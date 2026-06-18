@@ -15,12 +15,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
 | 3u | **001U / Fix / Debug** | In-game hotkey feedback + trace | **Live certified** (2026-06-18) |
 | 4 | **002** | Progression harness + F7 status | **Live certified** (2026-06-18) |
-| 5 | **003 / 003B** | Treasury Delta Watch | **003B shipped** — F10 retest pending |
+| 5 | **003 / 003B** | Treasury Delta Watch | **PARTIAL PASS** (2026-06-18) |
 | 6 | **003C** | Quick Forge Start (dev save + auto sandbox character) | **Shipped** |
 | 7 | **004A** | Report formatting / readable log surfaces | **Shipped** |
-| 8 | **004B** | Stub recommendation model (`RankForgeCandidates`) | **Shipped** — live cert pending |
+| 8 | **004B** | Stub recommendation model (`RankForgeCandidates`) | **LIVE CERT PASS** (2026-06-18) |
 | 9 | **005A** | Candidate source boundary + real scaffold + stub fallback | **Shipped** |
 | 10 | **005B** | Doctrine dev commands | **Shipped** |
+| 11 | **005C** | Recipe API recon (`ProbeForgeRecipes`) | **Shipped** — live cert pending |
 
 ## Current Dev Status
 
@@ -28,7 +29,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |------|--------|
 | Module version | **v0.0.7** |
 | Sprint 004A report formatting | **Shipped** — structured F7 / Treasury / cert blocks |
-| Sprint 004B stub recommendations | **Shipped** — live cert pending — [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md) |
+| Sprint 004B stub recommendations | **LIVE CERT PASS** (2026-06-18) — [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md) |
+| Sprint 005C recipe probe | **Shipped** — live cert pending — [docs/sprint-005c-live-results.md](docs/sprint-005c-live-results.md) |
 | Sprint 005A source boundary | **Shipped** — `IForgeCandidateSource`, real scaffold, stub fallback |
 | Sprint 005B doctrine commands | **Shipped** — `SetForgeDoctrine*` via file inbox |
 | Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
@@ -40,13 +42,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 ## Current focus
 
-**Live cert Sprint 004B** — `.\forge.ps1 -Command RankForgeCandidates -Wait` → F7 → update [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md).
+**Live cert Sprint 005C** — close game, `Forge.cmd`, load dev save → `.\forge.ps1 -Command ProbeForgeRecipes -Wait` → F7 — [docs/sprint-005c-live-results.md](docs/sprint-005c-live-results.md).
 
-**Live cert 003B retest** — F10 fast-forward 3–5 days, F7, `TreasurySnapshotNow`, inspect JSON.
+**Optional follow-ups** — 005A/005B inbox commands; strict 003B F10 multi-day + `TreasurySnapshotNow`.
 
 **Daily dev** — load **`BlacksmithGuild_DevStart.sav`** (~30s to map). See [docs/dev-disposable-save.md](docs/dev-disposable-save.md).
 
-**Sprint 005C+** — real Bannerlord recipe reads (gated on 004B + 003B live cert PASS).
+**Sprint 005D+** — map probe data to `ForgeCandidate` economics; keep stub oracle baseline.
 
 > **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 
