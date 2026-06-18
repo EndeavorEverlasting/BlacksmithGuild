@@ -35,19 +35,21 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 000B | **Complete** |
 | Sprint 001 / 001B | **Certified** — `certification.overall: PASS` (6/6) via `-Certify -Wait` |
 | Sprint 001U / Fix / Debug | **Live certified** (2026-06-18) — see [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
-| Sprint 002 | **Code complete** — progression commands wired, F7 `ShowForgeStatus`, `-CertifyProgression`; needs in-game PASS |
+| Sprint 002 | **Code complete — certify blocked** (2026-06-18) — inbox timeout; game not running with campaign loaded |
 | Sprint 003 | **Planned** — gated on `certification002.overall: PASS`; see `docs/treasury-delta-watch-plan.md` |
 | Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; watch mode can build while game is open |
 | In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — message feed (F7–F11), toast (forge), file logs |
 
-**Next gate: Sprint 002** — certify in-game on a disposable campaign (plain map, `TBG READY`, panels closed):
+**Sprint 002 certification: BLOCKED** — `.\forge.ps1 -CertifyProgression -Wait` timed out (2026-06-18) because Bannerlord was not running with a disposable campaign loaded (`session.phase: ModuleOnly`, `canPollFileInbox: false`). Sprint 003 does **not** start until `certification002.overall: PASS`.
+
+**Retry when game is ready** (plain map, `TBG READY`, panels closed):
 
 ```powershell
 .\forge.ps1 -CertifyProgression -Wait
 .\forge.ps1 -Check -SkipInstall
 ```
 
-Expect `certification002.overall: PASS` (4/4). Sprint 003 Treasury Delta Watch starts only after that gate clears.
+Expect `certification002.overall: PASS` (4/4). Then Sprint 003 Treasury Delta Watch MVP.
 
 Press **Enter** on the campaign map to expand the Combat Log. Close open panels if F-keys appear silent.
 
@@ -137,4 +139,4 @@ F7 reads summarized state only — service owns scan/classify/write JSON.
 
 ## Stern verdict
 
-**Next action:** Certify Sprint 002 in-game (`-CertifyProgression -Wait`). Then Sprint 003 Treasury Delta Watch.
+**Next action:** Load disposable campaign in Bannerlord, wait for `TBG READY`, then retry `-CertifyProgression -Wait`. Sprint 003 blocked until 002 PASS.
