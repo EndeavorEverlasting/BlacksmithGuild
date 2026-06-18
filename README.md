@@ -45,6 +45,7 @@ PowerShell cannot advance in-game time — use these keys after loading a campai
 BlacksmithGuild/
   LaunchForge.cmd           <- double-click: build + install + open launcher
   CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
+  BackupSaves.cmd           <- double-click: incremental save backup
   forge.ps1                 <- one-click build + install (+ optional launcher/log)
   docs/
     sprint-000-bootstrap.md
@@ -53,6 +54,8 @@ BlacksmithGuild/
   scripts/
     install-mod.ps1
     collect-diagnostics.ps1
+    backup-saves.ps1
+    verify-saves.ps1
     forge-status.ps1
     verify-sprint-000a.ps1
   Module/
@@ -122,7 +125,44 @@ From repo root:
 .\forge.ps1 -Launch    # build, install, open launcher
 .\forge.ps1 -Check     # build, install, scan log for [TBG TEST] PASS
 .\forge.ps1 -CollectDiagnostics  # collect crash/log bundle after a failure
+.\forge.ps1 -VerifySaves         # read-only check: live saves vs backups
+.\forge.ps1 -BackupSaves         # incremental save backup only
+.\forge.ps1 -SkipSaveBackup      # opt out of automatic backup on any run
 ```
+
+Every `forge.ps1` run **auto-backs up changed saves** unless `-SkipSaveBackup` is set.
+
+## Save safety
+
+Your live saves stay in:
+
+```text
+Documents\Mount and Blade II Bannerlord\Game Saves\
+```
+
+The repo **never deletes or modifies** save files. Incremental backups go to:
+
+```text
+Documents\Mount and Blade II Bannerlord\BlacksmithGuild_SaveBackups\
+```
+
+| Rule | Why |
+|------|-----|
+| **Legacy saves → mod OFF** | Confirmed: old saves load when BlacksmithGuild is disabled |
+| **Sprint 000A tests → new disposable campaign, mod ON** | Avoid module/data mismatch |
+| **Auto-backup on every forge run** | Only copies new/changed `.sav` files (SHA256 manifest) |
+
+Verify backups:
+
+```powershell
+.\forge.ps1 -VerifySaves
+```
+
+**Manual restore** (if ever needed):
+
+1. Close Bannerlord
+2. Copy a timestamped `.sav` from `BlacksmithGuild_SaveBackups\<save name>\` → `Game Saves\`
+3. Launch with **The Blacksmith Guild disabled** for legacy campaigns
 
 Or double-click `LaunchForge.cmd` to build, install, and open the launcher.
 

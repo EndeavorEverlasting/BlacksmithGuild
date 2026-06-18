@@ -145,6 +145,9 @@ foreach ($statusFile in @($statusPaths.StatusJson, $statusPaths.ForgeLog)) {
     }
 }
 
+$backupManifest = Join-Path $DocsRoot 'BlacksmithGuild_SaveBackups\backup-manifest.json'
+Copy-IfExists -SourcePath $backupManifest -DestPath (Join-Path $OutRoot 'status\backup-manifest.json') -Copied $cRef -Missing $mRef | Out-Null
+
 Set-ForgeStep -Name 'collect_sources' -Status 'RUNNING'
 
 # Bannerlord logs and crashes under Documents
@@ -319,6 +322,19 @@ $summary.Add("BlacksmithGuild repo version: $repoVersion")
 $summary.Add("BlacksmithGuild installed version: $installedVersion")
 $summary.Add("BlacksmithGuild_Phase1.log found: $modLogFound")
 $summary.Add("[TBG TEST] PASS found: $passFound")
+
+$backupManifestPath = Join-Path $DocsRoot 'BlacksmithGuild_SaveBackups\backup-manifest.json'
+$backedSaveCount = 0
+if (Test-Path -LiteralPath $backupManifestPath) {
+    try {
+        $bm = Get-Content -LiteralPath $backupManifestPath -Raw | ConvertFrom-Json
+        if ($bm.files) {
+            $backedSaveCount = @($bm.files.PSObject.Properties).Count
+        }
+    } catch { }
+}
+$summary.Add("Save backups in manifest: $backedSaveCount (see BlacksmithGuild_SaveBackups)")
+$summary.Add('Save safety: legacy saves load with mod disabled; backups are copy-only.')
 $summary.Add('')
 $summary.Add('Detected issues:')
 if ($matchRecords.Count -eq 0) {

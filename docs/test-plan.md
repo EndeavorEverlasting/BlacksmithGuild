@@ -24,6 +24,20 @@ The dev hotkeys only matter after the mod has loaded on the campaign map.
 
 ---
 
+## Save safety
+
+Live saves: `Documents\Mount and Blade II Bannerlord\Game Saves\`
+
+Backups: `Documents\Mount and Blade II Bannerlord\BlacksmithGuild_SaveBackups\`
+
+- **Legacy saves:** disable **The Blacksmith Guild** in the launcher before loading (confirmed working).
+- **Mod testing:** use a **new disposable campaign** with the mod enabled.
+- **Auto-backup:** every `forge.ps1` run backs up only new/changed `.sav` files.
+- **Verify:** `.\forge.ps1 -VerifySaves` — statuses `SAFE`, `UNBACKED`, or `CHANGED_SINCE_BACKUP`.
+- **Restore:** manual copy from backup folder to `Game Saves\` (never auto-restore).
+
+---
+
 ## Crash and data-load diagnostics
 
 If Bannerlord crashes or shows missing-list/object errors, do not paste screenshots as the main evidence.
@@ -54,12 +68,14 @@ Sprint 000A must use a **new disposable campaign**. Dev hotkeys may be blocked i
 ### Certification test flow (after diagnostics land)
 
 ```text
-1. LaunchForge.cmd
-2. New disposable campaign
-3. If crash → CollectDiagnostics.cmd
-4. If load → check [TBG PREFLIGHT] lines in BlacksmithGuild_Phase1.log
-5. If preflight PASS → Ctrl+Alt+D
-6. On failure → bring diagnostic-summary.txt
+1. LaunchForge.cmd          (auto-backs up changed saves first)
+2. New disposable campaign  (mod ON for 000A certification)
+3. Legacy save play         (mod OFF — separate session)
+4. If crash → CollectDiagnostics.cmd
+5. If load → check [TBG PREFLIGHT] lines in BlacksmithGuild_Phase1.log
+6. If preflight PASS → Ctrl+Alt+D
+7. On failure → bring diagnostic-summary.txt
+8. Verify saves anytime → .\forge.ps1 -VerifySaves
 ```
 
 ---

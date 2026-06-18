@@ -30,6 +30,11 @@ function Start-ForgeStatusRun {
         [string]$Operation
     )
 
+    if ($script:ForgeStatusState -and $script:ForgeStatusState.overall -eq 'RUNNING') {
+        Write-ForgeLogLine "RUN attach source=$Source operation=$Operation"
+        return
+    }
+
     $script:ForgeStatusState = [ordered]@{
         updatedAt = (Get-Date).ToString('o')
         source    = $Source
