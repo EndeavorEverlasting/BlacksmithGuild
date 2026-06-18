@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using BlacksmithGuild.Forge;
 using BlacksmithGuild.Treasury;
 
 namespace BlacksmithGuild.DevTools
@@ -23,7 +24,8 @@ namespace BlacksmithGuild.DevTools
                 CharacterProgressionTestScenarios.AddSmithingXpCommand,
                 CharacterProgressionTestScenarios.AddSmithingFocusCommand,
                 CharacterProgressionTestScenarios.AddEnduranceAttributeCommand,
-                TreasuryDeltaWatchService.TreasurySnapshotNowCommand
+                TreasuryDeltaWatchService.TreasurySnapshotNowCommand,
+                ForgeRecommendationService.RankForgeCandidatesCommand
             };
 
         public static bool IsRegistered(string commandName)

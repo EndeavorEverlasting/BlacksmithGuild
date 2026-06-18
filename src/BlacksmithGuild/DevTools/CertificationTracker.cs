@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BlacksmithGuild.DevTools.Reporting;
 
 namespace BlacksmithGuild.DevTools
 {
@@ -21,6 +22,7 @@ namespace BlacksmithGuild.DevTools
             new Dictionary<string, CheckState>(StringComparer.OrdinalIgnoreCase);
 
         private static int _fastForwardToggleSuccesses;
+        private static string _lastOverall = "NOT_STARTED";
 
         private struct CheckState
         {
@@ -37,6 +39,8 @@ namespace BlacksmithGuild.DevTools
                 At = DateTime.Now.ToString("o"),
                 Message = message
             };
+
+            MaybeEmitCertReport();
         }
 
         public static void OnForgeLit()
@@ -220,6 +224,21 @@ namespace BlacksmithGuild.DevTools
             at = null;
             message = null;
             return false;
+        }
+
+        private static void MaybeEmitCertReport()
+        {
+            var overall = DeriveOverall(campaignReady: true, mainHeroReady: true);
+            if (overall == _lastOverall)
+            {
+                return;
+            }
+
+            _lastOverall = overall;
+            if (overall == "PASS" || overall == "FAIL" || overall == "BLOCKED")
+            {
+                CertificationReporter.WriteSprint001Report();
+            }
         }
     }
 }

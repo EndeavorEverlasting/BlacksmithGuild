@@ -18,7 +18,8 @@ namespace BlacksmithGuild
         {
             return candidates
                 .Select(candidate => ScoreCandidate(candidate, doctrine))
-                .OrderByDescending(candidate => candidate.Score)
+                .OrderByDescending(candidate => candidate.FinalScore)
+                .ThenByDescending(candidate => candidate.EstimatedNetProfit)
                 .ToList();
         }
 
@@ -26,26 +27,32 @@ namespace BlacksmithGuild
             ForgeCandidate candidate,
             ForgeDoctrine doctrine)
         {
-            int doctrineBonus = GetDoctrineBonus(candidate, doctrine);
+            var netProfit = ComputeNetProfit(candidate);
+            var doctrineScore = ComputeDoctrineScore(candidate, doctrine, netProfit);
+            var finalScore = netProfit + doctrineScore;
 
-            candidate.EstimatedNetProfit =
-                candidate.EstimatedValue
-                - candidate.EstimatedMaterialCost
-                - candidate.RareMaterialPenalty
-                + doctrineBonus;
-
-            candidate.Score = candidate.EstimatedNetProfit;
+            candidate.EstimatedNetProfit = netProfit;
+            candidate.DoctrineScore = doctrineScore;
+            candidate.FinalScore = finalScore;
+            candidate.Score = finalScore;
 
             candidate.Reason =
-                $"Value {candidate.EstimatedValue}, " +
-                $"material cost {candidate.EstimatedMaterialCost}, " +
-                $"rare penalty {candidate.RareMaterialPenalty}, " +
-                $"doctrine {doctrine}.";
+                $"net={netProfit}, doctrine={doctrineScore}, reservePolicy={DescribeReservePolicy()}, doctrineMode={doctrine}.";
 
             return candidate;
         }
 
-        private int GetDoctrineBonus(ForgeCandidate candidate, ForgeDoctrine doctrine)
+        private int ComputeNetProfit(ForgeCandidate candidate)
+        {
+            return candidate.EstimatedValue
+                - candidate.EstimatedMaterialCost
+                - candidate.RareMaterialPenalty;
+        }
+
+        private int ComputeDoctrineScore(
+            ForgeCandidate candidate,
+            ForgeDoctrine doctrine,
+            int netProfit)
         {
             switch (doctrine)
             {
@@ -53,26 +60,33 @@ namespace BlacksmithGuild
                     return candidate.EstimatedValue / 10;
 
                 case ForgeDoctrine.RareMetalConservation:
-                    return -candidate.RareMaterialPenalty;
+                    return _reservePolicy.PreserveRareMaterials
+                        ? -candidate.RareMaterialPenalty
+                        : 0;
 
                 case ForgeDoctrine.ProfitForge:
-                    return 0;
+                    return netProfit > 0 ? 0 : -500;
 
                 case ForgeDoctrine.UnlockGrinder:
-                    return 0;
+                    return candidate.WeaponClass.Contains("Two-Handed") ? 250 : 0;
 
                 case ForgeDoctrine.WarArsenal:
-                    return 0;
+                    return candidate.WeaponClass.Contains("Polearm") ? 300 : 0;
 
                 case ForgeDoctrine.MaterialAlchemist:
-                    return 0;
+                    return candidate.RareMaterialPenalty > 0 ? -candidate.RareMaterialPenalty / 2 : 100;
 
                 case ForgeDoctrine.CommissionHunter:
-                    return 0;
+                    return candidate.EstimatedValue >= 10000 ? 150 : 0;
 
                 default:
                     return 0;
             }
+        }
+
+        private string DescribeReservePolicy()
+        {
+            return _reservePolicy.PreserveRareMaterials ? "preserve-rare" : "spend-rare";
         }
     }
 }

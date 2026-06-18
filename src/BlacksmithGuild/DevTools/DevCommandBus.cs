@@ -1,3 +1,4 @@
+using BlacksmithGuild.Forge;
 using BlacksmithGuild.Treasury;
 
 namespace BlacksmithGuild.DevTools
@@ -163,7 +164,8 @@ namespace BlacksmithGuild.DevTools
             }
 
             if (commandName == DevCommandRegistry.ShowForgeStatusCommand ||
-                commandName == DevCommandRegistry.ListScenariosCommand)
+                commandName == DevCommandRegistry.ListScenariosCommand ||
+                commandName == ForgeRecommendationService.RankForgeCandidatesCommand)
             {
                 return;
             }
@@ -339,6 +341,10 @@ namespace BlacksmithGuild.DevTools
                     return CharacterProgressionTestScenarios.RunAddEnduranceAttributeOnly();
                 case TreasuryDeltaWatchService.TreasurySnapshotNowCommand:
                     return TreasuryDeltaWatchService.RunSnapshotNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.RankForgeCandidatesCommand:
+                    return ForgeRecommendationService.RunRankNow()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 default:

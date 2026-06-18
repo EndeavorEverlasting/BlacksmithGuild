@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Library;
 
@@ -83,10 +84,24 @@ namespace BlacksmithGuild.Treasury
             if (Campaign.Current == null || Hero.MainHero == null)
             {
                 DebugLogger.Test("[TBG TREASURY] TreasurySnapshotNow blocked: campaign not ready.", showInGame: false);
+                CertificationReporter.WriteTreasuryRetestReport(
+                    snapshotSucceeded: false,
+                    snapshotGeneration: _summary.SnapshotGeneration,
+                    deltaCount: _summary.DeltaCount,
+                    suspiciousCount: _summary.SuspiciousCount,
+                    criticalCount: _summary.CriticalCount);
                 return false;
             }
 
+            var generationBefore = _snapshotGeneration;
             TryTakeSnapshot("manual");
+            WriteTreasuryReport("TreasurySnapshotNow");
+            CertificationReporter.WriteTreasuryRetestReport(
+                snapshotSucceeded: _snapshotGeneration > generationBefore || _snapshotCount > 0,
+                snapshotGeneration: _summary.SnapshotGeneration,
+                deltaCount: _summary.DeltaCount,
+                suspiciousCount: _summary.SuspiciousCount,
+                criticalCount: _summary.CriticalCount);
             return true;
         }
 
@@ -96,25 +111,122 @@ namespace BlacksmithGuild.Treasury
             _pendingSnapshotReason = reason;
         }
 
-        public static void DisplaySummaryInGame()
+        public static void AppendToReport(ReportFormatter report)
         {
+            report.Section("Treasury");
             if (!_summary.Enabled || _snapshotCount == 0)
             {
-                InGameNotice.Info("TBG TREASURY: watch=inactive (no snapshots yet)");
+                report.Line("watch", "inactive (no snapshots yet)");
                 return;
             }
 
             var severity = string.IsNullOrEmpty(_summary.MaxSeverity) ? "Observed" : _summary.MaxSeverity;
-            InGameNotice.Info(
-                $"TBG TREASURY: watch=active gen={_summary.SnapshotGeneration} entities={_summary.ActorsTracked} maxDelta={_summary.MaxAbsDelta:N0} severity={severity}"
-            );
+            report.Line("generation", _summary.SnapshotGeneration.ToString());
+            report.Line("day", _summary.LastSnapshotDay.ToString());
+            report.Line("kingdomsTracked", _summary.ActorsTracked.ToString());
+            report.Line("maxDelta", _summary.MaxAbsDelta.ToString("N0"));
+            report.Line("severity", severity);
 
-            if (_summary.CriticalCount > 0 && !string.IsNullOrEmpty(_summary.LastCriticalActor))
+            AppendDeltaVerdicts(report);
+
+            report.Section("Evidence");
+            report.Line("json", "BlacksmithGuild_TreasuryWatch.json");
+        }
+
+        public static void WriteTreasuryReport(string source)
+        {
+            var report = ReportFormatter.BeginReport("TREASURY WATCH", source, "treasury-watch");
+
+            report.Section("Snapshot");
+            report.Line("generation", _summary.SnapshotGeneration.ToString());
+            report.Line("day", _summary.LastSnapshotDay.ToString());
+            report.Line("kingdomsTracked", _summary.ActorsTracked.ToString());
+            report.Line("snapshotCount", _summary.SnapshotCount.ToString());
+
+            report.Section("Deltas");
+            AppendDeltaVerdicts(report);
+
+            report.Section("Evidence");
+            report.Line("json", "BlacksmithGuild_TreasuryWatch.json");
+
+            var severity = string.IsNullOrEmpty(_summary.MaxSeverity) ? "Observed" : _summary.MaxSeverity;
+            report.SummaryLine(
+                $"treasury: gen={_summary.SnapshotGeneration} entities={_summary.ActorsTracked} severity={severity}");
+
+            report.EndReport(emitInGame: source == TreasurySnapshotNowCommand, emitToFile: true);
+        }
+
+        private static void AppendDeltaVerdicts(ReportFormatter report)
+        {
+            if (_snapshotCount == 0)
             {
-                InGameNotice.Info(
-                    $"TBG TREASURY: last critical={_summary.LastCriticalActor} delta={_summary.LastCriticalDelta:+#;-#;0}"
-                );
+                report.Verdict(ReportVerdict.Info, "No snapshots taken yet");
+                return;
             }
+
+            if (RecentDeltas.Count == 0)
+            {
+                report.Verdict(ReportVerdict.Warn, "No treasury deltas detected");
+                return;
+            }
+
+            var shown = 0;
+            foreach (var delta in RecentDeltas.OrderByDescending(d => Math.Abs(d.Delta)))
+            {
+                if (shown >= 5)
+                {
+                    break;
+                }
+
+                var sign = delta.Delta >= 0 ? "+" : "";
+                var label = FormatDeltaLabel(delta);
+                var verdict = MapClassificationToVerdict(delta.Classification);
+                report.Verdict(verdict, $"{delta.ActorName}: {sign}{delta.Delta:N0} {label}");
+                shown++;
+            }
+
+            if (_summary.CriticalCount > 0)
+            {
+                report.Verdict(ReportVerdict.Warn, $"{_summary.CriticalCount} critical anomal{(_summary.CriticalCount == 1 ? "y" : "ies")} tracked");
+            }
+            else if (_summary.SuspiciousCount > 0)
+            {
+                report.Verdict(ReportVerdict.Warn, $"{_summary.SuspiciousCount} suspicious delta(s) tracked");
+            }
+            else
+            {
+                report.Verdict(ReportVerdict.Pass, "No critical anomalies");
+            }
+        }
+
+        private static string FormatDeltaLabel(TreasuryDelta delta)
+        {
+            if (delta.Classification == TreasurySeverity.Critical.ToString())
+            {
+                return "critical anomaly";
+            }
+
+            if (delta.Classification == TreasurySeverity.Suspicious.ToString())
+            {
+                return "suspicious";
+            }
+
+            return "observed";
+        }
+
+        private static ReportVerdict MapClassificationToVerdict(string classification)
+        {
+            if (classification == TreasurySeverity.Critical.ToString())
+            {
+                return ReportVerdict.Warn;
+            }
+
+            if (classification == TreasurySeverity.Suspicious.ToString())
+            {
+                return ReportVerdict.Warn;
+            }
+
+            return ReportVerdict.Info;
         }
 
         private static void TryTakeSnapshot(string reason)

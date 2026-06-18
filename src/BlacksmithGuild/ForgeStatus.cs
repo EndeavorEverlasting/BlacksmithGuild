@@ -4,6 +4,8 @@ using System.IO;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
+using BlacksmithGuild.Forge;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.Library;
 
@@ -38,6 +40,8 @@ namespace BlacksmithGuild
         private static ProgressionTestSnapshot _progressionTest;
         private static TreasuryWatchSummary _treasuryWatch;
         private static bool _treasuryWatchRecorded;
+        private static ForgeRecommendationSummary _forgeRecommendations;
+        private static bool _forgeRecommendationsRecorded;
         private static SessionPhase _sessionPhase = SessionPhase.ModuleOnly;
         private static bool _sessionTimePaused;
 
@@ -167,6 +171,13 @@ namespace BlacksmithGuild
             Flush();
         }
 
+        public static void RecordForgeRecommendations(ForgeRecommendationSummary summary)
+        {
+            _forgeRecommendations = summary;
+            _forgeRecommendationsRecorded = summary != null && summary.HasRankings;
+            Flush();
+        }
+
         /// <summary>
         /// Read-only verdict card: posts cached summary to the notice log. Does not scan or mutate campaign data.
         /// </summary>
@@ -185,38 +196,81 @@ namespace BlacksmithGuild
                 ? "none"
                 : $"{_lastCommand} {_lastCommandResult ?? ""}".Trim();
 
-            InGameNotice.Info(
-                $"TBG STATUS: loadedVersion={version} dllUtc={dllUtc} reload={reload}"
-            );
-            InGameNotice.Info(
-                $"TBG STATUS: session={_sessionPhase} devTools={devTools} preflight={preflight} last={last}"
-            );
-
-            if (DevToolsConfig.AutoSkipCharacterCreation)
-            {
-                InGameNotice.Info(
-                    $"TBG STATUS: quickStart={CampaignSetupStateTracker.Phase} activeState={CampaignSetupStateTracker.ActiveStateName}"
-                );
-            }
-
             var certOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
             var certPassed = CertificationTracker.CountPassed();
             var certRequired = CertificationTracker.RequiredCheckNames.Count;
+            var treasuryGen = _treasuryWatchRecorded ? _treasuryWatch.SnapshotGeneration : 0;
+
+            var report = ReportFormatter.BeginReport("FORGE STATUS", "F7", "forge-status");
+
+            report.Section("Session");
+            report.Line("phase", _sessionPhase.ToString());
+            report.Line("ready", (_campaignReady && _mainHeroReady).ToString().ToLowerInvariant());
+            report.Line("devTools", devTools);
+            report.Line("preflight", preflight);
+            report.Line("reload", reload);
+            report.Line("loadedVersion", version);
+            report.Line("dllUtc", dllUtc);
+
+            report.Section("Last Command");
+            report.Line("command", string.IsNullOrEmpty(_lastCommand) ? "none" : _lastCommand);
+            report.Line("source", string.IsNullOrEmpty(_lastCommandSource) ? "none" : _lastCommandSource);
+            report.Line("result", string.IsNullOrEmpty(_lastCommandResult) ? "none" : _lastCommandResult);
+            if (!string.IsNullOrEmpty(_lastCommandDetail))
+            {
+                report.Line("detail", _lastCommandDetail);
+            }
+
+            if (DevToolsConfig.AutoSkipCharacterCreation)
+            {
+                report.Section("Quick Start");
+                report.Line("phase", CampaignSetupStateTracker.Phase.ToString());
+                report.Line("activeState", CampaignSetupStateTracker.ActiveStateName ?? "unknown");
+            }
+
             if (certPassed > 0 || certOverall != "NOT_STARTED")
             {
-                InGameNotice.Info($"TBG STATUS: cert={certOverall} ({certPassed}/{certRequired})");
+                report.Section("Certification");
+                report.Line("sprint001", $"{certOverall} ({certPassed}/{certRequired})");
+                var cert002Overall = Sprint002CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
+                var cert002Passed = Sprint002CertificationTracker.CountPassed();
+                var cert002Required = Sprint002CertificationTracker.RequiredCheckNames.Count;
+                if (cert002Passed > 0 || cert002Overall != "NOT_STARTED")
+                {
+                    report.Line("sprint002", $"{cert002Overall} ({cert002Passed}/{cert002Required})");
+                }
             }
+
+            TreasuryDeltaWatchService.AppendToReport(report);
+            ForgeRecommendationService.AppendToReport(report);
 
             if (PendingReloadWatcher.IsReloadBlocked)
             {
-                InGameNotice.Warn("TBG STATUS: reload=blocked — close Bannerlord, run Forge.cmd");
+                report.Verdict(ReportVerdict.Warn, "Reload blocked — close Bannerlord, run Forge.cmd");
             }
-            else             if (PendingReloadWatcher.IsReloadPending)
+            else if (PendingReloadWatcher.IsReloadPending)
             {
-                InGameNotice.Warn("TBG STATUS: reload=pending — restart Bannerlord");
+                report.Verdict(ReportVerdict.Warn, "Reload pending — restart Bannerlord");
             }
 
-            TreasuryDeltaWatchService.DisplaySummaryInGame();
+            report.SummaryLine($"phase: {_sessionPhase} | reload: {reload} | treasury: gen={treasuryGen}");
+            if (certPassed > 0 || certOverall != "NOT_STARTED")
+            {
+                report.SummaryLine($"cert: {certOverall} ({certPassed}/{certRequired})");
+            }
+
+            var forgeLine = ForgeRecommendationService.BuildCompactSummaryLine();
+            if (!string.IsNullOrEmpty(forgeLine))
+            {
+                report.SummaryLine(forgeLine.Replace("TBG FORGE: ", string.Empty));
+            }
+
+            report.EndReport();
+
+            if (!string.IsNullOrEmpty(forgeLine))
+            {
+                InGameNotice.Info(forgeLine);
+            }
 
             DebugLogger.Test("ShowForgeStatus displayed cached summary.", showInGame: false);
         }
@@ -438,6 +492,20 @@ namespace BlacksmithGuild
                     builder.AppendLine($"    \"lastCriticalActor\": \"{Escape(_treasuryWatch.LastCriticalActor ?? "")}\",");
                     builder.AppendLine($"    \"lastCriticalDelta\": {_treasuryWatch.LastCriticalDelta},");
                     builder.AppendLine($"    \"lastReportPath\": \"{Escape(_treasuryWatch.ReportPath ?? "")}\"");
+                    builder.AppendLine("  },");
+                }
+
+                if (_forgeRecommendationsRecorded)
+                {
+                    builder.AppendLine("  \"forgeRecommendations\": {");
+                    builder.AppendLine($"    \"source\": \"{Escape(_forgeRecommendations.Source ?? "")}\",");
+                    builder.AppendLine($"    \"doctrine\": \"{Escape(_forgeRecommendations.Doctrine ?? "")}\",");
+                    builder.AppendLine($"    \"topCandidateId\": \"{Escape(_forgeRecommendations.TopCandidateId ?? "")}\",");
+                    builder.AppendLine($"    \"topCandidateName\": \"{Escape(_forgeRecommendations.TopCandidateName ?? "")}\",");
+                    builder.AppendLine($"    \"topFinalScore\": {_forgeRecommendations.TopFinalScore},");
+                    builder.AppendLine($"    \"rankedCount\": {_forgeRecommendations.RankedCount},");
+                    builder.AppendLine($"    \"reportPath\": \"{Escape(_forgeRecommendations.ReportPath ?? "")}\",");
+                    builder.AppendLine($"    \"generatedAt\": \"{(_forgeRecommendations.GeneratedAt ?? DateTime.Now):o}\"");
                     builder.AppendLine("  },");
                 }
 

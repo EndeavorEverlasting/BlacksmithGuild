@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using BlacksmithGuild.Forge;
 
 namespace BlacksmithGuild
 {
@@ -8,44 +8,11 @@ namespace BlacksmithGuild
         {
             GuildLog.Info("campaign detected. Running Phase 1 fake forge advisor.");
 
-            var advisor = new ForgeAdvisor(new MaterialReservePolicy());
-
-            var fakeCandidates = new List<ForgeCandidate>
+            if (ForgeRecommendationService.RunRankNow(source: "campaign-smoke"))
             {
-                new ForgeCandidate
-                {
-                    WeaponClass = "Two-Handed Sword",
-                    DesignName = "Long Warblade",
-                    EstimatedValue = 14800,
-                    EstimatedMaterialCost = 2200,
-                    RareMaterialPenalty = 1350
-                },
-                new ForgeCandidate
-                {
-                    WeaponClass = "Polearm",
-                    DesignName = "Heavy Glaive Pattern",
-                    EstimatedValue = 11200,
-                    EstimatedMaterialCost = 1200,
-                    RareMaterialPenalty = 250
-                },
-                new ForgeCandidate
-                {
-                    WeaponClass = "One-Handed Sword",
-                    DesignName = "Officer Sidearm",
-                    EstimatedValue = 6200,
-                    EstimatedMaterialCost = 900,
-                    RareMaterialPenalty = 100
-                }
-            };
-
-            var ranked = advisor.RankCandidates(fakeCandidates, ForgeDoctrine.ProfitForge);
-
-            if (ranked.Count > 0)
-            {
-                var top = ranked[0];
-
+                var summary = ForgeRecommendationService.Summary;
                 GuildLog.Info(
-                    $"Top fake candidate: {top.DesignName} | Score {top.Score} | {top.Reason}"
+                    $"Top fake candidate: {summary.TopCandidateName} | Score {summary.TopFinalScore:0} | source={summary.Source}"
                 );
             }
             else

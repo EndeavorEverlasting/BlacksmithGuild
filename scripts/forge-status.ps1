@@ -389,7 +389,9 @@ function Send-ForgeCommand {
         'RichSmithingProgressionTest',
         'AddSmithingXp',
         'AddSmithingFocus',
-        'AddEnduranceAttribute'
+        'AddEnduranceAttribute',
+        'TreasurySnapshotNow',
+        'RankForgeCandidates'
     )
 
     if ($allowed -notcontains $CommandName) {

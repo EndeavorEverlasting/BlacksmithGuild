@@ -21,7 +21,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 5 | **003** | Treasury Delta Watch (evidence system) | **003B hardened** — F10 retest pending |
 | 5b | **003B** | Treasury hardening (defer snapshot, gen, JSON, dev cmd) | **Shipped** |
 | 5c | **003C** | Quick Forge Start (dev save + auto sandbox character) | **Shipped** (2026-06-18) |
-| 6 | **004+** | Recommendation system | Later |
+| 6 | **004A** | Report formatting / readable log surfaces | **Shipped** (2026-06-18) |
+| 7 | **004B** | Forge recommendation data model (stub source) | **Shipped** (2026-06-18) — live cert pending |
 
 > **Breadcrumb:** Load **`BlacksmithGuild_DevStart.sav`** for daily dev — [docs/dev-disposable-save.md](docs/dev-disposable-save.md). **F7** = read-only status verdict card.
 
@@ -32,39 +33,36 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Field | Value |
 |-------|-------|
 | Branch | `main` |
-| Version | `v0.0.6` |
-| Sprint 003C | **Shipped** — dev save docs + auto sandbox character (Harmony, dev-only) |
+| Version | `v0.0.7` |
+| Sprint 004A | **Shipped** — ReportFormatter + structured F7 / Treasury / cert output |
+| Sprint 004B | **Shipped** — stub RankForgeCandidates + recommendations JSON + F7 forge line |
 | Sprint 003B | **Shipped** — F10 retest for treasury deltas still pending |
 | Dev loop | Close Bannerlord → **`Forge.cmd`** → load **`BlacksmithGuild_DevStart.sav`** → `TBG READY` |
-| Quick start doc | [docs/dev-disposable-save.md](docs/dev-disposable-save.md) |
+| Live cert doc | [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md) |
 
-**Next: 003B retest** — F10 3–5 days on dev save, F7, `TreasurySnapshotNow`, inspect JSON.
+**Next: live cert Sprint 004** — `RankForgeCandidates` → F7 → inspect JSON + Phase1.log.
 
-**Then Sprint 004** — Forge recommendation data model (gated on 003B retest PASS).
+**Then: 003B treasury retest** — F10 3–5 days + `TreasurySnapshotNow` (still gates real recipe work).
 
 ### Sprint entry gates (do not skip)
 
 | Sprint | Enter when | Do not start if |
 |--------|------------|-----------------|
-| **004+** Recommendations | 003 evidence stable + 003B retest PASS | Treasury watch not proven safe |
+| **005+** Real recipe browser | 004B live cert PASS + 003B retest PASS | Stub recommendations not proven in-game |
 
 ---
 
-## Sprint 003C: Quick Forge Start (**Shipped** 2026-06-18)
+## Sprint 004B: Forge Recommendations (**Shipped** 2026-06-18)
 
-**Phase 1:** [docs/dev-disposable-save.md](docs/dev-disposable-save.md) — load `BlacksmithGuild_DevStart.sav` (~30s to map).
+**Command:** `.\forge.ps1 -Command RankForgeCandidates -Wait`
 
-**Phase 2:** `DevToolsConfig.AutoSkipCharacterCreation = true` — Harmony patches `SandBoxGameManager.OnLoadFinished` + `CharacterCreationState.NextStage`; `CampaignSetupStateTracker` logs menu/cutscene/creation transitions.
+**F7:** compact `TBG FORGE:` line after rankings cached.
 
-**Retest Phase 1:** Load dev save → `TBG READY` → F7.
-
-**Retest Phase 2:** New Sandbox → no UI clicks → `[TBG QUICKSTART] transition:` in log → `TBG QUICKSTART` notice → `TBG READY`.
-
-**If Phase 2 fails:** use Phase 1 dev save; optional external QuickStart mod as fallback.
+**Evidence:** [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md)
 
 ---
 
-## Sprint 003: Treasury Delta Watch (**003B shipped**)
+## Sprint 003: Treasury Delta Watch (**003B retest pending**)
 
 **Retest:** F10 fast-forward 3–5 days (F9 alone does not advance calendar). `.\forge.ps1 -Command TreasurySnapshotNow -Wait`.
 
@@ -74,18 +72,18 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 ```text
 Repo: EndeavorEverlasting/BlacksmithGuild
+Module: v0.0.7
 
-Sprint 003C shipped. Daily dev: load BlacksmithGuild_DevStart.sav (see docs/dev-disposable-save.md).
+Live cert Sprint 004:
+  Forge.cmd → load dev save → TBG READY
+  .\forge.ps1 -Command RankForgeCandidates -Wait → F7
+  Inspect BlacksmithGuild_ForgeRecommendations.json + Phase1.log
 
-Retest 003B treasury:
-  Forge.cmd → load dev save → F10 ON (3-5 days) → F10 OFF → F7
-  .\forge.ps1 -Command TreasurySnapshotNow -Wait
-
-Then Sprint 004 recommendation model.
+Then 003B treasury retest (F10 3-5 days + TreasurySnapshotNow).
 ```
 
 ---
 
 ## Stern verdict
 
-**Next action:** Create dev save if missing → 003B F10 retest → Sprint 004 recommendation model.
+**Next action:** Live cert 004B in-game → 003B F10 retest → real recipe source (Sprint 005+).
