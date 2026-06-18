@@ -14,8 +14,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 2 | **000B** | Fluid Steam dev loop | **Complete** |
 | 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
 | 3u | **001U / Fix / Debug** | In-game hotkey feedback + trace | **Live certified** (2026-06-18) |
-| 4 | **002** | Progression harness + F7 status | **Code complete — certify in-game** |
-| 5 | **003** | Treasury Delta Watch | Planned |
+| 4 | **002** | Progression harness + F7 status | **Live certified** (2026-06-18) |
+| 5 | **003** | Treasury Delta Watch | **MVP shipped** — verify in-game |
 | 6 | **004+** | Recommendation system | Later |
 
 ## Current Dev Status
@@ -25,13 +25,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Module version | **v0.0.5** |
 | Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
 | Combat Log | Press **Enter** on campaign map to scroll F7–F11 messages |
-| Sprint 002 progression | **Code complete — certify in-game** |
-| Next gate | `.\forge.ps1 -CertifyProgression -Wait` → `certification002.overall: PASS` |
-| Sprint 003 Treasury Watch | Planned — gated on Sprint 002 PASS |
+| Sprint 002 progression | **Live certified** (2026-06-18) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
+| Sprint 003 Treasury Watch | **MVP shipped** — verify `BlacksmithGuild_TreasuryWatch.json` + F7 after 2+ days |
+| Dev loop | `Forge.cmd` (build only) or **`ForgeAndLaunch.cmd`** (build + launcher on clean PASS) |
 
 ## Current focus
 
-**Sprint 002** — certify progression harness on a disposable campaign (`-CertifyProgression -Wait`, `Ctrl+Alt+S`, **F7** status).
+**Sprint 003** — verify Treasury Delta Watch on a disposable campaign (daily ticks, F7 treasury lines, JSON report).
 
 > **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 
@@ -126,6 +126,7 @@ Includes `certification` (Sprint 001) and `certification002` (Sprint 002) blocks
 ```text
 BlacksmithGuild/
   Forge.cmd                 <- double-click: build + install (daily dev loop)
+  ForgeAndLaunch.cmd        <- build + install + open launcher on clean PASS only
   ForgeWatch.cmd            <- double-click: auto rebuild on source changes
   LaunchForge.cmd           <- first install / explicit: build + install + open launcher
   CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
@@ -207,7 +208,19 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 
 Release builds auto-install to `Modules/BlacksmithGuild` and write `BlacksmithGuild_PendingReload.json`. **Restart Bannerlord** to load a new DLL — there is no hot reload. While Bannerlord is running, the loaded Client DLL is **locked**; install may be **blocked** until you close the game.
 
-**Double-click:** `Forge.cmd` (build + install, window stays open). **Close Bannerlord first** for a reliable install. **First install / launcher:** `LaunchForge.cmd`. **Auto rebuild:** `ForgeWatch.cmd` or `.\forge.ps1 -Watch` (can build while the game is open; install may block until you close Bannerlord).
+**Double-click:** `Forge.cmd` (build + install, window stays open). **Close Bannerlord first** for a reliable install. **`ForgeAndLaunch.cmd`** — same build/install, then opens the Bannerlord launcher only on clean PASS (not if install blocked or game running). **First install / explicit launcher:** `LaunchForge.cmd`. **Auto rebuild:** `ForgeWatch.cmd` or `.\forge.ps1 -Watch` (can build while the game is open; install may block until you close Bannerlord).
+
+## One-step clean launch
+
+Use:
+
+```text
+ForgeAndLaunch.cmd
+```
+
+This builds, installs, verifies, and opens the Bannerlord launcher only if Forge finishes with a clean PASS (`overall: PASS` and install step PASS).
+
+If install is BLOCKED because Bannerlord is running, it will not launch. Close Bannerlord and run `Forge.cmd` again.
 
 **In Cursor / VS Code:** `Ctrl+Shift+B` (Build + Install task). Optional background task: **Forge Watch**. **Not in Bannerlord.**
 
@@ -246,7 +259,7 @@ From repo root:
 .\forge.ps1 -SkipSaveBackup      # opt out of automatic backup on any run
 ```
 
-Double-click **`Forge.cmd`** for the daily build+install loop. **`LaunchForge.cmd`** when you need the launcher opened. **`ForgeWatch.cmd`** for watch mode.
+Double-click **`Forge.cmd`** for the daily build+install loop. **`ForgeAndLaunch.cmd`** when you want build+install and the launcher opened on clean PASS. **`LaunchForge.cmd`** when you always want the launcher after build. **`ForgeWatch.cmd`** for watch mode.
 
 Every `forge.ps1` run **auto-backs up changed saves** unless `-SkipSaveBackup` is set. Watch mode backs up on the first rebuild only. For daily play you do not need forge — only after code changes or when running diagnostics/backups.
 

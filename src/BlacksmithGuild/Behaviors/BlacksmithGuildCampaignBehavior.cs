@@ -1,4 +1,5 @@
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.Treasury;
 using TaleWorlds.CampaignSystem;
 
 namespace BlacksmithGuild.Behaviors
@@ -18,6 +19,7 @@ namespace BlacksmithGuild.Behaviors
         private void OnDailyTick()
         {
             GameReadinessService.RunPreflightWhenReady();
+            TreasuryDeltaWatchService.OnDailyTick();
 
             if (!DevToolsConfig.AutoRunGoldTestOnDailyTick || _hasRunGoldTest)
             {
@@ -75,6 +77,7 @@ namespace BlacksmithGuild.Behaviors
                 InGameNotice.Ready("campaign map ready. Press F8 for commands.");
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
                 HotkeyTraceService.OnMapReady();
+                TreasuryDeltaWatchService.OnCampaignMapReady();
             }
         }
 

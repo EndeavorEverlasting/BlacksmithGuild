@@ -17,8 +17,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3c | **001U** | In-game command feedback + message-channel clarity (F7–F11 visible) | **Live certified** (2026-06-18) |
 | 3d | **001U-Fix** | Message timing + visibility (map readiness gate, TBG READY, no auto gold) | **Live certified** (2026-06-18) |
 | 3e | **001U-Debug** | Hotkey polling trace + menu/fallback fixes | **Live certified** (2026-06-18) |
-| 4 | **002** | Stoke the Apprentice — skill-point / progression harness + F7 status | **Code complete — certify in-game** |
-| 5 | **003** | Treasury Delta Watch (evidence system) | Planned — see `docs/treasury-delta-watch-*.md` |
+| 4 | **002** | Stoke the Apprentice — skill-point / progression harness + F7 status | **Live certified** (2026-06-18) |
+| 5 | **003** | Treasury Delta Watch (evidence system) | **MVP shipped** — verify in-game |
 | 6 | **004+** | Recommendation system | Later |
 
 > **Breadcrumb:** `Ctrl+Alt+S` runs `RichSmithingProgressionTest`. **F7** = read-only status verdict card. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
@@ -35,25 +35,14 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 000B | **Complete** |
 | Sprint 001 / 001B | **Certified** — `certification.overall: PASS` (6/6) via `-Certify -Wait` |
 | Sprint 001U / Fix / Debug | **Live certified** (2026-06-18) — see [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
-| Sprint 002 | **Code complete — certify blocked** (2026-06-18) — inbox timeout; game not running with campaign loaded |
-| Sprint 003 | **Planned** — gated on `certification002.overall: PASS`; see `docs/treasury-delta-watch-plan.md` |
-| Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; watch mode can build while game is open |
+| Sprint 002 | **Live certified** (2026-06-18) — `certification002.overall: PASS` (4/4) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
+| Sprint 003 | **MVP shipped** — Treasury Delta Watch; verify JSON + F7 in-game |
+| Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; **`ForgeAndLaunch.cmd`** on clean PASS opens launcher |
 | In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — message feed (F7–F11), toast (forge), file logs |
 
-**Sprint 002 certification: BLOCKED** — `.\forge.ps1 -CertifyProgression -Wait` timed out (2026-06-18) because Bannerlord was not running with a disposable campaign loaded (`session.phase: ModuleOnly`, `canPollFileInbox: false`). Sprint 003 does **not** start until `certification002.overall: PASS`.
+**Next: verify Sprint 003 Treasury Delta Watch in-game** — load disposable campaign, advance 2+ days or wait for daily ticks, check `BlacksmithGuild_TreasuryWatch.json` and **F7** treasury lines.
 
-**Retry when game is ready** (plain map, `TBG READY`, panels closed):
-
-```powershell
-.\forge.ps1 -CertifyProgression -Wait
-.\forge.ps1 -Check -SkipInstall
-```
-
-Expect `certification002.overall: PASS` (4/4). Then Sprint 003 Treasury Delta Watch MVP.
-
-Press **Enter** on the campaign map to expand the Combat Log. Close open panels if F-keys appear silent.
-
-**Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again. Watch for `TBG RELOAD` / **F7** `reload=blocked` or `reload=pending`.
+**Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. Use **`ForgeAndLaunch.cmd`** to build/install and open the launcher on clean PASS only. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again.
 
 ### Sprint entry gates (do not skip)
 
@@ -90,20 +79,25 @@ Press **Enter** on the campaign map to expand the Combat Log. Close open panels 
 
 ---
 
-## Sprint 002: Progression harness + F7 status (**Code complete — certify in-game**)
+## Sprint 002: Progression harness + F7 status (**Live certified** 2026-06-18)
 
-**Delivered (v0.0.5):**
+**Evidence:** [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md)
 
-- Progression commands: `RichSmithingProgressionTest`, `AddSmithingXp`, `AddSmithingFocus`, `AddEnduranceAttribute`
-- Hotkeys: **F7** `ShowForgeStatus`, **Ctrl+Alt+S/X/C**
-- `Sprint002CertificationTracker` + `certification002` in status JSON
-- `.\forge.ps1 -CertifyProgression -Wait`
-- [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — Enter log, Alt+` console, F7 verdict card
-- `engine_integrity` scan fix (ignores preflight disclaimer)
+**Certification:** `.\forge.ps1 -CertifyProgression -Wait` → `certification002.overall: PASS` (4/4).
 
-**Certify:** disposable campaign → `.\forge.ps1 -CertifyProgression -Wait` → `.\forge.ps1 -Check -SkipInstall`; expect `certification002.overall: PASS` (4/4).
+---
 
-**Next sprint:** Treasury Delta Watch — see `docs/treasury-delta-watch-plan.md` (when present on branch).
+## Sprint 003: Treasury Delta Watch (**MVP shipped**)
+
+**Delivered:**
+
+- `TreasuryDeltaWatchService` — daily snapshots, delta ledger, Observed/Suspicious/Critical classification
+- `BlacksmithGuild_TreasuryWatch.json` in Bannerlord install root
+- F7 cached summary (`TBG TREASURY: ...`)
+- High-signal notices for Suspicious/Critical only
+- `treasuryWatch` block in `BlacksmithGuild_Status.json`
+
+**Verify:** disposable campaign → 2+ daily ticks → inspect JSON + F7.
 
 ---
 
@@ -112,14 +106,10 @@ Press **Enter** on the campaign map to expand the Combat Log. Close open panels 
 ```text
 Repo: EndeavorEverlasting/BlacksmithGuild
 
-Sprint 001U live-certified (v0.0.5). Evidence: docs/sprint-001u-live-results.md
+Sprint 002 live-certified. Sprint 003 Treasury MVP shipped.
+Verify: BlacksmithGuild_TreasuryWatch.json + F7 treasury lines after 2+ days.
 
-Next gate — Sprint 002 in-game:
-  .\forge.ps1 -CertifyProgression -Wait
-  .\forge.ps1 -Check -SkipInstall
-
-If certification002.overall: PASS → Sprint 003 Treasury Delta Watch MVP.
-F7 reads summarized state only — service owns scan/classify/write JSON.
+Dev loop: Forge.cmd (build only) or ForgeAndLaunch.cmd (build + launcher on PASS).
 ```
 
 ---
@@ -139,4 +129,4 @@ F7 reads summarized state only — service owns scan/classify/write JSON.
 
 ## Stern verdict
 
-**Next action:** Load disposable campaign in Bannerlord, wait for `TBG READY`, then retry `-CertifyProgression -Wait`. Sprint 003 blocked until 002 PASS.
+**Next action:** Verify Treasury Delta Watch in-game (2+ daily ticks, JSON + F7). Use `ForgeAndLaunch.cmd` for one-step build + launcher on PASS.

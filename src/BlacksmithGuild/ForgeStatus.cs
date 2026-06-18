@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.Treasury;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild
@@ -34,6 +35,8 @@ namespace BlacksmithGuild
         private static DateTime? _lastCommandTime;
         private static GoldTestSnapshot _goldTest;
         private static ProgressionTestSnapshot _progressionTest;
+        private static TreasuryWatchSummary _treasuryWatch;
+        private static bool _treasuryWatchRecorded;
         private static SessionPhase _sessionPhase = SessionPhase.ModuleOnly;
         private static bool _sessionTimePaused;
 
@@ -156,6 +159,13 @@ namespace BlacksmithGuild
             Flush();
         }
 
+        public static void RecordTreasuryWatch(TreasuryWatchSummary summary)
+        {
+            _treasuryWatch = summary;
+            _treasuryWatchRecorded = true;
+            Flush();
+        }
+
         /// <summary>
         /// Read-only verdict card: posts cached summary to the notice log. Does not scan or mutate campaign data.
         /// </summary>
@@ -193,10 +203,12 @@ namespace BlacksmithGuild
             {
                 InGameNotice.Warn("TBG STATUS: reload=blocked — close Bannerlord, run Forge.cmd");
             }
-            else if (PendingReloadWatcher.IsReloadPending)
+            else             if (PendingReloadWatcher.IsReloadPending)
             {
                 InGameNotice.Warn("TBG STATUS: reload=pending — restart Bannerlord");
             }
+
+            TreasuryDeltaWatchService.DisplaySummaryInGame();
 
             DebugLogger.Test("ShowForgeStatus displayed cached summary.", showInGame: false);
         }
@@ -392,6 +404,25 @@ namespace BlacksmithGuild
                     builder.AppendLine($"    \"smithingFocusAfter\": {_progressionTest.SmithingFocusAfter},");
                     builder.AppendLine($"    \"enduranceBefore\": {_progressionTest.EnduranceBefore},");
                     builder.AppendLine($"    \"enduranceAfter\": {_progressionTest.EnduranceAfter}");
+                    builder.AppendLine("  },");
+                }
+
+                if (_treasuryWatchRecorded)
+                {
+                    builder.AppendLine("  \"treasuryWatch\": {");
+                    builder.AppendLine($"    \"enabled\": {_treasuryWatch.Enabled.ToString().ToLowerInvariant()},");
+                    builder.AppendLine($"    \"lastSnapshotDay\": {_treasuryWatch.LastSnapshotDay},");
+                    builder.AppendLine($"    \"actorsTracked\": {_treasuryWatch.ActorsTracked},");
+                    builder.AppendLine($"    \"snapshotCount\": {_treasuryWatch.SnapshotCount},");
+                    builder.AppendLine($"    \"deltaCount\": {_treasuryWatch.DeltaCount},");
+                    builder.AppendLine($"    \"observedCount\": {_treasuryWatch.ObservedCount},");
+                    builder.AppendLine($"    \"suspiciousCount\": {_treasuryWatch.SuspiciousCount},");
+                    builder.AppendLine($"    \"criticalCount\": {_treasuryWatch.CriticalCount},");
+                    builder.AppendLine($"    \"maxAbsDelta\": {_treasuryWatch.MaxAbsDelta},");
+                    builder.AppendLine($"    \"maxSeverity\": \"{Escape(_treasuryWatch.MaxSeverity ?? "")}\",");
+                    builder.AppendLine($"    \"lastCriticalActor\": \"{Escape(_treasuryWatch.LastCriticalActor ?? "")}\",");
+                    builder.AppendLine($"    \"lastCriticalDelta\": {_treasuryWatch.LastCriticalDelta},");
+                    builder.AppendLine($"    \"lastReportPath\": \"{Escape(_treasuryWatch.ReportPath ?? "")}\"");
                     builder.AppendLine("  },");
                 }
 

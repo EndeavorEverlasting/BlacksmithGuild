@@ -329,7 +329,9 @@ TBG HOTKEY: RichPlayerEconomyTest fired
 
 ## Test 4: Smithing Progression Test (Sprint 002)
 
-**Status:** **Code complete — certify in-game**
+**Status:** **Live certified** (2026-06-18, v0.0.5)
+
+**Evidence:** [docs/sprint-002-live-results.md](sprint-002-live-results.md)
 
 **Purpose:** Confirm mod-side scripts can modify player character progression safely.
 
@@ -411,6 +413,30 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 ### Caveat
 
 If F-keys are silent but Ctrl+Alt+7–1 work, an open panel is swallowing keys. Close the panel and retest.
+
+---
+
+## Sprint 003 Treasury Delta Watch (MVP)
+
+**Status:** **MVP shipped** — verify in-game
+
+### Preconditions
+
+- Disposable campaign, mod ON, `TBG READY`
+- Allow 2+ daily ticks (F9 or natural time advance)
+
+### Verify
+
+1. **F7** — expect `TBG TREASURY: watch=active entities=N ...`
+2. Inspect `<Bannerlord>\BlacksmithGuild_TreasuryWatch.json`
+3. Inspect `treasuryWatch` block in `BlacksmithGuild_Status.json`
+4. Phase1.log — `[TBG TREASURY] Snapshot #N ...`
+
+### PASS criteria
+
+- JSON written after 2+ snapshots
+- F7 shows cached summary only (no live scan)
+- Suspicious/Critical deltas produce `TBG TREASURY:` notices; Observed does not spam
 
 ---
 
