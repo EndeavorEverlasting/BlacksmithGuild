@@ -20,7 +20,7 @@ Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` @ `4721db8` |
+| Branch | `main` (up to date with `origin/main`; hotfix `6142ff7`) |
 | Version | `v0.0.7` |
 | Working tree | **Clean** |
 | Remote | `origin/main` up to date |
