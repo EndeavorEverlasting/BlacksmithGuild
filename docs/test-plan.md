@@ -1,6 +1,22 @@
-# Test Plan — Sprint 000
+# Test Plan
 
-## Normal startup behavior
+## Sprint sequencing
+
+Build/install loop first. Certification evidence second. Dev-tool safety third. Skill points fourth. Recommendations later.
+
+| Order | Sprint | Purpose | Status |
+|-------|--------|---------|--------|
+| 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
+| 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | Complete |
+| 3 | **001** | Dev tool safety and repeatability | Next |
+| 4 | **002** | Skill-point / progression harness (`RichSmithingProgressionTest`) | Scaffolded |
+| 5 | **003+** | Recommendation system | Later |
+
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for the future smithing/progression dev command (Sprint 002). Only `Ctrl+Alt+D` / `F` / `L` are wired today.
+
+---
+
+## Normal startup behavior (Sprint 000B)
 
 The Blacksmith Guild is a normal Bannerlord module.
 
@@ -191,11 +207,11 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 ---
 
-## Test 4: Smithing Progression Test
+## Test 4: Smithing Progression Test (Sprint 002)
 
-**Status:** **Pending** — source scaffolded; `Ctrl+Alt+S` reserved but **not wired**. Use Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`) for current certification.
+**Status:** **Pending** — source scaffolded; `Ctrl+Alt+S` reserved but **not wired**. Use Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`) for Sprint 000A certification.
 
-**Purpose:** Confirm mod-side scripts can modify player character progression safely (future Sprint 001 completion).
+**Purpose:** Confirm mod-side scripts can modify player character progression safely (Sprint 002).
 
 **Steps (when hotkey is wired):**
 
@@ -247,4 +263,4 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
 - **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward. Both are blocked when preflight is FAIL.
 - `RichPlayerEconomyTest` runs on the first `DailyTickEvent` (or **Ctrl+Alt+D**) if `AutoRunGoldTestOnDailyTick` is enabled (blocked on preflight FAIL).
-- `RichSmithingProgressionTest` is **not wired** — `Ctrl+Alt+S` reserved for future manual trigger; does not run on daily tick.
+- `RichSmithingProgressionTest` is **not wired** (Sprint 002) — `Ctrl+Alt+S` is reserved for the future smithing/progression dev command; does not run on daily tick.

@@ -4,19 +4,36 @@ Math before hammer.
 
 ---
 
+## Sprint sequencing
+
+Build/install loop first. Certification evidence second. Dev-tool safety third. Skill points fourth. Recommendations later.
+
+| Order | Sprint | Purpose | Status |
+|-------|--------|---------|--------|
+| 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
+| 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | **Complete** |
+| 3 | **001** | Dev tool safety and repeatability | **Next** |
+| 4 | **002** | Skill-point / progression harness (`RichSmithingProgressionTest`) | Scaffolded |
+| 5 | **003+** | Recommendation system | Later |
+
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for the future smithing/progression dev command (Sprint 002).
+
+---
+
 ## Repo state (handoff for next chat)
 
 | Field | Value |
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.4` |
-| Sprint 001 | **Scaffolded** — progression source files exist; hotkeys **not wired** (`Ctrl+Alt+S` reserved) |
+| Sprint 000B | **Complete** — Release auto-install, Steam Play docs, `.vscode/tasks.json` |
+| Sprint 000A | **In progress** — needs in-game PASS for Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`) |
+| Sprint 002 | **Scaffolded** — progression source files exist; hotkeys **not wired** |
 | Dev loop | **Steam Play** daily; `dotnet build -c Release` auto-installs; launcher checkboxes = mod ON/OFF |
-| Sprint 000A | **Blocked** — game data errors on some loads; disposable campaign + mod ON for cert |
 | Save safety | Incremental backup on every `forge.ps1` run; `.\forge.ps1 -VerifySaves` |
 | Legacy saves | Load with **mod OFF** in launcher (confirmed working) |
 
-**Next: in-game PASS for Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`), wire Sprint 001 hotkeys, then Phase 2.**
+**Next: Sprint 000A in-game PASS, then Sprint 001 (dev tool safety). Sprint 002 wires `Ctrl+Alt+S`.**
 
 ---
 
@@ -29,9 +46,22 @@ Math before hammer.
 
 ---
 
-## Sprint 001: Stoke the Apprentice
+## Sprint 001: Dev tool safety and repeatability (next)
 
-**Subtitle:** Controlled character progression test harness
+**Goal:** Harden the dev-command spine before adding progression mutation.
+
+- Preflight gate reliability (fix `MainHero` timing NRE)
+- Repeatable hotkey behavior under preflight WARN/FAIL
+- `forge.ps1 -Check` coverage for wired commands
+- Explicit PASS/FAIL/BLOCKED status for each test in `BlacksmithGuild_Status.json`
+
+**Do not wire `Ctrl+Alt+S` in this sprint** — reserved for Sprint 002.
+
+---
+
+## Sprint 002: Skill-point / progression harness
+
+**Subtitle:** Controlled character progression test harness (was "Stoke the Apprentice")
 
 ### Goal
 
@@ -72,7 +102,7 @@ Register in `RegisteredCommands` beside gold, time, and list commands.
 | `Ctrl+Alt+D` | **Wired** | `AdvanceOneDay` |
 | `Ctrl+Alt+F` | **Wired** | `ToggleFastForward` |
 | `Ctrl+Alt+L` | **Wired** | `ListScenarios` |
-| `Ctrl+Alt+S` | **Reserved — not wired** | Future: `RichSmithingProgressionTest` |
+| `Ctrl+Alt+S` | **Reserved — not wired** | Sprint 002: `RichSmithingProgressionTest` |
 | `Ctrl+Alt+X` | **Reserved — not wired** | Future: `AddSmithingXp` only |
 | `Ctrl+Alt+C` | **Reserved — not wired** | Future: `AddSmithingFocus` only |
 
@@ -144,7 +174,7 @@ Register in `RegisteredCommands` beside gold, time, and list commands.
 ```text
 Repo: EndeavorEverlasting/BlacksmithGuild
 
-Implement Sprint 001: Stoke the Apprentice.
+Implement Sprint 002: Skill-point / progression harness.
 
 Goal:
 Add a controlled character progression dev scenario for Mount & Blade II: Bannerlord that can modify the player hero’s smithing readiness for testing.
@@ -176,31 +206,36 @@ See NEXT_STEPS.md for full spec.
 
 ## GitHub issues to create (separate tickets)
 
-### Issue 1 — Sprint 001: Controlled smithing progression dev scenario
+### Issue 1 — Sprint 001: Dev tool safety and repeatability
 
-- `CharacterProgressionTestScenarios.cs`, `CharacterProgressionSnapshot.cs`
-- Register `RichSmithingProgressionTest`, hotkey `Ctrl+Alt+S`
-- Before/after logs, PASS/FAIL, test plan update
+- Fix preflight NRE / timing
+- Harden `Ctrl+Alt+D` / `F` / `L` under WARN/FAIL
+- Expand `forge.ps1 -Check` test coverage
 
-### Issue 2 — Granular dev commands
+### Issue 2 — Sprint 002: Controlled smithing progression dev scenario
+
+- Wire `CharacterProgressionTestScenarios.cs`, register commands, hotkey `Ctrl+Alt+S`
+- Before/after logs, PASS/FAIL, Test 4 in test plan
+
+### Issue 3 — Sprint 002 follow-up: Granular dev commands
 
 - `AddSmithingXp`, `AddSmithingFocus`, `AddEnduranceAttribute`
 - Hotkeys `Ctrl+Alt+X`, `Ctrl+Alt+C` (optional same sprint or follow-up)
 - Each logs before/after; unknown commands fail safely
 
-### Issue 3 — Design forge recommendation data model (Phase 2)
+### Issue 4 — Sprint 003+: Design forge recommendation data model
 
 - Expand `ForgeCandidate`, add `PlayerForgeState`, `RecommendationScoreBreakdown`
 - Preserve fake smoke test; deterministic ranking
 
-### Issue 4 — Doctrine-aware advisor scoring pass (Phase 2)
+### Issue 5 — Sprint 003+: Doctrine-aware advisor scoring pass
 
 - Tunable weights for `CashCrisis`, `RareMetalConservation`, `ProfitForge`, `UnlockGrinder`, `WarArsenal`, `MaterialAlchemist`, `CommissionHunter`
 - Same candidates rank differently per doctrine; output explains winner
 
 ---
 
-## Phase 2: Recommendation system (after Sprint 001)
+## Sprint 003+: Recommendation system
 
 **Goal:** Forge advisor with teeth — answer what to craft, smelt, buy, sell, or grind next given hero, materials, unlocks, economy, doctrine.
 
@@ -212,11 +247,11 @@ See NEXT_STEPS.md for full spec.
 4. **Scoring engine** — weighted sum: profit, unlock, XP, scarcity, time, risk, doctrineBonus
 5. **Output** — logs only first (`[TBG ADVISOR] Top recommendation: ...`); UI later
 
-**Not before Sprint 001 PASS.**
+**Not before Sprint 002 PASS.**
 
 ---
 
-## Phase 1B / 1C (unchanged, after 000A + 001)
+## Phase 1B / 1C (after 000A + 001 + 002)
 
 ### Phase 1B: Manual real candidate ranker (v0.1.1)
 
@@ -232,4 +267,4 @@ See NEXT_STEPS.md for full spec.
 
 ## Stern verdict
 
-**Next action for next chat:** Wire Sprint 001 hotkeys (`Ctrl+Alt+S`), register progression commands, then in-game Test 4 PASS.
+**Next action for next chat:** Sprint 000A in-game PASS (Tests 2–3), then Sprint 001 dev tool safety. Wire `Ctrl+Alt+S` in Sprint 002 only.

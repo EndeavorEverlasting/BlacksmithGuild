@@ -4,11 +4,23 @@ A Mount & Blade II: Bannerlord mod focused on economy pressure, institutional me
 
 Math before hammer.
 
-## Current Sprint
+## Sprint sequencing
 
-**Sprint 000A certification** — disposable campaign, time dev hotkeys, gold economy test.
+Build/install loop first. Certification evidence second. Dev-tool safety third. Skill points fourth. Recommendations later.
 
-**Sprint 001 (Stoke the Apprentice)** — progression harness source scaffolded; **`Ctrl+Alt+S` not wired yet** (reserved for future).
+| Order | Sprint | Purpose | Status |
+|-------|--------|---------|--------|
+| 1 | **000A** | Certify in-game load / gold / hotkey chain | In progress |
+| 2 | **000B** | Fluid Steam dev loop | **Complete** |
+| 3 | **001** | Dev tool safety and repeatability | Next |
+| 4 | **002** | Skill-point / progression harness | Scaffolded |
+| 5 | **003+** | Recommendation system | Later |
+
+## Current focus
+
+**Sprint 000A** — certify Tests 1–3 on a disposable campaign (`Ctrl+Alt+D` / `F` / `L`).
+
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for the future smithing/progression dev command (Sprint 002). Only `Ctrl+Alt+D` / `F` / `L` are wired today.
 
 ## Dev hotkeys (campaign map)
 
@@ -19,7 +31,7 @@ PowerShell cannot advance in-game time — use these keys after loading a campai
 | Ctrl+Alt+D | Yes | Fire one daily tick instantly (`AdvanceOneDay`) |
 | Ctrl+Alt+F | Yes | Toggle unstoppable fast-forward on/off |
 | Ctrl+Alt+L | Yes | List registered dev commands in log/messages |
-| Ctrl+Alt+S | **Reserved** | Future: `RichSmithingProgressionTest` (smithing progression scenario) |
+| Ctrl+Alt+S | **Reserved** | Sprint 002: future smithing/progression dev command |
 
 ## What it does not do yet
 
@@ -35,7 +47,9 @@ BlacksmithGuild/
   LaunchForge.cmd           <- first install / explicit: build + install + open launcher
   CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
   BackupSaves.cmd           <- double-click: incremental save backup
-  forge.ps1                 <- one-click build + install (+ optional launcher/log)
+  forge.ps1                 <- install, backup, diagnostics, log scan
+  .vscode/
+    tasks.json              <- default build task (Ctrl+Shift+B): Release + auto-install
   docs/
     sprint-000-bootstrap.md
     sprint-000a-results.md
@@ -108,6 +122,8 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 ```
 
 Release builds auto-install to `Modules/BlacksmithGuild`. Then **Steam → Play**.
+
+In Cursor/VS Code: **Ctrl+Shift+B** runs the default **Build + Install** task (`.vscode/tasks.json`).
 
 ## Forge tooling (install, backup, diagnostics)
 
@@ -259,11 +275,12 @@ Admin rights may be required for `Program Files (x86)`.
 
 ## Acceptance tests
 
-See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist:
+See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist (Sprint 000A):
 
 1. Launcher shows **The Blacksmith Guild**
 2. Campaign loads with forge-lit message and fake advisor output
-3. After one daily tick, `RichPlayerEconomyTest` adds 100,000 gold and prints `PASS`
+3. **Ctrl+Alt+D** (or one daily tick) → `RichPlayerEconomyTest` adds 100,000 gold and prints `PASS`
+4. **Ctrl+Alt+L** lists four registered commands (`Ctrl+Alt+S` reserved for Sprint 002)
 
 ## License
 

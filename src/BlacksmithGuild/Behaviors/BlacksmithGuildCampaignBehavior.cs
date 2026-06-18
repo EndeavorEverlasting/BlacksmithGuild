@@ -68,7 +68,7 @@ namespace BlacksmithGuild.Behaviors
             {
                 DevCommandRunner.Run(DevCommandRegistry.ListScenariosCommand);
             }
-            // Ctrl+Alt+S reserved for future RichSmithingProgressionTest harness (Sprint 001 completion).
+            // Ctrl+Alt+S is reserved for the future smithing/progression dev command (Sprint 002).
         }
 
         private static bool IsCtrlAltDown()
