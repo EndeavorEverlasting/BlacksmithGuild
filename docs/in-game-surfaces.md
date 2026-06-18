@@ -103,7 +103,7 @@ Inbox path: `<Bannerlord install>\BlacksmithGuild_CommandInbox.json`
 
 **F7 reads summarized state only.** It does not scan, classify, or mutate campaign data.
 
-Future **Treasury Delta Watch** (Sprint 003) will append summary lines from `status.treasuryWatch` once that service exists — see planned docs `treasury-delta-watch-plan.md` and `treasury-delta-watch-surfaces.md`.
+Future **Treasury Delta Watch** (Sprint 003) will append summary lines from `status.treasuryWatch` once that service exists — see [treasury-delta-watch-plan.md](treasury-delta-watch-plan.md) and [treasury-delta-watch-surfaces.md](treasury-delta-watch-surfaces.md).
 
 Example F7 output today:
 
