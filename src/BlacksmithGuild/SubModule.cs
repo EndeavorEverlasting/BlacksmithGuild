@@ -1,4 +1,5 @@
 using BlacksmithGuild.Behaviors;
+using BlacksmithGuild.DevTools;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
@@ -24,6 +25,8 @@ namespace BlacksmithGuild
             {
                 var campaignStarter = (CampaignGameStarter)gameStarterObject;
                 campaignStarter.AddBehavior(new BlacksmithGuildCampaignBehavior());
+
+                GameDataPreflight.RunOnce();
 
                 GuildLog.Display(ForgeLitMessage);
                 ForgeAdvisorSmokeTest.Run();

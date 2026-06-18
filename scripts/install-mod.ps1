@@ -119,6 +119,9 @@ if ($CheckLog) {
         Write-Host 'No BlacksmithGuild_Phase1.log yet.' -ForegroundColor Yellow
         Write-Host 'Reminder: check The Blacksmith Guild in the launcher, click Play, then load a campaign.' -ForegroundColor Yellow
     }
+
+    Write-Host ''
+    Write-Host 'If the game crashed, run .\forge.ps1 -CollectDiagnostics and share diagnostic-summary.txt.' -ForegroundColor Yellow
 }
 
 Write-Host ''

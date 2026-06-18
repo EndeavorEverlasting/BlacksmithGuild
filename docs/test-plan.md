@@ -24,6 +24,46 @@ The dev hotkeys only matter after the mod has loaded on the campaign map.
 
 ---
 
+## Crash and data-load diagnostics
+
+If Bannerlord crashes or shows missing-list/object errors, do not paste screenshots as the main evidence.
+
+Run:
+
+```powershell
+.\forge.ps1 -CollectDiagnostics
+```
+
+or double-click `CollectDiagnostics.cmd`.
+
+Then share:
+
+- `diagnostic-summary.txt`
+- the tail of `BlacksmithGuild_Phase1.log`
+- the generated diagnostic zip if needed
+
+Known patterns the collector scans for:
+
+- missing beard tag / `has missing beard tag`
+- Craftingpieces, Perks, Traits, BuildingTypes, Policies
+- BasicCharacterObject / Assertion Failed
+- Module mismatch
+
+Sprint 000A must use a **new disposable campaign**. Dev hotkeys may be blocked if preflight detects broken data state.
+
+### Certification test flow (after diagnostics land)
+
+```text
+1. LaunchForge.cmd
+2. New disposable campaign
+3. If crash → CollectDiagnostics.cmd
+4. If load → check [TBG PREFLIGHT] lines in BlacksmithGuild_Phase1.log
+5. If preflight PASS → Ctrl+Alt+D
+6. On failure → bring diagnostic-summary.txt
+```
+
+---
+
 ## Test 1: Launcher Detection
 
 **Purpose:** Confirm Bannerlord recognizes `BlacksmithGuild` as a module.
@@ -81,13 +121,15 @@ Cannot find: ...\Modules\BlacksmithGuild\bin\Win64_Shipping_wEditor\BlacksmithGu
 **Steps:**
 
 1. Enable **The Blacksmith Guild** in the launcher.
-2. Start a new sandbox campaign (or load an existing save).
+2. Start a **new disposable** sandbox campaign (do not use an old save for 000A certification).
 3. Wait until the campaign map loads.
 
 **Expected in-game messages:**
 
 ```text
 [The Blacksmith Guild] Mod loaded. The forge is lit.
+[TBG PREFLIGHT] Starting game data preflight.
+[TBG PREFLIGHT] Result: PASS
 BlacksmithGuild: campaign detected. Running Phase 1 fake forge advisor.
 BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 ```
@@ -106,7 +148,7 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 **Steps:**
 
-1. Load a campaign with the mod enabled (Test 2).
+1. Load a campaign with the mod enabled and preflight PASS (Test 2).
 2. On the campaign map, press **Ctrl+Alt+D** to fire one daily tick instantly (or wait one in-game day).
 3. Observe in-game messages and/or `BlacksmithGuild_Phase1.log`.
 4. Open the clan finance / hero gold UI and note player gold.
@@ -141,6 +183,6 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 ## Notes
 
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
-- **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward.
-- `RichPlayerEconomyTest` also runs **once** on the first natural `DailyTickEvent` if `AutoRunGoldTestOnDailyTick` is enabled.
+- **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward. Both are blocked when preflight is FAIL.
+- `RichPlayerEconomyTest` also runs **once** on the first natural `DailyTickEvent` if `AutoRunGoldTestOnDailyTick` is enabled (also blocked on preflight FAIL).
 - Future sprints will add manual triggers through `DevCommandRegistry`.

@@ -7,6 +7,7 @@ namespace BlacksmithGuild.Behaviors
     public sealed class BlacksmithGuildCampaignBehavior : CampaignBehaviorBase
     {
         private bool _hasRunGoldTest;
+        private bool _loggedGoldTestBlock;
 
         public override void RegisterEvents()
         {
@@ -16,8 +17,24 @@ namespace BlacksmithGuild.Behaviors
 
         private void OnDailyTick()
         {
+            GameDataPreflight.RunOnce();
+
             if (!DevToolsConfig.AutoRunGoldTestOnDailyTick || _hasRunGoldTest || Hero.MainHero == null)
             {
+                return;
+            }
+
+            if (GameDataPreflight.BlocksRiskyDevTools)
+            {
+                if (!_loggedGoldTestBlock)
+                {
+                    _loggedGoldTestBlock = true;
+                    DebugLogger.Test(
+                        $"DailyTick gold test blocked because preflight failed: {GameDataPreflight.BlockReason}",
+                        showInGame: false
+                    );
+                }
+
                 return;
             }
 

@@ -44,6 +44,7 @@ PowerShell cannot advance in-game time — use these keys after loading a campai
 ```text
 BlacksmithGuild/
   LaunchForge.cmd           <- double-click: build + install + open launcher
+  CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
   forge.ps1                 <- one-click build + install (+ optional launcher/log)
   docs/
     sprint-000-bootstrap.md
@@ -51,6 +52,7 @@ BlacksmithGuild/
     test-plan.md
   scripts/
     install-mod.ps1
+    collect-diagnostics.ps1
     verify-sprint-000a.ps1
   Module/
     BlacksmithGuild/
@@ -74,6 +76,7 @@ BlacksmithGuild/
         BlacksmithGuildCampaignBehavior.cs
       DevTools/
         DevToolsConfig.cs
+        GameDataPreflight.cs
         DevCommandRunner.cs
         DebugLogger.cs
         DevCommandRegistry.cs
@@ -116,9 +119,45 @@ From repo root:
 ```powershell
 .\forge.ps1 -Launch    # build, install, open launcher
 .\forge.ps1 -Check     # build, install, scan log for [TBG TEST] PASS
+.\forge.ps1 -CollectDiagnostics  # collect crash/log bundle after a failure
 ```
 
 Or double-click `LaunchForge.cmd` to build, install, and open the launcher.
+
+## Crash and data-load diagnostics
+
+If Bannerlord crashes or shows missing-list/object errors, do not paste screenshots as the main evidence.
+
+Run:
+
+```powershell
+.\forge.ps1 -CollectDiagnostics
+```
+
+or double-click `CollectDiagnostics.cmd`.
+
+Then share:
+
+- `diagnostic-summary.txt`
+- the tail of `BlacksmithGuild_Phase1.log`
+- the generated diagnostic zip if needed
+
+Output is written to:
+
+```text
+Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Diagnostics\<timestamp>\
+```
+
+Known patterns the collector scans for:
+
+- missing beard tag / `has missing beard tag`
+- Craftingpieces, Perks, Traits, BuildingTypes, Policies
+- BasicCharacterObject / Assertion Failed
+- Module mismatch
+
+If the game ASSERTs before campaign loads (for example `lord_1_48_3 has missing beard tag!`), in-game preflight will not run — use the collector instead.
+
+Sprint 000A must be tested on a **new disposable campaign**. Old saves or module mismatches are not valid certification evidence. Dev hotkeys may be blocked if preflight detects broken data state.
 
 See [docs/sprint-000a-results.md](docs/sprint-000a-results.md) for acceptance checklist, gaps, and log file locations.
 
