@@ -1,6 +1,6 @@
 # Sprint 000A Results — Prove the Forge
 
-**Module:** `BlacksmithGuild` v0.0.2  
+**Module:** `BlacksmithGuild` v0.0.3  
 **Sprint goal:** Bannerlord loads the mod, shows confirmation, runs smoke + gold test.
 
 ## One-click commands
@@ -27,7 +27,7 @@ Or:
 | Check | Expected | Status |
 |-------|----------|--------|
 | Build | `dotnet build` succeeds | Agent PASS |
-| Install | `Modules/BlacksmithGuild` has xml + dll | Agent PASS |
+| Install | `Modules/BlacksmithGuild` has xml + **both** Client and wEditor DLLs | Agent PASS |
 | Launcher | Mod appears; checkbox enabled | **User** |
 | Campaign start | Forge-lit + advisor messages | **User** |
 | Daily tick | `RichPlayerEconomyTest` runs once | **User** |
@@ -53,6 +53,7 @@ First PASS or failure: _______________________________________________
 | In-game log prefix | `[TBG TEST]` lines show as `BlacksmithGuild: [TBG TEST]` in UI | Cosmetic; file log is raw |
 | Fake advisor only | No real smithing data | Phase 1B (`NEXT_STEPS.md`) |
 | Log path discovery | `BasePath.Name` varies by install | Use `forge.ps1 -Check` to find log |
+| wEditor bin folder | Fixed v0.0.3 — both shipping folders required | Documented in README troubleshooting |
 
 ---
 
@@ -62,6 +63,7 @@ First PASS or failure: _______________________________________________
 |------|------------|
 | Mod checkbox not enabled | README + install script reminder; most common miss |
 | Wrong Bannerlord install path | `GameFolder` in `BlacksmithGuild.csproj` must match Steam path |
+| wEditor DLL missing (pre-v0.0.3) | Run `.\forge.ps1`; verify both `bin/Win64_Shipping_*` folders have DLL |
 | DLL/game version mismatch | Rebuild after game updates; references are local TaleWorlds DLLs |
 | Silent log write failure | `GuildLog` swallows file errors; check in-game messages if log missing |
 | Old save without mod history | Fine — mod runs on load if enabled; advance 1 day for gold test |
@@ -76,7 +78,8 @@ First PASS or failure: _______________________________________________
 | `BlacksmithGuild_Phase1.log` | Primary acceptance evidence (`[TBG TEST] PASS`, gold before/after) |
 | `Documents\Mount and Blade II Bannerlord\Configs\LauncherData.xml` | Confirms mod enabled in launcher |
 | `Modules\BlacksmithGuild\SubModule.xml` | Installed version and dependencies |
-| `Modules\BlacksmithGuild\bin\Win64_Shipping_Client\BlacksmithGuild.dll` | Installed build matches local compile |
+| `Modules\BlacksmithGuild\bin\Win64_Shipping_Client\BlacksmithGuild.dll` | Installed Client build |
+| `Modules\BlacksmithGuild\bin\Win64_Shipping_wEditor\BlacksmithGuild.dll` | Installed wEditor build (required for some launch paths) |
 | Bannerlord `rgl_log_*.txt` (if crash) | Load failures / DLL mismatch |
 
 Typical log locations:

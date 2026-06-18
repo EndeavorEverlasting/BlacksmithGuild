@@ -39,7 +39,8 @@ $RepoRoot = Get-RepoRoot
 $BannerlordRoot = Get-BannerlordRoot -RepoRoot $RepoRoot
 $ModuleSrc = Join-Path $RepoRoot 'Module\BlacksmithGuild'
 $ModuleDest = Join-Path $BannerlordRoot 'Modules\BlacksmithGuild'
-$DllRel = 'bin\Win64_Shipping_Client\BlacksmithGuild.dll'
+$DllRelClient = 'bin\Win64_Shipping_Client\BlacksmithGuild.dll'
+$DllRelWEditor = 'bin\Win64_Shipping_wEditor\BlacksmithGuild.dll'
 $LauncherExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe'
 
 Write-Host '=== The Blacksmith Guild: install-mod ===' -ForegroundColor Cyan
@@ -53,19 +54,35 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 Pop-Location
 
-$builtDll = Join-Path $ModuleSrc $DllRel
-if (-not (Test-Path -LiteralPath $builtDll)) { throw "Missing build output: $builtDll" }
-Write-Host "PASS - DLL built ($((Get-Item -LiteralPath $builtDll).Length) bytes)" -ForegroundColor Green
+$builtDllClient = Join-Path $ModuleSrc $DllRelClient
+$builtDllWEditor = Join-Path $ModuleSrc $DllRelWEditor
+if (-not (Test-Path -LiteralPath $builtDllClient)) { throw "Missing build output: $builtDllClient" }
+if (-not (Test-Path -LiteralPath $builtDllWEditor)) { throw "Missing wEditor build output: $builtDllWEditor" }
+Write-Host "PASS - DLL built (Client + wEditor, $((Get-Item -LiteralPath $builtDllClient).Length) bytes each)" -ForegroundColor Green
 
 Write-Host ''
 Write-Host '[2/3] Installing to Modules/BlacksmithGuild...'
 Copy-Item -Recurse -Force -LiteralPath $ModuleSrc -Destination $ModuleDest
 
+# Explicit copies — Copy-Item merge to Program Files can skip new files / stale xml.
+Copy-Item -Force -LiteralPath (Join-Path $ModuleSrc 'SubModule.xml') -Destination (Join-Path $ModuleDest 'SubModule.xml')
+foreach ($dllRel in @($DllRelClient, $DllRelWEditor)) {
+    $srcDll = Join-Path $ModuleSrc $dllRel
+    $destDll = Join-Path $ModuleDest $dllRel
+    $destDir = Split-Path $destDll -Parent
+    if (-not (Test-Path -LiteralPath $destDir)) {
+        New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+    }
+    Copy-Item -Force -LiteralPath $srcDll -Destination $destDll
+}
+
 $installedXml = Join-Path $ModuleDest 'SubModule.xml'
-$installedDll = Join-Path $ModuleDest $DllRel
+$installedDllClient = Join-Path $ModuleDest $DllRelClient
+$installedDllWEditor = Join-Path $ModuleDest $DllRelWEditor
 if (-not (Test-Path -LiteralPath $installedXml)) { throw 'Missing installed SubModule.xml' }
-if (-not (Test-Path -LiteralPath $installedDll)) { throw 'Missing installed BlacksmithGuild.dll' }
-Write-Host 'PASS - Module installed' -ForegroundColor Green
+if (-not (Test-Path -LiteralPath $installedDllClient)) { throw "Missing installed Client DLL: $installedDllClient" }
+if (-not (Test-Path -LiteralPath $installedDllWEditor)) { throw "Missing installed wEditor DLL: $installedDllWEditor" }
+Write-Host 'PASS - Module installed (Client + wEditor DLLs)' -ForegroundColor Green
 
 Write-Host ''
 Write-Host '[3/3] Verifying structure...'

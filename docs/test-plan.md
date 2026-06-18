@@ -6,11 +6,19 @@
 
 **Steps:**
 
-1. Build the project:
+1. Build and install (recommended — populates both bin folders):
+
+   ```powershell
+   .\forge.ps1
+   ```
+
+   Or manually:
+
    ```powershell
    dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
    ```
-2. Copy `Module/BlacksmithGuild` into `Bannerlord/Modules/BlacksmithGuild`.
+
+2. Copy `Module/BlacksmithGuild` into `Bannerlord/Modules/BlacksmithGuild` (must include `bin/Win64_Shipping_Client` **and** `bin/Win64_Shipping_wEditor`).
 3. Open the Bannerlord launcher.
 4. Find **The Blacksmith Guild** in the mod list and enable it.
 
@@ -22,6 +30,15 @@
 **Fail:**
 
 - Mod missing, launcher crash, or dependency load failure.
+
+**Failure A2 — wEditor DLL missing:**
+
+```text
+Cannot find: ...\Modules\BlacksmithGuild\bin\Win64_Shipping_wEditor\BlacksmithGuild.dll
+```
+
+- **Cause:** DLL only in `Win64_Shipping_Client` (pre-v0.0.3 build, or manual build without post-build copy).
+- **Fix:** Run `.\forge.ps1` from repo root. Verify both paths exist under `Modules/BlacksmithGuild/bin/`.
 
 ---
 
@@ -87,5 +104,6 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 ## Notes
 
+- Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
 - `RichPlayerEconomyTest` runs **once** on the first `DailyTickEvent` after campaign load.
 - Future sprints will add manual triggers through `DevCommandRegistry`.

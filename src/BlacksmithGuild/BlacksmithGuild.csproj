@@ -11,7 +11,12 @@
 
     <OutputPath>..\..\Module\BlacksmithGuild\bin\Win64_Shipping_Client\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <WEditorOutputPath>..\..\Module\BlacksmithGuild\bin\Win64_Shipping_wEditor\</WEditorOutputPath>
   </PropertyGroup>
+
+  <Target Name="CopyToWEditor" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(WEditorOutputPath)" />
+  </Target>
 
   <ItemGroup>
     <Reference Include="TaleWorlds.Core">

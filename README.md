@@ -14,7 +14,7 @@ Load the module, enter campaign, and run a controlled economy test scenario (`Ri
 
 ## What Sprint 000 does
 
-- Appears in the Bannerlord launcher as **The Blacksmith Guild** (`BlacksmithGuild`, v0.0.2)
+- Appears in the Bannerlord launcher as **The Blacksmith Guild** (`BlacksmithGuild`, v0.0.3)
 - Displays `[The Blacksmith Guild] Mod loaded. The forge is lit.` on campaign start
 - Registers `BlacksmithGuildCampaignBehavior` for dev/test scenarios
 - Runs fake forge advisor ranking (regression smoke test)
@@ -45,7 +45,9 @@ BlacksmithGuild/
       SubModule.xml
       bin/
         Win64_Shipping_Client/
-          BlacksmithGuild.dll   <- build output (not committed)
+          BlacksmithGuild.dll   <- primary build output (not committed)
+        Win64_Shipping_wEditor/
+          BlacksmithGuild.dll   <- post-build copy, same DLL (not committed)
   src/
     BlacksmithGuild/
       BlacksmithGuild.csproj
@@ -93,7 +95,10 @@ Output lands at:
 
 ```text
 Module/BlacksmithGuild/bin/Win64_Shipping_Client/BlacksmithGuild.dll
+Module/BlacksmithGuild/bin/Win64_Shipping_wEditor/BlacksmithGuild.dll   <- copied on build
 ```
+
+Prefer `.\forge.ps1` over raw `dotnet build` — it ensures both folders are populated before install.
 
 If Bannerlord is not at the default Steam path, edit `GameFolder` in `src/BlacksmithGuild/BlacksmithGuild.csproj`.
 
@@ -105,7 +110,13 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord
 
 ## Install
 
-Copy the **module folder** (not the repo root) into Bannerlord's `Modules` directory:
+Use the one-click workflow (recommended):
+
+```powershell
+.\forge.ps1
+```
+
+Or copy the **module folder** (not the repo root) into Bannerlord's `Modules` directory. The full `bin/` tree must include **both** `Win64_Shipping_Client` and `Win64_Shipping_wEditor`:
 
 ```powershell
 Copy-Item -Recurse -Force `
@@ -114,6 +125,15 @@ Copy-Item -Recurse -Force `
 ```
 
 Admin rights may be required for `Program Files (x86)`.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| `Cannot find ... Win64_Shipping_wEditor\BlacksmithGuild.dll` | Run `.\forge.ps1` — build copies DLL to both bin folders (fixed in v0.0.3) |
+| Mod not in launcher | Confirm `Modules/BlacksmithGuild/SubModule.xml` exists; rebuild and recopy |
+| No in-game messages | Enable **The Blacksmith Guild** checkbox in the launcher before loading a save |
+| Build fails (missing TaleWorlds DLLs) | Set `GameFolder` in `BlacksmithGuild.csproj` to your Steam install path |
 
 ## Acceptance tests
 

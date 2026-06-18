@@ -11,7 +11,8 @@ Prove the Bannerlord module loads, shows a visible confirmation, runs the existi
 - `DevTools/` harness: `DebugLogger`, `DevCommandRegistry`, `TestScenarioRunner`, `EconomyTestScenarios`
 - `RichPlayerEconomyTest` adds 100,000 gold on first daily tick and logs before/after
 - `ForgeAdvisorSmokeTest` preserved as regression smoke test
-- Module version bumped to `v0.0.2`
+- Dual-bin DLL layout: `Win64_Shipping_Client` + `Win64_Shipping_wEditor` (v0.0.3)
+- Module version bumped to `v0.0.3`
 
 ## Deferred
 
@@ -31,11 +32,14 @@ Prove the Bannerlord module loads, shows a visible confirmation, runs the existi
 ## Build and install
 
 ```powershell
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
+.\forge.ps1
+```
 
-Copy-Item -Recurse -Force `
-  ".\Module\BlacksmithGuild" `
-  "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Modules\BlacksmithGuild"
+Build output (both required for Bannerlord to load):
+
+```text
+Module/BlacksmithGuild/bin/Win64_Shipping_Client/BlacksmithGuild.dll
+Module/BlacksmithGuild/bin/Win64_Shipping_wEditor/BlacksmithGuild.dll
 ```
 
 See [test-plan.md](test-plan.md) for acceptance steps.

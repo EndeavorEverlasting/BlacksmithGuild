@@ -4,7 +4,7 @@
 
 Pass condition:
 
-- Game launches
+- Game launches (no `Win64_Shipping_wEditor` DLL error — use `.\forge.ps1` for dual-bin install)
 - Mod appears in launcher as **The Blacksmith Guild**
 - Campaign loads
 - In-game BlacksmithGuild messages appear
