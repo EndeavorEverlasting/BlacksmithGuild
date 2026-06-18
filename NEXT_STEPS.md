@@ -20,10 +20,10 @@ Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (hotfix commit pending push) |
+| Branch | `main` @ `6142ff7` |
 | Version | `v0.0.7` |
-| Working tree | Source changes staged for commit |
-| Remote | `origin/main` |
+| Working tree | **Clean** |
+| Remote | `origin/main` up to date |
 | Open PRs | None |
 | Stale branches | None |
 
