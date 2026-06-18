@@ -34,9 +34,19 @@ namespace BlacksmithGuild.Forge
                     return false;
                 }
 
-                // Sprint 005A scaffold: probe point for Bannerlord crafting/recipe APIs.
-                // Return empty until real recipe enumeration is implemented in Sprint 005C+.
-                detail = "Real source ready but returned zero candidates (API probe pending).";
+                var probeResult = ForgeRecipeProbeService.RunProbe();
+                ForgeRecipeProbeService.PublishProbeResult(probeResult, "RealForgeCandidateSource", writeStructuredReport: false);
+
+                if (probeResult.Candidates != null && probeResult.Candidates.Count > 0)
+                {
+                    candidates = probeResult.Candidates;
+                    status = ForgeCandidateSourceStatus.Ok;
+                    detail = probeResult.Report?.Detail ?? $"{candidates.Count} real candidates";
+                    return true;
+                }
+
+                detail = probeResult.Report?.Detail
+                    ?? "Real source probe found no mappable candidates (economics mapping deferred).";
                 status = ForgeCandidateSourceStatus.Empty;
                 return false;
             }

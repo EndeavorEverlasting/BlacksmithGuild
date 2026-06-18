@@ -42,6 +42,8 @@ namespace BlacksmithGuild
         private static bool _treasuryWatchRecorded;
         private static ForgeRecommendationSummary _forgeRecommendations;
         private static bool _forgeRecommendationsRecorded;
+        private static ForgeRecipeProbeSummary _recipeProbe;
+        private static bool _recipeProbeRecorded;
         private static SessionPhase _sessionPhase = SessionPhase.ModuleOnly;
         private static bool _sessionTimePaused;
 
@@ -178,6 +180,13 @@ namespace BlacksmithGuild
             Flush();
         }
 
+        public static void RecordRecipeProbe(ForgeRecipeProbeSummary summary)
+        {
+            _recipeProbe = summary;
+            _recipeProbeRecorded = summary != null && summary.HasProbe;
+            Flush();
+        }
+
         /// <summary>
         /// Read-only verdict card: posts cached summary to the notice log. Does not scan or mutate campaign data.
         /// </summary>
@@ -243,6 +252,7 @@ namespace BlacksmithGuild
 
             TreasuryDeltaWatchService.AppendToReport(report);
             ForgeRecommendationService.AppendToReport(report);
+            ForgeRecipeProbeService.AppendToReport(report);
 
             if (PendingReloadWatcher.IsReloadBlocked)
             {
@@ -510,6 +520,22 @@ namespace BlacksmithGuild
                     builder.AppendLine($"    \"candidateCount\": {_forgeRecommendations.CandidateCount},");
                     builder.AppendLine($"    \"reportPath\": \"{Escape(_forgeRecommendations.ReportPath ?? "")}\",");
                     builder.AppendLine($"    \"generatedAt\": \"{(_forgeRecommendations.GeneratedAt ?? DateTime.Now):o}\"");
+                    builder.AppendLine("  },");
+                }
+
+                if (_recipeProbeRecorded)
+                {
+                    builder.AppendLine("  \"recipeProbe\": {");
+                    builder.AppendLine($"    \"probeStatus\": \"{Escape(_recipeProbe.ProbeStatus ?? "")}\",");
+                    builder.AppendLine($"    \"detail\": \"{Escape(_recipeProbe.Detail ?? "")}\",");
+                    builder.AppendLine($"    \"matchedTypeCount\": {_recipeProbe.MatchedTypeCount},");
+                    builder.AppendLine($"    \"templateCount\": {_recipeProbe.TemplateCount},");
+                    builder.AppendLine(
+                        $"    \"craftingOrderCount\": {(_recipeProbe.CraftingOrderCount.HasValue ? _recipeProbe.CraftingOrderCount.Value.ToString() : "null")},");
+                    builder.AppendLine(
+                        $"    \"smithingSkillLevel\": {(_recipeProbe.SmithingSkillLevel.HasValue ? _recipeProbe.SmithingSkillLevel.Value.ToString() : "null")},");
+                    builder.AppendLine($"    \"reportPath\": \"{Escape(_recipeProbe.ReportPath ?? "")}\",");
+                    builder.AppendLine($"    \"generatedAt\": \"{(_recipeProbe.GeneratedAt ?? DateTime.Now):o}\"");
                     builder.AppendLine("  },");
                 }
 

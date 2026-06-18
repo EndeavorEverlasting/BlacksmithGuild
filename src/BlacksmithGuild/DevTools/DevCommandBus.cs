@@ -377,6 +377,10 @@ namespace BlacksmithGuild.DevTools
                     return ForgeRecommendationService.ShowDoctrine()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case ForgeRecommendationService.ProbeForgeRecipesCommand:
+                    return ForgeRecipeProbeService.RunProbeNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     return DevCommandResult.Unknown;
             }

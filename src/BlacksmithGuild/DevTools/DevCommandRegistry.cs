@@ -32,7 +32,8 @@ namespace BlacksmithGuild.DevTools
                 ForgeRecommendationService.SetForgeDoctrineProfitForgeCommand,
                 ForgeRecommendationService.SetForgeDoctrineRareMetalConservationCommand,
                 ForgeRecommendationService.SetForgeDoctrineCashCrisisCommand,
-                ForgeRecommendationService.ShowForgeDoctrineCommand
+                ForgeRecommendationService.ShowForgeDoctrineCommand,
+                ForgeRecommendationService.ProbeForgeRecipesCommand
             };
 
         public static bool IsRegistered(string commandName)

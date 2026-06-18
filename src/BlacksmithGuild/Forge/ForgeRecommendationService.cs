@@ -19,6 +19,7 @@ namespace BlacksmithGuild.Forge
         public const string SetForgeDoctrineRareMetalConservationCommand = "SetForgeDoctrineRareMetalConservation";
         public const string SetForgeDoctrineCashCrisisCommand = "SetForgeDoctrineCashCrisis";
         public const string ShowForgeDoctrineCommand = "ShowForgeDoctrine";
+        public const string ProbeForgeRecipesCommand = ForgeRecipeProbeService.ProbeForgeRecipesCommand;
 
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_ForgeRecommendations.json");
