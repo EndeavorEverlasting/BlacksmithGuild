@@ -140,7 +140,7 @@ Includes `certification` (Sprint 001) and `certification002` (Sprint 002) blocks
 - Full treasury explanation engine
 - UI automation or Harmony patches *(Sprint 003C adds dev-only Harmony for sandbox character skip)*
 - Full economy model or faction systems
-- Recommendation engine (Phase 2)
+- Real smithing recommendation engine based on Bannerlord recipe data (005C+ — probe shipped; economics mapping deferred)
 
 ## Folder layout
 
