@@ -6,21 +6,7 @@ Math before hammer.
 
 ## Current Sprint
 
-**Sprint 000: Light the Forge** — bootstrap the module and prove the dev/test harness runs inside a campaign.
-
-## First Test Goal
-
-Load the module, enter campaign, and run a controlled economy test scenario (`RichPlayerEconomyTest`).
-
-## What Sprint 000 does
-
-- Appears in the Bannerlord launcher as **The Blacksmith Guild** (`BlacksmithGuild`, v0.0.4)
-- Displays `[The Blacksmith Guild] Mod loaded. The forge is lit.` on campaign start
-- Registers `BlacksmithGuildCampaignBehavior` for dev/test scenarios
-- Runs fake forge advisor ranking (regression smoke test)
-- Runs `RichPlayerEconomyTest` on first daily tick (+100,000 gold with before/after logging)
-- **Dev hotkeys** on campaign map (see below)
-- Writes log lines to `BlacksmithGuild_Phase1.log` near the Bannerlord base path
+**Sprint 001: Stoke the Apprentice** — controlled character progression dev harness (smithing XP, focus, endurance).
 
 ## Dev hotkeys (campaign map)
 
@@ -31,13 +17,16 @@ PowerShell cannot advance in-game time — use these keys after loading a campai
 | Ctrl+Alt+D | Fire one daily tick instantly (`AdvanceOneDay`) |
 | Ctrl+Alt+F | Toggle unstoppable fast-forward on/off |
 | Ctrl+Alt+L | List registered dev commands in log/messages |
+| Ctrl+Alt+S | Run `RichSmithingProgressionTest` (smithing progression scenario) |
+| Ctrl+Alt+X | Add Smithing XP only (`AddSmithingXp`) |
+| Ctrl+Alt+C | Add Smithing focus only (`AddSmithingFocus`) |
 
 ## What it does not do yet
 
 - Read real smithing recipes
-- Manual/key dev command triggers
 - UI automation or Harmony patches
 - Full economy model or faction systems
+- Recommendation engine (Phase 2)
 
 ## Folder layout
 

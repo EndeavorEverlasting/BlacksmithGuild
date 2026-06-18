@@ -196,9 +196,60 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 ---
 
+## Test 4: Smithing Progression Test
+
+**Purpose:** Confirm mod-side scripts can modify player character progression safely.
+
+**Steps:**
+
+1. Build and install:
+
+   ```powershell
+   .\forge.ps1
+   ```
+
+2. Enable **The Blacksmith Guild** in the Bannerlord launcher.
+3. Load a **new disposable** campaign.
+4. On the campaign map, press **Ctrl+Alt+S**.
+5. Check `BlacksmithGuild_Phase1.log`.
+
+**Optional granular commands:**
+
+- **Ctrl+Alt+X** — add Smithing XP only
+- **Ctrl+Alt+C** — add Smithing focus only
+
+**Expected output:**
+
+```text
+[TBG TEST] Scenario: RichSmithingProgressionTest
+[TBG TEST] Smithing before smithing skill level: <value>
+[TBG TEST] Smithing before smithing XP: <value>
+[TBG TEST] Smithing XP added: 10,000
+[TBG TEST] Smithing focus added: 3
+[TBG TEST] Smithing after smithing XP: <value>
+[TBG TEST] Smithing after smithing focus: <value>
+[TBG TEST] PASS
+```
+
+Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkills.Crafting`).
+
+**Pass:**
+
+- No crash.
+- Smithing progression changes by the expected amount or logs a clear partial result.
+- Save remains loadable after saving and reloading.
+
+**Fail:**
+
+- MainHero is null.
+- No progression changes.
+- Crash, save corruption, or silent failure with no diagnostic output.
+
+---
+
 ## Notes
 
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
 - **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward. Both are blocked when preflight is FAIL.
 - `RichPlayerEconomyTest` also runs **once** on the first natural `DailyTickEvent` if `AutoRunGoldTestOnDailyTick` is enabled (also blocked on preflight FAIL).
-- Future sprints will add manual triggers through `DevCommandRegistry`.
+- `RichSmithingProgressionTest` is **manual only** (`Ctrl+Alt+S`); it does not run on daily tick.

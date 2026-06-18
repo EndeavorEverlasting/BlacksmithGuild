@@ -34,6 +34,18 @@ namespace BlacksmithGuild.DevTools
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     EconomyTestScenarios.RunRichPlayerEconomyTest();
                     break;
+                case CharacterProgressionTestScenarios.RichSmithingProgressionTestName:
+                    CharacterProgressionTestScenarios.RunRichSmithingProgressionTest();
+                    break;
+                case DevCommandRegistry.AddSmithingXpCommand:
+                    CharacterProgressionTestScenarios.RunAddSmithingXpOnly();
+                    break;
+                case DevCommandRegistry.AddSmithingFocusCommand:
+                    CharacterProgressionTestScenarios.RunAddSmithingFocusOnly();
+                    break;
+                case DevCommandRegistry.AddEnduranceAttributeCommand:
+                    CharacterProgressionTestScenarios.RunAddEnduranceAttributeOnly();
+                    break;
             }
         }
 
