@@ -183,13 +183,13 @@ Once installed under `Modules/BlacksmithGuild`, **Steam → Play** opens the Ban
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 ```
 
-Release builds auto-install to `Modules/BlacksmithGuild` and write `BlacksmithGuild_PendingReload.json`. **Restart Bannerlord** to load the new DLL — there is no hot reload.
+Release builds auto-install to `Modules/BlacksmithGuild` and write `BlacksmithGuild_PendingReload.json`. **Restart Bannerlord** to load a new DLL — there is no hot reload. While Bannerlord is running, the loaded Client DLL is **locked**; install may be **blocked** until you close the game.
 
-**Double-click:** `Forge.cmd` (build + install, window stays open). **First install / launcher:** `LaunchForge.cmd`. **Auto rebuild:** `ForgeWatch.cmd` or `.\forge.ps1 -Watch`.
+**Double-click:** `Forge.cmd` (build + install, window stays open). **Close Bannerlord first** for a reliable install. **First install / launcher:** `LaunchForge.cmd`. **Auto rebuild:** `ForgeWatch.cmd` or `.\forge.ps1 -Watch` (can build while the game is open; install may block until you close Bannerlord).
 
 **In Cursor / VS Code:** `Ctrl+Shift+B` (Build + Install task). Optional background task: **Forge Watch**. **Not in Bannerlord.**
 
-If the game is still running when you install, you get a Windows toast (when available), an in-game notice within ~2s (`TBG RELOAD: …`), and **F7** shows `reload=pending`.
+If Bannerlord is running when a build completes, you may get a blocked-install notice (`TBG RELOAD: … close Bannerlord …`) or, after a successful install with the game still open, `reload=pending` on **F7**.
 
 ## Skill harness runway (Sprint 002 — not implemented)
 

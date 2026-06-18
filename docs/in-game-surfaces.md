@@ -9,7 +9,7 @@ Use these three layers while developing on a **disposable campaign** (mod ON).
 | Mod loaded? | **Enter** on campaign map → look for `The forge is lit` |
 | Hotkey worked? | **Enter** → `TBG HOTKEY: … fired` toast |
 | Cert / session summary? | **F7** `ShowForgeStatus`, then **Enter** to scroll |
-| New build while game open? | Install via Forge.cmd / `dotnet build` → `TBG RELOAD: …` in notice log; **F7** shows `reload=pending` — restart Bannerlord |
+| New build while game open? | Build may succeed but Client DLL install can be **blocked** (file locked). In-game: `TBG RELOAD: … close Bannerlord …`; **F7** shows `reload=blocked`. After successful install: `reload=pending` — restart Bannerlord |
 | List dev commands? | **F8** |
 | Full test output? | Tail `BlacksmithGuild_Phase1.log` or `.\forge.ps1 -Check -SkipInstall` |
 | Engine sanity (gold/XP)? | **Alt+`** dev console on disposable save only |
@@ -32,7 +32,9 @@ Via `GuildLog` → `InformationManager.DisplayMessage`:
 - Fake forge advisor lines on daily tick
 - `TBG HOTKEY: <Command> fired` after F7–F11 / Ctrl+Alt dev keys
 - **F7** status lines (`TBG STATUS: …`)
-- **`TBG RELOAD: …`** when a newer build was installed while the game is still running (once per install; restart required)
+- **`TBG RELOAD: …`** when a newer build exists:
+  - `installStatus: installed` — new DLL copied; restart Bannerlord to load it
+  - `installStatus: blockedByRunningGame` — build ready but Client DLL locked; close Bannerlord, run `Forge.cmd` again
 
 ### What is *not* here
 
@@ -95,7 +97,7 @@ Inbox path: `<Bannerlord install>\BlacksmithGuild_CommandInbox.json`
 | Artifact | Path |
 |----------|------|
 | Status JSON | `<Bannerlord install>\BlacksmithGuild_Status.json` |
-| Pending reload marker | `<Bannerlord install>\BlacksmithGuild_PendingReload.json` |
+| Pending reload marker | `<Bannerlord install>\BlacksmithGuild_PendingReload.json` (`installStatus`: `installed` or `blockedByRunningGame`) |
 | Mod log | `<Bannerlord install>\BlacksmithGuild_Phase1.log` |
 | Command ack | `<Bannerlord install>\BlacksmithGuild_CommandAck.json` |
 | Forge tooling status | `%USERPROFILE%\Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Status.json` |
@@ -115,5 +117,6 @@ TBG STATUS: cert=PASS (6/6) preflight=Pass
 TBG STATUS: last=RichPlayerEconomyTest Success
 TBG STATUS: session=MapPaused inbox=ok
 TBG STATUS: cert002=PASS (4/4)
+TBG STATUS: reload=blocked — close Bannerlord, run Forge.cmd
 TBG STATUS: reload=pending — restart Bannerlord
 ```

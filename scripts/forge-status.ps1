@@ -221,6 +221,31 @@ function Invoke-ForgeStep {
     }
 }
 
+function Complete-ForgeStepBlocked {
+    param(
+        [string]$Name,
+        [string]$Message = ''
+    )
+
+    Set-ForgeStep -Name $Name -Status 'BLOCKED' -Message $Message
+}
+
+function Test-ForgeStepBlocked {
+    param([string]$Name)
+
+    if (-not $script:ForgeStatusState) {
+        return $false
+    }
+
+    foreach ($step in $script:ForgeStatusState.steps) {
+        if ($step.name -eq $Name -and $step.status -eq 'BLOCKED') {
+            return $true
+        }
+    }
+
+    return $false
+}
+
 function Scan-InGameStatus {
     param([string]$BannerlordRoot)
 

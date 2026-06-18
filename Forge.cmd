@@ -12,12 +12,14 @@ echo Surfaces: docs\in-game-surfaces.md
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1"
-if errorlevel 1 (
+set FORGE_EXIT=%ERRORLEVEL%
+if %FORGE_EXIT% NEQ 0 (
     echo.
-    echo Build or install failed. See messages above.
+    echo Build failed. See messages above.
     pause
-    exit /b 1
+    exit /b %FORGE_EXIT%
 )
 
 echo.
+echo If install was blocked, close Bannerlord and run Forge.cmd again.
 pause

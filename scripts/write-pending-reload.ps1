@@ -1,5 +1,5 @@
-# Write BlacksmithGuild_PendingReload.json after a Release install.
-# Optional Windows toast when Bannerlord is running (restart required — no hot reload).
+# Write BlacksmithGuild_PendingReload.json after a Release build/install attempt.
+# Optional Windows toast when Bannerlord is running (restart required - no hot reload).
 
 param(
     [Parameter(Mandatory = $true)]
@@ -9,7 +9,11 @@ param(
     [string]$Source,
 
     [Parameter(Mandatory = $true)]
-    [string]$DllPath
+    [string]$DllPath,
+
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('installed', 'blockedByRunningGame')]
+    [string]$InstallStatus
 )
 
 $ErrorActionPreference = 'Stop'
@@ -91,15 +95,27 @@ $payload = [ordered]@{
     dllBytes        = $dllItem.Length
     dllLastWriteUtc = $dllItem.LastWriteTimeUtc.ToString('o')
     source          = $Source
+    installStatus   = $InstallStatus
 }
 
 $payload | ConvertTo-Json -Compress | Set-Content -LiteralPath $markerPath -Encoding UTF8
-Write-Host "Pending reload marker written: $markerPath" -ForegroundColor DarkGray
+Write-Host "Pending reload marker written ($InstallStatus): $markerPath" -ForegroundColor DarkGray
 
-if (Test-BannerlordProcessRunning) {
+if (-not (Test-BannerlordProcessRunning)) {
+    return
+}
+
+if ($InstallStatus -eq 'installed') {
     $toastMessage = "Blacksmith Guild updated - restart Bannerlord to load $version"
     if (-not (Show-ReloadToast -Title 'The Blacksmith Guild' -Message $toastMessage)) {
         Write-Host $toastMessage -ForegroundColor Yellow
         Write-Host 'Restart Bannerlord to load the new mod DLL (no hot reload).' -ForegroundColor Yellow
     }
+    return
+}
+
+$toastMessage = 'Build ready - close Bannerlord, then run Forge.cmd again'
+if (-not (Show-ReloadToast -Title 'The Blacksmith Guild' -Message $toastMessage)) {
+    Write-Host $toastMessage -ForegroundColor Yellow
+    Write-Host 'The loaded mod DLL is locked while Bannerlord is running.' -ForegroundColor Yellow
 }

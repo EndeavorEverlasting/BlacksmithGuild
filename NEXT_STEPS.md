@@ -33,12 +33,12 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 001 / 001B | **Certified** — `certification.overall: PASS` (6/6) via `-Certify -Wait` |
 | Sprint 002 | **Code complete** — progression commands wired, F7 `ShowForgeStatus`, `-CertifyProgression`; needs in-game PASS |
 | Sprint 003 | **Planned** — Treasury Delta Watch (`docs/treasury-delta-watch-plan.md`) |
-| Dev loop | **Steam Play** daily; `Forge.cmd` / `dotnet build -c Release` auto-installs; restart game to load new DLL |
+| Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; watch mode can build while game is open |
 | In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — Enter log, Alt+` console, F7–F11 |
 
 **Next: Load disposable campaign → `.\forge.ps1 -CertifyProgression -Wait` → `.\forge.ps1 -Check -SkipInstall`; expect `certification002.overall: PASS` (4/4). Optional: F7/F8 in-game, Ctrl+Alt+S on focused map.**
 
-**Dev loop:** Double-click **`Forge.cmd`** after code changes; **`ForgeWatch.cmd`** for auto rebuild. If Bannerlord is open, watch for `TBG RELOAD: …` or **F7** `reload=pending`, then restart.
+**Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again. Watch for `TBG RELOAD` / **F7** `reload=blocked` or `reload=pending`.
 
 ### Sprint entry gates (do not skip)
 

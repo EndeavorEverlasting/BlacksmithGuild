@@ -13,6 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'forge-status.ps1')
+. (Join-Path $PSScriptRoot 'copy-client-dll.ps1')
 
 function Get-RepoRoot {
     $root = Split-Path -Parent $PSScriptRoot
@@ -69,59 +70,30 @@ try {
         Write-Host "PASS - DLL built (Client + wEditor, $((Get-Item -LiteralPath $builtDllClient).Length) bytes each)" -ForegroundColor Green
     }
 
-    Invoke-ForgeStep -Name 'install' -Action {
+    Set-ForgeStep -Name 'install' -Status 'RUNNING'
+    try {
         Write-Host ''
         Write-Host '[2/3] Installing to Modules/BlacksmithGuild...'
 
-        $nestedModule = Join-Path $ModuleDest 'BlacksmithGuild'
-        if (Test-Path -LiteralPath $nestedModule) {
-            Write-Host 'Removing nested duplicate module folder from prior install...' -ForegroundColor Yellow
-            Remove-Item -Recurse -Force -LiteralPath $nestedModule
-        }
+        $installResult = Sync-ModToGameModules `
+            -ModuleSourceDir $ModuleSrc `
+            -ModuleDestDir $ModuleDest `
+            -BannerlordRoot $BannerlordRoot `
+            -Source 'install-mod.ps1'
 
-        if (-not (Test-Path -LiteralPath $ModuleDest)) {
-            New-Item -ItemType Directory -Force -Path $ModuleDest | Out-Null
-        }
-
-        Copy-Item -Force -LiteralPath (Join-Path $ModuleSrc 'SubModule.xml') -Destination (Join-Path $ModuleDest 'SubModule.xml')
-
-        $clientCopied = $false
-        $wEditorCopied = $false
-        foreach ($dllRel in @($DllRelClient, $DllRelWEditor)) {
-            $srcDll = Join-Path $ModuleSrc $dllRel
-            $destDll = Join-Path $ModuleDest $dllRel
-            $destDir = Split-Path $destDll -Parent
-            if (-not (Test-Path -LiteralPath $destDir)) {
-                New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-            }
-            try {
-                Copy-Item -Force -LiteralPath $srcDll -Destination $destDll -ErrorAction Stop
-                if ($dllRel -eq $DllRelClient) { $clientCopied = $true }
-                if ($dllRel -eq $DllRelWEditor) { $wEditorCopied = $true }
-            } catch {
-                if ($dllRel -eq $DllRelWEditor) {
-                    Write-Host "WARN - wEditor DLL not copied (game/launcher may have file locked). Client build is enough for Steam Play." -ForegroundColor Yellow
-                } else {
-                    throw
-                }
-            }
-        }
-
-        $installedXml = Join-Path $ModuleDest 'SubModule.xml'
-        $installedDllClient = Join-Path $ModuleDest $DllRelClient
-        $installedDllWEditor = Join-Path $ModuleDest $DllRelWEditor
-        if (-not (Test-Path -LiteralPath $installedXml)) { throw 'Missing installed SubModule.xml' }
-        if (-not (Test-Path -LiteralPath $installedDllClient)) { throw "Missing installed Client DLL: $installedDllClient" }
-        if (-not (Test-Path -LiteralPath $installedDllWEditor)) {
-            Write-Host "WARN - wEditor DLL missing at $installedDllWEditor (launcher may be open). Steam Play uses Client DLL." -ForegroundColor Yellow
-        }
-        if ($clientCopied) {
+        if ($installResult.Status -eq 'blockedByRunningGame') {
+            Complete-ForgeStepBlocked -Name 'install' -Message 'Client DLL locked by running Bannerlord'
+            Write-Host ''
+            Write-Host 'Build succeeded, but install is blocked because Bannerlord is running.' -ForegroundColor Yellow
+            Write-Host 'Close Bannerlord, then run Forge.cmd again.' -ForegroundColor Yellow
+        } else {
+            Set-ForgeStep -Name 'install' -Status 'PASS'
             Write-Host 'PASS - Module installed (Client DLL required for Steam Play)' -ForegroundColor Green
-            & (Join-Path $PSScriptRoot 'write-pending-reload.ps1') `
-                -BannerlordRoot $BannerlordRoot `
-                -Source 'install-mod.ps1' `
-                -DllPath $installedDllClient
         }
+    } catch {
+        Set-ForgeStep -Name 'install' -Status 'FAIL' -Message $_.Exception.Message
+        Add-ForgeError $_.Exception.Message
+        throw
     }
 
     Invoke-ForgeStep -Name 'verify_structure' -Action {
@@ -180,8 +152,8 @@ try {
     Write-Host ''
     Write-Host 'Daily play:' -ForegroundColor Cyan
     Write-Host '  Steam -> Play (launcher uses your saved mod checkboxes).'
-    Write-Host 'After code changes: dotnet build -c Release (auto-installs), then Steam -> Play.'
-    Write-Host 'Use forge -Launch only for first install or when you want the launcher opened explicitly.' -ForegroundColor Cyan
+    Write-Host 'After code changes: close Bannerlord, then Forge.cmd / dotnet build / Ctrl+Shift+B to install.'
+    Write-Host 'Use LaunchForge.cmd or forge -Launch only for first install or when you want the launcher opened explicitly.' -ForegroundColor Cyan
 
     if ($Launch) {
         Invoke-ForgeStep -Name 'open_launcher' -Action {
@@ -193,6 +165,9 @@ try {
     }
 
     $overall = 'PASS'
+    if (Test-ForgeStepBlocked -Name 'install') {
+        $overall = 'WARN'
+    }
     if ($CheckLog -and $script:ForgeStatusState.tests) {
         foreach ($key in $script:ForgeStatusState.tests.Keys) {
             if ($script:ForgeStatusState.tests[$key].status -eq 'FAIL') {

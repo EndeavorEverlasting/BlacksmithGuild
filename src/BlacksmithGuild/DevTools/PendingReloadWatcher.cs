@@ -8,7 +8,7 @@ using TaleWorlds.Library;
 namespace BlacksmithGuild.DevTools
 {
     /// <summary>
-    /// Detects when a newer mod DLL was installed while Bannerlord is still running.
+    /// Detects when a newer mod build exists or was installed while Bannerlord is still running.
     /// Read-only — never attempts hot reload.
     /// </summary>
     public static class PendingReloadWatcher
@@ -20,9 +20,23 @@ namespace BlacksmithGuild.DevTools
         private static string _loadedVersion = "unknown";
         private static float _pollAccumulator;
         private static DateTime? _lastNotifiedDllWriteUtc;
-        private static bool _reloadPending;
+        private static string _lastNotifiedInstallStatus;
+        private static ReloadState _reloadState = ReloadState.None;
 
-        public static bool IsReloadPending => _reloadPending;
+        public enum ReloadState
+        {
+            None,
+            InstalledPending,
+            BlockedByRunningGame
+        }
+
+        public static ReloadState CurrentReloadState => _reloadState;
+
+        public static bool IsReloadPending =>
+            _reloadState == ReloadState.InstalledPending;
+
+        public static bool IsReloadBlocked =>
+            _reloadState == ReloadState.BlockedByRunningGame;
 
         public static void OnModuleLoad()
         {
@@ -69,7 +83,7 @@ namespace BlacksmithGuild.DevTools
         {
             if (!File.Exists(MarkerPath))
             {
-                _reloadPending = false;
+                _reloadState = ReloadState.None;
                 return;
             }
 
@@ -81,20 +95,50 @@ namespace BlacksmithGuild.DevTools
 
             if (markerDllWriteUtc <= _loadedDllWriteUtc)
             {
-                _reloadPending = false;
+                _reloadState = ReloadState.None;
                 return;
             }
 
-            _reloadPending = true;
+            var installStatus = TryParseStringField(markerJson, "installStatus");
+            if (string.IsNullOrEmpty(installStatus))
+            {
+                installStatus = "installed";
+            }
+
+            if (string.Equals(installStatus, "blockedByRunningGame", StringComparison.OrdinalIgnoreCase))
+            {
+                _reloadState = ReloadState.BlockedByRunningGame;
+            }
+            else if (string.Equals(installStatus, "installed", StringComparison.OrdinalIgnoreCase))
+            {
+                _reloadState = ReloadState.InstalledPending;
+            }
+            else
+            {
+                _reloadState = ReloadState.None;
+                return;
+            }
 
             if (_lastNotifiedDllWriteUtc.HasValue &&
-                _lastNotifiedDllWriteUtc.Value == markerDllWriteUtc)
+                _lastNotifiedDllWriteUtc.Value == markerDllWriteUtc &&
+                string.Equals(_lastNotifiedInstallStatus, installStatus, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
             _lastNotifiedDllWriteUtc = markerDllWriteUtc;
+            _lastNotifiedInstallStatus = installStatus;
             var version = TryParseStringField(markerJson, "version") ?? _loadedVersion;
+
+            if (_reloadState == ReloadState.BlockedByRunningGame)
+            {
+                ForgeStatus.Log("[TBG RELOAD] blocked install detected (new build ready)");
+                GuildLog.Display(
+                    "TBG RELOAD: New build is ready, but Bannerlord must be closed before it can install. Run Forge.cmd after closing."
+                );
+                return;
+            }
+
             ForgeStatus.Log("[TBG RELOAD] pending install detected");
             GuildLog.Display(
                 $"TBG RELOAD: New mod build installed ({version}). Restart Bannerlord to load it."
