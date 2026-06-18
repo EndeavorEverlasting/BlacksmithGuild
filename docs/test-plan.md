@@ -380,6 +380,40 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 
 ---
 
+## Sprint 001U Live Hotkey Certification
+
+**Status:** **Live certified** (2026-06-18, v0.0.5)
+
+**Evidence:** [docs/sprint-001u-live-results.md](sprint-001u-live-results.md)
+
+### Preconditions
+
+- Disposable campaign, mod ON
+- Plain campaign map, paused
+- Wait for `TBG READY: campaign map ready. Press F8 for commands.`
+- Close open panels (Training Field, settlement menus) — they may swallow F-keys
+- Press **Enter** to expand the Combat Log before judging visibility
+
+### Test sequence
+
+1. **F8** — list dev commands
+2. **F7** — status verdict card
+3. **F9** — advance one day (`DailyTick fired`)
+4. **F10** — fast-forward ON, then **F10** again OFF
+5. **F11** — gold test PASS (+100,000); repeat **F11** once
+
+### PASS criteria
+
+- Each hotkey produces in-game notice and `[TBG COMMAND TRACE] ... result=Success` in Phase1.log
+- F11 increases gold by 100,000 per press; no auto gold on daily tick
+- `goldTest.passed: true` in Bannerlord-root `BlacksmithGuild_Status.json`
+
+### Caveat
+
+If F-keys are silent but Ctrl+Alt+7–1 work, an open panel is swallowing keys. Close the panel and retest.
+
+---
+
 ## Notes
 
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll`.

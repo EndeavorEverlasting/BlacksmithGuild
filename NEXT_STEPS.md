@@ -14,9 +14,9 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | **Complete** |
 | 3 | **001** | Dev command harness (visible, repeatable, safe) | **Certified** (2026-06-18) |
 | 3b | **001B** | Focus-aware inbox poll, explicit certification status, `-Certify -Wait` | **Certified** (2026-06-18) |
-| 3c | **001U** | In-game command feedback + message-channel clarity (F7–F11 visible) | **Complete** |
-| 3d | **001U-Fix** | Message timing + visibility (map readiness gate, TBG READY, no auto gold) | **Complete** |
-| 3e | **001U-Debug** | Hotkey polling trace + menu/fallback fixes | **Complete** |
+| 3c | **001U** | In-game command feedback + message-channel clarity (F7–F11 visible) | **Live certified** (2026-06-18) |
+| 3d | **001U-Fix** | Message timing + visibility (map readiness gate, TBG READY, no auto gold) | **Live certified** (2026-06-18) |
+| 3e | **001U-Debug** | Hotkey polling trace + menu/fallback fixes | **Live certified** (2026-06-18) |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness + F7 status | **Code complete — certify in-game** |
 | 5 | **003** | Treasury Delta Watch (evidence system) | Planned — see `docs/treasury-delta-watch-*.md` |
 | 6 | **004+** | Recommendation system | Later |
@@ -34,12 +34,22 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 000A | **Certified** (2026-06-18) |
 | Sprint 000B | **Complete** |
 | Sprint 001 / 001B | **Certified** — `certification.overall: PASS` (6/6) via `-Certify -Wait` |
+| Sprint 001U / Fix / Debug | **Live certified** (2026-06-18) — see [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
 | Sprint 002 | **Code complete** — progression commands wired, F7 `ShowForgeStatus`, `-CertifyProgression`; needs in-game PASS |
-| Sprint 003 | **Planned** — Treasury Delta Watch (`docs/treasury-delta-watch-plan.md`) |
+| Sprint 003 | **Planned** — gated on `certification002.overall: PASS`; see `docs/treasury-delta-watch-plan.md` |
 | Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; watch mode can build while game is open |
 | In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — message feed (F7–F11), toast (forge), file logs |
 
-**Next: Live retest on plain campaign map (wait for `TBG READY`, close panels, F7–F11 or Ctrl+Alt+7–1). Check Phase1 log for trace lines. Then certify Sprint 002: `.\forge.ps1 -CertifyProgression -Wait`.**
+**Next gate: Sprint 002** — certify in-game on a disposable campaign (plain map, `TBG READY`, panels closed):
+
+```powershell
+.\forge.ps1 -CertifyProgression -Wait
+.\forge.ps1 -Check -SkipInstall
+```
+
+Expect `certification002.overall: PASS` (4/4). Sprint 003 Treasury Delta Watch starts only after that gate clears.
+
+Press **Enter** on the campaign map to expand the Combat Log. Close open panels if F-keys appear silent.
 
 **Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again. Watch for `TBG RELOAD` / **F7** `reload=blocked` or `reload=pending`.
 
@@ -100,11 +110,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 ```text
 Repo: EndeavorEverlasting/BlacksmithGuild
 
-Sprint 002 code complete (v0.0.5). Certify in-game:
+Sprint 001U live-certified (v0.0.5). Evidence: docs/sprint-001u-live-results.md
+
+Next gate — Sprint 002 in-game:
   .\forge.ps1 -CertifyProgression -Wait
   .\forge.ps1 -Check -SkipInstall
 
-Then Sprint 003: Treasury Delta Watch (docs/treasury-delta-watch-plan.md).
+If certification002.overall: PASS → Sprint 003 Treasury Delta Watch MVP.
 F7 reads summarized state only — service owns scan/classify/write JSON.
 ```
 

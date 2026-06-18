@@ -13,9 +13,21 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 1 | **000A** | Certify in-game load / gold / hotkey chain | **Certified** |
 | 2 | **000B** | Fluid Steam dev loop | **Complete** |
 | 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
+| 3u | **001U / Fix / Debug** | In-game hotkey feedback + trace | **Live certified** (2026-06-18) |
 | 4 | **002** | Progression harness + F7 status | **Code complete — certify in-game** |
 | 5 | **003** | Treasury Delta Watch | Planned |
 | 6 | **004+** | Recommendation system | Later |
+
+## Current Dev Status
+
+| Item | Status |
+|------|--------|
+| Module version | **v0.0.5** |
+| Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
+| Combat Log | Press **Enter** on campaign map to scroll F7–F11 messages |
+| Sprint 002 progression | **Code complete — certify in-game** |
+| Next gate | `.\forge.ps1 -CertifyProgression -Wait` → `certification002.overall: PASS` |
+| Sprint 003 Treasury Watch | Planned — gated on Sprint 002 PASS |
 
 ## Current focus
 
