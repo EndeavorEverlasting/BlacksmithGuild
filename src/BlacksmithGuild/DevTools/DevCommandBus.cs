@@ -1,3 +1,5 @@
+using BlacksmithGuild.Treasury;
+
 namespace BlacksmithGuild.DevTools
 {
     public enum DevCommandResult
@@ -200,6 +202,11 @@ namespace BlacksmithGuild.DevTools
                             : "Fast-forward OFF."
                     );
                     break;
+                case TreasuryDeltaWatchService.TreasurySnapshotNowCommand:
+                    InGameNotice.Success(
+                        $"Treasury snapshot gen={TreasuryDeltaWatchService.Summary.SnapshotGeneration}, actors={TreasuryDeltaWatchService.Summary.ActorsTracked}."
+                    );
+                    break;
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     InGameNotice.Success(
                         $"Gold test PASS, +{EconomyTestScenarios.RichPlayerGoldDelta}."
@@ -330,6 +337,10 @@ namespace BlacksmithGuild.DevTools
                     return CharacterProgressionTestScenarios.RunAddSmithingFocusOnly();
                 case CharacterProgressionTestScenarios.AddEnduranceAttributeCommand:
                     return CharacterProgressionTestScenarios.RunAddEnduranceAttributeOnly();
+                case TreasuryDeltaWatchService.TreasurySnapshotNowCommand:
+                    return TreasuryDeltaWatchService.RunSnapshotNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     return DevCommandResult.Unknown;
             }

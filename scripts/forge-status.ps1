@@ -501,6 +501,8 @@ function Invoke-ForgeProgressionCertification {
         Send-ForgeCommand -CommandName $cmd -BannerlordRoot $BannerlordRoot -Wait -TimeoutSec $TimeoutSec
     }
 
+    Start-Sleep -Milliseconds 500
+
     $statusPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
     if (Test-Path -LiteralPath $statusPath) {
         $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json

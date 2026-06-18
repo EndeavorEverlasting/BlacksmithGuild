@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 
+using BlacksmithGuild.Treasury;
+
 namespace BlacksmithGuild.DevTools
 {
     public static class DevCommandRegistry
@@ -20,7 +22,8 @@ namespace BlacksmithGuild.DevTools
                 CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
                 CharacterProgressionTestScenarios.AddSmithingXpCommand,
                 CharacterProgressionTestScenarios.AddSmithingFocusCommand,
-                CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
+                CharacterProgressionTestScenarios.AddEnduranceAttributeCommand,
+                TreasuryDeltaWatchService.TreasurySnapshotNowCommand
             };
 
         public static bool IsRegistered(string commandName)

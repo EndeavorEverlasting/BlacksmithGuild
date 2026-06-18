@@ -414,6 +414,7 @@ namespace BlacksmithGuild
                     builder.AppendLine($"    \"lastSnapshotDay\": {_treasuryWatch.LastSnapshotDay},");
                     builder.AppendLine($"    \"actorsTracked\": {_treasuryWatch.ActorsTracked},");
                     builder.AppendLine($"    \"snapshotCount\": {_treasuryWatch.SnapshotCount},");
+                    builder.AppendLine($"    \"snapshotGeneration\": {_treasuryWatch.SnapshotGeneration},");
                     builder.AppendLine($"    \"deltaCount\": {_treasuryWatch.DeltaCount},");
                     builder.AppendLine($"    \"observedCount\": {_treasuryWatch.ObservedCount},");
                     builder.AppendLine($"    \"suspiciousCount\": {_treasuryWatch.SuspiciousCount},");

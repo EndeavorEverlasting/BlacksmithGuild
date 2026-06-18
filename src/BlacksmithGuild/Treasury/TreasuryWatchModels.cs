@@ -40,6 +40,7 @@ namespace BlacksmithGuild.Treasury
         public int LastSnapshotDay { get; set; }
         public int ActorsTracked { get; set; }
         public int SnapshotCount { get; set; }
+        public int SnapshotGeneration { get; set; }
         public int DeltaCount { get; set; }
         public int ObservedCount { get; set; }
         public int SuspiciousCount { get; set; }
@@ -59,6 +60,7 @@ namespace BlacksmithGuild.Treasury
         public int LastSnapshotDay { get; set; }
         public int ActorsTracked { get; set; }
         public int SnapshotCount { get; set; }
+        public int SnapshotGeneration { get; set; }
         public List<TreasurySnapshot> LatestSnapshots { get; set; } = new List<TreasurySnapshot>();
         public List<TreasuryDelta> RecentDeltas { get; set; } = new List<TreasuryDelta>();
         public TreasuryWatchSummary Summary { get; set; } = new TreasuryWatchSummary();

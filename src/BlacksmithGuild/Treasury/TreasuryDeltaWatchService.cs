@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using TaleWorlds.CampaignSystem;
@@ -10,7 +11,10 @@ namespace BlacksmithGuild.Treasury
 {
     public static class TreasuryDeltaWatchService
     {
+        public const string TreasurySnapshotNowCommand = "TreasurySnapshotNow";
+
         private const int MaxRecentDeltas = 50;
+        private const int MaxLatestSnapshotsInReport = 10;
         private const int SuspiciousThreshold = 50_000;
         private const int CriticalThreshold = 150_000;
 
@@ -24,7 +28,11 @@ namespace BlacksmithGuild.Treasury
         private static TreasuryWatchSummary _summary = new TreasuryWatchSummary { Enabled = true };
         private static TreasuryWatchReport _cachedReport = new TreasuryWatchReport();
         private static bool _initialized;
+        private static bool _loggedCampaignDaySource;
+        private static bool _pendingSnapshot;
+        private static string _pendingSnapshotReason;
         private static int _snapshotCount;
+        private static int _snapshotGeneration;
 
         public static TreasuryWatchSummary Summary => _summary;
 
@@ -39,7 +47,7 @@ namespace BlacksmithGuild.Treasury
             _summary.Enabled = true;
             _summary.ReportPath = "BlacksmithGuild_TreasuryWatch.json";
             DebugLogger.Test("[TBG TREASURY] Treasury Delta Watch initialized.", showInGame: false);
-            TryTakeSnapshot("map-ready");
+            ScheduleSnapshot("map-ready");
         }
 
         public static void OnDailyTick()
@@ -49,7 +57,43 @@ namespace BlacksmithGuild.Treasury
                 return;
             }
 
-            TryTakeSnapshot("daily-tick");
+            ScheduleSnapshot("daily-tick");
+        }
+
+        public static void ProcessPendingSnapshot()
+        {
+            if (!_pendingSnapshot || Campaign.Current == null)
+            {
+                return;
+            }
+
+            if (!GameSessionState.IsCampaignMapReady)
+            {
+                return;
+            }
+
+            var reason = _pendingSnapshotReason ?? "deferred";
+            _pendingSnapshot = false;
+            _pendingSnapshotReason = null;
+            TryTakeSnapshot(reason);
+        }
+
+        public static bool RunSnapshotNow()
+        {
+            if (Campaign.Current == null || Hero.MainHero == null)
+            {
+                DebugLogger.Test("[TBG TREASURY] TreasurySnapshotNow blocked: campaign not ready.", showInGame: false);
+                return false;
+            }
+
+            TryTakeSnapshot("manual");
+            return true;
+        }
+
+        public static void ScheduleSnapshot(string reason)
+        {
+            _pendingSnapshot = true;
+            _pendingSnapshotReason = reason;
         }
 
         public static void DisplaySummaryInGame()
@@ -62,7 +106,7 @@ namespace BlacksmithGuild.Treasury
 
             var severity = string.IsNullOrEmpty(_summary.MaxSeverity) ? "Observed" : _summary.MaxSeverity;
             InGameNotice.Info(
-                $"TBG TREASURY: watch=active entities={_summary.ActorsTracked} maxDelta={_summary.MaxAbsDelta:N0} severity={severity}"
+                $"TBG TREASURY: watch=active gen={_summary.SnapshotGeneration} entities={_summary.ActorsTracked} maxDelta={_summary.MaxAbsDelta:N0} severity={severity}"
             );
 
             if (_summary.CriticalCount > 0 && !string.IsNullOrEmpty(_summary.LastCriticalActor))
@@ -82,7 +126,9 @@ namespace BlacksmithGuild.Treasury
                     return;
                 }
 
-                var currentDay = GetCampaignDay();
+                var currentDay = GetCampaignDay(out var daySource);
+                LogCampaignDaySourceOnce(daySource);
+
                 var snapshots = CollectSnapshots(currentDay);
                 if (snapshots.Count == 0)
                 {
@@ -111,12 +157,13 @@ namespace BlacksmithGuild.Treasury
 
                 TrimRecentDeltas();
                 _snapshotCount++;
+                _snapshotGeneration++;
                 UpdateSummary(snapshots, currentDay, newDeltas);
                 WriteReport(currentDay, snapshots);
                 ForgeStatus.RecordTreasuryWatch(_summary);
 
                 DebugLogger.Test(
-                    $"[TBG TREASURY] Snapshot #{_snapshotCount} day={currentDay} actors={snapshots.Count} newDeltas={newDeltas.Count} ({reason})",
+                    $"[TBG TREASURY] Snapshot #{_snapshotCount} gen={_snapshotGeneration} day={currentDay} actors={snapshots.Count} newDeltas={newDeltas.Count} ({reason})",
                     showInGame: false
                 );
             }
@@ -125,6 +172,17 @@ namespace BlacksmithGuild.Treasury
                 DebugLogger.Test($"[TBG TREASURY] Snapshot failed: {ex.Message}", showInGame: false);
                 _cachedReport.Warnings.Add(ex.Message);
             }
+        }
+
+        private static void LogCampaignDaySourceOnce(string daySource)
+        {
+            if (_loggedCampaignDaySource)
+            {
+                return;
+            }
+
+            _loggedCampaignDaySource = true;
+            DebugLogger.Test($"[TBG TREASURY] Campaign day source: {daySource}", showInGame: false);
         }
 
         private static List<TreasurySnapshot> CollectSnapshots(int currentDay)
@@ -398,6 +456,7 @@ namespace BlacksmithGuild.Treasury
             _summary.LastSnapshotDay = currentDay;
             _summary.ActorsTracked = snapshots.Count;
             _summary.SnapshotCount = _snapshotCount;
+            _summary.SnapshotGeneration = _snapshotGeneration;
             _summary.DeltaCount = RecentDeltas.Count;
             _summary.ObservedCount = 0;
             _summary.SuspiciousCount = 0;
@@ -454,6 +513,7 @@ namespace BlacksmithGuild.Treasury
             _cachedReport.LastSnapshotDay = _summary.LastSnapshotDay;
             _cachedReport.ActorsTracked = _summary.ActorsTracked;
             _cachedReport.SnapshotCount = _summary.SnapshotCount;
+            _cachedReport.SnapshotGeneration = _summary.SnapshotGeneration;
             _cachedReport.Summary = _summary;
             _cachedReport.RecentDeltas = new List<TreasuryDelta>(RecentDeltas);
             _cachedReport.LatestSnapshots = latestSnapshots ?? _cachedReport.LatestSnapshots;
@@ -474,6 +534,7 @@ namespace BlacksmithGuild.Treasury
             builder.AppendLine("{");
             builder.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
             builder.AppendLine($"  \"campaignDay\": {report.CampaignDay},");
+            builder.AppendLine($"  \"snapshotGeneration\": {report.SnapshotGeneration},");
             builder.AppendLine($"  \"watchEnabled\": {report.WatchEnabled.ToString().ToLowerInvariant()},");
             builder.AppendLine($"  \"lastSnapshotDay\": {report.LastSnapshotDay},");
             builder.AppendLine($"  \"actorsTracked\": {report.ActorsTracked},");
@@ -483,6 +544,7 @@ namespace BlacksmithGuild.Treasury
             builder.AppendLine($"    \"lastSnapshotDay\": {report.Summary.LastSnapshotDay},");
             builder.AppendLine($"    \"actorsTracked\": {report.Summary.ActorsTracked},");
             builder.AppendLine($"    \"snapshotCount\": {report.Summary.SnapshotCount},");
+            builder.AppendLine($"    \"snapshotGeneration\": {report.Summary.SnapshotGeneration},");
             builder.AppendLine($"    \"deltaCount\": {report.Summary.DeltaCount},");
             builder.AppendLine($"    \"observedCount\": {report.Summary.ObservedCount},");
             builder.AppendLine($"    \"suspiciousCount\": {report.Summary.SuspiciousCount},");
@@ -493,6 +555,30 @@ namespace BlacksmithGuild.Treasury
             builder.AppendLine($"    \"lastCriticalDelta\": {report.Summary.LastCriticalDelta},");
             builder.AppendLine($"    \"reportPath\": \"{Escape(report.Summary.ReportPath ?? "")}\"");
             builder.AppendLine("  },");
+            builder.AppendLine("  \"latestSnapshots\": [");
+
+            var latest = report.LatestSnapshots ?? new List<TreasurySnapshot>();
+            var capped = latest.Take(MaxLatestSnapshotsInReport).ToList();
+            for (var i = 0; i < capped.Count; i++)
+            {
+                var snap = capped[i];
+                if (i > 0)
+                {
+                    builder.AppendLine(",");
+                }
+
+                builder.AppendLine("    {");
+                builder.AppendLine($"      \"actorId\": \"{Escape(snap.ActorId)}\",");
+                builder.AppendLine($"      \"actorName\": \"{Escape(snap.ActorName)}\",");
+                builder.AppendLine($"      \"actorType\": \"{Escape(snap.ActorType)}\",");
+                builder.AppendLine($"      \"gold\": {snap.Gold},");
+                builder.AppendLine($"      \"day\": {snap.Day},");
+                builder.AppendLine($"      \"warStateAgainstPlayer\": \"{Escape(snap.WarStateAgainstPlayer ?? "")}\"");
+                builder.Append("    }");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"recentDeltas\": [");
 
             for (var i = 0; i < report.RecentDeltas.Count; i++)
@@ -538,16 +624,35 @@ namespace BlacksmithGuild.Treasury
             return builder.ToString();
         }
 
-        private static int GetCampaignDay()
+        private static int GetCampaignDay(out string source)
         {
+            source = "unknown";
+
             try
             {
-                return (int)CampaignTime.Now.ToDays;
+                var days = (int)CampaignTime.Now.ToDays;
+                source = "CampaignTime.Now.ToDays";
+                return days;
             }
             catch
             {
-                return 0;
             }
+
+            try
+            {
+                if (Campaign.Current != null)
+                {
+                    var days = (int)CampaignTime.Now.ToYears * 360 + (int)CampaignTime.Now.GetDayOfSeason;
+                    source = "CampaignTime.Now.GetDayOfSeason";
+                    return days;
+                }
+            }
+            catch
+            {
+            }
+
+            source = "fallback-zero";
+            return 0;
         }
 
         private static string Escape(string value)

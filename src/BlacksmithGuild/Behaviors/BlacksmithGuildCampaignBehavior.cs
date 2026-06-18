@@ -71,6 +71,8 @@ namespace BlacksmithGuild.Behaviors
 
             GameSessionState.Refresh();
 
+            TreasuryDeltaWatchService.ProcessPendingSnapshot();
+
             if (!_hasAnnouncedCampaignMapReady && GameSessionState.IsCampaignMapReady)
             {
                 _hasAnnouncedCampaignMapReady = true;
