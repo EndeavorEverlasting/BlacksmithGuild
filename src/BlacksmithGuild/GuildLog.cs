@@ -9,7 +9,29 @@ namespace BlacksmithGuild
         private static readonly string LogPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_Phase1.log");
 
+        public static void Display(string message, bool showInGame = true)
+        {
+            WriteToFile(message);
+
+            if (showInGame)
+            {
+                InformationManager.DisplayMessage(new InformationMessage(message));
+            }
+        }
+
         public static void Info(string message, bool showInGame = true)
+        {
+            WriteToFile(message);
+
+            if (showInGame)
+            {
+                InformationManager.DisplayMessage(
+                    new InformationMessage($"BlacksmithGuild: {message}")
+                );
+            }
+        }
+
+        private static void WriteToFile(string message)
         {
             try
             {
@@ -21,13 +43,6 @@ namespace BlacksmithGuild
             catch
             {
                 // Do not crash the game because our log failed.
-            }
-
-            if (showInGame)
-            {
-                InformationManager.DisplayMessage(
-                    new InformationMessage($"BlacksmithGuild: {message}")
-                );
             }
         }
     }

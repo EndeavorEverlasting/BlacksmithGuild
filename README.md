@@ -1,27 +1,40 @@
 # The Blacksmith Guild
 
-A Mount & Blade II: Bannerlord mod that treats blacksmithing as an economic institution. Phase 1 proves the mod skeleton loads, logs, and runs a fake forge advisor ranking.
+A Mount & Blade II: Bannerlord mod focused on economy pressure, institutional mechanics, faction incentives, and repeatable test scenarios.
 
 Math before hammer.
 
-## What Phase 1 does
+## Current Sprint
 
-- Appears in the Bannerlord launcher as **The Blacksmith Guild**
-- Logs when the module loads
-- Runs a fake forge candidate ranking when a campaign starts
-- Displays the top candidate in-game via `InformationManager.DisplayMessage`
+**Sprint 000: Light the Forge** — bootstrap the module and prove the dev/test harness runs inside a campaign.
+
+## First Test Goal
+
+Load the module, enter campaign, and run a controlled economy test scenario (`RichPlayerEconomyTest`).
+
+## What Sprint 000 does
+
+- Appears in the Bannerlord launcher as **The Blacksmith Guild** (`BlacksmithGuild`, v0.0.2)
+- Displays `[The Blacksmith Guild] Mod loaded. The forge is lit.` on campaign start
+- Registers `BlacksmithGuildCampaignBehavior` for dev/test scenarios
+- Runs fake forge advisor ranking (regression smoke test)
+- Runs `RichPlayerEconomyTest` on first daily tick (+100,000 gold with before/after logging)
 - Writes log lines to `BlacksmithGuild_Phase1.log` near the Bannerlord base path
 
 ## What it does not do yet
 
 - Read real smithing recipes
+- Manual/key dev command triggers
 - UI automation or Harmony patches
-- Actual crafting or save modification
+- Full economy model or faction systems
 
 ## Folder layout
 
 ```text
 BlacksmithGuild/
+  docs/
+    sprint-000-bootstrap.md
+    test-plan.md
   Module/
     BlacksmithGuild/
       SubModule.xml
@@ -33,10 +46,18 @@ BlacksmithGuild/
       BlacksmithGuild.csproj
       SubModule.cs
       GuildLog.cs
+      ForgeAdvisorSmokeTest.cs
       ForgeAdvisor.cs
       ForgeCandidate.cs
       ForgeDoctrine.cs
       MaterialReservePolicy.cs
+      Behaviors/
+        BlacksmithGuildCampaignBehavior.cs
+      DevTools/
+        DebugLogger.cs
+        DevCommandRegistry.cs
+        TestScenarioRunner.cs
+        EconomyTestScenarios.cs
 ```
 
 ## Prerequisites
@@ -76,19 +97,13 @@ Copy-Item -Recurse -Force `
 
 Admin rights may be required for `Program Files (x86)`.
 
-## Phase 1 acceptance test
+## Acceptance tests
 
-1. Open Bannerlord launcher, enable **The Blacksmith Guild**
-2. Start or load a campaign
-3. Confirm in-game messages:
+See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist:
 
-```text
-BlacksmithGuild: module loaded.
-BlacksmithGuild: campaign detected. Running Phase 1 fake forge advisor.
-BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | Value 14800, material cost 2200, rare penalty 1350, doctrine ProfitForge.
-```
-
-4. No crash means Phase 1 passes
+1. Launcher shows **The Blacksmith Guild**
+2. Campaign loads with forge-lit message and fake advisor output
+3. After one daily tick, `RichPlayerEconomyTest` adds 100,000 gold and prints `PASS`
 
 ## License
 
