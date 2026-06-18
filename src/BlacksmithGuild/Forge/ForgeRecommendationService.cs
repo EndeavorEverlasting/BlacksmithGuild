@@ -79,6 +79,7 @@ namespace BlacksmithGuild.Forge
 
                 var advisor = new ForgeAdvisor(new MaterialReservePolicy());
                 var ranked = advisor.RankCandidates(resolution.Candidates, doctrine).ToList();
+                var mapMeta = ForgeRealCandidateMapper.LastResult;
 
                 _cachedReport = new ForgeRecommendationReport
                 {
@@ -89,6 +90,9 @@ namespace BlacksmithGuild.Forge
                     FallbackUsed = resolution.FallbackUsed,
                     CandidateCount = resolution.Candidates.Count,
                     Doctrine = doctrine.ToString(),
+                    EconomicsMode = resolution.FallbackUsed ? null : mapMeta?.EconomicsMode,
+                    TemplateCount = resolution.FallbackUsed ? 0 : mapMeta?.TemplateCount ?? 0,
+                    MappedCount = resolution.FallbackUsed ? 0 : mapMeta?.MappedCount ?? 0,
                     TopCandidate = ranked.FirstOrDefault(),
                     Ranked = ranked
                 };
@@ -130,6 +134,12 @@ namespace BlacksmithGuild.Forge
             report.Line("sourceKind", _summary.SourceKind);
             report.Line("sourceStatus", _summary.SourceStatus);
             report.Line("fallbackUsed", _summary.FallbackUsed.ToString().ToLowerInvariant());
+            if (!string.IsNullOrEmpty(_summary.EconomicsMode))
+            {
+                report.Line("economicsMode", _summary.EconomicsMode);
+                report.Line("templateCount", _summary.TemplateCount.ToString());
+                report.Line("mappedCount", _summary.MappedCount.ToString());
+            }
             report.Line("ranked", _summary.RankedCount.ToString());
             report.Line("json", _summary.ReportPath);
         }
@@ -212,6 +222,9 @@ namespace BlacksmithGuild.Forge
                 SourceStatus = report.SourceStatus,
                 FallbackUsed = report.FallbackUsed,
                 Doctrine = report.Doctrine,
+                EconomicsMode = report.EconomicsMode,
+                TemplateCount = report.TemplateCount,
+                MappedCount = report.MappedCount,
                 TopCandidateId = top?.Id,
                 TopCandidateName = top?.DesignName,
                 TopFinalScore = top?.FinalScore ?? 0,
@@ -235,6 +248,12 @@ namespace BlacksmithGuild.Forge
             report.Line("sourceStatus", _cachedReport.SourceStatus);
             report.Line("fallbackUsed", _cachedReport.FallbackUsed.ToString().ToLowerInvariant());
             report.Line("candidateCount", _cachedReport.CandidateCount.ToString());
+            if (!string.IsNullOrEmpty(_cachedReport.EconomicsMode))
+            {
+                report.Line("economicsMode", _cachedReport.EconomicsMode);
+                report.Line("templateCount", _cachedReport.TemplateCount.ToString());
+                report.Line("mappedCount", _cachedReport.MappedCount.ToString());
+            }
             if (_cachedReport.FallbackUsed)
             {
                 report.Verdict(ReportVerdict.Warn, "Real source unavailable — fell back to stub oracle");
@@ -303,6 +322,10 @@ namespace BlacksmithGuild.Forge
             builder.AppendLine($"  \"fallbackUsed\": {report.FallbackUsed.ToString().ToLowerInvariant()},");
             builder.AppendLine($"  \"candidateCount\": {report.CandidateCount},");
             builder.AppendLine($"  \"doctrine\": \"{Escape(report.Doctrine)}\",");
+            builder.AppendLine(
+                $"  \"economicsMode\": {(string.IsNullOrEmpty(report.EconomicsMode) ? "null" : $"\"{Escape(report.EconomicsMode)}\"")},");
+            builder.AppendLine($"  \"templateCount\": {report.TemplateCount},");
+            builder.AppendLine($"  \"mappedCount\": {report.MappedCount},");
 
             if (report.TopCandidate != null)
             {

@@ -11,6 +11,9 @@ namespace BlacksmithGuild.Forge
         public string SourceStatus { get; set; }
         public bool FallbackUsed { get; set; }
         public string Doctrine { get; set; }
+        public string EconomicsMode { get; set; }
+        public int TemplateCount { get; set; }
+        public int MappedCount { get; set; }
         public string TopCandidateId { get; set; }
         public string TopCandidateName { get; set; }
         public float TopFinalScore { get; set; }
@@ -29,6 +32,9 @@ namespace BlacksmithGuild.Forge
         public bool FallbackUsed { get; set; }
         public int CandidateCount { get; set; }
         public string Doctrine { get; set; }
+        public string EconomicsMode { get; set; }
+        public int TemplateCount { get; set; }
+        public int MappedCount { get; set; }
         public ForgeCandidate TopCandidate { get; set; }
         public List<ForgeCandidate> Ranked { get; set; } = new List<ForgeCandidate>();
     }

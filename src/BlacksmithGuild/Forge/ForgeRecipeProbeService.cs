@@ -82,7 +82,7 @@ namespace BlacksmithGuild.Forge
                 {
                     report.ProbeStatus = "Ok";
                     report.Detail =
-                        $"Found {report.TemplateCount} crafting templates and {report.MatchedTypeCount} matching types; candidate mapping deferred (005C recon).";
+                        $"Found {report.TemplateCount} crafting templates and {report.MatchedTypeCount} matching types; real candidate mapping available via SetForgeCandidateSourceReal.";
                 }
                 else
                 {

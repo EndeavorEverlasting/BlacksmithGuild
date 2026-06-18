@@ -16,7 +16,7 @@ namespace BlacksmithGuild.Forge
         {
             candidates = Array.Empty<ForgeCandidate>();
             status = ForgeCandidateSourceStatus.Unavailable;
-            detail = "Real recipe browser not implemented yet (005A scaffold).";
+            detail = "Real recipe browser not ready.";
 
             try
             {
@@ -37,16 +37,18 @@ namespace BlacksmithGuild.Forge
                 var probeResult = ForgeRecipeProbeService.RunProbe();
                 ForgeRecipeProbeService.PublishProbeResult(probeResult, "RealForgeCandidateSource", writeStructuredReport: false);
 
-                if (probeResult.Candidates != null && probeResult.Candidates.Count > 0)
+                var mapResult = ForgeRealCandidateMapper.TryMapTemplates(Hero.MainHero);
+                if (mapResult.Candidates != null && mapResult.Candidates.Count > 0)
                 {
-                    candidates = probeResult.Candidates;
+                    candidates = mapResult.Candidates;
                     status = ForgeCandidateSourceStatus.Ok;
-                    detail = probeResult.Report?.Detail ?? $"{candidates.Count} real candidates";
+                    detail = mapResult.Detail;
                     return true;
                 }
 
-                detail = probeResult.Report?.Detail
-                    ?? "Real source probe found no mappable candidates (economics mapping deferred).";
+                detail = mapResult.Detail
+                    ?? probeResult.Report?.Detail
+                    ?? "Real source probe found no mappable candidates.";
                 status = ForgeCandidateSourceStatus.Empty;
                 return false;
             }
