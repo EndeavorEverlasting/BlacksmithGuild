@@ -70,7 +70,16 @@ try {
     Invoke-ForgeStep -Name 'install' -Action {
         Write-Host ''
         Write-Host '[2/3] Installing to Modules/BlacksmithGuild...'
-        Copy-Item -Recurse -Force -LiteralPath $ModuleSrc -Destination $ModuleDest
+
+        $nestedModule = Join-Path $ModuleDest 'BlacksmithGuild'
+        if (Test-Path -LiteralPath $nestedModule) {
+            Write-Host 'Removing nested duplicate module folder from prior install...' -ForegroundColor Yellow
+            Remove-Item -Recurse -Force -LiteralPath $nestedModule
+        }
+
+        if (-not (Test-Path -LiteralPath $ModuleDest)) {
+            New-Item -ItemType Directory -Force -Path $ModuleDest | Out-Null
+        }
 
         Copy-Item -Force -LiteralPath (Join-Path $ModuleSrc 'SubModule.xml') -Destination (Join-Path $ModuleDest 'SubModule.xml')
         foreach ($dllRel in @($DllRelClient, $DllRelWEditor)) {
@@ -101,6 +110,11 @@ try {
             if (-not (Test-Path -LiteralPath $depXml)) { throw "Missing dependency: $dep" }
         }
         $installedXml = Join-Path $ModuleDest 'SubModule.xml'
+        $nestedModule = Join-Path $ModuleDest 'BlacksmithGuild'
+        if (Test-Path -LiteralPath $nestedModule) {
+            throw 'Nested module folder BlacksmithGuild/BlacksmithGuild detected — install is corrupt'
+        }
+
         [xml]$subModule = Get-Content -LiteralPath $installedXml
         Write-Host "PASS - Module $($subModule.Module.Name.value) ($($subModule.Module.Id.value)) $($subModule.Module.Version.value)" -ForegroundColor Green
     }
@@ -148,7 +162,7 @@ try {
             if (-not (Test-Path -LiteralPath $LauncherExe)) { throw "Launcher not found: $LauncherExe" }
             Write-Host ''
             Write-Host 'Opening Bannerlord launcher...'
-            Start-Process -FilePath $LauncherExe
+            Start-Process -FilePath $LauncherExe -WorkingDirectory (Split-Path -Parent $LauncherExe)
         }
     }
 
