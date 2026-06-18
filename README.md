@@ -16,7 +16,6 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3u | **001U / Fix / Debug** | In-game hotkey feedback + trace | **Live certified** (2026-06-18) |
 | 4 | **002** | Progression harness + F7 status | **Live certified** (2026-06-18) |
 | 5 | **003 / 003B** | Treasury Delta Watch | **PARTIAL PASS** (2026-06-18) |
-| 6 | **003C** | Quick Forge Start (dev save + auto sandbox character) | **Shipped** |
 | 6 | **003C** | QuickStart + dev save auto-load + Forge launcher | **Shipped** — live cert pending |
 | 7 | **004A** | Report formatting / readable log surfaces | **Shipped** |
 | 8 | **004B** | Stub recommendation model (`RankForgeCandidates`) | **LIVE CERT PASS** (2026-06-18) |
