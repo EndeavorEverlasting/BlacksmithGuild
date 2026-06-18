@@ -35,6 +35,8 @@ namespace BlacksmithGuild.DevTools
 
         public static string BlockReason { get; private set; } = "preflight not run";
 
+        public static string LastBlockReason { get; private set; }
+
         public static bool HasCompletedPreflight => _preflightCompleted;
 
         public static bool IsCampaignReady
@@ -80,34 +82,52 @@ namespace BlacksmithGuild.DevTools
                     showInGame: false
                 );
                 reason = "campaign map not ready.";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (GameSessionState.IsMapMenuOpen)
+            {
+                var menuId = GameSessionState.MapMenuId ?? "unknown";
+                DebugLogger.Test(
+                    $"Risky command blocked: map menu open ({menuId})",
+                    showInGame: false
+                );
+                reason = "map menu open — close panel first.";
+                LastBlockReason = reason;
                 return false;
             }
 
             if (!IsCampaignReady)
             {
                 reason = "campaign not ready";
+                LastBlockReason = reason;
                 return false;
             }
 
             if (!IsMainHeroReady)
             {
                 reason = "MainHero not ready";
+                LastBlockReason = reason;
                 return false;
             }
 
             if (!_preflightCompleted)
             {
                 reason = "data preflight not completed";
+                LastBlockReason = reason;
                 return false;
             }
 
             if (Verdict == PreflightVerdict.Fail)
             {
                 reason = BlockReason;
+                LastBlockReason = reason;
                 return false;
             }
 
             reason = null;
+            LastBlockReason = null;
             return true;
         }
 

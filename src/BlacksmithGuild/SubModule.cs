@@ -19,6 +19,7 @@ namespace BlacksmithGuild
             ForgeStatus.SetModLoaded(true);
             ForgeStatus.SetStep("module_load", "PASS");
             PendingReloadWatcher.OnModuleLoad();
+            HotkeyTraceService.LogVersionAtStartup();
             GuildLog.Info("module loaded.", showInGame: false);
         }
 
@@ -33,6 +34,11 @@ namespace BlacksmithGuild
                 return;
             }
 
+            if (IsCampaignActive())
+            {
+                DevHotkeyHandler.Poll();
+            }
+
             _inboxPollAccumulator += dt;
             if (_inboxPollAccumulator < 0.5f)
             {
@@ -41,6 +47,18 @@ namespace BlacksmithGuild
 
             _inboxPollAccumulator = 0f;
             DevCommandFileInbox.Poll();
+        }
+
+        private static bool IsCampaignActive()
+        {
+            try
+            {
+                return Campaign.Current != null;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         protected override void OnGameStart(Game game, IGameStarter gameStarterObject)

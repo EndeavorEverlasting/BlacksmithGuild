@@ -28,6 +28,11 @@ namespace BlacksmithGuild.DevTools
                 showInGame: false
             );
 
+            if (!string.IsNullOrEmpty(hotkeyLabel))
+            {
+                HotkeyTraceService.OnCommandReceived(hotkeyLabel, commandName);
+            }
+
             if (!DevCommandRegistry.IsRegistered(commandName))
             {
                 DebugLogger.Test($"Unknown command: {commandName}");
@@ -54,6 +59,7 @@ namespace BlacksmithGuild.DevTools
                     CertificationTracker.OnCommandResult(commandName, DevCommandResult.Blocked, blockReason);
                     Sprint002CertificationTracker.OnCommandResult(commandName, DevCommandResult.Blocked, blockReason);
                     NotifyBlocked(commandName, hotkeyLabel, blockReason);
+                    TraceCommandResult(hotkeyLabel, commandName, DevCommandResult.Blocked, blockReason);
                     return DevCommandResult.Blocked;
                 }
 
@@ -74,7 +80,25 @@ namespace BlacksmithGuild.DevTools
             CertificationTracker.OnCommandResult(commandName, result);
             Sprint002CertificationTracker.OnCommandResult(commandName, result);
             NotifyResult(commandName, hotkeyLabel, result);
+            TraceCommandResult(hotkeyLabel, commandName, result);
             return result;
+        }
+
+        private static void TraceCommandResult(
+            string hotkeyLabel,
+            string commandName,
+            DevCommandResult result,
+            string reason = null)
+        {
+            if (string.IsNullOrEmpty(hotkeyLabel))
+            {
+                return;
+            }
+
+            var detail = reason ?? (result == DevCommandResult.Blocked
+                ? GameReadinessService.LastBlockReason
+                : null);
+            HotkeyTraceService.OnCommandResult(hotkeyLabel, commandName, result, detail);
         }
 
         private static void NotifyRequest(string commandName, string hotkeyLabel)
@@ -167,18 +191,18 @@ namespace BlacksmithGuild.DevTools
             switch (commandName)
             {
                 case DevCommandRegistry.AdvanceOneDayCommand:
-                    InGameNotice.Success("TBG: DailyTick fired.");
+                    InGameNotice.Success("DailyTick fired.");
                     break;
                 case DevCommandRegistry.ToggleFastForwardCommand:
                     InGameNotice.Success(
                         TimeDevTools.IsFastForwardActive
-                            ? "TBG: Fast-forward ON."
-                            : "TBG: Fast-forward OFF."
+                            ? "Fast-forward ON."
+                            : "Fast-forward OFF."
                     );
                     break;
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     InGameNotice.Success(
-                        $"TBG: Gold test PASS, +{EconomyTestScenarios.RichPlayerGoldDelta}."
+                        $"Gold test PASS, +{EconomyTestScenarios.RichPlayerGoldDelta}."
                     );
                     break;
                 default:

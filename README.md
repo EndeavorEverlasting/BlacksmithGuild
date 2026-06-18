@@ -51,9 +51,13 @@ Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys an
 | Ctrl+Alt+X | `AddSmithingXp` | Add smithing XP only |
 | Ctrl+Alt+C | `AddSmithingFocus` | Add smithing focus only |
 
-Press **Enter** on the campaign map to scroll the notice log after F7/F8. Wait for **`TBG READY: campaign map ready. Press F8 for commands.`** before certifying F9–F11. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
+Press **Enter** on the campaign map to scroll the notice log after F7/F8. Wait for **`TBG READY: campaign map ready. Press F8 for commands.`** before certifying F9–F11. **Close open campaign panels** (Training Field, settlement menus) if F-keys appear silent — or use **Ctrl+Alt+7–1** fallbacks. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
 
-Risky commands (F9–F11, Ctrl+Alt mutations) are blocked until the campaign map is stable (`MapState`, no active mission). Blocked output: `TBG <key> BLOCKED: campaign map not ready.`
+**F7/F8** are diagnostic/help keys. **F9/F10/F11** are risky dev keys and may be blocked when a map menu is open (`TBG … BLOCKED: map menu open — close panel first.`).
+
+If there is no visible response, check `BlacksmithGuild_Phase1.log` for `[TBG HOTKEY TRACE]` and `[TBG COMMAND TRACE]` lines.
+
+Risky commands (F9–F11, Ctrl+Alt mutations) are also blocked until the campaign map is stable (`MapState`, no active mission).
 
 Gold test is **manual F11 only** — auto-run on DailyTick is disabled by default.
 
@@ -65,7 +69,9 @@ Gold test is **manual F11 only** — auto-run on DailyTick is disabled by defaul
 | Ctrl+Alt+D | `AdvanceOneDay` |
 | Ctrl+Alt+F | `ToggleFastForward` |
 
-Each hotkey shows visible in-game feedback in the **message feed** (lower-left log) via `InGameNotice` — request/result/block lines per key. File inbox commands use explicit result lines (e.g. `TBG: Gold test PASS, +100000.`) or file-only detail for non-user-facing commands.
+**Menu fallback (when F-keys swallowed):** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test).
+
+Each hotkey shows visible in-game feedback in the **message feed** (lower-left log) via `InGameNotice` — request/result/block lines per key. File inbox commands use explicit result lines (e.g. `TBG SUCCESS: Gold test PASS, +100000.`) or file-only detail for non-user-facing commands.
 
 ### File-based command inbox (primary certification path)
 

@@ -162,6 +162,7 @@ namespace BlacksmithGuild
         public static void DisplaySummaryInGame()
         {
             var version = PendingReloadWatcher.LoadedModuleVersion;
+            var dllUtc = PendingReloadWatcher.LoadedDllWriteUtcIso;
             var devTools = DevToolsConfig.DevToolsEnabled ? "on" : "off";
             var reload = PendingReloadWatcher.IsReloadBlocked
                 ? "blocked"
@@ -174,9 +175,11 @@ namespace BlacksmithGuild
                 : $"{_lastCommand} {_lastCommandResult ?? ""}".Trim();
 
             InGameNotice.Info(
-                $"TBG STATUS: v{version} session={_sessionPhase} devTools={devTools} reload={reload}"
+                $"TBG STATUS: loadedVersion={version} dllUtc={dllUtc} reload={reload}"
             );
-            InGameNotice.Info($"TBG STATUS: preflight={preflight} last={last}");
+            InGameNotice.Info(
+                $"TBG STATUS: session={_sessionPhase} devTools={devTools} preflight={preflight} last={last}"
+            );
 
             var certOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
             var certPassed = CertificationTracker.CountPassed();

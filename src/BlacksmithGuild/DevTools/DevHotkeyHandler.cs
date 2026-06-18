@@ -9,6 +9,11 @@ namespace BlacksmithGuild.DevTools
         private static bool _f9WasDown;
         private static bool _f10WasDown;
         private static bool _f11WasDown;
+        private static bool _fallback7WasDown;
+        private static bool _fallback8WasDown;
+        private static bool _fallback9WasDown;
+        private static bool _fallback0WasDown;
+        private static bool _fallback1WasDown;
         private static bool _legacyDWasDown;
         private static bool _legacyFWasDown;
         private static bool _legacyLWasDown;
@@ -23,87 +28,161 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (TryFireEdge(InputKey.F7, ref _f7WasDown))
+            GameSessionState.Refresh();
+
+            if (GameSessionState.CanPollHelpHotkeys)
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ShowForgeStatusCommand, "F7", hotkeyLabel: "F7");
+                HotkeyTraceService.OnPollingActive();
+            }
+            else
+            {
+                HotkeyTraceService.OnPollBlocked(GameSessionState.GetCampaignMapBlockDetail());
+            }
+
+            if (TryHelpHotkey(InputKey.F7, "F7", DevCommandRegistry.ShowForgeStatusCommand, ref _f7WasDown))
+            {
                 return;
             }
 
-            if (TryFireEdge(InputKey.F8, ref _f8WasDown))
+            if (TryHelpHotkey(InputKey.F8, "F8", DevCommandRegistry.ListScenariosCommand, ref _f8WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "F8", hotkeyLabel: "F8");
                 return;
             }
 
-            if (TryFireEdge(InputKey.F9, ref _f9WasDown))
+            if (TryRiskyHotkey(InputKey.F9, "F9", DevCommandRegistry.AdvanceOneDayCommand, ref _f9WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.AdvanceOneDayCommand, "F9", hotkeyLabel: "F9");
                 return;
             }
 
-            if (TryFireEdge(InputKey.F10, ref _f10WasDown))
+            if (TryRiskyHotkey(InputKey.F10, "F10", DevCommandRegistry.ToggleFastForwardCommand, ref _f10WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ToggleFastForwardCommand, "F10", hotkeyLabel: "F10");
                 return;
             }
 
-            if (TryFireEdge(InputKey.F11, ref _f11WasDown))
-            {
-                DevCommandBus.TryRun(
-                    EconomyTestScenarios.RichPlayerEconomyTestName,
+            if (TryRiskyHotkey(
+                    InputKey.F11,
                     "F11",
-                    hotkeyLabel: "F11"
-                );
+                    EconomyTestScenarios.RichPlayerEconomyTestName,
+                    ref _f11WasDown))
+            {
                 return;
             }
 
-            if (!IsCtrlAltDown())
+            if (IsCtrlAltDown())
             {
-                _legacyDWasDown = Input.IsKeyDown(InputKey.D);
-                _legacyFWasDown = Input.IsKeyDown(InputKey.F);
-                _legacyLWasDown = Input.IsKeyDown(InputKey.L);
-                _legacySWasDown = Input.IsKeyDown(InputKey.S);
-                _legacyXWasDown = Input.IsKeyDown(InputKey.X);
-                _legacyCWasDown = Input.IsKeyDown(InputKey.C);
+                if (TryHelpHotkey(InputKey.D7, "Ctrl+Alt+7", DevCommandRegistry.ShowForgeStatusCommand, ref _fallback7WasDown))
+                {
+                    return;
+                }
+
+                if (TryHelpHotkey(InputKey.D8, "Ctrl+Alt+8", DevCommandRegistry.ListScenariosCommand, ref _fallback8WasDown))
+                {
+                    return;
+                }
+
+                if (TryRiskyHotkey(InputKey.D9, "Ctrl+Alt+9", DevCommandRegistry.AdvanceOneDayCommand, ref _fallback9WasDown))
+                {
+                    return;
+                }
+
+                if (TryRiskyHotkey(InputKey.D0, "Ctrl+Alt+0", DevCommandRegistry.ToggleFastForwardCommand, ref _fallback0WasDown))
+                {
+                    return;
+                }
+
+                if (TryRiskyHotkey(
+                        InputKey.D1,
+                        "Ctrl+Alt+1",
+                        EconomyTestScenarios.RichPlayerEconomyTestName,
+                        ref _fallback1WasDown))
+                {
+                    return;
+                }
+
+                if (TryFireEdge(InputKey.D, ref _legacyDWasDown))
+                {
+                    RunCommand("Ctrl+Alt+D", DevCommandRegistry.AdvanceOneDayCommand, "Ctrl+Alt+D");
+                }
+                else if (TryFireEdge(InputKey.F, ref _legacyFWasDown))
+                {
+                    RunCommand("Ctrl+Alt+F", DevCommandRegistry.ToggleFastForwardCommand, "Ctrl+Alt+F");
+                }
+                else if (TryFireEdge(InputKey.L, ref _legacyLWasDown))
+                {
+                    RunCommand("Ctrl+Alt+L", DevCommandRegistry.ListScenariosCommand, "Ctrl+Alt+L");
+                }
+                else if (TryFireEdge(InputKey.S, ref _legacySWasDown))
+                {
+                    RunCommand(
+                        "Ctrl+Alt+S",
+                        CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
+                        "Ctrl+Alt+S"
+                    );
+                }
+                else if (TryFireEdge(InputKey.X, ref _legacyXWasDown))
+                {
+                    RunCommand(
+                        "Ctrl+Alt+X",
+                        CharacterProgressionTestScenarios.AddSmithingXpCommand,
+                        "Ctrl+Alt+X"
+                    );
+                }
+                else if (TryFireEdge(InputKey.C, ref _legacyCWasDown))
+                {
+                    RunCommand(
+                        "Ctrl+Alt+C",
+                        CharacterProgressionTestScenarios.AddSmithingFocusCommand,
+                        "Ctrl+Alt+C"
+                    );
+                }
+
                 return;
             }
 
-            if (TryFireEdge(InputKey.D, ref _legacyDWasDown))
+            _legacyDWasDown = Input.IsKeyDown(InputKey.D);
+            _legacyFWasDown = Input.IsKeyDown(InputKey.F);
+            _legacyLWasDown = Input.IsKeyDown(InputKey.L);
+            _legacySWasDown = Input.IsKeyDown(InputKey.S);
+            _legacyXWasDown = Input.IsKeyDown(InputKey.X);
+            _legacyCWasDown = Input.IsKeyDown(InputKey.C);
+        }
+
+        private static bool TryHelpHotkey(InputKey key, string label, string commandName, ref bool wasDown)
+        {
+            if (!GameSessionState.CanPollHelpHotkeys)
             {
-                DevCommandBus.TryRun(DevCommandRegistry.AdvanceOneDayCommand, "Ctrl+Alt+D", hotkeyLabel: "Ctrl+Alt+D");
+                return false;
             }
-            else if (TryFireEdge(InputKey.F, ref _legacyFWasDown))
+
+            if (!TryFireEdge(key, ref wasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ToggleFastForwardCommand, "Ctrl+Alt+F", hotkeyLabel: "Ctrl+Alt+F");
+                return false;
             }
-            else if (TryFireEdge(InputKey.L, ref _legacyLWasDown))
+
+            RunCommand(label, commandName, label);
+            return true;
+        }
+
+        private static bool TryRiskyHotkey(InputKey key, string label, string commandName, ref bool wasDown)
+        {
+            if (!GameSessionState.CanPollHelpHotkeys)
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "Ctrl+Alt+L", hotkeyLabel: "Ctrl+Alt+L");
+                return false;
             }
-            else if (TryFireEdge(InputKey.S, ref _legacySWasDown))
+
+            if (!TryFireEdge(key, ref wasDown))
             {
-                DevCommandBus.TryRun(
-                    CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
-                    "Ctrl+Alt+S",
-                    hotkeyLabel: "Ctrl+Alt+S"
-                );
+                return false;
             }
-            else if (TryFireEdge(InputKey.X, ref _legacyXWasDown))
-            {
-                DevCommandBus.TryRun(
-                    CharacterProgressionTestScenarios.AddSmithingXpCommand,
-                    "Ctrl+Alt+X",
-                    hotkeyLabel: "Ctrl+Alt+X"
-                );
-            }
-            else if (TryFireEdge(InputKey.C, ref _legacyCWasDown))
-            {
-                DevCommandBus.TryRun(
-                    CharacterProgressionTestScenarios.AddSmithingFocusCommand,
-                    "Ctrl+Alt+C",
-                    hotkeyLabel: "Ctrl+Alt+C"
-                );
-            }
+
+            RunCommand(label, commandName, label);
+            return true;
+        }
+
+        private static void RunCommand(string source, string commandName, string hotkeyLabel)
+        {
+            HotkeyTraceService.OnKeyDetected(hotkeyLabel);
+            DevCommandBus.TryRun(commandName, source, hotkeyLabel: hotkeyLabel);
         }
 
         private static bool TryFireEdge(InputKey key, ref bool wasDown)

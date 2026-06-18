@@ -74,11 +74,7 @@ namespace BlacksmithGuild.Behaviors
                 _hasAnnouncedCampaignMapReady = true;
                 InGameNotice.Ready("campaign map ready. Press F8 for commands.");
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
-            }
-
-            if (GameSessionState.CanPollHotkeys)
-            {
-                DevHotkeyHandler.Poll();
+                HotkeyTraceService.OnMapReady();
             }
         }
 

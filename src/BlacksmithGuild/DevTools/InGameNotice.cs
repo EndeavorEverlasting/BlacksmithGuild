@@ -51,7 +51,8 @@ namespace BlacksmithGuild.DevTools
                 return true;
             }
 
-            if (message.StartsWith("TBG ", StringComparison.Ordinal))
+            if (message.StartsWith("TBG ", StringComparison.Ordinal) ||
+                message.StartsWith("TBG:", StringComparison.Ordinal))
             {
                 return false;
             }

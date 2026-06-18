@@ -40,6 +40,9 @@ namespace BlacksmithGuild.DevTools
 
         public static string LoadedModuleVersion => _loadedVersion;
 
+        public static string LoadedDllWriteUtcIso =>
+            _loadedDllWriteUtc == default ? "unknown" : _loadedDllWriteUtc.ToString("o");
+
         public static void OnModuleLoad()
         {
             try
