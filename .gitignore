@@ -1,0 +1,16 @@
+# .NET build
+**/bin/**
+!**/bin/**/
+!**/bin/**/.gitkeep
+obj/
+.vs/
+*.user
+*.suo
+
+# IDE / OS
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local game logs (runtime only)
+BlacksmithGuild_Phase1.log
