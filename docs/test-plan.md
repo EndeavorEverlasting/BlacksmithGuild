@@ -10,7 +10,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | Complete |
 | 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
 | 4 | **002** | Stoke the Apprentice — progression harness + F7 status | **Code complete — certify in-game** |
-| 5 | **003** | Treasury Delta Watch | Planned |
+| 5 | **003** | Treasury Delta Watch | **003B shipped** — F10 retest |
+| 5c | **003C** | Quick Forge Start (dev save + auto character) | **Shipped** |
 | 6 | **004+** | Recommendation system | Later |
 
 > **Surfaces:** [in-game-surfaces.md](in-game-surfaces.md) — **Enter** notice log, **Alt+`** console, **F7–F11** dev keys.
@@ -41,7 +42,7 @@ There is no separate "start mod" command.
 
 1. **Steam → Play** (launcher opens with your saved mod checkboxes).
 2. For dev testing: confirm **The Blacksmith Guild** is checked. For legacy saves: leave it **unchecked**.
-3. Click **Play**, then load a throwaway campaign (mod ON) or legacy save (mod OFF).
+3. Click **Play**, then **Load** `BlacksmithGuild_DevStart.sav` (preferred — see [dev-disposable-save.md](dev-disposable-save.md)) or a throwaway campaign.
 4. Confirm the log contains (when mod is checked):
 
 ```text
@@ -413,6 +414,55 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 ### Caveat
 
 If F-keys are silent but Ctrl+Alt+7–1 work, an open panel is swallowing keys. Close the panel and retest.
+
+---
+
+## Sprint 003C — Quick Forge Start
+
+**Status:** **Shipped** — dev save workflow + optional auto sandbox character creation
+
+**Doc:** [dev-disposable-save.md](dev-disposable-save.md)
+
+### Phase 1 — Dev save load (primary daily path)
+
+**One-time:** copy disposable save to:
+
+```text
+Documents\Mount and Blade II Bannerlord\Game Saves\Native\BlacksmithGuild_DevStart.sav
+```
+
+**Verify:**
+
+1. `Forge.cmd` → launcher → **Load** `BlacksmithGuild_DevStart.sav`
+2. Map ready in ~30s — no character creation screens
+3. `TBG READY: campaign map ready. Press F8 for commands.`
+4. **F7** — status summary
+
+### Phase 2 — Auto New Campaign (dev flag on)
+
+`DevToolsConfig.AutoSkipCharacterCreation = true` (default in dev builds).
+
+1. New **Sandbox** (not Story Mode), mod ON
+2. No manual character-creation clicks
+3. Phase1.log: `[TBG QUICKSTART] transition:` lines through creation stages
+4. Notice: `TBG QUICKSTART: default character applied.`
+5. Then `TBG READY`
+
+### PASS criteria
+
+| Phase | Evidence |
+|-------|----------|
+| 1 | Load save → map → `TBG READY` → F7 under 30s |
+| 2 | New Sandbox → log transitions → QUICKSTART notice → `TBG READY` |
+
+### Output files
+
+- `BlacksmithGuild_Phase1.log` — `[TBG QUICKSTART]` transitions
+- `BlacksmithGuild_Status.json` — `quickStart.setupPhase`, `quickStart.activeState`
+
+### Fallback
+
+If Phase 2 patch fails after game update: use Phase 1 dev save only; external QuickStart mod optional.
 
 ---
 

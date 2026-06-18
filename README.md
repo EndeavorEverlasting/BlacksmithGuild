@@ -16,22 +16,26 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3u | **001U / Fix / Debug** | In-game hotkey feedback + trace | **Live certified** (2026-06-18) |
 | 4 | **002** | Progression harness + F7 status | **Live certified** (2026-06-18) |
 | 5 | **003 / 003B** | Treasury Delta Watch | **003B shipped** — F10 retest for deltas |
-| 6 | **004+** | Recommendation system | Later |
+| 6 | **003C** | Quick Forge Start (dev save + auto sandbox character) | **Shipped** |
+| 7 | **004+** | Recommendation system | Later |
 
 ## Current Dev Status
 
 | Item | Status |
 |------|--------|
-| Module version | **v0.0.5** |
+| Module version | **v0.0.6** |
 | Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
 | Combat Log | Press **Enter** on campaign map to scroll F7–F11 messages |
 | Sprint 002 progression | **Live certified** (2026-06-18) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
 | Sprint 003 Treasury Watch | **003B shipped** — [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md); use **F10** for delta testing |
 | Dev loop | `Forge.cmd` (build only) or **`ForgeAndLaunch.cmd`** (build + launcher on clean PASS) |
+| Quick start | Load **`BlacksmithGuild_DevStart.sav`** — see [docs/dev-disposable-save.md](docs/dev-disposable-save.md) |
 
 ## Current focus
 
-**Sprint 003** — 003B retest: F10 fast-forward 3–5 days, F7, `TreasurySnapshotNow`, inspect JSON.
+**Sprint 003C** — Quick Forge Start shipped. Prefer loading **`BlacksmithGuild_DevStart.sav`** for daily dev (~30s to map). Optional: New Sandbox with auto character creation when `DevToolsConfig.AutoSkipCharacterCreation` is on.
+
+**Sprint 003B retest** — F10 fast-forward 3–5 days, F7, `TreasurySnapshotNow`, inspect JSON.
 
 > **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 
@@ -117,7 +121,7 @@ Includes `certification` (Sprint 001) and `certification002` (Sprint 002) blocks
 ## What it does not do yet
 
 - Read real smithing recipes
-- UI automation or Harmony patches
+- UI automation or Harmony patches *(Sprint 003C adds dev-only Harmony for sandbox character skip)*
 - Full economy model or faction systems
 - Recommendation engine (Phase 2)
 
@@ -135,6 +139,7 @@ BlacksmithGuild/
   .vscode/
     tasks.json              <- Cursor/VS Code only: Ctrl+Shift+B = Build + Install (not in Bannerlord)
   docs/
+    dev-disposable-save.md
     in-game-surfaces.md
     sprint-000-bootstrap.md
     sprint-000a-results.md
@@ -193,7 +198,7 @@ Once installed under `Modules/BlacksmithGuild`, **Steam → Play** opens the Ban
 
 1. **Steam → Play**
 2. **The Blacksmith Guild** checked for dev / disposable campaigns; **unchecked** for legacy saves
-3. Click **Play**, load a campaign
+3. Click **Play**, **Load** `BlacksmithGuild_DevStart.sav` (preferred) or a throwaway campaign
 4. Confirm the log contains (when mod is checked):
 
 ```text
@@ -400,7 +405,7 @@ Admin rights may be required for `Program Files (x86)`.
 
 See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist (Sprint 002):
 
-1. Launcher shows **The Blacksmith Guild** (v0.0.5)
+1. Launcher shows **The Blacksmith Guild** (v0.0.6)
 2. Campaign loads with forge-lit message and fake advisor output
 3. **F7** shows status summary in notice log (press **Enter** to scroll)
 4. **F8** lists nine registered commands
