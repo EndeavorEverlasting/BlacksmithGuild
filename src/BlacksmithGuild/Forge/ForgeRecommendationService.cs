@@ -88,6 +88,7 @@ namespace BlacksmithGuild.Forge
                     SourceKind = resolution.SourceKind.ToString(),
                     SourceStatus = resolution.SourceStatus.ToString(),
                     FallbackUsed = resolution.FallbackUsed,
+                    ResolutionDetail = resolution.Detail,
                     CandidateCount = resolution.Candidates.Count,
                     Doctrine = doctrine.ToString(),
                     EconomicsMode = resolution.FallbackUsed ? null : mapMeta?.EconomicsMode,
@@ -134,6 +135,10 @@ namespace BlacksmithGuild.Forge
             report.Line("sourceKind", _summary.SourceKind);
             report.Line("sourceStatus", _summary.SourceStatus);
             report.Line("fallbackUsed", _summary.FallbackUsed.ToString().ToLowerInvariant());
+            if (_summary.FallbackUsed && !string.IsNullOrEmpty(_summary.ResolutionDetail))
+            {
+                report.Line("realDetail", _summary.ResolutionDetail);
+            }
             if (!string.IsNullOrEmpty(_summary.EconomicsMode))
             {
                 report.Line("economicsMode", _summary.EconomicsMode);
@@ -221,6 +226,7 @@ namespace BlacksmithGuild.Forge
                 SourceKind = report.SourceKind,
                 SourceStatus = report.SourceStatus,
                 FallbackUsed = report.FallbackUsed,
+                ResolutionDetail = report.ResolutionDetail,
                 Doctrine = report.Doctrine,
                 EconomicsMode = report.EconomicsMode,
                 TemplateCount = report.TemplateCount,
@@ -248,6 +254,10 @@ namespace BlacksmithGuild.Forge
             report.Line("sourceStatus", _cachedReport.SourceStatus);
             report.Line("fallbackUsed", _cachedReport.FallbackUsed.ToString().ToLowerInvariant());
             report.Line("candidateCount", _cachedReport.CandidateCount.ToString());
+            if (_cachedReport.FallbackUsed && !string.IsNullOrEmpty(_cachedReport.ResolutionDetail))
+            {
+                report.Line("realDetail", _cachedReport.ResolutionDetail);
+            }
             if (!string.IsNullOrEmpty(_cachedReport.EconomicsMode))
             {
                 report.Line("economicsMode", _cachedReport.EconomicsMode);
@@ -320,6 +330,8 @@ namespace BlacksmithGuild.Forge
             builder.AppendLine($"  \"sourceKind\": \"{Escape(report.SourceKind)}\",");
             builder.AppendLine($"  \"sourceStatus\": \"{Escape(report.SourceStatus)}\",");
             builder.AppendLine($"  \"fallbackUsed\": {report.FallbackUsed.ToString().ToLowerInvariant()},");
+            builder.AppendLine(
+                $"  \"realDetail\": {(string.IsNullOrEmpty(report.ResolutionDetail) ? "null" : $"\"{Escape(report.ResolutionDetail)}\"")},");
             builder.AppendLine($"  \"candidateCount\": {report.CandidateCount},");
             builder.AppendLine($"  \"doctrine\": \"{Escape(report.Doctrine)}\",");
             builder.AppendLine(

@@ -10,6 +10,7 @@ namespace BlacksmithGuild.Forge
         public string SourceKind { get; set; }
         public string SourceStatus { get; set; }
         public bool FallbackUsed { get; set; }
+        public string ResolutionDetail { get; set; }
         public string Doctrine { get; set; }
         public string EconomicsMode { get; set; }
         public int TemplateCount { get; set; }
@@ -30,6 +31,7 @@ namespace BlacksmithGuild.Forge
         public string SourceKind { get; set; }
         public string SourceStatus { get; set; }
         public bool FallbackUsed { get; set; }
+        public string ResolutionDetail { get; set; }
         public int CandidateCount { get; set; }
         public string Doctrine { get; set; }
         public string EconomicsMode { get; set; }

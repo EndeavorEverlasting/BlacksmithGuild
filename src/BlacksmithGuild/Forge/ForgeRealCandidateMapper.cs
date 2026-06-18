@@ -55,41 +55,53 @@ namespace BlacksmithGuild.Forge
 
                 foreach (var template in templates.Take(MaxMappedTemplates))
                 {
-                    var gateReason = "skill gate unreadable — included";
-                    if (ForgeRecipeEconomics.TryEvaluateSkillGate(template, hero, out var difficulty, out var blocked))
-                    {
-                        gateReason = blocked
-                            ? $"skill gate difficulty={difficulty} skill={smithingSkill}"
-                            : $"skill ok difficulty={difficulty}";
+                    var templateId = template.StringId ?? template.Id.ToString();
 
-                        if (blocked)
+                    try
+                    {
+                        var gateReason = "skill gate unreadable — included";
+                        if (ForgeRecipeEconomics.TryEvaluateSkillGate(template, hero, out var difficulty, out var blocked))
                         {
-                            result.SkippedCount++;
-                            continue;
+                            gateReason = blocked
+                                ? $"skill gate difficulty={difficulty} skill={smithingSkill}"
+                                : $"skill ok difficulty={difficulty}";
+
+                            if (blocked)
+                            {
+                                result.SkippedCount++;
+                                continue;
+                            }
                         }
-                    }
 
-                    var economics = ForgeRecipeEconomics.Estimate(template, hero);
-                    if (economics.UsedExactCosts)
-                    {
-                        result.ExactEconomicsCount++;
-                    }
-                    else
-                    {
-                        result.HeuristicEconomicsCount++;
-                    }
+                        var economics = ForgeRecipeEconomics.Estimate(template, hero);
+                        if (economics.UsedExactCosts)
+                        {
+                            result.ExactEconomicsCount++;
+                        }
+                        else
+                        {
+                            result.HeuristicEconomicsCount++;
+                        }
 
-                    candidates.Add(new ForgeCandidate
+                        candidates.Add(new ForgeCandidate
+                        {
+                            Id = $"real.template.{templateId}",
+                            DesignName = ResolveDesignName(template),
+                            WeaponClass = ResolveWeaponClass(template),
+                            Source = SourceName,
+                            EstimatedValue = economics.Value,
+                            EstimatedMaterialCost = economics.MaterialCost,
+                            RareMaterialPenalty = economics.RareMaterialPenalty,
+                            Reason = $"economics={economics.Detail}; skill={smithingSkill}; {gateReason}"
+                        });
+                    }
+                    catch (Exception ex)
                     {
-                        Id = $"real.template.{template.StringId ?? template.Id.ToString()}",
-                        DesignName = ResolveDesignName(template),
-                        WeaponClass = ResolveWeaponClass(template),
-                        Source = SourceName,
-                        EstimatedValue = economics.Value,
-                        EstimatedMaterialCost = economics.MaterialCost,
-                        RareMaterialPenalty = economics.RareMaterialPenalty,
-                        Reason = $"economics={economics.Detail}; skill={smithingSkill}; {gateReason}"
-                    });
+                        result.SkippedCount++;
+                        DebugLogger.Test(
+                            $"[TBG FORGE] Real candidate map skipped template {templateId}: {ex.Message}",
+                            showInGame: false);
+                    }
                 }
 
                 result.MappedCount = candidates.Count;

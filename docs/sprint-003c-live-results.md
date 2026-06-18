@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Code shipped** (`cf257a9`) — live cert pending after Bannerlord restart with new DLL
+**LIVE CERT PASS** — Continue path, 2026-06-18 (session 19:16 UTC)
 
 ## What shipped
 
@@ -16,7 +16,17 @@
 | Forge launcher | `Forge.cmd` | Build + install + open launcher (`-Launch`) |
 | Truthful notices | `CampaignSetupStateTracker.cs` | `TBG DEVSAVE` vs `TBG QUICKSTART` |
 
-## Live cert protocol
+## Live cert evidence (2026-06-18)
+
+| Check | Result |
+|-------|--------|
+| Path | **Continue** (dev save pinned) |
+| DLL | `dllUtc=2026-06-18T23:16:10` (new build loaded) |
+| API probe | `manager=found nextStage=found` |
+| Patches | `OnLoadFinished=OK NextStage=OK StartNewGame=OK` |
+| Map ready | `TBG READY` on campaign map |
+
+## Live cert protocol (regression)
 
 1. Close Bannerlord completely
 2. `Forge.cmd` (build + install + launcher)
@@ -53,14 +63,14 @@ Documents\Mount and Blade II Bannerlord\Game Saves\Native\
   BlacksmithGuild_DevStart*.sav       ← Continue target
 ```
 
-## Known gaps (post-003C fix)
+## Known gaps (post-003C)
 
 | Gap | Detail |
 |-----|--------|
-| **Live cert not run** | Pre-fix logs show `patch apply failed` — restart game after `cf257a9` |
 | **Story Mode** | Correctly blocked — no automation |
 | **F10 safety guards** | Backlog — use F9 / TreasurySnapshotNow for cert |
 | **Date-stamped save naming** | `BlacksmithGuild_DevStart*.sav` works; dated rename script optional |
+| **SandBox auto-character** | Not re-certified this session (Continue path only) |
 
 ## Risks
 

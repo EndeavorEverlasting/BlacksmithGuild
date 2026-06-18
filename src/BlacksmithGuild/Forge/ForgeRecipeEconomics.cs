@@ -30,20 +30,27 @@ namespace BlacksmithGuild.Forge
                 return false;
             }
 
-            if (!TryBuildDefaultWeaponDesign(template, out var design))
+            try
+            {
+                if (!TryBuildDefaultWeaponDesign(template, out var design))
+                {
+                    return false;
+                }
+
+                var smithingModel = Campaign.Current?.Models?.SmithingModel;
+                if (smithingModel == null)
+                {
+                    return false;
+                }
+
+                difficulty = smithingModel.CalculateWeaponDesignDifficulty(design);
+                blocked = difficulty > hero.GetSkillValue(DefaultSkills.Crafting) + SkillGateSlack;
+                return true;
+            }
+            catch
             {
                 return false;
             }
-
-            var smithingModel = Campaign.Current?.Models?.SmithingModel;
-            if (smithingModel == null)
-            {
-                return false;
-            }
-
-            difficulty = smithingModel.CalculateWeaponDesignDifficulty(design);
-            blocked = difficulty > hero.GetSkillValue(DefaultSkills.Crafting) + SkillGateSlack;
-            return true;
         }
 
         public static ForgeRecipeEconomicsResult Estimate(CraftingTemplate template, Hero hero)
@@ -98,14 +105,38 @@ namespace BlacksmithGuild.Forge
                 return false;
             }
 
-            var elements = buildOrders
-                .OrderBy(order => order.Order)
-                .Select(order => ResolveElement(template, order.PieceType))
-                .ToArray();
-
-            if (elements.Any(element => element == null || !element.IsValid))
+            var slotCount = GetPieceSlotCount();
+            var elements = new WeaponDesignElement[slotCount];
+            for (var slot = 0; slot < slotCount; slot++)
             {
-                return false;
+                elements[slot] = WeaponDesignElement.GetInvalidPieceForType((CraftingPiece.PieceTypes)slot);
+            }
+
+            foreach (var order in buildOrders.OrderBy(entry => entry.Order))
+            {
+                var pieceType = order.PieceType;
+                var index = (int)pieceType;
+                if (index < 0 || index >= slotCount)
+                {
+                    continue;
+                }
+
+                elements[index] = ResolveElement(template, pieceType);
+            }
+
+            foreach (var order in buildOrders)
+            {
+                var index = (int)order.PieceType;
+                if (index < 0 || index >= slotCount)
+                {
+                    return false;
+                }
+
+                var element = elements[index];
+                if (element == null || !element.IsValid)
+                {
+                    return false;
+                }
             }
 
             var name = template.GetName();
@@ -113,8 +144,14 @@ namespace BlacksmithGuild.Forge
             {
                 name = new TextObject(template.StringId ?? "weapon");
             }
+
             design = new WeaponDesign(template, name, elements, template.StringId ?? template.Id.ToString());
             return design != null;
+        }
+
+        private static int GetPieceSlotCount()
+        {
+            return (int)CraftingPiece.PieceTypes.NumberOfPieceTypes;
         }
 
         private static WeaponDesignElement ResolveElement(CraftingTemplate template, CraftingPiece.PieceTypes pieceType)
