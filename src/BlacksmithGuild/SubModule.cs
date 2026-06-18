@@ -14,6 +14,7 @@ namespace BlacksmithGuild
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
+            ForgeStatus.SetModLoaded(true);
             ForgeStatus.SetStep("module_load", "PASS");
             GuildLog.Info("module loaded.", showInGame: false);
         }
@@ -28,8 +29,6 @@ namespace BlacksmithGuild
                 {
                     var campaignStarter = (CampaignGameStarter)gameStarterObject;
                     campaignStarter.AddBehavior(new BlacksmithGuildCampaignBehavior());
-
-                    GameDataPreflight.RunOnce();
 
                     GuildLog.Display(ForgeLitMessage);
                     ForgeStatus.SetTest("forge_lit", "PASS");

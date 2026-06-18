@@ -124,9 +124,9 @@ try {
             }
 
             if ($foundLog) {
-                Scan-AcceptanceLog -LogPath $foundLog
+                Scan-AcceptanceLog -LogPath $foundLog -BannerlordRoot $BannerlordRoot
             } else {
-                Scan-AcceptanceLog -LogPath ''
+                Scan-AcceptanceLog -LogPath '' -BannerlordRoot $BannerlordRoot
                 Write-Host 'No BlacksmithGuild_Phase1.log yet.' -ForegroundColor Yellow
                 Write-Host 'Reminder: check The Blacksmith Guild in the launcher, click Play, then load a campaign.' -ForegroundColor Yellow
             }

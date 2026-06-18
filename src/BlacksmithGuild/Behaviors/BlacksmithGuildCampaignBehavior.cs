@@ -1,6 +1,5 @@
 using BlacksmithGuild.DevTools;
 using TaleWorlds.CampaignSystem;
-using TaleWorlds.InputSystem;
 
 namespace BlacksmithGuild.Behaviors
 {
@@ -17,19 +16,24 @@ namespace BlacksmithGuild.Behaviors
 
         private void OnDailyTick()
         {
-            GameDataPreflight.RunOnce();
+            GameReadinessService.RunPreflightWhenReady();
 
-            if (!DevToolsConfig.AutoRunGoldTestOnDailyTick || _hasRunGoldTest || Hero.MainHero == null)
+            if (!DevToolsConfig.AutoRunGoldTestOnDailyTick || _hasRunGoldTest)
             {
                 return;
             }
 
-            if (GameDataPreflight.BlocksRiskyDevTools)
+            if (!GameReadinessService.IsMainHeroReady)
+            {
+                return;
+            }
+
+            if (GameReadinessService.Verdict == PreflightVerdict.Fail)
             {
                 if (!_loggedGoldTestBlock)
                 {
                     _loggedGoldTestBlock = true;
-                    var reason = GameDataPreflight.BlockReason;
+                    var reason = GameReadinessService.BlockReason;
                     DebugLogger.Test(
                         $"DailyTick gold test blocked because preflight failed: {reason}",
                         showInGame: false
@@ -41,7 +45,7 @@ namespace BlacksmithGuild.Behaviors
             }
 
             _hasRunGoldTest = true;
-            TestScenarioRunner.Run(EconomyTestScenarios.RichPlayerEconomyTestName);
+            DevCommandBus.TryRun(EconomyTestScenarios.RichPlayerEconomyTestName, "daily-tick-auto");
         }
 
         private void OnCampaignTick(float dt)
@@ -51,32 +55,8 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            if (!IsCtrlAltDown())
-            {
-                return;
-            }
-
-            if (Input.IsKeyPressed(InputKey.D))
-            {
-                DevCommandRunner.Run(DevCommandRegistry.AdvanceOneDayCommand);
-            }
-            else if (Input.IsKeyPressed(InputKey.F))
-            {
-                DevCommandRunner.Run(DevCommandRegistry.ToggleFastForwardCommand);
-            }
-            else if (Input.IsKeyPressed(InputKey.L))
-            {
-                DevCommandRunner.Run(DevCommandRegistry.ListScenariosCommand);
-            }
-            // Ctrl+Alt+S is reserved for the future smithing/progression dev command (Sprint 002).
-        }
-
-        private static bool IsCtrlAltDown()
-        {
-            bool ctrl =
-                Input.IsKeyDown(InputKey.LeftControl) || Input.IsKeyDown(InputKey.RightControl);
-            bool alt = Input.IsKeyDown(InputKey.LeftAlt) || Input.IsKeyDown(InputKey.RightAlt);
-            return ctrl && alt;
+            DevHotkeyHandler.Poll();
+            DevCommandFileInbox.Poll();
         }
 
         public override void SyncData(IDataStore dataStore)

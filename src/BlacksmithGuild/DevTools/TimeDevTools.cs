@@ -8,24 +8,25 @@ namespace BlacksmithGuild.DevTools
 
         public static bool IsFastForwardActive => _fastForwardActive;
 
-        public static void AdvanceOneDay()
+        public static bool AdvanceOneDay()
         {
             if (Campaign.Current == null)
             {
                 DebugLogger.Test("AdvanceOneDay: FAIL — no active campaign.");
-                return;
+                return false;
             }
 
             CampaignEventDispatcher.Instance.DailyTick();
             DebugLogger.Test("AdvanceOneDay: DailyTick fired.");
+            return true;
         }
 
-        public static void ToggleFastForward()
+        public static bool ToggleFastForward()
         {
             if (Campaign.Current == null)
             {
                 DebugLogger.Test("ToggleFastForward: FAIL — no active campaign.");
-                return;
+                return false;
             }
 
             _fastForwardActive = !_fastForwardActive;
@@ -40,6 +41,8 @@ namespace BlacksmithGuild.DevTools
                 Campaign.Current.TimeControlMode = CampaignTimeControlMode.Stop;
                 DebugLogger.Test("ToggleFastForward: OFF (time stopped).");
             }
+
+            return true;
         }
     }
 }

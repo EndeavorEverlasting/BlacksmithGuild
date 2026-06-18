@@ -8,11 +8,11 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|--------|---------|--------|
 | 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | Complete |
-| 3 | **001** | Dev tool safety and repeatability | Next |
+| 3 | **001** | Dev command harness (visible, repeatable, safe) | In progress |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
-> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002 — Stoke the Apprentice. Only `Ctrl+Alt+D` / `F` / `L` are wired today. Do not use `Ctrl+Alt+S` in current verification.
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002. Primary dev keys are `F8`–`F11`; `Ctrl+Alt+L/D/F` are legacy fallbacks.
 
 ## Two environments: IDE vs game
 
@@ -20,7 +20,9 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|----------|---------|
 | **Cursor / VS Code** (repo open) | `Ctrl+Shift+B` | Build + Install (`dotnet build -c Release`; auto-install) |
 | **Terminal** (repo root) | `dotnet build ... -c Release` | Same as `Ctrl+Shift+B` without the IDE |
-| **Bannerlord** (campaign map) | `Ctrl+Alt+D` / `F` / `L` | In-game dev commands |
+| **Bannerlord** (campaign map) | `F8` / `F9` / `F10` / `F11` | Primary in-game dev commands |
+| **Bannerlord** (campaign map) | `Ctrl+Alt+L` / `D` / `F` | Legacy dev command fallbacks |
+| **Terminal** (repo root) | `.\forge.ps1 -Command <name>` | File-based command inbox |
 
 Rule: **build in the editor or terminal; test in the game.**
 
@@ -73,7 +75,54 @@ Entry criteria for Sprint 002: Sprint 000B complete, Sprint 000A Tests 2–3 PAS
 
 ---
 
-## Sprint 000B verification (this patch)
+## Sprint 001 verification — Dev command harness
+
+Proves commands are visible, repeatable, and safe on a **disposable campaign**.
+
+### Paths
+
+- **Log:** `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log`
+- **Status JSON:** `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json`
+- **Command inbox:** `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_CommandInbox.json`
+
+### Canonical hotkey sequence
+
+On campaign map with mod enabled:
+
+```text
+F8              → TBG HOTKEY: ListScenarios fired + command list in log
+F9              → TBG HOTKEY: AdvanceOneDay fired + AdvanceOneDay: DailyTick fired.
+F10             → TBG HOTKEY: ToggleFastForward fired + ToggleFastForward: ON
+F10             → TBG HOTKEY: ToggleFastForward fired + ToggleFastForward: OFF
+F11             → TBG HOTKEY: RichPlayerEconomyTest fired + [TBG TEST] PASS
+```
+
+Legacy equivalents: `Ctrl+Alt+L`, `Ctrl+Alt+D`, `Ctrl+Alt+F` (no F11 legacy — use F11 or file inbox).
+
+### File inbox sequence (optional)
+
+With campaign loaded:
+
+```powershell
+.\forge.ps1 -Command ListScenarios
+.\forge.ps1 -Command AdvanceOneDay
+.\forge.ps1 -Command ToggleFastForward
+.\forge.ps1 -Command RichPlayerEconomyTest
+```
+
+### Check hierarchy
+
+1. `BlacksmithGuild_Status.json` — `lastCommand`, `goldTest.passed`, readiness flags
+2. `BlacksmithGuild_Phase1.log` — confirms details
+3. In-game toast — human visibility (`TBG HOTKEY: ... fired`)
+
+Run `.\forge.ps1 -Check` after an in-game session.
+
+**Do not test `Ctrl+Alt+S`** — reserved for Sprint 002.
+
+---
+
+## Sprint 000B verification (build/install loop)
 
 Proves build/install loop only — **not** character mutation.
 
@@ -81,17 +130,7 @@ Proves build/install loop only — **not** character mutation.
 2. Confirm DLLs under `Modules/BlacksmithGuild/bin/Win64_Shipping_Client` and `.../Win64_Shipping_wEditor`
 3. **Steam → Play** (mod checked ON)
 4. Disposable campaign → confirm forge-lit log line
-5. On campaign map, test **wired hotkeys only:**
-
-   ```text
-   Ctrl+Alt+D
-   Ctrl+Alt+F
-   Ctrl+Alt+F    (toggle off)
-   Ctrl+Alt+L
-   ```
-
-6. **Do not test `Ctrl+Alt+S`** — reserved for Sprint 002
-7. Check `BlacksmithGuild_Phase1.log`
+5. Confirm `BlacksmithGuild_Phase1.log` exists after load
 
 ---
 
@@ -202,10 +241,15 @@ Cannot find: ...\Modules\BlacksmithGuild\bin\Win64_Shipping_wEditor\BlacksmithGu
 
 ```text
 [The Blacksmith Guild] Mod loaded. The forge is lit.
-[TBG PREFLIGHT] Starting game data preflight.
-[TBG PREFLIGHT] Result: PASS
 BlacksmithGuild: campaign detected. Running Phase 1 fake forge advisor.
 BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
+```
+
+After MainHero is available (first daily tick or F9/F11):
+
+```text
+[TBG PREFLIGHT] Starting game data preflight.
+[TBG PREFLIGHT] Result: Pass
 ```
 
 **Expected log file:** `BlacksmithGuild_Phase1.log` near the Bannerlord base path.
@@ -218,28 +262,40 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 ## Test 3: Rich Player Economy Test
 
-**Purpose:** Confirm mod-side scripts can generate a controlled test value.
+**Purpose:** Confirm mod-side scripts can generate a controlled test value via explicit command.
 
 **Steps:**
 
-1. Load a campaign with the mod enabled and preflight PASS (Test 2).
-2. On the campaign map, press **Ctrl+Alt+D** to fire one daily tick instantly (or wait one in-game day).
-3. Observe in-game messages and/or `BlacksmithGuild_Phase1.log`.
-4. Open the clan finance / hero gold UI and note player gold.
-5. Save the game and reload to confirm the save is still valid.
+1. Load a **fresh disposable** campaign with the mod enabled.
+2. Wait until campaign map loads and MainHero is available (preflight runs on first ready tick).
+3. On the campaign map, press **F11** (or `.\forge.ps1 -Command RichPlayerEconomyTest` with campaign loaded).
+4. Observe in-game toast, `BlacksmithGuild_Status.json`, and `BlacksmithGuild_Phase1.log`.
+5. Open the clan finance / hero gold UI and note player gold.
+6. Save the game and reload to confirm the save is still valid.
 
-**Optional — fast-forward:** Press **Ctrl+Alt+F** to start unstoppable fast-forward; press **Ctrl+Alt+F** again to stop.
+**Optional — advance day:** Press **F9** (or `Ctrl+Alt+D` legacy) to fire one daily tick.
 
-**Optional — list commands:** Press **Ctrl+Alt+L** to print registered dev commands.
+**Optional — fast-forward:** Press **F10** twice (or `Ctrl+Alt+F` legacy) to toggle ON/OFF.
+
+**Optional — list commands:** Press **F8** (or `Ctrl+Alt+L` legacy).
 
 **Expected output:**
 
 ```text
+TBG HOTKEY: RichPlayerEconomyTest fired
+[TBG TEST] MUTATION COMMAND: RichPlayerEconomyTest
+[TBG TEST] Use disposable campaign only.
 [TBG TEST] Scenario: RichPlayerEconomyTest
 [TBG TEST] Gold before: <starting gold>
 [TBG TEST] Gold added: 100,000
 [TBG TEST] Gold after: <starting gold + 100,000>
 [TBG TEST] PASS
+```
+
+**Expected status JSON (`goldTest`):**
+
+```json
+"goldTest": { "ran": true, "passed": true, "delta": 100000 }
 ```
 
 **Pass:**
@@ -256,7 +312,7 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 ## Test 4: Smithing Progression Test (Sprint 002)
 
-**Status:** **Pending** — source scaffolded; `Ctrl+Alt+S` reserved but **not wired**. Use Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`) for Sprint 000A certification.
+**Status:** **Pending** — source scaffolded; `Ctrl+Alt+S` reserved but **not wired**. Use Sprint 001 harness (F8–F11) for certification.
 
 **Purpose:** Confirm mod-side scripts can modify player character progression safely (Sprint 002).
 
@@ -271,10 +327,11 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 **Current certification instead:**
 
 1. Disposable campaign (mod ON)
-2. **Ctrl+Alt+D** — fire daily tick / gold test
-3. **Ctrl+Alt+F** — optional fast-forward
-4. **Ctrl+Alt+L** — list registered commands (expect four: `RichPlayerEconomyTest`, `ListScenarios`, `AdvanceOneDay`, `ToggleFastForward`)
-5. Check `BlacksmithGuild_Phase1.log`
+2. **F8** — list registered commands (expect four)
+3. **F9** — advance one day
+4. **F10** — toggle fast-forward ON/OFF
+5. **F11** — run gold test explicitly
+6. Check `BlacksmithGuild_Status.json` then `BlacksmithGuild_Phase1.log`
 
 **Expected output:**
 
@@ -308,6 +365,9 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 ## Notes
 
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
-- **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward. Both are blocked when preflight is FAIL.
-- `RichPlayerEconomyTest` runs on the first `DailyTickEvent` (or **Ctrl+Alt+D**) if `AutoRunGoldTestOnDailyTick` is enabled (blocked on preflight FAIL).
-- `RichSmithingProgressionTest` is **not wired** (Sprint 002) — `Ctrl+Alt+S` is reserved for the future smithing/progression dev command; does not run on daily tick.
+- **Primary dev keys:** F8 = `ListScenarios`, F9 = `AdvanceOneDay`, F10 = `ToggleFastForward`, F11 = `RichPlayerEconomyTest`.
+- **Legacy fallbacks:** `Ctrl+Alt+L/D/F` map to the same commands (no F11 legacy).
+- Risky commands are blocked when readiness/preflight is FAIL. `ListScenarios` is always safe.
+- `RichPlayerEconomyTest` is an explicit mutation command (F11 or file inbox). Optional auto-run on daily tick remains configurable via `AutoRunGoldTestOnDailyTick`.
+- `RichSmithingProgressionTest` is **not wired** (Sprint 002) — `Ctrl+Alt+S` is reserved.
+- `forge.ps1 -Check` reads in-game `BlacksmithGuild_Status.json` first, then confirms log details.

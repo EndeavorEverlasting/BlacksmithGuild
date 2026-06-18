@@ -12,15 +12,15 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|--------|---------|--------|
 | 1 | **000A** | Certify in-game load / gold / hotkey chain | In progress |
 | 2 | **000B** | Fluid Steam dev loop | **Complete** |
-| 3 | **001** | Dev tool safety and repeatability | Next |
+| 3 | **001** | Dev command harness (visible, repeatable, safe) | **In progress** |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
 ## Current focus
 
-**Sprint 000A** — certify Tests 1–3 on a disposable campaign (`Ctrl+Alt+D` / `F` / `L`).
+**Sprint 001** — certify dev command harness on a disposable campaign (`F8` / `F9` / `F10` / `F11`).
 
-> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002 — Stoke the Apprentice. Only `Ctrl+Alt+D` / `F` / `L` are wired today. Do not use `Ctrl+Alt+S` in current verification.
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002 — Stoke the Apprentice. Primary dev keys are `F8`–`F11`; `Ctrl+Alt+L/D/F` remain as legacy fallbacks.
 
 ## Two environments: IDE vs game
 
@@ -28,20 +28,61 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|----------|---------|
 | **Cursor / VS Code** (repo open, editor focused) | `Ctrl+Shift+B` | **Build + Install** — runs `dotnet build -c Release` via [`.vscode/tasks.json`](.vscode/tasks.json); auto-copies to `Modules/BlacksmithGuild` |
 | **Terminal** (repo root) | same as build command below | Equivalent to `Ctrl+Shift+B` if you do not use the IDE |
-| **Bannerlord** (campaign map, mod ON) | `Ctrl+Alt+D` / `F` / `L` | In-game dev commands only — not used in the editor |
+| **Bannerlord** (campaign map, mod ON) | `F8` / `F9` / `F10` / `F11` | In-game dev commands (primary) |
+| **Bannerlord** (campaign map, mod ON) | `Ctrl+Alt+L` / `D` / `F` | Legacy dev command fallbacks |
 
 Rule: **build in the editor or terminal; test in the game.**
 
-## Dev hotkeys (in-game — campaign map only)
+## Dev commands (in-game — campaign map only)
 
-PowerShell cannot advance in-game time — use these keys after loading a campaign:
+Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys and file inbox are input adapters — not the architecture itself.
 
-| Hotkey | Wired | Action |
-|--------|-------|--------|
-| Ctrl+Alt+D | Yes | Fire one daily tick instantly (`AdvanceOneDay`) |
-| Ctrl+Alt+F | Yes | Toggle unstoppable fast-forward on/off |
-| Ctrl+Alt+L | Yes | List registered dev commands in log/messages |
+### Primary hotkeys
+
+| Hotkey | Command | Action |
+|--------|---------|--------|
+| F8 | `ListScenarios` | List registered dev commands in log |
+| F9 | `AdvanceOneDay` | Fire one daily tick instantly |
+| F10 | `ToggleFastForward` | Toggle unstoppable fast-forward on/off |
+| F11 | `RichPlayerEconomyTest` | Run gold mutation test (disposable campaign only) |
 | Ctrl+Alt+S | **Reserved** | Sprint 002: future smithing/progression dev command |
+
+### Legacy hotkeys (fallback)
+
+| Hotkey | Command |
+|--------|---------|
+| Ctrl+Alt+L | `ListScenarios` |
+| Ctrl+Alt+D | `AdvanceOneDay` |
+| Ctrl+Alt+F | `ToggleFastForward` |
+
+Each hotkey shows an in-game toast (`TBG HOTKEY: <Command> fired`) before execution. Reliability is under active certification (Sprint 001).
+
+### File-based command inbox
+
+While a campaign is loaded, the mod polls:
+
+```text
+<Bannerlord install>\BlacksmithGuild_CommandInbox.json
+```
+
+From PowerShell:
+
+```powershell
+.\forge.ps1 -Command ListScenarios
+.\forge.ps1 -Command AdvanceOneDay
+.\forge.ps1 -Command ToggleFastForward
+.\forge.ps1 -Command RichPlayerEconomyTest
+```
+
+### Live status JSON
+
+After each command, the mod writes:
+
+```text
+<Bannerlord install>\BlacksmithGuild_Status.json
+```
+
+`forge.ps1 -Check` reads status JSON first, then confirms details in `BlacksmithGuild_Phase1.log`.
 
 ## What it does not do yet
 
@@ -158,7 +199,8 @@ From repo root:
 
 ```powershell
 .\forge.ps1 -Launch    # build, install, open launcher (first install / explicit)
-.\forge.ps1 -Check     # build, install, scan log for [TBG TEST] PASS
+.\forge.ps1 -Check     # build, install, scan status JSON + log
+.\forge.ps1 -Command RichPlayerEconomyTest  # write command to in-game inbox
 .\forge.ps1 -CollectDiagnostics  # collect crash/log bundle after a failure
 .\forge.ps1 -VerifySaves         # read-only check: live saves vs backups
 .\forge.ps1 -BackupSaves         # incremental save backup only
@@ -302,12 +344,14 @@ Admin rights may be required for `Program Files (x86)`.
 
 ## Acceptance tests
 
-See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist (Sprint 000A):
+See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist (Sprint 001):
 
 1. Launcher shows **The Blacksmith Guild**
 2. Campaign loads with forge-lit message and fake advisor output
-3. **Ctrl+Alt+D** (or one daily tick) → `RichPlayerEconomyTest` adds 100,000 gold and prints `PASS`
-4. **Ctrl+Alt+L** lists four registered commands (`Ctrl+Alt+S` reserved for Sprint 002)
+3. **F8** lists four registered commands (`Ctrl+Alt+S` reserved for Sprint 002)
+4. **F9** advances one day; **F10** toggles fast-forward ON/OFF
+5. **F11** runs `RichPlayerEconomyTest` and prints `[TBG TEST] PASS` on a disposable campaign
+6. `BlacksmithGuild_Status.json` updates after each command
 
 ## License
 

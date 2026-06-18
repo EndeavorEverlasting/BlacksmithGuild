@@ -12,7 +12,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|--------|---------|--------|
 | 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | **Complete** |
-| 3 | **001** | Dev tool safety and repeatability | **Next** |
+| 3 | **001** | Dev command harness (visible, repeatable, safe) | **Code complete — certify in-game** |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
@@ -27,13 +27,14 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Branch | `main` |
 | Version | `v0.0.4` |
 | Sprint 000B | **Complete** — Release auto-install, Steam Play docs, `.vscode/tasks.json` |
-| Sprint 000A | **In progress** — needs in-game PASS for Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`) |
+| Sprint 000A | **In progress** — certify Tests 2–3 on disposable campaign |
+| Sprint 001 | **Code complete** — `DevCommandBus`, F8–F11, file inbox, live status JSON; needs in-game PASS |
 | Sprint 002 | **Scaffolded** — progression source files exist; hotkeys **not wired** |
 | Dev loop | **Steam Play** daily; `dotnet build -c Release` auto-installs; launcher checkboxes = mod ON/OFF |
 | Save safety | Incremental backup on every `forge.ps1` run; `.\forge.ps1 -VerifySaves` |
 | Legacy saves | Load with **mod OFF** in launcher (confirmed working) |
 
-**Next: Sprint 000A in-game PASS (Tests 2–3), then Sprint 001 (dev tool safety). Sprint 002 wires `Ctrl+Alt+S`.**
+**Next: In-game certification — F8/F9/F10/F11 on disposable campaign; `forge.ps1 -Check` reads status JSON then log. Then Sprint 002 wires `Ctrl+Alt+S`.**
 
 ### Sprint entry gates (do not skip)
 
@@ -54,16 +55,20 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 ---
 
-## Sprint 001: Dev tool safety and repeatability (next)
+## Sprint 001: Dev command harness (code complete — certify in-game)
 
-**Goal:** Harden the dev-command spine before adding progression mutation.
+**Delivered:**
 
-- Preflight gate reliability (fix `MainHero` timing NRE)
-- Repeatable hotkey behavior under preflight WARN/FAIL
-- `forge.ps1 -Check` coverage for wired commands
-- Explicit PASS/FAIL/BLOCKED status for each test in `BlacksmithGuild_Status.json`
+- `DevCommandBus` — command received/started/result/blocked logging
+- `GameReadinessService` — deferred preflight when MainHero ready
+- `DevHotkeyHandler` — F8–F11 primary; Ctrl+Alt+L/D/F legacy; edge debounce
+- `DevCommandFileInbox` + `forge.ps1 -Command <name>`
+- Live `BlacksmithGuild_Status.json` after each command
+- F11 = explicit `RichPlayerEconomyTest` (decoupled from F9)
 
-**Do not wire `Ctrl+Alt+S` in this sprint** — reserved for Sprint 002.
+**Certification sequence:** F8 → F9 → F10 ×2 → F11 on disposable campaign. Run `.\forge.ps1 -Check`.
+
+**Do not wire `Ctrl+Alt+S`** — reserved for Sprint 002.
 
 ---
 

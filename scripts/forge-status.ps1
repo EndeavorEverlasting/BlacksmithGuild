@@ -221,8 +221,117 @@ function Invoke-ForgeStep {
     }
 }
 
+function Scan-InGameStatus {
+    param([string]$BannerlordRoot)
+
+    $statusPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
+    if (-not (Test-Path -LiteralPath $statusPath)) {
+        Set-ForgeTest -Name 'in_game_status' -Status 'PENDING' -Message 'BlacksmithGuild_Status.json not found in Bannerlord root'
+        return $false
+    }
+
+    Write-Host "In-game status: $statusPath"
+    $status = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+    Set-ForgeTest -Name 'in_game_status' -Status 'PASS' -Message $statusPath
+
+    if ($status.modLoaded -eq $true) {
+        Set-ForgeTest -Name 'mod_loaded' -Status 'PASS'
+    }
+
+    if ($status.campaignReady -eq $true) {
+        Set-ForgeTest -Name 'campaign_ready' -Status 'PASS'
+    } else {
+        Set-ForgeTest -Name 'campaign_ready' -Status 'PENDING' -Message 'Load a campaign'
+    }
+
+    if ($status.mainHeroReady -eq $true) {
+        Set-ForgeTest -Name 'main_hero_ready' -Status 'PASS'
+    } else {
+        Set-ForgeTest -Name 'main_hero_ready' -Status 'PENDING' -Message 'Wait for MainHero on campaign map'
+    }
+
+    if ($status.preflight) {
+        $verdict = [string]$status.preflight.verdict
+        if ($verdict -eq 'Pass') {
+            Set-ForgeTest -Name 'preflight' -Status 'PASS'
+        } elseif ($verdict -eq 'Fail') {
+            Set-ForgeTest -Name 'preflight' -Status 'FAIL' -Message $status.preflight.reason
+        } else {
+            Set-ForgeTest -Name 'preflight' -Status 'PENDING' -Message "Preflight verdict: $verdict"
+        }
+    }
+
+    if ($status.goldTest) {
+        if ($status.goldTest.passed -eq $true) {
+            Set-ForgeTest -Name 'gold_test' -Status 'PASS' -Message "delta=$($status.goldTest.delta)"
+        } elseif ($status.goldTest.ran -eq $true) {
+            Set-ForgeTest -Name 'gold_test' -Status 'FAIL' -Message 'Gold test ran but did not pass'
+        }
+    }
+
+    if ($status.lastCommand) {
+        $cmd = $status.lastCommand
+        $msg = "$($cmd.name) via $($cmd.source) = $($cmd.result)"
+        Set-ForgeTest -Name 'last_command' -Status 'PASS' -Message $msg
+    }
+
+    return $true
+}
+
+function Send-ForgeCommand {
+    param(
+        [Parameter(Mandatory = $true)][string]$CommandName,
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot
+    )
+
+    $allowed = @(
+        'ListScenarios',
+        'AdvanceOneDay',
+        'ToggleFastForward',
+        'RichPlayerEconomyTest'
+    )
+
+    if ($allowed -notcontains $CommandName) {
+        throw "Unknown command '$CommandName'. Allowed: $($allowed -join ', ')"
+    }
+
+    $inboxPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandInbox.json'
+    $sequence = 1
+    if (Test-Path -LiteralPath $inboxPath) {
+        try {
+            $existing = Get-Content -LiteralPath $inboxPath -Raw | ConvertFrom-Json
+            if ($existing.sequence) {
+                $sequence = [int]$existing.sequence + 1
+            }
+        } catch {
+            $sequence = [int](Get-Date -UFormat %s)
+        }
+    }
+
+    $payload = [ordered]@{
+        sequence = $sequence
+        command  = $CommandName
+        source   = 'forge.ps1'
+    }
+
+    $payload | ConvertTo-Json | Set-Content -LiteralPath $inboxPath -Encoding UTF8
+    Write-Host "Wrote command inbox: $inboxPath" -ForegroundColor Green
+    Write-Host "  sequence=$sequence command=$CommandName"
+    Write-Host 'Load a campaign with the mod enabled; the mod polls this file each campaign tick.'
+}
+
 function Scan-AcceptanceLog {
-    param([string]$LogPath)
+    param(
+        [string]$LogPath,
+        [string]$BannerlordRoot = ''
+    )
+
+    if ($BannerlordRoot -and (Test-Path -LiteralPath $BannerlordRoot)) {
+        $scannedStatus = Scan-InGameStatus -BannerlordRoot $BannerlordRoot
+        if ($scannedStatus) {
+            Write-Host ''
+        }
+    }
 
     if (-not (Test-Path -LiteralPath $LogPath)) {
         Set-ForgeTest -Name 'mod_log_present' -Status 'FAIL' -Message 'BlacksmithGuild_Phase1.log not found'

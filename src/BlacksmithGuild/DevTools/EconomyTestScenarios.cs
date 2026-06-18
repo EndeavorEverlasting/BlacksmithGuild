@@ -7,16 +7,24 @@ namespace BlacksmithGuild.DevTools
         public const string RichPlayerEconomyTestName = "RichPlayerEconomyTest";
         public const int RichPlayerGoldDelta = 100_000;
 
-        public static void RunRichPlayerEconomyTest()
+        public static DevCommandResult RunRichPlayerEconomyTest()
         {
-            var hero = Hero.MainHero;
+            Hero hero;
+            try
+            {
+                hero = Hero.MainHero;
+            }
+            catch
+            {
+                hero = null;
+            }
 
             if (hero == null)
             {
                 DebugLogger.Test("Scenario: RichPlayerEconomyTest");
                 DebugLogger.Test("FAIL — MainHero is null.");
                 ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", "MainHero is null");
-                return;
+                return DevCommandResult.Failed;
             }
 
             int goldBefore = hero.Gold;
@@ -37,13 +45,15 @@ namespace BlacksmithGuild.DevTools
             {
                 DebugLogger.Test("PASS");
                 ForgeStatus.SetTest(RichPlayerEconomyTestName, "PASS");
+                ForgeStatus.RecordGoldTest(true, goldBefore, goldAfter, actualDelta);
+                return DevCommandResult.Success;
             }
-            else
-            {
-                var message = $"expected delta {goldDelta:N0}, actual delta {actualDelta:N0}";
-                DebugLogger.Test($"FAIL — {message}.");
-                ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", message);
-            }
+
+            var message = $"expected delta {goldDelta:N0}, actual delta {actualDelta:N0}";
+            DebugLogger.Test($"FAIL — {message}.");
+            ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", message);
+            ForgeStatus.RecordGoldTest(false, goldBefore, goldAfter, actualDelta);
+            return DevCommandResult.Failed;
         }
     }
 }
