@@ -138,11 +138,10 @@ try {
     }
 
     Write-Host ''
-    Write-Host 'Normal startup:' -ForegroundColor Cyan
-    Write-Host '  1. Confirm The Blacksmith Guild is checked in the Bannerlord launcher.'
-    Write-Host '  2. Click Play — Bannerlord loads checked modules automatically.'
-    Write-Host '  3. Load a campaign and confirm the forge-lit log line.'
-    Write-Host 'No separate mod-start command is required.' -ForegroundColor Cyan
+    Write-Host 'Daily play:' -ForegroundColor Cyan
+    Write-Host '  Steam -> Play (launcher uses your saved mod checkboxes).'
+    Write-Host 'After code changes: dotnet build -c Release (auto-installs), then Steam -> Play.'
+    Write-Host 'Use forge -Launch only for first install or when you want the launcher opened explicitly.' -ForegroundColor Cyan
 
     if ($Launch) {
         Invoke-ForgeStep -Name 'open_launcher' -Action {

@@ -18,6 +18,19 @@
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(WEditorOutputPath)" />
   </Target>
 
+  <Target Name="InstallToGameModules" AfterTargets="CopyToWEditor" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <_ModuleSourceDir>$(MSBuildProjectDirectory)\..\..\Module\BlacksmithGuild</_ModuleSourceDir>
+      <_ModuleInstallDir>$(GameFolder)\Modules\BlacksmithGuild</_ModuleInstallDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(_ModuleInstallDir)\bin\Win64_Shipping_Client;$(_ModuleInstallDir)\bin\Win64_Shipping_wEditor" />
+    <Copy SourceFiles="$(_ModuleSourceDir)\SubModule.xml" DestinationFolder="$(_ModuleInstallDir)" SkipUnchangedFiles="true" ContinueOnError="true" />
+    <Copy SourceFiles="$(_ModuleSourceDir)\bin\Win64_Shipping_Client\BlacksmithGuild.dll" DestinationFolder="$(_ModuleInstallDir)\bin\Win64_Shipping_Client" SkipUnchangedFiles="true" ContinueOnError="true" />
+    <Copy SourceFiles="$(_ModuleSourceDir)\bin\Win64_Shipping_wEditor\BlacksmithGuild.dll" DestinationFolder="$(_ModuleInstallDir)\bin\Win64_Shipping_wEditor" SkipUnchangedFiles="true" ContinueOnError="true" />
+    <Warning Condition="!Exists('$(_ModuleInstallDir)\SubModule.xml')" Text="BlacksmithGuild auto-install could not write to $(_ModuleInstallDir). Close Bannerlord or run forge.ps1." />
+    <Message Importance="High" Condition="Exists('$(_ModuleInstallDir)\SubModule.xml')" Text="BlacksmithGuild installed to $(_ModuleInstallDir)" />
+  </Target>
+
   <ItemGroup>
     <Reference Include="TaleWorlds.Core">
       <HintPath>$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Core.dll</HintPath>

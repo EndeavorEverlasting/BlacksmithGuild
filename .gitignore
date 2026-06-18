@@ -9,6 +9,9 @@ obj/
 
 # IDE / OS
 .idea/
+.cursor/
+.vscode/*
+!.vscode/tasks.json
 .DS_Store
 Thumbs.db
 

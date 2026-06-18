@@ -4,15 +4,10 @@ setlocal
 echo.
 echo The Blacksmith Guild - Forge Launcher
 echo.
-echo This script builds and installs the Bannerlord module, then opens the Bannerlord launcher.
+echo First install or explicit launcher open: builds, installs, opens Bannerlord launcher.
 echo.
-echo Normal startup:
-echo 1. Confirm The Blacksmith Guild is checked in the Bannerlord launcher.
-echo 2. Click Play.
-echo 3. Load a campaign.
-echo 4. The mod loads automatically because it is checked.
-echo.
-echo No separate mod-start command is required.
+echo Daily play: Steam -^> Play (launcher uses your saved mod checkboxes).
+echo After code changes: dotnet build -c Release (auto-installs), then Steam -^> Play.
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch

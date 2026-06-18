@@ -32,7 +32,7 @@ PowerShell cannot advance in-game time — use these keys after loading a campai
 
 ```text
 BlacksmithGuild/
-  LaunchForge.cmd           <- double-click: build + install + open launcher
+  LaunchForge.cmd           <- first install / explicit: build + install + open launcher
   CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
   BackupSaves.cmd           <- double-click: incremental save backup
   forge.ps1                 <- one-click build + install (+ optional launcher/log)
@@ -88,30 +88,33 @@ BlacksmithGuild/
 
 The Blacksmith Guild is a normal Bannerlord module.
 
-Once it is installed under `Modules/BlacksmithGuild` and checked in the Bannerlord launcher, Bannerlord loads it automatically when the game starts.
+Once installed under `Modules/BlacksmithGuild`, **Steam → Play** opens the Bannerlord launcher with your saved mod checkboxes (`LauncherData.xml`). Checked mods load automatically — no separate start command. Scripts never force-enable the mod.
 
-There is no separate "start mod" command.
+### Daily play
 
-Expected flow:
-
-1. Double-click `LaunchForge.cmd` or run `.\forge.ps1 -Launch`.
-2. In the Bannerlord launcher, confirm **The Blacksmith Guild** is checked.
-3. Click **Play**.
-4. Load a throwaway campaign save or start a campaign.
-5. Confirm the log contains:
+1. **Steam → Play**
+2. **The Blacksmith Guild** checked for dev / disposable campaigns; **unchecked** for legacy saves
+3. Click **Play**, load a campaign
+4. Confirm the log contains (when mod is checked):
 
 ```text
 [The Blacksmith Guild] Mod loaded. The forge is lit.
 ```
 
-The dev hotkeys only matter after the mod has loaded on the campaign map.
+### After code changes
 
-## One-click dev workflow
+```powershell
+dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
+```
+
+Release builds auto-install to `Modules/BlacksmithGuild`. Then **Steam → Play**.
+
+## Forge tooling (install, backup, diagnostics)
 
 From repo root:
 
 ```powershell
-.\forge.ps1 -Launch    # build, install, open launcher
+.\forge.ps1 -Launch    # build, install, open launcher (first install / explicit)
 .\forge.ps1 -Check     # build, install, scan log for [TBG TEST] PASS
 .\forge.ps1 -CollectDiagnostics  # collect crash/log bundle after a failure
 .\forge.ps1 -VerifySaves         # read-only check: live saves vs backups
@@ -119,7 +122,7 @@ From repo root:
 .\forge.ps1 -SkipSaveBackup      # opt out of automatic backup on any run
 ```
 
-Every `forge.ps1` run **auto-backs up changed saves** unless `-SkipSaveBackup` is set.
+Every `forge.ps1` run **auto-backs up changed saves** unless `-SkipSaveBackup` is set. For daily play you do not need forge — only after code changes (`dotnet build`) or when running diagnostics/backups.
 
 ## Save safety
 
@@ -153,7 +156,7 @@ Verify backups:
 2. Copy a timestamped `.sav` from `BlacksmithGuild_SaveBackups\<save name>\` → `Game Saves\`
 3. Launch with **The Blacksmith Guild disabled** for legacy campaigns
 
-Or double-click `LaunchForge.cmd` to build, install, and open the launcher.
+For first install, double-click `LaunchForge.cmd` (build, install, open launcher). Daily play uses Steam.
 
 `.\forge.ps1 -Check` prints per-step and per-test statuses (PASS / FAIL / PENDING / BLOCKED).
 
@@ -217,7 +220,7 @@ Module/BlacksmithGuild/bin/Win64_Shipping_Client/BlacksmithGuild.dll
 Module/BlacksmithGuild/bin/Win64_Shipping_wEditor/BlacksmithGuild.dll   <- copied on build
 ```
 
-Prefer `.\forge.ps1` over raw `dotnet build` — it ensures both folders are populated before install.
+`dotnet build -c Release` auto-installs to `Modules/BlacksmithGuild` and populates both `bin/` folders. Use `.\forge.ps1` when you also need save backup, log scan, or dependency verify.
 
 If Bannerlord is not at the default Steam path, edit `GameFolder` in `src/BlacksmithGuild/BlacksmithGuild.csproj`.
 

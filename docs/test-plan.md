@@ -4,23 +4,31 @@
 
 The Blacksmith Guild is a normal Bannerlord module.
 
-Once it is installed under `Modules/BlacksmithGuild` and checked in the Bannerlord launcher, Bannerlord loads it automatically when the game starts.
+Once it is installed under `Modules/BlacksmithGuild`, the Bannerlord launcher (via Steam Play) decides which mods load. Launcher checkboxes are saved in `Documents\Mount and Blade II Bannerlord\Configs\LauncherData.xml`. **Scripts never force-enable the mod** — your launcher selection is authoritative.
 
 There is no separate "start mod" command.
 
-Expected flow:
+### Daily play (default)
 
-1. Double-click `LaunchForge.cmd` or run `.\forge.ps1 -Launch`.
-2. In the Bannerlord launcher, confirm **The Blacksmith Guild** is checked.
-3. Click **Play**.
-4. Load a throwaway campaign save or start a campaign.
-5. Confirm the log contains:
+1. **Steam → Play** (launcher opens with your saved mod checkboxes).
+2. For dev testing: confirm **The Blacksmith Guild** is checked. For legacy saves: leave it **unchecked**.
+3. Click **Play**, then load a throwaway campaign (mod ON) or legacy save (mod OFF).
+4. Confirm the log contains (when mod is checked):
 
 ```text
 [The Blacksmith Guild] Mod loaded. The forge is lit.
 ```
 
 The dev hotkeys only matter after the mod has loaded on the campaign map.
+
+### After code changes
+
+1. `dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release` (auto-installs to `Modules/BlacksmithGuild`).
+2. **Steam → Play**.
+
+### When to use forge instead
+
+Use `.\forge.ps1` or `LaunchForge.cmd` for first install, save backup, log scan (`-Check`), or diagnostics (`-CollectDiagnostics`). Use `.\forge.ps1 -Launch` only when you explicitly want build + install + open the launcher.
 
 ---
 
@@ -68,7 +76,7 @@ Sprint 000A must use a **new disposable campaign**. Dev hotkeys may be blocked i
 ### Certification test flow (after diagnostics land)
 
 ```text
-1. LaunchForge.cmd          (auto-backs up changed saves first)
+1. Steam → Play             (launcher respects saved mod checkboxes)
 2. New disposable campaign  (mod ON for 000A certification)
 3. Legacy save play         (mod OFF — separate session)
 4. If crash → CollectDiagnostics.cmd
@@ -86,29 +94,16 @@ Sprint 000A must use a **new disposable campaign**. Dev hotkeys may be blocked i
 
 **Steps:**
 
-1. Build and install (recommended — populates both bin folders and opens the launcher):
-
-   ```powershell
-   .\forge.ps1 -Launch
-   ```
-
-   Or double-click `LaunchForge.cmd`.
-
-   Build/install only (no launcher):
-
-   ```powershell
-   .\forge.ps1
-   ```
-
-   Or manually:
+1. Build and install (first time or after dependency changes):
 
    ```powershell
    dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
    ```
 
-2. Copy `Module/BlacksmithGuild` into `Bannerlord/Modules/BlacksmithGuild` (must include `bin/Win64_Shipping_Client` **and** `bin/Win64_Shipping_wEditor`).
-3. Open the Bannerlord launcher.
-4. Find **The Blacksmith Guild** in the mod list and enable it.
+   Release builds auto-copy to `Bannerlord/Modules/BlacksmithGuild` (both `bin/` folders). Or use `.\forge.ps1` / `LaunchForge.cmd` for full verify + optional launcher.
+
+2. **Steam → Play** (or open the Bannerlord launcher).
+3. Find **The Blacksmith Guild** in the mod list and enable it (once — launcher remembers).
 
 **Expected:**
 

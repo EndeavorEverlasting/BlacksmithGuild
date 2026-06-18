@@ -10,10 +10,11 @@ Math before hammer.
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.4` |
-| Sprint 001 | **Implemented** — manual smithing progression dev scenario (`Ctrl+Alt+S`); needs in-game PASS |
+| Sprint 001 | **Implemented** — smithing progression dev scenario (`Ctrl+Alt+S`); needs in-game PASS |
+| Dev loop | **Steam Play** daily; `dotnet build -c Release` auto-installs; launcher checkboxes = mod ON/OFF |
 | Sprint 000A | **Blocked** — game data errors on some loads; disposable campaign + mod ON for cert |
 | Save safety | Incremental backup on every `forge.ps1` run; `.\forge.ps1 -VerifySaves` |
-| Legacy saves | Load with **mod OFF** (confirmed working) |
+| Legacy saves | Load with **mod OFF** in launcher (confirmed working) |
 
 **Next: in-game PASS for Test 4, then Phase 2 recommendation design (Issue 3).**
 
