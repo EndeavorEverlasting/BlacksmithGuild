@@ -53,6 +53,7 @@ BlacksmithGuild/
   scripts/
     install-mod.ps1
     collect-diagnostics.ps1
+    forge-status.ps1
     verify-sprint-000a.ps1
   Module/
     BlacksmithGuild/
@@ -67,6 +68,7 @@ BlacksmithGuild/
       BlacksmithGuild.csproj
       SubModule.cs
       GuildLog.cs
+      ForgeStatus.cs
       ForgeAdvisorSmokeTest.cs
       ForgeAdvisor.cs
       ForgeCandidate.cs
@@ -123,6 +125,18 @@ From repo root:
 ```
 
 Or double-click `LaunchForge.cmd` to build, install, and open the launcher.
+
+`.\forge.ps1 -Check` prints per-step and per-test statuses (PASS / FAIL / PENDING / BLOCKED).
+
+Status and log files (dev/test output goes to file, not in-game OK dialogs):
+
+```text
+Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Status.json
+Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Forge.log
+Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log
+```
+
+Engine ASSERT dialogs (Abort/Retry/Ignore) are not controlled by this mod. After a crash, run diagnostics instead of clicking through dialogs.
 
 ## Crash and data-load diagnostics
 

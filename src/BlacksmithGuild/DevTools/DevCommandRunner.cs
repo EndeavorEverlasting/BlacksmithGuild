@@ -46,6 +46,7 @@ namespace BlacksmithGuild.DevTools
                 DebugLogger.Test(
                     $"{commandName} blocked because preflight failed: {GameDataPreflight.BlockReason}"
                 );
+                ForgeStatus.SetTest(commandName, "BLOCKED", GameDataPreflight.BlockReason);
                 return false;
             }
 

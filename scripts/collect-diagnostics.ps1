@@ -2,6 +2,9 @@
 # Usage: .\scripts\collect-diagnostics.ps1
 
 $ErrorActionPreference = 'Continue'
+. (Join-Path $PSScriptRoot 'forge-status.ps1')
+
+Start-ForgeStatusRun -Source 'collect-diagnostics' -Operation 'collect'
 
 function Get-RepoRoot {
     $root = Split-Path -Parent $PSScriptRoot
@@ -131,6 +134,18 @@ foreach ($log in $modLogSources) {
         $missing.Add($log)
     }
 }
+
+$statusPaths = Get-ForgeStatusPaths
+foreach ($statusFile in @($statusPaths.StatusJson, $statusPaths.ForgeLog)) {
+    if (Test-Path -LiteralPath $statusFile) {
+        Copy-IfExists -SourcePath $statusFile -DestPath (Join-Path $OutRoot "status\$(Split-Path $statusFile -Leaf)") -Copied $cRef -Missing $mRef | Out-Null
+    } else {
+        Write-Host "MISSING: $statusFile" -ForegroundColor Yellow
+        $missing.Add($statusFile)
+    }
+}
+
+Set-ForgeStep -Name 'collect_sources' -Status 'RUNNING'
 
 # Bannerlord logs and crashes under Documents
 if (Test-Path -LiteralPath $DocsRoot) {
@@ -366,3 +381,12 @@ Write-Host 'Diagnostic collection complete.' -ForegroundColor Cyan
 Write-Host "Folder: $OutRoot"
 Write-Host "Summary: $summaryPath"
 Write-Host "Zip: $zipPath"
+
+Set-ForgeStep -Name 'collect_sources' -Status 'PASS' -Message $OutRoot
+Set-ForgeStep -Name 'write_summary' -Status 'PASS' -Message $summaryPath
+if ($matchRecords.Count -gt 0) {
+    Add-ForgeError "Detected $($matchRecords.Count) error pattern matches. See diagnostic-summary.txt."
+}
+$overall = if ($matchRecords.Count -gt 0) { 'WARN' } else { 'PASS' }
+$statusPath = Complete-ForgeStatusRun -Overall $overall
+Write-ForgeStatusSummary -StatusJsonPath $statusPath

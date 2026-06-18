@@ -90,6 +90,8 @@ namespace BlacksmithGuild.DevTools
                         showInGame: false
                     );
                 }
+
+                ForgeStatus.SetPreflight(Verdict.ToString(), BlockReason);
             }
             catch (Exception ex)
             {
@@ -97,6 +99,7 @@ namespace BlacksmithGuild.DevTools
                 BlockReason = $"preflight exception: {ex.Message}";
                 GuildLog.Info($"[TBG PREFLIGHT] Exception: {ex.Message}", showInGame: false);
                 GuildLog.Info("[TBG PREFLIGHT] Result: Unknown", showInGame: false);
+                ForgeStatus.SetPreflight(Verdict.ToString(), BlockReason);
             }
         }
 

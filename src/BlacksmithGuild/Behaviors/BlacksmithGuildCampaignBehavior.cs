@@ -29,10 +29,12 @@ namespace BlacksmithGuild.Behaviors
                 if (!_loggedGoldTestBlock)
                 {
                     _loggedGoldTestBlock = true;
+                    var reason = GameDataPreflight.BlockReason;
                     DebugLogger.Test(
-                        $"DailyTick gold test blocked because preflight failed: {GameDataPreflight.BlockReason}",
+                        $"DailyTick gold test blocked because preflight failed: {reason}",
                         showInGame: false
                     );
+                    ForgeStatus.SetTest(EconomyTestScenarios.RichPlayerEconomyTestName, "BLOCKED", reason);
                 }
 
                 return;

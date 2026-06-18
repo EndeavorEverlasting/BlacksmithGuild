@@ -14,7 +14,8 @@ namespace BlacksmithGuild
         protected override void OnSubModuleLoad()
         {
             base.OnSubModuleLoad();
-            GuildLog.Info("module loaded.");
+            ForgeStatus.SetStep("module_load", "PASS");
+            GuildLog.Info("module loaded.", showInGame: false);
         }
 
         protected override void OnGameStart(Game game, IGameStarter gameStarterObject)
@@ -23,13 +24,22 @@ namespace BlacksmithGuild
 
             if (game.GameType is Campaign)
             {
-                var campaignStarter = (CampaignGameStarter)gameStarterObject;
-                campaignStarter.AddBehavior(new BlacksmithGuildCampaignBehavior());
+                try
+                {
+                    var campaignStarter = (CampaignGameStarter)gameStarterObject;
+                    campaignStarter.AddBehavior(new BlacksmithGuildCampaignBehavior());
 
-                GameDataPreflight.RunOnce();
+                    GameDataPreflight.RunOnce();
 
-                GuildLog.Display(ForgeLitMessage);
-                ForgeAdvisorSmokeTest.Run();
+                    GuildLog.Display(ForgeLitMessage);
+                    ForgeStatus.SetTest("forge_lit", "PASS");
+                    ForgeAdvisorSmokeTest.Run();
+                }
+                catch (System.Exception ex)
+                {
+                    ForgeStatus.RecordError($"Campaign start failed: {ex.Message}");
+                    GuildLog.Info($"[TBG ERROR] Campaign start failed: {ex.Message}", showInGame: false);
+                }
             }
         }
     }

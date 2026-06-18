@@ -15,8 +15,8 @@ if ($CollectDiagnostics) {
     return
 }
 
-$installArgs = @()
-if ($Launch) { $installArgs += '-Launch' }
-if ($Check) { $installArgs += '-CheckLog' }
+$installParams = @{}
+if ($Launch) { $installParams.Launch = $true }
+if ($Check) { $installParams.CheckLog = $true }
 
-& (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installArgs
+& (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installParams

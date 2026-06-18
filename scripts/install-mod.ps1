@@ -11,6 +11,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'forge-status.ps1')
 
 function Get-RepoRoot {
     $root = Split-Path -Parent $PSScriptRoot
@@ -35,105 +36,136 @@ function Get-BannerlordRoot {
     throw 'Bannerlord install not found. Set GameFolder in BlacksmithGuild.csproj.'
 }
 
-$RepoRoot = Get-RepoRoot
-$BannerlordRoot = Get-BannerlordRoot -RepoRoot $RepoRoot
-$ModuleSrc = Join-Path $RepoRoot 'Module\BlacksmithGuild'
-$ModuleDest = Join-Path $BannerlordRoot 'Modules\BlacksmithGuild'
-$DllRelClient = 'bin\Win64_Shipping_Client\BlacksmithGuild.dll'
-$DllRelWEditor = 'bin\Win64_Shipping_wEditor\BlacksmithGuild.dll'
-$LauncherExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe'
+$operation = if ($Launch) { 'launch' } elseif ($CheckLog) { 'check' } else { 'install' }
+Start-ForgeStatusRun -Source 'install-mod' -Operation $operation
 
-Write-Host '=== The Blacksmith Guild: install-mod ===' -ForegroundColor Cyan
-Write-Host "Repo:       $RepoRoot"
-Write-Host "Bannerlord: $BannerlordRoot"
-Write-Host ''
+try {
+    $RepoRoot = Get-RepoRoot
+    $BannerlordRoot = Get-BannerlordRoot -RepoRoot $RepoRoot
+    $ModuleSrc = Join-Path $RepoRoot 'Module\BlacksmithGuild'
+    $ModuleDest = Join-Path $BannerlordRoot 'Modules\BlacksmithGuild'
+    $DllRelClient = 'bin\Win64_Shipping_Client\BlacksmithGuild.dll'
+    $DllRelWEditor = 'bin\Win64_Shipping_wEditor\BlacksmithGuild.dll'
+    $LauncherExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe'
 
-Write-Host '[1/3] Building Release...'
-Push-Location $RepoRoot
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
-Pop-Location
-
-$builtDllClient = Join-Path $ModuleSrc $DllRelClient
-$builtDllWEditor = Join-Path $ModuleSrc $DllRelWEditor
-if (-not (Test-Path -LiteralPath $builtDllClient)) { throw "Missing build output: $builtDllClient" }
-if (-not (Test-Path -LiteralPath $builtDllWEditor)) { throw "Missing wEditor build output: $builtDllWEditor" }
-Write-Host "PASS - DLL built (Client + wEditor, $((Get-Item -LiteralPath $builtDllClient).Length) bytes each)" -ForegroundColor Green
-
-Write-Host ''
-Write-Host '[2/3] Installing to Modules/BlacksmithGuild...'
-Copy-Item -Recurse -Force -LiteralPath $ModuleSrc -Destination $ModuleDest
-
-# Explicit copies — Copy-Item merge to Program Files can skip new files / stale xml.
-Copy-Item -Force -LiteralPath (Join-Path $ModuleSrc 'SubModule.xml') -Destination (Join-Path $ModuleDest 'SubModule.xml')
-foreach ($dllRel in @($DllRelClient, $DllRelWEditor)) {
-    $srcDll = Join-Path $ModuleSrc $dllRel
-    $destDll = Join-Path $ModuleDest $dllRel
-    $destDir = Split-Path $destDll -Parent
-    if (-not (Test-Path -LiteralPath $destDir)) {
-        New-Item -ItemType Directory -Force -Path $destDir | Out-Null
-    }
-    Copy-Item -Force -LiteralPath $srcDll -Destination $destDll
-}
-
-$installedXml = Join-Path $ModuleDest 'SubModule.xml'
-$installedDllClient = Join-Path $ModuleDest $DllRelClient
-$installedDllWEditor = Join-Path $ModuleDest $DllRelWEditor
-if (-not (Test-Path -LiteralPath $installedXml)) { throw 'Missing installed SubModule.xml' }
-if (-not (Test-Path -LiteralPath $installedDllClient)) { throw "Missing installed Client DLL: $installedDllClient" }
-if (-not (Test-Path -LiteralPath $installedDllWEditor)) { throw "Missing installed wEditor DLL: $installedDllWEditor" }
-Write-Host 'PASS - Module installed (Client + wEditor DLLs)' -ForegroundColor Green
-
-Write-Host ''
-Write-Host '[3/3] Verifying structure...'
-$deps = @('Native', 'SandBoxCore', 'Sandbox', 'StoryMode')
-foreach ($dep in $deps) {
-    $depXml = Join-Path $BannerlordRoot "Modules\$dep\SubModule.xml"
-    if (-not (Test-Path -LiteralPath $depXml)) { throw "Missing dependency: $dep" }
-}
-[xml]$subModule = Get-Content -LiteralPath $installedXml
-Write-Host "PASS - Module $($subModule.Module.Name.value) ($($subModule.Module.Id.value)) $($subModule.Module.Version.value)" -ForegroundColor Green
-
-if ($CheckLog) {
+    Write-Host '=== The Blacksmith Guild: install-mod ===' -ForegroundColor Cyan
+    Write-Host "Repo:       $RepoRoot"
+    Write-Host "Bannerlord: $BannerlordRoot"
     Write-Host ''
-    Write-Host '--- Log scan ---'
-    $logCandidates = @(
-        (Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'),
-        (Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log')
-    )
-    $found = $false
-    foreach ($log in $logCandidates) {
-        if (Test-Path -LiteralPath $log) {
-            $found = $true
-            Write-Host "Log: $log"
-            Get-Content -LiteralPath $log -Tail 15
-            if (Select-String -LiteralPath $log -Pattern '[TBG TEST] PASS' -SimpleMatch -Quiet) {
-                Write-Host 'ACCEPTANCE: RichPlayerEconomyTest PASS found' -ForegroundColor Green
-            } else {
-                Write-Host 'ACCEPTANCE: No PASS yet (check mod in launcher, click Play, load campaign, advance 1 day)' -ForegroundColor Yellow
+
+    Invoke-ForgeStep -Name 'build' -Action {
+        Write-Host '[1/3] Building Release...'
+        Push-Location $RepoRoot
+        dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
+        if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+        Pop-Location
+
+        $builtDllClient = Join-Path $ModuleSrc $DllRelClient
+        $builtDllWEditor = Join-Path $ModuleSrc $DllRelWEditor
+        if (-not (Test-Path -LiteralPath $builtDllClient)) { throw "Missing build output: $builtDllClient" }
+        if (-not (Test-Path -LiteralPath $builtDllWEditor)) { throw "Missing wEditor build output: $builtDllWEditor" }
+        Write-Host "PASS - DLL built (Client + wEditor, $((Get-Item -LiteralPath $builtDllClient).Length) bytes each)" -ForegroundColor Green
+    }
+
+    Invoke-ForgeStep -Name 'install' -Action {
+        Write-Host ''
+        Write-Host '[2/3] Installing to Modules/BlacksmithGuild...'
+        Copy-Item -Recurse -Force -LiteralPath $ModuleSrc -Destination $ModuleDest
+
+        Copy-Item -Force -LiteralPath (Join-Path $ModuleSrc 'SubModule.xml') -Destination (Join-Path $ModuleDest 'SubModule.xml')
+        foreach ($dllRel in @($DllRelClient, $DllRelWEditor)) {
+            $srcDll = Join-Path $ModuleSrc $dllRel
+            $destDll = Join-Path $ModuleDest $dllRel
+            $destDir = Split-Path $destDll -Parent
+            if (-not (Test-Path -LiteralPath $destDir)) {
+                New-Item -ItemType Directory -Force -Path $destDir | Out-Null
             }
-            break
+            Copy-Item -Force -LiteralPath $srcDll -Destination $destDll
+        }
+
+        $installedXml = Join-Path $ModuleDest 'SubModule.xml'
+        $installedDllClient = Join-Path $ModuleDest $DllRelClient
+        $installedDllWEditor = Join-Path $ModuleDest $DllRelWEditor
+        if (-not (Test-Path -LiteralPath $installedXml)) { throw 'Missing installed SubModule.xml' }
+        if (-not (Test-Path -LiteralPath $installedDllClient)) { throw "Missing installed Client DLL: $installedDllClient" }
+        if (-not (Test-Path -LiteralPath $installedDllWEditor)) { throw "Missing installed wEditor DLL: $installedDllWEditor" }
+        Write-Host 'PASS - Module installed (Client + wEditor DLLs)' -ForegroundColor Green
+    }
+
+    Invoke-ForgeStep -Name 'verify_structure' -Action {
+        Write-Host ''
+        Write-Host '[3/3] Verifying structure...'
+        $deps = @('Native', 'SandBoxCore', 'Sandbox', 'StoryMode')
+        foreach ($dep in $deps) {
+            $depXml = Join-Path $BannerlordRoot "Modules\$dep\SubModule.xml"
+            if (-not (Test-Path -LiteralPath $depXml)) { throw "Missing dependency: $dep" }
+        }
+        $installedXml = Join-Path $ModuleDest 'SubModule.xml'
+        [xml]$subModule = Get-Content -LiteralPath $installedXml
+        Write-Host "PASS - Module $($subModule.Module.Name.value) ($($subModule.Module.Id.value)) $($subModule.Module.Version.value)" -ForegroundColor Green
+    }
+
+    if ($CheckLog) {
+        Invoke-ForgeStep -Name 'scan_log' -Action {
+            Write-Host ''
+            Write-Host '--- Log scan ---'
+            $logCandidates = @(
+                (Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'),
+                (Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log')
+            )
+            $foundLog = $null
+            foreach ($log in $logCandidates) {
+                if (Test-Path -LiteralPath $log) {
+                    $foundLog = $log
+                    Write-Host "Log: $log"
+                    Get-Content -LiteralPath $log -Tail 15
+                    break
+                }
+            }
+
+            if ($foundLog) {
+                Scan-AcceptanceLog -LogPath $foundLog
+            } else {
+                Scan-AcceptanceLog -LogPath ''
+                Write-Host 'No BlacksmithGuild_Phase1.log yet.' -ForegroundColor Yellow
+                Write-Host 'Reminder: check The Blacksmith Guild in the launcher, click Play, then load a campaign.' -ForegroundColor Yellow
+            }
+
+            Write-Host ''
+            Write-Host 'If the game crashed, run .\forge.ps1 -CollectDiagnostics and share diagnostic-summary.txt.' -ForegroundColor Yellow
+            Write-Host 'Engine ASSERT dialogs (Abort/Retry/Ignore) are not mod-controlled; errors are captured in logs after CollectDiagnostics.' -ForegroundColor Yellow
         }
     }
-    if (-not $found) {
-        Write-Host 'No BlacksmithGuild_Phase1.log yet.' -ForegroundColor Yellow
-        Write-Host 'Reminder: check The Blacksmith Guild in the launcher, click Play, then load a campaign.' -ForegroundColor Yellow
+
+    Write-Host ''
+    Write-Host 'Normal startup:' -ForegroundColor Cyan
+    Write-Host '  1. Confirm The Blacksmith Guild is checked in the Bannerlord launcher.'
+    Write-Host '  2. Click Play — Bannerlord loads checked modules automatically.'
+    Write-Host '  3. Load a campaign and confirm the forge-lit log line.'
+    Write-Host 'No separate mod-start command is required.' -ForegroundColor Cyan
+
+    if ($Launch) {
+        Invoke-ForgeStep -Name 'open_launcher' -Action {
+            if (-not (Test-Path -LiteralPath $LauncherExe)) { throw "Launcher not found: $LauncherExe" }
+            Write-Host ''
+            Write-Host 'Opening Bannerlord launcher...'
+            Start-Process -LiteralPath $LauncherExe
+        }
     }
 
-    Write-Host ''
-    Write-Host 'If the game crashed, run .\forge.ps1 -CollectDiagnostics and share diagnostic-summary.txt.' -ForegroundColor Yellow
-}
+    $overall = 'PASS'
+    if ($CheckLog -and $script:ForgeStatusState.tests) {
+        foreach ($key in $script:ForgeStatusState.tests.Keys) {
+            if ($script:ForgeStatusState.tests[$key].status -eq 'FAIL') {
+                $overall = 'WARN'
+            }
+        }
+    }
 
-Write-Host ''
-Write-Host 'Normal startup:' -ForegroundColor Cyan
-Write-Host '  1. Confirm The Blacksmith Guild is checked in the Bannerlord launcher.'
-Write-Host '  2. Click Play — Bannerlord loads checked modules automatically.'
-Write-Host '  3. Load a campaign and confirm the forge-lit log line.'
-Write-Host 'No separate mod-start command is required.' -ForegroundColor Cyan
-
-if ($Launch) {
-    if (-not (Test-Path -LiteralPath $LauncherExe)) { throw "Launcher not found: $LauncherExe" }
-    Write-Host ''
-    Write-Host 'Opening Bannerlord launcher...'
-    Start-Process -LiteralPath $LauncherExe
+    $statusPath = Complete-ForgeStatusRun -Overall $overall
+    Write-ForgeStatusSummary -StatusJsonPath $statusPath
+} catch {
+    $statusPath = Complete-ForgeStatusRun -Overall 'FAIL'
+    Write-ForgeStatusSummary -StatusJsonPath $statusPath
+    throw
 }

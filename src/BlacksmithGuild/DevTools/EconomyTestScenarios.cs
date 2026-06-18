@@ -15,6 +15,7 @@ namespace BlacksmithGuild.DevTools
             {
                 DebugLogger.Test("Scenario: RichPlayerEconomyTest");
                 DebugLogger.Test("FAIL — MainHero is null.");
+                ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", "MainHero is null");
                 return;
             }
 
@@ -35,12 +36,13 @@ namespace BlacksmithGuild.DevTools
             if (actualDelta == goldDelta)
             {
                 DebugLogger.Test("PASS");
+                ForgeStatus.SetTest(RichPlayerEconomyTestName, "PASS");
             }
             else
             {
-                DebugLogger.Test(
-                    $"FAIL — expected delta {goldDelta:N0}, actual delta {actualDelta:N0}."
-                );
+                var message = $"expected delta {goldDelta:N0}, actual delta {actualDelta:N0}";
+                DebugLogger.Test($"FAIL — {message}.");
+                ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", message);
             }
         }
     }
