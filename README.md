@@ -13,16 +13,26 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 1 | **000A** | Certify in-game load / gold / hotkey chain | In progress |
 | 2 | **000B** | Fluid Steam dev loop | **Complete** |
 | 3 | **001** | Dev tool safety and repeatability | Next |
-| 4 | **002** | Skill-point / progression harness | Scaffolded |
+| 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
 ## Current focus
 
 **Sprint 000A** — certify Tests 1–3 on a disposable campaign (`Ctrl+Alt+D` / `F` / `L`).
 
-> **Breadcrumb:** `Ctrl+Alt+S` is reserved for the future smithing/progression dev command (Sprint 002). Only `Ctrl+Alt+D` / `F` / `L` are wired today.
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002 — Stoke the Apprentice. Only `Ctrl+Alt+D` / `F` / `L` are wired today. Do not use `Ctrl+Alt+S` in current verification.
 
-## Dev hotkeys (campaign map)
+## Two environments: IDE vs game
+
+| Where | Shortcut | Purpose |
+|-------|----------|---------|
+| **Cursor / VS Code** (repo open, editor focused) | `Ctrl+Shift+B` | **Build + Install** — runs `dotnet build -c Release` via [`.vscode/tasks.json`](.vscode/tasks.json); auto-copies to `Modules/BlacksmithGuild` |
+| **Terminal** (repo root) | same as build command below | Equivalent to `Ctrl+Shift+B` if you do not use the IDE |
+| **Bannerlord** (campaign map, mod ON) | `Ctrl+Alt+D` / `F` / `L` | In-game dev commands only — not used in the editor |
+
+Rule: **build in the editor or terminal; test in the game.**
+
+## Dev hotkeys (in-game — campaign map only)
 
 PowerShell cannot advance in-game time — use these keys after loading a campaign:
 
@@ -49,7 +59,7 @@ BlacksmithGuild/
   BackupSaves.cmd           <- double-click: incremental save backup
   forge.ps1                 <- install, backup, diagnostics, log scan
   .vscode/
-    tasks.json              <- default build task (Ctrl+Shift+B): Release + auto-install
+    tasks.json              <- Cursor/VS Code only: Ctrl+Shift+B = Build + Install (not in Bannerlord)
   docs/
     sprint-000-bootstrap.md
     sprint-000a-results.md
@@ -123,7 +133,24 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 
 Release builds auto-install to `Modules/BlacksmithGuild`. Then **Steam → Play**.
 
-In Cursor/VS Code: **Ctrl+Shift+B** runs the default **Build + Install** task (`.vscode/tasks.json`).
+**In Cursor / VS Code:** `Ctrl+Shift+B` (Build + Install task). **Not in Bannerlord.**
+
+## Skill harness runway (Sprint 002 — not implemented)
+
+Next gameplay-dev target after 000A evidence and Sprint 001 dev-tool safety:
+
+**Sprint 002 — Stoke the Apprentice** — smithing/progression dev harness.
+
+| Item | Purpose |
+|------|---------|
+| Reserved hotkey | `Ctrl+Alt+S` (not wired today) |
+| `RichSmithingProgressionTest` | Main skill/progression scenario |
+| Before/after snapshot | Prove actual hero progression change |
+| Controlled Smithing XP | First mutation target |
+| Focus / attribute support | Later, if compile-safe |
+| PASS/FAIL logging | No silent magic |
+
+This patch does **not** implement skill points. It prepares the build/play loop for fast repetition when Sprint 002 lands.
 
 ## Forge tooling (install, backup, diagnostics)
 

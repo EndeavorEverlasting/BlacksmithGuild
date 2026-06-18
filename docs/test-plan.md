@@ -9,10 +9,20 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | Complete |
 | 3 | **001** | Dev tool safety and repeatability | Next |
-| 4 | **002** | Skill-point / progression harness (`RichSmithingProgressionTest`) | Scaffolded |
+| 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
-> **Breadcrumb:** `Ctrl+Alt+S` is reserved for the future smithing/progression dev command (Sprint 002). Only `Ctrl+Alt+D` / `F` / `L` are wired today.
+> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002 — Stoke the Apprentice. Only `Ctrl+Alt+D` / `F` / `L` are wired today. Do not use `Ctrl+Alt+S` in current verification.
+
+## Two environments: IDE vs game
+
+| Where | Shortcut | Purpose |
+|-------|----------|---------|
+| **Cursor / VS Code** (repo open) | `Ctrl+Shift+B` | Build + Install (`dotnet build -c Release`; auto-install) |
+| **Terminal** (repo root) | `dotnet build ... -c Release` | Same as `Ctrl+Shift+B` without the IDE |
+| **Bannerlord** (campaign map) | `Ctrl+Alt+D` / `F` / `L` | In-game dev commands |
+
+Rule: **build in the editor or terminal; test in the game.**
 
 ---
 
@@ -40,11 +50,48 @@ The dev hotkeys only matter after the mod has loaded on the campaign map.
 ### After code changes
 
 1. `dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release` (auto-installs to `Modules/BlacksmithGuild`).
+   - **In Cursor / VS Code:** `Ctrl+Shift+B` runs the same command (not in Bannerlord).
 2. **Steam → Play**.
 
 ### When to use forge instead
 
 Use `.\forge.ps1` or `LaunchForge.cmd` for first install, save backup, log scan (`-Check`), or diagnostics (`-CollectDiagnostics`). Use `.\forge.ps1 -Launch` only when you explicitly want build + install + open the launcher.
+
+Do **not** require forge for daily play.
+
+---
+
+## Skill harness runway (Sprint 002 — docs only)
+
+Next gameplay-dev target: **Sprint 002 — Stoke the Apprentice**.
+
+- **Reserved hotkey:** `Ctrl+Alt+S` (not wired; do not test yet)
+- **Planned:** capture before/after hero progression snapshot; add controlled Smithing XP; log PASS/FAIL; explicit save-safety
+- **Out of scope for Sprint 000B:** skill mutation, focus/attribute adds, recommendations, UI
+
+Entry criteria for Sprint 002: Sprint 000B complete, Sprint 000A Tests 2–3 PASS in log, Sprint 001 dev-tool safety done.
+
+---
+
+## Sprint 000B verification (this patch)
+
+Proves build/install loop only — **not** character mutation.
+
+1. `dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release`
+2. Confirm DLLs under `Modules/BlacksmithGuild/bin/Win64_Shipping_Client` and `.../Win64_Shipping_wEditor`
+3. **Steam → Play** (mod checked ON)
+4. Disposable campaign → confirm forge-lit log line
+5. On campaign map, test **wired hotkeys only:**
+
+   ```text
+   Ctrl+Alt+D
+   Ctrl+Alt+F
+   Ctrl+Alt+F    (toggle off)
+   Ctrl+Alt+L
+   ```
+
+6. **Do not test `Ctrl+Alt+S`** — reserved for Sprint 002
+7. Check `BlacksmithGuild_Phase1.log`
 
 ---
 

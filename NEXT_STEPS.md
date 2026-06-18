@@ -13,7 +13,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | **Complete** |
 | 3 | **001** | Dev tool safety and repeatability | **Next** |
-| 4 | **002** | Skill-point / progression harness (`RichSmithingProgressionTest`) | Scaffolded |
+| 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
 > **Breadcrumb:** `Ctrl+Alt+S` is reserved for the future smithing/progression dev command (Sprint 002).
@@ -33,7 +33,15 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Save safety | Incremental backup on every `forge.ps1` run; `.\forge.ps1 -VerifySaves` |
 | Legacy saves | Load with **mod OFF** in launcher (confirmed working) |
 
-**Next: Sprint 000A in-game PASS, then Sprint 001 (dev tool safety). Sprint 002 wires `Ctrl+Alt+S`.**
+**Next: Sprint 000A in-game PASS (Tests 2–3), then Sprint 001 (dev tool safety). Sprint 002 wires `Ctrl+Alt+S`.**
+
+### Sprint entry gates (do not skip)
+
+| Sprint | Enter when | Do not start if |
+|--------|------------|-----------------|
+| **001** Dev tool safety | 000B complete; 000A Tests 2–3 PASS in log | Preflight/crash unresolved; still using `LaunchForge` for daily play |
+| **002** Stoke the Apprentice | 001 complete; dev hotkeys reliable under preflight | 000A not certified; trying to add recommendations or forge economy |
+| **003+** Recommendations | 002 PASS in log; progression mutation proven safe | Skill harness not wired or untested |
 
 ---
 
