@@ -15,7 +15,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
 | 3u | **001U / Fix / Debug** | In-game hotkey feedback + trace | **Live certified** (2026-06-18) |
 | 4 | **002** | Progression harness + F7 status | **Live certified** (2026-06-18) |
-| 5 | **003** | Treasury Delta Watch | **MVP shipped** — verify in-game |
+| 5 | **003 / 003B** | Treasury Delta Watch | **003B shipped** — F10 retest for deltas |
 | 6 | **004+** | Recommendation system | Later |
 
 ## Current Dev Status
@@ -26,12 +26,12 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
 | Combat Log | Press **Enter** on campaign map to scroll F7–F11 messages |
 | Sprint 002 progression | **Live certified** (2026-06-18) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
-| Sprint 003 Treasury Watch | **MVP shipped** — verify `BlacksmithGuild_TreasuryWatch.json` + F7 after 2+ days |
+| Sprint 003 Treasury Watch | **003B shipped** — [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md); use **F10** for delta testing |
 | Dev loop | `Forge.cmd` (build only) or **`ForgeAndLaunch.cmd`** (build + launcher on clean PASS) |
 
 ## Current focus
 
-**Sprint 003** — verify Treasury Delta Watch on a disposable campaign (daily ticks, F7 treasury lines, JSON report).
+**Sprint 003** — 003B retest: F10 fast-forward 3–5 days, F7, `TreasurySnapshotNow`, inspect JSON.
 
 > **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 

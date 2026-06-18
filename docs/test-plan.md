@@ -416,27 +416,38 @@ If F-keys are silent but Ctrl+Alt+7–1 work, an open panel is swallowing keys. 
 
 ---
 
-## Sprint 003 Treasury Delta Watch (MVP)
+## Sprint 003 Treasury Delta Watch (003B)
 
-**Status:** **MVP shipped** — verify in-game
+**Status:** **Machinery certified** — 003B hardening shipped; **F10 retest** for deltas
+
+**Evidence:** [docs/sprint-003-live-results.md](sprint-003-live-results.md)
+
+### Important: F9 vs F10
+
+| Key | Use for |
+|-----|---------|
+| **F9** | DailyTick harness (Sprint 001U) — does **not** advance campaign calendar |
+| **F10** | Real in-game days — use for treasury delta testing |
+| **TreasurySnapshotNow** | Manual snapshot via `.\forge.ps1 -Command TreasurySnapshotNow -Wait` |
 
 ### Preconditions
 
-- Disposable campaign, mod ON, `TBG READY`
-- Allow 2+ daily ticks (F9 or natural time advance)
+- Disposable save, mod ON, `TBG READY`
+- Close Bannerlord before `Forge.cmd` to install 003B DLL
 
-### Verify
+### Verify sequence
 
-1. **F7** — expect `TBG TREASURY: watch=active entities=N ...`
-2. Inspect `<Bannerlord>\BlacksmithGuild_TreasuryWatch.json`
-3. Inspect `treasuryWatch` block in `BlacksmithGuild_Status.json`
-4. Phase1.log — `[TBG TREASURY] Snapshot #N ...`
+1. Load disposable save
+2. **F10 ON** → 3–5 in-game days → **F10 OFF**
+3. **F7** — `TBG TREASURY: watch=active gen=N ...`
+4. `.\forge.ps1 -Command TreasurySnapshotNow -Wait`
+5. Inspect `BlacksmithGuild_TreasuryWatch.json` — `snapshotGeneration`, `latestSnapshots[]`
 
 ### PASS criteria
 
-- JSON written after 2+ snapshots
-- F7 shows cached summary only (no live scan)
-- Suspicious/Critical deltas produce `TBG TREASURY:` notices; Observed does not spam
+- `snapshotGeneration` increments; JSON + F7 reflect cached state
+- Zero deltas OK on stable economy if machinery proven
+- Suspicious/Critical notices only when thresholds exceeded
 
 ---
 

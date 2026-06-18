@@ -18,7 +18,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3d | **001U-Fix** | Message timing + visibility (map readiness gate, TBG READY, no auto gold) | **Live certified** (2026-06-18) |
 | 3e | **001U-Debug** | Hotkey polling trace + menu/fallback fixes | **Live certified** (2026-06-18) |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness + F7 status | **Live certified** (2026-06-18) |
-| 5 | **003** | Treasury Delta Watch (evidence system) | **MVP shipped** — verify in-game |
+| 5 | **003** | Treasury Delta Watch (evidence system) | **003B hardened** — machinery certified; F10 retest for deltas |
+| 5b | **003B** | Treasury hardening (defer snapshot, gen, JSON, dev cmd) | **Shipped** — verify with F10 |
 | 6 | **004+** | Recommendation system | Later |
 
 > **Breadcrumb:** `Ctrl+Alt+S` runs `RichSmithingProgressionTest`. **F7** = read-only status verdict card. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
@@ -36,13 +37,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 001 / 001B | **Certified** — `certification.overall: PASS` (6/6) via `-Certify -Wait` |
 | Sprint 001U / Fix / Debug | **Live certified** (2026-06-18) — see [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
 | Sprint 002 | **Live certified** (2026-06-18) — `certification002.overall: PASS` (4/4) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
-| Sprint 003 | **MVP shipped** — Treasury Delta Watch; verify JSON + F7 in-game |
+| Sprint 003 | **003B shipped** — [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md); retest with F10/natural days |
 | Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; **`ForgeAndLaunch.cmd`** on clean PASS opens launcher |
 | In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — message feed (F7–F11), toast (forge), file logs |
 
-**Next: verify Sprint 003 Treasury Delta Watch in-game** — load disposable campaign, advance 2+ days or wait for daily ticks, check `BlacksmithGuild_TreasuryWatch.json` and **F7** treasury lines.
+**Next: 003B retest** — close Bannerlord, `Forge.cmd`, load disposable save, **F10** 3–5 days (not F9 alone), F7 + `TreasurySnapshotNow`, inspect JSON.
 
-**Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. Use **`ForgeAndLaunch.cmd`** to build/install and open the launcher on clean PASS only. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again.
+**Dev loop:** Close Bannerlord, then **`Forge.cmd`**. **`ForgeAndLaunch.cmd`** opens launcher on clean PASS only.
 
 ### Sprint entry gates (do not skip)
 
@@ -87,17 +88,15 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 ---
 
-## Sprint 003: Treasury Delta Watch (**MVP shipped**)
+## Sprint 003: Treasury Delta Watch (**003B shipped**)
 
-**Delivered:**
+**Evidence:** [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md)
 
-- `TreasuryDeltaWatchService` — daily snapshots, delta ledger, Observed/Suspicious/Critical classification
-- `BlacksmithGuild_TreasuryWatch.json` in Bannerlord install root
-- F7 cached summary (`TBG TREASURY: ...`)
-- High-signal notices for Suspicious/Critical only
-- `treasuryWatch` block in `BlacksmithGuild_Status.json`
+**003B delivered:** deferred post-tick snapshots, `snapshotGeneration`, `latestSnapshots[]` in JSON, `TreasurySnapshotNow` inbox command.
 
-**Verify:** disposable campaign → 2+ daily ticks → inspect JSON + F7.
+**Retest:** F10 fast-forward 3–5 days (F9 alone does not advance calendar). `.\forge.ps1 -Command TreasurySnapshotNow -Wait`.
+
+**Next sprint (004):** Forge recommendation data model — gated on 003B retest PASS.
 
 ---
 
@@ -106,10 +105,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 ```text
 Repo: EndeavorEverlasting/BlacksmithGuild
 
-Sprint 002 live-certified. Sprint 003 Treasury MVP shipped.
-Verify: BlacksmithGuild_TreasuryWatch.json + F7 treasury lines after 2+ days.
+Sprint 003B shipped. Retest treasury watch:
+  Close Bannerlord → Forge.cmd → load disposable save
+  F10 ON (3-5 days) → F10 OFF → F7
+  .\forge.ps1 -Command TreasurySnapshotNow -Wait
 
-Dev loop: Forge.cmd (build only) or ForgeAndLaunch.cmd (build + launcher on PASS).
+Evidence: docs/sprint-003-live-results.md
+Then Sprint 004 recommendation model.
 ```
 
 ---
@@ -129,4 +131,4 @@ Dev loop: Forge.cmd (build only) or ForgeAndLaunch.cmd (build + launcher on PASS
 
 ## Stern verdict
 
-**Next action:** Verify Treasury Delta Watch in-game (2+ daily ticks, JSON + F7). Use `ForgeAndLaunch.cmd` for one-step build + launcher on PASS.
+**Next action:** 003B retest with F10 (not F9 alone). Then Sprint 004 recommendation model.
