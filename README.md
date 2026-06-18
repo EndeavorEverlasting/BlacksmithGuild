@@ -32,9 +32,14 @@ Load the module, enter campaign, and run a controlled economy test scenario (`Ri
 
 ```text
 BlacksmithGuild/
+  forge.ps1                 <- one-click build + install (+ optional launcher/log)
   docs/
     sprint-000-bootstrap.md
+    sprint-000a-results.md
     test-plan.md
+  scripts/
+    install-mod.ps1
+    verify-sprint-000a.ps1
   Module/
     BlacksmithGuild/
       SubModule.xml
@@ -65,7 +70,20 @@ BlacksmithGuild/
 - Mount & Blade II: Bannerlord installed (default Steam path below)
 - .NET SDK (for `dotnet build`)
 
-## Build
+## One-click dev workflow
+
+From repo root:
+
+```powershell
+.\forge.ps1 -Launch    # build, install, open launcher
+.\forge.ps1 -Check     # build, install, scan log for [TBG TEST] PASS
+```
+
+**Enable "The Blacksmith Guild" in the launcher** before loading a save.
+
+See [docs/sprint-000a-results.md](docs/sprint-000a-results.md) for acceptance checklist, gaps, and log file locations.
+
+## Build (manual)
 
 ```powershell
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
