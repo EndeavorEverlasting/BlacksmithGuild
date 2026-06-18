@@ -92,6 +92,21 @@ namespace BlacksmithGuild.DevTools
                 case "F11":
                     InGameNotice.Info("TBG F11: Gold test requested.");
                     break;
+                case "Ctrl+Alt+D":
+                    InGameNotice.Info("TBG Ctrl+Alt+D: Daily tick test requested.");
+                    break;
+                case "Ctrl+Alt+F":
+                    InGameNotice.Info("TBG Ctrl+Alt+F: Fast-forward toggle requested.");
+                    break;
+                case "Ctrl+Alt+S":
+                    InGameNotice.Info("TBG Ctrl+Alt+S: Progression test requested.");
+                    break;
+                case "Ctrl+Alt+X":
+                    InGameNotice.Info("TBG Ctrl+Alt+X: Smithing XP test requested.");
+                    break;
+                case "Ctrl+Alt+C":
+                    InGameNotice.Info("TBG Ctrl+Alt+C: Smithing focus test requested.");
+                    break;
             }
         }
 
@@ -133,13 +148,42 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (result == DevCommandResult.Success)
-            {
-                InGameNotice.Success($"TBG: {commandName} Success");
-            }
-            else if (result == DevCommandResult.Failed)
+            NotifyNonHotkeyResult(commandName, result);
+        }
+
+        private static void NotifyNonHotkeyResult(string commandName, DevCommandResult result)
+        {
+            if (result == DevCommandResult.Failed)
             {
                 InGameNotice.Fail($"TBG FAILED: {commandName} — {GetFailReason(commandName)}");
+                return;
+            }
+
+            if (result != DevCommandResult.Success)
+            {
+                return;
+            }
+
+            switch (commandName)
+            {
+                case DevCommandRegistry.AdvanceOneDayCommand:
+                    InGameNotice.Success("TBG: DailyTick fired.");
+                    break;
+                case DevCommandRegistry.ToggleFastForwardCommand:
+                    InGameNotice.Success(
+                        TimeDevTools.IsFastForwardActive
+                            ? "TBG: Fast-forward ON."
+                            : "TBG: Fast-forward OFF."
+                    );
+                    break;
+                case EconomyTestScenarios.RichPlayerEconomyTestName:
+                    InGameNotice.Success(
+                        $"TBG: Gold test PASS, +{EconomyTestScenarios.RichPlayerGoldDelta}."
+                    );
+                    break;
+                default:
+                    DebugLogger.Test($"{commandName} succeeded (file/inbox source).", showInGame: false);
+                    break;
             }
         }
 
@@ -148,28 +192,31 @@ namespace BlacksmithGuild.DevTools
             switch (hotkeyLabel)
             {
                 case "F9":
-                    if (result == DevCommandResult.Success)
-                    {
-                        InGameNotice.Success("TBG F9: DailyTick fired.");
-                    }
-                    else
-                    {
-                        InGameNotice.Fail($"TBG F9 FAILED: {GetFailReason(commandName)}");
-                    }
-                    break;
-
-                case "F10":
+                case "Ctrl+Alt+D":
                     if (result == DevCommandResult.Success)
                     {
                         InGameNotice.Success(
-                            TimeDevTools.IsFastForwardActive
-                                ? "TBG F10: Fast-forward ON."
-                                : "TBG F10: Fast-forward OFF."
+                            hotkeyLabel == "F9"
+                                ? "TBG F9: DailyTick fired."
+                                : "TBG Ctrl+Alt+D: DailyTick fired."
                         );
                     }
                     else
                     {
-                        InGameNotice.Fail($"TBG F10 FAILED: {GetFailReason(commandName)}");
+                        InGameNotice.Fail($"TBG {hotkeyLabel} FAILED: {GetFailReason(commandName)}");
+                    }
+                    break;
+
+                case "F10":
+                case "Ctrl+Alt+F":
+                    if (result == DevCommandResult.Success)
+                    {
+                        var onOff = TimeDevTools.IsFastForwardActive ? "ON." : "OFF.";
+                        InGameNotice.Success($"TBG {hotkeyLabel}: Fast-forward {onOff}");
+                    }
+                    else
+                    {
+                        InGameNotice.Fail($"TBG {hotkeyLabel} FAILED: {GetFailReason(commandName)}");
                     }
                     break;
 
@@ -189,7 +236,7 @@ namespace BlacksmithGuild.DevTools
                 default:
                     if (result == DevCommandResult.Success)
                     {
-                        InGameNotice.Success($"TBG {hotkeyLabel}: {commandName} Success");
+                        InGameNotice.Success($"TBG {hotkeyLabel}: {commandName} completed.");
                     }
                     else if (result == DevCommandResult.Failed)
                     {
@@ -275,9 +322,9 @@ namespace BlacksmithGuild.DevTools
             DebugLogger.Test("Press F7 for status summary (read-only).", showInGame: false);
 
             InGameNotice.Info("TBG COMMANDS");
-            InGameNotice.Info("F7 Status | F8 Commands | F9 Daily tick test");
-            InGameNotice.Info("F10 Fast-forward ON/OFF | F11 Gold test");
-            InGameNotice.Info("Ctrl+Alt+D/F/L/S/X/C legacy commands");
+            InGameNotice.Info("F7 Status | F8 Commands");
+            InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
+            InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
         }
     }
 }

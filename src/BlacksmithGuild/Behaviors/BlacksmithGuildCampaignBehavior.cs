@@ -5,6 +5,7 @@ namespace BlacksmithGuild.Behaviors
 {
     public sealed class BlacksmithGuildCampaignBehavior : CampaignBehaviorBase
     {
+        private static bool _hasAnnouncedCampaignMapReady;
         private bool _hasRunGoldTest;
         private bool _loggedGoldTestBlock;
 
@@ -23,8 +24,19 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            if (!GameReadinessService.IsMainHeroReady)
+            GameSessionState.Refresh();
+
+            if (!GameSessionState.IsCampaignMapReady)
             {
+                if (!_loggedGoldTestBlock)
+                {
+                    _loggedGoldTestBlock = true;
+                    DebugLogger.Test(
+                        $"DailyTick gold test blocked: campaign map not ready ({GameSessionState.GetCampaignMapBlockDetail()})",
+                        showInGame: false
+                    );
+                }
+
                 return;
             }
 
@@ -56,6 +68,14 @@ namespace BlacksmithGuild.Behaviors
             }
 
             GameSessionState.Refresh();
+
+            if (!_hasAnnouncedCampaignMapReady && GameSessionState.IsCampaignMapReady)
+            {
+                _hasAnnouncedCampaignMapReady = true;
+                InGameNotice.Ready("campaign map ready. Press F8 for commands.");
+                DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
+            }
+
             if (GameSessionState.CanPollHotkeys)
             {
                 DevHotkeyHandler.Poll();

@@ -7,7 +7,7 @@ Use these three layers while developing on a **disposable campaign** (mod ON).
 | Goal | Do this |
 |------|---------|
 | Mod loaded? | **Enter** on campaign map → look for `The forge is lit` |
-| Shortcut fired? | **Enter** → `TBG F9:` / `TBG F10:` / `TBG F11:` or `TBG … BLOCKED:` in the **lower-left message feed** |
+| Shortcut fired? | Wait for `TBG READY: campaign map ready. Press F8 for commands.` then **Enter** → `TBG F9:` / `TBG F10:` / `TBG F11:` or `TBG … BLOCKED:` in the **lower-left message feed** |
 | Cert / session summary? | **F7** → `TBG STATUS:` lines in the message feed |
 | New build while game open? | Build may succeed but Client DLL install can be **blocked** (file locked). In-game: `TBG RELOAD: … close Bannerlord …`; **F7** shows `reload=blocked`. After successful install: `reload=pending` — restart Bannerlord |
 | List dev commands? | **F8** |
@@ -22,7 +22,7 @@ The Blacksmith Guild uses three separate channels. Do not confuse them.
 
 | Channel | Mechanism | Where it appears | Used for |
 |---------|-----------|------------------|----------|
-| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left / bottom-left game log (press **Enter** on campaign map to scroll) | F7–F11 shortcut ack, results, block reasons, compact status |
+| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left / bottom-left game log (press **Enter** on campaign map to scroll). Colored where supported (green success, yellow blocked/warn, red fail). | F7–F11 shortcut ack, `TBG READY`, results, block reasons, compact status |
 | **Windows toast** | PowerShell after forge install | Windows notification area (usually bottom-right) | Build/install/reload reminders when Bannerlord is running |
 | **File logs** | Append to disk | `<Bannerlord>\BlacksmithGuild_Phase1.log`, `BlacksmithGuild_Forge.log` | Full diagnostics, certification evidence |
 
@@ -34,7 +34,15 @@ The Blacksmith Guild uses three separate channels. Do not confuse them.
 
 Shortcut feedback is displayed through Bannerlord's normal in-game message feed (`InformationManager.DisplayMessage`). In the game UI this is the **lower-left / bottom-left message log area** — press **Enter** on the campaign map to open and scroll.
 
-Windows toast notifications are separate (forge install scripts) and may appear in the Windows notification area, usually bottom-right.
+During intro/cinematic or other non-map states, Bannerlord may render the feed differently or less prominently. **Do not certify hotkeys until** you see:
+
+```text
+TBG READY: campaign map ready. Press F8 for commands.
+```
+
+Gold test does **not** auto-run on DailyTick by default — use **F11** manually after the ready message.
+
+Windows toast notifications are separate (forge install scripts) and may appear in the Windows notification area, usually bottom-right. Toast is **not** used for shortcut feedback.
 
 Full diagnostic detail remains in:
 
@@ -46,12 +54,12 @@ Full diagnostic detail remains in:
 | Key | Expected visible messages |
 |-----|---------------------------|
 | **F7** | `TBG STATUS: v… session=… devTools=… reload=clear\|pending\|blocked`; preflight + last command; optional cert line |
-| **F8** | `TBG COMMANDS` + compact F7–F11 / Ctrl+Alt list |
+| **F8** | `TBG COMMANDS` + `F7 Status \| F8 Commands` + `F9 Daily tick \| F10 Fast-forward \| F11 Gold test` + feed hint |
 | **F9** | `TBG F9: Daily tick test requested.` → `TBG F9: DailyTick fired.` or `TBG F9 BLOCKED:` / `TBG F9 FAILED:` |
 | **F10** | `TBG F10: Fast-forward ON.` / `OFF.` or `TBG F10 BLOCKED:` / `FAILED:` |
 | **F11** | `TBG F11: Gold test requested.` → `TBG F11: Gold test PASS, +100000.` or `BLOCKED` / `FAILED` |
 
-If a risky command is blocked, the block reason appears in-game (e.g. `TBG F9 BLOCKED: campaign not ready`) and in the file log.
+If a risky command is blocked before the campaign map is stable, the block reason appears in-game (e.g. `TBG F11 BLOCKED: campaign map not ready.`) and in the file log with additional detail.
 
 ---
 
@@ -68,6 +76,7 @@ If a risky command is blocked, the block reason appears in-game (e.g. `TBG F9 BL
 Via `GuildLog` / `InGameNotice` → `InformationManager.DisplayMessage`:
 
 - `[The Blacksmith Guild] Mod loaded. The forge is lit.`
+- **`TBG READY: campaign map ready. Press F8 for commands.`** (once per session, after stable map)
 - Fake forge advisor lines on daily tick
 - **F7–F11** shortcut feedback (`TBG STATUS:`, `TBG COMMANDS`, `TBG F9:`, etc.)
 - **`TBG RELOAD: …`** when a newer build exists:

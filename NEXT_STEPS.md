@@ -15,6 +15,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 3 | **001** | Dev command harness (visible, repeatable, safe) | **Certified** (2026-06-18) |
 | 3b | **001B** | Focus-aware inbox poll, explicit certification status, `-Certify -Wait` | **Certified** (2026-06-18) |
 | 3c | **001U** | In-game command feedback + message-channel clarity (F7–F11 visible) | **Complete** |
+| 3d | **001U-Fix** | Message timing + visibility (map readiness gate, TBG READY, no auto gold) | **Complete** |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness + F7 status | **Code complete — certify in-game** |
 | 5 | **003** | Treasury Delta Watch (evidence system) | Planned — see `docs/treasury-delta-watch-*.md` |
 | 6 | **004+** | Recommendation system | Later |
@@ -37,7 +38,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; watch mode can build while game is open |
 | In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — message feed (F7–F11), toast (forge), file logs |
 
-**Next: Retest F7–F11 on disposable campaign (messages in lower-left feed). Then certify Sprint 002: `.\forge.ps1 -CertifyProgression -Wait`.**
+**Next: Live retest Sprint 001U-Fix on disposable campaign (wait for `TBG READY`, then F7–F11). Then certify Sprint 002: `.\forge.ps1 -CertifyProgression -Wait`.**
 
 **Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again. Watch for `TBG RELOAD` / **F7** `reload=blocked` or `reload=pending`.
 

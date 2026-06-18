@@ -21,7 +21,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 **Sprint 002** — certify progression harness on a disposable campaign (`-CertifyProgression -Wait`, `Ctrl+Alt+S`, **F7** status).
 
-> **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), Windows toast (forge install), file logs. **Not** the cheat console for shortcuts.
+> **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 
 ## Two environments: IDE vs game
 
@@ -51,7 +51,11 @@ Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys an
 | Ctrl+Alt+X | `AddSmithingXp` | Add smithing XP only |
 | Ctrl+Alt+C | `AddSmithingFocus` | Add smithing focus only |
 
-Press **Enter** on the campaign map to scroll the notice log after F7/F8. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
+Press **Enter** on the campaign map to scroll the notice log after F7/F8. Wait for **`TBG READY: campaign map ready. Press F8 for commands.`** before certifying F9–F11. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
+
+Risky commands (F9–F11, Ctrl+Alt mutations) are blocked until the campaign map is stable (`MapState`, no active mission). Blocked output: `TBG <key> BLOCKED: campaign map not ready.`
+
+Gold test is **manual F11 only** — auto-run on DailyTick is disabled by default.
 
 ### Legacy hotkeys (fallback)
 
@@ -61,7 +65,7 @@ Press **Enter** on the campaign map to scroll the notice log after F7/F8. See [d
 | Ctrl+Alt+D | `AdvanceOneDay` |
 | Ctrl+Alt+F | `ToggleFastForward` |
 
-Each hotkey shows visible in-game feedback in the **message feed** (lower-left log) via `InGameNotice` — request/result/block lines per key. File inbox commands log `TBG: {command} Success` or `TBG FAILED:` when run without a hotkey label.
+Each hotkey shows visible in-game feedback in the **message feed** (lower-left log) via `InGameNotice` — request/result/block lines per key. File inbox commands use explicit result lines (e.g. `TBG: Gold test PASS, +100000.`) or file-only detail for non-user-facing commands.
 
 ### File-based command inbox (primary certification path)
 

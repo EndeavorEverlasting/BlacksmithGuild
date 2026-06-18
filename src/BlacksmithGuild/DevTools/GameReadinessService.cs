@@ -69,7 +69,19 @@ namespace BlacksmithGuild.DevTools
 
         public static bool CanRunRiskyCommands(out string reason)
         {
+            GameSessionState.Refresh();
             RunPreflightWhenReady();
+
+            if (!GameSessionState.IsCampaignMapReady)
+            {
+                var detail = GameSessionState.GetCampaignMapBlockDetail();
+                DebugLogger.Test(
+                    $"Risky command blocked: campaign map not ready ({detail})",
+                    showInGame: false
+                );
+                reason = "campaign map not ready.";
+                return false;
+            }
 
             if (!IsCampaignReady)
             {

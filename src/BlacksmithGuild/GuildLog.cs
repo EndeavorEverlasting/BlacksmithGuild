@@ -9,13 +9,20 @@ namespace BlacksmithGuild
         private static readonly string LogPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_Phase1.log");
 
-        public static void Display(string message, bool showInGame = true)
+        public static void Display(string message, bool showInGame = true, Color? color = null)
         {
             WriteToFile(message);
 
             if (showInGame)
             {
-                InformationManager.DisplayMessage(new InformationMessage(message));
+                if (color.HasValue)
+                {
+                    InformationManager.DisplayMessage(new InformationMessage(message, color.Value));
+                }
+                else
+                {
+                    InformationManager.DisplayMessage(new InformationMessage(message));
+                }
             }
         }
 
