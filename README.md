@@ -17,6 +17,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 4 | **002** | Progression harness + F7 status | **Live certified** (2026-06-18) |
 | 5 | **003 / 003B** | Treasury Delta Watch | **PARTIAL PASS** (2026-06-18) |
 | 6 | **003C** | Quick Forge Start (dev save + auto sandbox character) | **Shipped** |
+| 6 | **003C** | QuickStart + dev save auto-load + Forge launcher | **Shipped** — live cert pending |
 | 7 | **004A** | Report formatting / readable log surfaces | **Shipped** |
 | 8 | **004B** | Stub recommendation model (`RankForgeCandidates`) | **LIVE CERT PASS** (2026-06-18) |
 | 9 | **005A** | Candidate source boundary + real scaffold + stub fallback | **Shipped** |
@@ -32,6 +33,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 004A report formatting | **Shipped** — structured F7 / Treasury / cert blocks |
 | Sprint 004B stub recommendations | **LIVE CERT PASS** (2026-06-18) — [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md) |
 | Sprint 005C recipe probe | **Shipped** — [docs/sprint-005c-live-results.md](docs/sprint-005c-live-results.md) |
+| Sprint 003C QuickStart fix | **Shipped** — live cert pending — [docs/sprint-003c-live-results.md](docs/sprint-003c-live-results.md) |
 | Sprint 005D real candidates | **Shipped** — live cert pending — [docs/sprint-005d-live-results.md](docs/sprint-005d-live-results.md) |
 | Sprint 005A source boundary | **Shipped** — `IForgeCandidateSource`, real scaffold, stub fallback |
 | Sprint 005B doctrine commands | **Shipped** — `SetForgeDoctrine*` via file inbox |
@@ -44,15 +46,11 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 ## Current focus
 
-**Live cert Sprint 005D** — close game, `Forge.cmd`, load dev save → `SetForgeCandidateSourceReal` + `RankForgeCandidates` → F7 — [docs/sprint-005d-live-results.md](docs/sprint-005d-live-results.md).
+**One live cert session** — close game → `Forge.cmd` → **Continue** → 005D real rank + stub regression — [docs/sprint-005d-live-results.md](docs/sprint-005d-live-results.md) · QuickStart — [docs/sprint-003c-live-results.md](docs/sprint-003c-live-results.md).
 
-**Optional follow-ups** — 005A/005B inbox commands; strict 003B F10 multi-day + `TreasurySnapshotNow`.
+**Next dev sprint:** 005E — crafting orders + inventory in economics.
 
-**Daily dev** — load **`BlacksmithGuild_DevStart.sav`** (~30s to map). See [docs/dev-disposable-save.md](docs/dev-disposable-save.md).
-
-**Sprint 005E** — crafting orders + inventory in economics; doctrine tuning on real candidates.
-
-**Backlog** — QuickStart automation fix, player-facing forge UI (006).
+**Backlog:** F10 safety guards, strict 003B, player forge UI (006).
 
 > **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 

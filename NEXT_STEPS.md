@@ -1,6 +1,6 @@
 # Next Steps
 
-Math before hammer. Real recipes before UI. Cert before polish.
+Math before hammer. Real recipes before UI. One live cert session closes 003C + 005D.
 
 ---
 
@@ -8,13 +8,11 @@ Math before hammer. Real recipes before UI. Cert before polish.
 
 | Order | Sprint | Status |
 |-------|--------|--------|
-| 004A | Report formatting | **Shipped** |
-| 004B | Stub recommendations | **LIVE CERT PASS** (2026-06-18) |
-| 005A | Source boundary + real scaffold | **Shipped** |
-| 005B | Doctrine dev commands | **Shipped** |
-| 005C | Recipe API recon (read-only) | **Shipped** |
-| **005D** | **Real candidate mapping + economics** | **Shipped** — live cert after rebuild |
-| 005E+ | Orders, inventory, doctrine tuning on real set | **Next** |
+| 003C | QuickStart + dev save auto-load + Forge launcher | **Shipped** (`cf257a9`) — live cert pending |
+| 005D | Real candidate mapping + economics | **Shipped** (`36f309b`) — live cert pending |
+| **005E** | Orders, inventory, doctrine tuning on real set | **Next** |
+
+Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
 
 ---
 
@@ -22,37 +20,39 @@ Math before hammer. Real recipes before UI. Cert before polish.
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` |
+| Branch | `main` @ `cf257a9` |
 | Version | `v0.0.7` |
-| Published | push to `origin/main` after 005D live cert |
+| Working tree | **Clean** |
+| Remote | `origin/main` up to date |
+| Open PRs | None |
 
 ---
 
-## Next actions (user — in game)
-
-1. **Live cert 005D** — close game, `Forge.cmd`, load dev save → [docs/sprint-005d-live-results.md](docs/sprint-005d-live-results.md)
-2. **Optional 005A/005B inbox** — [docs/sprint-005-live-results.md](docs/sprint-005-live-results.md)
-3. **Optional strict 003B** — F10 3–5 days + `TreasurySnapshotNow` — [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md)
-
-Minimal dev entry (once per build):
+## Next actions (user — one session closes both live certs)
 
 ```text
-Close game → Forge.cmd → Load dev save → TBG READY
+Close Bannerlord → Forge.cmd → Continue (or Play → SandBox if no dev save)
+→ TBG READY
 .\forge.ps1 -Command SetForgeCandidateSourceReal -Wait
 .\forge.ps1 -Command RankForgeCandidates -Wait
-# F7 — real weapon names, source=real, fallbackUsed=false
+→ F7: source=real, fallbackUsed=false, real.template.* IDs
+.\forge.ps1 -Command SetForgeCandidateSourceStub -Wait
+.\forge.ps1 -Command RankForgeCandidates -Wait
+→ F7: Long Warblade 11250
 ```
+
+Docs: [sprint-003c-live-results.md](docs/sprint-003c-live-results.md) · [sprint-005d-live-results.md](docs/sprint-005d-live-results.md)
 
 ---
 
-## Next actions (dev — after 005D live cert)
+## Next actions (dev — after live cert)
 
-**Sprint 005E:** crafting orders + hero inventory in economics; doctrine affects real candidates; tune rank quality.
+**Sprint 005E:** crafting orders + hero inventory in economics; doctrine tuning on real candidates.
 
-**Backlog:** QuickStart automation fix, strict F10/003B, player-facing forge UI (006).
+**Backlog:** F10 safety guards, strict 003B F10 multi-day, player forge UI (006).
 
 ---
 
 ## Stern verdict
 
-Stub oracle (Long Warblade 11250) remains the regression baseline. Real source must produce ranked output with `fallbackUsed=false` before removing stub fallback.
+Stub oracle (Long Warblade 11250) remains regression baseline. Real source must cert with `fallbackUsed=false` before removing stub fallback.

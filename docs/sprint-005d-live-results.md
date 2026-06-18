@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Code shipped** — live cert pending after `Forge.cmd` rebuild + in-game rank run
+**Code shipped** (`36f309b` + QuickStart `cf257a9`) — live cert pending after game restart + rank run
 
 ## Scope
 
@@ -20,8 +20,8 @@ Map `CraftingTemplate.All` into ranked `ForgeCandidate` entries with read-only e
 
 ## Live cert protocol
 
-1. Close Bannerlord → `Forge.cmd`
-2. Load `BlacksmithGuild_DevStart.sav` → `TBG READY`
+1. Close Bannerlord → **`Forge.cmd`** (build + install + launcher)
+2. **Continue** (dev save pinned) or **Play → SandBox** (auto-load / auto-character) → `TBG READY`
 3. Run:
 
 ```powershell
@@ -85,7 +85,7 @@ Key JSON fields (`BlacksmithGuild_ForgeRecommendations.json`):
 | **Crafting orders** | Order prices not folded into economics (005E) |
 | **Doctrine on real set** | Doctrine scoring works; real-candidate tuning deferred to 005E |
 | **Template cap** | Mapper capped at 100 templates for perf |
-| **QuickStart / F10 / 003B** | Backlog — load dev save manually |
+| **QuickStart** | **Shipped** (`cf257a9`) — live cert pending — [docs/sprint-003c-live-results.md](docs/sprint-003c-live-results.md) |
 | **005A/005B inbox cert** | Optional |
 
 ## Risks
