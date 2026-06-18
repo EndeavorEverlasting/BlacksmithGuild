@@ -25,6 +25,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _setupComplete;
         private static bool _loggedWaiting;
         private static bool _loggedQuickStartNotice;
+        private static bool _bootstrapUsed;
+        private static bool _devSaveLoadUsed;
+        private static string _devSaveName;
 
         public static SetupPhase Phase => _phase;
 
@@ -42,6 +45,39 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _setupComplete = false;
             _loggedWaiting = false;
             _loggedQuickStartNotice = false;
+            _bootstrapUsed = false;
+            _devSaveLoadUsed = false;
+            _devSaveName = null;
+        }
+
+        public static void MarkSandboxBootstrapStarted()
+        {
+            _bootstrapUsed = true;
+            MarkSandboxSetupStarted();
+        }
+
+        public static void MarkDevSaveLoadStarted(string saveName)
+        {
+            _devSaveLoadUsed = true;
+            _devSaveName = saveName;
+            _setupComplete = false;
+            _phase = SetupPhase.MapTransition;
+            _subStage = saveName;
+            GuildLog.Info($"[TBG QUICKSTART] dev save load started: {saveName}", showInGame: false);
+        }
+
+        public static void MarkDevSaveLoadIfApplicable()
+        {
+            if (!DevToolsConfig.AutoLoadDevSave)
+            {
+                return;
+            }
+
+            if (DevSaveResolver.TryGetLatest(out var saveInfo) && saveInfo?.Name != null)
+            {
+                _devSaveLoadUsed = true;
+                _devSaveName = saveInfo.Name;
+            }
         }
 
         public static void Poll()
@@ -224,10 +260,22 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             GuildLog.Info("[TBG QUICKSTART] setup complete; handing off to map readiness gate.", showInGame: false);
 
-            if (!_loggedQuickStartNotice)
+            if (_loggedQuickStartNotice)
             {
-                _loggedQuickStartNotice = true;
-                GuildLog.Display("TBG QUICKSTART: default character applied.");
+                return;
+            }
+
+            _loggedQuickStartNotice = true;
+
+            if (_devSaveLoadUsed)
+            {
+                GuildLog.Display($"TBG DEVSAVE: map ready ({_devSaveName ?? "dev save"}).");
+                return;
+            }
+
+            if (_bootstrapUsed)
+            {
+                GuildLog.Display("TBG QUICKSTART: sandbox character auto-applied.");
             }
         }
 

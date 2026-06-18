@@ -19,19 +19,19 @@ The repo does **not** commit `.sav` binaries — only this Documents path is doc
 ## Daily dev loop (preferred)
 
 ```text
-Forge.cmd → launcher → Load BlacksmithGuild_DevStart.sav → TBG READY → F7 / F10 / cert
+Forge.cmd → launcher opens → Play or Continue → map ready (auto dev save or auto character)
 ```
 
 | Step | Action |
 |------|--------|
 | 1 | Close Bannerlord if open |
-| 2 | Double-click **`Forge.cmd`** (or `Ctrl+Shift+B` in Cursor) |
-| 3 | Steam → Play → **The Blacksmith Guild** checked |
-| 4 | **Load** → `BlacksmithGuild_DevStart.sav` |
-| 5 | Wait for `TBG READY: campaign map ready. Press F8 for commands.` |
-| 6 | Run dev tests (F7, F10, inbox cert, etc.) |
+| 2 | Double-click **`Forge.cmd`** (build + install + launcher) |
+| 3 | **Continue** — loads `BlacksmithGuild_DevStart*.sav` (pinned as most recent by Forge) |
+| 4 | **Play → SandBox** — auto-loads dev save if present; otherwise auto-skips character creation |
+| 5 | Wait for `TBG READY` or `TBG DEVSAVE: map ready` |
+| 6 | Run dev tests (F7, inbox cert, etc.) |
 
-**PASS target:** map ready in under ~30 seconds, zero character-creation screens.
+**PASS target:** map ready in under ~60s, zero manual character-creation clicks when dev save missing.
 
 ## Mod checkbox rules
 

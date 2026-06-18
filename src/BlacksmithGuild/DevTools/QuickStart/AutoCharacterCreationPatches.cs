@@ -16,30 +16,88 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static bool TryApply()
         {
-            if (!DevToolsConfig.AutoSkipCharacterCreation || _applied)
+            if (!DevToolsConfig.AutoSkipCharacterCreation && !DevToolsConfig.AutoLoadDevSave)
             {
-                return _applied;
+                return false;
+            }
+
+            if (_applied)
+            {
+                return true;
+            }
+
+            _harmony = new Harmony(HarmonyId);
+            SkipIntroVideoIfConfigured();
+
+            var onLoadFinishedOk = TryApplySandBoxOnLoadFinishedPatch();
+            var managerNextStageOk = TryApplyManagerNextStagePatch();
+            var startNewGameOk = DevToolsConfig.AutoLoadDevSave && DevSaveAutoLoader.TryApplyStartNewGamePatch(_harmony);
+
+            _applied = onLoadFinishedOk || managerNextStageOk || startNewGameOk;
+            if (_applied)
+            {
+                CampaignSetupStateTracker.ResetForNewSession();
+            }
+
+            GuildLog.Info(
+                $"[TBG QUICKSTART] patches: OnLoadFinished={(onLoadFinishedOk ? "OK" : "SKIP")} " +
+                $"NextStage={(managerNextStageOk ? "OK" : "SKIP")} " +
+                $"StartNewGame={(startNewGameOk ? "OK" : "SKIP")} " +
+                $"characterApi={(CharacterCreationReflection.IsAvailable ? "OK" : "SKIP")}",
+                showInGame: false);
+
+            if (_applied && (CharacterCreationReflection.IsAvailable || DevToolsConfig.AutoLoadDevSave))
+            {
+                GuildLog.Info("[TBG QUICKSTART] Character creation automation enabled.", showInGame: false);
+            }
+
+            return _applied;
+        }
+
+        private static bool TryApplySandBoxOnLoadFinishedPatch()
+        {
+            if (!DevToolsConfig.AutoSkipCharacterCreation)
+            {
+                return false;
             }
 
             try
             {
-                if (!CharacterCreationReflection.IsAvailable)
-                {
-                    GuildLog.Info("[TBG QUICKSTART] CharacterCreationState API not found — intro skip only.", showInGame: false);
-                }
-
-                _harmony = new Harmony(HarmonyId);
-                ApplySandBoxGameManagerPatch();
-                ApplyCharacterCreationStatePatch();
-                SkipIntroVideoIfConfigured();
-                _applied = true;
-                CampaignSetupStateTracker.ResetForNewSession();
-                GuildLog.Info("[TBG QUICKSTART] Character creation automation enabled.", showInGame: false);
+                var target = AccessTools.DeclaredMethod(typeof(SandBoxGameManager), "OnLoadFinished");
+                var prefix = AccessTools.Method(typeof(AutoCharacterCreationPatches), nameof(OnLoadFinishedPrefix));
+                _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
                 return true;
             }
             catch (Exception ex)
             {
-                GuildLog.Info($"[TBG QUICKSTART] patch apply failed: {ex.Message}", showInGame: false);
+                GuildLog.Info($"[TBG QUICKSTART] OnLoadFinished patch failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        private static bool TryApplyManagerNextStagePatch()
+        {
+            if (!DevToolsConfig.AutoSkipCharacterCreation)
+            {
+                return false;
+            }
+
+            try
+            {
+                var managerType = AccessTools.TypeByName("TaleWorlds.CampaignSystem.CharacterCreationContent.CharacterCreationManager");
+                var target = managerType == null ? null : AccessTools.Method(managerType, "NextStage");
+                if (target == null)
+                {
+                    return false;
+                }
+
+                var postfix = AccessTools.Method(typeof(AutoCharacterCreationPatches), nameof(ManagerNextStagePostfix));
+                _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] CharacterCreationManager.NextStage patch failed: {ex.Message}", showInGame: false);
                 return false;
             }
         }
@@ -62,29 +120,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
-        private static void ApplySandBoxGameManagerPatch()
-        {
-            var target = AccessTools.Method(typeof(SandBoxGameManager), "OnLoadFinished");
-            var prefix = AccessTools.Method(typeof(AutoCharacterCreationPatches), nameof(OnLoadFinishedPrefix));
-            _harmony.Patch(target, prefix: new HarmonyMethod(prefix));
-        }
-
-        private static void ApplyCharacterCreationStatePatch()
-        {
-            var stateType = CharacterCreationReflection.StateType;
-            if (stateType == null)
-            {
-                return;
-            }
-
-            var target = AccessTools.DeclaredMethod(stateType, "NextStage");
-            var postfix = AccessTools.Method(typeof(AutoCharacterCreationPatches), nameof(NextStagePostfix));
-            _harmony.Patch(target, postfix: new HarmonyMethod(postfix));
-        }
-
         private static bool OnLoadFinishedPrefix(SandBoxGameManager __instance)
         {
-            if (!DevToolsConfig.AutoSkipCharacterCreation || !CharacterCreationReflection.IsAvailable)
+            if (!DevToolsConfig.AutoSkipCharacterCreation)
             {
                 return true;
             }
@@ -97,12 +135,18 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
                 if (isSaveGame)
                 {
+                    CampaignSetupStateTracker.MarkDevSaveLoadIfApplicable();
                     return true;
                 }
 
                 if (IsStoryModeGameManager(__instance))
                 {
                     CampaignSetupStateTracker.MarkStoryModeBlocked();
+                    return true;
+                }
+
+                if (!CharacterCreationReflection.IsAvailable)
+                {
                     return true;
                 }
 
@@ -143,9 +187,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     GuildLog.Info("[TBG QUICKSTART] could not create character creation state — vanilla path.", showInGame: false);
                     return true;
                 }
+
                 Game.Current.GameStateManager.CleanAndPushState((GameState)gameState, 0);
 
-                CampaignSetupStateTracker.MarkSandboxSetupStarted();
+                CampaignSetupStateTracker.MarkSandboxBootstrapStarted();
                 CampaignSetupStateTracker.OnCharacterCreationStage(gameState);
 
                 GuildLog.Info("[TBG QUICKSTART] Character creation skipped — auto-advancing.", showInGame: false);
@@ -158,20 +203,26 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
-        private static void NextStagePostfix(object __instance)
+        private static void ManagerNextStagePostfix(object __instance)
         {
             if (!DevToolsConfig.AutoSkipCharacterCreation)
             {
                 return;
             }
 
-            if (CharacterCreationReflection.IsStoryModeContent(__instance))
+            var state = GameStateManager.Current?.ActiveState;
+            if (state == null)
+            {
+                return;
+            }
+
+            if (CharacterCreationReflection.IsStoryModeContent(state))
             {
                 CampaignSetupStateTracker.MarkStoryModeBlocked();
                 return;
             }
 
-            CampaignSetupStateTracker.OnCharacterCreationStage(__instance);
+            CampaignSetupStateTracker.OnCharacterCreationStage(state);
         }
 
         private static object CreateSandboxCharacterCreationContent()

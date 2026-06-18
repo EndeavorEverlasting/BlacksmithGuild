@@ -39,7 +39,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Combat Log | Press **Enter** on campaign map to scroll F7–F11 messages |
 | Sprint 002 progression | **Live certified** (2026-06-18) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
 | Sprint 003 Treasury Watch | **003B shipped** — [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md); use **F10** for delta testing |
-| Dev loop | `Forge.cmd` (build only) or **`ForgeAndLaunch.cmd`** (build + launcher on clean PASS) |
+| Dev loop | `Forge.cmd` (build + install + launcher) or **`ForgeAndLaunch.cmd`** (launch only on clean PASS) |
 | Quick start | Load **`BlacksmithGuild_DevStart.sav`** — see [docs/dev-disposable-save.md](docs/dev-disposable-save.md) |
 
 ## Current focus

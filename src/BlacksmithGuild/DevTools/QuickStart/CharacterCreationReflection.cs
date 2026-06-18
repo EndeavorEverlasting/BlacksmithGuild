@@ -11,21 +11,29 @@ namespace BlacksmithGuild.DevTools.QuickStart
     internal static class CharacterCreationReflection
     {
         private static Type _stateType;
+        private static Type _managerType;
+        private static PropertyInfo _managerProperty;
         private static MethodInfo _nextStageMethod;
         private static PropertyInfo _currentStageProperty;
-        private static PropertyInfo _characterCreationProperty;
         private static PropertyInfo _characterCreationContentProperty;
         private static PropertyInfo _characterCreationMenuCountProperty;
         private static MethodInfo _getCurrentMenuOptionsMethod;
         private static MethodInfo _runConsequenceMethod;
+        private static bool _probeLogged;
 
-        public static Type StateType => EnsureStateType();
+        public static Type StateType => EnsureBindings();
 
-        public static bool IsAvailable => EnsureStateType() != null && _nextStageMethod != null;
+        public static bool IsAvailable => EnsureBindings() != null && _managerType != null && _nextStageMethod != null;
+
+        public static object GetManager(object state)
+        {
+            return _managerProperty?.GetValue(state);
+        }
 
         public static object GetCurrentStage(object state)
         {
-            return _currentStageProperty?.GetValue(state);
+            var manager = GetManager(state);
+            return manager == null ? null : _currentStageProperty?.GetValue(manager);
         }
 
         public static string GetCurrentStageName(object state)
@@ -35,17 +43,19 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static void NextStage(object state)
         {
-            _nextStageMethod?.Invoke(state, null);
+            var manager = GetManager(state);
+            _nextStageMethod?.Invoke(manager, null);
         }
 
         public static object GetCharacterCreation(object state)
         {
-            return _characterCreationProperty?.GetValue(state);
+            return GetManager(state);
         }
 
         public static object GetCharacterCreationContent(object state)
         {
-            return _characterCreationContentProperty?.GetValue(state);
+            var manager = GetManager(state);
+            return manager == null ? null : _characterCreationContentProperty?.GetValue(manager);
         }
 
         public static void SkipCultureStage(object state)
@@ -75,16 +85,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static void SkipNarrativeStage(object state)
         {
-            var charCreation = GetCharacterCreation(state);
-            if (charCreation == null)
+            var manager = GetCharacterCreation(state);
+            if (manager == null)
             {
                 return;
             }
 
-            var menuCount = (int)(_characterCreationMenuCountProperty?.GetValue(charCreation) ?? 0);
+            var menuCount = (int)(_characterCreationMenuCountProperty?.GetValue(manager) ?? 0);
             for (var i = 0; i < menuCount; i++)
             {
-                var options = _getCurrentMenuOptionsMethod?.Invoke(charCreation, new object[] { i }) as System.Collections.IList;
+                var options = _getCurrentMenuOptionsMethod?.Invoke(manager, new object[] { i }) as System.Collections.IList;
                 if (options == null || options.Count == 0)
                 {
                     continue;
@@ -114,9 +124,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 }
 
                 selected ??= options[0];
-                if (selected != null)
+                if (selected != null && _runConsequenceMethod != null)
                 {
-                    _runConsequenceMethod?.Invoke(charCreation, new[] { selected, i, (object)false });
+                    _runConsequenceMethod.Invoke(manager, new[] { selected, i, (object)false });
                 }
             }
 
@@ -137,7 +147,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
-        private static Type EnsureStateType()
+        private static Type EnsureBindings()
         {
             if (_stateType != null)
             {
@@ -149,32 +159,44 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             if (_stateType == null)
             {
+                LogProbe("state=missing manager=missing nextStage=missing");
                 return null;
             }
 
-            _nextStageMethod = AccessTools.DeclaredMethod(_stateType, "NextStage");
-            _currentStageProperty = AccessTools.Property(_stateType, "CurrentStage");
-            _characterCreationProperty = AccessTools.Property(_stateType, "CharacterCreation");
-            _characterCreationContentProperty = AccessTools.Property(_stateType, "CharacterCreationContent");
+            _managerProperty = AccessTools.Property(_stateType, "CharacterCreationManager");
+            _managerType = _managerProperty?.PropertyType
+                ?? AccessTools.TypeByName("TaleWorlds.CampaignSystem.CharacterCreationContent.CharacterCreationManager");
 
-            var charCreationType = _characterCreationProperty?.PropertyType;
-            if (charCreationType != null)
+            if (_managerType == null)
             {
-                _characterCreationMenuCountProperty = AccessTools.Property(charCreationType, "CharacterCreationMenuCount");
-                _getCurrentMenuOptionsMethod = AccessTools.Method(charCreationType, "GetCurrentMenuOptions", new[] { typeof(int) });
-                _runConsequenceMethod = AccessTools.Method(
-                    charCreationType,
-                    "RunConsequence",
-                    new[] { charCreationType.Assembly.GetType("TaleWorlds.CampaignSystem.CharacterCreationContent.CharacterCreationOption"), typeof(int), typeof(bool) }
-                );
-
-                if (_runConsequenceMethod == null)
-                {
-                    _runConsequenceMethod = AccessTools.Method(charCreationType, "RunConsequence");
-                }
+                LogProbe("state=found manager=missing nextStage=missing");
+                return _stateType;
             }
 
+            _nextStageMethod = AccessTools.Method(_managerType, "NextStage");
+            _currentStageProperty = AccessTools.Property(_managerType, "CurrentStage");
+            _characterCreationContentProperty = AccessTools.Property(_managerType, "CharacterCreationContent");
+            _characterCreationMenuCountProperty = AccessTools.Property(_managerType, "CharacterCreationMenuCount");
+            _getCurrentMenuOptionsMethod = AccessTools.Method(_managerType, "GetCurrentMenuOptions", new[] { typeof(int) });
+            _runConsequenceMethod = AccessTools.Method(_managerType, "RunConsequence")
+                ?? AccessTools.Method(_managerType, "OnNarrativeMenuOptionSelected");
+
+            LogProbe(
+                $"state=found manager=found nextStage={(_nextStageMethod != null ? "found" : "missing")} " +
+                $"menus={(_getCurrentMenuOptionsMethod != null ? "found" : "missing")}");
+
             return _stateType;
+        }
+
+        private static void LogProbe(string detail)
+        {
+            if (_probeLogged)
+            {
+                return;
+            }
+
+            _probeLogged = true;
+            GuildLog.Info($"[TBG QUICKSTART] API probe: {detail}", showInGame: false);
         }
 
         private static CultureObject TryGetSelectedCulture(object content)

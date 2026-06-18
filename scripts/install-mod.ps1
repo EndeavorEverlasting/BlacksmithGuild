@@ -151,9 +151,11 @@ try {
 
     Write-Host ''
     Write-Host 'Daily play:' -ForegroundColor Cyan
-    Write-Host '  Steam -> Play (launcher uses your saved mod checkboxes).'
+    Write-Host '  Forge.cmd opens the launcher. Click Play or Continue.'
+    Write-Host '  Dev save auto-load: BlacksmithGuild_DevStart*.sav (Continue) or SandBox (auto-load/new character).'
     Write-Host 'After code changes: close Bannerlord, then Forge.cmd / dotnet build / Ctrl+Shift+B to install.'
-    Write-Host 'Use LaunchForge.cmd or forge -Launch only for first install or when you want the launcher opened explicitly.' -ForegroundColor Cyan
+
+    & (Join-Path $PSScriptRoot 'pin-dev-save.ps1')
 
     if ($Launch) {
         Invoke-ForgeStep -Name 'open_launcher' -Action {
