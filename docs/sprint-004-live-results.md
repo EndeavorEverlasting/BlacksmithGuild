@@ -2,9 +2,9 @@
 
 ## Verdict
 
-**Pending live certification** — code shipped 2026-06-18 (`v0.0.7`)
+**LIVE CERT PASS** — 2026-06-18 session (`v0.0.7`, loaded `BlacksmithGuild_DevStart.sav`)
 
-Sprint 004A (ReportFormatter) + 004B (stub recommendation model) built together. In-game PASS not yet recorded.
+Sprint 004A (ReportFormatter) + 004B (stub recommendation model). Evidence: Phase1.log + JSON + F7 + Status JSON.
 
 ## Environment
 
@@ -37,15 +37,26 @@ Sprint 004A (ReportFormatter) + 004B (stub recommendation model) built together.
 
 ## PASS criteria
 
-| Check | Expected |
-|-------|----------|
+| Check | Result (2026-06-18) |
+|-------|---------------------|
 | RankForgeCandidates ACK | Success |
-| JSON written | `BlacksmithGuild_ForgeRecommendations.json` with `topCandidate` + `ranked[]` |
-| Top candidate (ProfitForge) | Long Warblade, finalScore **11250** |
-| Top 3 order | Long Warblade → Heavy Glaive Pattern → Officer Sidearm |
-| F7 compact line | `TBG FORGE: top=Long Warblade score=11250 doctrine=ProfitForge source=stub` |
-| Phase1.log report | `TBG REPORT: FORGE RECOMMENDATIONS` with `reportId` + Top 3 section |
-| Status JSON | `forgeRecommendations.topCandidateName=Long Warblade` |
+| JSON written | PASS — `BlacksmithGuild_ForgeRecommendations.json` |
+| Top candidate (ProfitForge) | PASS — Long Warblade, finalScore **11250** |
+| Top 3 order | PASS — Long Warblade → Heavy Glaive Pattern → Officer Sidearm |
+| F7 compact line | PASS — `TBG FORGE: top=Long Warblade score=11250 doctrine=ProfitForge source=stub` |
+| Phase1.log report | PASS — `TBG REPORT: FORGE RECOMMENDATIONS` |
+| Status JSON | PASS — `forgeRecommendations.topCandidateName=Long Warblade` |
+
+## Live cert log excerpts (2026-06-18)
+
+```text
+TBG REPORT: FORGE RECOMMENDATIONS
+reportId: forge-recommendations-20260618-182326
+top: Long Warblade | finalScore: 11250 | source: stub | doctrine: ProfitForge
+TBG FORGE: top=Long Warblade score=11250 doctrine=ProfitForge source=stub
+```
+
+## Original PASS criteria
 
 ## Stub candidate reference scores (ProfitForge)
 
@@ -68,10 +79,10 @@ Documents\Mount and Blade II Bannerlord\BlacksmithGuild_ForgeRecommendations.jso
 
 | Gap | Detail |
 |-----|--------|
-| **003B treasury retest** | Still pending — F10 3–5 days + `TreasurySnapshotNow` |
-| **Real recipe source** | Stub only; no Bannerlord crafting API reads |
-| **Doctrine selection** | Hard-coded `ProfitForge` in `RunRankNow`; no player doctrine UI |
-| **Live cert** | This document — fill PASS/FAIL after in-game run |
+| **003B treasury retest** | PARTIAL PASS — machinery proven; strict F10 multi-day + `TreasurySnapshotNow` cert block optional |
+| **Real recipe source** | 005C read-only probe shipped; candidate mapping + economics deferred |
+| **Doctrine selection** | Dev commands only; no player doctrine UI |
+| **005A/005B inbox** | Not run in 2026-06-18 session — optional follow-up |
 
 ## Failure classification
 

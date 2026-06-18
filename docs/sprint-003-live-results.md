@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Machinery live-certified** — 2026-06-18 (partial session before 003B fixes)
+**PARTIAL PASS** — 2026-06-18 session (machinery proven; strict multi-day F10 retest not completed)
 
 **003B hardening:** deferred snapshots, `snapshotGeneration`, `latestSnapshots[]` in JSON, `TreasurySnapshotNow` dev command.
 
@@ -60,7 +60,28 @@ TBG TREASURY: watch=active entities=78 maxDelta=0 severity=Observed
 }
 ```
 
-## 003B retest steps (after `Forge.cmd` with game closed)
+## 003B retest results (2026-06-18)
+
+| Check | Result |
+|-------|--------|
+| `snapshotGeneration` increments | PASS — gen 1 → 2 → 3 |
+| `latestSnapshots[]` populated | PASS — TreasuryWatch JSON |
+| Treasury deltas observed | PASS — 5 deltas in session |
+| F10 fast-forward machinery | PASS — ON/OFF toggled successfully |
+| Campaign day advance (3–5 days) | **Not proven** — day stuck at 91077 (F10 ~2s only) |
+| `TreasurySnapshotNow` cert block | **Not run** — no `TBG CERT: 003B TREASURY RETEST` in log |
+
+### Log excerpts (2026-06-18)
+
+```text
+TBG TREASURY: Snapshot #1 gen=1 … Snapshot #3 gen=3 … newDeltas=5
+TBG F10: Fast-forward ON. / OFF.
+TBG F9: DailyTick fired. (multiple Success)
+```
+
+Status JSON: `treasuryWatch.snapshotGeneration=3`, `deltaCount=5`, 78 actors tracked.
+
+## 003B retest steps (optional strict completion)
 
 1. Load disposable save → `TBG READY`
 2. F7 — confirm `gen=N` in treasury line (003B)

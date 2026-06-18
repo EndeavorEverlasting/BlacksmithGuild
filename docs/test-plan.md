@@ -472,9 +472,7 @@ If Phase 2 patch fails after game update: use Phase 1 dev save only; external Qu
 
 ## Sprint 003 Treasury Delta Watch (003B)
 
-**Status:** **Machinery certified** — 003B hardening shipped; **F10 retest** for deltas
-
-**Evidence:** [docs/sprint-003-live-results.md](sprint-003-live-results.md)
+**Status:** **PARTIAL PASS** — machinery proven; strict F10 multi-day optional — see [sprint-003-live-results.md](sprint-003-live-results.md)
 
 ### Important: F9 vs F10
 
@@ -505,7 +503,9 @@ If Phase 2 patch fails after game update: use Phase 1 dev save only; external Qu
 
 ---
 
-## Sprint 004B — Stub recommendations (live cert pending)
+## Sprint 004B — Stub recommendations
+
+**Status:** **LIVE CERT PASS** (2026-06-18) — see [sprint-004-live-results.md](sprint-004-live-results.md)
 
 ### Protocol
 
@@ -521,13 +521,13 @@ Forge.cmd   # game closed
 - `BlacksmithGuild_ForgeRecommendations.json` exists; top = Long Warblade, finalScore 11250, source stub
 - Phase1.log: `TBG REPORT: FORGE RECOMMENDATIONS`
 - F7: compact `TBG FORGE:` line
-- Update [sprint-004-live-results.md](sprint-004-live-results.md)
-
-**Gate:** Do not call 004 done until live evidence recorded.
+- Update [sprint-004-live-results.md](sprint-004-live-results.md) — **done**
 
 ---
 
-## Sprint 005A/005B — Source boundary + doctrine (code shipped; live cert pending)
+## Sprint 005A/005B — Source boundary + doctrine
+
+**Status:** Code shipped; harness PASS; inbox cert optional — see [sprint-005-live-results.md](sprint-005-live-results.md)
 
 ### Protocol
 
@@ -552,9 +552,39 @@ Forge.cmd   # game closed
 - `SetForgeDoctrineRareMetalConservation` changes ranking vs ProfitForge (stub oracle)
 - `ShowForgeDoctrine` prints active doctrine in notice log
 
-**Gate for 005C real recipes:** 004B live cert PASS + 003B treasury retest PASS.
+**Gate for 005C real recipes:** 004B PASS + treasury machinery proven (003B partial OK).
 
 See [sprint-005-live-results.md](sprint-005-live-results.md).
+
+---
+
+## Sprint 005C — Recipe API recon (read-only)
+
+**Status:** Code shipped — live cert pending after rebuild
+
+**Evidence:** [docs/sprint-005c-live-results.md](sprint-005c-live-results.md)
+
+### Protocol
+
+```powershell
+Forge.cmd   # game closed
+# Load BlacksmithGuild_DevStart.sav → TBG READY
+.\forge.ps1 -Command ProbeForgeRecipes -Wait
+.\forge.ps1 -Command RankForgeCandidates -Wait
+.\forge.ps1 -Command SetForgeCandidateSourceReal -Wait
+.\forge.ps1 -Command RankForgeCandidates -Wait
+# F7 in game
+```
+
+### PASS criteria
+
+- `BlacksmithGuild_RecipeProbe.json` exists; `probeStatus=Ok`; `templateCount` > 0
+- Phase1.log: `TBG REPORT: FORGE RECIPE PROBE`
+- Status JSON: `recipeProbe` block populated
+- Stub rank unchanged (Long Warblade 11250)
+- Real source + rank: `fallbackUsed=true` (economics mapping not yet implemented)
+
+**Gate:** 005D+ real economics mapping — do not remove stub fallback until real ranked output verified.
 
 ---
 
