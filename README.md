@@ -6,20 +6,20 @@ Math before hammer.
 
 ## Current Sprint
 
-**Sprint 001: Stoke the Apprentice** — controlled character progression dev harness (smithing XP, focus, endurance).
+**Sprint 000A certification** — disposable campaign, time dev hotkeys, gold economy test.
+
+**Sprint 001 (Stoke the Apprentice)** — progression harness source scaffolded; **`Ctrl+Alt+S` not wired yet** (reserved for future).
 
 ## Dev hotkeys (campaign map)
 
 PowerShell cannot advance in-game time — use these keys after loading a campaign:
 
-| Hotkey | Action |
-|--------|--------|
-| Ctrl+Alt+D | Fire one daily tick instantly (`AdvanceOneDay`) |
-| Ctrl+Alt+F | Toggle unstoppable fast-forward on/off |
-| Ctrl+Alt+L | List registered dev commands in log/messages |
-| Ctrl+Alt+S | Run `RichSmithingProgressionTest` (smithing progression scenario) |
-| Ctrl+Alt+X | Add Smithing XP only (`AddSmithingXp`) |
-| Ctrl+Alt+C | Add Smithing focus only (`AddSmithingFocus`) |
+| Hotkey | Wired | Action |
+|--------|-------|--------|
+| Ctrl+Alt+D | Yes | Fire one daily tick instantly (`AdvanceOneDay`) |
+| Ctrl+Alt+F | Yes | Toggle unstoppable fast-forward on/off |
+| Ctrl+Alt+L | Yes | List registered dev commands in log/messages |
+| Ctrl+Alt+S | **Reserved** | Future: `RichSmithingProgressionTest` (smithing progression scenario) |
 
 ## What it does not do yet
 

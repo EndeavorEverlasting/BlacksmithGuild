@@ -6,6 +6,9 @@ namespace BlacksmithGuild.DevTools
     public static class CharacterProgressionTestScenarios
     {
         public const string RichSmithingProgressionTestName = "RichSmithingProgressionTest";
+        public const string AddSmithingXpCommand = "AddSmithingXp";
+        public const string AddSmithingFocusCommand = "AddSmithingFocus";
+        public const string AddEnduranceAttributeCommand = "AddEnduranceAttribute";
         public const int SmithingXpDelta = 10_000;
         public const int SmithingFocusDelta = 3;
         public const int EnduranceAttributeDelta = 1;
@@ -70,7 +73,7 @@ namespace BlacksmithGuild.DevTools
         public static void RunAddSmithingXpOnly()
         {
             var hero = Hero.MainHero;
-            DebugLogger.Test($"Command: {DevCommandRegistry.AddSmithingXpCommand}");
+            DebugLogger.Test($"Command: {AddSmithingXpCommand}");
 
             if (hero == null)
             {
@@ -96,7 +99,7 @@ namespace BlacksmithGuild.DevTools
         public static void RunAddSmithingFocusOnly()
         {
             var hero = Hero.MainHero;
-            DebugLogger.Test($"Command: {DevCommandRegistry.AddSmithingFocusCommand}");
+            DebugLogger.Test($"Command: {AddSmithingFocusCommand}");
 
             if (hero == null)
             {
@@ -122,7 +125,7 @@ namespace BlacksmithGuild.DevTools
         public static void RunAddEnduranceAttributeOnly()
         {
             var hero = Hero.MainHero;
-            DebugLogger.Test($"Command: {DevCommandRegistry.AddEnduranceAttributeCommand}");
+            DebugLogger.Test($"Command: {AddEnduranceAttributeCommand}");
 
             if (hero == null)
             {

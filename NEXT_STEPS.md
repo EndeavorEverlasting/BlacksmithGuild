@@ -10,13 +10,13 @@ Math before hammer.
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.4` |
-| Sprint 001 | **Implemented** — smithing progression dev scenario (`Ctrl+Alt+S`); needs in-game PASS |
+| Sprint 001 | **Scaffolded** — progression source files exist; hotkeys **not wired** (`Ctrl+Alt+S` reserved) |
 | Dev loop | **Steam Play** daily; `dotnet build -c Release` auto-installs; launcher checkboxes = mod ON/OFF |
 | Sprint 000A | **Blocked** — game data errors on some loads; disposable campaign + mod ON for cert |
 | Save safety | Incremental backup on every `forge.ps1` run; `.\forge.ps1 -VerifySaves` |
 | Legacy saves | Load with **mod OFF** in launcher (confirmed working) |
 
-**Next: in-game PASS for Test 4, then Phase 2 recommendation design (Issue 3).**
+**Next: in-game PASS for Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`), wire Sprint 001 hotkeys, then Phase 2.**
 
 ---
 
@@ -67,13 +67,14 @@ Register in `RegisteredCommands` beside gold, time, and list commands.
 
 ### New hotkeys (`BlacksmithGuildCampaignBehavior`)
 
-| Hotkey | Action |
-|--------|--------|
-| `Ctrl+Alt+S` | Run `RichSmithingProgressionTest` |
-| `Ctrl+Alt+X` | Add Smithing XP only |
-| `Ctrl+Alt+C` | Add Smithing focus only |
-
-Existing hotkeys unchanged: `Ctrl+Alt+D` / `F` / `L`.
+| Hotkey | Status | Action |
+|--------|--------|--------|
+| `Ctrl+Alt+D` | **Wired** | `AdvanceOneDay` |
+| `Ctrl+Alt+F` | **Wired** | `ToggleFastForward` |
+| `Ctrl+Alt+L` | **Wired** | `ListScenarios` |
+| `Ctrl+Alt+S` | **Reserved — not wired** | Future: `RichSmithingProgressionTest` |
+| `Ctrl+Alt+X` | **Reserved — not wired** | Future: `AddSmithingXp` only |
+| `Ctrl+Alt+C` | **Reserved — not wired** | Future: `AddSmithingFocus` only |
 
 **Do not auto-run progression test on daily tick.** Keep gold test behavior unchanged.
 
@@ -114,12 +115,15 @@ Existing hotkeys unchanged: `Ctrl+Alt+D` / `F` / `L`.
 - `dotnet build` Release succeeds
 - `.\forge.ps1 -Check` still works
 - Campaign loads (disposable save, mod ON)
-- `Ctrl+Alt+S` runs scenario; log shows before / after
+- `Ctrl+Alt+D` / `F` / `L` work on campaign map; `Ctrl+Alt+L` lists four registered commands
+- Wire `Ctrl+Alt+S` and register progression commands — **not done yet**
 - Save remains loadable after save/reload
 
-### Test 4 (add to `docs/test-plan.md`)
+### Test 4 (add to `docs/test-plan.md`) — **pending hotkey wiring**
 
-**Steps:** `.\forge.ps1` → enable mod → load campaign → `Ctrl+Alt+S` on campaign map → check `BlacksmithGuild_Phase1.log`
+**Steps (future):** `dotnet build -c Release` → Steam Play → mod ON → disposable campaign → `Ctrl+Alt+S` on campaign map → check `BlacksmithGuild_Phase1.log`
+
+**Current certification:** use Tests 2–3 with `Ctrl+Alt+D` / `F` / `L` instead.
 
 **Expected log:**
 
@@ -157,7 +161,7 @@ Required changes:
 2. Add CharacterProgressionTestScenarios.cs — RichSmithingProgressionTest (XP 10k, focus 3, Endurance 1)
 3. Update DevCommandRegistry — register RichSmithingProgressionTest + AddSmithingXp/Focus/Endurance constants
 4. Update DevCommandRunner — route scenario; safe cases for granular commands if implemented
-5. Update BlacksmithGuildCampaignBehavior — Ctrl+Alt+S (and X/C if in scope); no daily-tick auto-run
+5. Update BlacksmithGuildCampaignBehavior — wire Ctrl+Alt+S (and X/C if in scope); no daily-tick auto-run — **S/X/C reserved, not wired yet**
 6. Update docs/test-plan.md — Test 4
 
 Hard constraints:
@@ -228,6 +232,4 @@ See NEXT_STEPS.md for full spec.
 
 ## Stern verdict
 
-**Next action for next chat:** Create GitHub Issue 1, then run the Sprint 001 Cursor prompt above.
-
-Prove character progression mutation is safe **before** building the recommendation engine.
+**Next action for next chat:** Wire Sprint 001 hotkeys (`Ctrl+Alt+S`), register progression commands, then in-game Test 4 PASS.

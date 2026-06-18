@@ -7,21 +7,14 @@ namespace BlacksmithGuild.DevTools
         public const string ListScenariosCommand = "ListScenarios";
         public const string AdvanceOneDayCommand = "AdvanceOneDay";
         public const string ToggleFastForwardCommand = "ToggleFastForward";
-        public const string AddSmithingXpCommand = "AddSmithingXp";
-        public const string AddSmithingFocusCommand = "AddSmithingFocus";
-        public const string AddEnduranceAttributeCommand = "AddEnduranceAttribute";
 
         private static readonly HashSet<string> RegisteredCommands =
             new HashSet<string>
             {
                 EconomyTestScenarios.RichPlayerEconomyTestName,
-                CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
                 ListScenariosCommand,
                 AdvanceOneDayCommand,
-                ToggleFastForwardCommand,
-                AddSmithingXpCommand,
-                AddSmithingFocusCommand,
-                AddEnduranceAttributeCommand
+                ToggleFastForwardCommand
             };
 
         public static bool IsRegistered(string commandName)

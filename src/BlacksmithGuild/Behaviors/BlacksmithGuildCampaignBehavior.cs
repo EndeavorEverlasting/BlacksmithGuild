@@ -68,18 +68,7 @@ namespace BlacksmithGuild.Behaviors
             {
                 DevCommandRunner.Run(DevCommandRegistry.ListScenariosCommand);
             }
-            else if (Input.IsKeyPressed(InputKey.S))
-            {
-                DevCommandRunner.Run(CharacterProgressionTestScenarios.RichSmithingProgressionTestName);
-            }
-            else if (Input.IsKeyPressed(InputKey.X))
-            {
-                DevCommandRunner.Run(DevCommandRegistry.AddSmithingXpCommand);
-            }
-            else if (Input.IsKeyPressed(InputKey.C))
-            {
-                DevCommandRunner.Run(DevCommandRegistry.AddSmithingFocusCommand);
-            }
+            // Ctrl+Alt+S reserved for future RichSmithingProgressionTest harness (Sprint 001 completion).
         }
 
         private static bool IsCtrlAltDown()

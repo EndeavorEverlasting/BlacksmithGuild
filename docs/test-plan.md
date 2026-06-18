@@ -193,25 +193,25 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 
 ## Test 4: Smithing Progression Test
 
-**Purpose:** Confirm mod-side scripts can modify player character progression safely.
+**Status:** **Pending** — source scaffolded; `Ctrl+Alt+S` reserved but **not wired**. Use Tests 2–3 (`Ctrl+Alt+D` / `F` / `L`) for current certification.
 
-**Steps:**
+**Purpose:** Confirm mod-side scripts can modify player character progression safely (future Sprint 001 completion).
 
-1. Build and install:
+**Steps (when hotkey is wired):**
 
-   ```powershell
-   .\forge.ps1
-   ```
+1. `dotnet build -c Release` (auto-installs) or `.\forge.ps1`
+2. **Steam → Play** with **The Blacksmith Guild** checked
+3. Load a **new disposable** campaign
+4. On the campaign map, press **Ctrl+Alt+S** (reserved — not active yet)
+5. Check `BlacksmithGuild_Phase1.log`
 
-2. Enable **The Blacksmith Guild** in the Bannerlord launcher.
-3. Load a **new disposable** campaign.
-4. On the campaign map, press **Ctrl+Alt+S**.
-5. Check `BlacksmithGuild_Phase1.log`.
+**Current certification instead:**
 
-**Optional granular commands:**
-
-- **Ctrl+Alt+X** — add Smithing XP only
-- **Ctrl+Alt+C** — add Smithing focus only
+1. Disposable campaign (mod ON)
+2. **Ctrl+Alt+D** — fire daily tick / gold test
+3. **Ctrl+Alt+F** — optional fast-forward
+4. **Ctrl+Alt+L** — list registered commands (expect four: `RichPlayerEconomyTest`, `ListScenarios`, `AdvanceOneDay`, `ToggleFastForward`)
+5. Check `BlacksmithGuild_Phase1.log`
 
 **Expected output:**
 
@@ -246,5 +246,5 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
 - **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward. Both are blocked when preflight is FAIL.
-- `RichPlayerEconomyTest` also runs **once** on the first natural `DailyTickEvent` if `AutoRunGoldTestOnDailyTick` is enabled (also blocked on preflight FAIL).
-- `RichSmithingProgressionTest` is **manual only** (`Ctrl+Alt+S`); it does not run on daily tick.
+- `RichPlayerEconomyTest` runs on the first `DailyTickEvent` (or **Ctrl+Alt+D**) if `AutoRunGoldTestOnDailyTick` is enabled (blocked on preflight FAIL).
+- `RichSmithingProgressionTest` is **not wired** — `Ctrl+Alt+S` reserved for future manual trigger; does not run on daily tick.
