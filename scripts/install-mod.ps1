@@ -157,10 +157,8 @@ try {
 
     if ($Launch) {
         Invoke-ForgeStep -Name 'open_launcher' -Action {
-            if (-not (Test-Path -LiteralPath $LauncherExe)) { throw "Launcher not found: $LauncherExe" }
             Write-Host ''
-            Write-Host 'Opening Bannerlord launcher...'
-            Start-Process -FilePath $LauncherExe -WorkingDirectory (Split-Path -Parent $LauncherExe)
+            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot
         }
     }
 
