@@ -6,7 +6,7 @@ Math before hammer.
 
 ## Sprint sequencing
 
-Build/install loop first. Certification evidence second. Dev-tool safety third. Skill points fourth. Recommendations fifth (stub shipped; real recipes gated).
+Build/install loop first. Certification evidence second. Dev-tool safety third. Skill points fourth. Recommendations fifth (stub baseline + real candidates shipped).
 
 | Order | Sprint | Purpose | Status |
 |-------|--------|---------|--------|
