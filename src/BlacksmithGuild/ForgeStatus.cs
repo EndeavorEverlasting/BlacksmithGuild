@@ -33,6 +33,7 @@ namespace BlacksmithGuild
         private static int _lastCommandSequence = -1;
         private static DateTime? _lastCommandTime;
         private static GoldTestSnapshot _goldTest;
+        private static ProgressionTestSnapshot _progressionTest;
         private static SessionPhase _sessionPhase = SessionPhase.ModuleOnly;
         private static bool _sessionTimePaused;
 
@@ -43,6 +44,18 @@ namespace BlacksmithGuild
             public int GoldBefore;
             public int GoldAfter;
             public int Delta;
+        }
+
+        private struct ProgressionTestSnapshot
+        {
+            public bool Ran;
+            public bool Passed;
+            public float SmithingXpBefore;
+            public float SmithingXpAfter;
+            public int SmithingFocusBefore;
+            public int SmithingFocusAfter;
+            public int EnduranceBefore;
+            public int EnduranceAfter;
         }
 
         public static void Log(string message)
@@ -118,6 +131,70 @@ namespace BlacksmithGuild
                 Delta = delta
             };
             Flush();
+        }
+
+        public static void RecordProgressionTest(
+            bool passed,
+            float smithingXpBefore,
+            float smithingXpAfter,
+            int smithingFocusBefore,
+            int smithingFocusAfter,
+            int enduranceBefore,
+            int enduranceAfter)
+        {
+            _progressionTest = new ProgressionTestSnapshot
+            {
+                Ran = true,
+                Passed = passed,
+                SmithingXpBefore = smithingXpBefore,
+                SmithingXpAfter = smithingXpAfter,
+                SmithingFocusBefore = smithingFocusBefore,
+                SmithingFocusAfter = smithingFocusAfter,
+                EnduranceBefore = enduranceBefore,
+                EnduranceAfter = enduranceAfter
+            };
+            Flush();
+        }
+
+        /// <summary>
+        /// Read-only verdict card: posts cached summary to the notice log. Does not scan or mutate campaign data.
+        /// </summary>
+        public static void DisplaySummaryInGame()
+        {
+            var certOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
+            var certPassed = CertificationTracker.CountPassed();
+            var certRequired = CertificationTracker.RequiredCheckNames.Count;
+            var preflight = string.IsNullOrEmpty(_preflightVerdict) ? "unknown" : _preflightVerdict;
+            var last = string.IsNullOrEmpty(_lastCommand)
+                ? "none"
+                : $"{_lastCommand} {_lastCommandResult ?? ""}".Trim();
+            var inbox = GameSessionState.CanPollFileInbox ? "ok" : "blocked";
+
+            GuildLog.Display(
+                $"TBG STATUS: cert={certOverall} ({certPassed}/{certRequired}) preflight={preflight}"
+            );
+            GuildLog.Display($"TBG STATUS: last={last}");
+            GuildLog.Display($"TBG STATUS: session={_sessionPhase} inbox={inbox}");
+
+            var cert002Overall = Sprint002CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
+            var cert002Passed = Sprint002CertificationTracker.CountPassed();
+            var cert002Required = Sprint002CertificationTracker.RequiredCheckNames.Count;
+            if (cert002Passed > 0 || cert002Overall != "NOT_STARTED")
+            {
+                GuildLog.Display(
+                    $"TBG STATUS: cert002={cert002Overall} ({cert002Passed}/{cert002Required})"
+                );
+            }
+
+            if (_progressionTest.Ran)
+            {
+                GuildLog.Display(
+                    $"TBG STATUS: progressionTest={(_progressionTest.Passed ? "PASS" : "FAIL")} " +
+                    $"smithingXp={_progressionTest.SmithingXpBefore:N0}->{_progressionTest.SmithingXpAfter:N0}"
+                );
+            }
+
+            DebugLogger.Test("ShowForgeStatus displayed cached summary.", showInGame: false);
         }
 
         public static void UpdateReadiness(bool campaignReady, bool mainHeroReady)
@@ -222,6 +299,48 @@ namespace BlacksmithGuild
                 builder.AppendLine("    }");
                 builder.AppendLine("  },");
 
+                var certification002Overall =
+                    Sprint002CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
+                builder.AppendLine("  \"certification002\": {");
+                builder.AppendLine($"    \"sprint\": \"{Sprint002CertificationTracker.SprintId}\",");
+                builder.AppendLine($"    \"overall\": \"{Escape(certification002Overall)}\",");
+                builder.AppendLine($"    \"completed\": {Sprint002CertificationTracker.CountPassed()},");
+                builder.AppendLine($"    \"required\": {Sprint002CertificationTracker.RequiredCheckNames.Count},");
+                builder.AppendLine($"    \"nextCheck\": \"{Escape(Sprint002CertificationTracker.GetNextCheck())}\",");
+                builder.AppendLine("    \"checks\": {");
+
+                checkFirst = true;
+                foreach (var checkName in Sprint002CertificationTracker.RequiredCheckNames)
+                {
+                    Sprint002CertificationTracker.TryGetCheck(checkName, out var status, out var at, out var message);
+                    if (!checkFirst)
+                    {
+                        builder.AppendLine(",");
+                    }
+
+                    checkFirst = false;
+                    if (!string.IsNullOrEmpty(at) && !string.IsNullOrEmpty(message))
+                    {
+                        builder.Append(
+                            $"      \"{Escape(checkName)}\": {{ \"status\": \"{Escape(status)}\", \"at\": \"{Escape(at)}\", \"message\": \"{Escape(message)}\" }}"
+                        );
+                    }
+                    else if (!string.IsNullOrEmpty(at))
+                    {
+                        builder.Append(
+                            $"      \"{Escape(checkName)}\": {{ \"status\": \"{Escape(status)}\", \"at\": \"{Escape(at)}\" }}"
+                        );
+                    }
+                    else
+                    {
+                        builder.Append($"      \"{Escape(checkName)}\": {{ \"status\": \"{Escape(status)}\" }}");
+                    }
+                }
+
+                builder.AppendLine();
+                builder.AppendLine("    }");
+                builder.AppendLine("  },");
+
                 if (!string.IsNullOrEmpty(_lastCommand))
                 {
                     builder.AppendLine("  \"lastCommand\": {");
@@ -255,6 +374,20 @@ namespace BlacksmithGuild
                     builder.AppendLine($"    \"goldBefore\": {_goldTest.GoldBefore},");
                     builder.AppendLine($"    \"goldAfter\": {_goldTest.GoldAfter},");
                     builder.AppendLine($"    \"delta\": {_goldTest.Delta}");
+                    builder.AppendLine("  },");
+                }
+
+                if (_progressionTest.Ran)
+                {
+                    builder.AppendLine("  \"progressionTest\": {");
+                    builder.AppendLine("    \"ran\": true,");
+                    builder.AppendLine($"    \"passed\": {_progressionTest.Passed.ToString().ToLowerInvariant()},");
+                    builder.AppendLine($"    \"smithingXpBefore\": {_progressionTest.SmithingXpBefore},");
+                    builder.AppendLine($"    \"smithingXpAfter\": {_progressionTest.SmithingXpAfter},");
+                    builder.AppendLine($"    \"smithingFocusBefore\": {_progressionTest.SmithingFocusBefore},");
+                    builder.AppendLine($"    \"smithingFocusAfter\": {_progressionTest.SmithingFocusAfter},");
+                    builder.AppendLine($"    \"enduranceBefore\": {_progressionTest.EnduranceBefore},");
+                    builder.AppendLine($"    \"enduranceAfter\": {_progressionTest.EnduranceAfter}");
                     builder.AppendLine("  },");
                 }
 

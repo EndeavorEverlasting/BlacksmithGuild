@@ -54,6 +54,7 @@ namespace BlacksmithGuild.DevTools
                     ForgeStatus.RecordCommand(commandName, source, "BLOCKED", blockReason, sequence);
                     ForgeStatus.SetTest(commandName, "BLOCKED", blockReason);
                     CertificationTracker.OnCommandResult(commandName, DevCommandResult.Blocked, blockReason);
+                    Sprint002CertificationTracker.OnCommandResult(commandName, DevCommandResult.Blocked, blockReason);
                     return DevCommandResult.Blocked;
                 }
 
@@ -72,6 +73,7 @@ namespace BlacksmithGuild.DevTools
             var result = Execute(commandName);
             ForgeStatus.RecordCommand(commandName, source, result.ToString(), null, sequence);
             CertificationTracker.OnCommandResult(commandName, result);
+            Sprint002CertificationTracker.OnCommandResult(commandName, result);
             return result;
         }
 
@@ -79,12 +81,20 @@ namespace BlacksmithGuild.DevTools
         {
             return commandName == DevCommandRegistry.AdvanceOneDayCommand
                 || commandName == DevCommandRegistry.ToggleFastForwardCommand
-                || commandName == EconomyTestScenarios.RichPlayerEconomyTestName;
+                || commandName == EconomyTestScenarios.RichPlayerEconomyTestName
+                || commandName == CharacterProgressionTestScenarios.RichSmithingProgressionTestName
+                || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
+                || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
+                || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand;
         }
 
         private static bool IsMutationCommand(string commandName)
         {
-            return commandName == EconomyTestScenarios.RichPlayerEconomyTestName;
+            return commandName == EconomyTestScenarios.RichPlayerEconomyTestName
+                || commandName == CharacterProgressionTestScenarios.RichSmithingProgressionTestName
+                || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
+                || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
+                || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand;
         }
 
         private static DevCommandResult Execute(string commandName)
@@ -94,12 +104,23 @@ namespace BlacksmithGuild.DevTools
                 case DevCommandRegistry.ListScenariosCommand:
                     ListRegisteredCommands();
                     return DevCommandResult.Success;
+                case DevCommandRegistry.ShowForgeStatusCommand:
+                    ForgeStatus.DisplaySummaryInGame();
+                    return DevCommandResult.Success;
                 case DevCommandRegistry.AdvanceOneDayCommand:
                     return TimeDevTools.AdvanceOneDay() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case DevCommandRegistry.ToggleFastForwardCommand:
                     return TimeDevTools.ToggleFastForward() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     return EconomyTestScenarios.RunRichPlayerEconomyTest();
+                case CharacterProgressionTestScenarios.RichSmithingProgressionTestName:
+                    return CharacterProgressionTestScenarios.RunRichSmithingProgressionTest();
+                case CharacterProgressionTestScenarios.AddSmithingXpCommand:
+                    return CharacterProgressionTestScenarios.RunAddSmithingXpOnly();
+                case CharacterProgressionTestScenarios.AddSmithingFocusCommand:
+                    return CharacterProgressionTestScenarios.RunAddSmithingFocusOnly();
+                case CharacterProgressionTestScenarios.AddEnduranceAttributeCommand:
+                    return CharacterProgressionTestScenarios.RunAddEnduranceAttributeOnly();
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -112,6 +133,9 @@ namespace BlacksmithGuild.DevTools
             {
                 DebugLogger.Test($"  - {name}", showInGame: false);
             }
+
+            DebugLogger.Test("Press F7 for status summary (read-only).", showInGame: false);
+            GuildLog.Display("TBG: Press F7 for status. F8 lists commands.");
         }
     }
 }

@@ -10,17 +10,18 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 | Order | Sprint | Purpose | Status |
 |-------|--------|---------|--------|
-| 1 | **000A** | Certify in-game load / gold / hotkey chain | In progress |
+| 1 | **000A** | Certify in-game load / gold / hotkey chain | **Certified** |
 | 2 | **000B** | Fluid Steam dev loop | **Complete** |
-| 3 | **001** | Dev command harness (visible, repeatable, safe) | **In progress** |
-| 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
-| 5 | **003+** | Recommendation system | Later |
+| 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
+| 4 | **002** | Progression harness + F7 status | **Code complete — certify in-game** |
+| 5 | **003** | Treasury Delta Watch | Planned |
+| 6 | **004+** | Recommendation system | Later |
 
 ## Current focus
 
-**Sprint 001** — certify dev command harness on a disposable campaign (`F8` / `F9` / `F10` / `F11`).
+**Sprint 002** — certify progression harness on a disposable campaign (`-CertifyProgression -Wait`, `Ctrl+Alt+S`, **F7** status).
 
-> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002 — Stoke the Apprentice. Primary dev keys are `F8`–`F11`; `Ctrl+Alt+L/D/F` remain as legacy fallbacks.
+> **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — **Enter** notice log, **Alt+`** dev console, **F7–F11** dev commands.
 
 ## Two environments: IDE vs game
 
@@ -28,8 +29,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|----------|---------|
 | **Cursor / VS Code** (repo open, editor focused) | `Ctrl+Shift+B` | **Build + Install** — runs `dotnet build -c Release` via [`.vscode/tasks.json`](.vscode/tasks.json); auto-copies to `Modules/BlacksmithGuild` |
 | **Terminal** (repo root) | same as build command below | Equivalent to `Ctrl+Shift+B` if you do not use the IDE |
-| **Bannerlord** (campaign map, mod ON) | `F8` / `F9` / `F10` / `F11` | In-game dev commands (primary) |
-| **Bannerlord** (campaign map, mod ON) | `Ctrl+Alt+L` / `D` / `F` | Legacy dev command fallbacks |
+| **Bannerlord** (campaign map, mod ON) | `F7`–`F11` | Dev commands (F7 = status summary) |
+| **Bannerlord** (campaign map, mod ON) | `Ctrl+Alt+S` / `X` / `C` / `L` / `D` / `F` | Progression + legacy dev commands |
 
 Rule: **build in the editor or terminal; test in the game.**
 
@@ -41,11 +42,16 @@ Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys an
 
 | Hotkey | Command | Action |
 |--------|---------|--------|
+| F7 | `ShowForgeStatus` | Read-only status verdict (cert, session, last command) |
 | F8 | `ListScenarios` | List registered dev commands in log |
 | F9 | `AdvanceOneDay` | Fire one daily tick instantly |
 | F10 | `ToggleFastForward` | Toggle unstoppable fast-forward on/off |
 | F11 | `RichPlayerEconomyTest` | Run gold mutation test (disposable campaign only) |
-| Ctrl+Alt+S | **Reserved** | Sprint 002: future smithing/progression dev command |
+| Ctrl+Alt+S | `RichSmithingProgressionTest` | Smithing XP/focus/endurance test |
+| Ctrl+Alt+X | `AddSmithingXp` | Add smithing XP only |
+| Ctrl+Alt+C | `AddSmithingFocus` | Add smithing focus only |
+
+Press **Enter** on the campaign map to scroll the notice log after F7/F8. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
 
 ### Legacy hotkeys (fallback)
 
@@ -55,7 +61,7 @@ Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys an
 | Ctrl+Alt+D | `AdvanceOneDay` |
 | Ctrl+Alt+F | `ToggleFastForward` |
 
-Each hotkey shows an in-game toast (`TBG HOTKEY: <Command> fired`) before execution. Reliability is under active certification (Sprint 001).
+Each hotkey shows an in-game toast (`TBG HOTKEY: <Command> fired`) before execution.
 
 ### File-based command inbox (primary certification path)
 
@@ -66,12 +72,13 @@ While a campaign is loaded, the mod polls the inbox every **0.5s** via `OnApplic
 ```
 
 ```powershell
-.\forge.ps1 -Certify -Wait          # full Sprint 001 sequence; alt-tab OK
-.\forge.ps1 -Command AdvanceOneDay -Wait
-.\forge.ps1 -Check -SkipInstall     # read status only; game may stay open
+.\forge.ps1 -Certify -Wait              # Sprint 001 (6 checks); alt-tab OK
+.\forge.ps1 -CertifyProgression -Wait   # Sprint 002 (4 checks); alt-tab OK
+.\forge.ps1 -Command ShowForgeStatus -Wait
+.\forge.ps1 -Check -SkipInstall         # read status only; game may stay open
 ```
 
-Hotkeys (F8–F11) remain optional and **require game focus** on the campaign map.
+Hotkeys (F7–F11, Ctrl+Alt) require game focus on the campaign map.
 
 ### Live status JSON
 
@@ -81,7 +88,7 @@ After each command, the mod writes:
 <Bannerlord install>\BlacksmithGuild_Status.json
 ```
 
-Includes explicit `certification.overall`: `NOT_STARTED` / `WARMUP` / `IN_PROGRESS` / `PASS` / `FAIL` / `BLOCKED` (not vague `RUNNING`).
+Includes `certification` (Sprint 001) and `certification002` (Sprint 002) blocks with explicit `overall` values.
 
 `forge.ps1 -Check` reads status JSON first, then confirms log details.
 
@@ -103,6 +110,7 @@ BlacksmithGuild/
   .vscode/
     tasks.json              <- Cursor/VS Code only: Ctrl+Shift+B = Build + Install (not in Bannerlord)
   docs/
+    in-game-surfaces.md
     sprint-000-bootstrap.md
     sprint-000a-results.md
     test-plan.md
@@ -345,14 +353,15 @@ Admin rights may be required for `Program Files (x86)`.
 
 ## Acceptance tests
 
-See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist (Sprint 001):
+See [docs/test-plan.md](docs/test-plan.md) for full steps. Quick checklist (Sprint 002):
 
-1. Launcher shows **The Blacksmith Guild**
+1. Launcher shows **The Blacksmith Guild** (v0.0.5)
 2. Campaign loads with forge-lit message and fake advisor output
-3. **F8** lists four registered commands (`Ctrl+Alt+S` reserved for Sprint 002)
-4. **F9** advances one day; **F10** toggles fast-forward ON/OFF
-5. **F11** runs `RichPlayerEconomyTest` and prints `[TBG TEST] PASS` on a disposable campaign
-6. `BlacksmithGuild_Status.json` updates after each command
+3. **F7** shows status summary in notice log (press **Enter** to scroll)
+4. **F8** lists nine registered commands
+5. **F9** / **F10** advance day and toggle fast-forward
+6. **F11** runs gold test; **Ctrl+Alt+S** runs progression test on disposable campaign
+7. `.\forge.ps1 -CertifyProgression -Wait` → `certification002.overall: PASS`
 
 ## License
 

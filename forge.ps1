@@ -5,6 +5,7 @@
 #   .\forge.ps1 -Check -SkipInstall   scan only (game may stay open)
 #   .\forge.ps1 -Command AdvanceOneDay -Wait
 #   .\forge.ps1 -Certify -Wait     full Sprint 001 cert via file inbox
+#   .\forge.ps1 -CertifyProgression -Wait   Sprint 002 progression cert
 
 param(
     [switch]$Launch,
@@ -16,6 +17,7 @@ param(
     [switch]$SkipInstall,
     [switch]$Wait,
     [switch]$Certify,
+    [switch]$CertifyProgression,
     [string]$Command,
     [int]$TimeoutSec = 60
 )
@@ -48,10 +50,14 @@ if ($CollectDiagnostics) {
 
 . (Join-Path $PSScriptRoot 'scripts\forge-status.ps1')
 
-if ($Command -or $Certify) {
+if ($Command -or $Certify -or $CertifyProgression) {
     $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $PSScriptRoot
     if ($Certify) {
         Invoke-ForgeCertification -BannerlordRoot $bannerlordRoot -TimeoutSec $TimeoutSec
+        return
+    }
+    if ($CertifyProgression) {
+        Invoke-ForgeProgressionCertification -BannerlordRoot $bannerlordRoot -TimeoutSec $TimeoutSec
         return
     }
     Send-ForgeCommand -CommandName $Command -BannerlordRoot $bannerlordRoot -Wait:$Wait -TimeoutSec $TimeoutSec

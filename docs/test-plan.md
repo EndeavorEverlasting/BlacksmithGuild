@@ -6,13 +6,14 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 | Order | Sprint | Purpose | Status |
 |-------|--------|---------|--------|
-| 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
+| 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | **Certified** |
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | Complete |
-| 3 | **001** | Dev command harness (visible, repeatable, safe) | In progress |
-| 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
-| 5 | **003+** | Recommendation system | Later |
+| 3 | **001 / 001B** | Dev command harness + focus-aware cert | **Certified** |
+| 4 | **002** | Stoke the Apprentice — progression harness + F7 status | **Code complete — certify in-game** |
+| 5 | **003** | Treasury Delta Watch | Planned |
+| 6 | **004+** | Recommendation system | Later |
 
-> **Breadcrumb:** `Ctrl+Alt+S` is reserved for Sprint 002. Primary dev keys are `F8`–`F11`; `Ctrl+Alt+L/D/F` are legacy fallbacks.
+> **Surfaces:** [in-game-surfaces.md](in-game-surfaces.md) — **Enter** notice log, **Alt+`** console, **F7–F11** dev keys.
 
 ## Two environments: IDE vs game
 
@@ -20,8 +21,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 |-------|----------|---------|
 | **Cursor / VS Code** (repo open) | `Ctrl+Shift+B` | Build + Install (`dotnet build -c Release`; auto-install) |
 | **Terminal** (repo root) | `dotnet build ... -c Release` | Same as `Ctrl+Shift+B` without the IDE |
-| **Bannerlord** (campaign map) | `F8` / `F9` / `F10` / `F11` | Primary in-game dev commands |
-| **Bannerlord** (campaign map) | `Ctrl+Alt+L` / `D` / `F` | Legacy dev command fallbacks |
+| **Bannerlord** (campaign map) | `F7`–`F11` | Dev commands (F7 = status) |
+| **Bannerlord** (campaign map) | `Ctrl+Alt+S` / `X` / `C` / `L` / `D` / `F` | Progression + legacy |
 | **Terminal** (repo root) | `.\forge.ps1 -Command <name>` | File-based command inbox |
 
 Rule: **build in the editor or terminal; test in the game.**
@@ -63,15 +64,13 @@ Do **not** require forge for daily play.
 
 ---
 
-## Skill harness runway (Sprint 002 — docs only)
+## Sprint 002 — Progression harness (code complete — certify in-game)
 
-Next gameplay-dev target: **Sprint 002 — Stoke the Apprentice**.
+- **Hotkeys:** `Ctrl+Alt+S` (full test), `Ctrl+Alt+X` (XP), `Ctrl+Alt+C` (focus); `AddEnduranceAttribute` via inbox only
+- **F7:** `ShowForgeStatus` — read-only verdict card
+- **Cert:** `.\forge.ps1 -CertifyProgression -Wait` → expect `certification002.overall: PASS` (4/4)
 
-- **Reserved hotkey:** `Ctrl+Alt+S` (not wired; do not test yet)
-- **Planned:** capture before/after hero progression snapshot; add controlled Smithing XP; log PASS/FAIL; explicit save-safety
-- **Out of scope for Sprint 000B:** skill mutation, focus/attribute adds, recommendations, UI
-
-Entry criteria for Sprint 002: Sprint 000B complete, Sprint 000A Tests 2–3 PASS in log, Sprint 001 dev-tool safety done.
+Entry criteria: Sprint 001 certified (`certification.overall: PASS`).
 
 ---
 
@@ -330,26 +329,27 @@ TBG HOTKEY: RichPlayerEconomyTest fired
 
 ## Test 4: Smithing Progression Test (Sprint 002)
 
-**Status:** **Pending** — source scaffolded; `Ctrl+Alt+S` reserved but **not wired**. Use Sprint 001 harness (F8–F11) for certification.
+**Status:** **Code complete — certify in-game**
 
-**Purpose:** Confirm mod-side scripts can modify player character progression safely (Sprint 002).
+**Purpose:** Confirm mod-side scripts can modify player character progression safely.
 
-**Steps (when hotkey is wired):**
+### Canonical certification (file inbox — focus not required)
 
-1. `dotnet build -c Release` (auto-installs) or `.\forge.ps1`
-2. **Steam → Play** with **The Blacksmith Guild** checked
-3. Load a **new disposable** campaign
-4. On the campaign map, press **Ctrl+Alt+S** (reserved — not active yet)
-5. Check `BlacksmithGuild_Phase1.log`
+```powershell
+.\forge.ps1 -CertifyProgression -Wait
+.\forge.ps1 -Check -SkipInstall
+```
 
-**Current certification instead:**
+Expect `certification002.overall: PASS` (4/4) and `progressionTest.passed: true`.
+
+Commands run: `RichSmithingProgressionTest`, `AddSmithingXp`, `AddSmithingFocus`, `AddEnduranceAttribute`.
+
+### Optional hotkey path (game focused)
 
 1. Disposable campaign (mod ON)
-2. **F8** — list registered commands (expect four)
-3. **F9** — advance one day
-4. **F10** — toggle fast-forward ON/OFF
-5. **F11** — run gold test explicitly
-6. Check `BlacksmithGuild_Status.json` then `BlacksmithGuild_Phase1.log`
+2. **Ctrl+Alt+S** on campaign map
+3. **F7** for status summary (press **Enter** to scroll notice log)
+4. Check `BlacksmithGuild_Phase1.log`
 
 **Expected output:**
 
@@ -382,10 +382,10 @@ Note: Bannerlord maps smithing readiness to the **Crafting** skill (`DefaultSkil
 
 ## Notes
 
-- Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
-- **Primary dev keys:** F8 = `ListScenarios`, F9 = `AdvanceOneDay`, F10 = `ToggleFastForward`, F11 = `RichPlayerEconomyTest`.
-- **Legacy fallbacks:** `Ctrl+Alt+L/D/F` map to the same commands (no F11 legacy).
-- Risky commands are blocked when readiness/preflight is FAIL. `ListScenarios` is always safe.
-- `RichPlayerEconomyTest` is an explicit mutation command (F11 or file inbox). Optional auto-run on daily tick remains configurable via `AutoRunGoldTestOnDailyTick`.
-- `RichSmithingProgressionTest` is **not wired** (Sprint 002) — `Ctrl+Alt+S` is reserved.
-- `forge.ps1 -Check` reads in-game `BlacksmithGuild_Status.json` first, then confirms log details.
+- Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll`.
+- **Primary dev keys:** F7 = `ShowForgeStatus`, F8 = `ListScenarios`, F9 = `AdvanceOneDay`, F10 = `ToggleFastForward`, F11 = `RichPlayerEconomyTest`.
+- **Progression:** `Ctrl+Alt+S` = `RichSmithingProgressionTest`, `Ctrl+Alt+X/C` = XP/focus only.
+- **Legacy fallbacks:** `Ctrl+Alt+L/D/F` map to list/day/fast-forward.
+- **Notice log:** press **Enter** on campaign map to scroll messages (see [in-game-surfaces.md](in-game-surfaces.md)).
+- Risky commands blocked when preflight FAIL. `ListScenarios` and `ShowForgeStatus` are always safe.
+- `forge.ps1 -Check` reads in-game status JSON first; `engine_integrity` ignores preflight disclaimer lines.

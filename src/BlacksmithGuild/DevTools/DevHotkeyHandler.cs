@@ -4,6 +4,7 @@ namespace BlacksmithGuild.DevTools
 {
     public static class DevHotkeyHandler
     {
+        private static bool _f7WasDown;
         private static bool _f8WasDown;
         private static bool _f9WasDown;
         private static bool _f10WasDown;
@@ -11,11 +12,20 @@ namespace BlacksmithGuild.DevTools
         private static bool _legacyDWasDown;
         private static bool _legacyFWasDown;
         private static bool _legacyLWasDown;
+        private static bool _legacySWasDown;
+        private static bool _legacyXWasDown;
+        private static bool _legacyCWasDown;
 
         public static void Poll()
         {
             if (!DevToolsConfig.DevToolsEnabled)
             {
+                return;
+            }
+
+            if (TryFireEdge(InputKey.F7, ref _f7WasDown))
+            {
+                DevCommandBus.TryRun(DevCommandRegistry.ShowForgeStatusCommand, "F7", showHotkeyAck: true);
                 return;
             }
 
@@ -52,6 +62,9 @@ namespace BlacksmithGuild.DevTools
                 _legacyDWasDown = Input.IsKeyDown(InputKey.D);
                 _legacyFWasDown = Input.IsKeyDown(InputKey.F);
                 _legacyLWasDown = Input.IsKeyDown(InputKey.L);
+                _legacySWasDown = Input.IsKeyDown(InputKey.S);
+                _legacyXWasDown = Input.IsKeyDown(InputKey.X);
+                _legacyCWasDown = Input.IsKeyDown(InputKey.C);
                 return;
             }
 
@@ -66,6 +79,30 @@ namespace BlacksmithGuild.DevTools
             else if (TryFireEdge(InputKey.L, ref _legacyLWasDown))
             {
                 DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "Ctrl+Alt+L", showHotkeyAck: true);
+            }
+            else if (TryFireEdge(InputKey.S, ref _legacySWasDown))
+            {
+                DevCommandBus.TryRun(
+                    CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
+                    "Ctrl+Alt+S",
+                    showHotkeyAck: true
+                );
+            }
+            else if (TryFireEdge(InputKey.X, ref _legacyXWasDown))
+            {
+                DevCommandBus.TryRun(
+                    CharacterProgressionTestScenarios.AddSmithingXpCommand,
+                    "Ctrl+Alt+X",
+                    showHotkeyAck: true
+                );
+            }
+            else if (TryFireEdge(InputKey.C, ref _legacyCWasDown))
+            {
+                DevCommandBus.TryRun(
+                    CharacterProgressionTestScenarios.AddSmithingFocusCommand,
+                    "Ctrl+Alt+C",
+                    showHotkeyAck: true
+                );
             }
         }
 

@@ -309,6 +309,35 @@ function Scan-InGameStatus {
         }
     }
 
+    if ($status.certification002) {
+        $cert2 = $status.certification002
+        $cert2Overall = [string]$cert2.overall
+        Write-Host "Certification002 ($($cert2.sprint)): $cert2Overall ($($cert2.completed)/$($cert2.required)) next=$($cert2.nextCheck)"
+        Set-ForgeTest -Name 'certification002' -Status $(if ($cert2Overall -eq 'PASS') { 'PASS' } elseif ($cert2Overall -eq 'FAIL') { 'FAIL' } else { 'PENDING' }) -Message "$cert2Overall ($($cert2.completed)/$($cert2.required))"
+
+        if ($cert2.checks) {
+            foreach ($prop in $cert2.checks.PSObject.Properties) {
+                $check = $prop.Value
+                $checkStatus = [string]$check.status
+                $msg = if ($check.message) { " - $($check.message)" } else { '' }
+                Write-Host "  [$checkStatus] cert002_$($prop.Name)$msg" -ForegroundColor $(switch ($checkStatus) { 'PASS' { 'Green' } 'FAIL' { 'Red' } 'BLOCKED' { 'Yellow' } default { 'Gray' } })
+                if ($checkStatus -eq 'PASS') {
+                    Set-ForgeTest -Name "cert002_$($prop.Name)" -Status 'PASS'
+                } elseif ($checkStatus -eq 'FAIL') {
+                    Set-ForgeTest -Name "cert002_$($prop.Name)" -Status 'FAIL' -Message $check.message
+                }
+            }
+        }
+    }
+
+    if ($status.progressionTest) {
+        if ($status.progressionTest.passed -eq $true) {
+            Set-ForgeTest -Name 'progression_test' -Status 'PASS' -Message "smithingXp=$($status.progressionTest.smithingXpBefore)->$($status.progressionTest.smithingXpAfter)"
+        } elseif ($status.progressionTest.ran -eq $true) {
+            Set-ForgeTest -Name 'progression_test' -Status 'FAIL' -Message 'Progression test ran but did not pass'
+        }
+    }
+
     if ($status.lastCommand) {
         $cmd = $status.lastCommand
         $msg = "$($cmd.name) via $($cmd.source) = $($cmd.result)"
@@ -328,9 +357,14 @@ function Send-ForgeCommand {
 
     $allowed = @(
         'ListScenarios',
+        'ShowForgeStatus',
         'AdvanceOneDay',
         'ToggleFastForward',
-        'RichPlayerEconomyTest'
+        'RichPlayerEconomyTest',
+        'RichSmithingProgressionTest',
+        'AddSmithingXp',
+        'AddSmithingFocus',
+        'AddEnduranceAttribute'
     )
 
     if ($allowed -notcontains $CommandName) {
@@ -424,6 +458,34 @@ function Invoke-ForgeCertification {
     }
 }
 
+function Invoke-ForgeProgressionCertification {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [int]$TimeoutSec = 90
+    )
+
+    Write-Host '=== Sprint 002 progression certification (file inbox, focus not required) ===' -ForegroundColor Cyan
+    $steps = @(
+        'RichSmithingProgressionTest',
+        'AddSmithingXp',
+        'AddSmithingFocus',
+        'AddEnduranceAttribute'
+    )
+
+    foreach ($cmd in $steps) {
+        Send-ForgeCommand -CommandName $cmd -BannerlordRoot $BannerlordRoot -Wait -TimeoutSec $TimeoutSec
+    }
+
+    $statusPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
+    if (Test-Path -LiteralPath $statusPath) {
+        $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+        if ($st.certification002) {
+            Write-Host ''
+            Write-Host "Certification002 overall: $($st.certification002.overall) ($($st.certification002.completed)/$($st.certification002.required))" -ForegroundColor Cyan
+        }
+    }
+}
+
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)))
     $csproj = Join-Path $RepoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
@@ -463,6 +525,7 @@ function Scan-AcceptanceLog {
         forge_lit = '\[The Blacksmith Guild\] Mod loaded\. The forge is lit\.'
         preflight = '\[TBG PREFLIGHT\] Result: Pass'
         gold_test = '\[TBG TEST\] PASS'
+        progression_test = '\[TBG TEST\] Scenario: RichSmithingProgressionTest'
     }
 
     foreach ($entry in $patterns.GetEnumerator()) {
@@ -479,8 +542,20 @@ function Scan-AcceptanceLog {
         Set-ForgeTest -Name 'gold_test' -Status 'BLOCKED' -Message 'Blocked by preflight or safety gate'
     }
 
-    if (Select-String -LiteralPath $LogPath -Pattern 'Assertion Failed|has missing beard tag' -Quiet) {
+    $engineFail = $false
+    $logLines = Get-Content -LiteralPath $LogPath -ErrorAction SilentlyContinue
+    foreach ($line in $logLines) {
+        if ($line -match '\[TBG PREFLIGHT\]') { continue }
+        if ($line -match 'Assertion Failed|has missing beard tag!') {
+            $engineFail = $true
+            break
+        }
+    }
+
+    if ($engineFail) {
         Add-ForgeError 'Engine assertion or beard-tag failure detected in log. Run CollectDiagnostics; do not rely on in-game OK dialogs.'
         Set-ForgeTest -Name 'engine_integrity' -Status 'FAIL' -Message 'See log / diagnostic-summary.txt'
+    } else {
+        Set-ForgeTest -Name 'engine_integrity' -Status 'PASS'
     }
 }

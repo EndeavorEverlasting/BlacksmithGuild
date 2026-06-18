@@ -13,7 +13,7 @@ namespace BlacksmithGuild.DevTools
         public const int SmithingFocusDelta = 3;
         public const int EnduranceAttributeDelta = 1;
 
-        public static void RunRichSmithingProgressionTest()
+        public static DevCommandResult RunRichSmithingProgressionTest()
         {
             var hero = Hero.MainHero;
 
@@ -23,7 +23,7 @@ namespace BlacksmithGuild.DevTools
             {
                 DebugLogger.Test("FAIL — MainHero is null.");
                 ForgeStatus.SetTest(RichSmithingProgressionTestName, "FAIL", "MainHero is null");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var before = CharacterProgressionSnapshot.Capture(hero);
@@ -33,7 +33,7 @@ namespace BlacksmithGuild.DevTools
             {
                 DebugLogger.Test("FAIL — could not add smithing XP.");
                 ForgeStatus.SetTest(RichSmithingProgressionTestName, "FAIL", "HeroDeveloper unavailable");
-                return;
+                return DevCommandResult.Failed;
             }
 
             DebugLogger.Test($"Smithing XP added: {SmithingXpDelta:N0}");
@@ -63,14 +63,33 @@ namespace BlacksmithGuild.DevTools
             {
                 DebugLogger.Test("PASS");
                 ForgeStatus.SetTest(RichSmithingProgressionTestName, "PASS");
-                return;
+                ForgeStatus.RecordProgressionTest(
+                    true,
+                    before.SmithingXpAvailable ? before.SmithingXp : 0,
+                    after.SmithingXpAvailable ? after.SmithingXp : 0,
+                    before.SmithingFocusAvailable ? before.SmithingFocus : 0,
+                    after.SmithingFocusAvailable ? after.SmithingFocus : 0,
+                    before.EnduranceAvailable ? before.Endurance : 0,
+                    after.EnduranceAvailable ? after.Endurance : 0
+                );
+                return DevCommandResult.Success;
             }
 
             DebugLogger.Test("FAIL — no expected progression values changed.");
             ForgeStatus.SetTest(RichSmithingProgressionTestName, "FAIL", "No progression change detected");
+            ForgeStatus.RecordProgressionTest(
+                false,
+                before.SmithingXpAvailable ? before.SmithingXp : 0,
+                after.SmithingXpAvailable ? after.SmithingXp : 0,
+                before.SmithingFocusAvailable ? before.SmithingFocus : 0,
+                after.SmithingFocusAvailable ? after.SmithingFocus : 0,
+                before.EnduranceAvailable ? before.Endurance : 0,
+                after.EnduranceAvailable ? after.Endurance : 0
+            );
+            return DevCommandResult.Failed;
         }
 
-        public static void RunAddSmithingXpOnly()
+        public static DevCommandResult RunAddSmithingXpOnly()
         {
             var hero = Hero.MainHero;
             DebugLogger.Test($"Command: {AddSmithingXpCommand}");
@@ -78,7 +97,7 @@ namespace BlacksmithGuild.DevTools
             if (hero == null)
             {
                 DebugLogger.Test("FAIL — MainHero is null.");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var before = CharacterProgressionSnapshot.Capture(hero);
@@ -87,16 +106,24 @@ namespace BlacksmithGuild.DevTools
             if (!HeroProgressionDevTools.AddSmithingXp(hero, SmithingXpDelta))
             {
                 DebugLogger.Test("FAIL — could not add smithing XP.");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var after = CharacterProgressionSnapshot.Capture(hero);
             DebugLogger.Test($"Smithing XP added: {SmithingXpDelta:N0}");
             DebugLogger.Test($"Smithing XP after: {(after.SmithingXpAvailable ? after.SmithingXp.ToString("N0") : "unavailable")}");
-            DebugLogger.Test(before.SmithingXp != after.SmithingXp ? "PASS" : "FAIL — smithing XP unchanged.");
+
+            if (before.SmithingXpAvailable && after.SmithingXpAvailable && before.SmithingXp != after.SmithingXp)
+            {
+                DebugLogger.Test("PASS");
+                return DevCommandResult.Success;
+            }
+
+            DebugLogger.Test("FAIL — smithing XP unchanged.");
+            return DevCommandResult.Failed;
         }
 
-        public static void RunAddSmithingFocusOnly()
+        public static DevCommandResult RunAddSmithingFocusOnly()
         {
             var hero = Hero.MainHero;
             DebugLogger.Test($"Command: {AddSmithingFocusCommand}");
@@ -104,7 +131,7 @@ namespace BlacksmithGuild.DevTools
             if (hero == null)
             {
                 DebugLogger.Test("FAIL — MainHero is null.");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var before = CharacterProgressionSnapshot.Capture(hero);
@@ -113,16 +140,25 @@ namespace BlacksmithGuild.DevTools
             if (!HeroProgressionDevTools.AddSmithingFocus(hero, SmithingFocusDelta))
             {
                 DebugLogger.Test("FAIL — could not add smithing focus.");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var after = CharacterProgressionSnapshot.Capture(hero);
             DebugLogger.Test($"Smithing focus added: {SmithingFocusDelta}");
             DebugLogger.Test($"Smithing focus after: {(after.SmithingFocusAvailable ? after.SmithingFocus.ToString() : "unavailable")}");
-            DebugLogger.Test(before.SmithingFocus != after.SmithingFocus ? "PASS" : "FAIL — smithing focus unchanged.");
+
+            if (before.SmithingFocusAvailable && after.SmithingFocusAvailable &&
+                before.SmithingFocus != after.SmithingFocus)
+            {
+                DebugLogger.Test("PASS");
+                return DevCommandResult.Success;
+            }
+
+            DebugLogger.Test("FAIL — smithing focus unchanged.");
+            return DevCommandResult.Failed;
         }
 
-        public static void RunAddEnduranceAttributeOnly()
+        public static DevCommandResult RunAddEnduranceAttributeOnly()
         {
             var hero = Hero.MainHero;
             DebugLogger.Test($"Command: {AddEnduranceAttributeCommand}");
@@ -130,7 +166,7 @@ namespace BlacksmithGuild.DevTools
             if (hero == null)
             {
                 DebugLogger.Test("FAIL — MainHero is null.");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var before = CharacterProgressionSnapshot.Capture(hero);
@@ -139,13 +175,21 @@ namespace BlacksmithGuild.DevTools
             if (!HeroProgressionDevTools.AddEnduranceAttribute(hero, EnduranceAttributeDelta))
             {
                 DebugLogger.Test("FAIL — could not add endurance attribute.");
-                return;
+                return DevCommandResult.Failed;
             }
 
             var after = CharacterProgressionSnapshot.Capture(hero);
             DebugLogger.Test($"Endurance attribute added: {EnduranceAttributeDelta}");
             DebugLogger.Test($"Endurance after: {(after.EnduranceAvailable ? after.Endurance.ToString() : "unavailable")}");
-            DebugLogger.Test(before.Endurance != after.Endurance ? "PASS" : "FAIL — endurance unchanged.");
+
+            if (before.EnduranceAvailable && after.EnduranceAvailable && before.Endurance != after.Endurance)
+            {
+                DebugLogger.Test("PASS");
+                return DevCommandResult.Success;
+            }
+
+            DebugLogger.Test("FAIL — endurance unchanged.");
+            return DevCommandResult.Failed;
         }
     }
 }
