@@ -38,6 +38,8 @@ namespace BlacksmithGuild.DevTools
         public static bool IsReloadBlocked =>
             _reloadState == ReloadState.BlockedByRunningGame;
 
+        public static string LoadedModuleVersion => _loadedVersion;
+
         public static void OnModuleLoad()
         {
             try

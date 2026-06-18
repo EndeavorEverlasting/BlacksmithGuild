@@ -161,47 +161,38 @@ namespace BlacksmithGuild
         /// </summary>
         public static void DisplaySummaryInGame()
         {
-            var certOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
-            var certPassed = CertificationTracker.CountPassed();
-            var certRequired = CertificationTracker.RequiredCheckNames.Count;
+            var version = PendingReloadWatcher.LoadedModuleVersion;
+            var devTools = DevToolsConfig.DevToolsEnabled ? "on" : "off";
+            var reload = PendingReloadWatcher.IsReloadBlocked
+                ? "blocked"
+                : PendingReloadWatcher.IsReloadPending
+                    ? "pending"
+                    : "clear";
             var preflight = string.IsNullOrEmpty(_preflightVerdict) ? "unknown" : _preflightVerdict;
             var last = string.IsNullOrEmpty(_lastCommand)
                 ? "none"
                 : $"{_lastCommand} {_lastCommandResult ?? ""}".Trim();
-            var inbox = GameSessionState.CanPollFileInbox ? "ok" : "blocked";
 
-            GuildLog.Display(
-                $"TBG STATUS: cert={certOverall} ({certPassed}/{certRequired}) preflight={preflight}"
+            InGameNotice.Info(
+                $"TBG STATUS: v{version} session={_sessionPhase} devTools={devTools} reload={reload}"
             );
-            GuildLog.Display($"TBG STATUS: last={last}");
-            GuildLog.Display($"TBG STATUS: session={_sessionPhase} inbox={inbox}");
+            InGameNotice.Info($"TBG STATUS: preflight={preflight} last={last}");
 
-            var cert002Overall = Sprint002CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
-            var cert002Passed = Sprint002CertificationTracker.CountPassed();
-            var cert002Required = Sprint002CertificationTracker.RequiredCheckNames.Count;
-            if (cert002Passed > 0 || cert002Overall != "NOT_STARTED")
+            var certOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
+            var certPassed = CertificationTracker.CountPassed();
+            var certRequired = CertificationTracker.RequiredCheckNames.Count;
+            if (certPassed > 0 || certOverall != "NOT_STARTED")
             {
-                GuildLog.Display(
-                    $"TBG STATUS: cert002={cert002Overall} ({cert002Passed}/{cert002Required})"
-                );
-            }
-
-            if (_progressionTest.Ran)
-            {
-                GuildLog.Display(
-                    $"TBG STATUS: progressionTest={(_progressionTest.Passed ? "PASS" : "FAIL")} " +
-                    $"smithingXp={_progressionTest.SmithingXpBefore:N0}->{_progressionTest.SmithingXpAfter:N0}"
-                );
-            }
-
-            if (PendingReloadWatcher.IsReloadPending)
-            {
-                GuildLog.Display("TBG STATUS: reload=pending — restart Bannerlord");
+                InGameNotice.Info($"TBG STATUS: cert={certOverall} ({certPassed}/{certRequired})");
             }
 
             if (PendingReloadWatcher.IsReloadBlocked)
             {
-                GuildLog.Display("TBG STATUS: reload=blocked — close Bannerlord, run Forge.cmd");
+                InGameNotice.Warn("TBG STATUS: reload=blocked — close Bannerlord, run Forge.cmd");
+            }
+            else if (PendingReloadWatcher.IsReloadPending)
+            {
+                InGameNotice.Warn("TBG STATUS: reload=pending — restart Bannerlord");
             }
 
             DebugLogger.Test("ShowForgeStatus displayed cached summary.", showInGame: false);

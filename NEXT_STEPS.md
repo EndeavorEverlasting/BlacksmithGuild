@@ -14,6 +14,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | **Complete** |
 | 3 | **001** | Dev command harness (visible, repeatable, safe) | **Certified** (2026-06-18) |
 | 3b | **001B** | Focus-aware inbox poll, explicit certification status, `-Certify -Wait` | **Certified** (2026-06-18) |
+| 3c | **001U** | In-game command feedback + message-channel clarity (F7–F11 visible) | **Complete** |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness + F7 status | **Code complete — certify in-game** |
 | 5 | **003** | Treasury Delta Watch (evidence system) | Planned — see `docs/treasury-delta-watch-*.md` |
 | 6 | **004+** | Recommendation system | Later |
@@ -34,9 +35,9 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 002 | **Code complete** — progression commands wired, F7 `ShowForgeStatus`, `-CertifyProgression`; needs in-game PASS |
 | Sprint 003 | **Planned** — Treasury Delta Watch (`docs/treasury-delta-watch-plan.md`) |
 | Dev loop | **Steam Play** daily; close Bannerlord before `Forge.cmd` / `dotnet build` for install; watch mode can build while game is open |
-| In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — Enter log, Alt+` console, F7–F11 |
+| In-game surfaces | [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — message feed (F7–F11), toast (forge), file logs |
 
-**Next: Load disposable campaign → `.\forge.ps1 -CertifyProgression -Wait` → `.\forge.ps1 -Check -SkipInstall`; expect `certification002.overall: PASS` (4/4). Optional: F7/F8 in-game, Ctrl+Alt+S on focused map.**
+**Next: Retest F7–F11 on disposable campaign (messages in lower-left feed). Then certify Sprint 002: `.\forge.ps1 -CertifyProgression -Wait`.**
 
 **Dev loop:** Close Bannerlord, then **`Forge.cmd`** after code changes. **`ForgeWatch.cmd`** can rebuild while the game is open; if install is blocked, close Bannerlord and run **`Forge.cmd`** again. Watch for `TBG RELOAD` / **F7** `reload=blocked` or `reload=pending`.
 

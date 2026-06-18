@@ -7,8 +7,12 @@ namespace BlacksmithGuild.DevTools
         public const string RichPlayerEconomyTestName = "RichPlayerEconomyTest";
         public const int RichPlayerGoldDelta = 100_000;
 
+        public static string LastFailReason { get; private set; }
+
         public static DevCommandResult RunRichPlayerEconomyTest()
         {
+            LastFailReason = null;
+
             Hero hero;
             try
             {
@@ -21,6 +25,7 @@ namespace BlacksmithGuild.DevTools
 
             if (hero == null)
             {
+                LastFailReason = "MainHero is null";
                 DebugLogger.Test("Scenario: RichPlayerEconomyTest");
                 DebugLogger.Test("FAIL — MainHero is null.");
                 ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", "MainHero is null");
@@ -50,6 +55,7 @@ namespace BlacksmithGuild.DevTools
             }
 
             var message = $"expected delta {goldDelta:N0}, actual delta {actualDelta:N0}";
+            LastFailReason = message;
             DebugLogger.Test($"FAIL — {message}.");
             ForgeStatus.SetTest(RichPlayerEconomyTestName, "FAIL", message);
             ForgeStatus.RecordGoldTest(false, goldBefore, goldAfter, actualDelta);

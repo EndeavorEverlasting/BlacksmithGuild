@@ -21,7 +21,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 **Sprint 002** — certify progression harness on a disposable campaign (`-CertifyProgression -Wait`, `Ctrl+Alt+S`, **F7** status).
 
-> **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — **Enter** notice log, **Alt+`** dev console, **F7–F11** dev commands.
+> **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), Windows toast (forge install), file logs. **Not** the cheat console for shortcuts.
 
 ## Two environments: IDE vs game
 
@@ -61,7 +61,7 @@ Press **Enter** on the campaign map to scroll the notice log after F7/F8. See [d
 | Ctrl+Alt+D | `AdvanceOneDay` |
 | Ctrl+Alt+F | `ToggleFastForward` |
 
-Each hotkey shows an in-game toast (`TBG HOTKEY: <Command> fired`) before execution.
+Each hotkey shows visible in-game feedback in the **message feed** (lower-left log) via `InGameNotice` — request/result/block lines per key. File inbox commands log `TBG: {command} Success` or `TBG FAILED:` when run without a hotkey label.
 
 ### File-based command inbox (primary certification path)
 

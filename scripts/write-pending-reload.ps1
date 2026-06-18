@@ -13,21 +13,29 @@ param(
 
     [Parameter(Mandatory = $true)]
     [ValidateSet('installed', 'blockedByRunningGame')]
-    [string]$InstallStatus
+    [string]$InstallStatus,
+
+    [string]$ModuleSourceDir
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Get-ModVersionFromXml {
+    param([string]$SubModuleXml)
+
+    if (-not (Test-Path -LiteralPath $SubModuleXml)) {
+        return 'unknown'
+    }
+
+    [xml]$doc = Get-Content -LiteralPath $SubModuleXml
+    return $doc.Module.Version.value
+}
 
 function Get-ModVersionFromInstall {
     param([string]$Root)
 
     $subModuleXml = Join-Path $Root 'Modules\BlacksmithGuild\SubModule.xml'
-    if (-not (Test-Path -LiteralPath $subModuleXml)) {
-        return 'unknown'
-    }
-
-    [xml]$doc = Get-Content -LiteralPath $subModuleXml
-    return $doc.Module.Version.value
+    return Get-ModVersionFromXml -SubModuleXml $subModuleXml
 }
 
 function Test-BannerlordProcessRunning {
@@ -86,7 +94,11 @@ if (-not (Test-Path -LiteralPath $DllPath)) {
 }
 
 $dllItem = Get-Item -LiteralPath $DllPath
-$version = Get-ModVersionFromInstall -Root $BannerlordRoot
+if ($InstallStatus -eq 'blockedByRunningGame' -and $ModuleSourceDir) {
+    $version = Get-ModVersionFromXml -SubModuleXml (Join-Path $ModuleSourceDir 'SubModule.xml')
+} else {
+    $version = Get-ModVersionFromInstall -Root $BannerlordRoot
+}
 $markerPath = Join-Path $BannerlordRoot 'BlacksmithGuild_PendingReload.json'
 
 $payload = [ordered]@{

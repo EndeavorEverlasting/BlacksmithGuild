@@ -7,12 +7,51 @@ Use these three layers while developing on a **disposable campaign** (mod ON).
 | Goal | Do this |
 |------|---------|
 | Mod loaded? | **Enter** on campaign map → look for `The forge is lit` |
-| Hotkey worked? | **Enter** → `TBG HOTKEY: … fired` toast |
-| Cert / session summary? | **F7** `ShowForgeStatus`, then **Enter** to scroll |
+| Shortcut fired? | **Enter** → `TBG F9:` / `TBG F10:` / `TBG F11:` or `TBG … BLOCKED:` in the **lower-left message feed** |
+| Cert / session summary? | **F7** → `TBG STATUS:` lines in the message feed |
 | New build while game open? | Build may succeed but Client DLL install can be **blocked** (file locked). In-game: `TBG RELOAD: … close Bannerlord …`; **F7** shows `reload=blocked`. After successful install: `reload=pending` — restart Bannerlord |
 | List dev commands? | **F8** |
 | Full test output? | Tail `BlacksmithGuild_Phase1.log` or `.\forge.ps1 -Check -SkipInstall` |
 | Engine sanity (gold/XP)? | **Alt+`** dev console on disposable save only |
+
+---
+
+## Message channels
+
+The Blacksmith Guild uses three separate channels. Do not confuse them.
+
+| Channel | Mechanism | Where it appears | Used for |
+|---------|-----------|------------------|----------|
+| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left / bottom-left game log (press **Enter** on campaign map to scroll) | F7–F11 shortcut ack, results, block reasons, compact status |
+| **Windows toast** | PowerShell after forge install | Windows notification area (usually bottom-right) | Build/install/reload reminders when Bannerlord is running |
+| **File logs** | Append to disk | `<Bannerlord>\BlacksmithGuild_Phase1.log`, `BlacksmithGuild_Forge.log` | Full diagnostics, certification evidence |
+
+**Not used for normal shortcut feedback:** Bannerlord cheat/developer console (Alt+` — top overlay). Toast alone is not sufficient; in-game feed always gets the primary signal.
+
+---
+
+## In-game feedback location
+
+Shortcut feedback is displayed through Bannerlord's normal in-game message feed (`InformationManager.DisplayMessage`). In the game UI this is the **lower-left / bottom-left message log area** — press **Enter** on the campaign map to open and scroll.
+
+Windows toast notifications are separate (forge install scripts) and may appear in the Windows notification area, usually bottom-right.
+
+Full diagnostic detail remains in:
+
+- `BlacksmithGuild_Phase1.log`
+- `BlacksmithGuild_Forge.log`
+
+### Shortcut feedback (visible in message feed)
+
+| Key | Expected visible messages |
+|-----|---------------------------|
+| **F7** | `TBG STATUS: v… session=… devTools=… reload=clear\|pending\|blocked`; preflight + last command; optional cert line |
+| **F8** | `TBG COMMANDS` + compact F7–F11 / Ctrl+Alt list |
+| **F9** | `TBG F9: Daily tick test requested.` → `TBG F9: DailyTick fired.` or `TBG F9 BLOCKED:` / `TBG F9 FAILED:` |
+| **F10** | `TBG F10: Fast-forward ON.` / `OFF.` or `TBG F10 BLOCKED:` / `FAILED:` |
+| **F11** | `TBG F11: Gold test requested.` → `TBG F11: Gold test PASS, +100000.` or `BLOCKED` / `FAILED` |
+
+If a risky command is blocked, the block reason appears in-game (e.g. `TBG F9 BLOCKED: campaign not ready`) and in the file log.
 
 ---
 
@@ -26,12 +65,11 @@ Use these three layers while developing on a **disposable campaign** (mod ON).
 
 ### What TBG writes here
 
-Via `GuildLog` → `InformationManager.DisplayMessage`:
+Via `GuildLog` / `InGameNotice` → `InformationManager.DisplayMessage`:
 
 - `[The Blacksmith Guild] Mod loaded. The forge is lit.`
 - Fake forge advisor lines on daily tick
-- `TBG HOTKEY: <Command> fired` after F7–F11 / Ctrl+Alt dev keys
-- **F7** status lines (`TBG STATUS: …`)
+- **F7–F11** shortcut feedback (`TBG STATUS:`, `TBG COMMANDS`, `TBG F9:`, etc.)
 - **`TBG RELOAD: …`** when a newer build exists:
   - `installStatus: installed` — new DLL copied; restart Bannerlord to load it
   - `installStatus: blockedByRunningGame` — build ready but Client DLL locked; close Bannerlord, run `Forge.cmd` again
@@ -113,10 +151,8 @@ Future **Treasury Delta Watch** (Sprint 003) will append summary lines from `sta
 Example F7 output today:
 
 ```text
-TBG STATUS: cert=PASS (6/6) preflight=Pass
-TBG STATUS: last=RichPlayerEconomyTest Success
-TBG STATUS: session=MapPaused inbox=ok
-TBG STATUS: cert002=PASS (4/4)
+TBG STATUS: v0.0.5 session=MapPaused devTools=on reload=clear
+TBG STATUS: preflight=Pass last=AdvanceOneDay Success
+TBG STATUS: cert=PASS (6/6)
 TBG STATUS: reload=blocked — close Bannerlord, run Forge.cmd
-TBG STATUS: reload=pending — restart Bannerlord
 ```

@@ -1,4 +1,6 @@
 # Shared Client DLL copy + pending-reload marker for install-mod and dotnet build.
+# Client DLL is copied before SubModule.xml so a blocked install cannot bump the
+# installed module version while the old DLL remains loaded (Module Mismatch).
 
 param(
     [string]$BannerlordRoot,
@@ -28,7 +30,10 @@ function Copy-ModClientDll {
         [string]$BannerlordRoot,
 
         [Parameter(Mandatory = $true)]
-        [string]$Source
+        [string]$Source,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ModuleSourceDir
     )
 
     if (-not (Test-Path -LiteralPath $SourceDll)) {
@@ -48,7 +53,8 @@ function Copy-ModClientDll {
                 -BannerlordRoot $BannerlordRoot `
                 -Source $Source `
                 -DllPath $SourceDll `
-                -InstallStatus 'blockedByRunningGame'
+                -InstallStatus 'blockedByRunningGame' `
+                -ModuleSourceDir $ModuleSourceDir
 
             return [pscustomobject]@{
                 Status = 'blockedByRunningGame'
@@ -97,6 +103,17 @@ function Sync-ModToGameModules {
         New-Item -ItemType Directory -Force -Path $ModuleDestDir | Out-Null
     }
 
+    $clientResult = Copy-ModClientDll `
+        -SourceDll (Join-Path $ModuleSourceDir $dllRelClient) `
+        -DestDll (Join-Path $ModuleDestDir $dllRelClient) `
+        -BannerlordRoot $BannerlordRoot `
+        -Source $Source `
+        -ModuleSourceDir $ModuleSourceDir
+
+    if ($clientResult.Status -eq 'blockedByRunningGame') {
+        return $clientResult
+    }
+
     Copy-Item -Force -LiteralPath (Join-Path $ModuleSourceDir 'SubModule.xml') `
         -Destination (Join-Path $ModuleDestDir 'SubModule.xml')
 
@@ -114,18 +131,12 @@ function Sync-ModToGameModules {
         }
     }
 
-    $clientResult = Copy-ModClientDll `
-        -SourceDll (Join-Path $ModuleSourceDir $dllRelClient) `
-        -DestDll (Join-Path $ModuleDestDir $dllRelClient) `
-        -BannerlordRoot $BannerlordRoot `
-        -Source $Source
-
     $installedDllClient = Join-Path $ModuleDestDir $dllRelClient
     $installedDllWEditor = Join-Path $ModuleDestDir $dllRelWEditor
     $installedXml = Join-Path $ModuleDestDir 'SubModule.xml'
 
     if (-not (Test-Path -LiteralPath $installedXml)) { throw 'Missing installed SubModule.xml' }
-    if ($clientResult.Status -eq 'installed' -and -not (Test-Path -LiteralPath $installedDllClient)) {
+    if (-not (Test-Path -LiteralPath $installedDllClient)) {
         throw "Missing installed Client DLL: $installedDllClient"
     }
     if (-not (Test-Path -LiteralPath $installedDllWEditor)) {

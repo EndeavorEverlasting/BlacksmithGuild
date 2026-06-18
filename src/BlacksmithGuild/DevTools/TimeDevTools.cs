@@ -8,10 +8,15 @@ namespace BlacksmithGuild.DevTools
 
         public static bool IsFastForwardActive => _fastForwardActive;
 
+        public static string LastFailReason { get; private set; }
+
         public static bool AdvanceOneDay()
         {
+            LastFailReason = null;
+
             if (Campaign.Current == null)
             {
+                LastFailReason = "no active campaign";
                 DebugLogger.Test("AdvanceOneDay: FAIL — no active campaign.");
                 return false;
             }
@@ -23,8 +28,11 @@ namespace BlacksmithGuild.DevTools
 
         public static bool ToggleFastForward()
         {
+            LastFailReason = null;
+
             if (Campaign.Current == null)
             {
+                LastFailReason = "no active campaign";
                 DebugLogger.Test("ToggleFastForward: FAIL — no active campaign.");
                 return false;
             }

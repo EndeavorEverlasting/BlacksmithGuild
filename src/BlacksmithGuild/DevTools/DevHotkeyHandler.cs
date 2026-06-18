@@ -25,25 +25,25 @@ namespace BlacksmithGuild.DevTools
 
             if (TryFireEdge(InputKey.F7, ref _f7WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ShowForgeStatusCommand, "F7", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.ShowForgeStatusCommand, "F7", hotkeyLabel: "F7");
                 return;
             }
 
             if (TryFireEdge(InputKey.F8, ref _f8WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "F8", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "F8", hotkeyLabel: "F8");
                 return;
             }
 
             if (TryFireEdge(InputKey.F9, ref _f9WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.AdvanceOneDayCommand, "F9", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.AdvanceOneDayCommand, "F9", hotkeyLabel: "F9");
                 return;
             }
 
             if (TryFireEdge(InputKey.F10, ref _f10WasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ToggleFastForwardCommand, "F10", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.ToggleFastForwardCommand, "F10", hotkeyLabel: "F10");
                 return;
             }
 
@@ -52,7 +52,7 @@ namespace BlacksmithGuild.DevTools
                 DevCommandBus.TryRun(
                     EconomyTestScenarios.RichPlayerEconomyTestName,
                     "F11",
-                    showHotkeyAck: true
+                    hotkeyLabel: "F11"
                 );
                 return;
             }
@@ -70,22 +70,22 @@ namespace BlacksmithGuild.DevTools
 
             if (TryFireEdge(InputKey.D, ref _legacyDWasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.AdvanceOneDayCommand, "Ctrl+Alt+D", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.AdvanceOneDayCommand, "Ctrl+Alt+D", hotkeyLabel: "Ctrl+Alt+D");
             }
             else if (TryFireEdge(InputKey.F, ref _legacyFWasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ToggleFastForwardCommand, "Ctrl+Alt+F", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.ToggleFastForwardCommand, "Ctrl+Alt+F", hotkeyLabel: "Ctrl+Alt+F");
             }
             else if (TryFireEdge(InputKey.L, ref _legacyLWasDown))
             {
-                DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "Ctrl+Alt+L", showHotkeyAck: true);
+                DevCommandBus.TryRun(DevCommandRegistry.ListScenariosCommand, "Ctrl+Alt+L", hotkeyLabel: "Ctrl+Alt+L");
             }
             else if (TryFireEdge(InputKey.S, ref _legacySWasDown))
             {
                 DevCommandBus.TryRun(
                     CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
                     "Ctrl+Alt+S",
-                    showHotkeyAck: true
+                    hotkeyLabel: "Ctrl+Alt+S"
                 );
             }
             else if (TryFireEdge(InputKey.X, ref _legacyXWasDown))
@@ -93,7 +93,7 @@ namespace BlacksmithGuild.DevTools
                 DevCommandBus.TryRun(
                     CharacterProgressionTestScenarios.AddSmithingXpCommand,
                     "Ctrl+Alt+X",
-                    showHotkeyAck: true
+                    hotkeyLabel: "Ctrl+Alt+X"
                 );
             }
             else if (TryFireEdge(InputKey.C, ref _legacyCWasDown))
@@ -101,7 +101,7 @@ namespace BlacksmithGuild.DevTools
                 DevCommandBus.TryRun(
                     CharacterProgressionTestScenarios.AddSmithingFocusCommand,
                     "Ctrl+Alt+C",
-                    showHotkeyAck: true
+                    hotkeyLabel: "Ctrl+Alt+C"
                 );
             }
         }
