@@ -7,11 +7,15 @@ namespace BlacksmithGuild.Forge
     {
         public bool HasRankings { get; set; }
         public string Source { get; set; }
+        public string SourceKind { get; set; }
+        public string SourceStatus { get; set; }
+        public bool FallbackUsed { get; set; }
         public string Doctrine { get; set; }
         public string TopCandidateId { get; set; }
         public string TopCandidateName { get; set; }
         public float TopFinalScore { get; set; }
         public int RankedCount { get; set; }
+        public int CandidateCount { get; set; }
         public string ReportPath { get; set; } = "BlacksmithGuild_ForgeRecommendations.json";
         public DateTime? GeneratedAt { get; set; }
     }
@@ -20,6 +24,10 @@ namespace BlacksmithGuild.Forge
     {
         public string GeneratedUtc { get; set; }
         public string Source { get; set; }
+        public string SourceKind { get; set; }
+        public string SourceStatus { get; set; }
+        public bool FallbackUsed { get; set; }
+        public int CandidateCount { get; set; }
         public string Doctrine { get; set; }
         public ForgeCandidate TopCandidate { get; set; }
         public List<ForgeCandidate> Ranked { get; set; } = new List<ForgeCandidate>();

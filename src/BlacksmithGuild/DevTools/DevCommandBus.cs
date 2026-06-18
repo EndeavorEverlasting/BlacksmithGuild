@@ -165,7 +165,9 @@ namespace BlacksmithGuild.DevTools
 
             if (commandName == DevCommandRegistry.ShowForgeStatusCommand ||
                 commandName == DevCommandRegistry.ListScenariosCommand ||
-                commandName == ForgeRecommendationService.RankForgeCandidatesCommand)
+                commandName == ForgeRecommendationService.RankForgeCandidatesCommand ||
+                commandName == ForgeRecommendationService.ShowForgeCandidateSourceCommand ||
+                commandName == ForgeRecommendationService.ShowForgeDoctrineCommand)
             {
                 return;
             }
@@ -345,6 +347,34 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case ForgeRecommendationService.RankForgeCandidatesCommand:
                     return ForgeRecommendationService.RunRankNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.SetForgeCandidateSourceStubCommand:
+                    return ForgeRecommendationService.SetRequestedSourceKind(ForgeCandidateSourceKind.Stub)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.SetForgeCandidateSourceRealCommand:
+                    return ForgeRecommendationService.SetRequestedSourceKind(ForgeCandidateSourceKind.Real)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.ShowForgeCandidateSourceCommand:
+                    return ForgeRecommendationService.ShowCandidateSource()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.SetForgeDoctrineProfitForgeCommand:
+                    return ForgeRecommendationService.SetActiveDoctrine(ForgeDoctrine.ProfitForge)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.SetForgeDoctrineRareMetalConservationCommand:
+                    return ForgeRecommendationService.SetActiveDoctrine(ForgeDoctrine.RareMetalConservation)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.SetForgeDoctrineCashCrisisCommand:
+                    return ForgeRecommendationService.SetActiveDoctrine(ForgeDoctrine.CashCrisis)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ForgeRecommendationService.ShowForgeDoctrineCommand:
+                    return ForgeRecommendationService.ShowDoctrine()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 default:

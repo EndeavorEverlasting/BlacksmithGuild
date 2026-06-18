@@ -12,28 +12,81 @@ namespace BlacksmithGuild.Forge
     public static class ForgeRecommendationService
     {
         public const string RankForgeCandidatesCommand = "RankForgeCandidates";
+        public const string SetForgeCandidateSourceStubCommand = "SetForgeCandidateSourceStub";
+        public const string SetForgeCandidateSourceRealCommand = "SetForgeCandidateSourceReal";
+        public const string ShowForgeCandidateSourceCommand = "ShowForgeCandidateSource";
+        public const string SetForgeDoctrineProfitForgeCommand = "SetForgeDoctrineProfitForge";
+        public const string SetForgeDoctrineRareMetalConservationCommand = "SetForgeDoctrineRareMetalConservation";
+        public const string SetForgeDoctrineCashCrisisCommand = "SetForgeDoctrineCashCrisis";
+        public const string ShowForgeDoctrineCommand = "ShowForgeDoctrine";
 
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_ForgeRecommendations.json");
 
+        private static readonly StubForgeCandidateSource StubSource = new StubForgeCandidateSource();
+        private static readonly RealForgeCandidateSource RealSource = new RealForgeCandidateSource();
+
+        private static ForgeCandidateSourceKind _requestedSourceKind = ForgeCandidateSourceKind.Stub;
+        private static ForgeDoctrine _activeDoctrine = ForgeDoctrine.ProfitForge;
         private static ForgeRecommendationSummary _summary = new ForgeRecommendationSummary();
         private static ForgeRecommendationReport _cachedReport = new ForgeRecommendationReport();
         private static bool _summaryRecorded;
 
         public static ForgeRecommendationSummary Summary => _summary;
+        public static ForgeCandidateSourceKind RequestedSourceKind => _requestedSourceKind;
+        public static ForgeDoctrine ActiveDoctrine => _activeDoctrine;
 
-        public static bool RunRankNow(ForgeDoctrine doctrine = ForgeDoctrine.ProfitForge, string source = RankForgeCandidatesCommand)
+        public static bool SetRequestedSourceKind(ForgeCandidateSourceKind kind)
+        {
+            _requestedSourceKind = kind;
+            DebugLogger.Test($"[TBG FORGE] Candidate source set to {kind}.", showInGame: false);
+            InGameNotice.Info($"TBG FORGE: candidate source set to {kind}.");
+            return true;
+        }
+
+        public static bool SetActiveDoctrine(ForgeDoctrine doctrine)
+        {
+            _activeDoctrine = doctrine;
+            DebugLogger.Test($"[TBG FORGE] Doctrine set to {doctrine}.", showInGame: false);
+            InGameNotice.Info($"TBG FORGE: doctrine set to {doctrine}.");
+            return true;
+        }
+
+        public static bool ShowCandidateSource()
+        {
+            InGameNotice.Info($"TBG FORGE: requested source={_requestedSourceKind}");
+            return true;
+        }
+
+        public static bool ShowDoctrine()
+        {
+            InGameNotice.Info($"TBG FORGE: active doctrine={_activeDoctrine}");
+            return true;
+        }
+
+        public static bool RunRankNow(ForgeDoctrine? doctrineOverride = null, string source = RankForgeCandidatesCommand)
         {
             try
             {
-                var candidates = StubForgeCandidateSource.GetCandidates();
+                var doctrine = doctrineOverride ?? _activeDoctrine;
+                var resolution = ResolveCandidates(_requestedSourceKind);
+                if (resolution.Candidates.Count == 0)
+                {
+                    DebugLogger.Test("[TBG FORGE] RankForgeCandidates failed: no candidates after source resolution.", showInGame: false);
+                    return false;
+                }
+
                 var advisor = new ForgeAdvisor(new MaterialReservePolicy());
-                var ranked = advisor.RankCandidates(candidates, doctrine).ToList();
+                var ranked = advisor.RankCandidates(resolution.Candidates, doctrine).ToList();
 
                 _cachedReport = new ForgeRecommendationReport
                 {
                     GeneratedUtc = DateTime.UtcNow.ToString("o"),
-                    Source = StubForgeCandidateSource.SourceName,
+                    Source = resolution.SourceLabel,
+                    SourceKind = resolution.SourceKind.ToString(),
+                    SourceStatus = resolution.SourceStatus.ToString(),
+                    FallbackUsed = resolution.FallbackUsed,
+                    CandidateCount = resolution.Candidates.Count,
                     Doctrine = doctrine.ToString(),
                     TopCandidate = ranked.FirstOrDefault(),
                     Ranked = ranked
@@ -45,7 +98,7 @@ namespace BlacksmithGuild.Forge
                 ForgeStatus.RecordForgeRecommendations(_summary);
 
                 DebugLogger.Test(
-                    $"[TBG FORGE] RankForgeCandidates complete source={_cachedReport.Source} doctrine={_cachedReport.Doctrine} top={_summary.TopCandidateName} score={_summary.TopFinalScore:0}",
+                    $"[TBG FORGE] RankForgeCandidates complete source={_cachedReport.Source} kind={_cachedReport.SourceKind} doctrine={_cachedReport.Doctrine} top={_summary.TopCandidateName} score={_summary.TopFinalScore:0}",
                     showInGame: false);
 
                 return ranked.Count > 0;
@@ -63,7 +116,9 @@ namespace BlacksmithGuild.Forge
             if (!_summaryRecorded || !_summary.HasRankings)
             {
                 report.Line("status", "no rankings cached (run RankForgeCandidates)");
-                report.Verdict(ReportVerdict.Info, "Top candidate cached from stub source after RankForgeCandidates");
+                report.Line("requestedSource", _requestedSourceKind.ToString());
+                report.Line("activeDoctrine", _activeDoctrine.ToString());
+                report.Verdict(ReportVerdict.Info, "Run RankForgeCandidates to cache ranked candidates");
                 return;
             }
 
@@ -71,6 +126,9 @@ namespace BlacksmithGuild.Forge
             report.Line("score", _summary.TopFinalScore.ToString("0"));
             report.Line("doctrine", _summary.Doctrine);
             report.Line("source", _summary.Source);
+            report.Line("sourceKind", _summary.SourceKind);
+            report.Line("sourceStatus", _summary.SourceStatus);
+            report.Line("fallbackUsed", _summary.FallbackUsed.ToString().ToLowerInvariant());
             report.Line("ranked", _summary.RankedCount.ToString());
             report.Line("json", _summary.ReportPath);
         }
@@ -86,6 +144,62 @@ namespace BlacksmithGuild.Forge
                 $"TBG FORGE: top={_summary.TopCandidateName} score={_summary.TopFinalScore:0} doctrine={_summary.Doctrine} source={_summary.Source}";
         }
 
+        private static CandidateResolution ResolveCandidates(ForgeCandidateSourceKind requestedKind)
+        {
+            if (requestedKind == ForgeCandidateSourceKind.Real)
+            {
+                if (RealSource.TryGetCandidates(out var realCandidates, out var realStatus, out var realDetail))
+                {
+                    return new CandidateResolution
+                    {
+                        Candidates = realCandidates,
+                        SourceKind = ForgeCandidateSourceKind.Real,
+                        SourceLabel = "real",
+                        SourceStatus = realStatus,
+                        FallbackUsed = false,
+                        Detail = realDetail
+                    };
+                }
+
+                DebugLogger.Test($"[TBG FORGE] [WARN] real forge candidate source unavailable: {realDetail}", showInGame: false);
+                if (StubSource.TryGetCandidates(out var fallbackCandidates, out var stubStatus, out var stubDetail))
+                {
+                    return new CandidateResolution
+                    {
+                        Candidates = fallbackCandidates,
+                        SourceKind = ForgeCandidateSourceKind.StubFallback,
+                        SourceLabel = "stub-fallback",
+                        SourceStatus = stubStatus,
+                        FallbackUsed = true,
+                        Detail = $"real failed ({realStatus}: {realDetail}); {stubDetail}"
+                    };
+                }
+            }
+
+            if (StubSource.TryGetCandidates(out var stubOnly, out var status, out var detail))
+            {
+                return new CandidateResolution
+                {
+                    Candidates = stubOnly,
+                    SourceKind = ForgeCandidateSourceKind.Stub,
+                    SourceLabel = StubForgeCandidateSource.SourceName,
+                    SourceStatus = status,
+                    FallbackUsed = false,
+                    Detail = detail
+                };
+            }
+
+            return new CandidateResolution
+            {
+                Candidates = Array.Empty<ForgeCandidate>(),
+                SourceKind = ForgeCandidateSourceKind.Stub,
+                SourceLabel = StubForgeCandidateSource.SourceName,
+                SourceStatus = ForgeCandidateSourceStatus.Empty,
+                FallbackUsed = false,
+                Detail = detail ?? "stub source returned no candidates"
+            };
+        }
+
         private static void UpdateSummary(ForgeRecommendationReport report)
         {
             var top = report.TopCandidate;
@@ -93,11 +207,15 @@ namespace BlacksmithGuild.Forge
             {
                 HasRankings = report.Ranked != null && report.Ranked.Count > 0,
                 Source = report.Source,
+                SourceKind = report.SourceKind,
+                SourceStatus = report.SourceStatus,
+                FallbackUsed = report.FallbackUsed,
                 Doctrine = report.Doctrine,
                 TopCandidateId = top?.Id,
                 TopCandidateName = top?.DesignName,
                 TopFinalScore = top?.FinalScore ?? 0,
                 RankedCount = report.Ranked?.Count ?? 0,
+                CandidateCount = report.CandidateCount,
                 ReportPath = "BlacksmithGuild_ForgeRecommendations.json",
                 GeneratedAt = DateTime.Now
             };
@@ -109,9 +227,24 @@ namespace BlacksmithGuild.Forge
             var report = ReportFormatter.BeginReport("FORGE RECOMMENDATIONS", source, "forge-recommendations");
             var top = _cachedReport.TopCandidate;
 
+            report.Section("Source");
+            report.Line("requested", _requestedSourceKind.ToString());
+            report.Line("resolved", _cachedReport.Source);
+            report.Line("sourceKind", _cachedReport.SourceKind);
+            report.Line("sourceStatus", _cachedReport.SourceStatus);
+            report.Line("fallbackUsed", _cachedReport.FallbackUsed.ToString().ToLowerInvariant());
+            report.Line("candidateCount", _cachedReport.CandidateCount.ToString());
+            if (_cachedReport.FallbackUsed)
+            {
+                report.Verdict(ReportVerdict.Warn, "Real source unavailable — fell back to stub oracle");
+            }
+            else
+            {
+                report.Verdict(ReportVerdict.Pass, "Candidate source resolved");
+            }
+
             report.Section("Doctrine");
             report.Line("active", _cachedReport.Doctrine);
-            report.Line("source", _cachedReport.Source);
 
             if (top != null)
             {
@@ -164,6 +297,10 @@ namespace BlacksmithGuild.Forge
             builder.AppendLine("{");
             builder.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
             builder.AppendLine($"  \"source\": \"{Escape(report.Source)}\",");
+            builder.AppendLine($"  \"sourceKind\": \"{Escape(report.SourceKind)}\",");
+            builder.AppendLine($"  \"sourceStatus\": \"{Escape(report.SourceStatus)}\",");
+            builder.AppendLine($"  \"fallbackUsed\": {report.FallbackUsed.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"candidateCount\": {report.CandidateCount},");
             builder.AppendLine($"  \"doctrine\": \"{Escape(report.Doctrine)}\",");
 
             if (report.TopCandidate != null)
@@ -220,6 +357,16 @@ namespace BlacksmithGuild.Forge
         private static string Escape(string value)
         {
             return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private sealed class CandidateResolution
+        {
+            public IReadOnlyList<ForgeCandidate> Candidates { get; set; } = Array.Empty<ForgeCandidate>();
+            public ForgeCandidateSourceKind SourceKind { get; set; }
+            public string SourceLabel { get; set; }
+            public ForgeCandidateSourceStatus SourceStatus { get; set; }
+            public bool FallbackUsed { get; set; }
+            public string Detail { get; set; }
         }
     }
 }

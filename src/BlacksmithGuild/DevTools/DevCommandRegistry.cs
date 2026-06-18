@@ -25,7 +25,14 @@ namespace BlacksmithGuild.DevTools
                 CharacterProgressionTestScenarios.AddSmithingFocusCommand,
                 CharacterProgressionTestScenarios.AddEnduranceAttributeCommand,
                 TreasuryDeltaWatchService.TreasurySnapshotNowCommand,
-                ForgeRecommendationService.RankForgeCandidatesCommand
+                ForgeRecommendationService.RankForgeCandidatesCommand,
+                ForgeRecommendationService.SetForgeCandidateSourceStubCommand,
+                ForgeRecommendationService.SetForgeCandidateSourceRealCommand,
+                ForgeRecommendationService.ShowForgeCandidateSourceCommand,
+                ForgeRecommendationService.SetForgeDoctrineProfitForgeCommand,
+                ForgeRecommendationService.SetForgeDoctrineRareMetalConservationCommand,
+                ForgeRecommendationService.SetForgeDoctrineCashCrisisCommand,
+                ForgeRecommendationService.ShowForgeDoctrineCommand
             };
 
         public static bool IsRegistered(string commandName)

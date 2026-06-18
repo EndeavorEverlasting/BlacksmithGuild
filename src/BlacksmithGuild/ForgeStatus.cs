@@ -499,11 +499,15 @@ namespace BlacksmithGuild
                 {
                     builder.AppendLine("  \"forgeRecommendations\": {");
                     builder.AppendLine($"    \"source\": \"{Escape(_forgeRecommendations.Source ?? "")}\",");
+                    builder.AppendLine($"    \"sourceKind\": \"{Escape(_forgeRecommendations.SourceKind ?? "")}\",");
+                    builder.AppendLine($"    \"sourceStatus\": \"{Escape(_forgeRecommendations.SourceStatus ?? "")}\",");
+                    builder.AppendLine($"    \"fallbackUsed\": {_forgeRecommendations.FallbackUsed.ToString().ToLowerInvariant()},");
                     builder.AppendLine($"    \"doctrine\": \"{Escape(_forgeRecommendations.Doctrine ?? "")}\",");
                     builder.AppendLine($"    \"topCandidateId\": \"{Escape(_forgeRecommendations.TopCandidateId ?? "")}\",");
                     builder.AppendLine($"    \"topCandidateName\": \"{Escape(_forgeRecommendations.TopCandidateName ?? "")}\",");
                     builder.AppendLine($"    \"topFinalScore\": {_forgeRecommendations.TopFinalScore},");
                     builder.AppendLine($"    \"rankedCount\": {_forgeRecommendations.RankedCount},");
+                    builder.AppendLine($"    \"candidateCount\": {_forgeRecommendations.CandidateCount},");
                     builder.AppendLine($"    \"reportPath\": \"{Escape(_forgeRecommendations.ReportPath ?? "")}\",");
                     builder.AppendLine($"    \"generatedAt\": \"{(_forgeRecommendations.GeneratedAt ?? DateTime.Now):o}\"");
                     builder.AppendLine("  },");

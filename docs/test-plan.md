@@ -12,7 +12,11 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 4 | **002** | Stoke the Apprentice — progression harness + F7 status | **Code complete — certify in-game** |
 | 5 | **003** | Treasury Delta Watch | **003B shipped** — F10 retest |
 | 5c | **003C** | Quick Forge Start (dev save + auto character) | **Shipped** |
-| 6 | **004+** | Recommendation system | Later |
+| 6 | **004A** | Report formatting | **Shipped** |
+| 7 | **004B** | Stub recommendations | **Shipped** — live cert pending |
+| 8 | **005A** | Candidate source boundary + real scaffold | **Shipped** |
+| 9 | **005B** | Doctrine dev commands | **Shipped** |
+| 10 | **005C+** | Real recipe enumeration | **Gated** — 004B + 003B live cert |
 
 > **Surfaces:** [in-game-surfaces.md](in-game-surfaces.md) — **Enter** notice log, **Alt+`** console, **F7–F11** dev keys.
 
@@ -498,6 +502,59 @@ If Phase 2 patch fails after game update: use Phase 1 dev save only; external Qu
 - `snapshotGeneration` increments; JSON + F7 reflect cached state
 - Zero deltas OK on stable economy if machinery proven
 - Suspicious/Critical notices only when thresholds exceeded
+
+---
+
+## Sprint 004B — Stub recommendations (live cert pending)
+
+### Protocol
+
+```powershell
+Forge.cmd   # game closed
+# Load BlacksmithGuild_DevStart.sav → TBG READY
+.\forge.ps1 -Command RankForgeCandidates -Wait
+# F7 in game
+```
+
+### PASS criteria
+
+- `BlacksmithGuild_ForgeRecommendations.json` exists; top = Long Warblade, finalScore 11250, source stub
+- Phase1.log: `TBG REPORT: FORGE RECOMMENDATIONS`
+- F7: compact `TBG FORGE:` line
+- Update [sprint-004-live-results.md](sprint-004-live-results.md)
+
+**Gate:** Do not call 004 done until live evidence recorded.
+
+---
+
+## Sprint 005A/005B — Source boundary + doctrine (code shipped; live cert pending)
+
+### Protocol
+
+```powershell
+.\forge.ps1 -Command SetForgeCandidateSourceStub -Wait
+.\forge.ps1 -Command RankForgeCandidates -Wait
+.\forge.ps1 -Command SetForgeCandidateSourceReal -Wait
+.\forge.ps1 -Command RankForgeCandidates -Wait   # expect stub-fallback
+.\forge.ps1 -Command SetForgeDoctrineRareMetalConservation -Wait
+.\forge.ps1 -Command RankForgeCandidates -Wait
+.\forge.ps1 -Command ShowForgeDoctrine -Wait
+```
+
+### PASS criteria (005A)
+
+- Default stub rank unchanged (Long Warblade 11250 under ProfitForge)
+- Real source request → JSON `fallbackUsed=true`, `source=stub-fallback`, Phase1.log `[WARN]`
+- JSON includes `sourceKind`, `sourceStatus`, `candidateCount`
+
+### PASS criteria (005B)
+
+- `SetForgeDoctrineRareMetalConservation` changes ranking vs ProfitForge (stub oracle)
+- `ShowForgeDoctrine` prints active doctrine in notice log
+
+**Gate for 005C real recipes:** 004B live cert PASS + 003B treasury retest PASS.
+
+See [sprint-005-live-results.md](sprint-005-live-results.md).
 
 ---
 

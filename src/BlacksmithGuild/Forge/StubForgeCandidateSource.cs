@@ -2,11 +2,29 @@ using System.Collections.Generic;
 
 namespace BlacksmithGuild.Forge
 {
-    public static class StubForgeCandidateSource
+    public sealed class StubForgeCandidateSource : IForgeCandidateSource
     {
         public const string SourceName = "stub";
 
+        public ForgeCandidateSourceKind Kind => ForgeCandidateSourceKind.Stub;
+
+        public bool TryGetCandidates(
+            out IReadOnlyList<ForgeCandidate> candidates,
+            out ForgeCandidateSourceStatus status,
+            out string detail)
+        {
+            candidates = BuildCandidates();
+            status = ForgeCandidateSourceStatus.Ok;
+            detail = $"{candidates.Count} stub candidates";
+            return candidates.Count > 0;
+        }
+
         public static IReadOnlyList<ForgeCandidate> GetCandidates()
+        {
+            return BuildCandidates();
+        }
+
+        private static IReadOnlyList<ForgeCandidate> BuildCandidates()
         {
             return new List<ForgeCandidate>
             {

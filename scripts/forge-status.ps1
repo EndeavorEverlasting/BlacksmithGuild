@@ -391,7 +391,14 @@ function Send-ForgeCommand {
         'AddSmithingFocus',
         'AddEnduranceAttribute',
         'TreasurySnapshotNow',
-        'RankForgeCandidates'
+        'RankForgeCandidates',
+        'SetForgeCandidateSourceStub',
+        'SetForgeCandidateSourceReal',
+        'ShowForgeCandidateSource',
+        'SetForgeDoctrineProfitForge',
+        'SetForgeDoctrineRareMetalConservation',
+        'SetForgeDoctrineCashCrisis',
+        'ShowForgeDoctrine'
     )
 
     if ($allowed -notcontains $CommandName) {
