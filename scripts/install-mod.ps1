@@ -148,7 +148,7 @@ try {
             if (-not (Test-Path -LiteralPath $LauncherExe)) { throw "Launcher not found: $LauncherExe" }
             Write-Host ''
             Write-Host 'Opening Bannerlord launcher...'
-            Start-Process -LiteralPath $LauncherExe
+            Start-Process -FilePath $LauncherExe
         }
     }
 

@@ -9,7 +9,7 @@ echo.
 echo Daily play: Steam -^> Play (launcher uses your saved mod checkboxes).
 echo After code changes: dotnet build -c Release (auto-installs), then Steam -^> Play.
 echo Ctrl+Alt+S is reserved for Sprint 002 Stoke the Apprentice. Not wired today.
-echo Build in Cursor: Ctrl+Shift+B. Test in game: Ctrl+Alt+D / F / L only.
+echo Build in Cursor: Ctrl+Shift+B. Test in game: F8 / F9 / F10 / F11 (legacy Ctrl+Alt+L/D/F).
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch
