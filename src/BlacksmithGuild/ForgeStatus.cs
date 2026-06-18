@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.Library;
 
@@ -191,6 +192,13 @@ namespace BlacksmithGuild
                 $"TBG STATUS: session={_sessionPhase} devTools={devTools} preflight={preflight} last={last}"
             );
 
+            if (DevToolsConfig.AutoSkipCharacterCreation)
+            {
+                InGameNotice.Info(
+                    $"TBG STATUS: quickStart={CampaignSetupStateTracker.Phase} activeState={CampaignSetupStateTracker.ActiveStateName}"
+                );
+            }
+
             var certOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
             var certPassed = CertificationTracker.CountPassed();
             var certRequired = CertificationTracker.RequiredCheckNames.Count;
@@ -273,6 +281,12 @@ namespace BlacksmithGuild
                 builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"canPollFileInbox\": {GameSessionState.CanPollFileInbox.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"canPollHotkeys\": {GameSessionState.CanPollHotkeys.ToString().ToLowerInvariant()}");
+                builder.AppendLine("  },");
+                builder.AppendLine("  \"quickStart\": {");
+                builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");
+                builder.AppendLine($"    \"subStage\": \"{Escape(CampaignSetupStateTracker.SubStage ?? "")}\",");
+                builder.AppendLine($"    \"activeState\": \"{Escape(CampaignSetupStateTracker.ActiveStateName ?? "")}\"");
                 builder.AppendLine("  },");
 
                 builder.AppendLine("  \"certification\": {");

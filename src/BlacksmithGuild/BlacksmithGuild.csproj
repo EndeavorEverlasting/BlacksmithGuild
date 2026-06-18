@@ -23,6 +23,19 @@
   </Target>
 
   <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+  </ItemGroup>
+
+  <Target Name="CopyHarmonyToOutput" AfterTargets="Build">
+    <Copy SourceFiles="$(NuGetPackageRoot)lib.harmony\2.3.3\lib\net472\0Harmony.dll" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('$(NuGetPackageRoot)lib.harmony\2.3.3\lib\net472\0Harmony.dll')" />
+    <Copy SourceFiles="$(NuGetPackageRoot)lib.harmony\2.3.3\lib\net472\0Harmony.dll" DestinationFolder="$(WEditorOutputPath)" SkipUnchangedFiles="true" Condition="Exists('$(NuGetPackageRoot)lib.harmony\2.3.3\lib\net472\0Harmony.dll')" />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="SandBox">
+      <HintPath>$(GameFolder)\Modules\SandBox\bin\Win64_Shipping_Client\SandBox.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="TaleWorlds.Core">
       <HintPath>$(GameFolder)\bin\Win64_Shipping_Client\TaleWorlds.Core.dll</HintPath>
       <Private>false</Private>

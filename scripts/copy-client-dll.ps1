@@ -114,6 +114,27 @@ function Sync-ModToGameModules {
         return $clientResult
     }
 
+    $harmonyRelClient = 'bin\Win64_Shipping_Client\0Harmony.dll'
+    $harmonyRelWEditor = 'bin\Win64_Shipping_wEditor\0Harmony.dll'
+    foreach ($harmonyRel in @($harmonyRelClient, $harmonyRelWEditor)) {
+        $srcHarmony = Join-Path $ModuleSourceDir $harmonyRel
+        if (-not (Test-Path -LiteralPath $srcHarmony)) {
+            continue
+        }
+
+        $destHarmony = Join-Path $ModuleDestDir $harmonyRel
+        $destDir = Split-Path $destHarmony -Parent
+        if (-not (Test-Path -LiteralPath $destDir)) {
+            New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        }
+
+        try {
+            Copy-Item -Force -LiteralPath $srcHarmony -Destination $destHarmony -ErrorAction Stop
+        } catch {
+            Write-Host "WARN - Harmony DLL not copied ($harmonyRel)." -ForegroundColor Yellow
+        }
+    }
+
     Copy-Item -Force -LiteralPath (Join-Path $ModuleSourceDir 'SubModule.xml') `
         -Destination (Join-Path $ModuleDestDir 'SubModule.xml')
 

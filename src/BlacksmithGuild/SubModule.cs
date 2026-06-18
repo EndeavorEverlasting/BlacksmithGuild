@@ -1,5 +1,6 @@
 using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.QuickStart;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
@@ -20,7 +21,14 @@ namespace BlacksmithGuild
             ForgeStatus.SetStep("module_load", "PASS");
             PendingReloadWatcher.OnModuleLoad();
             HotkeyTraceService.LogVersionAtStartup();
+            AutoCharacterCreationPatches.TryApply();
             GuildLog.Info("module loaded.", showInGame: false);
+        }
+
+        protected override void OnBeforeInitialModuleScreenSetAsRoot()
+        {
+            base.OnBeforeInitialModuleScreenSetAsRoot();
+            AutoCharacterCreationPatches.TryApply();
         }
 
         protected override void OnApplicationTick(float dt)
@@ -28,6 +36,7 @@ namespace BlacksmithGuild
             base.OnApplicationTick(dt);
 
             PendingReloadWatcher.Poll(dt);
+            CampaignSetupStateTracker.Poll();
 
             if (!DevToolsConfig.DevToolsEnabled)
             {
