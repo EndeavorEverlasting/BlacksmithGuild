@@ -18,12 +18,15 @@ namespace BlacksmithGuild
             base.OnSubModuleLoad();
             ForgeStatus.SetModLoaded(true);
             ForgeStatus.SetStep("module_load", "PASS");
+            PendingReloadWatcher.OnModuleLoad();
             GuildLog.Info("module loaded.", showInGame: false);
         }
 
         protected override void OnApplicationTick(float dt)
         {
             base.OnApplicationTick(dt);
+
+            PendingReloadWatcher.Poll(dt);
 
             if (!DevToolsConfig.DevToolsEnabled)
             {

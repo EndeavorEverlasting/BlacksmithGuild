@@ -20,6 +20,25 @@
         "reveal": "silent",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Forge Watch",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/forge.ps1",
+        "-Watch"
+      ],
+      "isBackground": true,
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     }
   ]
 }

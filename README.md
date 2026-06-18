@@ -103,10 +103,12 @@ Includes `certification` (Sprint 001) and `certification002` (Sprint 002) blocks
 
 ```text
 BlacksmithGuild/
+  Forge.cmd                 <- double-click: build + install (daily dev loop)
+  ForgeWatch.cmd            <- double-click: auto rebuild on source changes
   LaunchForge.cmd           <- first install / explicit: build + install + open launcher
   CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
   BackupSaves.cmd           <- double-click: incremental save backup
-  forge.ps1                 <- install, backup, diagnostics, log scan
+  forge.ps1                 <- install, backup, diagnostics, log scan, -Watch
   .vscode/
     tasks.json              <- Cursor/VS Code only: Ctrl+Shift+B = Build + Install (not in Bannerlord)
   docs/
@@ -181,9 +183,13 @@ Once installed under `Modules/BlacksmithGuild`, **Steam → Play** opens the Ban
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 ```
 
-Release builds auto-install to `Modules/BlacksmithGuild`. Then **Steam → Play**.
+Release builds auto-install to `Modules/BlacksmithGuild` and write `BlacksmithGuild_PendingReload.json`. **Restart Bannerlord** to load the new DLL — there is no hot reload.
 
-**In Cursor / VS Code:** `Ctrl+Shift+B` (Build + Install task). **Not in Bannerlord.**
+**Double-click:** `Forge.cmd` (build + install, window stays open). **First install / launcher:** `LaunchForge.cmd`. **Auto rebuild:** `ForgeWatch.cmd` or `.\forge.ps1 -Watch`.
+
+**In Cursor / VS Code:** `Ctrl+Shift+B` (Build + Install task). Optional background task: **Forge Watch**. **Not in Bannerlord.**
+
+If the game is still running when you install, you get a Windows toast (when available), an in-game notice within ~2s (`TBG RELOAD: …`), and **F7** shows `reload=pending`.
 
 ## Skill harness runway (Sprint 002 — not implemented)
 
@@ -207,8 +213,10 @@ This patch does **not** implement skill points. It prepares the build/play loop 
 From repo root:
 
 ```powershell
-.\forge.ps1 -Launch    # build, install, open launcher (first install / explicit)
-.\forge.ps1 -Check     # build, install, scan status JSON + log
+.\forge.ps1                  # build + install (+ auto save backup)
+.\forge.ps1 -Launch          # build, install, open launcher (first install / explicit)
+.\forge.ps1 -Watch           # auto rebuild on .cs / SubModule.xml changes
+.\forge.ps1 -Check           # build, install, scan status JSON + log
 .\forge.ps1 -Command RichPlayerEconomyTest  # write command to in-game inbox
 .\forge.ps1 -CollectDiagnostics  # collect crash/log bundle after a failure
 .\forge.ps1 -VerifySaves         # read-only check: live saves vs backups
@@ -216,7 +224,9 @@ From repo root:
 .\forge.ps1 -SkipSaveBackup      # opt out of automatic backup on any run
 ```
 
-Every `forge.ps1` run **auto-backs up changed saves** unless `-SkipSaveBackup` is set. For daily play you do not need forge — only after code changes (`dotnet build`) or when running diagnostics/backups.
+Double-click **`Forge.cmd`** for the daily build+install loop. **`LaunchForge.cmd`** when you need the launcher opened. **`ForgeWatch.cmd`** for watch mode.
+
+Every `forge.ps1` run **auto-backs up changed saves** unless `-SkipSaveBackup` is set. Watch mode backs up on the first rebuild only. For daily play you do not need forge — only after code changes or when running diagnostics/backups.
 
 ## Save safety
 

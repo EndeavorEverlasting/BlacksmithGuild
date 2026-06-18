@@ -29,6 +29,9 @@
     <Copy SourceFiles="$(_ModuleSourceDir)\bin\Win64_Shipping_wEditor\BlacksmithGuild.dll" DestinationFolder="$(_ModuleInstallDir)\bin\Win64_Shipping_wEditor" SkipUnchangedFiles="true" ContinueOnError="true" />
     <Warning Condition="!Exists('$(_ModuleInstallDir)\SubModule.xml')" Text="BlacksmithGuild auto-install could not write to $(_ModuleInstallDir). Close Bannerlord or run forge.ps1." />
     <Message Importance="High" Condition="Exists('$(_ModuleInstallDir)\SubModule.xml')" Text="BlacksmithGuild installed to $(_ModuleInstallDir)" />
+    <Exec Condition="Exists('$(_ModuleInstallDir)\bin\Win64_Shipping_Client\BlacksmithGuild.dll')"
+          Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\write-pending-reload.ps1&quot; -BannerlordRoot &quot;$(GameFolder)&quot; -Source &quot;dotnet-build&quot; -DllPath &quot;$(_ModuleInstallDir)\bin\Win64_Shipping_Client\BlacksmithGuild.dll&quot;"
+          IgnoreExitCode="true" />
   </Target>
 
   <ItemGroup>

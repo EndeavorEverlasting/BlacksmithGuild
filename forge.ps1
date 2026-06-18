@@ -6,9 +6,11 @@
 #   .\forge.ps1 -Command AdvanceOneDay -Wait
 #   .\forge.ps1 -Certify -Wait     full Sprint 001 cert via file inbox
 #   .\forge.ps1 -CertifyProgression -Wait   Sprint 002 progression cert
+#   .\forge.ps1 -Watch                 auto rebuild on source changes (ForgeWatch.cmd)
 
 param(
     [switch]$Launch,
+    [switch]$Watch,
     [switch]$Check,
     [switch]$CollectDiagnostics,
     [switch]$BackupSaves,
@@ -19,7 +21,8 @@ param(
     [switch]$Certify,
     [switch]$CertifyProgression,
     [string]$Command,
-    [int]$TimeoutSec = 60
+    [int]$TimeoutSec = 60,
+    [int]$WatchDebounceSec = 2
 )
 
 function Invoke-SaveBackupIfNeeded {
@@ -49,6 +52,11 @@ if ($CollectDiagnostics) {
 }
 
 . (Join-Path $PSScriptRoot 'scripts\forge-status.ps1')
+
+if ($Watch) {
+    & (Join-Path $PSScriptRoot 'scripts\forge-watch.ps1') -WatchDebounceSec $WatchDebounceSec
+    return
+}
 
 if ($Command -or $Certify -or $CertifyProgression) {
     $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $PSScriptRoot

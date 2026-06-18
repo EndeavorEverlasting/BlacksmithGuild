@@ -117,6 +117,10 @@ try {
         }
         if ($clientCopied) {
             Write-Host 'PASS - Module installed (Client DLL required for Steam Play)' -ForegroundColor Green
+            & (Join-Path $PSScriptRoot 'write-pending-reload.ps1') `
+                -BannerlordRoot $BannerlordRoot `
+                -Source 'install-mod.ps1' `
+                -DllPath $installedDllClient
         }
     }
 

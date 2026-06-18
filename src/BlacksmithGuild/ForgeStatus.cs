@@ -194,6 +194,11 @@ namespace BlacksmithGuild
                 );
             }
 
+            if (PendingReloadWatcher.IsReloadPending)
+            {
+                GuildLog.Display("TBG STATUS: reload=pending — restart Bannerlord");
+            }
+
             DebugLogger.Test("ShowForgeStatus displayed cached summary.", showInGame: false);
         }
 
