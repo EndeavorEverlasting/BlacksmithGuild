@@ -10,11 +10,17 @@ namespace BlacksmithGuild.DevTools
 
     public static class DevCommandBus
     {
-        public static DevCommandResult TryRun(string commandName, string source, bool showHotkeyAck = false)
+        public static DevCommandResult TryRun(
+            string commandName,
+            string source,
+            bool showHotkeyAck = false,
+            int sequence = -1)
         {
+            GameSessionState.Refresh();
+            ForgeStatus.UpdateSession(GameSessionState.Phase, GameSessionState.IsTimePaused);
             ForgeStatus.UpdateReadiness(
-                GameReadinessService.IsCampaignReady,
-                GameReadinessService.IsMainHeroReady
+                GameSessionState.IsCampaignLoaded,
+                GameSessionState.IsMainHeroReady
             );
 
             DebugLogger.Test(
@@ -25,7 +31,7 @@ namespace BlacksmithGuild.DevTools
             if (!DevCommandRegistry.IsRegistered(commandName))
             {
                 DebugLogger.Test($"Unknown command: {commandName}");
-                ForgeStatus.RecordCommand(commandName, source, "FAIL", "unknown command");
+                ForgeStatus.RecordCommand(commandName, source, "FAIL", "unknown command", sequence);
                 return DevCommandResult.Unknown;
             }
 
@@ -45,8 +51,9 @@ namespace BlacksmithGuild.DevTools
                 if (!GameReadinessService.CanRunRiskyCommands(out var blockReason))
                 {
                     DebugLogger.Test($"{commandName} blocked: {blockReason}");
-                    ForgeStatus.RecordCommand(commandName, source, "BLOCKED", blockReason);
+                    ForgeStatus.RecordCommand(commandName, source, "BLOCKED", blockReason, sequence);
                     ForgeStatus.SetTest(commandName, "BLOCKED", blockReason);
+                    CertificationTracker.OnCommandResult(commandName, DevCommandResult.Blocked, blockReason);
                     return DevCommandResult.Blocked;
                 }
 
@@ -63,7 +70,8 @@ namespace BlacksmithGuild.DevTools
             DebugLogger.Test($"Command started: {commandName}", showInGame: false);
 
             var result = Execute(commandName);
-            ForgeStatus.RecordCommand(commandName, source, result.ToString());
+            ForgeStatus.RecordCommand(commandName, source, result.ToString(), null, sequence);
+            CertificationTracker.OnCommandResult(commandName, result);
             return result;
         }
 

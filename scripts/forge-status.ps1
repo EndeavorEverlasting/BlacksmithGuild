@@ -261,6 +261,46 @@ function Scan-InGameStatus {
         }
     }
 
+    if ($status.certification) {
+        $cert = $status.certification
+        $certOverall = [string]$cert.overall
+        Write-Host "Certification ($($cert.sprint)): $certOverall ($($cert.completed)/$($cert.required)) next=$($cert.nextCheck)"
+        $certColor = switch ($certOverall) {
+            'PASS' { 'Green' }
+            'FAIL' { 'Red' }
+            'BLOCKED' { 'Yellow' }
+            'IN_PROGRESS' { 'Cyan' }
+            'WARMUP' { 'Yellow' }
+            default { 'Gray' }
+        }
+        Set-ForgeTest -Name 'certification' -Status $(if ($certOverall -eq 'PASS') { 'PASS' } elseif ($certOverall -eq 'FAIL') { 'FAIL' } else { 'PENDING' }) -Message "$certOverall ($($cert.completed)/$($cert.required))"
+
+        if ($cert.checks) {
+            foreach ($prop in $cert.checks.PSObject.Properties) {
+                $check = $prop.Value
+                $checkStatus = [string]$check.status
+                $color = switch ($checkStatus) {
+                    'PASS' { 'Green' }
+                    'FAIL' { 'Red' }
+                    'BLOCKED' { 'Yellow' }
+                    'IN_PROGRESS' { 'Cyan' }
+                    default { 'Gray' }
+                }
+                $msg = if ($check.message) { " - $($check.message)" } else { '' }
+                Write-Host "  [$checkStatus] $($prop.Name)$msg" -ForegroundColor $color
+                if ($checkStatus -eq 'PASS') {
+                    Set-ForgeTest -Name "cert_$($prop.Name)" -Status 'PASS'
+                } elseif ($checkStatus -eq 'FAIL') {
+                    Set-ForgeTest -Name "cert_$($prop.Name)" -Status 'FAIL' -Message $check.message
+                }
+            }
+        }
+    }
+
+    if ($status.session) {
+        Write-Host "Session: phase=$($status.session.phase) paused=$($status.session.timePaused) inbox=$($status.session.canPollFileInbox)"
+    }
+
     if ($status.goldTest) {
         if ($status.goldTest.passed -eq $true) {
             Set-ForgeTest -Name 'gold_test' -Status 'PASS' -Message "delta=$($status.goldTest.delta)"
@@ -281,7 +321,9 @@ function Scan-InGameStatus {
 function Send-ForgeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$CommandName,
-        [Parameter(Mandatory = $true)][string]$BannerlordRoot
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [switch]$Wait,
+        [int]$TimeoutSec = 60
     )
 
     $allowed = @(
@@ -296,6 +338,8 @@ function Send-ForgeCommand {
     }
 
     $inboxPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandInbox.json'
+    $ackPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandAck.json'
+    $statusPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
     $sequence = 1
     if (Test-Path -LiteralPath $inboxPath) {
         try {
@@ -315,9 +359,81 @@ function Send-ForgeCommand {
     }
 
     $payload | ConvertTo-Json | Set-Content -LiteralPath $inboxPath -Encoding UTF8
-    Write-Host "Wrote command inbox: $inboxPath" -ForegroundColor Green
-    Write-Host "  sequence=$sequence command=$CommandName"
-    Write-Host 'Load a campaign with the mod enabled; the mod polls this file each campaign tick.'
+    Write-Host "Wrote command inbox: sequence=$sequence command=$CommandName" -ForegroundColor Green
+
+    if (-not $Wait) {
+        Write-Host 'Polls every 0.5s via OnApplicationTick (works when campaign loaded; focus not required).'
+        return $sequence
+    }
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    Write-Host "Waiting up to ${TimeoutSec}s for ack (alt-tab OK if campaign is loaded)..." -ForegroundColor Cyan
+    while ((Get-Date) -lt $deadline) {
+        Start-Sleep -Milliseconds 500
+
+        if (Test-Path -LiteralPath $ackPath) {
+            try {
+                $ack = Get-Content -LiteralPath $ackPath -Raw | ConvertFrom-Json
+                if ([int]$ack.sequence -eq $sequence) {
+                    Write-Host "ACK: $($ack.command) = $($ack.result)" -ForegroundColor Green
+                    return $sequence
+                }
+            } catch { }
+        }
+
+        if (Test-Path -LiteralPath $statusPath) {
+            try {
+                $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+                if ($st.lastCommand -and [int]$st.lastCommand.sequence -eq $sequence) {
+                    Write-Host "Status: $($st.lastCommand.name) = $($st.lastCommand.result)" -ForegroundColor Green
+                    return $sequence
+                }
+            } catch { }
+        }
+    }
+
+    throw "Timeout waiting for command '$CommandName' (sequence $sequence). Is campaign loaded with mod ON?"
+}
+
+function Invoke-ForgeCertification {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [int]$TimeoutSec = 90
+    )
+
+    Write-Host '=== Sprint 001 certification (file inbox, focus not required) ===' -ForegroundColor Cyan
+    $steps = @(
+        'ListScenarios',
+        'AdvanceOneDay',
+        'ToggleFastForward',
+        'ToggleFastForward',
+        'RichPlayerEconomyTest'
+    )
+
+    foreach ($cmd in $steps) {
+        Send-ForgeCommand -CommandName $cmd -BannerlordRoot $BannerlordRoot -Wait -TimeoutSec $TimeoutSec
+    }
+
+    $statusPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
+    if (Test-Path -LiteralPath $statusPath) {
+        $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+        if ($st.certification) {
+            Write-Host ''
+            Write-Host "Certification overall: $($st.certification.overall) ($($st.certification.completed)/$($st.certification.required))" -ForegroundColor Cyan
+        }
+    }
+}
+
+function Get-BannerlordRootFromRepo {
+    param([string]$RepoRoot = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)))
+    $csproj = Join-Path $RepoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
+    if ($csproj -match '<GameFolder>([^<]+)</GameFolder>') {
+        $fromCsproj = $Matches[1] -replace '&amp;', '&'
+        if (Test-Path -LiteralPath $fromCsproj) { return $fromCsproj }
+    }
+    $default = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord'
+    if (Test-Path -LiteralPath $default) { return $default }
+    throw 'Bannerlord install not found. Set GameFolder in BlacksmithGuild.csproj.'
 }
 
 function Scan-AcceptanceLog {

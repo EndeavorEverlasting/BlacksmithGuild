@@ -10,8 +10,12 @@ namespace BlacksmithGuild.DevTools
         private static readonly string InboxPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_CommandInbox.json");
 
+        private static readonly string AckPath =
+            Path.Combine(BasePath.Name, "BlacksmithGuild_CommandAck.json");
+
         private static long _lastSeenWriteTicks = -1;
         private static int _lastSeenSequence = -1;
+        private static bool _loggedWaitingForHero;
 
         public static void Poll()
         {
@@ -19,6 +23,22 @@ namespace BlacksmithGuild.DevTools
             {
                 return;
             }
+
+            GameSessionState.Refresh();
+            ForgeStatus.UpdateSession(GameSessionState.Phase, GameSessionState.IsTimePaused);
+
+            if (!GameSessionState.CanPollFileInbox)
+            {
+                if (GameSessionState.IsCampaignLoaded && !GameSessionState.IsMainHeroReady && !_loggedWaitingForHero)
+                {
+                    _loggedWaitingForHero = true;
+                    DebugLogger.Test("[TBG INBOX] waiting: MainHero not ready", showInGame: false);
+                }
+
+                return;
+            }
+
+            _loggedWaitingForHero = false;
 
             try
             {
@@ -49,11 +69,30 @@ namespace BlacksmithGuild.DevTools
                 _lastSeenSequence = sequence;
 
                 var commandSource = string.IsNullOrWhiteSpace(source) ? "file-inbox" : source;
-                DevCommandBus.TryRun(command, commandSource);
+                var result = DevCommandBus.TryRun(command, commandSource, sequence: sequence);
+                WriteAck(sequence, command, result.ToString());
             }
             catch (Exception ex)
             {
                 GuildLog.Info($"[TBG INBOX] Failed to read command inbox: {ex.Message}", showInGame: false);
+            }
+        }
+
+        private static void WriteAck(int sequence, string command, string result)
+        {
+            try
+            {
+                var json =
+                    "{" +
+                    $"\"sequence\": {sequence}," +
+                    $"\"command\": \"{command}\"," +
+                    $"\"result\": \"{result}\"," +
+                    $"\"time\": \"{DateTime.Now:o}\"" +
+                    "}";
+                File.WriteAllText(AckPath, json);
+            }
+            catch
+            {
             }
         }
 

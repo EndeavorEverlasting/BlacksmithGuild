@@ -7,7 +7,8 @@
 
 param(
     [switch]$Launch,
-    [switch]$CheckLog
+    [switch]$CheckLog,
+    [switch]$SkipInstall
 )
 
 $ErrorActionPreference = 'Stop'
@@ -53,6 +54,7 @@ try {
     Write-Host "Bannerlord: $BannerlordRoot"
     Write-Host ''
 
+    if (-not $SkipInstall) {
     Invoke-ForgeStep -Name 'build' -Action {
         Write-Host '[1/3] Building Release...'
         Push-Location $RepoRoot
@@ -82,6 +84,9 @@ try {
         }
 
         Copy-Item -Force -LiteralPath (Join-Path $ModuleSrc 'SubModule.xml') -Destination (Join-Path $ModuleDest 'SubModule.xml')
+
+        $clientCopied = $false
+        $wEditorCopied = $false
         foreach ($dllRel in @($DllRelClient, $DllRelWEditor)) {
             $srcDll = Join-Path $ModuleSrc $dllRel
             $destDll = Join-Path $ModuleDest $dllRel
@@ -89,7 +94,17 @@ try {
             if (-not (Test-Path -LiteralPath $destDir)) {
                 New-Item -ItemType Directory -Force -Path $destDir | Out-Null
             }
-            Copy-Item -Force -LiteralPath $srcDll -Destination $destDll
+            try {
+                Copy-Item -Force -LiteralPath $srcDll -Destination $destDll -ErrorAction Stop
+                if ($dllRel -eq $DllRelClient) { $clientCopied = $true }
+                if ($dllRel -eq $DllRelWEditor) { $wEditorCopied = $true }
+            } catch {
+                if ($dllRel -eq $DllRelWEditor) {
+                    Write-Host "WARN - wEditor DLL not copied (game/launcher may have file locked). Client build is enough for Steam Play." -ForegroundColor Yellow
+                } else {
+                    throw
+                }
+            }
         }
 
         $installedXml = Join-Path $ModuleDest 'SubModule.xml'
@@ -97,8 +112,12 @@ try {
         $installedDllWEditor = Join-Path $ModuleDest $DllRelWEditor
         if (-not (Test-Path -LiteralPath $installedXml)) { throw 'Missing installed SubModule.xml' }
         if (-not (Test-Path -LiteralPath $installedDllClient)) { throw "Missing installed Client DLL: $installedDllClient" }
-        if (-not (Test-Path -LiteralPath $installedDllWEditor)) { throw "Missing installed wEditor DLL: $installedDllWEditor" }
-        Write-Host 'PASS - Module installed (Client + wEditor DLLs)' -ForegroundColor Green
+        if (-not (Test-Path -LiteralPath $installedDllWEditor)) {
+            Write-Host "WARN - wEditor DLL missing at $installedDllWEditor (launcher may be open). Steam Play uses Client DLL." -ForegroundColor Yellow
+        }
+        if ($clientCopied) {
+            Write-Host 'PASS - Module installed (Client DLL required for Steam Play)' -ForegroundColor Green
+        }
     }
 
     Invoke-ForgeStep -Name 'verify_structure' -Action {
@@ -117,6 +136,9 @@ try {
 
         [xml]$subModule = Get-Content -LiteralPath $installedXml
         Write-Host "PASS - Module $($subModule.Module.Name.value) ($($subModule.Module.Id.value)) $($subModule.Module.Version.value)" -ForegroundColor Green
+    }
+    } else {
+        Write-Host 'SkipInstall: scanning status/log only (no build/install).' -ForegroundColor Cyan
     }
 
     if ($CheckLog) {

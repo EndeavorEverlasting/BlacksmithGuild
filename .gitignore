@@ -20,6 +20,7 @@ BlacksmithGuild_Phase1.log
 BlacksmithGuild_Forge.log
 BlacksmithGuild_Status.json
 BlacksmithGuild_CommandInbox.json
+BlacksmithGuild_CommandAck.json
 *.log
 
 # Bannerlord / game DLLs (local references only)

@@ -85,19 +85,37 @@ Proves commands are visible, repeatable, and safe on a **disposable campaign**.
 - **Status JSON:** `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json`
 - **Command inbox:** `C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_CommandInbox.json`
 
-### Canonical hotkey sequence
+### Canonical certification (file inbox — focus not required)
 
-On campaign map with mod enabled:
+Campaign loaded on map (paused OK). From repo — **alt-tab welcome**:
 
-```text
-F8              → TBG HOTKEY: ListScenarios fired + command list in log
-F9              → TBG HOTKEY: AdvanceOneDay fired + AdvanceOneDay: DailyTick fired.
-F10             → TBG HOTKEY: ToggleFastForward fired + ToggleFastForward: ON
-F10             → TBG HOTKEY: ToggleFastForward fired + ToggleFastForward: OFF
-F11             → TBG HOTKEY: RichPlayerEconomyTest fired + [TBG TEST] PASS
+```powershell
+.\forge.ps1 -Certify -Wait
 ```
 
-Legacy equivalents: `Ctrl+Alt+L`, `Ctrl+Alt+D`, `Ctrl+Alt+F` (no F11 legacy — use F11 or file inbox).
+Or step-by-step:
+
+```powershell
+.\forge.ps1 -Command ListScenarios -Wait
+.\forge.ps1 -Command AdvanceOneDay -Wait
+.\forge.ps1 -Command ToggleFastForward -Wait
+.\forge.ps1 -Command ToggleFastForward -Wait
+.\forge.ps1 -Command RichPlayerEconomyTest -Wait
+```
+
+Verify without closing game:
+
+```powershell
+.\forge.ps1 -Check -SkipInstall
+```
+
+Expect `certification.overall: PASS` in status JSON.
+
+### Optional hotkey sequence (requires game focus)
+
+```text
+F8 → F9 → F10 → F10 → F11
+```
 
 ### File inbox sequence (optional)
 

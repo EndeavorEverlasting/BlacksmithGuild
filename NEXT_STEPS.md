@@ -13,6 +13,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 1 | **000A** | Certify in-game load / gold / hotkey chain (Tests 1–3) | In progress |
 | 2 | **000B** | Fluid Steam dev loop (`dotnet build` auto-install, Steam Play) | **Complete** |
 | 3 | **001** | Dev command harness (visible, repeatable, safe) | **Code complete — certify in-game** |
+| 3b | **001B** | Focus-aware inbox poll, explicit certification status, `-Certify -Wait` | **Code complete — certify in-game** |
 | 4 | **002** | Stoke the Apprentice — skill-point / progression harness | Scaffolded (docs + source; hotkeys not wired) |
 | 5 | **003+** | Recommendation system | Later |
 
@@ -29,12 +30,13 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 000B | **Complete** — Release auto-install, Steam Play docs, `.vscode/tasks.json` |
 | Sprint 000A | **In progress** — certify Tests 2–3 on disposable campaign |
 | Sprint 001 | **Code complete** — `DevCommandBus`, F8–F11, file inbox, live status JSON; needs in-game PASS |
+| Sprint 001B | **Code complete** — app-tick inbox poll (alt-tab OK), `certification` block in status JSON, `forge.ps1 -Certify -Wait`, `-Check -SkipInstall` |
 | Sprint 002 | **Scaffolded** — progression source files exist; hotkeys **not wired** |
 | Dev loop | **Steam Play** daily; `dotnet build -c Release` auto-installs; launcher checkboxes = mod ON/OFF |
 | Save safety | Incremental backup on every `forge.ps1` run; `.\forge.ps1 -VerifySaves` |
 | Legacy saves | Load with **mod OFF** in launcher (confirmed working) |
 
-**Next: In-game certification — F8/F9/F10/F11 on disposable campaign; `forge.ps1 -Check` reads status JSON then log. Then Sprint 002 wires `Ctrl+Alt+S`.**
+**Next: In-game certification — load disposable campaign, run `.\forge.ps1 -Certify -Wait` (alt-tab OK), then `.\forge.ps1 -Check -SkipInstall`; expect `certification.overall: PASS`. Hotkeys (F8–F11) remain focus-dependent. Then Sprint 002 wires `Ctrl+Alt+S`.**
 
 ### Sprint entry gates (do not skip)
 
@@ -66,9 +68,24 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 - Live `BlacksmithGuild_Status.json` after each command
 - F11 = explicit `RichPlayerEconomyTest` (decoupled from F9)
 
-**Certification sequence:** F8 → F9 → F10 ×2 → F11 on disposable campaign. Run `.\forge.ps1 -Check`.
+**Certification sequence (primary):** Load disposable campaign → `.\forge.ps1 -Certify -Wait` → `.\forge.ps1 -Check -SkipInstall`.
+
+**Certification sequence (manual / hotkeys):** F8 → F9 → F10 ×2 → F11 on disposable campaign (game window focused). Run `.\forge.ps1 -Check -SkipInstall`.
 
 **Do not wire `Ctrl+Alt+S`** — reserved for Sprint 002.
+
+---
+
+## Sprint 001B: Focus-aware certification (code complete — certify in-game)
+
+**Delivered:**
+
+- `GameSessionState` — session phase, `canPollFileInbox` / `canPollHotkeys`
+- `CertificationTracker` — explicit checks (`forge_lit`, `preflight_pass`, `list_commands`, `advance_one_day`, `toggle_fast_forward` ×2, `gold_test`); overall `NOT_STARTED` / `WARMUP` / `IN_PROGRESS` / `PASS` / `FAIL` / `BLOCKED`
+- `OnApplicationTick` polls file inbox every 0.5s (focus-independent)
+- `BlacksmithGuild_CommandAck.json` for `-Wait` command completion
+- `forge.ps1 -Certify`, `-Wait`, `-SkipInstall`, `-TimeoutSec`
+- wEditor DLL copy failure → WARN (launcher lock); Client DLL sufficient for Steam Play
 
 ---
 

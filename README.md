@@ -57,22 +57,21 @@ Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys an
 
 Each hotkey shows an in-game toast (`TBG HOTKEY: <Command> fired`) before execution. Reliability is under active certification (Sprint 001).
 
-### File-based command inbox
+### File-based command inbox (primary certification path)
 
-While a campaign is loaded, the mod polls:
+While a campaign is loaded, the mod polls the inbox every **0.5s** via `OnApplicationTick` — **works when paused or alt-tabbed** (focus not required):
 
 ```text
 <Bannerlord install>\BlacksmithGuild_CommandInbox.json
 ```
 
-From PowerShell:
-
 ```powershell
-.\forge.ps1 -Command ListScenarios
-.\forge.ps1 -Command AdvanceOneDay
-.\forge.ps1 -Command ToggleFastForward
-.\forge.ps1 -Command RichPlayerEconomyTest
+.\forge.ps1 -Certify -Wait          # full Sprint 001 sequence; alt-tab OK
+.\forge.ps1 -Command AdvanceOneDay -Wait
+.\forge.ps1 -Check -SkipInstall     # read status only; game may stay open
 ```
+
+Hotkeys (F8–F11) remain optional and **require game focus** on the campaign map.
 
 ### Live status JSON
 
@@ -82,7 +81,9 @@ After each command, the mod writes:
 <Bannerlord install>\BlacksmithGuild_Status.json
 ```
 
-`forge.ps1 -Check` reads status JSON first, then confirms details in `BlacksmithGuild_Phase1.log`.
+Includes explicit `certification.overall`: `NOT_STARTED` / `WARMUP` / `IN_PROGRESS` / `PASS` / `FAIL` / `BLOCKED` (not vague `RUNNING`).
+
+`forge.ps1 -Check` reads status JSON first, then confirms log details.
 
 ## What it does not do yet
 

@@ -55,8 +55,11 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            DevHotkeyHandler.Poll();
-            DevCommandFileInbox.Poll();
+            GameSessionState.Refresh();
+            if (GameSessionState.CanPollHotkeys)
+            {
+                DevHotkeyHandler.Poll();
+            }
         }
 
         public override void SyncData(IDataStore dataStore)
