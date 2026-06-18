@@ -43,6 +43,7 @@ PowerShell cannot advance in-game time — use these keys after loading a campai
 
 ```text
 BlacksmithGuild/
+  LaunchForge.cmd           <- double-click: build + install + open launcher
   forge.ps1                 <- one-click build + install (+ optional launcher/log)
   docs/
     sprint-000-bootstrap.md
@@ -86,6 +87,28 @@ BlacksmithGuild/
 - Mount & Blade II: Bannerlord installed (default Steam path below)
 - .NET SDK (for `dotnet build`)
 
+## Normal startup behavior
+
+The Blacksmith Guild is a normal Bannerlord module.
+
+Once it is installed under `Modules/BlacksmithGuild` and checked in the Bannerlord launcher, Bannerlord loads it automatically when the game starts.
+
+There is no separate "start mod" command.
+
+Expected flow:
+
+1. Double-click `LaunchForge.cmd` or run `.\forge.ps1 -Launch`.
+2. In the Bannerlord launcher, confirm **The Blacksmith Guild** is checked.
+3. Click **Play**.
+4. Load a throwaway campaign save or start a campaign.
+5. Confirm the log contains:
+
+```text
+[The Blacksmith Guild] Mod loaded. The forge is lit.
+```
+
+The dev hotkeys only matter after the mod has loaded on the campaign map.
+
 ## One-click dev workflow
 
 From repo root:
@@ -95,7 +118,7 @@ From repo root:
 .\forge.ps1 -Check     # build, install, scan log for [TBG TEST] PASS
 ```
 
-**Enable "The Blacksmith Guild" in the launcher** before loading a save.
+Or double-click `LaunchForge.cmd` to build, install, and open the launcher.
 
 See [docs/sprint-000a-results.md](docs/sprint-000a-results.md) for acceptance checklist, gaps, and log file locations.
 

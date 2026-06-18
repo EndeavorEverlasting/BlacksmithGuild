@@ -1,12 +1,44 @@
 # Test Plan — Sprint 000
 
+## Normal startup behavior
+
+The Blacksmith Guild is a normal Bannerlord module.
+
+Once it is installed under `Modules/BlacksmithGuild` and checked in the Bannerlord launcher, Bannerlord loads it automatically when the game starts.
+
+There is no separate "start mod" command.
+
+Expected flow:
+
+1. Double-click `LaunchForge.cmd` or run `.\forge.ps1 -Launch`.
+2. In the Bannerlord launcher, confirm **The Blacksmith Guild** is checked.
+3. Click **Play**.
+4. Load a throwaway campaign save or start a campaign.
+5. Confirm the log contains:
+
+```text
+[The Blacksmith Guild] Mod loaded. The forge is lit.
+```
+
+The dev hotkeys only matter after the mod has loaded on the campaign map.
+
+---
+
 ## Test 1: Launcher Detection
 
 **Purpose:** Confirm Bannerlord recognizes `BlacksmithGuild` as a module.
 
 **Steps:**
 
-1. Build and install (recommended — populates both bin folders):
+1. Build and install (recommended — populates both bin folders and opens the launcher):
+
+   ```powershell
+   .\forge.ps1 -Launch
+   ```
+
+   Or double-click `LaunchForge.cmd`.
+
+   Build/install only (no launcher):
 
    ```powershell
    .\forge.ps1

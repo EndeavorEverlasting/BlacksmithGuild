@@ -110,22 +110,27 @@ if ($CheckLog) {
             if (Select-String -LiteralPath $log -Pattern '[TBG TEST] PASS' -SimpleMatch -Quiet) {
                 Write-Host 'ACCEPTANCE: RichPlayerEconomyTest PASS found' -ForegroundColor Green
             } else {
-                Write-Host 'ACCEPTANCE: No PASS yet (enable mod, load campaign, advance 1 day)' -ForegroundColor Yellow
+                Write-Host 'ACCEPTANCE: No PASS yet (check mod in launcher, click Play, load campaign, advance 1 day)' -ForegroundColor Yellow
             }
             break
         }
     }
     if (-not $found) {
         Write-Host 'No BlacksmithGuild_Phase1.log yet.' -ForegroundColor Yellow
-        Write-Host 'Reminder: check the mod box in the launcher before loading a save.' -ForegroundColor Yellow
+        Write-Host 'Reminder: check The Blacksmith Guild in the launcher, click Play, then load a campaign.' -ForegroundColor Yellow
     }
 }
 
 Write-Host ''
-Write-Host 'Next: enable "The Blacksmith Guild" in the launcher, then load a campaign.' -ForegroundColor Cyan
+Write-Host 'Normal startup:' -ForegroundColor Cyan
+Write-Host '  1. Confirm The Blacksmith Guild is checked in the Bannerlord launcher.'
+Write-Host '  2. Click Play — Bannerlord loads checked modules automatically.'
+Write-Host '  3. Load a campaign and confirm the forge-lit log line.'
+Write-Host 'No separate mod-start command is required.' -ForegroundColor Cyan
 
 if ($Launch) {
     if (-not (Test-Path -LiteralPath $LauncherExe)) { throw "Launcher not found: $LauncherExe" }
-    Write-Host "Opening launcher..."
+    Write-Host ''
+    Write-Host 'Opening Bannerlord launcher...'
     Start-Process -LiteralPath $LauncherExe
 }
