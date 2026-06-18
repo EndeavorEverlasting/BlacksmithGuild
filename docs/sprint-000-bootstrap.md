@@ -12,7 +12,8 @@ Prove the Bannerlord module loads, shows a visible confirmation, runs the existi
 - `RichPlayerEconomyTest` adds 100,000 gold on first daily tick and logs before/after
 - `ForgeAdvisorSmokeTest` preserved as regression smoke test
 - Dual-bin DLL layout: `Win64_Shipping_Client` + `Win64_Shipping_wEditor` (v0.0.3)
-- Module version bumped to `v0.0.3`
+- Dev time hotkeys: Ctrl+Alt+D (advance daily tick), Ctrl+Alt+F (toggle fast-forward), Ctrl+Alt+L (list commands) (v0.0.4)
+- Module version bumped to `v0.0.4`
 
 ## Deferred
 

@@ -75,10 +75,14 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 **Steps:**
 
 1. Load a campaign with the mod enabled (Test 2).
-2. Advance time until the first daily tick (or wait one in-game day).
+2. On the campaign map, press **Ctrl+Alt+D** to fire one daily tick instantly (or wait one in-game day).
 3. Observe in-game messages and/or `BlacksmithGuild_Phase1.log`.
 4. Open the clan finance / hero gold UI and note player gold.
 5. Save the game and reload to confirm the save is still valid.
+
+**Optional — fast-forward:** Press **Ctrl+Alt+F** to start unstoppable fast-forward; press **Ctrl+Alt+F** again to stop.
+
+**Optional — list commands:** Press **Ctrl+Alt+L** to print registered dev commands.
 
 **Expected output:**
 
@@ -105,5 +109,6 @@ BlacksmithGuild: Top fake candidate: Long Warblade | Score 11250 | ...
 ## Notes
 
 - Bannerlord may load mods from `Win64_Shipping_Client` or `Win64_Shipping_wEditor` depending on launcher path — both folders must contain `BlacksmithGuild.dll` (v0.0.3+).
-- `RichPlayerEconomyTest` runs **once** on the first `DailyTickEvent` after campaign load.
+- **Ctrl+Alt+D** fires `CampaignEventDispatcher.DailyTick()` for instant dev testing; **Ctrl+Alt+F** toggles fast-forward.
+- `RichPlayerEconomyTest` also runs **once** on the first natural `DailyTickEvent` if `AutoRunGoldTestOnDailyTick` is enabled.
 - Future sprints will add manual triggers through `DevCommandRegistry`.

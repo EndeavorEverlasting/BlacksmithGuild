@@ -1,6 +1,6 @@
 # Sprint 000A Results — Prove the Forge
 
-**Module:** `BlacksmithGuild` v0.0.3  
+**Module:** `BlacksmithGuild` v0.0.4  
 **Sprint goal:** Bannerlord loads the mod, shows confirmation, runs smoke + gold test.
 
 ## One-click commands
@@ -47,9 +47,9 @@ First PASS or failure: _______________________________________________
 
 | Gap | Impact | Next sprint |
 |-----|--------|-------------|
-| No manual test trigger | Must wait for daily tick to re-run gold test | Sprint 001 |
-| `DevCommandRegistry` is stub only | Cannot list/run scenarios on demand | Sprint 001 |
-| No `DevToolsEnabled` gate | Dev behavior always active when mod loaded | Sprint 001 |
+| No manual test trigger | **Fixed v0.0.4** — Ctrl+Alt+D / Ctrl+Alt+F / Ctrl+Alt+L | Sprint 001 done |
+| `DevCommandRegistry` is stub only | **Fixed v0.0.4** — routes time + economy commands | — |
+| No `DevToolsEnabled` gate | `DevToolsConfig.DevToolsEnabled` added; still compile-time `true` | Future: config file |
 | In-game log prefix | `[TBG TEST]` lines show as `BlacksmithGuild: [TBG TEST]` in UI | Cosmetic; file log is raw |
 | Fake advisor only | No real smithing data | Phase 1B (`NEXT_STEPS.md`) |
 | Log path discovery | `BasePath.Name` varies by install | Use `forge.ps1 -Check` to find log |
@@ -67,7 +67,18 @@ First PASS or failure: _______________________________________________
 | DLL/game version mismatch | Rebuild after game updates; references are local TaleWorlds DLLs |
 | Silent log write failure | `GuildLog` swallows file errors; check in-game messages if log missing |
 | Old save without mod history | Fine — mod runs on load if enabled; advance 1 day for gold test |
-| `Program Files` copy needs admin | Run PowerShell as Administrator if copy fails |
+| `DailyTick()` dev shortcut side effects | Dev-only hotkey; runs full game daily logic once |
+| Fast-forward left on | Press Ctrl+Alt+F again to stop; watch for OFF log message |
+
+---
+
+## Dev hotkeys (v0.0.4)
+
+| Hotkey | Command |
+|--------|---------|
+| Ctrl+Alt+D | `AdvanceOneDay` — instant daily tick |
+| Ctrl+Alt+F | `ToggleFastForward` — unstoppable fast-forward on/off |
+| Ctrl+Alt+L | `ListScenarios` — print registered commands |
 
 ---
 
@@ -91,8 +102,6 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 
 ---
 
-## Sprint 001 gate
+## Sprint 001 status
 
-Blocked until all user checklist rows are **PASS**.
-
-Sprint 001 scope: **Manual Test Control** — hotkey trigger, optional auto daily-tick, scenario list. No economy features yet.
+**Manual test control delivered in v0.0.4** (hotkeys + `DevCommandRunner`). In-game 000A acceptance still required for full PASS.

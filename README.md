@@ -14,12 +14,23 @@ Load the module, enter campaign, and run a controlled economy test scenario (`Ri
 
 ## What Sprint 000 does
 
-- Appears in the Bannerlord launcher as **The Blacksmith Guild** (`BlacksmithGuild`, v0.0.3)
+- Appears in the Bannerlord launcher as **The Blacksmith Guild** (`BlacksmithGuild`, v0.0.4)
 - Displays `[The Blacksmith Guild] Mod loaded. The forge is lit.` on campaign start
 - Registers `BlacksmithGuildCampaignBehavior` for dev/test scenarios
 - Runs fake forge advisor ranking (regression smoke test)
 - Runs `RichPlayerEconomyTest` on first daily tick (+100,000 gold with before/after logging)
+- **Dev hotkeys** on campaign map (see below)
 - Writes log lines to `BlacksmithGuild_Phase1.log` near the Bannerlord base path
+
+## Dev hotkeys (campaign map)
+
+PowerShell cannot advance in-game time — use these keys after loading a campaign:
+
+| Hotkey | Action |
+|--------|--------|
+| Ctrl+Alt+D | Fire one daily tick instantly (`AdvanceOneDay`) |
+| Ctrl+Alt+F | Toggle unstoppable fast-forward on/off |
+| Ctrl+Alt+L | List registered dev commands in log/messages |
 
 ## What it does not do yet
 
@@ -61,10 +72,13 @@ BlacksmithGuild/
       Behaviors/
         BlacksmithGuildCampaignBehavior.cs
       DevTools/
+        DevToolsConfig.cs
+        DevCommandRunner.cs
         DebugLogger.cs
         DevCommandRegistry.cs
         TestScenarioRunner.cs
         EconomyTestScenarios.cs
+        TimeDevTools.cs
 ```
 
 ## Prerequisites

@@ -4,15 +4,24 @@ namespace BlacksmithGuild.DevTools
 {
     public static class DevCommandRegistry
     {
-        private static readonly HashSet<string> RegisteredScenarios =
-            new HashSet<string> { EconomyTestScenarios.RichPlayerEconomyTestName };
+        public const string ListScenariosCommand = "ListScenarios";
+        public const string AdvanceOneDayCommand = "AdvanceOneDay";
+        public const string ToggleFastForwardCommand = "ToggleFastForward";
 
-        public static bool IsRegistered(string scenarioName)
+        private static readonly HashSet<string> RegisteredCommands =
+            new HashSet<string>
+            {
+                EconomyTestScenarios.RichPlayerEconomyTestName,
+                ListScenariosCommand,
+                AdvanceOneDayCommand,
+                ToggleFastForwardCommand
+            };
+
+        public static bool IsRegistered(string commandName)
         {
-            return RegisteredScenarios.Contains(scenarioName);
+            return RegisteredCommands.Contains(commandName);
         }
 
-        public static IReadOnlyCollection<string> RegisteredScenarioNames =>
-            RegisteredScenarios;
+        public static IReadOnlyCollection<string> RegisteredCommandNames => RegisteredCommands;
     }
 }
