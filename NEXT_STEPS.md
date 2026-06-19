@@ -13,8 +13,9 @@ Zero-click forge loop first. Economics (005E) after 006E live cert.
 | 006A/B | Auto protagonist build + profiles | **Shipped** — live cert pending |
 | 006C | SandBox intro skip + visible bootstrap | **Shipped** |
 | 006D | v1.4.6 culture/narrative hotfix | **Shipped** |
-| **006E** | Full launch funnel (Forge → map) | **Hotfix v0.0.11-G shipped** — **live cert pending** |
-| **005E** | Orders, inventory, doctrine tuning | **After 006E PASS** |
+| **006E** | Full launch funnel (Forge → map) | **PARTIAL PASS** — launch + culture; narrative blocked Family |
+| **006F** | Narrative menu sprint-through | **Shipped** — live cert pending |
+| **005E** | Orders, inventory, doctrine tuning | **After 006F PASS** |
 
 ---
 
@@ -24,30 +25,22 @@ Zero-click forge loop first. Economics (005E) after 006E live cert.
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.11` |
-| Current sprint plan | [docs/plans/006e-main-menu-auto-launch.plan.md](docs/plans/006e-main-menu-auto-launch.plan.md) |
+| Current sprint plan | [docs/sprint-006f-live-results.md](docs/sprint-006f-live-results.md) |
 | Open PRs | None |
 
 ---
 
-## Next actions (user — 006E live cert)
+## Next actions (user — 006F live cert)
 
-**Path A — Bootstrap (zero-click):**
+**Path A — Bootstrap (zero-click through map):**
 
 ```text
 Close Bannerlord → Forge.cmd
-→ auto PLAY → auto CAUTION Confirm → auto Safe Mode No (if shown)
-→ auto New Campaign → SandBox → intro skip → culture → TBG READY
+→ auto PLAY → Safe Mode / CAUTION handled
+→ SandBoxNewGame → culture → narrative menus → map → TBG READY
 ```
 
-**Path B — Daily Continue (zero-click):**
-
-```text
-Close Bannerlord → ForgeContinue.cmd
-→ auto CONTINUE → auto CAUTION Confirm → auto Safe Mode No (if shown)
-→ auto Continue Campaign → TBG DEVSAVE / TBG READY
-```
-
-Check logs — see [sprint-006e-live-results.md](docs/sprint-006e-live-results.md).
+Check logs — see [sprint-006f-live-results.md](docs/sprint-006f-live-results.md).
 
 ---
 

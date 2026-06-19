@@ -161,6 +161,6 @@ BlacksmithGuild_Launch.log
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap | **PENDING** | | v0.0.11-G hotfix: crash reporter + launcher PLAY + InitialState warmup |
+| A — Forge.cmd bootstrap | **PARTIAL PASS** | 2026-06-18 | Launch funnel + culture + face OK; stalled at Family (006F fix) |
 | B — ForgeContinue.cmd | **PENDING** | | |
 | Add-Type compile smoke | **PASS** | 2026-06-18 | `launcher-auto-nav.ps1` loads UIAHelper; logs `intent=play` |

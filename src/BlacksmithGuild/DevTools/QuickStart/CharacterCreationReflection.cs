@@ -20,12 +20,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static PropertyInfo _currentStageProperty;
         private static PropertyInfo _characterCreationContentProperty;
         private static PropertyInfo _characterCreationMenuCountProperty;
+        private static PropertyInfo _currentMenuIndexProperty;
         private static MethodInfo _getCurrentMenuOptionsMethod;
         private static MethodInfo _narrativeMenuOptionSelectedMethod;
         private static MethodInfo _legacyRunConsequenceMethod;
         private static MethodInfo _applyCultureMethod;
         private static bool _probeLogged;
         private static bool _cultureFailureLogged;
+        private static readonly HashSet<int> LoggedNarrativeMenuSelections = new HashSet<int>();
+        private static int _narrativeMenusCompleted;
+        private static string _lastNarrativeFailureDetail;
 
         public static Type StateType => EnsureBindings();
 
@@ -110,52 +114,171 @@ namespace BlacksmithGuild.DevTools.QuickStart
             TrySkipCultureStage(state);
         }
 
-        public static void SkipNarrativeStage(object state)
+        public static void ResetNarrativeSession()
+        {
+            LoggedNarrativeMenuSelections.Clear();
+            _narrativeMenusCompleted = 0;
+            _lastNarrativeFailureDetail = null;
+        }
+
+        public static string GetNarrativeStallDiagnostics()
+        {
+            return _lastNarrativeFailureDetail ?? "no narrative failure detail recorded";
+        }
+
+        public static bool TryNextStage(object state)
+        {
+            try
+            {
+                var manager = GetManager(state);
+                if (manager == null || _nextStageMethod == null)
+                {
+                    return false;
+                }
+
+                _nextStageMethod.Invoke(manager, null);
+                return true;
+            }
+            catch (TargetInvocationException ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                GuildLog.Info($"[TBG QUICKSTART] NextStage failed: {inner}", showInGame: false);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] NextStage failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        public static bool TryAdvanceNarrativeMenu(object state)
         {
             var manager = GetCharacterCreation(state);
             if (manager == null)
             {
-                return;
+                _lastNarrativeFailureDetail = "manager is null";
+                return false;
+            }
+
+            if (_getCurrentMenuOptionsMethod == null)
+            {
+                _lastNarrativeFailureDetail = "GetCurrentMenuOptions is missing";
+                return false;
             }
 
             var menuCount = (int)(_characterCreationMenuCountProperty?.GetValue(manager) ?? 0);
-            for (var i = 0; i < menuCount; i++)
+            if (menuCount <= 0)
             {
-                var options = EnumerateMenuOptions(_getCurrentMenuOptionsMethod?.Invoke(manager, new object[] { i }));
-                object selected = null;
-                foreach (var option in options)
+                _lastNarrativeFailureDetail = "menuCount is 0";
+                return false;
+            }
+
+            var progressed = false;
+            const int maxMenusPerTick = 12;
+
+            for (var attempt = 0; attempt < maxMenusPerTick; attempt++)
+            {
+                var menuIndex = TryGetCurrentMenuIndex(manager);
+                if (menuIndex >= menuCount)
                 {
-                    if (option == null)
-                    {
-                        continue;
-                    }
-
-                    var onCondition = option.GetType().GetMethod(
-                        "OnCondition",
-                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    if (onCondition == null)
-                    {
-                        selected = option;
-                        break;
-                    }
-
-                    var conditionResult = onCondition.Invoke(option, null) as bool?;
-                    if (conditionResult != false)
-                    {
-                        selected = option;
-                        break;
-                    }
+                    return progressed ? TryNextStage(state) : TryNextStage(state);
                 }
 
-                if (selected == null)
+                if (!TrySelectNarrativeOption(manager, menuIndex, menuCount, out var selected))
+                {
+                    break;
+                }
+
+                progressed = true;
+
+                if (_currentMenuIndexProperty == null)
+                {
+                    _narrativeMenusCompleted++;
+                    continue;
+                }
+
+                var nextIndex = TryGetCurrentMenuIndex(manager);
+                if (nextIndex <= menuIndex)
+                {
+                    break;
+                }
+            }
+
+            return progressed;
+        }
+
+        private static bool TrySelectNarrativeOption(
+            object manager,
+            int menuIndex,
+            int menuCount,
+            out object selected)
+        {
+            selected = null;
+            var options = new List<object>();
+            foreach (var option in EnumerateMenuOptions(_getCurrentMenuOptionsMethod.Invoke(manager, new object[] { menuIndex })))
+            {
+                if (option != null)
+                {
+                    options.Add(option);
+                }
+            }
+
+            if (options.Count == 0)
+            {
+                _lastNarrativeFailureDetail = $"menu={menuIndex} optionCount=0 menuCount={menuCount}";
+                return false;
+            }
+
+            foreach (var option in options)
+            {
+                if (!IsOptionAvailable(option))
                 {
                     continue;
                 }
 
-                InvokeNarrativeSelection(manager, selected, i);
+                selected = option;
+                break;
             }
 
-            NextStage(state);
+            if (selected == null)
+            {
+                _lastNarrativeFailureDetail =
+                    $"menu={menuIndex} no valid option ({options.Count} total) menuCount={menuCount}";
+                return false;
+            }
+
+            try
+            {
+                InvokeNarrativeSelection(manager, selected, menuIndex);
+            }
+            catch (TargetInvocationException ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                _lastNarrativeFailureDetail = $"menu={menuIndex} invoke failed: {inner}";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _lastNarrativeFailureDetail = $"menu={menuIndex} invoke failed: {ex.Message}";
+                return false;
+            }
+
+            if (!LoggedNarrativeMenuSelections.Contains(menuIndex))
+            {
+                LoggedNarrativeMenuSelections.Add(menuIndex);
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] narrative auto-selected menu={menuIndex} option={DescribeNarrativeOption(selected)}",
+                    showInGame: false);
+            }
+
+            _lastNarrativeFailureDetail = null;
+            return true;
+        }
+
+        public static void SkipNarrativeStage(object state)
+        {
+            TryAdvanceNarrativeMenu(state);
         }
 
         public static bool IsStoryModeContent(object state)
@@ -202,6 +325,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _currentStageProperty = AccessTools.Property(_managerType, "CurrentStage");
             _characterCreationContentProperty = AccessTools.Property(_managerType, "CharacterCreationContent");
             _characterCreationMenuCountProperty = AccessTools.Property(_managerType, "CharacterCreationMenuCount");
+            _currentMenuIndexProperty = AccessTools.Property(_managerType, "CurrentMenuIndex")
+                ?? AccessTools.Property(_managerType, "CurrentMenu");
             _getCurrentMenuOptionsMethod = AccessTools.Method(_managerType, "GetCurrentMenuOptions", new[] { typeof(int) });
 
             _legacyRunConsequenceMethod = AccessTools.Method(_managerType, "RunConsequence");
@@ -219,6 +344,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             LogProbe(
                 $"state=found manager=found nextStage={(_nextStageMethod != null ? "found" : "missing")} " +
                 $"menus={(_getCurrentMenuOptionsMethod != null ? "found" : "missing")} " +
+                $"currentMenuIndex={(_currentMenuIndexProperty != null ? "found" : "missing")} " +
                 $"culture={(_applyCultureMethod != null ? "found" : "missing")} " +
                 $"narrative={narrativeBinding}");
 
@@ -246,6 +372,85 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     _legacyRunConsequenceMethod.Invoke(manager, new[] { selected });
                 }
             }
+        }
+
+        private static int TryGetCurrentMenuIndex(object manager)
+        {
+            if (_currentMenuIndexProperty != null)
+            {
+                try
+                {
+                    var value = _currentMenuIndexProperty.GetValue(manager);
+                    if (value is int index)
+                    {
+                        return index;
+                    }
+
+                    if (value != null && int.TryParse(value.ToString(), out var parsed))
+                    {
+                        return parsed;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return _narrativeMenusCompleted;
+        }
+
+        private static bool IsOptionAvailable(object option)
+        {
+            try
+            {
+                var onCondition = option.GetType().GetMethod(
+                    "OnCondition",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (onCondition == null)
+                {
+                    return true;
+                }
+
+                return onCondition.Invoke(option, null) as bool? != false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string DescribeNarrativeOption(object option)
+        {
+            if (option == null)
+            {
+                return "null";
+            }
+
+            try
+            {
+                var stringIdProperty = option.GetType().GetProperty(
+                    "StringId",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var stringId = stringIdProperty?.GetValue(option) as string;
+                if (!string.IsNullOrWhiteSpace(stringId))
+                {
+                    return stringId;
+                }
+
+                var idField = option.GetType().GetField(
+                    "Id",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var id = idField?.GetValue(option)?.ToString();
+                if (!string.IsNullOrWhiteSpace(id))
+                {
+                    return id;
+                }
+            }
+            catch
+            {
+            }
+
+            return option.GetType().Name;
         }
 
         private static IEnumerable EnumerateMenuOptions(object optionsObject)

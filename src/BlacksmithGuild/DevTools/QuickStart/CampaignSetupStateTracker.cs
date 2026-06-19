@@ -31,7 +31,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _bootstrapUsed;
         private static bool _devSaveLoadUsed;
         private static string _devSaveName;
-        private static string _lastHandledCreationSubStage;
+        private static string _simpleStagePendingAdvance;
         private static float _creationStageStalledSeconds;
         private static string _creationStallSubStage;
         private static bool _hasAnnouncedCreationStall;
@@ -70,10 +70,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _bootstrapUsed = false;
             _devSaveLoadUsed = false;
             _devSaveName = null;
-            _lastHandledCreationSubStage = null;
+            _simpleStagePendingAdvance = null;
             _creationStageStalledSeconds = 0f;
             _creationStallSubStage = null;
             _hasAnnouncedCreationStall = false;
+            CharacterCreationReflection.ResetNarrativeSession();
             MainMenuAutoLauncher.ResetForNewSession();
         }
 
@@ -155,10 +156,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _loggedWaiting = false;
                 if (nextPhase == SetupPhase.CharacterCreation)
                 {
-                    _lastHandledCreationSubStage = null;
+                    _simpleStagePendingAdvance = null;
                     _creationStageStalledSeconds = 0f;
                     _creationStallSubStage = subStage;
                     _hasAnnouncedCreationStall = false;
+                    CharacterCreationReflection.ResetNarrativeSession();
                 }
             }
 
@@ -192,10 +194,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _phase = nextPhase;
                 _subStage = stageName;
                 _loggedWaiting = false;
-                _lastHandledCreationSubStage = null;
+                _simpleStagePendingAdvance = null;
                 _creationStageStalledSeconds = 0f;
                 _creationStallSubStage = stageName;
                 _hasAnnouncedCreationStall = false;
+                CharacterCreationReflection.ResetNarrativeSession();
             }
 
             TryAdvanceCurrentCreationStage(0f);
@@ -212,7 +215,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _phase = SetupPhase.CharacterCreation;
             _subStage = "bootstrap";
             _loggedWaiting = false;
-            _lastHandledCreationSubStage = null;
+            _simpleStagePendingAdvance = null;
         }
 
         private static void TryAdvanceCurrentCreationStage(float dt)
@@ -233,23 +236,14 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (_subStage != stageName)
             {
                 _subStage = stageName;
-                _lastHandledCreationSubStage = null;
+                _simpleStagePendingAdvance = null;
                 _creationStageStalledSeconds = 0f;
                 _creationStallSubStage = stageName;
                 _hasAnnouncedCreationStall = false;
+                CharacterCreationReflection.ResetNarrativeSession();
             }
 
-            var advanced = false;
-            if (stageName == "CharacterCreationCultureStage")
-            {
-                advanced = CharacterCreationReflection.TrySkipCultureStage(activeState);
-            }
-            else if (_lastHandledCreationSubStage != stageName)
-            {
-                _lastHandledCreationSubStage = stageName;
-                HandleCharacterCreationStage(activeState, stageName);
-                advanced = true;
-            }
+            var advanced = TryAdvanceCreationStage(activeState, stageName);
 
             if (advanced)
             {
@@ -272,9 +266,56 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             _hasAnnouncedCreationStall = true;
             AnnounceSetupStalled($"CharacterCreation/{stageName}");
+            if (stageName is "CharacterCreationNarrativeStage" or "CharacterCreationGenericStage")
+            {
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] narrative stall detail: {CharacterCreationReflection.GetNarrativeStallDiagnostics()}",
+                    showInGame: false);
+            }
+
             GuildLog.Info(
                 $"[TBG QUICKSTART] stage stalled for {CreationStageStallThresholdSeconds:0}s at {stageName}.",
                 showInGame: false);
+        }
+
+        private static bool TryAdvanceCreationStage(object state, string stageName)
+        {
+            if (stageName == "CharacterCreationCultureStage")
+            {
+                return CharacterCreationReflection.TrySkipCultureStage(state);
+            }
+
+            if (stageName is "CharacterCreationNarrativeStage" or "CharacterCreationGenericStage")
+            {
+                return CharacterCreationReflection.TryAdvanceNarrativeMenu(state);
+            }
+
+            if (!IsSimpleNextStage(stageName))
+            {
+                return false;
+            }
+
+            if (string.Equals(_simpleStagePendingAdvance, stageName, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!CharacterCreationReflection.TryNextStage(state))
+            {
+                return false;
+            }
+
+            _simpleStagePendingAdvance = stageName;
+            return true;
+        }
+
+        private static bool IsSimpleNextStage(string stageName)
+        {
+            return stageName is "CharacterCreationFaceGeneratorStage"
+                or "CharacterCreationReviewStage"
+                or "CharacterCreationOptionsStage"
+                or "CharacterCreationBannerEditorStage"
+                or "CharacterCreationClanNamingStage";
         }
 
         public static void MarkStoryModeBlocked()
@@ -347,39 +388,6 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             return "unknown";
-        }
-
-        private static void HandleCharacterCreationStage(object state, string stageName)
-        {
-            try
-            {
-                if (stageName == "CharacterCreationCultureStage")
-                {
-                    CharacterCreationReflection.SkipCultureStage(state);
-                }
-                else if (stageName == "CharacterCreationFaceGeneratorStage")
-                {
-                    CharacterCreationReflection.NextStage(state);
-                }
-                else if (stageName == "CharacterCreationNarrativeStage" || stageName == "CharacterCreationGenericStage")
-                {
-                    CharacterCreationReflection.SkipNarrativeStage(state);
-                }
-                else if (stageName is "CharacterCreationReviewStage"
-                    or "CharacterCreationOptionsStage"
-                    or "CharacterCreationBannerEditorStage"
-                    or "CharacterCreationClanNamingStage")
-                {
-                    CharacterCreationReflection.NextStage(state);
-                }
-            }
-            catch (Exception ex)
-            {
-                GuildLog.Info(
-                    $"[TBG QUICKSTART] stage handler failed at {stageName}: {ex.Message}",
-                    showInGame: false
-                );
-            }
         }
 
         private static void CompleteSetup()
