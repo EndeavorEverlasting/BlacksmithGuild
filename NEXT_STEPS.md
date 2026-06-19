@@ -20,10 +20,10 @@ Build the car, not the fuzzy dice. Profile-driven protagonist shaping before eco
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (006B commit pending push) |
+| Branch | `main` (up to date with `origin/main`; 006B `a4caa0c`) |
 | Version | `v0.0.7` |
-| Working tree | Source changes staged for commit |
-| Remote | `origin/main` |
+| Working tree | **Clean** |
+| Remote | `origin/main` up to date |
 | Open PRs | None |
 
 ---
