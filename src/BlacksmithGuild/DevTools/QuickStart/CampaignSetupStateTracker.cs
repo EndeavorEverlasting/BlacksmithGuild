@@ -37,6 +37,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static bool IsTracking => DevToolsConfig.AutoSkipCharacterCreation && !_setupComplete;
 
+        public static bool BootstrapUsed => _bootstrapUsed;
+
+        public static bool DevSaveLoadUsed => _devSaveLoadUsed;
+
+        public static bool UsedDisposableQuickStartPath => _bootstrapUsed || _devSaveLoadUsed;
+
         public static void ResetForNewSession()
         {
             _phase = SetupPhase.Idle;

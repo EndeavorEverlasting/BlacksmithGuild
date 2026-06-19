@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Forge;
@@ -44,6 +45,8 @@ namespace BlacksmithGuild
         private static bool _forgeRecommendationsRecorded;
         private static ForgeRecipeProbeSummary _recipeProbe;
         private static bool _recipeProbeRecorded;
+        private static AutoCharacterBuildSummary _autoCharacterBuild;
+        private static bool _autoCharacterBuildRecorded;
         private static SessionPhase _sessionPhase = SessionPhase.ModuleOnly;
         private static bool _sessionTimePaused;
 
@@ -187,6 +190,13 @@ namespace BlacksmithGuild
             Flush();
         }
 
+        public static void RecordAutoCharacterBuild(AutoCharacterBuildSummary summary)
+        {
+            _autoCharacterBuild = summary;
+            _autoCharacterBuildRecorded = summary != null && summary.HasReport;
+            Flush();
+        }
+
         /// <summary>
         /// Read-only verdict card: posts cached summary to the notice log. Does not scan or mutate campaign data.
         /// </summary>
@@ -253,6 +263,7 @@ namespace BlacksmithGuild
             TreasuryDeltaWatchService.AppendToReport(report);
             ForgeRecommendationService.AppendToReport(report);
             ForgeRecipeProbeService.AppendToReport(report);
+            AutoCharacterBuildService.AppendToReport(report);
 
             if (PendingReloadWatcher.IsReloadBlocked)
             {
@@ -536,6 +547,17 @@ namespace BlacksmithGuild
                         $"    \"smithingSkillLevel\": {(_recipeProbe.SmithingSkillLevel.HasValue ? _recipeProbe.SmithingSkillLevel.Value.ToString() : "null")},");
                     builder.AppendLine($"    \"reportPath\": \"{Escape(_recipeProbe.ReportPath ?? "")}\",");
                     builder.AppendLine($"    \"generatedAt\": \"{(_recipeProbe.GeneratedAt ?? DateTime.Now):o}\"");
+                    builder.AppendLine("  },");
+                }
+
+                if (_autoCharacterBuildRecorded)
+                {
+                    builder.AppendLine("  \"autoCharacterBuild\": {");
+                    builder.AppendLine($"    \"profile\": \"{Escape(_autoCharacterBuild.Profile ?? "")}\",");
+                    builder.AppendLine($"    \"applied\": {_autoCharacterBuild.Applied.ToString().ToLowerInvariant()},");
+                    builder.AppendLine($"    \"trigger\": \"{Escape(_autoCharacterBuild.Trigger ?? "")}\",");
+                    builder.AppendLine($"    \"reportPath\": \"{Escape(_autoCharacterBuild.ReportPath ?? "")}\",");
+                    builder.AppendLine($"    \"generatedAt\": \"{(_autoCharacterBuild.GeneratedAt ?? DateTime.Now):o}\"");
                     builder.AppendLine("  },");
                 }
 

@@ -1,6 +1,6 @@
 # Next Steps
 
-Math before hammer. Real recipes before UI. One live cert session closes 005D after hotfix.
+Build the car, not the fuzzy dice. Protagonist shaping before economics polish.
 
 ---
 
@@ -9,8 +9,9 @@ Math before hammer. Real recipes before UI. One live cert session closes 005D af
 | Order | Sprint | Status |
 |-------|--------|--------|
 | 003C | QuickStart + dev save auto-load + Forge launcher | **LIVE CERT PASS** (Continue, 2026-06-18) |
-| 005D | Real candidate mapping + economics | **Hotfix shipped** — live cert pending |
-| **005E** | Orders, inventory, doctrine tuning on real set | **Next** (after 005D PASS) |
+| 005D | Real candidate mapping + economics | **Hotfix shipped** — live cert optional/pending |
+| **006A** | Auto Protagonist Build (`ForgeQuartermasterWarlord`) | **Shipped** — live cert pending |
+| **005E** | Orders, inventory, doctrine tuning on real set | **After 006A PASS** |
 
 Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
 
@@ -20,41 +21,38 @@ Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (up to date with `origin/main`; hotfix `6142ff7`) |
+| Branch | `main` (006A commit pending push) |
 | Version | `v0.0.7` |
-| Working tree | **Clean** |
-| Remote | `origin/main` up to date |
+| Working tree | Source changes staged for commit |
+| Remote | `origin/main` |
 | Open PRs | None |
 | Stale branches | None |
 
 ---
 
-## Next actions (user — one session closes 005D live cert)
+## Next actions (user — 006A live cert)
 
 ```text
 Close Bannerlord → Forge.cmd → Continue → TBG READY
-.\forge.ps1 -Command SetForgeCandidateSourceReal -Wait
-.\forge.ps1 -Command RankForgeCandidates -Wait
-→ F7: source=real, fallbackUsed=false, real.template.* IDs, economicsMode present
-.\forge.ps1 -Command SetForgeCandidateSourceStub -Wait
-.\forge.ps1 -Command RankForgeCandidates -Wait
-→ F7: Long Warblade 11250
+.\forge.ps1 -Command ApplyAutoCharacterBuild -Wait
+.\forge.ps1 -Command ShowForgeStatus -Wait
+→ F7: Auto Character Build section + JSON on disk
 ```
 
-**No smithy required** — campaign map only, pause time (Space).
+Optional: new SandBox bootstrap (no dev save) → verify auto `TBG CHARACTER:` on map ready.
 
-Docs: [sprint-003c-live-results.md](docs/sprint-003c-live-results.md) · [sprint-005d-live-results.md](docs/sprint-005d-live-results.md)
+Docs: [sprint-006a-live-results.md](docs/sprint-006a-live-results.md)
 
 ---
 
-## Next actions (dev — after 005D live cert PASS)
+## Next actions (dev — after 006A live cert PASS)
 
 **Sprint 005E:** crafting orders + hero inventory in economics; doctrine tuning on real candidates.
 
-**Backlog:** F10 safety guards, strict 003B F10 multi-day, player forge UI (006).
+**Backlog:** F10 safety guards, player forge UI (006), 005D live cert if still pending.
 
 ---
 
 ## Stern verdict
 
-Stub oracle (Long Warblade 11250) remains regression baseline. Real source must cert with `fallbackUsed=false` before removing stub fallback.
+Protagonist build is dev/disposable only. Auto-apply fires on **new-game bootstrap** only — Continue requires explicit `ApplyAutoCharacterBuild`.

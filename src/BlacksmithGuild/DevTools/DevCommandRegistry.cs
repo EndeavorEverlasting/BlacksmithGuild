@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-
+using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.Treasury;
 
@@ -33,7 +33,8 @@ namespace BlacksmithGuild.DevTools
                 ForgeRecommendationService.SetForgeDoctrineRareMetalConservationCommand,
                 ForgeRecommendationService.SetForgeDoctrineCashCrisisCommand,
                 ForgeRecommendationService.ShowForgeDoctrineCommand,
-                ForgeRecommendationService.ProbeForgeRecipesCommand
+                ForgeRecommendationService.ProbeForgeRecipesCommand,
+                AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
             };
 
         public static bool IsRegistered(string commandName)

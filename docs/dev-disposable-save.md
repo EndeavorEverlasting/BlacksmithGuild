@@ -40,6 +40,8 @@ Forge.cmd → launcher opens → Play or Continue → map ready (auto dev save o
 | `BlacksmithGuild_DevStart.sav` (dev disposable) | **ON** |
 | Legacy / personal saves | **OFF** |
 
+**Auto character build:** applies automatically only on **new-game SandBox bootstrap** (no dev save). On **Continue**, run `ApplyAutoCharacterBuild` explicitly via file inbox.
+
 ## When to use New Campaign instead
 
 - First-time creation of the dev save (one-time)

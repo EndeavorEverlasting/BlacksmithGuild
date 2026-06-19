@@ -1,5 +1,6 @@
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.Treasury;
+using BlacksmithGuild.DevTools.AutoCharacterBuild;
 
 namespace BlacksmithGuild.DevTools
 {
@@ -167,7 +168,8 @@ namespace BlacksmithGuild.DevTools
                 commandName == DevCommandRegistry.ListScenariosCommand ||
                 commandName == ForgeRecommendationService.RankForgeCandidatesCommand ||
                 commandName == ForgeRecommendationService.ShowForgeCandidateSourceCommand ||
-                commandName == ForgeRecommendationService.ShowForgeDoctrineCommand)
+                commandName == ForgeRecommendationService.ShowForgeDoctrineCommand ||
+                commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand)
             {
                 return;
             }
@@ -305,7 +307,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.RichSmithingProgressionTestName
                 || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
-                || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand;
+                || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
+                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand;
         }
 
         private static bool IsMutationCommand(string commandName)
@@ -314,7 +317,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.RichSmithingProgressionTestName
                 || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
-                || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand;
+                || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
+                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand;
         }
 
         private static DevCommandResult Execute(string commandName)
@@ -381,6 +385,8 @@ namespace BlacksmithGuild.DevTools
                     return ForgeRecipeProbeService.RunProbeNow()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case AutoCharacterBuildService.ApplyAutoCharacterBuildCommand:
+                    return AutoCharacterBuildService.TryApplyFromCommand();
                 default:
                     return DevCommandResult.Unknown;
             }
