@@ -23,7 +23,8 @@
 | Path A bootstrap (Layer B) | **PASS** (prior) | Phase1 ~02:32:04 — TBG READY, count=1 |
 | Path C quit | **USER PASS** | 006I-4 |
 | Layer A handoff | **FAIL** | No `handoff:` in Launch.log |
-| Module Mismatch UIA | **RISK** | Loose `mismatch` match scans desktop; false positive @ 11:02 |
+| Module Mismatch UIA | **FIXED** | Scoped to Module Mismatch dialog; no desktop `mismatch` scan |
+| Desktop click safety | **FIXED** | No RootElement clicks; `ForgeStop.cmd` for emergency kill |
 | Continue load | **PENDING** | Re-test `LaunchForgeContinue.cmd` |
 | Path B culture Back | **PENDING** | Not re-certified |
 | Market F12 | **PENDING** | `BlacksmithGuild_MarketIntel.json` absent |
@@ -36,11 +37,17 @@
 3. **`.editorconfig`** — `charset = utf-8-bom` for `*.ps1` / `*.psm1` / `*.psd1`.
 4. **`docs/forge-zero-click-contract.md`** — canonical Play → Confirm → Safe Mode No → character build → TBG READY spec.
 
-## Known gap — Module Mismatch false positive
+## Known gap — desktop click safety (FIXED 2026-06-19)
 
-`HasModuleMismatchDialog()` matches any UIA `Text` containing `"mismatch"` on **AutomationElement.RootElement** (entire desktop). Session 2026-06-19 11:02 logged taskbar/widget text as Module Mismatch buttons and clicked Yes spuriously.
+**Root cause:** `launcher-auto-nav.ps1` used `AutomationElement.RootElement` to find buttons named `PLAY`, `Yes`, `No`, `Confirm` anywhere on the desktop. That clicked unrelated apps (Excel, games, PowerShell taskbar pins, etc.).
 
-**Fix target:** `scripts/launcher-auto-nav.ps1` — scope search to Bannerlord game/launcher windows only; require exact `"Module Mismatch"` title, not substring `mismatch`.
+**Fix shipped:** All UIA clicks are scoped to Bannerlord launcher/game windows or titled dialogs (`Safe Mode`, `Module Mismatch`, crash reporter, CAUTION). Global desktop fallback and `{ENTER}` SendKeys removed.
+
+**Emergency stop:** `ForgeStop.cmd` — kills Bannerlord, launcher, and forge shell processes (no taskbar icon).
+
+## Prior gap — Module Mismatch false positive (FIXED same commit)
+
+`HasModuleMismatchDialog()` previously matched any UIA `Text` containing `"mismatch"` on the entire desktop. Now requires exact `"Module Mismatch"` title/text within scoped windows only.
 
 ## Output files to analyze
 

@@ -137,6 +137,21 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 
 ---
 
+## Emergency stop
+
+`launcher-auto-nav.ps1` runs headless (no taskbar icon). If it clicks the wrong thing or hangs:
+
+```powershell
+cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+.\ForgeStop.cmd
+```
+
+Kills Bannerlord, the TaleWorlds launcher, and any Forge shell still running. Close any unrelated windows it may have opened manually.
+
+**Safety rule (2026-06-19):** UIA must never click `AutomationElement.RootElement` buttons (`PLAY`, `Yes`, `No`, `Confirm`) — only scoped Bannerlord launcher/game/dialog windows.
+
+---
+
 ## Status (2026-06-19)
 
 | Piece | Code | User cert |
@@ -145,7 +160,8 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 | Module Mismatch UIA | Shipped (006I-5) | Pending — `LaunchForgeContinue.cmd` |
 | Layer B intro skip + creation | Shipped (006C–006I) | Path A PASS; Path B pending |
 | UTF-8 BOM for PS 5.1 | **SHIPPED** — run `scripts/tools/Add-Utf8Bom.ps1 -Fix` after new `.ps1` |
-| Module Mismatch UIA false positive | **RISK** — tighten `HasModuleMismatchDialog` to game/launcher window only |
+| Desktop UIA click safety | **SHIPPED** — scoped clicks only; `ForgeStop.cmd` |
+| Module Mismatch UIA false positive | **FIXED** — exact `Module Mismatch` dialog scope |
 | **006I LIVE CERT PASS** | — | **Blocks 005E** until full matrix PASS |
 
 ---

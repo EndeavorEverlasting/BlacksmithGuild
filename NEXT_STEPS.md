@@ -19,7 +19,7 @@
 | 005E market intel (read-only) | **SHIPPED** — F12 hotkey MVP; user cert PENDING |
 | 005E smithing posse automation | BLOCKED (006I cert) |
 
-**2026-06-19:** UTF-8 BOM fix shipped (Forge.cmd parse on PS 5.1). Zero-click contract documented. **Cert still PARTIAL** — see [post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md). Module Mismatch UIA false-positive risk identified.
+**2026-06-19:** UTF-8 BOM fix shipped (Forge.cmd parse on PS 5.1). Zero-click contract documented. **UIA desktop click safety fix** — scoped clicks only; use **`ForgeStop.cmd`** if automation runs away. **Cert still PARTIAL** — see [post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md).
 
 ---
 
