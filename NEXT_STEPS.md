@@ -12,7 +12,7 @@
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Launcher handoff cert pending. |
 | 006I-3 | SHIPPED. Re-cert PENDING. |
-| 006I-4 | PLANNING ONLY. If Path C still fails after re-cert. |
+| 006I-4 | SHIPPED. Quit re-arm fix + diagnostics — Path C re-cert PENDING. |
 | 005E economics | NEXT. Gated on 006I cert PASS. |
 
 **2026-06-19 cert: PARTIAL** — Path A map OK (screenshot); Path B culture Back FAIL; Path C quit FAIL.
@@ -71,6 +71,8 @@ Path C: Pause → Quit → clean exit (no Task Manager)
 ```
 
 Collect log tails — see [docs/checkpoints/post-006i-3-handoff.md](docs/checkpoints/post-006i-3-handoff.md).
+
+**006I-4 — Re-cert Path C (user):** After `.\Forge.cmd` reaches map, Pause → Quit. Confirm no intro replay and no Task Manager. See [docs/plans/006i-4-quit-to-menu-intro-loop.plan.md](docs/plans/006i-4-quit-to-menu-intro-loop.plan.md).
 
 **005E — Blocked until 006I cert PASS.**
 

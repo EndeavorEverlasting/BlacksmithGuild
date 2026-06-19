@@ -35,8 +35,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static float _creationStageStalledSeconds;
         private static string _creationStallSubStage;
         private static bool _hasAnnouncedCreationStall;
+        private static bool _bootstrapCompletedThisProcess;
 
         private const float CreationStageStallThresholdSeconds = 5f;
+
+        public static bool BootstrapCompletedThisProcess => _bootstrapCompletedThisProcess;
 
         public static SetupPhase Phase => _phase;
 
@@ -74,6 +77,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _creationStageStalledSeconds = 0f;
             _creationStallSubStage = null;
             _hasAnnouncedCreationStall = false;
+            _bootstrapCompletedThisProcess = false;
             CharacterCreationReflection.ResetNarrativeSession();
             MainMenuAutoLauncher.ResetForNewSession();
         }
@@ -151,6 +155,30 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 GuildLog.Info($"[TBG QUICKSTART] bootstrap disarmed: {reason}", showInGame: false);
             }
+
+            if (_bootstrapUsed
+                && (string.Equals(reason, "campaign map ready", StringComparison.Ordinal)
+                    || string.Equals(reason, "setup complete", StringComparison.Ordinal)))
+            {
+                MarkBootstrapCompleted(reason);
+            }
+        }
+
+        private static void MarkBootstrapCompleted(string reason)
+        {
+            if (_bootstrapCompletedThisProcess)
+            {
+                return;
+            }
+
+            _bootstrapCompletedThisProcess = true;
+            GuildLog.Info(
+                "[TBG QUICKSTART] bootstrap complete: disarming forward launch state and intro skip hooks " +
+                $"reason={reason}",
+                showInGame: false);
+            MainMenuAutoLauncher.EnsureIntentFilesCleared("bootstrap complete");
+            MainMenuAutoLauncher.LogLaunchIntentFileStatus("bootstrap complete");
+            QuickStartDiagnostics.LogStateStack("bootstrap complete");
         }
 
         public static void NotifyCampaignMapReady()
@@ -444,6 +472,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
+            MainMenuAutoLauncher.LogLaunchIntentFileStatus("returned to main menu");
+            QuickStartDiagnostics.LogStateStack("returned to main menu");
             DisarmBootstrap("returned to main menu");
         }
 

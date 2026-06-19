@@ -13,6 +13,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _probeLogged;
         private static int _campaignIntroSkipCount;
         private static bool _forwardIntroSkipDone;
+
+        internal static bool ForwardIntroSkipDone => _forwardIntroSkipDone;
+
         private static FieldInfo _playedIntroVideoField;
         private static MethodInfo _launchCampaignIntroVideoMethod;
         private static MethodInfo _simulateCharacterCreationMethod;
@@ -148,9 +151,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static void GameEndPrefix()
         {
+            QuickStartDiagnostics.LogStateStack("Game.End");
+            MainMenuAutoLauncher.LogLaunchIntentFileStatus("Game.End");
             CampaignSetupStateTracker.DisarmBootstrap("game end");
-            _forwardIntroSkipDone = false;
-            _campaignIntroSkipCount = 0;
         }
 
         private static void OnLoadFinishedIntroFlagPrefix(SandBoxGameManager __instance)
@@ -256,23 +259,28 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static bool VideoPlaybackOnActivatePrefix(object __instance)
         {
-            if (!ShouldSkipIntroVideo(null))
+            var stateType = __instance?.GetType().Name ?? "null";
+
+            if (!ShouldSkipIntroVideo(null, "OnActivate", stateType))
             {
                 return true;
             }
 
             if (ShouldBlockOnActivateIntroSkip())
             {
+                QuickStartDiagnostics.LogIntroDecision("OnActivate", stateType, "block", "post-forward creation block");
                 return true;
             }
 
             if (!IsSkippableVideoState(__instance))
             {
+                QuickStartDiagnostics.LogIntroDecision("OnActivate", stateType, "block", "not skippable video state");
                 return true;
             }
 
             try
             {
+                QuickStartDiagnostics.LogIntroDecision("OnActivate", stateType, "allow", "forward bootstrap skip");
                 CampaignSetupStateTracker.AnnounceCutsceneSkip();
                 SkipCampaignIntroVideo(__instance, "OnActivate");
                 return false;
@@ -286,26 +294,37 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static void CleanAndPushStatePostfix(GameState gameState)
         {
-            if (!ShouldSkipIntroVideo(null) || gameState == null)
+            var stateType = gameState?.GetType().Name ?? "null";
+
+            if (gameState == null)
+            {
+                return;
+            }
+
+            if (!ShouldSkipIntroVideo(null, "CleanAndPushState", stateType))
             {
                 return;
             }
 
             if (ShouldBlockCleanAndPushIntroSkip())
             {
-                GuildLog.Info(
-                    $"[TBG QUICKSTART] intro skip blocked: CleanAndPushState (subStage={GetCurrentCreationSubStage() ?? "null"})",
-                    showInGame: false);
+                QuickStartDiagnostics.LogIntroDecision(
+                    "CleanAndPushState",
+                    stateType,
+                    "block",
+                    $"post-forward block subStage={GetCurrentCreationSubStage() ?? "null"}");
                 return;
             }
 
             if (!IsSkippableVideoState(gameState))
             {
+                QuickStartDiagnostics.LogIntroDecision("CleanAndPushState", stateType, "block", "not skippable video state");
                 return;
             }
 
             try
             {
+                QuickStartDiagnostics.LogIntroDecision("CleanAndPushState", stateType, "allow", "forward bootstrap skip");
                 CampaignSetupStateTracker.AnnounceCutsceneSkip();
                 SkipCampaignIntroVideo(gameState, "CleanAndPushState");
             }
@@ -317,18 +336,32 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static bool ShouldSkipIntroVideo(SandBoxGameManager instance)
         {
+            return ShouldSkipIntroVideo(instance, null, null);
+        }
+
+        private static bool ShouldSkipIntroVideo(SandBoxGameManager instance, string hook, string stateType)
+        {
             if (!DevToolsConfig.AutoSkipCharacterCreation || !AutoCharacterCreationConfig.SkipSandboxCampaignIntro)
             {
+                LogIntroBlock(hook, stateType, "config disabled");
+                return false;
+            }
+
+            if (CampaignSetupStateTracker.BootstrapCompletedThisProcess)
+            {
+                LogIntroBlock(hook, stateType, "bootstrap already completed this process");
                 return false;
             }
 
             if (!CampaignSetupStateTracker.IsBootstrapArmed || CampaignSetupStateTracker.DevSaveLoadUsed)
             {
+                LogIntroBlock(hook, stateType, "bootstrap not armed or dev save load");
                 return false;
             }
 
             if (CampaignSetupStateTracker.Phase == SetupPhase.Complete)
             {
+                LogIntroBlock(hook, stateType, "phase complete");
                 return false;
             }
 
@@ -337,6 +370,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 var activeStateName = GameSessionState.GetActiveStateName();
                 if (string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase))
                 {
+                    LogIntroBlock(hook, stateType, "InitialState/main menu");
                     return false;
                 }
             }
@@ -346,6 +380,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             if (instance != null && IsStoryModeGameManager(instance))
             {
+                LogIntroBlock(hook, stateType, "story mode");
                 return false;
             }
 
@@ -357,6 +392,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
                         ?? AccessTools.Field(typeof(SandBoxGameManager), "<LoadingSavedGame>k__BackingField");
                     if (loadingSavedGameField != null && (bool)loadingSavedGameField.GetValue(instance))
                     {
+                        LogIntroBlock(hook, stateType, "loading saved game");
                         return false;
                     }
                 }
@@ -366,6 +402,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             return true;
+        }
+
+        private static void LogIntroBlock(string hook, string stateType, string reason)
+        {
+            if (string.IsNullOrEmpty(hook))
+            {
+                return;
+            }
+
+            QuickStartDiagnostics.LogIntroDecision(hook, stateType ?? GameSessionState.GetActiveStateName(), "block", reason);
         }
 
         private static bool IsSkippableVideoState(object state)
@@ -408,6 +454,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (_campaignIntroSkipCount == 1)
             {
                 _forwardIntroSkipDone = true;
+                QuickStartDiagnostics.LogStateStack("first intro skip");
             }
 
             GuildLog.Info(

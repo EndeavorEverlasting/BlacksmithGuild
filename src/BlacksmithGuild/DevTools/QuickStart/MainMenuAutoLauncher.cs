@@ -55,6 +55,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static bool IsForwardLaunchInProgress => _forwardLaunchInProgress;
 
+        internal static string CurrentLaunchIntentLabel =>
+            string.IsNullOrEmpty(_launchIntent) ? "none" : _launchIntent;
+
         public static void ClearForwardLaunchInProgress()
         {
             _forwardLaunchInProgress = false;
@@ -81,6 +84,26 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             if (IsCampaignLoaded())
             {
+                return;
+            }
+
+            if (_intentConsumed)
+            {
+                if (IsOnMainMenu())
+                {
+                    LogMainMenuIntentDecision("block", "intent already consumed");
+                }
+
+                return;
+            }
+
+            if (CampaignSetupStateTracker.BootstrapCompletedThisProcess)
+            {
+                if (IsOnMainMenu())
+                {
+                    LogMainMenuIntentDecision("block", "bootstrap already completed this process");
+                }
+
                 return;
             }
 
@@ -121,18 +144,24 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
+            var executed = false;
             if (string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
+                LogMainMenuIntentDecision("auto-select", "continue intent");
                 if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
                 {
                     CompleteIntent($"auto-selecting {selectedId} (Continue Campaign).");
+                    executed = true;
                 }
             }
             else if (TryExecuteFirstAvailable(PlayOptionIds, "SandBox", out var playId))
             {
+                LogMainMenuIntentDecision("auto-select", "play intent");
                 CompleteIntent($"auto-selecting {playId} (SandBox).");
+                executed = true;
             }
-            else if (_mainMenuWaitSeconds >= MainMenuTimeoutSeconds && !_loggedMainMenuTimeout)
+
+            if (!executed && _mainMenuWaitSeconds >= MainMenuTimeoutSeconds && !_loggedMainMenuTimeout)
             {
                 _loggedMainMenuTimeout = true;
                 LogVisibleOptions("main menu auto-select timed out");
@@ -143,9 +172,39 @@ namespace BlacksmithGuild.DevTools.QuickStart
         {
             GuildLog.Info($"[TBG QUICKSTART] {message}", showInGame: false);
             GuildLog.Display($"TBG QUICKSTART: {message}");
-            DeleteIntentFiles();
+            DeleteIntentFiles("intent consumed after main menu action");
             _intentConsumed = true;
+            _launchIntent = null;
             _forwardLaunchInProgress = true;
+            LogMainMenuIntentDecision("delete", "intent consumed");
+        }
+
+        internal static void EnsureIntentFilesCleared(string reason)
+        {
+            DeleteIntentFiles(reason);
+        }
+
+        internal static void LogLaunchIntentFileStatus(string trigger)
+        {
+            foreach (var path in GetIntentCandidatePaths().Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var exists = File.Exists(path);
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] launch intent file ({trigger}): path={path} exists={exists}",
+                    showInGame: false);
+            }
+        }
+
+        private static void LogMainMenuIntentDecision(string decision, string reason)
+        {
+            var source = _intentSourcePaths.Count > 0
+                ? string.Join("|", _intentSourcePaths)
+                : "memory";
+            GuildLog.Info(
+                $"[TBG QUICKSTART] main menu intent decision: intent={CurrentLaunchIntentLabel} " +
+                $"source={source} consumed={_intentConsumed} phase={CampaignSetupStateTracker.Phase} " +
+                $"ready={CampaignSetupStateTracker.BootstrapCompletedThisProcess} decision={decision} reason={reason}",
+                showInGame: false);
         }
 
         private static bool IsCampaignLoaded()
@@ -419,7 +478,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
-        private static void DeleteIntentFiles()
+        private static void DeleteIntentFiles(string reason)
         {
             foreach (var path in GetIntentCandidatePaths().Concat(_intentSourcePaths).Distinct(StringComparer.OrdinalIgnoreCase))
             {
@@ -428,12 +487,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     if (File.Exists(path))
                     {
                         File.Delete(path);
-                        GuildLog.Info($"[TBG QUICKSTART] removed launch intent file {path}", showInGame: false);
+                        GuildLog.Info($"[TBG QUICKSTART] launch intent deleted: path={path} reason={reason}", showInGame: false);
                     }
                 }
                 catch (Exception ex)
                 {
-                    GuildLog.Info($"[TBG QUICKSTART] launch intent delete failed ({path}): {ex.Message}", showInGame: false);
+                    GuildLog.Info($"[TBG QUICKSTART] launch intent delete failed: path={path} reason={ex.Message}", showInGame: false);
                 }
             }
         }

@@ -35,8 +35,16 @@ Status:
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Layer A handoff still pending formal cert. |
 | 006I-3 | SHIPPED. Re-cert PENDING after narrow gate + quit guard. |
-| 006I-4 | PLANNING ONLY. Quit-to-menu intro replay loop if Path C still fails. |
+| 006I-4 | SHIPPED. Quit re-arm fix + diagnostics — Path C re-cert PENDING. |
 | 005E economics | NEXT. Gated on 006I cert PASS. |
+
+## 006I-4 fix (quit-to-menu intro replay)
+
+**Diagnosis:** Hypothesis A — `MainMenuAutoLauncher` re-selected `SandBoxNewGame` on return to main menu because `_launchIntent` stayed `"play"` after first consume.
+
+**Fix:** Clear intent memory after consume; block menu auto-select when intent consumed or bootstrap completed; permanent post-READY disarm latch; diagnostic logging.
+
+**Cert:** Path C re-cert pending — do not mark PASS until user confirms clean quit.
 
 ## Live cert record (2026-06-19 user session)
 
@@ -133,7 +141,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 |-----|--------|
 | 006I-3 re-cert Paths A/B/C | **PENDING** — close Bannerlord, run `.\Forge.cmd` |
 | Path B culture Back | **FAIL** in 2026-06-19 session — 006I-3 fix targets this |
-| Path C quit teardown | **FAIL** in 2026-06-19 session — 006I-3 quit guard; may need more |
+| Path C quit teardown | **FIX SHIPPED (006I-4)** — stale launch intent re-arm; re-cert PENDING |
 | Layer A handoff | **PENDING** — need `handoff:` in Launch.log from `.\Forge.cmd` |
 | Fresh log tails from ~01:22 PASS session | Not collected — re-run required |
 | ForgeContinue.cmd | Optional regression |

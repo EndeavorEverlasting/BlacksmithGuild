@@ -2,16 +2,16 @@
 
 ## Status
 
-PLANNING ONLY.
+SHIPPED — RE-CERT PENDING.
 
-This is the next stabilization sprint if 006I-3 re-cert still fails Path C.
+Fix implemented at code review + Hypothesis A diagnosis. User Path C re-cert required before PASS.
 
 | Gate | Status |
 |------|--------|
 | 006I-3 implementation | SHIPPED |
 | 006I-3 re-cert | PENDING |
-| Path C quit | FAIL in latest user session |
-| 006I-4 implementation | NOT STARTED |
+| Path C quit | FAIL in prior session — fix shipped, re-cert pending |
+| 006I-4 implementation | SHIPPED (diagnostics + guards) |
 | 005E economics | BLOCKED |
 
 ## Problem
@@ -306,6 +306,21 @@ tutorial skip
 Story Mode
 module version bump
 ```
+
+## Implementation record (2026-06-19)
+
+**Diagnosis:** Hypothesis A — stale in-memory launch intent re-arm.
+
+After `CompleteIntent()`, `_launchIntent` remained `"play"` while `_intentConsumed` was true. On quit to main menu, `MainMenuAutoLauncher.Poll` saw non-empty intent and re-executed `SandBoxNewGame`, restarting the campaign intro path.
+
+**Fix shipped:**
+
+- Clear `_launchIntent` after consume; block `Poll` when `_intentConsumed` or `BootstrapCompletedThisProcess`
+- `BootstrapCompletedThisProcess` latch set at TBG READY / setup complete; blocks intro hooks and menu auto-select
+- Delete launch intent files at bootstrap complete; do not reset intro skip counters in `GameEndPrefix`
+- Diagnostic logging: intro decision, main menu intent decision, launch intent file status, state stack snapshots
+
+**Cert:** Path C re-cert pending — do not mark PASS until user confirms clean quit.
 
 ## Definition of done
 
