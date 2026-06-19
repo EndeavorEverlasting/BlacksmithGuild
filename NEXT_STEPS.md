@@ -1,6 +1,6 @@
 # Next Steps
 
-Build the car, not the fuzzy dice. v1.4.6 culture/narrative automation before economics polish.
+Zero-click forge loop first. Economics (005E) after 006E live cert.
 
 ---
 
@@ -11,9 +11,10 @@ Build the car, not the fuzzy dice. v1.4.6 culture/narrative automation before ec
 | 003C | QuickStart + dev save auto-load | **LIVE CERT PASS** (Continue) |
 | 005D | Real candidate mapping | **Hotfix shipped** |
 | 006A/B | Auto protagonist build + profiles | **Shipped** — live cert pending |
-| 006C | SandBox intro skip + visible bootstrap | **FAIL on v1.4.6** — intro OK, creation broken |
-| **006D** | v1.4.6 culture/narrative hotfix | **Shipped** — live cert pending |
-| **005E** | Orders, inventory, doctrine tuning | **After 006D PASS** |
+| 006C | SandBox intro skip + visible bootstrap | **Shipped** |
+| 006D | v1.4.6 culture/narrative hotfix | **Shipped** |
+| **006E** | Full launch funnel (Forge → map) | **Shipped** — **live cert pending** |
+| **005E** | Orders, inventory, doctrine tuning | **After 006E PASS** |
 
 ---
 
@@ -21,40 +22,35 @@ Build the car, not the fuzzy dice. v1.4.6 culture/narrative automation before ec
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (up to date with `origin/main`; 006D `5b920f5`) |
-| Version | `v0.0.9` |
-| Working tree | **Clean** |
-| Remote | `origin/main` up to date |
+| Branch | `main` |
+| Version | `v0.0.10` |
+| Current sprint plan | [docs/plans/006e-main-menu-auto-launch.plan.md](docs/plans/006e-main-menu-auto-launch.plan.md) |
 | Open PRs | None |
 
 ---
 
-## Next actions (user — 006D live cert)
+## Next actions (user — 006E live cert)
 
-**Path A — New Campaign (primary):**
-
-```text
-Close Bannerlord → Forge.cmd → New Campaign → SandBox
-→ intro skipped, culture auto-selected, no manual creation clicks, TBG READY
-```
-
-**Path B — Continue regression:**
+**Path A — Bootstrap (zero-click):**
 
 ```text
-Forge.cmd → Continue → TBG DEVSAVE / TBG READY
+Close Bannerlord → Forge.cmd
+→ auto PLAY → auto CAUTION Confirm → auto Safe Mode No (if shown)
+→ auto New Campaign → SandBox → intro skip → culture → TBG READY
 ```
 
-Check Phase1.log for:
+**Path B — Daily Continue (zero-click):**
 
 ```text
-using vanilla character creation launch; Poll will auto-advance stages.
-culture=found narrative=OnNarrativeMenuOptionSelected
+Close Bannerlord → ForgeContinue.cmd
+→ auto CONTINUE → auto CAUTION Confirm → auto Safe Mode No (if shown)
+→ auto Continue Campaign → TBG DEVSAVE / TBG READY
 ```
 
-Docs: [sprint-006d-live-results.md](docs/sprint-006d-live-results.md)
+Check logs — see [sprint-006e-live-results.md](docs/sprint-006e-live-results.md).
 
 ---
 
 ## Stern verdict
 
-**Continue** = daily dev loop. **New Campaign** = cert/bootstrap only. 006C intro skip stands; 006D fixes v1.4.6 character creation. Tutorial skip and main-menu automation remain future work.
+**ForgeContinue.cmd** = daily dev loop. **Forge.cmd** = bootstrap cert. Layer A (PowerShell UI automation) handles launcher; Layer B (in-game mod) handles main menu. Tutorial skip remains future work.

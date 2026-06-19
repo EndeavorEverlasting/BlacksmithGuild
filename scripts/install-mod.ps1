@@ -7,6 +7,9 @@
 
 param(
     [switch]$Launch,
+    [ValidateSet('play', 'continue')]
+    [string]$LaunchIntent = 'play',
+    [switch]$LaunchManual,
     [switch]$CheckLog,
     [switch]$SkipInstall
 )
@@ -150,9 +153,10 @@ try {
     }
 
     Write-Host ''
-    Write-Host 'Daily play:' -ForegroundColor Cyan
-    Write-Host '  Forge.cmd opens the launcher. Click Play or Continue.'
-    Write-Host '  Dev save auto-load: BlacksmithGuild_DevStart*.sav (Continue) or SandBox (auto-load/new character).'
+    Write-Host 'Daily play (006E zero-click):' -ForegroundColor Cyan
+    Write-Host '  Forge.cmd          -> auto PLAY -> New Campaign -> SandBox -> map'
+    Write-Host '  ForgeContinue.cmd  -> auto CONTINUE -> dev save -> map'
+    Write-Host '  -LaunchManual on forge.ps1 skips launcher UI automation (legacy).'
     Write-Host 'After code changes: close Bannerlord, then Forge.cmd / dotnet build / Ctrl+Shift+B to install.'
 
     & (Join-Path $PSScriptRoot 'pin-dev-save.ps1')
@@ -160,7 +164,13 @@ try {
     if ($Launch) {
         Invoke-ForgeStep -Name 'open_launcher' -Action {
             Write-Host ''
+            if (-not $LaunchManual) {
+                & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
+            }
             & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot
+            if (-not $LaunchManual) {
+                & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
+            }
         }
     }
 

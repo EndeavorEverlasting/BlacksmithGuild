@@ -2,6 +2,22 @@
 
 Use a **bundled dev save** to skip New Campaign character creation during daily development.
 
+## Zero-click launch contract (006E)
+
+| Forge entry | Launcher (auto) | In-game (auto) | Use |
+|-------------|-----------------|----------------|-----|
+| **`Forge.cmd`** | PLAY | New Campaign → SandBox | Bootstrap cert / fresh sandbox |
+| **`ForgeContinue.cmd`** | CONTINUE | Continue Campaign | **Daily dev loop** |
+
+```text
+Forge.cmd          → zero clicks until map (bootstrap cert)
+ForgeContinue.cmd  → zero clicks until map (daily dev loop)
+```
+
+Opt-out: `.\forge.ps1 -Launch -LaunchManual` opens the launcher without UI automation.
+
+Plan: [docs/plans/006e-main-menu-auto-launch.plan.md](plans/006e-main-menu-auto-launch.plan.md) · Cert: [sprint-006e-live-results.md](sprint-006e-live-results.md)
+
 ## One-time setup
 
 1. Start a disposable sandbox campaign with **The Blacksmith Guild** enabled.
@@ -19,18 +35,19 @@ The repo does **not** commit `.sav` binaries — only this Documents path is doc
 ## Daily dev loop (preferred)
 
 ```text
-Forge.cmd → launcher opens → Continue → map ready
+ForgeContinue.cmd → auto CONTINUE → map ready
 ```
 
 | Step | Action |
 |------|--------|
 | 1 | Close Bannerlord if open |
-| 2 | Double-click **`Forge.cmd`** (build + install + open launcher) |
-| 3 | **Continue** — loads `BlacksmithGuild_DevStart*.sav` (pinned as most recent by Forge) |
-| 4 | Wait for `TBG READY` or `TBG DEVSAVE: map ready` |
-| 5 | Run dev tests (F7, inbox cert, etc.) |
+| 2 | Double-click **`ForgeContinue.cmd`** (build + install + auto CONTINUE) |
+| 3 | Wait for `TBG READY` or `TBG DEVSAVE: map ready` |
+| 4 | Run dev tests (F7, inbox cert, etc.) |
 
-**PASS target:** map ready in under ~60s via Continue.
+**PASS target:** map ready in under ~60s via Continue with **no manual clicks**.
+
+For fresh bootstrap cert, use **`Forge.cmd`** instead (auto PLAY → New Campaign → SandBox).
 
 ## New Campaign vs Continue
 
@@ -77,6 +94,7 @@ To re-enable dev-save hijack on Play/New Campaign (legacy 003C behavior), set `D
 ## Output files to analyze
 
 ```text
+<Bannerlord install root>\BlacksmithGuild_Launch.log
 Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log
 Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Status.json
 ```

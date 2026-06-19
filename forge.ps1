@@ -10,6 +10,9 @@
 
 param(
     [switch]$Launch,
+    [ValidateSet('play', 'continue')]
+    [string]$LaunchIntent = 'play',
+    [switch]$LaunchManual,
     [switch]$Watch,
     [switch]$Check,
     [switch]$CollectDiagnostics,
@@ -78,5 +81,7 @@ $installParams = @{}
 if ($Launch) { $installParams.Launch = $true }
 if ($Check) { $installParams.CheckLog = $true }
 if ($SkipInstall) { $installParams.SkipInstall = $true }
+if ($Launch) { $installParams.LaunchIntent = $LaunchIntent }
+if ($LaunchManual) { $installParams.LaunchManual = $true }
 
 & (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installParams

@@ -17,8 +17,21 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 8 | **005A** | Candidate source boundary + real scaffold | **Shipped** |
 | 9 | **005B** | Doctrine dev commands | **Shipped** |
 | 10 | **005C+** | Real recipe enumeration | **Gated** — 004B + 003B live cert |
+| 11 | **006E** | Full launch funnel automation | **Shipped** — live cert pending |
 
 > **Surfaces:** [in-game-surfaces.md](in-game-surfaces.md) — **Enter** notice log, **Alt+`** console, **F7–F11** dev keys.
+
+## Sprint 006E — zero-click launch cert
+
+Plan: [docs/plans/006e-main-menu-auto-launch.plan.md](plans/006e-main-menu-auto-launch.plan.md) · Results: [sprint-006e-live-results.md](sprint-006e-live-results.md)
+
+**Path A — Bootstrap:** Close Bannerlord → `Forge.cmd` → no manual clicks until `TBG READY`.
+
+**Path B — Continue:** Close Bannerlord → `ForgeContinue.cmd` → no manual clicks until `TBG DEVSAVE` / `TBG READY`.
+
+**Logs:** `<Bannerlord root>\BlacksmithGuild_Launch.log` + `Documents\...\BlacksmithGuild_Phase1.log`
+
+---
 
 ## Two environments: IDE vs game
 

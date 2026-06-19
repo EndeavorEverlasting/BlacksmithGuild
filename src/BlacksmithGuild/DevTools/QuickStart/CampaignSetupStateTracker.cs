@@ -74,6 +74,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _creationStageStalledSeconds = 0f;
             _creationStallSubStage = null;
             _hasAnnouncedCreationStall = false;
+            MainMenuAutoLauncher.ResetForNewSession();
         }
 
         public static void AnnounceCutsceneSkip()
@@ -135,6 +136,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static void Poll(float dt = 0f)
         {
+            MainMenuAutoLauncher.Poll(dt);
+
             if (!IsTracking)
             {
                 return;

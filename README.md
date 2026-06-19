@@ -25,12 +25,15 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 12 | **005D** | Real candidate mapping + read-only economics | **Hotfix shipped** — live cert optional |
 | 13 | **006A** | Auto Protagonist Build (`ForgeQuartermasterWarlord`) | **Shipped** — superseded by 006B |
 | 14 | **006B** | Build profiles + mode selection (7 modes) | **Shipped** — live cert pending |
+| 15 | **006C** | SandBox intro skip + visible QuickStart bootstrap | **Shipped** |
+| 16 | **006D** | v1.4.6 character creation hotfix | **Shipped** |
+| 17 | **006E** | Full launch funnel (`Forge.cmd` / `ForgeContinue.cmd` zero-click) | **Shipped** — live cert pending |
 
 ## Current Dev Status
 
 | Item | Status |
 |------|--------|
-| Module version | **v0.0.7** |
+| Module version | **v0.0.10** |
 | Sprint 004A report formatting | **Shipped** — structured F7 / Treasury / cert blocks |
 | Sprint 004B stub recommendations | **LIVE CERT PASS** (2026-06-18) — [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md) |
 | Sprint 005C recipe probe | **Shipped** — [docs/sprint-005c-live-results.md](docs/sprint-005c-live-results.md) |
@@ -38,22 +41,23 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 005D real candidates | **Hotfix shipped** — live cert optional — [docs/sprint-005d-live-results.md](docs/sprint-005d-live-results.md) |
 | Sprint 006A auto protagonist build | **Shipped** — [docs/sprint-006a-live-results.md](docs/sprint-006a-live-results.md) |
 | Sprint 006B build profiles | **Shipped** — live cert pending — [docs/sprint-006b-live-results.md](docs/sprint-006b-live-results.md) |
+| Sprint 006E launch funnel | **Shipped** — live cert pending — [docs/sprint-006e-live-results.md](docs/sprint-006e-live-results.md) · [docs/plans/006e-main-menu-auto-launch.plan.md](docs/plans/006e-main-menu-auto-launch.plan.md) |
 | Sprint 005A source boundary | **Shipped** — `IForgeCandidateSource`, real scaffold, stub fallback |
 | Sprint 005B doctrine commands | **Shipped** — `SetForgeDoctrine*` via file inbox |
 | Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
 | Combat Log | Press **Enter** on campaign map to scroll F7–F11 messages |
 | Sprint 002 progression | **Live certified** (2026-06-18) — [docs/sprint-002-live-results.md](docs/sprint-002-live-results.md) |
 | Sprint 003 Treasury Watch | **003B shipped** — [docs/sprint-003-live-results.md](docs/sprint-003-live-results.md); use **F10** for delta testing |
-| Dev loop | `Forge.cmd` (build + install + launcher) or **`ForgeAndLaunch.cmd`** (launch only on clean PASS) |
+| Dev loop | **`ForgeContinue.cmd`** (daily) or **`Forge.cmd`** (bootstrap) — see [docs/dev-disposable-save.md](docs/dev-disposable-save.md) |
 | Quick start | Load **`BlacksmithGuild_DevStart.sav`** — see [docs/dev-disposable-save.md](docs/dev-disposable-save.md) |
 
 ## Current focus
 
-**Sprint 006B live cert** — profile selection + apply — [docs/sprint-006b-live-results.md](docs/sprint-006b-live-results.md).
+**Sprint 006E live cert** — zero-click Play and Continue paths — [docs/sprint-006e-live-results.md](docs/sprint-006e-live-results.md).
 
-**Next dev sprint:** 005E — crafting orders + inventory in economics (after 006B PASS).
+**Next dev sprint:** 005E — crafting orders + inventory in economics (after 006E PASS).
 
-**Backlog:** 005D live cert (optional), F10 safety guards, player forge UI (006).
+**Backlog:** 006B live cert, 005D live cert (optional), F10 safety guards, player forge UI.
 
 > **Surfaces:** [docs/in-game-surfaces.md](docs/in-game-surfaces.md) — lower-left message feed (F7–F11), `TBG READY` gate, Windows toast (forge install only), file logs. **Not** the cheat console for shortcuts.
 
