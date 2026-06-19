@@ -48,6 +48,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static float _initialStateStableSeconds;
         private static List<string> _intentSourcePaths = new List<string>();
         private static bool _forwardLaunchInProgress;
+        private static readonly HashSet<string> LoggedBlockReasons = new HashSet<string>(StringComparer.Ordinal);
 
         private const float InitialStateWarmupSeconds = 1.0f;
 
@@ -73,6 +74,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _mainMenuWaitSeconds = 0f;
             _initialStateStableSeconds = 0f;
             _intentSourcePaths = new List<string>();
+            LoggedBlockReasons.Clear();
         }
 
         public static void Poll(float dt)
@@ -87,6 +89,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
+            if (string.IsNullOrEmpty(_launchIntent) && !_intentConsumed)
+            {
+                TryLoadLaunchIntent();
+            }
+
             if (_intentConsumed)
             {
                 if (IsOnMainMenu())
@@ -97,7 +104,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
-            if (CampaignSetupStateTracker.BootstrapCompletedThisProcess)
+            if (CampaignSetupStateTracker.BootstrapCompletedThisProcess
+                && !string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
                 if (IsOnMainMenu())
                 {
@@ -105,11 +113,6 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 }
 
                 return;
-            }
-
-            if (string.IsNullOrEmpty(_launchIntent) && !_intentConsumed)
-            {
-                TryLoadLaunchIntent();
             }
 
             if (string.IsNullOrEmpty(_launchIntent))
@@ -197,6 +200,15 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static void LogMainMenuIntentDecision(string decision, string reason)
         {
+            if (string.Equals(decision, "block", StringComparison.OrdinalIgnoreCase))
+            {
+                var logKey = $"{decision}|{reason}";
+                if (!LoggedBlockReasons.Add(logKey))
+                {
+                    return;
+                }
+            }
+
             var source = _intentSourcePaths.Count > 0
                 ? string.Join("|", _intentSourcePaths)
                 : "memory";

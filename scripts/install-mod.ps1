@@ -154,8 +154,9 @@ try {
 
     Write-Host ''
     Write-Host 'Daily play (006E zero-click):' -ForegroundColor Cyan
-    Write-Host '  Forge.cmd          -> auto PLAY -> New Campaign -> SandBox -> map'
-    Write-Host '  ForgeContinue.cmd  -> auto CONTINUE -> dev save -> map'
+    Write-Host '  Forge.cmd               -> auto PLAY -> New Campaign -> SandBox -> map'
+    Write-Host '  ForgeContinue.cmd       -> auto CONTINUE -> dev save -> map'
+    Write-Host '  LaunchForgeContinue.cmd -> build + launcher + CONTINUE intent (006I-5)'
     Write-Host '  -LaunchManual on forge.ps1 skips launcher UI automation (legacy).'
     Write-Host 'After code changes: close Bannerlord, then Forge.cmd / dotnet build / Ctrl+Shift+B to install.'
 

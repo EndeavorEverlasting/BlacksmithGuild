@@ -197,6 +197,78 @@ public static class UIAHelper
         return caution != null;
     }
 
+    public static bool HasModuleMismatchDialog()
+    {
+        try
+        {
+            var textCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text);
+            var textElements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, textCondition);
+            foreach (AutomationElement element in textElements)
+            {
+                var name = element.Current.Name ?? string.Empty;
+                if (name.IndexOf("Module Mismatch", StringComparison.OrdinalIgnoreCase) >= 0
+                    || name.IndexOf("mismatch", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            var windowCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window);
+            var windows = AutomationElement.RootElement.FindAll(TreeScope.Children, windowCondition);
+            foreach (AutomationElement window in windows)
+            {
+                var title = window.Current.Name ?? string.Empty;
+                if (title.IndexOf("Module Mismatch", StringComparison.OrdinalIgnoreCase) >= 0
+                    || title.IndexOf("mismatch", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+        }
+        catch { }
+
+        return false;
+    }
+
+    public static string LogVisibleModuleMismatchButtons()
+    {
+        var names = new List<string>();
+        try
+        {
+            var buttonCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
+            var buttons = AutomationElement.RootElement.FindAll(TreeScope.Descendants, buttonCondition);
+            foreach (AutomationElement button in buttons)
+            {
+                var name = button.Current.Name;
+                if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                {
+                    names.Add(name);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return "button scan failed: " + ex.Message;
+        }
+
+        if (names.Count == 0) return "no Module Mismatch buttons visible";
+        return string.Join(", ", names.ToArray());
+    }
+
+    public static bool ClickModuleMismatchYes()
+    {
+        var candidates = new[] { "Yes", "OK", "Continue" };
+        foreach (var name in candidates)
+        {
+            if (ClickButtonByName(name, false))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static AutomationElement FindLauncherRoot()
     {
         var processes = Process.GetProcessesByName(LauncherProcessName);
@@ -296,11 +368,16 @@ $clickedPlayContinue = $false
 $clickedCaution = $false
 $clickedSafeMode = $false
 $clickedCrashReporter = $false
+$clickedModuleMismatch = $false
+$loggedModuleMismatchButtons = $false
 $gameStablePolls = 0
 $requiredStablePolls = 3
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
+$loadStallSec = 180
+$phase1LogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
+$statusJsonPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
 
 function Extend-DeadlineForSlowPath {
     if ($clickedSafeMode -or $clickedCrashReporter) {
@@ -320,6 +397,128 @@ function Test-GameProcessRunning {
 function Invoke-Handoff {
     param([string]$Reason)
     Write-LaunchLog "handoff: $Reason"
+    Wait-PostHandoffWatchdog -Reason $Reason
+}
+
+function Test-Phase1ReadyOrStall {
+    param([ref]$StallDetected)
+
+    $StallDetected.Value = $false
+    if (-not (Test-Path -LiteralPath $phase1LogPath)) {
+        return $false
+    }
+
+    $tail = Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue
+    if (-not $tail) {
+        return $false
+    }
+
+    foreach ($line in $tail) {
+        if ($line -match 'TBG READY') {
+            return $true
+        }
+        if ($line -match 'load stall: GameLoadingState exceeded') {
+            $StallDetected.Value = $true
+            return $false
+        }
+    }
+
+    return $false
+}
+
+function Test-StatusJsonReady {
+    if (-not (Test-Path -LiteralPath $statusJsonPath)) {
+        return $false
+    }
+
+    try {
+        $status = Get-Content -LiteralPath $statusJsonPath -Raw -ErrorAction Stop | ConvertFrom-Json
+        if ($status.campaignReady -eq $true) {
+            return $true
+        }
+    } catch { }
+
+    return $false
+}
+
+function Invoke-ModuleMismatchClick {
+    if (-not [UIAHelper]::HasModuleMismatchDialog()) {
+        return $false
+    }
+
+    if (-not $loggedModuleMismatchButtons) {
+        $visible = [UIAHelper]::LogVisibleModuleMismatchButtons()
+        Write-LaunchLog "Module Mismatch visible buttons: $visible"
+        $script:loggedModuleMismatchButtons = $true
+    }
+
+    if (-not [UIAHelper]::ClickModuleMismatchYes()) {
+        return $false
+    }
+
+    if (-not $clickedModuleMismatch) {
+        Write-LaunchLog 'clicked Module Mismatch Yes'
+        $script:clickedModuleMismatch = $true
+    }
+
+    return $true
+}
+
+function Wait-PostHandoffWatchdog {
+    param([string]$Reason)
+
+    Write-LaunchLog "post-handoff watch started ($Reason)"
+    $watchStart = Get-Date
+    $gameLoadingSince = $null
+    $stallDetected = $false
+
+    while (((Get-Date) - $watchStart).TotalSeconds -lt $loadStallSec) {
+        if (-not (Test-GameProcessRunning)) {
+            Write-LaunchLog 'post-handoff: Bannerlord exited'
+            return
+        }
+
+        if (Invoke-ModuleMismatchClick) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
+        }
+
+        if ((Test-Phase1ReadyOrStall -StallDetected ([ref]$stallDetected)) -or (Test-StatusJsonReady)) {
+            Write-LaunchLog 'post-handoff: TBG READY detected'
+            return
+        }
+
+        if ($stallDetected) {
+            Write-LaunchLog "load stall watchdog: C# stall signature in Phase1.log — terminating Bannerlord"
+            Stop-Process -Name $gameExeName -Force -ErrorAction SilentlyContinue
+            throw "load stall watchdog triggered (C# stall signature)"
+        }
+
+        if (Test-Path -LiteralPath $statusJsonPath) {
+            try {
+                $status = Get-Content -LiteralPath $statusJsonPath -Raw | ConvertFrom-Json
+                if ($status.activeState -eq 'GameLoadingState') {
+                    if (-not $gameLoadingSince) {
+                        $gameLoadingSince = Get-Date
+                    } elseif (((Get-Date) - $gameLoadingSince).TotalSeconds -ge $loadStallSec) {
+                        Write-LaunchLog "load stall watchdog: GameLoadingState exceeded ${loadStallSec}s — terminating Bannerlord"
+                        Stop-Process -Name $gameExeName -Force -ErrorAction SilentlyContinue
+                        throw "load stall watchdog triggered after ${loadStallSec}s in GameLoadingState"
+                    }
+                } else {
+                    $gameLoadingSince = $null
+                }
+            } catch {
+                if ($_.Exception.Message -match 'load stall watchdog triggered') {
+                    throw
+                }
+            }
+        }
+
+        Start-Sleep -Milliseconds 1000
+    }
+
+    Write-LaunchLog "post-handoff watch completed (${loadStallSec}s, no stall kill)"
 }
 
 function Test-HandoffWhenGameStable {
@@ -377,6 +576,11 @@ while ((Get-Date) -lt $deadline) {
             return
         }
         Write-LaunchLog 'Bannerlord.exe running but crash reporter visible — waiting'
+    }
+
+    if (Invoke-ModuleMismatchClick) {
+        Start-Sleep -Milliseconds $PollMs
+        continue
     }
 
     if ([UIAHelper]::HasCrashReporterDialog()) {

@@ -36,8 +36,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static string _creationStallSubStage;
         private static bool _hasAnnouncedCreationStall;
         private static bool _bootstrapCompletedThisProcess;
+        private static float _gameLoadingStateStalledSeconds;
+        private static bool _hasAnnouncedGameLoadingStall;
 
         private const float CreationStageStallThresholdSeconds = 5f;
+        private const float GameLoadingStallThresholdSeconds = 180f;
 
         public static bool BootstrapCompletedThisProcess => _bootstrapCompletedThisProcess;
 
@@ -78,6 +81,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _creationStallSubStage = null;
             _hasAnnouncedCreationStall = false;
             _bootstrapCompletedThisProcess = false;
+            _gameLoadingStateStalledSeconds = 0f;
+            _hasAnnouncedGameLoadingStall = false;
             CharacterCreationReflection.ResetNarrativeSession();
             MainMenuAutoLauncher.ResetForNewSession();
         }
@@ -198,6 +203,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             TryDisarmOnMainMenuReturn();
+
+            TryDetectGameLoadingStall(activeStateName, dt);
 
             if (!IsTracking)
             {
@@ -447,6 +454,33 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             return "unknown";
+        }
+
+        private static void TryDetectGameLoadingStall(string activeStateName, float dt)
+        {
+            if (!string.Equals(activeStateName, "GameLoadingState", StringComparison.OrdinalIgnoreCase))
+            {
+                _gameLoadingStateStalledSeconds = 0f;
+                return;
+            }
+
+            if (dt <= 0f)
+            {
+                return;
+            }
+
+            _gameLoadingStateStalledSeconds += dt;
+            if (_gameLoadingStateStalledSeconds < GameLoadingStallThresholdSeconds || _hasAnnouncedGameLoadingStall)
+            {
+                return;
+            }
+
+            _hasAnnouncedGameLoadingStall = true;
+            GuildLog.Info(
+                $"[TBG QUICKSTART] load stall: GameLoadingState exceeded {GameLoadingStallThresholdSeconds:0}s",
+                showInGame: false);
+            QuickStartDiagnostics.LogStateStack("GameLoadingState stall");
+            AnnounceSetupStalled("GameLoadingState");
         }
 
         private static void TryDisarmOnMainMenuReturn()
