@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Code shipped** — live cert pending (Forge.cmd zero-click through Family + subsequent narrative menus)
+**LIVE CERT PASS** — Forge.cmd zero-click bootstrap reached map (`TBG READY`) on 2026-06-19.
 
 ## Scope
 
@@ -101,10 +101,27 @@ Key lines: `narrative stage initialized`, `narrative auto-selected menu=empire_f
 | Double culture apply | Culture gate before narrative; postfix uses correct state |
 | Manual advance desyncs UI | Logged separately; engine path preferred |
 
-## Cert record (fill after live run)
+## Live cert record (2026-06-19 00:26)
+
+Phase1.log session after build `8cef0ce`:
+
+```text
+[TBG QUICKSTART] narrative stage initialized
+[TBG QUICKSTART] narrative auto-selected menu=narrative_parent_menu option=empire_lanlord_option (suitable=6)
+[TBG QUICKSTART] narrative advanced to next menu (TrySwitchToNextMenu)
+... (childhood, education, youth, adulthood, age_selection)
+[TBG QUICKSTART] transition: CharacterCreation(NarrativeStage) -> BannerEditor -> ClanNaming -> Review -> Options
+[TBG QUICKSTART] culture auto-selected: Empire (count=6)
+TBG READY: campaign map ready. Press F8 for commands.
+[TBG QUICKSTART] setup complete; handing off to map readiness gate.
+```
+
+No stall lines in this session. Real StringIds logged (not type-name fallback).
+
+## Cert record
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap (full map) | **PENDING** | | 006H stall recovery |
-| B — ForgeContinue.cmd regression | **PENDING** | | Should be unaffected |
+| A — Forge.cmd bootstrap (full map) | **PASS** | 2026-06-19 | Six narrative menus + post-narrative stages; map Summer 1, 1084 |
+| B — ForgeContinue.cmd regression | **PENDING** | | Recommend one daily-loop cert when convenient |
 | 006G narrative API fix | **FAIL** | 2026-06-19 | StringId field + SelectedOptions ref-eq + stall trap |

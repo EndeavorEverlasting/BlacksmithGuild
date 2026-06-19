@@ -1,6 +1,6 @@
 # Next Steps
 
-Zero-click forge loop first. Economics (005E) after 006H live cert PASS.
+Economics (005E) is next. Zero-click bootstrap funnel is live-certified.
 
 ---
 
@@ -13,11 +13,11 @@ Zero-click forge loop first. Economics (005E) after 006H live cert PASS.
 | 006A/B | Auto protagonist build + profiles | **Shipped** — live cert pending |
 | 006C | SandBox intro skip + visible bootstrap | **Shipped** |
 | 006D | v1.4.6 culture/narrative hotfix | **Shipped** |
-| **006E** | Full launch funnel (Forge → map) | **PARTIAL PASS** — launch + culture; narrative blocked Family |
-| **006F** | Narrative menu sprint-through | **FAIL** — OnCondition(null), 36 options all invalid |
-| **006G** | Family / narrative API fix | **FAIL** — selectedCount=1, switchToNextMenu=false, gray Next |
-| **006H** | Family stall recovery | **Shipped** — live cert pending |
-| **005E** | Orders, inventory, doctrine tuning | **After 006H PASS** |
+| **006E** | Full launch funnel (Forge → map) | **LIVE CERT PASS** (Path A bootstrap) |
+| **006F** | Narrative menu sprint-through | **FAIL** — superseded by 006G/006H |
+| **006G** | Family / narrative API fix | **FAIL** — superseded by 006H |
+| **006H** | Family stall recovery | **LIVE CERT PASS** |
+| **005E** | Orders, inventory, doctrine tuning | **Next** |
 
 ---
 
@@ -27,25 +27,27 @@ Zero-click forge loop first. Economics (005E) after 006H live cert PASS.
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.11` |
-| Current sprint plan | [docs/sprint-006h-live-results.md](docs/sprint-006h-live-results.md) |
+| Last closed sprint | [docs/sprint-006h-live-results.md](docs/sprint-006h-live-results.md) |
+| Next feature | **005E** — scope from existing forge/economics code before coding |
 | Open PRs | None |
 
 ---
 
-## Next actions (user — 006H live cert)
+## Next actions
 
-**Path A — Bootstrap (zero-click through map):**
+**005E — Economics sprint (plan TBD):**
+
+- Scope orders, inventory, doctrine tuning from [`src/BlacksmithGuild/`](src/BlacksmithGuild/)
+- No 005E plan file exists yet; create `docs/plans/005e-*.plan.md` before implementation
+
+**Optional regression (user):**
 
 ```text
-Close Bannerlord → Forge.cmd
-→ auto PLAY → Safe Mode / CAUTION handled
-→ SandBoxNewGame → culture → narrative menus → map → TBG READY
+Close Bannerlord → ForgeContinue.cmd → TBG DEVSAVE / TBG READY
 ```
-
-Check logs — see [sprint-006h-live-results.md](docs/sprint-006h-live-results.md).
 
 ---
 
 ## Stern verdict
 
-**ForgeContinue.cmd** = daily dev loop. **Forge.cmd** = bootstrap cert. Layer A (PowerShell UI automation) handles launcher; Layer B (in-game mod) handles main menu. Tutorial skip remains future work.
+**ForgeContinue.cmd** = daily dev loop. **Forge.cmd** = bootstrap cert (**PASS** as of 2026-06-19). Tutorial skip remains future work.

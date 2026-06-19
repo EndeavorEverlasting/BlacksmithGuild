@@ -1,6 +1,6 @@
 # Sprint 006E — Live cert results
 
-**Status:** Hotfix shipped (v0.0.11) — **live cert pending** (user-run)
+**Status:** **LIVE CERT PASS** (Path A bootstrap) — narrative unblocked by 006H (2026-06-19)
 
 **Module version:** v0.0.11
 
@@ -161,6 +161,6 @@ BlacksmithGuild_Launch.log
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap | **PARTIAL PASS** | 2026-06-18 | Launch funnel + culture + face OK; stalled at Family (006F fix) |
-| B — ForgeContinue.cmd | **PENDING** | | |
+| A — Forge.cmd bootstrap | **PASS** | 2026-06-19 | Full funnel via 006H; `TBG READY` on map (see sprint-006h-live-results.md) |
+| B — ForgeContinue.cmd | **PENDING** | | Daily loop not re-certified this session |
 | Add-Type compile smoke | **PASS** | 2026-06-18 | `launcher-auto-nav.ps1` loads UIAHelper; logs `intent=play` |
