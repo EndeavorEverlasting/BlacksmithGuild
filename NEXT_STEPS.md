@@ -21,10 +21,10 @@ Build the car, not the fuzzy dice. SandBox bootstrap must skip the intro before 
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (006C pending push) |
+| Branch | `main` (up to date with `origin/main`; 006C `0103527`) |
 | Version | `v0.0.8` |
-| Working tree | Commit after build |
-| Remote | Push after commit |
+| Working tree | **Clean** |
+| Remote | `origin/main` up to date |
 | Open PRs | None |
 
 ---
