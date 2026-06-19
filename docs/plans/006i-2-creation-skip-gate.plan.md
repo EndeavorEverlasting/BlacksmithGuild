@@ -30,9 +30,9 @@ isProject: false
 | Path | `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild` |
 | Remote | `https://github.com/EndeavorEverlasting/BlacksmithGuild.git` |
 | Branch | `main` |
-| HEAD | `6fb5825` |
+| HEAD | `3c2c1d8` (implementation `6fb5825`) |
 | Version | `v0.0.11` |
-| Remote sync | 4 commits ahead of `origin/main` — treat local git as authoritative |
+| Remote sync | 5 commits ahead of `origin/main` — treat local git as authoritative |
 | Open PRs | None |
 | Working tree | Clean at implementation commit |
 
@@ -86,9 +86,9 @@ Forge.cmd
 **Analyze:**
 
 ```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 80
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 30
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 60
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 100
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 50
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 80
 ```
 
 ### Path table

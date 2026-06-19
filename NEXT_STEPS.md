@@ -38,9 +38,9 @@
 | Field | Value |
 |-------|-------|
 | Branch | `main` |
-| HEAD | `6fb5825` |
+| HEAD | `3c2c1d8` (implementation `6fb5825`) |
 | Version | `v0.0.11` |
-| Remote sync | 4 commits ahead of `origin/main` — push when user requests |
+| Remote sync | 5 commits ahead of `origin/main` — push when user requests |
 | Last closed sprint | [docs/sprint-006h-live-results.md](docs/sprint-006h-live-results.md) |
 | Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) |
 | Handoff checkpoint | [docs/checkpoints/post-006i-2-handoff.md](docs/checkpoints/post-006i-2-handoff.md) |

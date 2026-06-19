@@ -7,11 +7,11 @@
 | Path | `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild` |
 | Remote | `https://github.com/EndeavorEverlasting/BlacksmithGuild.git` |
 | Branch | `main` |
-| HEAD | `6fb5825` — Fix creation-phase intro skip loop and launcher handoff timeout (006I-2) |
+| HEAD | `3c2c1d8` — docs checkpoint (implementation at `6fb5825`) |
 | Version | `v0.0.11` |
-| Remote sync | 4 commits ahead of `origin/main` — public GitHub may look stale; treat local git as authoritative |
+| Remote sync | 5 commits ahead of `origin/main` — public GitHub may look stale; treat local git as authoritative |
 | Open PRs | None |
-| Working tree | Clean at implementation commit |
+| Working tree | Clean |
 
 ## Sprint status
 
@@ -69,10 +69,54 @@ Forge.cmd
 **Analyze:**
 
 ```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 80
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 30
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 60
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 100
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 50
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 80
 ```
+
+Also paste Forge.cmd terminal output (last ~20 lines) and note whether Path B/C were tested.
+
+### Cert decision rubric
+
+**PASS** only if all true:
+
+- Launch.log contains `handoff:`
+- No `launcher-auto-nav timed out`
+- Phase1.log contains `intro skip: campaign video via OnActivate (count=1)`
+- Phase1.log reaches `TBG READY: campaign map ready`
+- No forward-bootstrap `CleanAndPushState (count=2)` before TBG READY
+- No Options → Culture/Narrative restart
+
+**FAIL** if any true:
+
+- `launcher-auto-nav timed out`
+- `CleanAndPushState (count=2)` during forward bootstrap before TBG READY
+- Options returns to Culture/Narrative
+- `bootstrap disarmed: returned to main menu` between auto-select and intro skip
+- No TBG READY
+
+**PARTIAL** if:
+
+- Launcher handoff passes but in-game bootstrap fails
+- Intro skip gate works but map readiness fails
+- Path A passes but Path B/C remain untested
+
+### Analysis response template (paste logs → agent fills this)
+
+```text
+Verdict:
+Layer A:
+Layer B:
+Path A:
+Path B:
+Path C:
+PASS/FAIL:
+Smallest next fix:
+Exact evidence lines:
+```
+
+- **Layer A:** `scripts/launcher-auto-nav.ps1` — PLAY, CAUTION, Safe Mode, crash reporter, `handoff:`
+- **Layer B:** in-game QuickStart mod — intro skip, narrative, character creation, TBG READY
 
 ### Path table
 
@@ -119,7 +163,7 @@ On Path B only: count=2+ after culture Back is expected.
 
 | Risk | Notes |
 |------|-------|
-| Stale GitHub context | Remote is 4 commits behind local; do not overwrite local state from stale remote |
+| Stale GitHub context | Remote is 5 commits behind local; do not overwrite local state from stale remote |
 | 005E scope creep | No plan file exists; must scope before coding |
 | Path B never validated | Culture-back fix shipped in 006I but blocked by loop; first real test is post-006I-2 |
 | Continue path regression | `ForgeContinue.cmd` not re-run since 006H |

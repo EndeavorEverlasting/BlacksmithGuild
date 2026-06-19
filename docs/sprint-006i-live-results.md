@@ -4,7 +4,7 @@
 
 **SHIPPED — LIVE CERT PENDING**
 
-006I-2 implemented, built (`forge.ps1` PASS), committed at `6fb5825`. Live cert Paths A/B/C not yet run.
+006I-2 implemented, built (`forge.ps1` PASS), committed at `6fb5825`. Docs checkpoint `3c2c1d8`. Live cert Paths A/B/C not yet run.
 
 Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md)
 
@@ -12,9 +12,9 @@ Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-hando
 
 | Field | Value |
 |-------|-------|
-| HEAD | `6fb5825` |
+| HEAD | `3c2c1d8` (implementation `6fb5825`) |
 | Version | `v0.0.11` |
-| Remote | 4 commits behind local `main` — treat local git as authoritative |
+| Remote | 5 commits behind local `main` — treat local git as authoritative |
 | Build | PASS via `forge.ps1`; Release DLL installed to Bannerlord Modules |
 
 ## Sprint status
@@ -98,10 +98,12 @@ Forge.cmd
 **Analyze:**
 
 ```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 80
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 30
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 60
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 100
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 50
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 80
 ```
+
+Paste output into next agent session for cert analysis. See [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md) for PASS/FAIL/PARTIAL rubric and response template.
 
 ### Path table
 
