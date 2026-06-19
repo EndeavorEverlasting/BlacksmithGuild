@@ -21,10 +21,10 @@ Build the car, not the fuzzy dice. v1.4.6 culture/narrative automation before ec
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (006D pending push) |
+| Branch | `main` (up to date with `origin/main`; 006D `5b920f5`) |
 | Version | `v0.0.9` |
-| Working tree | Commit after build |
-| Remote | Push after commit |
+| Working tree | **Clean** |
+| Remote | `origin/main` up to date |
 | Open PRs | None |
 
 ---
