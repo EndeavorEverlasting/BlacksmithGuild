@@ -182,8 +182,21 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
-            var state = TaleWorlds.Core.GameStateManager.Current?.ActiveState;
-            if (state == null)
+            var stateType = CharacterCreationReflection.StateType;
+            object state = null;
+
+            if (__instance != null && stateType != null)
+            {
+                var stateField = AccessTools.Field(__instance.GetType(), "_state");
+                state = stateField?.GetValue(__instance);
+            }
+
+            if (state == null || stateType == null || state.GetType() != stateType)
+            {
+                state = TaleWorlds.Core.GameStateManager.Current?.ActiveState;
+            }
+
+            if (state == null || stateType == null || state.GetType() != stateType)
             {
                 return;
             }

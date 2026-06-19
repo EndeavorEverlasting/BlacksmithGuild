@@ -2,7 +2,9 @@
 
 ## Verdict
 
-**Code shipped** — live cert pending (Forge.cmd zero-click through Family + subsequent narrative menus)
+**FAIL** — selection registered (`selectedCount=1`) but Family Next stayed gray; stall trap on `switchToNextMenu=false`.
+
+Superseded by [sprint-006h-live-results.md](sprint-006h-live-results.md).
 
 ## Scope
 
@@ -100,6 +102,6 @@ Key lines: `narrative auto-selected`, `narrative advanced to next menu`, `narrat
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap (full map) | **PENDING** | | 006G narrative API fix |
+| A — Forge.cmd bootstrap (full map) | **FAIL** | 2026-06-19 | `menu=NarrativeMenu selectedCount=1 switchToNextMenu=false`; Family gray Next |
 | B — ForgeContinue.cmd regression | **PENDING** | | Should be unaffected |
 | 006F narrative sprint | **FAIL** | 2026-06-19 | OnCondition(null) + no TrySwitchToNextMenu |

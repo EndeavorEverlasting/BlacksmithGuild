@@ -27,11 +27,15 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static MethodInfo _getCurrentMenuOptionsMethod;
         private static MethodInfo _getSuitableNarrativeMenuOptionsMethod;
         private static MethodInfo _trySwitchToNextMenuMethod;
+        private static MethodInfo _startNarrativeStageMethod;
+        private static MethodInfo _getNarrativeMenuWithIdMethod;
         private static MethodInfo _narrativeMenuOptionSelectedMethod;
         private static MethodInfo _legacyRunConsequenceMethod;
         private static MethodInfo _applyCultureMethod;
         private static bool _probeLogged;
         private static bool _cultureFailureLogged;
+        private static bool _narrativeStageInitialized;
+        private static bool _narrativeStageInitLogged;
         private static readonly HashSet<string> LoggedNarrativeMenuSelections =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static int _narrativeMenusCompleted;
@@ -124,6 +128,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
         {
             LoggedNarrativeMenuSelections.Clear();
             _narrativeMenusCompleted = 0;
+            _narrativeStageInitialized = false;
+            _narrativeStageInitLogged = false;
             _lastNarrativeFailureDetail = null;
         }
 
@@ -167,6 +173,18 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return false;
             }
 
+            var content = GetCharacterCreationContent(state);
+            if (content == null || TryGetSelectedCulture(content) == null)
+            {
+                _lastNarrativeFailureDetail = "culture not selected";
+                return false;
+            }
+
+            if (!TryEnsureNarrativeStageInitialized(manager))
+            {
+                return false;
+            }
+
             var menuCount = (int)(_characterCreationMenuCountProperty?.GetValue(manager) ?? 0);
             if (menuCount <= 0)
             {
@@ -189,18 +207,14 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 var currentMenu = GetCurrentMenuObject(manager);
                 var menuId = GetMenuId(currentMenu) ?? TryGetCurrentMenuIndex(manager).ToString();
+                var outputMenuId = GetFieldString(currentMenu, "OutputMenuId") ?? "unknown";
                 var selectedOptions = GetSelectedOptions(manager);
                 var selectedCount = selectedOptions?.Count ?? 0;
 
-                if (IsCurrentMenuSelected(manager, currentMenu, menuId, selectedOptions))
+                if (IsCurrentMenuSelected(currentMenu, selectedOptions))
                 {
-                    if (TryInvokeSwitchToNextMenu(manager))
+                    if (TryAdvanceFromSelectedMenu(manager, currentMenu, menuId, outputMenuId, ref progressed))
                     {
-                        GuildLog.Info(
-                            "[TBG QUICKSTART] narrative advanced to next menu (TrySwitchToNextMenu)",
-                            showInGame: false);
-                        progressed = true;
-                        _lastNarrativeFailureDetail = null;
                         continue;
                     }
 
@@ -209,8 +223,13 @@ namespace BlacksmithGuild.DevTools.QuickStart
                         return progressed || TryNextStage(state);
                     }
 
+                    if (TryClearMenuSelection(manager, currentMenu))
+                    {
+                        continue;
+                    }
+
                     _lastNarrativeFailureDetail =
-                        $"currentMenu={menuId} suitableCount=0 selectedCount={selectedCount} switchToNextMenu=false";
+                        $"currentMenu={menuId} outputMenu={outputMenuId} selectedCount={selectedCount} switchToNextMenu=false manualAdvance=failed";
                     break;
                 }
 
@@ -264,11 +283,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 progressed = true;
                 _lastNarrativeFailureDetail = null;
 
-                if (TryInvokeSwitchToNextMenu(manager))
+                currentMenu = GetCurrentMenuObject(manager);
+                menuId = GetMenuId(currentMenu) ?? menuId;
+                outputMenuId = GetFieldString(currentMenu, "OutputMenuId") ?? outputMenuId;
+
+                if (TryAdvanceFromSelectedMenu(manager, currentMenu, menuId, outputMenuId, ref progressed))
                 {
-                    GuildLog.Info(
-                        "[TBG QUICKSTART] narrative advanced to next menu (TrySwitchToNextMenu)",
-                        showInGame: false);
                     continue;
                 }
 
@@ -283,6 +303,74 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             return progressed;
+        }
+
+        private static bool TryAdvanceFromSelectedMenu(
+            object manager,
+            object currentMenu,
+            string menuId,
+            string outputMenuId,
+            ref bool progressed)
+        {
+            if (TryInvokeSwitchToNextMenu(manager))
+            {
+                GuildLog.Info(
+                    "[TBG QUICKSTART] narrative advanced to next menu (TrySwitchToNextMenu)",
+                    showInGame: false);
+                progressed = true;
+                _lastNarrativeFailureDetail = null;
+                return true;
+            }
+
+            if (TryManualSwitchToNextMenu(manager, currentMenu, out var resolvedOutputMenuId))
+            {
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] narrative advanced to next menu (manual OutputMenuId={resolvedOutputMenuId})",
+                    showInGame: false);
+                progressed = true;
+                _lastNarrativeFailureDetail = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryEnsureNarrativeStageInitialized(object manager)
+        {
+            if (_narrativeStageInitialized)
+            {
+                return true;
+            }
+
+            if (_startNarrativeStageMethod == null)
+            {
+                _narrativeStageInitialized = true;
+                return true;
+            }
+
+            try
+            {
+                _startNarrativeStageMethod.Invoke(manager, null);
+                _narrativeStageInitialized = true;
+                if (!_narrativeStageInitLogged)
+                {
+                    _narrativeStageInitLogged = true;
+                    GuildLog.Info("[TBG QUICKSTART] narrative stage initialized", showInGame: false);
+                }
+
+                return true;
+            }
+            catch (TargetInvocationException ex)
+            {
+                var inner = ex.InnerException?.Message ?? ex.Message;
+                _lastNarrativeFailureDetail = $"StartNarrativeStage failed: {inner}";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _lastNarrativeFailureDetail = $"StartNarrativeStage failed: {ex.Message}";
+                return false;
+            }
         }
 
         public static void SkipNarrativeStage(object state)
@@ -341,6 +429,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _getCurrentMenuOptionsMethod = AccessTools.Method(_managerType, "GetCurrentMenuOptions", new[] { typeof(int) });
             _getSuitableNarrativeMenuOptionsMethod = AccessTools.Method(_managerType, "GetSuitableNarrativeMenuOptions");
             _trySwitchToNextMenuMethod = AccessTools.Method(_managerType, "TrySwitchToNextMenu");
+            _startNarrativeStageMethod = AccessTools.Method(_managerType, "StartNarrativeStage");
+            _getNarrativeMenuWithIdMethod = AccessTools.Method(_managerType, "GetNarrativeMenuWithId", new[] { typeof(string) });
 
             _legacyRunConsequenceMethod = AccessTools.Method(_managerType, "RunConsequence");
             _narrativeMenuOptionSelectedMethod = AccessTools.Method(_managerType, "OnNarrativeMenuOptionSelected");
@@ -359,6 +449,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 $"menus={(_getCurrentMenuOptionsMethod != null ? "found" : "missing")} " +
                 $"suitableOptions={(_getSuitableNarrativeMenuOptionsMethod != null ? "found" : "missing")} " +
                 $"trySwitchToNextMenu={(_trySwitchToNextMenuMethod != null ? "found" : "missing")} " +
+                $"startNarrativeStage={(_startNarrativeStageMethod != null ? "found" : "missing")} " +
+                $"getNarrativeMenuWithId={(_getNarrativeMenuWithIdMethod != null ? "found" : "missing")} " +
                 $"currentMenu={(_currentMenuProperty != null ? "found" : "missing")} " +
                 $"currentMenuIndex={(_currentMenuIndexProperty != null ? "found" : "missing")} " +
                 $"culture={(_applyCultureMethod != null ? "found" : "missing")} " +
@@ -449,6 +541,73 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
+        private static bool TryManualSwitchToNextMenu(object manager, object currentMenu, out string outputMenuId)
+        {
+            outputMenuId = GetFieldString(currentMenu, "OutputMenuId");
+            if (string.IsNullOrWhiteSpace(outputMenuId)
+                || _getNarrativeMenuWithIdMethod == null
+                || _currentMenuProperty == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                var nextMenu = _getNarrativeMenuWithIdMethod.Invoke(manager, new object[] { outputMenuId });
+                if (nextMenu == null)
+                {
+                    return false;
+                }
+
+                _currentMenuProperty.SetValue(manager, nextMenu);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryClearMenuSelection(object manager, object currentMenu)
+        {
+            var selectedOptions = GetSelectedOptions(manager);
+            if (selectedOptions == null || currentMenu == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (selectedOptions.Contains(currentMenu))
+                {
+                    selectedOptions.Remove(currentMenu);
+                    return true;
+                }
+
+                object keyToRemove = null;
+                foreach (var key in selectedOptions.Keys)
+                {
+                    if (ReferenceEquals(key, currentMenu))
+                    {
+                        keyToRemove = key;
+                        break;
+                    }
+                }
+
+                if (keyToRemove == null)
+                {
+                    return false;
+                }
+
+                selectedOptions.Remove(keyToRemove);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private static object GetCurrentMenuObject(object manager)
         {
             try
@@ -482,26 +641,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
             return null;
         }
 
-        private static bool IsCurrentMenuSelected(
-            object manager,
-            object currentMenu,
-            string menuId,
-            IDictionary selectedOptions)
+        private static bool IsCurrentMenuSelected(object currentMenu, IDictionary selectedOptions)
         {
-            if (selectedOptions == null || string.IsNullOrWhiteSpace(menuId))
+            if (currentMenu == null || selectedOptions == null)
             {
                 return false;
             }
 
             foreach (var key in selectedOptions.Keys)
             {
-                if (key == null)
-                {
-                    continue;
-                }
-
-                var keyId = key as string ?? GetMenuId(key) ?? key.ToString();
-                if (string.Equals(keyId, menuId, StringComparison.OrdinalIgnoreCase))
+                if (ReferenceEquals(key, currentMenu))
                 {
                     return true;
                 }
@@ -574,31 +723,79 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return null;
             }
 
+            var stringId = GetStringId(menu);
+            if (!string.IsNullOrWhiteSpace(stringId))
+            {
+                return stringId;
+            }
+
+            var id = GetFieldString(menu, "Id");
+            if (!string.IsNullOrWhiteSpace(id))
+            {
+                return id;
+            }
+
+            return menu.GetType().Name;
+        }
+
+        private static string GetStringId(object target)
+        {
+            if (target == null)
+            {
+                return null;
+            }
+
             try
             {
-                var stringIdProperty = menu.GetType().GetProperty(
+                var stringIdField = target.GetType().GetField(
                     "StringId",
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var stringId = stringIdProperty?.GetValue(menu) as string;
-                if (!string.IsNullOrWhiteSpace(stringId))
+                if (stringIdField != null)
                 {
-                    return stringId;
+                    var fieldValue = stringIdField.GetValue(target) as string;
+                    if (!string.IsNullOrWhiteSpace(fieldValue))
+                    {
+                        return fieldValue;
+                    }
                 }
 
-                var idField = menu.GetType().GetField(
-                    "Id",
+                var stringIdProperty = target.GetType().GetProperty(
+                    "StringId",
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var id = idField?.GetValue(menu)?.ToString();
-                if (!string.IsNullOrWhiteSpace(id))
+                if (stringIdProperty != null)
                 {
-                    return id;
+                    var propertyValue = stringIdProperty.GetValue(target) as string;
+                    if (!string.IsNullOrWhiteSpace(propertyValue))
+                    {
+                        return propertyValue;
+                    }
                 }
             }
             catch
             {
             }
 
-            return menu.GetType().Name;
+            return null;
+        }
+
+        private static string GetFieldString(object target, string fieldName)
+        {
+            if (target == null || string.IsNullOrWhiteSpace(fieldName))
+            {
+                return null;
+            }
+
+            try
+            {
+                var field = target.GetType().GetField(
+                    fieldName,
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                return field?.GetValue(target) as string;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static int TryGetCurrentMenuIndex(object manager)
@@ -659,28 +856,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return "null";
             }
 
-            try
+            var stringId = GetStringId(option);
+            if (!string.IsNullOrWhiteSpace(stringId))
             {
-                var stringIdProperty = option.GetType().GetProperty(
-                    "StringId",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var stringId = stringIdProperty?.GetValue(option) as string;
-                if (!string.IsNullOrWhiteSpace(stringId))
-                {
-                    return stringId;
-                }
-
-                var idField = option.GetType().GetField(
-                    "Id",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var id = idField?.GetValue(option)?.ToString();
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    return id;
-                }
+                return stringId;
             }
-            catch
+
+            var id = GetFieldString(option, "Id");
+            if (!string.IsNullOrWhiteSpace(id))
             {
+                return id;
             }
 
             return option.GetType().Name;
