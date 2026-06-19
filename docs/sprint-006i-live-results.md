@@ -6,7 +6,26 @@
 
 006I-3 shipped at `3cdbdd3` after **PARTIAL** cert on 2026-06-19. Do not mark PASS until Paths A/B/C re-run with fresh logs.
 
-Handoff: [docs/checkpoints/post-006i-3-handoff.md](checkpoints/post-006i-3-handoff.md) · Plan: [docs/plans/006i-3-narrow-skip-gate.plan.md](plans/006i-3-narrow-skip-gate.plan.md)
+Handoff: [docs/checkpoints/post-006i-3-handoff.md](checkpoints/post-006i-3-handoff.md) · Plan: [docs/plans/006i-3-narrow-skip-gate.plan.md](plans/006i-3-narrow-skip-gate.plan.md) · Plan (006I-4): [docs/plans/006i-4-quit-to-menu-intro-loop.plan.md](plans/006i-4-quit-to-menu-intro-loop.plan.md)
+
+## Current blocking glitch
+
+Path C remains unsafe.
+
+Observed:
+
+```text
+Quit / return toward main menu
+→ campaign intro replays
+→ user cannot get past it
+→ Task Manager required
+```
+
+Status:
+
+- 006I-3 shipped a guard attempt.
+- Re-cert is pending.
+- If still reproducible, proceed to 006I-4.
 
 ## Sprint status
 
@@ -16,6 +35,7 @@ Handoff: [docs/checkpoints/post-006i-3-handoff.md](checkpoints/post-006i-3-hando
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Layer A handoff still pending formal cert. |
 | 006I-3 | SHIPPED. Re-cert PENDING after narrow gate + quit guard. |
+| 006I-4 | PLANNING ONLY. Quit-to-menu intro replay loop if Path C still fails. |
 | 005E economics | NEXT. Gated on 006I cert PASS. |
 
 ## Live cert record (2026-06-19 user session)

@@ -12,9 +12,27 @@
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Launcher handoff cert pending. |
 | 006I-3 | SHIPPED. Re-cert PENDING. |
+| 006I-4 | PLANNING ONLY. If Path C still fails after re-cert. |
 | 005E economics | NEXT. Gated on 006I cert PASS. |
 
 **2026-06-19 cert: PARTIAL** — Path A map OK (screenshot); Path B culture Back FAIL; Path C quit FAIL.
+
+---
+
+## Active stabilization gate
+
+006I-3 is shipped, but live re-cert is still pending.
+
+Current blocking glitch:
+
+- Quit-to-main-menu can replay the campaign intro and trap the user, requiring Task Manager.
+- This blocks clean Path C certification.
+- Do not start 005E until this is certified clean.
+
+Plans:
+
+- [006I-4 Quit-to-Main-Menu Intro Replay Loop](docs/plans/006i-4-quit-to-menu-intro-loop.plan.md)
+- [005E Smithing Posse Stamina & Output Automation](docs/plans/005e-smithing-posse-stamina-output.plan.md)
 
 ---
 
