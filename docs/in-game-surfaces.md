@@ -6,6 +6,7 @@ Use these three layers while developing on a **disposable campaign** (mod ON).
 
 | Goal | Do this |
 |------|---------|
+| Zero-click dev launch | **`Forge.cmd`** — PLAY, version confirm, Safe Mode No, auto character build → map. See [forge-zero-click-contract.md](forge-zero-click-contract.md) |
 | Mod loaded? | **Enter** on campaign map → look for `The forge is lit` |
 | Shortcut fired? | Wait for `TBG READY: campaign map ready. Press F8 for commands.` then **Enter** → `TBG F9:` / `TBG F10:` / `TBG F11:` or `TBG … BLOCKED:` in the **lower-left message feed** |
 | Cert / session summary? | **F7** → `TBG STATUS:` lines in the message feed |

@@ -1,4 +1,4 @@
-# Bump dev save timestamp so launcher Continue prefers BlacksmithGuild_DevStart*.sav
+﻿# Bump dev save timestamp so launcher Continue prefers BlacksmithGuild_DevStart*.sav
 param(
     [string]$SavePrefix = 'BlacksmithGuild_DevStart'
 )

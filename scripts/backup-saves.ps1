@@ -1,4 +1,4 @@
-# Incremental copy-only backup for Bannerlord Game Saves (.sav files).
+﻿# Incremental copy-only backup for Bannerlord Game Saves (.sav files).
 # Usage: .\scripts\backup-saves.ps1 [-FinalizeRun]
 
 param(

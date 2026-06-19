@@ -27,7 +27,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 14 | **006B** | Build profiles + mode selection (7 modes) | **Shipped** — live cert pending |
 | 15 | **006C** | SandBox intro skip + visible QuickStart bootstrap | **Shipped** |
 | 16 | **006D** | v1.4.6 character creation hotfix | **Shipped** |
-| 17 | **006E** | Full launch funnel (`Forge.cmd` / `ForgeContinue.cmd` zero-click) | **Shipped** — live cert pending |
+| 17 | **006E** | Full launch funnel (`Forge.cmd` / `ForgeContinue.cmd` zero-click) | **Shipped** — [docs/forge-zero-click-contract.md](docs/forge-zero-click-contract.md) |
 
 ## Current Dev Status
 

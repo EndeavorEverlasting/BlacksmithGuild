@@ -1,4 +1,4 @@
-# One-click entry point from repo root.
+﻿# One-click entry point from repo root.
 #   .\forge.ps1                  build + install (+ auto save backup)
 #   .\forge.ps1 -Launch          build + install + open launcher
 #   .\forge.ps1 -Check           build + install + scan status JSON + log

@@ -1,4 +1,4 @@
-# Shared status + logging for forge.ps1 workflows.
+﻿# Shared status + logging for forge.ps1 workflows.
 # Writes BlacksmithGuild_Status.json and BlacksmithGuild_Forge.log under Documents.
 
 $script:ForgeStatusState = $null

@@ -4,6 +4,8 @@
 
 **IN PROGRESS** — agent analyzed on-disk logs (2026-06-19); **RE-CERT PARTIAL**; user matrix incomplete.
 
+**Zero-click spec:** [docs/forge-zero-click-contract.md](../forge-zero-click-contract.md)
+
 | Gate | Status |
 |------|--------|
 | Path A bootstrap | **PASS** (Phase1 ~02:32:04) |
@@ -14,6 +16,9 @@
 | Market F12 (005E-M) | **FAIL** — `BlacksmithGuild_MarketIntel.json` absent |
 | 006I LIVE CERT PASS tag | **BLOCKED** |
 | 005E smithing posse | **BLOCKED** |
+| UTF-8 BOM (PS 5.1 Forge) | **SHIPPED** — `scripts/tools/Add-Utf8Bom.ps1` |
+| Zero-click contract doc | **SHIPPED** — `docs/forge-zero-click-contract.md` |
+| Module Mismatch UIA scope | **RISK** — false positive on desktop `mismatch` text |
 
 ## Agent analysis (2026-06-19)
 
@@ -114,7 +119,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 | Continue path | Never evidenced in current log set; 006I-5 fix unverified |
 | Path B | Not re-certified after 006I-4 |
 | Market F12 | Not run; JSON absent |
-| Remote sync | 12 commits unpushed — intentional hold |
+| Module Mismatch UIA false positive | **RISK** — `mismatch` substring on desktop UIA tree; tighten to game/launcher window |
 | Version | Stay at `v0.0.11` until full PASS |
 
 ## Scope lock

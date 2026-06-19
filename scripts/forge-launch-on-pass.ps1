@@ -1,4 +1,4 @@
-# Returns $true when Documents forge status indicates a clean PASS suitable for auto-launch.
+﻿# Returns $true when Documents forge status indicates a clean PASS suitable for auto-launch.
 function Test-ForgeCleanPass {
     param([string]$StatusJsonPath)
 

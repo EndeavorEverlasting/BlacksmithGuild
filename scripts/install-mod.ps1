@@ -1,4 +1,4 @@
-# Build, install, and verify The Blacksmith Guild mod (one-click dev workflow).
+﻿# Build, install, and verify The Blacksmith Guild mod (one-click dev workflow).
 #
 # Usage:
 #   .\scripts\install-mod.ps1           # build + copy to Bannerlord/Modules

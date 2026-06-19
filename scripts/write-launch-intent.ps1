@@ -1,4 +1,4 @@
-# Writes BlacksmithGuild_LaunchIntent.json before launcher automation (Sprint 006E).
+﻿# Writes BlacksmithGuild_LaunchIntent.json before launcher automation (Sprint 006E).
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('play', 'continue')]

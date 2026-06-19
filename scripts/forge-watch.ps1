@@ -1,4 +1,4 @@
-# Debounced FileSystemWatcher: rebuild + install on source changes.
+﻿# Debounced FileSystemWatcher: rebuild + install on source changes.
 
 param(
     [int]$WatchDebounceSec = 2

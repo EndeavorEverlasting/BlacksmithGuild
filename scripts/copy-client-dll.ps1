@@ -1,4 +1,4 @@
-# Shared Client DLL copy + pending-reload marker for install-mod and dotnet build.
+﻿# Shared Client DLL copy + pending-reload marker for install-mod and dotnet build.
 # Client DLL is copied before SubModule.xml so a blocked install cannot bump the
 # installed module version while the old DLL remains loaded (Module Mismatch).
 

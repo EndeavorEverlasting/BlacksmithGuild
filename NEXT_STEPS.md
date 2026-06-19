@@ -1,5 +1,7 @@
 # Next Steps
 
+**Daily dev:** `Forge.cmd` should zero-click to map — full contract in [docs/forge-zero-click-contract.md](docs/forge-zero-click-contract.md) (PLAY → version confirm → Safe Mode No → auto character build → `TBG READY`).
+
 005E economics is next but **gated on 006I live cert PASS**. Do not start 005E until Paths A/B/C + load paths pass.
 
 ---
@@ -17,7 +19,7 @@
 | 005E market intel (read-only) | **SHIPPED** — F12 hotkey MVP; user cert PENDING |
 | 005E smithing posse automation | BLOCKED (006I cert) |
 
-**2026-06-19 cert: PARTIAL** — Path A PASS; Path C USER PASS. **006J agent pass:** Layer A handoff FAIL, Continue PENDING, Path B PENDING, Market F12 FAIL. See [docs/plans/006j-full-live-cert-closeout.plan.md](docs/plans/006j-full-live-cert-closeout.plan.md).
+**2026-06-19:** UTF-8 BOM fix shipped (Forge.cmd parse on PS 5.1). Zero-click contract documented. **Cert still PARTIAL** — see [post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md). Module Mismatch UIA false-positive risk identified.
 
 ---
 
@@ -50,7 +52,7 @@ Plans:
 | Version | `v0.0.11` |
 | Remote sync | ahead of `origin/main` — push when user requests |
 | Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) |
-| Handoff | [docs/checkpoints/post-006i-4-handoff.md](docs/checkpoints/post-006i-4-handoff.md) (active until 006J PASS) |
+| Handoff | [docs/checkpoints/post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md) (active until 006J PASS) |
 | Open sprint plan | [docs/plans/006j-full-live-cert-closeout.plan.md](docs/plans/006j-full-live-cert-closeout.plan.md) |
 | Next feature | **005E** — gated on 006I cert |
 | Open PRs | None |

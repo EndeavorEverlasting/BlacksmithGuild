@@ -1,4 +1,4 @@
-# Opens the Bannerlord launcher (shared by LaunchForge.cmd and ForgeAndLaunch.cmd).
+﻿# Opens the Bannerlord launcher (shared by LaunchForge.cmd and ForgeAndLaunch.cmd).
 param(
     [string]$BannerlordRoot
 )

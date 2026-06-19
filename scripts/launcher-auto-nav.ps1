@@ -1,4 +1,4 @@
-# Pre-main-menu UI automation: PLAY/CONTINUE, CAUTION Confirm, Safe Mode No (Sprint 006E).
+﻿# Pre-main-menu UI automation: PLAY/CONTINUE, CAUTION Confirm, Safe Mode No (Sprint 006E).
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('play', 'continue')]

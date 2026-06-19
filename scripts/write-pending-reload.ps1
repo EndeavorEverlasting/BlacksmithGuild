@@ -1,4 +1,4 @@
-# Write BlacksmithGuild_PendingReload.json after a Release build/install attempt.
+﻿# Write BlacksmithGuild_PendingReload.json after a Release build/install attempt.
 # Optional Windows toast when Bannerlord is running (restart required - no hot reload).
 
 param(

@@ -1,4 +1,4 @@
-# Collect Bannerlord + BlacksmithGuild diagnostic evidence into one bundle.
+﻿# Collect Bannerlord + BlacksmithGuild diagnostic evidence into one bundle.
 # Usage: .\scripts\collect-diagnostics.ps1
 
 $ErrorActionPreference = 'Continue'

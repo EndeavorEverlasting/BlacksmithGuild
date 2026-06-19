@@ -1,4 +1,4 @@
-# Build/install/verify, then open Bannerlord launcher only on clean Forge PASS.
+﻿# Build/install/verify, then open Bannerlord launcher only on clean Forge PASS.
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 

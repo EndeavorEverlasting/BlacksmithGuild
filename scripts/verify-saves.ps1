@@ -1,4 +1,4 @@
-# Read-only verification of live saves vs incremental backup manifest.
+﻿# Read-only verification of live saves vs incremental backup manifest.
 # Usage: .\scripts\verify-saves.ps1
 
 $ErrorActionPreference = 'Continue'
