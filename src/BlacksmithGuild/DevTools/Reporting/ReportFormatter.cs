@@ -55,6 +55,13 @@ namespace BlacksmithGuild.DevTools.Reporting
             return this;
         }
 
+        public ReportFormatter TableLine(string line)
+        {
+            EnsureOpen();
+            _sectionLines.Add(line ?? string.Empty);
+            return this;
+        }
+
         public ReportFormatter Verdict(ReportVerdict verdict, string message)
         {
             EnsureOpen();

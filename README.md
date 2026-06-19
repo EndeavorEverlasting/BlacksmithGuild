@@ -85,13 +85,14 @@ Dev commands are invoked through a **command bus** (`DevCommandBus`). Hotkeys an
 | F9 | `AdvanceOneDay` | Fire one daily tick instantly |
 | F10 | `ToggleFastForward` | Toggle unstoppable fast-forward on/off |
 | F11 | `RichPlayerEconomyTest` | Run gold mutation test (disposable campaign only) |
+| F12 | `MarketSnapshotNow` | Nearest-town trade intel table (read-only) |
 | Ctrl+Alt+S | `RichSmithingProgressionTest` | Smithing XP/focus/endurance test |
 | Ctrl+Alt+X | `AddSmithingXp` | Add smithing XP only |
 | Ctrl+Alt+C | `AddSmithingFocus` | Add smithing focus only |
 
-Press **Enter** on the campaign map to scroll the notice log after F7/F8. Wait for **`TBG READY: campaign map ready. Press F8 for commands.`** before certifying F9–F11. **Close open campaign panels** (Training Field, settlement menus) if F-keys appear silent — or use **Ctrl+Alt+7–1** fallbacks. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
+Press **Enter** on the campaign map to scroll the notice log after F7/F8. Wait for **`TBG READY: campaign map ready. Press F8 for commands.`** before certifying F9–F12. **Close open campaign panels** (Training Field, settlement menus) if F-keys appear silent — or use **Ctrl+Alt+7–1** / **Ctrl+Alt+M** fallbacks. See [docs/in-game-surfaces.md](docs/in-game-surfaces.md).
 
-**F7/F8** are diagnostic/help keys. **F9/F10/F11** are risky dev keys and may be blocked when a map menu is open (`TBG … BLOCKED: map menu open — close panel first.`).
+**F7/F8/F12** are diagnostic/help keys. **F9/F10/F11** are risky dev keys and may be blocked when a map menu is open (`TBG … BLOCKED: map menu open — close panel first.`).
 
 If there is no visible response, check `BlacksmithGuild_Phase1.log` for `[TBG HOTKEY TRACE]` and `[TBG COMMAND TRACE]` lines.
 
@@ -106,8 +107,9 @@ Gold test is **manual F11 only** — auto-run on DailyTick is disabled by defaul
 | Ctrl+Alt+L | `ListScenarios` |
 | Ctrl+Alt+D | `AdvanceOneDay` |
 | Ctrl+Alt+F | `ToggleFastForward` |
+| Ctrl+Alt+M | `MarketSnapshotNow` |
 
-**Menu fallback (when F-keys swallowed):** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test).
+**Menu fallback (when F-keys swallowed):** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), Ctrl+Alt+M (market intel).
 
 Each hotkey shows visible in-game feedback in the **message feed** (lower-left log) via `InGameNotice` — request/result/block lines per key. File inbox commands use explicit result lines (e.g. `TBG SUCCESS: Gold test PASS, +100000.`) or file-only detail for non-user-facing commands.
 
@@ -125,6 +127,7 @@ While a campaign is loaded, the mod polls the inbox every **0.5s** via `OnApplic
 .\forge.ps1 -Command ShowForgeStatus -Wait
 .\forge.ps1 -Command RankForgeCandidates -Wait
 .\forge.ps1 -Command TreasurySnapshotNow -Wait
+.\forge.ps1 -Command MarketSnapshotNow -Wait
 .\forge.ps1 -Command SetForgeCandidateSourceReal -Wait
 .\forge.ps1 -Command SetForgeDoctrineRareMetalConservation -Wait
 .\forge.ps1 -Command ApplyAutoCharacterBuild -Wait

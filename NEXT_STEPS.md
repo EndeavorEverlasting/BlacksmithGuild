@@ -14,7 +14,8 @@
 | 006I-3 | SHIPPED. Path B culture Back pending re-cert. |
 | 006I-4 | **Path C USER PASS** (2026-06-19). Tag `006i-4-path-c-pass` @ `57f6062`. |
 | 006I-5 | SHIPPED — Module Mismatch UIA, Continue entrypoint, load stall watchdog. Re-cert PENDING. |
-| 005E economics | NEXT. Gated on 006I cert PASS. |
+| 005E market intel (read-only) | **SHIPPED** — F12 hotkey MVP; user cert PENDING |
+| 005E smithing posse automation | BLOCKED (006I cert) |
 
 **2026-06-19 cert: PARTIAL** — Path A PASS; Path C USER PASS; Path B + Continue load pending.
 
@@ -34,6 +35,7 @@ Plans:
 
 - [006I-5 Continue / Module Mismatch / Load Watchdog](docs/plans/006i-5-continue-module-mismatch-load.plan.md)
 - [006I-4 Quit-to-Main-Menu Intro Replay Loop](docs/plans/006i-4-quit-to-menu-intro-loop.plan.md) — Path C PASS
+- [005E Market Intelligence Shop Hotkey](docs/plans/005e-market-intelligence-shop-hotkey.plan.md) — **SHIPPED (MVP)**
 - [005E Smithing Posse Stamina & Output Automation](docs/plans/005e-smithing-posse-stamina-output.plan.md) — BLOCKED
 
 ---
@@ -54,6 +56,15 @@ Plans:
 ---
 
 ## Next actions (user)
+
+**005E Market Intel — test on map (user):**
+
+```powershell
+cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+.\Forge.cmd
+```
+
+After `TBG READY`, stand near a town and press **F12** (or Ctrl+Alt+M). See [docs/plans/005e-market-intelligence-shop-hotkey.plan.md](docs/plans/005e-market-intelligence-shop-hotkey.plan.md).
 
 **006I-5 — Re-cert load paths:**
 

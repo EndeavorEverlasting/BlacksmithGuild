@@ -7,6 +7,7 @@ using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.Market;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.Library;
 
@@ -266,6 +267,7 @@ namespace BlacksmithGuild
             ForgeRecommendationService.AppendToReport(report);
             ForgeRecipeProbeService.AppendToReport(report);
             AutoCharacterBuildService.AppendToReport(report);
+            MarketIntelligenceService.AppendToReport(report);
 
             if (PendingReloadWatcher.IsReloadBlocked)
             {
@@ -288,11 +290,22 @@ namespace BlacksmithGuild
                 report.SummaryLine(forgeLine.Replace("TBG FORGE: ", string.Empty));
             }
 
+            var marketLine = MarketIntelligenceService.BuildCompactSummaryLine();
+            if (!string.IsNullOrEmpty(marketLine))
+            {
+                report.SummaryLine(marketLine.Replace("TBG MARKET: ", string.Empty));
+            }
+
             report.EndReport();
 
             if (!string.IsNullOrEmpty(forgeLine))
             {
                 InGameNotice.Info(forgeLine);
+            }
+
+            if (!string.IsNullOrEmpty(marketLine))
+            {
+                InGameNotice.Info(marketLine);
             }
 
             DebugLogger.Test("ShowForgeStatus displayed cached summary.", showInGame: false);

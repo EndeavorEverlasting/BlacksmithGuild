@@ -1,3 +1,4 @@
+using BlacksmithGuild.Market;
 using TaleWorlds.InputSystem;
 
 namespace BlacksmithGuild.DevTools
@@ -9,6 +10,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _f9WasDown;
         private static bool _f10WasDown;
         private static bool _f11WasDown;
+        private static bool _f12WasDown;
         private static bool _fallback7WasDown;
         private static bool _fallback8WasDown;
         private static bool _fallback9WasDown;
@@ -20,6 +22,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _legacySWasDown;
         private static bool _legacyXWasDown;
         private static bool _legacyCWasDown;
+        private static bool _legacyMWasDown;
 
         public static void Poll()
         {
@@ -64,6 +67,15 @@ namespace BlacksmithGuild.DevTools
                     "F11",
                     EconomyTestScenarios.RichPlayerEconomyTestName,
                     ref _f11WasDown))
+            {
+                return;
+            }
+
+            if (TryHelpHotkey(
+                    InputKey.F12,
+                    "F12",
+                    MarketIntelligenceService.MarketSnapshotNowCommand,
+                    ref _f12WasDown))
             {
                 return;
             }
@@ -135,6 +147,14 @@ namespace BlacksmithGuild.DevTools
                         "Ctrl+Alt+C"
                     );
                 }
+                else if (TryFireEdge(InputKey.M, ref _legacyMWasDown))
+                {
+                    RunCommand(
+                        "Ctrl+Alt+M",
+                        MarketIntelligenceService.MarketSnapshotNowCommand,
+                        "Ctrl+Alt+M"
+                    );
+                }
 
                 return;
             }
@@ -145,6 +165,7 @@ namespace BlacksmithGuild.DevTools
             _legacySWasDown = Input.IsKeyDown(InputKey.S);
             _legacyXWasDown = Input.IsKeyDown(InputKey.X);
             _legacyCWasDown = Input.IsKeyDown(InputKey.C);
+            _legacyMWasDown = Input.IsKeyDown(InputKey.M);
         }
 
         private static bool TryHelpHotkey(InputKey key, string label, string commandName, ref bool wasDown)

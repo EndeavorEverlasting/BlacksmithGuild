@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.Market;
 using BlacksmithGuild.Treasury;
 
 namespace BlacksmithGuild.DevTools
@@ -43,7 +44,8 @@ namespace BlacksmithGuild.DevTools
                 AutoCharacterBuildService.SetAutoCharacterBuildStewardSurgeonEngineerCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand,
-                AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand
+                AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand,
+                MarketIntelligenceService.MarketSnapshotNowCommand
             };
 
         public static bool IsRegistered(string commandName)

@@ -1,4 +1,5 @@
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.Market;
 using BlacksmithGuild.Treasury;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 
@@ -169,6 +170,7 @@ namespace BlacksmithGuild.DevTools
                 commandName == ForgeRecommendationService.RankForgeCandidatesCommand ||
                 commandName == ForgeRecommendationService.ShowForgeCandidateSourceCommand ||
                 commandName == ForgeRecommendationService.ShowForgeDoctrineCommand ||
+                commandName == MarketIntelligenceService.MarketSnapshotNowCommand ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
             {
                 return;
@@ -405,6 +407,10 @@ namespace BlacksmithGuild.DevTools
                     return AutoCharacterBuildService.SetSelectedProfileById("LightTouchVanillaPlus");
                 case AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand:
                     return AutoCharacterBuildService.SetSelectedProfileById("ShadowTrader");
+                case MarketIntelligenceService.MarketSnapshotNowCommand:
+                    return MarketIntelligenceService.RunScanNow(MarketIntelligenceService.MarketSnapshotNowCommand)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -422,7 +428,7 @@ namespace BlacksmithGuild.DevTools
 
             InGameNotice.Info("TBG COMMANDS");
             InGameNotice.Info("F7 Status | F8 Commands");
-            InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
+            InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test | F12 Market intel");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
         }
 
