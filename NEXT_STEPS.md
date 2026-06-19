@@ -28,6 +28,7 @@ Economics (005E) is next. Zero-click bootstrap funnel is live-certified.
 | Branch | `main` |
 | Version | `v0.0.11` |
 | Last closed sprint | [docs/sprint-006h-live-results.md](docs/sprint-006h-live-results.md) |
+| Post-006H handoff | [docs/checkpoints/post-006h-handoff.md](docs/checkpoints/post-006h-handoff.md) |
 | Next feature | **005E** — scope from existing forge/economics code before coding |
 | Open PRs | None |
 
