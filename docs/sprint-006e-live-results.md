@@ -125,9 +125,20 @@ Documents\Mount and Blade II Bannerlord\
 
 ---
 
+## v0.0.11 hotfix root causes (fixed)
+
+| Bug | Symptom | Fix |
+|-----|---------|-----|
+| Wrong menu IDs | Intent loaded, probe showed `SandBoxNewGame`, no auto-click | Use `SandBoxNewGame` / `ContinueCampaign` fallback chains |
+| Culture cast | Stall at culture menu 5s | `GetCultures()` returns `IEnumerable`, not `MBReadOnlyList` |
+| Add-Type compile | `[FAIL] open_launcher` — `Invalid expression term 'object'` | C# 5-compatible `out pattern` + `WindowsBase` assembly ref in `launcher-auto-nav.ps1` |
+
+---
+
 ## Cert record (fill after live run)
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap | | | |
-| B — ForgeContinue.cmd | | | |
+| A — Forge.cmd bootstrap | **PENDING** | | Layer A compile fix verified; full zero-click cert not yet run |
+| B — ForgeContinue.cmd | **PENDING** | | |
+| Add-Type compile smoke | **PASS** | 2026-06-18 | `launcher-auto-nav.ps1` loads UIAHelper; logs `intent=play` |

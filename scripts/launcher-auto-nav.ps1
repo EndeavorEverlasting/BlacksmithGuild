@@ -65,10 +65,15 @@ public static class UIAHelper
     {
         try
         {
-            if (element.TryGetCurrentPattern(InvokePattern.Pattern, out object pattern))
+            object pattern;
+            if (element.TryGetCurrentPattern(InvokePattern.Pattern, out pattern))
             {
-                ((InvokePattern)pattern).Invoke();
-                return true;
+                InvokePattern invokePattern = pattern as InvokePattern;
+                if (invokePattern != null)
+                {
+                    invokePattern.Invoke();
+                    return true;
+                }
             }
         }
         catch { }
@@ -107,7 +112,8 @@ public static class UIAHelper
     Add-Type -TypeDefinition $uiaHelperSource -ReferencedAssemblies @(
         'UIAutomationClient',
         'UIAutomationTypes',
-        'System.Windows.Forms'
+        'System.Windows.Forms',
+        'WindowsBase'
     ) -ErrorAction Stop
 }
 
