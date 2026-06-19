@@ -2,47 +2,65 @@
 
 ## Verdict
 
-**LIVE CERT PENDING** — 006I hotfix shipped (premature disarm + GameState.OnActivate patch); user must re-run Paths A/B/C.
+**LIVE CERT PENDING** — 006I hotfix (3758335) partial PASS; **006I-2 shipped** (creation-phase skip gate + launcher handoff). User must re-run Paths A/B/C.
 
-## Hotfix (post-regression)
+## 006I-2 (post-regression from live cert FAIL)
+
+**Symptoms (00:57 session):**
+
+1. **Launcher:** `launcher-auto-nav timed out after 120s` — game already running; no `Bannerlord.exe detected — handoff` log.
+2. **In-game:** `intro skip via CleanAndPushState (count=2)` during Options stage → creation reset loop; no TBG READY.
+
+**Root causes:**
+
+- `CleanAndPushStatePostfix` fired campaign video skip while `Phase == CharacterCreation` (Options subStage).
+- `HasCrashReporterDialog()` false-positive blocked handoff for full timeout despite `Bannerlord.exe` running.
+
+**Fix (006I-2):**
+
+| Piece | Location | Behavior |
+|-------|----------|----------|
+| Creation gate (OnActivate) | `SandboxCampaignIntroSkip.cs` | `IsCharacterCreationBootstrapActive()` blocks skip during active creation |
+| Creation gate (CleanAndPush) | `SandboxCampaignIntroSkip.cs` | Block skip entirely when `Phase == CharacterCreation` |
+| Stable handoff | `launcher-auto-nav.ps1` | 3-poll stable game + launcher gone or Safe Mode/PLAY path |
+| Crash reporter handoff | `launcher-auto-nav.ps1` | Immediate handoff after No click if game running |
+| Crash reporter heuristic | `launcher-auto-nav.ps1` | Text scan disabled when game main window present |
+| Slow-path timeout | `launcher-auto-nav.ps1` | Extend to 180s when Safe Mode or crash reporter clicked |
+| Handoff logging | `launcher-auto-nav.ps1` | `handoff: <reason>` lines |
+
+Plan: [docs/plans/006i-2-creation-skip-gate.plan.md](plans/006i-2-creation-skip-gate.plan.md)
+
+## Hotfix (006I — post-006H regression)
 
 **Symptom:** Forge.cmd reached cutscene but did not skip; no TBG QUICKSTART notices; stuck before map.
 
-**Root cause (Phase1.log):** `bootstrap disarmed: returned to main menu` fired on the same tick as `auto-selecting SandBoxNewGame` because `TryDisarmOnMainMenuReturn` ran after intent was consumed while still on `InitialState`.
+**Root cause (Phase1.log):** `bootstrap disarmed: returned to main menu` fired on same tick as `auto-selecting SandBoxNewGame`.
 
-**Fix:**
+**Fix (3758335):**
+
 - `MainMenuAutoLauncher.IsForwardLaunchInProgress` blocks disarm during SandBoxNewGame transition
-- Tightened `TryDisarmOnMainMenuReturn` (removed `Game.Current == null` branch)
 - `GameState.OnActivate` Harmony prefix replaces broken `VideoPlaybackState.OnActivate` patch on v1.4.6
 
-## Scope
+**Partial validation:** count=1 OnActivate skip confirmed; premature disarm fixed.
+
+## Scope (006I original)
 
 Fix intro skip firing at wrong lifecycle points:
 
 - **Culture Back** replayed full `campaign_intro` cutscene because `IsSkippableVideoState` returned false once `BootstrapUsed` was set.
-- **Pause → Quit** could loop on loading/cutscene because bootstrap stayed armed (`IsBootstrapArmed`) during teardown; `CleanAndPushState`/`FinishVideoState` intercepted non-exit video states.
+- **Pause → Quit** could loop on loading/cutscene because bootstrap stayed armed during teardown.
 
-## What shipped
+## What shipped (006I + 006I-2)
 
 | Piece | Location | Behavior |
 |-------|----------|----------|
-| Campaign-path-only skip | `SandboxCampaignIntroSkip.cs` | Removed `BootstrapUsed` block; skip only when `VideoPath` contains `campaign`; narrow fallback when path unreadable and forward bootstrap only |
+| Campaign-path-only skip | `SandboxCampaignIntroSkip.cs` | Skip only when `VideoPath` contains `campaign` |
 | Repeat skip hardening | `SandboxCampaignIntroSkip.cs` | Sets `_playedIntroVideo` before `OnVideoFinished`; logs skip count |
-| Bootstrap disarm | `CampaignSetupStateTracker.cs` | `DisarmBootstrap`, `NotifyCampaignMapReady`, main-menu return disarm in `Poll` |
-| Map-ready disarm | `BlacksmithGuildCampaignBehavior.cs` | Calls `NotifyCampaignMapReady()` when TBG READY fires |
-| Quit disarm | `SandboxCampaignIntroSkip.cs` | Harmony prefix on `Game.End` → disarm |
+| Creation-phase gate | `SandboxCampaignIntroSkip.cs` | Block skip during CharacterCreation (006I-2) |
+| Bootstrap disarm | `CampaignSetupStateTracker.cs` | `DisarmBootstrap`, `NotifyCampaignMapReady`, main-menu return disarm |
 | Forward launch guard | `MainMenuAutoLauncher.cs` | `IsForwardLaunchInProgress` blocks premature disarm |
 | Video skip patch | `SandboxCampaignIntroSkip.cs` | `GameState.OnActivate` prefix (v1.4.6) |
-| Main menu guard | `MainMenuAutoLauncher.cs` | Skip auto-launch when `Campaign.Current != null` |
-
-## Root cause
-
-```text
-Culture Back → game re-pushes campaign_intro VideoPlaybackState
-BootstrapUsed == true → IsSkippableVideoState returned false → full cutscene replay
-```
-
-Quit loop: intro skip remained armed after map ready if `CompleteSetup` desynced; teardown pushed video states that were forcibly finished, re-entering load chain.
+| Launcher handoff | `launcher-auto-nav.ps1` | Robust Bannerlord.exe handoff (006I-2) |
 
 ## Live cert protocol
 
@@ -54,63 +72,65 @@ Quit loop: intro skip remained armed after map ready if `CompleteSetup` desynced
 Forge.cmd → TBG READY
 ```
 
-**PASS:** six narrative menus advanced; no Family stall; map Summer 1, 1084.
+**PASS:** `handoff:` in Launch.log; count=1 intro skip only; six narrative menus; no count=2 during Options; map Summer 1, 1084.
 
-### Path B — Culture Back (new)
+### Path B — Culture Back
 
 ```text
 Forge.cmd → at culture stage press Back
 ```
 
-**PASS:** no full painted `campaign_intro` replay (may flash/skip instantly).  
-**FAIL:** intro cutscene with subtitles plays again.
+**PASS:** no full painted `campaign_intro` replay (may flash/skip instantly).
 
-### Path C — Quit (new)
+### Path C — Quit
 
 ```text
 Pause → Quit to desktop (during bootstrap AND after TBG READY)
 ```
 
-**PASS:** exits normally; no infinite loading.  
-**FAIL:** loading/cutscene loop; Task Manager required.
+**PASS:** exits normally; no infinite loading.
 
 ## Output files to analyze
 
 ```text
 C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log
+C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log
 C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json
 ```
 
 Key PASS lines:
 
 ```text
-[TBG QUICKSTART] intro skip: campaign video via CleanAndPushState (count=...)
-[TBG QUICKSTART] bootstrap disarmed: campaign map ready
-[TBG QUICKSTART] bootstrap disarmed: game end
+launcher-auto: handoff: Bannerlord.exe stable
+[TBG QUICKSTART] intro skip: campaign video via OnActivate (count=1)
+TBG READY: campaign map ready
 ```
 
-On culture Back, expect `count=2` or higher (forward skip + back skip).
-
-Must NOT appear between auto-select and intro skip:
+Must NOT appear during forward bootstrap before TBG READY:
 
 ```text
+intro skip: campaign video via CleanAndPushState (count=2)
 bootstrap disarmed: returned to main menu
+launcher-auto-nav timed out
 ```
 
-## Known gaps (post-006I ship)
+On culture Back (Path B), expect count=2 or higher only **after** Back from culture (not during Options).
+
+## Known gaps
 
 | Gap | Status |
 |-----|--------|
-| Live cert Paths A/B/C | **PENDING** — user must run |
-| ForgeContinue.cmd post-006H | Still optional regression |
+| Live cert Paths A/B/C | **PENDING** — user must run after 006I-2 |
+| ForgeContinue.cmd post-006H | Optional regression |
 | Tutorial skip | Out of scope |
 | Profile-aware narrative picks | Not implemented |
-| VideoPlaybackState patch | May still fail on v1.4.6; CleanAndPushState remains primary |
+| Culture-back fix (`BootstrapUsed` block removed) | Shipped in 006I — blocked by loop until 006I-2; re-test on Path B |
 
 ## Cert record
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap | **PENDING** | | 006H regression |
+| A — Forge.cmd bootstrap | **PENDING** | | 006H regression; 006I-2 fixes loop + launcher |
 | B — Culture Back | **PENDING** | | No cutscene replay |
 | C — Quit (bootstrap + map) | **PENDING** | | Clean exit |
+| Launcher handoff | **PENDING** | | `handoff:` log; no 120s timeout |

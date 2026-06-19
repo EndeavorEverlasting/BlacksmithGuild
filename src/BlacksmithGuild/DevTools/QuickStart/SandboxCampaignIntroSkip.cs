@@ -182,9 +182,26 @@ namespace BlacksmithGuild.DevTools.QuickStart
             return VideoPlaybackOnActivatePrefix(__instance);
         }
 
+        private static bool IsCharacterCreationBootstrapActive()
+        {
+            if (CampaignSetupStateTracker.Phase != SetupPhase.CharacterCreation)
+            {
+                return false;
+            }
+
+            var stateType = CharacterCreationReflection.StateType;
+            var active = GameStateManager.Current?.ActiveState;
+            return stateType != null && active?.GetType() == stateType;
+        }
+
         private static bool VideoPlaybackOnActivatePrefix(object __instance)
         {
             if (!ShouldSkipIntroVideo(null))
+            {
+                return true;
+            }
+
+            if (IsCharacterCreationBootstrapActive())
             {
                 return true;
             }
@@ -210,6 +227,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static void CleanAndPushStatePostfix(GameState gameState)
         {
             if (!ShouldSkipIntroVideo(null) || gameState == null)
+            {
+                return;
+            }
+
+            if (CampaignSetupStateTracker.Phase == SetupPhase.CharacterCreation)
             {
                 return;
             }

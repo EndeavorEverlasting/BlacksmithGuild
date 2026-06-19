@@ -78,7 +78,15 @@ public static class UIAHelper
     public static bool HasCrashReporterDialog()
     {
         var hwnd = FindWindow(null, CrashReporterTitle);
-        if (hwnd != IntPtr.Zero) return true;
+        if (hwnd != IntPtr.Zero)
+        {
+            return true;
+        }
+
+        if (HasGameMainWindow())
+        {
+            return false;
+        }
 
         try
         {
@@ -96,6 +104,29 @@ public static class UIAHelper
         catch { }
 
         return false;
+    }
+
+    public static bool HasGameMainWindow()
+    {
+        var processes = Process.GetProcessesByName("Bannerlord");
+        foreach (var process in processes)
+        {
+            try
+            {
+                if (process.MainWindowHandle != IntPtr.Zero)
+                {
+                    return true;
+                }
+            }
+            catch { }
+        }
+
+        return false;
+    }
+
+    public static bool HasLauncherRoot()
+    {
+        return FindLauncherRoot() != null;
     }
 
     public static bool ClickCrashReporterNo()
@@ -265,7 +296,69 @@ $clickedPlayContinue = $false
 $clickedCaution = $false
 $clickedSafeMode = $false
 $clickedCrashReporter = $false
-$deadline = (Get-Date).AddSeconds($TimeoutSec)
+$gameStablePolls = 0
+$requiredStablePolls = 3
+$startTime = Get-Date
+$effectiveTimeout = $TimeoutSec
+$deadline = $startTime.AddSeconds($effectiveTimeout)
+
+function Extend-DeadlineForSlowPath {
+    if ($clickedSafeMode -or $clickedCrashReporter) {
+        $extended = [Math]::Max($TimeoutSec, 180)
+        if ($extended -gt $script:effectiveTimeout) {
+            $script:effectiveTimeout = $extended
+            $script:deadline = $script:startTime.AddSeconds($extended)
+            Write-LaunchLog "extended timeout to ${extended}s (Safe Mode or crash reporter path)"
+        }
+    }
+}
+
+function Test-GameProcessRunning {
+    return $null -ne (Get-Process -Name $gameExeName -ErrorAction SilentlyContinue)
+}
+
+function Invoke-Handoff {
+    param([string]$Reason)
+    Write-LaunchLog "handoff: $Reason"
+}
+
+function Test-HandoffWhenGameStable {
+    if (-not (Test-GameProcessRunning)) {
+        $script:gameStablePolls = 0
+        return $false
+    }
+
+    $script:gameStablePolls++
+    if ($script:gameStablePolls -lt $requiredStablePolls) {
+        return $false
+    }
+
+    $launcherGone = -not [UIAHelper]::HasLauncherRoot()
+    $playPathSkipped = $clickedPlayContinue -or $clickedSafeMode
+
+    if (-not ($launcherGone -or $playPathSkipped)) {
+        return $false
+    }
+
+    if (-not [UIAHelper]::HasCrashReporterDialog()) {
+        if ($clickedPlayContinue) {
+            Invoke-Handoff 'Bannerlord.exe stable — PLAY clicked'
+        } elseif ($clickedSafeMode) {
+            Invoke-Handoff 'Bannerlord.exe stable — Safe Mode path'
+        } else {
+            Invoke-Handoff 'Bannerlord.exe stable — launcher gone'
+        }
+        return $true
+    }
+
+    if ($clickedCrashReporter) {
+        Invoke-Handoff 'Bannerlord.exe stable — crash reporter dismissed'
+        return $true
+    }
+
+    Write-LaunchLog 'Bannerlord.exe stable but crash reporter heuristic still true — waiting'
+    return $false
+}
 
 if ($LaunchIntent -eq 'continue') {
     $targetButtonNames = @('CONTINUE', 'Continue')
@@ -274,9 +367,13 @@ if ($LaunchIntent -eq 'continue') {
 }
 
 while ((Get-Date) -lt $deadline) {
+    if (Test-HandoffWhenGameStable) {
+        return
+    }
+
     if (Get-Process -Name $gameExeName -ErrorAction SilentlyContinue) {
         if (-not [UIAHelper]::HasCrashReporterDialog()) {
-            Write-LaunchLog 'Bannerlord.exe detected — handoff to in-game mod'
+            Invoke-Handoff 'Bannerlord.exe detected — handoff to in-game mod'
             return
         }
         Write-LaunchLog 'Bannerlord.exe running but crash reporter visible — waiting'
@@ -287,6 +384,11 @@ while ((Get-Date) -lt $deadline) {
             if (-not $clickedCrashReporter) {
                 Write-LaunchLog 'clicked crash reporter No'
                 $clickedCrashReporter = $true
+                Extend-DeadlineForSlowPath
+            }
+            if (Test-GameProcessRunning) {
+                Invoke-Handoff 'Bannerlord.exe running after crash reporter No'
+                return
             }
         }
         Start-Sleep -Milliseconds $PollMs
@@ -297,6 +399,7 @@ while ((Get-Date) -lt $deadline) {
         if (-not $clickedSafeMode) {
             Write-LaunchLog 'clicked Safe Mode No'
             $clickedSafeMode = $true
+            Extend-DeadlineForSlowPath
         }
         Start-Sleep -Milliseconds $PollMs
         continue
@@ -333,4 +436,4 @@ while ((Get-Date) -lt $deadline) {
 
 $visibleButtons = [UIAHelper]::LogVisibleLauncherButtons()
 Write-LaunchLog "timeout: visible launcher buttons: $visibleButtons"
-throw "launcher-auto-nav timed out after ${TimeoutSec}s (see $logPath)"
+throw "launcher-auto-nav timed out after ${effectiveTimeout}s (see $logPath)"
