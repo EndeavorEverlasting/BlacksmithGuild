@@ -36,7 +36,7 @@ namespace BlacksmithGuild
             base.OnApplicationTick(dt);
 
             PendingReloadWatcher.Poll(dt);
-            CampaignSetupStateTracker.Poll();
+            CampaignSetupStateTracker.Poll(dt);
 
             if (!DevToolsConfig.DevToolsEnabled)
             {

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Reflection;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
@@ -18,7 +19,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static PropertyInfo _characterCreationContentProperty;
         private static PropertyInfo _characterCreationMenuCountProperty;
         private static MethodInfo _getCurrentMenuOptionsMethod;
-        private static MethodInfo _runConsequenceMethod;
+        private static MethodInfo _narrativeMenuOptionSelectedMethod;
+        private static MethodInfo _legacyRunConsequenceMethod;
+        private static MethodInfo _applyCultureMethod;
         private static bool _probeLogged;
 
         public static Type StateType => EnsureBindings();
@@ -58,29 +61,36 @@ namespace BlacksmithGuild.DevTools.QuickStart
             return manager == null ? null : _characterCreationContentProperty?.GetValue(manager);
         }
 
-        public static void SkipCultureStage(object state)
+        public static bool TrySkipCultureStage(object state)
         {
             var content = GetCharacterCreationContent(state);
-            if (content == null)
+            var manager = GetCharacterCreation(state);
+            if (content == null || manager == null)
             {
-                NextStage(state);
-                return;
+                return false;
             }
 
             if (TryGetSelectedCulture(content) != null)
             {
                 NextStage(state);
-                return;
+                return true;
             }
 
             var cultures = TryGetCultures(content);
             if (cultures == null || cultures.Count == 0)
             {
-                return;
+                return false;
             }
 
-            TrySetSelectedCulture(content, cultures[0], GetCharacterCreation(state));
+            TrySetSelectedCulture(content, cultures[0], manager);
+            TryApplyCulture(content, manager);
             NextStage(state);
+            return true;
+        }
+
+        public static void SkipCultureStage(object state)
+        {
+            TrySkipCultureStage(state);
         }
 
         public static void SkipNarrativeStage(object state)
@@ -94,12 +104,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             var menuCount = (int)(_characterCreationMenuCountProperty?.GetValue(manager) ?? 0);
             for (var i = 0; i < menuCount; i++)
             {
-                var options = _getCurrentMenuOptionsMethod?.Invoke(manager, new object[] { i }) as System.Collections.IList;
-                if (options == null || options.Count == 0)
-                {
-                    continue;
-                }
-
+                var options = EnumerateMenuOptions(_getCurrentMenuOptionsMethod?.Invoke(manager, new object[] { i }));
                 object selected = null;
                 foreach (var option in options)
                 {
@@ -108,7 +113,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
                         continue;
                     }
 
-                    var onCondition = option.GetType().GetMethod("OnCondition", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    var onCondition = option.GetType().GetMethod(
+                        "OnCondition",
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                     if (onCondition == null)
                     {
                         selected = option;
@@ -123,11 +130,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     }
                 }
 
-                selected ??= options[0];
-                if (selected != null && _runConsequenceMethod != null)
+                if (selected == null)
                 {
-                    _runConsequenceMethod.Invoke(manager, new[] { selected, i, (object)false });
+                    continue;
                 }
+
+                InvokeNarrativeSelection(manager, selected, i);
             }
 
             NextStage(state);
@@ -178,14 +186,69 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _characterCreationContentProperty = AccessTools.Property(_managerType, "CharacterCreationContent");
             _characterCreationMenuCountProperty = AccessTools.Property(_managerType, "CharacterCreationMenuCount");
             _getCurrentMenuOptionsMethod = AccessTools.Method(_managerType, "GetCurrentMenuOptions", new[] { typeof(int) });
-            _runConsequenceMethod = AccessTools.Method(_managerType, "RunConsequence")
-                ?? AccessTools.Method(_managerType, "OnNarrativeMenuOptionSelected");
+
+            _legacyRunConsequenceMethod = AccessTools.Method(_managerType, "RunConsequence");
+            _narrativeMenuOptionSelectedMethod = AccessTools.Method(_managerType, "OnNarrativeMenuOptionSelected");
+
+            var contentType = AccessTools.TypeByName("TaleWorlds.CampaignSystem.CharacterCreationContent.CharacterCreationContent");
+            _applyCultureMethod = contentType == null
+                ? null
+                : AccessTools.Method(contentType, "ApplyCulture", new[] { _managerType });
+
+            var narrativeBinding = _narrativeMenuOptionSelectedMethod != null
+                ? "OnNarrativeMenuOptionSelected"
+                : _legacyRunConsequenceMethod != null ? "RunConsequence" : "missing";
 
             LogProbe(
                 $"state=found manager=found nextStage={(_nextStageMethod != null ? "found" : "missing")} " +
-                $"menus={(_getCurrentMenuOptionsMethod != null ? "found" : "missing")}");
+                $"menus={(_getCurrentMenuOptionsMethod != null ? "found" : "missing")} " +
+                $"culture={(_applyCultureMethod != null ? "found" : "missing")} " +
+                $"narrative={narrativeBinding}");
 
             return _stateType;
+        }
+
+        private static void InvokeNarrativeSelection(object manager, object selected, int menuIndex)
+        {
+            if (_narrativeMenuOptionSelectedMethod != null
+                && _narrativeMenuOptionSelectedMethod.GetParameters().Length == 1)
+            {
+                _narrativeMenuOptionSelectedMethod.Invoke(manager, new[] { selected });
+                return;
+            }
+
+            if (_legacyRunConsequenceMethod != null)
+            {
+                var parameters = _legacyRunConsequenceMethod.GetParameters();
+                if (parameters.Length == 3)
+                {
+                    _legacyRunConsequenceMethod.Invoke(manager, new[] { selected, menuIndex, (object)false });
+                }
+                else if (parameters.Length == 1)
+                {
+                    _legacyRunConsequenceMethod.Invoke(manager, new[] { selected });
+                }
+            }
+        }
+
+        private static IEnumerable EnumerateMenuOptions(object optionsObject)
+        {
+            if (optionsObject == null)
+            {
+                yield break;
+            }
+
+            if (optionsObject is IEnumerable enumerable)
+            {
+                foreach (var option in enumerable)
+                {
+                    yield return option;
+                }
+
+                yield break;
+            }
+
+            yield return optionsObject;
         }
 
         private static void LogProbe(string detail)
@@ -203,10 +266,17 @@ namespace BlacksmithGuild.DevTools.QuickStart
         {
             try
             {
+                var selectedCultureProperty = content.GetType().GetProperty(
+                    "SelectedCulture",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (selectedCultureProperty != null)
+                {
+                    return selectedCultureProperty.GetValue(content) as CultureObject;
+                }
+
                 var method = content.GetType().GetMethod(
                     "GetSelectedCulture",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                );
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 return method?.Invoke(content, null) as CultureObject;
             }
             catch
@@ -221,8 +291,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 var method = content.GetType().GetMethod(
                     "GetCultures",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                );
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 return method?.Invoke(content, null) as MBReadOnlyList<CultureObject>;
             }
             catch
@@ -237,9 +306,24 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 var method = content.GetType().GetMethod(
                     "SetSelectedCulture",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                );
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                 method?.Invoke(content, new[] { culture, characterCreation });
+            }
+            catch
+            {
+            }
+        }
+
+        private static void TryApplyCulture(object content, object manager)
+        {
+            if (_applyCultureMethod == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _applyCultureMethod.Invoke(content, new[] { manager });
             }
             catch
             {

@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Code shipped** — live cert pending (user-run New Campaign path)
+**FAIL on v1.4.6** — intro skip OK; character creation automation broken. Fixed in **006D** — see [sprint-006d-live-results.md](sprint-006d-live-results.md).
 
 ## Scope
 

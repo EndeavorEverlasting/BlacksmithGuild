@@ -1,6 +1,6 @@
 # Next Steps
 
-Build the car, not the fuzzy dice. SandBox bootstrap must skip the intro before economics polish.
+Build the car, not the fuzzy dice. v1.4.6 culture/narrative automation before economics polish.
 
 ---
 
@@ -10,10 +10,10 @@ Build the car, not the fuzzy dice. SandBox bootstrap must skip the intro before 
 |-------|--------|--------|
 | 003C | QuickStart + dev save auto-load | **LIVE CERT PASS** (Continue) |
 | 005D | Real candidate mapping | **Hotfix shipped** |
-| 006A | Auto Protagonist Build | **Shipped** — superseded by 006B |
-| 006B | Build profiles + mode selection | **Shipped** — live cert pending |
-| **006C** | SandBox intro skip + visible bootstrap | **Shipped** — live cert pending |
-| **005E** | Orders, inventory, doctrine tuning | **After 006C PASS** |
+| 006A/B | Auto protagonist build + profiles | **Shipped** — live cert pending |
+| 006C | SandBox intro skip + visible bootstrap | **FAIL on v1.4.6** — intro OK, creation broken |
+| **006D** | v1.4.6 culture/narrative hotfix | **Shipped** — live cert pending |
+| **005E** | Orders, inventory, doctrine tuning | **After 006D PASS** |
 
 ---
 
@@ -21,21 +21,21 @@ Build the car, not the fuzzy dice. SandBox bootstrap must skip the intro before 
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (up to date with `origin/main`; 006C `0103527`) |
-| Version | `v0.0.8` |
-| Working tree | **Clean** |
-| Remote | `origin/main` up to date |
+| Branch | `main` (006D pending push) |
+| Version | `v0.0.9` |
+| Working tree | Commit after build |
+| Remote | Push after commit |
 | Open PRs | None |
 
 ---
 
-## Next actions (user — 006C live cert)
+## Next actions (user — 006D live cert)
 
 **Path A — New Campaign (primary):**
 
 ```text
 Close Bannerlord → Forge.cmd → New Campaign → SandBox
-→ intro skipped, TBG QUICKSTART notices, auto character creation, TBG READY
+→ intro skipped, culture auto-selected, no manual creation clicks, TBG READY
 ```
 
 **Path B — Continue regression:**
@@ -44,18 +44,17 @@ Close Bannerlord → Forge.cmd → New Campaign → SandBox
 Forge.cmd → Continue → TBG DEVSAVE / TBG READY
 ```
 
-Then run 006B profile cert if not done:
+Check Phase1.log for:
 
 ```text
-.\forge.ps1 -Command ShowAutoCharacterBuildProfiles -Wait
-.\forge.ps1 -Command ApplyAutoCharacterBuild -Wait
-→ F7 + JSON profileId
+using vanilla character creation launch; Poll will auto-advance stages.
+culture=found narrative=OnNarrativeMenuOptionSelected
 ```
 
-Docs: [sprint-006c-live-results.md](docs/sprint-006c-live-results.md)
+Docs: [sprint-006d-live-results.md](docs/sprint-006d-live-results.md)
 
 ---
 
 ## Stern verdict
 
-**Continue** = daily dev loop. **New Campaign** = cert/bootstrap only (no dev-save hijack). Default profile **ForgeQuartermasterWarlord** auto-applies on fresh SandBox bootstrap only.
+**Continue** = daily dev loop. **New Campaign** = cert/bootstrap only. 006C intro skip stands; 006D fixes v1.4.6 character creation. Tutorial skip and main-menu automation remain future work.

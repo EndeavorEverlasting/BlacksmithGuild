@@ -31,6 +31,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _bootstrapUsed;
         private static bool _devSaveLoadUsed;
         private static string _devSaveName;
+        private static string _lastHandledCreationSubStage;
+        private static float _creationStageStalledSeconds;
+        private static string _creationStallSubStage;
+        private static bool _hasAnnouncedCreationStall;
+
+        private const float CreationStageStallThresholdSeconds = 5f;
 
         public static SetupPhase Phase => _phase;
 
@@ -64,6 +70,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _bootstrapUsed = false;
             _devSaveLoadUsed = false;
             _devSaveName = null;
+            _lastHandledCreationSubStage = null;
+            _creationStageStalledSeconds = 0f;
+            _creationStallSubStage = null;
+            _hasAnnouncedCreationStall = false;
         }
 
         public static void AnnounceCutsceneSkip()
@@ -88,9 +98,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
             GuildLog.Display("TBG QUICKSTART: auto-advancing character creation.");
         }
 
-        public static void AnnounceSetupStalled(SetupPhase phase)
+        public static void AnnounceSetupStalled(string stageLabel)
         {
-            GuildLog.Display($"TBG QUICKSTART: setup stalled at {phase} — see Phase1.log");
+            GuildLog.Display($"TBG QUICKSTART: setup stalled at {stageLabel} — see Phase1.log");
         }
 
         public static void MarkSandboxBootstrapStarted()
@@ -123,7 +133,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
-        public static void Poll()
+        public static void Poll(float dt = 0f)
         {
             if (!IsTracking)
             {
@@ -140,6 +150,13 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _subStage = subStage;
                 _lastActiveStateName = activeStateName;
                 _loggedWaiting = false;
+                if (nextPhase == SetupPhase.CharacterCreation)
+                {
+                    _lastHandledCreationSubStage = null;
+                    _creationStageStalledSeconds = 0f;
+                    _creationStallSubStage = subStage;
+                    _hasAnnouncedCreationStall = false;
+                }
             }
 
             if (_phase == SetupPhase.MapReady)
@@ -149,6 +166,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
             else if (_phase is SetupPhase.IntroVideo or SetupPhase.SandboxVideo)
             {
                 LogWaitingOnce("cutscene/video");
+            }
+            else if (_phase == SetupPhase.CharacterCreation)
+            {
+                TryAdvanceCurrentCreationStage(dt);
             }
         }
 
@@ -168,10 +189,13 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _phase = nextPhase;
                 _subStage = stageName;
                 _loggedWaiting = false;
+                _lastHandledCreationSubStage = null;
+                _creationStageStalledSeconds = 0f;
+                _creationStallSubStage = stageName;
+                _hasAnnouncedCreationStall = false;
             }
 
-            AnnounceCreationAdvance();
-            HandleCharacterCreationStage(state, stageName);
+            TryAdvanceCurrentCreationStage(0f);
         }
 
         public static void MarkSandboxSetupStarted()
@@ -185,6 +209,69 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _phase = SetupPhase.CharacterCreation;
             _subStage = "bootstrap";
             _loggedWaiting = false;
+            _lastHandledCreationSubStage = null;
+        }
+
+        private static void TryAdvanceCurrentCreationStage(float dt)
+        {
+            var stateType = CharacterCreationReflection.StateType;
+            var activeState = GameStateManager.Current?.ActiveState;
+            if (stateType == null || activeState == null || activeState.GetType() != stateType)
+            {
+                return;
+            }
+
+            if (!_bootstrapUsed)
+            {
+                _bootstrapUsed = true;
+            }
+
+            var stageName = CharacterCreationReflection.GetCurrentStageName(activeState);
+            if (_subStage != stageName)
+            {
+                _subStage = stageName;
+                _lastHandledCreationSubStage = null;
+                _creationStageStalledSeconds = 0f;
+                _creationStallSubStage = stageName;
+                _hasAnnouncedCreationStall = false;
+            }
+
+            var advanced = false;
+            if (stageName == "CharacterCreationCultureStage")
+            {
+                advanced = CharacterCreationReflection.TrySkipCultureStage(activeState);
+            }
+            else if (_lastHandledCreationSubStage != stageName)
+            {
+                _lastHandledCreationSubStage = stageName;
+                HandleCharacterCreationStage(activeState, stageName);
+                advanced = true;
+            }
+
+            if (advanced)
+            {
+                AnnounceCreationAdvance();
+                _creationStageStalledSeconds = 0f;
+                _hasAnnouncedCreationStall = false;
+                return;
+            }
+
+            if (dt <= 0f || stageName != _creationStallSubStage)
+            {
+                return;
+            }
+
+            _creationStageStalledSeconds += dt;
+            if (_creationStageStalledSeconds < CreationStageStallThresholdSeconds || _hasAnnouncedCreationStall)
+            {
+                return;
+            }
+
+            _hasAnnouncedCreationStall = true;
+            AnnounceSetupStalled($"CharacterCreation/{stageName}");
+            GuildLog.Info(
+                $"[TBG QUICKSTART] stage stalled for {CreationStageStallThresholdSeconds:0}s at {stageName}.",
+                showInGame: false);
         }
 
         public static void MarkStoryModeBlocked()

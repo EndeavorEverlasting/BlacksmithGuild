@@ -2,7 +2,7 @@
 <Module>
   <Name value="The Blacksmith Guild"/>
   <Id value="BlacksmithGuild"/>
-  <Version value="v0.0.8"/>
+  <Version value="v0.0.9"/>
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
 
