@@ -67,6 +67,7 @@ Documents\Mount and Blade II Bannerlord\Game Saves\Native\
 
 | Gap | Detail |
 |-----|--------|
+| **SandBox intro cutscene** | Fixed in **006C** — see [sprint-006c-live-results.md](sprint-006c-live-results.md) |
 | **Story Mode** | Correctly blocked — no automation |
 | **F10 safety guards** | Backlog — use F9 / TreasurySnapshotNow for cert |
 | **Date-stamped save naming** | `BlacksmithGuild_DevStart*.sav` works; dated rename script optional |

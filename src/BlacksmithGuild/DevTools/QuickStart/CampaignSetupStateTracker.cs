@@ -25,6 +25,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _setupComplete;
         private static bool _loggedWaiting;
         private static bool _loggedQuickStartNotice;
+        private static bool _hasAnnouncedCutsceneNotice;
+        private static bool _hasAnnouncedCreationNotice;
+        private static bool _bootstrapArmed;
         private static bool _bootstrapUsed;
         private static bool _devSaveLoadUsed;
         private static string _devSaveName;
@@ -35,7 +38,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static string ActiveStateName => _lastActiveStateName;
 
-        public static bool IsTracking => DevToolsConfig.AutoSkipCharacterCreation && !_setupComplete;
+        public static bool IsBootstrapArmed =>
+            _bootstrapArmed && DevToolsConfig.AutoSkipCharacterCreation && !_setupComplete;
+
+        public static bool IsTracking =>
+            DevToolsConfig.AutoSkipCharacterCreation && !_setupComplete && (_bootstrapArmed || _bootstrapUsed);
 
         public static bool BootstrapUsed => _bootstrapUsed;
 
@@ -51,9 +58,39 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _setupComplete = false;
             _loggedWaiting = false;
             _loggedQuickStartNotice = false;
+            _hasAnnouncedCutsceneNotice = false;
+            _hasAnnouncedCreationNotice = false;
+            _bootstrapArmed = DevToolsConfig.AutoSkipCharacterCreation;
             _bootstrapUsed = false;
             _devSaveLoadUsed = false;
             _devSaveName = null;
+        }
+
+        public static void AnnounceCutsceneSkip()
+        {
+            if (_hasAnnouncedCutsceneNotice || !DevToolsConfig.AutoSkipCharacterCreation)
+            {
+                return;
+            }
+
+            _hasAnnouncedCutsceneNotice = true;
+            GuildLog.Display("TBG QUICKSTART: SandBox intro cutscene detected — auto-skipping.");
+        }
+
+        public static void AnnounceCreationAdvance()
+        {
+            if (_hasAnnouncedCreationNotice || !DevToolsConfig.AutoSkipCharacterCreation)
+            {
+                return;
+            }
+
+            _hasAnnouncedCreationNotice = true;
+            GuildLog.Display("TBG QUICKSTART: auto-advancing character creation.");
+        }
+
+        public static void AnnounceSetupStalled(SetupPhase phase)
+        {
+            GuildLog.Display($"TBG QUICKSTART: setup stalled at {phase} — see Phase1.log");
         }
 
         public static void MarkSandboxBootstrapStarted()
@@ -133,6 +170,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _loggedWaiting = false;
             }
 
+            AnnounceCreationAdvance();
             HandleCharacterCreationStage(state, stageName);
         }
 
@@ -307,13 +345,22 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static void LogWaitingOnce(string reason)
         {
-            if (_loggedWaiting || !AutoCharacterCreationConfig.TraceTransitions)
+            if (_loggedWaiting)
             {
                 return;
             }
 
             _loggedWaiting = true;
-            GuildLog.Info($"[TBG QUICKSTART] waiting at {_phase} ({reason}).", showInGame: false);
+
+            if (_phase is SetupPhase.IntroVideo or SetupPhase.SandboxVideo)
+            {
+                AnnounceCutsceneSkip();
+            }
+
+            if (AutoCharacterCreationConfig.TraceTransitions)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] waiting at {_phase} ({reason}).", showInGame: false);
+            }
         }
 
         private static string FormatPhase(SetupPhase phase, string subStage)

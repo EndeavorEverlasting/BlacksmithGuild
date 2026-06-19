@@ -60,8 +60,15 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static bool StartNewGamePrefix(MBGameManager gameLoader)
         {
-            if (!DevToolsConfig.AutoLoadDevSave || gameLoader == null)
+            if (!DevToolsConfig.AutoLoadDevSaveOnStartNewGame || !DevToolsConfig.AutoLoadDevSave || gameLoader == null)
             {
+                if (DevToolsConfig.AutoSkipCharacterCreation)
+                {
+                    GuildLog.Info(
+                        "[TBG QUICKSTART] StartNewGame: fresh bootstrap (dev save load disabled).",
+                        showInGame: false);
+                }
+
                 return true;
             }
 

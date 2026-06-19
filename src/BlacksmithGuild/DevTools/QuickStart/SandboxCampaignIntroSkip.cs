@@ -1,0 +1,272 @@
+using System;
+using System.Reflection;
+using System.Text;
+using HarmonyLib;
+using SandBox;
+using TaleWorlds.Core;
+using TaleWorlds.MountAndBlade;
+
+namespace BlacksmithGuild.DevTools.QuickStart
+{
+    internal static class SandboxCampaignIntroSkip
+    {
+        private static bool _probeLogged;
+        private static FieldInfo _playedIntroVideoField;
+        private static MethodInfo _launchCampaignIntroVideoMethod;
+        private static MethodInfo _simulateCharacterCreationMethod;
+
+        public static bool TryApply(Harmony harmony)
+        {
+            if (!DevToolsConfig.AutoSkipCharacterCreation || !AutoCharacterCreationConfig.SkipSandboxCampaignIntro)
+            {
+                return false;
+            }
+
+            ProbeSandBoxApi();
+
+            var applied = false;
+            applied |= TryApplyVideoPlaybackActivatePatch(harmony);
+            applied |= TryApplyCleanAndPushStatePatch(harmony);
+            applied |= TryApplyOnLoadFinishedIntroFlagPatch(harmony);
+            return applied;
+        }
+
+        private static void ProbeSandBoxApi()
+        {
+            if (_probeLogged)
+            {
+                return;
+            }
+
+            _probeLogged = true;
+
+            var managerType = typeof(SandBoxGameManager);
+            _playedIntroVideoField = AccessTools.Field(managerType, "_playedIntroVideo")
+                ?? AccessTools.Field(managerType, "_introVideoPlayed");
+            _launchCampaignIntroVideoMethod = AccessTools.Method(managerType, "LaunchCampaignIntroVideo");
+            _simulateCharacterCreationMethod = AccessTools.Method(managerType, "SimulateCharacterCreation");
+
+            var launchSandbox = AccessTools.Method(managerType, "LaunchSandboxCharacterCreation");
+            var activeState = GameSessionState.GetActiveStateName();
+
+            var detail = new StringBuilder();
+            detail.Append("introField=").Append(_playedIntroVideoField != null ? "found" : "missing");
+            detail.Append(" launchIntro=").Append(_launchCampaignIntroVideoMethod != null ? "found" : "missing");
+            detail.Append(" launchSandbox=").Append(launchSandbox != null ? "found" : "missing");
+            detail.Append(" simulateCreation=").Append(_simulateCharacterCreationMethod != null ? "found" : "missing");
+            detail.Append(" activeState=").Append(activeState ?? "null");
+
+            GuildLog.Info($"[TBG QUICKSTART] SandBox intro probe: {detail}", showInGame: false);
+        }
+
+        private static bool TryApplyOnLoadFinishedIntroFlagPatch(Harmony harmony)
+        {
+            if (_playedIntroVideoField == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                var target = AccessTools.DeclaredMethod(typeof(SandBoxGameManager), "OnLoadFinished");
+                var prefix = AccessTools.Method(typeof(SandboxCampaignIntroSkip), nameof(OnLoadFinishedIntroFlagPrefix));
+                harmony.Patch(target, prefix: new HarmonyMethod(prefix) { priority = Priority.First });
+                return true;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] intro flag patch failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        private static bool TryApplyVideoPlaybackActivatePatch(Harmony harmony)
+        {
+            try
+            {
+                var target = AccessTools.Method(typeof(VideoPlaybackState), "OnActivate");
+                if (target == null)
+                {
+                    return false;
+                }
+
+                var prefix = AccessTools.Method(typeof(SandboxCampaignIntroSkip), nameof(VideoPlaybackOnActivatePrefix));
+                harmony.Patch(target, prefix: new HarmonyMethod(prefix));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] VideoPlaybackState patch failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        private static bool TryApplyCleanAndPushStatePatch(Harmony harmony)
+        {
+            try
+            {
+                var target = AccessTools.Method(typeof(GameStateManager), "CleanAndPushState");
+                if (target == null)
+                {
+                    return false;
+                }
+
+                var postfix = AccessTools.Method(typeof(SandboxCampaignIntroSkip), nameof(CleanAndPushStatePostfix));
+                harmony.Patch(target, postfix: new HarmonyMethod(postfix));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] CleanAndPushState patch failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        private static void OnLoadFinishedIntroFlagPrefix(SandBoxGameManager __instance)
+        {
+            if (!ShouldSkipIntroVideo(__instance))
+            {
+                return;
+            }
+
+            try
+            {
+                _playedIntroVideoField?.SetValue(__instance, true);
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] intro flag set failed: {ex.Message}", showInGame: false);
+            }
+        }
+
+        private static bool VideoPlaybackOnActivatePrefix(object __instance)
+        {
+            if (!ShouldSkipIntroVideo(null))
+            {
+                return true;
+            }
+
+            if (!IsSkippableVideoState(__instance))
+            {
+                return true;
+            }
+
+            try
+            {
+                CampaignSetupStateTracker.AnnounceCutsceneSkip();
+                FinishVideoState(__instance);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] video skip failed: {ex.Message}", showInGame: false);
+                return true;
+            }
+        }
+
+        private static void CleanAndPushStatePostfix(GameState gameState)
+        {
+            if (!ShouldSkipIntroVideo(null) || gameState == null)
+            {
+                return;
+            }
+
+            if (!IsSkippableVideoState(gameState))
+            {
+                return;
+            }
+
+            try
+            {
+                CampaignSetupStateTracker.AnnounceCutsceneSkip();
+                FinishVideoState(gameState);
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] CleanAndPushState video skip failed: {ex.Message}", showInGame: false);
+            }
+        }
+
+        private static bool ShouldSkipIntroVideo(SandBoxGameManager instance)
+        {
+            if (!DevToolsConfig.AutoSkipCharacterCreation || !AutoCharacterCreationConfig.SkipSandboxCampaignIntro)
+            {
+                return false;
+            }
+
+            if (!CampaignSetupStateTracker.IsBootstrapArmed || CampaignSetupStateTracker.DevSaveLoadUsed)
+            {
+                return false;
+            }
+
+            if (instance != null && IsStoryModeGameManager(instance))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (instance != null)
+                {
+                    var loadingSavedGameField = AccessTools.Field(typeof(SandBoxGameManager), "_loadingSavedGame")
+                        ?? AccessTools.Field(typeof(SandBoxGameManager), "<LoadingSavedGame>k__BackingField");
+                    if (loadingSavedGameField != null && (bool)loadingSavedGameField.GetValue(instance))
+                    {
+                        return false;
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return true;
+        }
+
+        private static bool IsSkippableVideoState(object state)
+        {
+            if (state == null)
+            {
+                return false;
+            }
+
+            var typeName = state.GetType().Name;
+            if (typeName.IndexOf("Video", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            if (CampaignSetupStateTracker.BootstrapUsed)
+            {
+                return false;
+            }
+
+            try
+            {
+                var path = AccessTools.Property(state.GetType(), "VideoPath")?.GetValue(state) as string;
+                if (!string.IsNullOrEmpty(path)
+                    && path.IndexOf("campaign", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+
+            return CampaignSetupStateTracker.IsBootstrapArmed;
+        }
+
+        private static void FinishVideoState(object videoState)
+        {
+            var onFinished = AccessTools.Method(videoState.GetType(), "OnVideoFinished");
+            onFinished?.Invoke(videoState, null);
+        }
+
+        private static bool IsStoryModeGameManager(SandBoxGameManager instance)
+        {
+            return instance != null
+                && instance.GetType().FullName?.IndexOf("StoryMode", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+    }
+}

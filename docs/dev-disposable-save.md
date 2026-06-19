@@ -19,19 +19,28 @@ The repo does **not** commit `.sav` binaries — only this Documents path is doc
 ## Daily dev loop (preferred)
 
 ```text
-Forge.cmd → launcher opens → Play or Continue → map ready (auto dev save or auto character)
+Forge.cmd → launcher opens → Continue → map ready
 ```
 
 | Step | Action |
 |------|--------|
 | 1 | Close Bannerlord if open |
-| 2 | Double-click **`Forge.cmd`** (build + install + launcher) |
+| 2 | Double-click **`Forge.cmd`** (build + install + open launcher) |
 | 3 | **Continue** — loads `BlacksmithGuild_DevStart*.sav` (pinned as most recent by Forge) |
-| 4 | **Play → SandBox** — auto-loads dev save if present; otherwise auto-skips character creation |
-| 5 | Wait for `TBG READY` or `TBG DEVSAVE: map ready` |
-| 6 | Run dev tests (F7, inbox cert, etc.) |
+| 4 | Wait for `TBG READY` or `TBG DEVSAVE: map ready` |
+| 5 | Run dev tests (F7, inbox cert, etc.) |
 
-**PASS target:** map ready in under ~60s, zero manual character-creation clicks when dev save missing.
+**PASS target:** map ready in under ~60s via Continue.
+
+## New Campaign vs Continue
+
+| Path | Behavior (006C+) |
+|------|------------------|
+| **Continue** | Loads pinned dev save — daily dev loop |
+| **New Campaign → SandBox** | Fresh bootstrap: intro skip + auto character creation + 006B auto-build |
+| **Play → SandBox** | Same as New Campaign (dev save **not** auto-loaded on `StartNewGame`) |
+
+To re-enable dev-save hijack on Play/New Campaign (legacy 003C behavior), set `DevToolsConfig.AutoLoadDevSaveOnStartNewGame = true`.
 
 ## Mod checkbox rules
 
@@ -45,7 +54,7 @@ Forge.cmd → launcher opens → Play or Continue → map ready (auto dev save o
 ## When to use New Campaign instead
 
 - First-time creation of the dev save (one-time)
-- Testing Sprint 003C Phase 2 auto character creation (`DevToolsConfig.AutoSkipCharacterCreation`)
+- Testing Sprint 006C SandBox intro skip + visible QuickStart bootstrap
 - Verifying a clean sandbox bootstrap after game updates
 
 ## Retest checklist
@@ -60,10 +69,10 @@ Forge.cmd → launcher opens → Play or Continue → map ready (auto dev save o
 **Phase 2 (auto New Campaign — when enabled):**
 
 1. New Sandbox with mod ON
-2. No manual character-creation clicks
+2. No manual character-creation clicks; intro cutscene auto-skipped
 3. Log shows `[TBG QUICKSTART] transition:` lines
-4. In-game notice: `TBG QUICKSTART: default character applied.`
-5. Then `TBG READY`
+4. In-game notice: at least one `TBG QUICKSTART:` during setup
+5. Map ready: `TBG QUICKSTART: sandbox character auto-applied.` then `TBG READY`
 
 ## Output files to analyze
 
