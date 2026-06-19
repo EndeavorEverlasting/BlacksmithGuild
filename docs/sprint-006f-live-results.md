@@ -2,7 +2,9 @@
 
 ## Verdict
 
-**Code shipped** — live cert pending (Forge.cmd zero-click through Family + subsequent narrative menus)
+**FAIL** — live cert blocked on Family screen (OnCondition invoked without manager; no TrySwitchToNextMenu)
+
+Superseded by [sprint-006g-live-results.md](sprint-006g-live-results.md).
 
 ## Scope
 
@@ -90,6 +92,6 @@ Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Status.json
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap (full map) | **PENDING** | | 006F narrative sprint |
+| A — Forge.cmd bootstrap (full map) | **FAIL** | 2026-06-19 | `menu=0 no valid option (36 total) menuCount=6`; stalled 5s at CharacterCreationNarrativeStage |
 | B — ForgeContinue.cmd regression | **PENDING** | | Should be unaffected |
 | 006E launch funnel | **PARTIAL PASS** | 2026-06-18 | PLAY, Safe Mode, culture, face reached Family |

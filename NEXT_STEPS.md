@@ -1,6 +1,6 @@
 # Next Steps
 
-Zero-click forge loop first. Economics (005E) after 006E live cert.
+Zero-click forge loop first. Economics (005E) after 006G live cert PASS.
 
 ---
 
@@ -14,8 +14,9 @@ Zero-click forge loop first. Economics (005E) after 006E live cert.
 | 006C | SandBox intro skip + visible bootstrap | **Shipped** |
 | 006D | v1.4.6 culture/narrative hotfix | **Shipped** |
 | **006E** | Full launch funnel (Forge → map) | **PARTIAL PASS** — launch + culture; narrative blocked Family |
-| **006F** | Narrative menu sprint-through | **Shipped** — live cert pending |
-| **005E** | Orders, inventory, doctrine tuning | **After 006F PASS** |
+| **006F** | Narrative menu sprint-through | **FAIL** — OnCondition(null), 36 options all invalid |
+| **006G** | Family / narrative API fix | **Shipped** — live cert pending |
+| **005E** | Orders, inventory, doctrine tuning | **After 006G PASS** |
 
 ---
 
@@ -25,12 +26,12 @@ Zero-click forge loop first. Economics (005E) after 006E live cert.
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.11` |
-| Current sprint plan | [docs/sprint-006f-live-results.md](docs/sprint-006f-live-results.md) |
+| Current sprint plan | [docs/sprint-006g-live-results.md](docs/sprint-006g-live-results.md) |
 | Open PRs | None |
 
 ---
 
-## Next actions (user — 006F live cert)
+## Next actions (user — 006G live cert)
 
 **Path A — Bootstrap (zero-click through map):**
 
@@ -40,7 +41,7 @@ Close Bannerlord → Forge.cmd
 → SandBoxNewGame → culture → narrative menus → map → TBG READY
 ```
 
-Check logs — see [sprint-006f-live-results.md](docs/sprint-006f-live-results.md).
+Check logs — see [sprint-006g-live-results.md](docs/sprint-006g-live-results.md).
 
 ---
 
