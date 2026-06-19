@@ -58,7 +58,7 @@ launcher-auto: Bannerlord.exe detected — handoff to in-game mod
 using vanilla character creation launch; Poll will auto-advance stages.
 ```
 
-**Must NOT see:** 40s idle on `InitialState`; `stage stalled for 5s at CharacterCreationCultureStage`.
+**Must NOT see:** crash reporter `* _*` dialog blocking UI; `Bannerlord.exe running but crash reporter visible — waiting` indefinitely; `ExecuteInitialStateOptionWithId(SandBoxNewGame) failed` without actionable inner reason.
 
 ---
 
@@ -84,6 +84,8 @@ Close Bannerlord → ForgeContinue.cmd
 <Bannerlord install root>\
   BlacksmithGuild_Launch.log
   BlacksmithGuild_LaunchIntent.json   ← removed after successful menu auto-select
+  rgl_log_*.txt                       ← after crash; via -CollectDiagnostics
+  diagnostic-summary.txt
 
 Documents\Mount and Blade II Bannerlord\
   BlacksmithGuild_LaunchIntent.json   ← dual-written by Forge; same consume rules
@@ -99,6 +101,31 @@ Documents\Mount and Blade II Bannerlord\
 |-----|---------|-----|
 | Wrong menu IDs | Intent loaded, probe showed `SandBoxNewGame`, no auto-click | Use `SandBoxNewGame` / `ContinueCampaign` fallback chains |
 | Culture cast | Stall at culture menu 5s | `GetCultures()` returns `IEnumerable`, not `MBReadOnlyList` |
+| Add-Type compile | `[FAIL] open_launcher` — `Invalid expression term 'object'` | C# 5-compatible `out pattern` + `WindowsBase` assembly ref in `launcher-auto-nav.ps1` |
+| Layer A no PLAY click | Launch.log stops at `intent=play`; UIA searched desktop root only | Launcher-scoped `FindLauncherRoot()` + `ClickButtonByNameInLauncher()` with name variants |
+| Crash reporter blocks funnel | TaleWorlds `* _*` dialog; user must click Yes/No manually | `HasCrashReporterDialog()` + `ClickCrashReporterNo()`; defer handoff until dismissed |
+| Menu execute too early | `ExecuteInitialStateOptionWithId` throws `TargetInvocationException` | Strict `InitialState` execute gate + 1.0s warmup; log `InnerException` message |
+
+---
+
+## Crash reporter diagnostics
+
+If the TaleWorlds crash reporter (`* _*` — "The application faced a problem...") appears during cert:
+
+1. Layer A should auto-click **No** (skip upload; faster dev loop). Use **Yes** manually when filing bug reports.
+2. Collect engine logs:
+
+```powershell
+.\forge.ps1 -CollectDiagnostics
+```
+
+3. Analyze under Bannerlord install root:
+
+```text
+rgl_log_*.txt
+diagnostic-summary.txt
+BlacksmithGuild_Launch.log
+```
 
 ---
 
@@ -106,12 +133,15 @@ Documents\Mount and Blade II Bannerlord\
 
 | Gap | Notes |
 |-----|--------|
+| Engine crash root cause | Crash reporter dismiss unblocks UI; may need `-CollectDiagnostics` for `rgl_log` |
 | Tutorial skip | Out of scope |
 | Launch without Forge | No Layer A; no intent file → in-game auto skipped |
-| DPI / multi-monitor | UI Automation may miss buttons; use `-LaunchManual` fallback |
+| DPI / multi-monitor | Launcher-scoped UIA helps; may still miss; timeout logs visible launcher buttons |
 | CAUTION as GPU overlay | Enter-key fallback if UIA cannot find Confirm |
 | Launcher UI redesign | Game update may change button names; probe logs all visible IDs |
 | Steam vs MS Store path | Script uses csproj `GameFolder`; document if paths differ |
+| Click No loses crash telemetry | Dev loop priority; document Yes for bug reports |
+| PLAY name differs by locale | `ClickButtonByNameInLauncher` tries case variants; timeout logs button names |
 
 ## Risks
 
@@ -122,16 +152,8 @@ Documents\Mount and Blade II Bannerlord\
 | Wrong Forge entry | Forge.cmd vs ForgeContinue.cmd documented in dev-disposable-save |
 | Option ID drift | Fallback chains + probe log |
 | Culture list empty on first tick | Poll retries each tick; failure logged once |
-
----
-
-## v0.0.11 hotfix root causes (fixed)
-
-| Bug | Symptom | Fix |
-|-----|---------|-----|
-| Wrong menu IDs | Intent loaded, probe showed `SandBoxNewGame`, no auto-click | Use `SandBoxNewGame` / `ContinueCampaign` fallback chains |
-| Culture cast | Stall at culture menu 5s | `GetCultures()` returns `IEnumerable`, not `MBReadOnlyList` |
-| Add-Type compile | `[FAIL] open_launcher` — `Invalid expression term 'object'` | C# 5-compatible `out pattern` + `WindowsBase` assembly ref in `launcher-auto-nav.ps1` |
+| SandBoxNewGame still throws after timing fix | `InnerException` log guides next fix |
+| Handoff while crash dialog visible | Block handoff until `HasCrashReporterDialog()` is false |
 
 ---
 
@@ -139,6 +161,6 @@ Documents\Mount and Blade II Bannerlord\
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap | **PENDING** | | Layer A compile fix verified; full zero-click cert not yet run |
+| A — Forge.cmd bootstrap | **PENDING** | | v0.0.11-G hotfix: crash reporter + launcher PLAY + InitialState warmup |
 | B — ForgeContinue.cmd | **PENDING** | | |
 | Add-Type compile smoke | **PASS** | 2026-06-18 | `launcher-auto-nav.ps1` loads UIAHelper; logs `intent=play` |

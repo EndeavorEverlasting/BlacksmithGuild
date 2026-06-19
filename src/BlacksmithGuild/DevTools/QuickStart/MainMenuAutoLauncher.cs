@@ -44,7 +44,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _optionsProbed;
         private static bool _loggedMainMenuTimeout;
         private static float _mainMenuWaitSeconds;
+        private static float _initialStateStableSeconds;
         private static List<string> _intentSourcePaths = new List<string>();
+
+        private const float InitialStateWarmupSeconds = 1.0f;
 
         public static bool HasActiveIntent => !string.IsNullOrEmpty(_launchIntent) && !_intentConsumed;
 
@@ -55,6 +58,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _optionsProbed = false;
             _loggedMainMenuTimeout = false;
             _mainMenuWaitSeconds = 0f;
+            _initialStateStableSeconds = 0f;
             _intentSourcePaths = new List<string>();
         }
 
@@ -87,6 +91,20 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             _mainMenuWaitSeconds += dt;
             ProbeOptionsOnce();
+
+            if (IsReadyForMenuExecute())
+            {
+                _initialStateStableSeconds += dt;
+            }
+            else
+            {
+                _initialStateStableSeconds = 0f;
+            }
+
+            if (!IsReadyForMenuExecute() || _initialStateStableSeconds < InitialStateWarmupSeconds)
+            {
+                return;
+            }
 
             if (string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
@@ -162,6 +180,19 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     && (string.IsNullOrEmpty(activeStateName)
                         || activeStateName == "null"
                         || activeStateName == "unknown");
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool IsReadyForMenuExecute()
+        {
+            try
+            {
+                var activeStateName = GameSessionState.GetActiveStateName();
+                return string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase);
             }
             catch
             {
@@ -262,6 +293,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
                 _executeInitialStateOptionWithIdMethod.Invoke(module, new object[] { optionId });
                 return true;
+            }
+            catch (TargetInvocationException ex)
+            {
+                var inner = ex.InnerException?.Message ?? "no inner";
+                GuildLog.Info($"[TBG QUICKSTART] ExecuteInitialStateOptionWithId({optionId}) failed: {inner}", showInGame: false);
+                return false;
             }
             catch (Exception ex)
             {

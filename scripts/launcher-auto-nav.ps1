@@ -27,6 +27,7 @@ function Write-LaunchLog {
 if (-not (Get-Module -Name UIAHelper -ErrorAction SilentlyContinue)) {
     $uiaHelperSource = @'
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -34,6 +35,9 @@ using System.Windows.Automation;
 
 public static class UIAHelper
 {
+    private const string LauncherProcessName = "TaleWorlds.MountAndBlade.Launcher";
+    private const string CrashReporterTitle = "* _*";
+
     public static bool ClickButtonByName(string name, bool requireEnabled = true)
     {
         if (string.IsNullOrWhiteSpace(name)) return false;
@@ -42,6 +46,107 @@ public static class UIAHelper
         if (element == null) return false;
         if (requireEnabled && !element.Current.IsEnabled) return false;
         return InvokeElement(element);
+    }
+
+    public static string ClickButtonByNameInLauncher(string[] names, bool requireEnabled = true)
+    {
+        if (names == null || names.Length == 0) return null;
+
+        var launcherRoot = FindLauncherRoot();
+        if (launcherRoot != null)
+        {
+            foreach (var name in names)
+            {
+                if (TryClickButtonInScope(launcherRoot, name, requireEnabled))
+                {
+                    return name;
+                }
+            }
+        }
+
+        foreach (var name in names)
+        {
+            if (ClickButtonByName(name, requireEnabled))
+            {
+                return name;
+            }
+        }
+
+        return null;
+    }
+
+    public static bool HasCrashReporterDialog()
+    {
+        var hwnd = FindWindow(null, CrashReporterTitle);
+        if (hwnd != IntPtr.Zero) return true;
+
+        try
+        {
+            var textCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Text);
+            var textElements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, textCondition);
+            foreach (AutomationElement element in textElements)
+            {
+                var name = element.Current.Name ?? string.Empty;
+                if (name.IndexOf("application faced a problem", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+        }
+        catch { }
+
+        return false;
+    }
+
+    public static bool ClickCrashReporterNo()
+    {
+        var hwnd = FindWindow(null, CrashReporterTitle);
+        if (hwnd != IntPtr.Zero)
+        {
+            SetForegroundWindow(hwnd);
+            Thread.Sleep(120);
+            if (ClickButtonByName("No", false)) return true;
+        }
+
+        try
+        {
+            var buttonCondition = new AndCondition(
+                new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button),
+                new PropertyCondition(AutomationElement.NameProperty, "No"));
+            var button = AutomationElement.RootElement.FindFirst(TreeScope.Descendants, buttonCondition);
+            if (button != null && InvokeElement(button)) return true;
+        }
+        catch { }
+
+        return false;
+    }
+
+    public static string LogVisibleLauncherButtons()
+    {
+        var names = new List<string>();
+        var launcherRoot = FindLauncherRoot();
+        if (launcherRoot == null) return "launcher window not found";
+
+        try
+        {
+            var buttonCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
+            var buttons = launcherRoot.FindAll(TreeScope.Descendants, buttonCondition);
+            foreach (AutomationElement button in buttons)
+            {
+                var name = button.Current.Name;
+                if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                {
+                    names.Add(name);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            return "button scan failed: " + ex.Message;
+        }
+
+        if (names.Count == 0) return "no launcher buttons visible";
+        return string.Join(", ", names.ToArray());
     }
 
     public static bool ClickSafeModeNo()
@@ -59,6 +164,43 @@ public static class UIAHelper
             TreeScope.Descendants,
             new PropertyCondition(AutomationElement.NameProperty, "CAUTION"));
         return caution != null;
+    }
+
+    private static AutomationElement FindLauncherRoot()
+    {
+        var processes = Process.GetProcessesByName(LauncherProcessName);
+        foreach (var process in processes)
+        {
+            try
+            {
+                var hwnd = process.MainWindowHandle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    return AutomationElement.FromHandle(hwnd);
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static bool TryClickButtonInScope(AutomationElement scope, string name, bool requireEnabled)
+    {
+        if (scope == null || string.IsNullOrWhiteSpace(name)) return false;
+
+        try
+        {
+            var condition = new PropertyCondition(AutomationElement.NameProperty, name);
+            var element = scope.FindFirst(TreeScope.Descendants, condition);
+            if (element == null) return false;
+            if (requireEnabled && !element.Current.IsEnabled) return false;
+            return InvokeElement(element);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static bool InvokeElement(AutomationElement element)
@@ -122,13 +264,33 @@ Write-LaunchLog "intent=$LaunchIntent"
 $clickedPlayContinue = $false
 $clickedCaution = $false
 $clickedSafeMode = $false
+$clickedCrashReporter = $false
 $deadline = (Get-Date).AddSeconds($TimeoutSec)
-$targetButton = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
+
+if ($LaunchIntent -eq 'continue') {
+    $targetButtonNames = @('CONTINUE', 'Continue')
+} else {
+    $targetButtonNames = @('PLAY', 'Play')
+}
 
 while ((Get-Date) -lt $deadline) {
     if (Get-Process -Name $gameExeName -ErrorAction SilentlyContinue) {
-        Write-LaunchLog 'Bannerlord.exe detected — handoff to in-game mod'
-        return
+        if (-not [UIAHelper]::HasCrashReporterDialog()) {
+            Write-LaunchLog 'Bannerlord.exe detected — handoff to in-game mod'
+            return
+        }
+        Write-LaunchLog 'Bannerlord.exe running but crash reporter visible — waiting'
+    }
+
+    if ([UIAHelper]::HasCrashReporterDialog()) {
+        if ([UIAHelper]::ClickCrashReporterNo()) {
+            if (-not $clickedCrashReporter) {
+                Write-LaunchLog 'clicked crash reporter No'
+                $clickedCrashReporter = $true
+            }
+        }
+        Start-Sleep -Milliseconds $PollMs
+        continue
     }
 
     if ([UIAHelper]::ClickSafeModeNo()) {
@@ -158,8 +320,10 @@ while ((Get-Date) -lt $deadline) {
     }
 
     if (-not $clickedPlayContinue) {
-        if ([UIAHelper]::ClickButtonByName($targetButton)) {
-            Write-LaunchLog "clicked $targetButton"
+        $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
+        if ($matchedName) {
+            $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
+            Write-LaunchLog "clicked $displayName ($matchedName)"
             $clickedPlayContinue = $true
         }
     }
@@ -167,4 +331,6 @@ while ((Get-Date) -lt $deadline) {
     Start-Sleep -Milliseconds $PollMs
 }
 
+$visibleButtons = [UIAHelper]::LogVisibleLauncherButtons()
+Write-LaunchLog "timeout: visible launcher buttons: $visibleButtons"
 throw "launcher-auto-nav timed out after ${TimeoutSec}s (see $logPath)"
