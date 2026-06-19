@@ -13,7 +13,7 @@ Zero-click forge loop first. Economics (005E) after 006E live cert.
 | 006A/B | Auto protagonist build + profiles | **Shipped** — live cert pending |
 | 006C | SandBox intro skip + visible bootstrap | **Shipped** |
 | 006D | v1.4.6 culture/narrative hotfix | **Shipped** |
-| **006E** | Full launch funnel (Forge → map) | **Shipped** — **live cert pending** |
+| **006E** | Full launch funnel (Forge → map) | **Hotfix v0.0.11 shipped** — **live cert pending** |
 | **005E** | Orders, inventory, doctrine tuning | **After 006E PASS** |
 
 ---
@@ -23,7 +23,7 @@ Zero-click forge loop first. Economics (005E) after 006E live cert.
 | Field | Value |
 |-------|-------|
 | Branch | `main` |
-| Version | `v0.0.10` |
+| Version | `v0.0.11` |
 | Current sprint plan | [docs/plans/006e-main-menu-auto-launch.plan.md](docs/plans/006e-main-menu-auto-launch.plan.md) |
 | Open PRs | None |
 

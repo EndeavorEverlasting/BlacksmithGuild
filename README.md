@@ -33,7 +33,7 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 | Item | Status |
 |------|--------|
-| Module version | **v0.0.10** |
+| Module version | **v0.0.11** |
 | Sprint 004A report formatting | **Shipped** — structured F7 / Treasury / cert blocks |
 | Sprint 004B stub recommendations | **LIVE CERT PASS** (2026-06-18) — [docs/sprint-004-live-results.md](docs/sprint-004-live-results.md) |
 | Sprint 005C recipe probe | **Shipped** — [docs/sprint-005c-live-results.md](docs/sprint-005c-live-results.md) |

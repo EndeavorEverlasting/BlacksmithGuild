@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
@@ -23,6 +25,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static MethodInfo _legacyRunConsequenceMethod;
         private static MethodInfo _applyCultureMethod;
         private static bool _probeLogged;
+        private static bool _cultureFailureLogged;
 
         public static Type StateType => EnsureBindings();
 
@@ -67,24 +70,38 @@ namespace BlacksmithGuild.DevTools.QuickStart
             var manager = GetCharacterCreation(state);
             if (content == null || manager == null)
             {
+                LogCultureFailureOnce("content or manager is null");
                 return false;
             }
 
             if (TryGetSelectedCulture(content) != null)
             {
                 NextStage(state);
+                _cultureFailureLogged = false;
                 return true;
             }
 
             var cultures = TryGetCultures(content);
             if (cultures == null || cultures.Count == 0)
             {
+                LogCultureFailureOnce($"GetCultures returned {(cultures == null ? "null" : "empty")}");
                 return false;
             }
 
             TrySetSelectedCulture(content, cultures[0], manager);
             TryApplyCulture(content, manager);
+
+            if (TryGetSelectedCulture(content) == null)
+            {
+                LogCultureFailureOnce($"SelectedCulture still null after SetSelectedCulture ({cultures[0]?.Name})");
+                return false;
+            }
+
             NextStage(state);
+            _cultureFailureLogged = false;
+            GuildLog.Info(
+                $"[TBG QUICKSTART] culture auto-selected: {cultures[0]?.Name} (count={cultures.Count})",
+                showInGame: false);
             return true;
         }
 
@@ -285,19 +302,47 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
-        private static MBReadOnlyList<CultureObject> TryGetCultures(object content)
+        private static List<CultureObject> TryGetCultures(object content)
         {
             try
             {
                 var method = content.GetType().GetMethod(
                     "GetCultures",
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                return method?.Invoke(content, null) as MBReadOnlyList<CultureObject>;
-            }
-            catch
-            {
+                var result = method?.Invoke(content, null);
+                if (result == null)
+                {
+                    return null;
+                }
+
+                if (result is IEnumerable<CultureObject> typedEnumerable)
+                {
+                    return typedEnumerable.Where(culture => culture != null).ToList();
+                }
+
+                if (result is IEnumerable enumerable)
+                {
+                    return enumerable.Cast<CultureObject>().Where(culture => culture != null).ToList();
+                }
+
                 return null;
             }
+            catch (Exception ex)
+            {
+                LogCultureFailureOnce($"GetCultures invoke failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static void LogCultureFailureOnce(string detail)
+        {
+            if (_cultureFailureLogged)
+            {
+                return;
+            }
+
+            _cultureFailureLogged = true;
+            GuildLog.Info($"[TBG QUICKSTART] culture skip failed: {detail}", showInGame: false);
         }
 
         private static void TrySetSelectedCulture(object content, CultureObject culture, object characterCreation)

@@ -14,6 +14,22 @@ namespace BlacksmithGuild.DevTools.QuickStart
     internal static class MainMenuAutoLauncher
     {
         private const string IntentFileName = "BlacksmithGuild_LaunchIntent.json";
+        private const float MainMenuTimeoutSeconds = 30f;
+
+        private static readonly string[] PlayOptionIds =
+        {
+            "SandBoxNewGame",
+            "SandBox",
+            "NewGame",
+            "StoryModeNewGame"
+        };
+
+        private static readonly string[] ContinueOptionIds =
+        {
+            "ContinueCampaign",
+            "Continue",
+            "CampaignResumeGame"
+        };
 
         private static MethodInfo _getInitialStateOptionsMethod;
         private static MethodInfo _getInitialStateOptionWithIdMethod;
@@ -26,9 +42,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static string _launchIntent;
         private static bool _intentConsumed;
         private static bool _optionsProbed;
-        private static bool _executedPrimary;
-        private static bool _executedSandBox;
-        private static float _sandBoxWaitSeconds;
+        private static bool _loggedMainMenuTimeout;
+        private static float _mainMenuWaitSeconds;
+        private static List<string> _intentSourcePaths = new List<string>();
 
         public static bool HasActiveIntent => !string.IsNullOrEmpty(_launchIntent) && !_intentConsumed;
 
@@ -37,9 +53,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _launchIntent = null;
             _intentConsumed = false;
             _optionsProbed = false;
-            _executedPrimary = false;
-            _executedSandBox = false;
-            _sandBoxWaitSeconds = 0f;
+            _loggedMainMenuTimeout = false;
+            _mainMenuWaitSeconds = 0f;
+            _intentSourcePaths = new List<string>();
         }
 
         public static void Poll(float dt)
@@ -66,62 +82,36 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             if (!IsOnMainMenu())
             {
-                if (_executedPrimary && string.Equals(_launchIntent, "play", StringComparison.OrdinalIgnoreCase))
-                {
-                    _sandBoxWaitSeconds += dt;
-                    if (_sandBoxWaitSeconds > 30f && !_executedSandBox)
-                    {
-                        GuildLog.Info("[TBG QUICKSTART] SandBox auto-select timed out on main menu.", showInGame: false);
-                        _intentConsumed = true;
-                    }
-                }
-
                 return;
             }
 
+            _mainMenuWaitSeconds += dt;
             ProbeOptionsOnce();
 
             if (string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
-                if (TryExecuteOption("Continue"))
+                if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
                 {
-                    GuildLog.Info("[TBG QUICKSTART] auto-selecting Continue Campaign.", showInGame: false);
-                    GuildLog.Display("TBG QUICKSTART: auto-selecting Continue Campaign.");
-                    _intentConsumed = true;
+                    CompleteIntent($"auto-selecting {selectedId} (Continue Campaign).");
                 }
-
-                return;
             }
-
-            if (!_executedPrimary)
+            else if (TryExecuteFirstAvailable(PlayOptionIds, "SandBox", out var playId))
             {
-                if (TryExecuteOption("SandBox"))
-                {
-                    GuildLog.Info("[TBG QUICKSTART] auto-selecting SandBox (direct).", showInGame: false);
-                    GuildLog.Display("TBG QUICKSTART: auto-selecting SandBox.");
-                    _executedPrimary = true;
-                    _executedSandBox = true;
-                    _intentConsumed = true;
-                    return;
-                }
-
-                if (TryExecuteOption("NewGame"))
-                {
-                    GuildLog.Info("[TBG QUICKSTART] auto-selecting New Campaign.", showInGame: false);
-                    GuildLog.Display("TBG QUICKSTART: auto-selecting New Campaign.");
-                    _executedPrimary = true;
-                }
-
-                return;
+                CompleteIntent($"auto-selecting {playId} (SandBox).");
             }
-
-            if (!_executedSandBox && TryExecuteOption("SandBox"))
+            else if (_mainMenuWaitSeconds >= MainMenuTimeoutSeconds && !_loggedMainMenuTimeout)
             {
-                GuildLog.Info("[TBG QUICKSTART] auto-selecting SandBox.", showInGame: false);
-                GuildLog.Display("TBG QUICKSTART: auto-selecting SandBox.");
-                _executedSandBox = true;
-                _intentConsumed = true;
+                _loggedMainMenuTimeout = true;
+                LogVisibleOptions("main menu auto-select timed out");
             }
+        }
+
+        private static void CompleteIntent(string message)
+        {
+            GuildLog.Info($"[TBG QUICKSTART] {message}", showInGame: false);
+            GuildLog.Display($"TBG QUICKSTART: {message}");
+            DeleteIntentFiles();
+            _intentConsumed = true;
         }
 
         private static bool EnsureBindings()
@@ -155,7 +145,6 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static object GetCurrentModule()
         {
-            var moduleType = AccessTools.TypeByName("TaleWorlds.MountAndBlade.Module");
             return _currentModuleProperty?.GetValue(null, null);
         }
 
@@ -188,13 +177,17 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             _optionsProbed = true;
+            LogVisibleOptions("main menu probe");
+        }
 
+        private static void LogVisibleOptions(string label)
+        {
             try
             {
                 var module = GetCurrentModule();
                 if (module == null)
                 {
-                    GuildLog.Info("[TBG QUICKSTART] main menu probe: Module.CurrentModule is null.", showInGame: false);
+                    GuildLog.Info($"[TBG QUICKSTART] {label}: Module.CurrentModule is null.", showInGame: false);
                     return;
                 }
 
@@ -202,20 +195,17 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 var options = optionsObject?.Cast<object>().ToList() ?? new List<object>();
                 if (options.Count == 0)
                 {
-                    GuildLog.Info("[TBG QUICKSTART] main menu probe: no options.", showInGame: false);
+                    GuildLog.Info($"[TBG QUICKSTART] {label}: no options.", showInGame: false);
                     return;
                 }
 
-                var summary = string.Join(
-                    " ",
-                    options.Select(DescribeOption));
-
+                var summary = string.Join(" ", options.Select(DescribeOption));
                 GuildLog.Info($"[TBG QUICKSTART] launch intent: {_launchIntent}", showInGame: false);
-                GuildLog.Info($"[TBG QUICKSTART] main menu probe: {summary}", showInGame: false);
+                GuildLog.Info($"[TBG QUICKSTART] {label}: {summary}", showInGame: false);
             }
             catch (Exception ex)
             {
-                GuildLog.Info($"[TBG QUICKSTART] main menu probe failed: {ex.Message}", showInGame: false);
+                GuildLog.Info($"[TBG QUICKSTART] {label} failed: {ex.Message}", showInGame: false);
             }
         }
 
@@ -224,6 +214,23 @@ namespace BlacksmithGuild.DevTools.QuickStart
             var id = _optionIdProperty?.GetValue(option) as string ?? "?";
             var hidden = InvokeBoolFunc(_optionIsHiddenProperty?.GetValue(option));
             return $"{id}={(hidden ? "hidden" : "visible")}";
+        }
+
+        private static bool TryExecuteFirstAvailable(string[] optionIds, string label, out string selectedId)
+        {
+            selectedId = null;
+            foreach (var optionId in optionIds)
+            {
+                if (!TryExecuteOption(optionId))
+                {
+                    continue;
+                }
+
+                selectedId = optionId;
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryExecuteOption(string optionId)
@@ -332,13 +339,36 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     }
 
                     _launchIntent = match.Groups["intent"].Value.ToLowerInvariant();
-                    File.Delete(path);
-                    GuildLog.Info($"[TBG QUICKSTART] consumed launch intent from {path}", showInGame: false);
+                    if (!_intentSourcePaths.Contains(path, StringComparer.OrdinalIgnoreCase))
+                    {
+                        _intentSourcePaths.Add(path);
+                    }
+
+                    GuildLog.Info($"[TBG QUICKSTART] loaded launch intent={_launchIntent} from {path}", showInGame: false);
                     return;
                 }
                 catch (Exception ex)
                 {
                     GuildLog.Info($"[TBG QUICKSTART] launch intent read failed ({path}): {ex.Message}", showInGame: false);
+                }
+            }
+        }
+
+        private static void DeleteIntentFiles()
+        {
+            foreach (var path in GetIntentCandidatePaths().Concat(_intentSourcePaths).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                        GuildLog.Info($"[TBG QUICKSTART] removed launch intent file {path}", showInGame: false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GuildLog.Info($"[TBG QUICKSTART] launch intent delete failed ({path}): {ex.Message}", showInGame: false);
                 }
             }
         }
