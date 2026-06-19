@@ -2,13 +2,35 @@
 
 ## Verdict
 
-**LIVE CERT PENDING** — 006I hotfix (3758335) partial PASS; **006I-2 shipped** (creation-phase skip gate + launcher handoff). User must re-run Paths A/B/C.
+**SHIPPED — LIVE CERT PENDING**
+
+006I-2 implemented, built (`forge.ps1` PASS), committed at `6fb5825`. Live cert Paths A/B/C not yet run.
+
+Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md)
+
+## Repo context
+
+| Field | Value |
+|-------|-------|
+| HEAD | `6fb5825` |
+| Version | `v0.0.11` |
+| Remote | 4 commits behind local `main` — treat local git as authoritative |
+| Build | PASS via `forge.ps1`; Release DLL installed to Bannerlord Modules |
+
+## Sprint status
+
+| Sprint | Status |
+|--------|--------|
+| 006H | LIVE CERT PASS. Do not regress narrative/bootstrap. |
+| 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
+| 006I-2 | SHIPPED. Live cert PENDING. |
+| 005E economics | NEXT. No plan file yet. Gated on 006I cert. |
 
 ## 006I-2 (post-regression from live cert FAIL)
 
 **Symptoms (00:57 session):**
 
-1. **Launcher:** `launcher-auto-nav timed out after 120s` — game already running; no `Bannerlord.exe detected — handoff` log.
+1. **Launcher:** `launcher-auto-nav timed out after 120s` — game already running; no handoff log.
 2. **In-game:** `intro skip via CleanAndPushState (count=2)` during Options stage → creation reset loop; no TBG READY.
 
 **Root causes:**
@@ -16,7 +38,7 @@
 - `CleanAndPushStatePostfix` fired campaign video skip while `Phase == CharacterCreation` (Options subStage).
 - `HasCrashReporterDialog()` false-positive blocked handoff for full timeout despite `Bannerlord.exe` running.
 
-**Fix (006I-2):**
+**Fix (006I-2, commit `6fb5825`):**
 
 | Piece | Location | Behavior |
 |-------|----------|----------|
@@ -30,13 +52,13 @@
 
 Plan: [docs/plans/006i-2-creation-skip-gate.plan.md](plans/006i-2-creation-skip-gate.plan.md)
 
-## Hotfix (006I — post-006H regression)
+## Hotfix (006I — post-006H regression, commit `3758335`)
 
 **Symptom:** Forge.cmd reached cutscene but did not skip; no TBG QUICKSTART notices; stuck before map.
 
 **Root cause (Phase1.log):** `bootstrap disarmed: returned to main menu` fired on same tick as `auto-selecting SandBoxNewGame`.
 
-**Fix (3758335):**
+**Fix:**
 
 - `MainMenuAutoLauncher.IsForwardLaunchInProgress` blocks disarm during SandBoxNewGame transition
 - `GameState.OnActivate` Harmony prefix replaces broken `VideoPlaybackState.OnActivate` patch on v1.4.6
@@ -64,31 +86,49 @@ Fix intro skip firing at wrong lifecycle points:
 
 ## Live cert protocol
 
-**Precondition:** Close Bannerlord → `Forge.cmd` (installs fresh DLL).
+**Precondition:** Close Bannerlord completely. Confirm no `Bannerlord.exe` or Launcher processes remain.
 
-### Path A — Forward bootstrap (006H regression)
+**Run:**
 
-```text
-Forge.cmd → TBG READY
+```powershell
+cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+Forge.cmd
 ```
 
-**PASS:** `handoff:` in Launch.log; count=1 intro skip only; six narrative menus; no count=2 during Options; map Summer 1, 1084.
+**Analyze:**
 
-### Path B — Culture Back
-
-```text
-Forge.cmd → at culture stage press Back
+```powershell
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 80
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 30
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 60
 ```
 
-**PASS:** no full painted `campaign_intro` replay (may flash/skip instantly).
+### Path table
 
-### Path C — Quit
+| Path | Cert action | PASS condition |
+|------|-------------|----------------|
+| Forge exit | Forge.cmd completes launcher handoff | Launch.log has `handoff:` reason, no timeout |
+| A | Full bootstrap to map | count=1 only, narrative advances, TBG READY |
+| B | Culture stage Back | No full campaign_intro replay |
+| C | Pause then Quit | Clean exit from bootstrap/map |
 
-```text
-Pause → Quit to desktop (during bootstrap AND after TBG READY)
-```
+### PASS signatures
 
-**PASS:** exits normally; no infinite loading.
+- Launch.log contains `handoff:`
+- Phase1.log contains `intro skip: campaign video via OnActivate (count=1)`
+- Phase1.log contains `TBG READY: campaign map ready`
+- No launcher timeout
+- No forward-bootstrap `CleanAndPushState (count=2)` before TBG READY
+- No Options → Culture narrative restart
+
+On culture Back (Path B), expect count=2 or higher only **after** Back from culture (not during Options).
+
+### FAIL signatures
+
+- `launcher-auto-nav timed out`
+- `intro skip: campaign video via CleanAndPushState (count=2)` during forward bootstrap before TBG READY
+- Options → Culture narrative restart
+- `bootstrap disarmed: returned to main menu` between auto-select and intro skip
 
 ## Output files to analyze
 
@@ -98,33 +138,20 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json
 ```
 
-Key PASS lines:
-
-```text
-launcher-auto: handoff: Bannerlord.exe stable
-[TBG QUICKSTART] intro skip: campaign video via OnActivate (count=1)
-TBG READY: campaign map ready
-```
-
-Must NOT appear during forward bootstrap before TBG READY:
-
-```text
-intro skip: campaign video via CleanAndPushState (count=2)
-bootstrap disarmed: returned to main menu
-launcher-auto-nav timed out
-```
-
-On culture Back (Path B), expect count=2 or higher only **after** Back from culture (not during Options).
-
 ## Known gaps
 
 | Gap | Status |
 |-----|--------|
-| Live cert Paths A/B/C | **PENDING** — user must run after 006I-2 |
-| ForgeContinue.cmd post-006H | Optional regression |
+| Path A full bootstrap cert | **PENDING** — user must run `Forge.cmd` |
+| Path B culture Back regression | **PENDING** — 006I culture-back fix never re-tested; blocked by count=2 loop until 006I-2 |
+| Path C quit teardown | **PENDING** |
+| Launcher handoff | **PENDING** — verify `handoff:` log; no 120s timeout |
+| ForgeContinue.cmd post-006H | Optional regression; not re-run |
+| Launcher false positives | Mitigated in 006I-2; UIA can still flake by GPU/driver/window timing |
 | Tutorial skip | Out of scope |
 | Profile-aware narrative picks | Not implemented |
-| Culture-back fix (`BootstrapUsed` block removed) | Shipped in 006I — blocked by loop until 006I-2; re-test on Path B |
+| Version bump | Still `v0.0.11` — bump only after cert PASS |
+| 005E economics | Next feature; no plan file yet; gated on 006I cert |
 
 ## Cert record
 
@@ -133,4 +160,4 @@ On culture Back (Path B), expect count=2 or higher only **after** Back from cult
 | A — Forge.cmd bootstrap | **PENDING** | | 006H regression; 006I-2 fixes loop + launcher |
 | B — Culture Back | **PENDING** | | No cutscene replay |
 | C — Quit (bootstrap + map) | **PENDING** | | Clean exit |
-| Launcher handoff | **PENDING** | | `handoff:` log; no 120s timeout |
+| Launcher handoff | **PENDING** | | `handoff:` log; no timeout |
