@@ -17,6 +17,9 @@ todos:
   - id: docs-partial-cert
     content: Record PARTIAL cert from 2026-06-19 session; fix .\Forge.cmd in docs
     status: completed
+  - id: docs-checkpoint
+    content: Create post-006i-3-handoff.md active checkpoint
+    status: completed
 isProject: false
 ---
 
@@ -44,6 +47,8 @@ isProject: false
 | `GameEndPrefix` | Resets skip counters on game end |
 
 ## Re-cert
+
+Checkpoint: [docs/checkpoints/post-006i-3-handoff.md](../checkpoints/post-006i-3-handoff.md)
 
 Close Bannerlord, then:
 

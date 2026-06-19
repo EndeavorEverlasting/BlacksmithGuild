@@ -2,11 +2,11 @@
 
 ## Verdict
 
-**SHIPPED — LIVE CERT PENDING (006I-3 fix shipped; re-cert required)**
+**SHIPPED — RE-CERT PENDING**
 
-006I-3 narrows the creation skip gate after **PARTIAL** cert on 2026-06-19. Do not mark PASS until Paths A/B/C re-run with fresh logs.
+006I-3 shipped at `3cdbdd3` after **PARTIAL** cert on 2026-06-19. Do not mark PASS until Paths A/B/C re-run with fresh logs.
 
-Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md) · Plan: [docs/plans/006i-3-narrow-skip-gate.plan.md](plans/006i-3-narrow-skip-gate.plan.md)
+Handoff: [docs/checkpoints/post-006i-3-handoff.md](checkpoints/post-006i-3-handoff.md) · Plan: [docs/plans/006i-3-narrow-skip-gate.plan.md](plans/006i-3-narrow-skip-gate.plan.md)
 
 ## Sprint status
 
@@ -66,10 +66,12 @@ PowerShell requires `.\Forge.cmd` (not bare `Forge.cmd`).
 **Analyze:**
 
 ```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 100
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 50
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 80
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 120
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 60
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 100
 ```
+
+See [docs/checkpoints/post-006i-3-handoff.md](checkpoints/post-006i-3-handoff.md) for PASS/FAIL rubric and analysis response template. Do not mark PASS without fresh A/B/C evidence.
 
 ### Path table
 

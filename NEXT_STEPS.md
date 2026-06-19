@@ -11,27 +11,10 @@
 | 006H | LIVE CERT PASS. Do not regress narrative/bootstrap. |
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Launcher handoff cert pending. |
-| 006I-3 | SHIPPED. Re-cert PENDING (narrow gate + quit guard). |
+| 006I-3 | SHIPPED. Re-cert PENDING. |
 | 005E economics | NEXT. Gated on 006I cert PASS. |
 
 **2026-06-19 cert: PARTIAL** — Path A map OK (screenshot); Path B culture Back FAIL; Path C quit FAIL.
-
----
-
-## Sprint sequencing (history)
-
-| Order | Sprint | Status |
-|-------|--------|--------|
-| 003C | QuickStart + dev save auto-load | **LIVE CERT PASS** (Continue) |
-| 005D | Real candidate mapping | **Hotfix shipped** |
-| 006A/B | Auto protagonist build + profiles | **Shipped** — live cert pending |
-| 006C | SandBox intro skip + visible bootstrap | **Shipped** |
-| 006D | v1.4.6 culture/narrative hotfix | **Shipped** |
-| **006E** | Full launch funnel (Forge → map) | **LIVE CERT PASS** (006H era) |
-| **006F–G** | Narrative fixes | **FAIL** — superseded by 006H |
-| **006H** | Family stall recovery | **LIVE CERT PASS** |
-| **006I / 006I-2 / 006I-3** | Intro skip lifecycle | **006I-3 SHIPPED** — re-cert pending |
-| **005E** | Orders, inventory, doctrine tuning | **Blocked** |
 
 ---
 
@@ -40,10 +23,12 @@
 | Field | Value |
 |-------|-------|
 | Branch | `main` |
+| HEAD | `3cdbdd3` |
 | Version | `v0.0.11` |
+| Remote sync | 7 commits ahead of `origin/main` — push when user requests |
 | Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) |
+| Handoff | [docs/checkpoints/post-006i-3-handoff.md](docs/checkpoints/post-006i-3-handoff.md) |
 | Plan | [docs/plans/006i-3-narrow-skip-gate.plan.md](docs/plans/006i-3-narrow-skip-gate.plan.md) |
-| Handoff | [docs/checkpoints/post-006i-2-handoff.md](docs/checkpoints/post-006i-2-handoff.md) |
 | Next feature | **005E** — gated on 006I cert |
 | Open PRs | None |
 
@@ -53,23 +38,21 @@
 
 **006I-3 — Re-cert (user):**
 
-Close Bannerlord completely (install was blocked while game running).
-
 ```powershell
+Get-Process Bannerlord, TaleWorlds.MountAndBlade.Launcher -ErrorAction SilentlyContinue
+
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\Forge.cmd
 ```
 
-Paths:
+Manual checks after Path A:
 
 ```text
-Forge exit: Launch.log handoff: reason, no timeout
-Path A:     Full bootstrap → count=1 only → TBG READY (no Options count=2)
-Path B:     Culture stage → Back or Escape → no full cutscene replay
-Path C:     Pause → Quit → clean exit (no Task Manager)
+Path B: Culture stage → Back or Escape → no full cutscene replay
+Path C: Pause → Quit → clean exit (no Task Manager)
 ```
 
-Paste log tails — see [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md).
+Collect log tails — see [docs/checkpoints/post-006i-3-handoff.md](docs/checkpoints/post-006i-3-handoff.md).
 
 **005E — Blocked until 006I cert PASS.**
 
@@ -77,4 +60,4 @@ Paste log tails — see [docs/sprint-006i-live-results.md](docs/sprint-006i-live
 
 ## Stern verdict
 
-**006H** = LIVE CERT PASS. **006I** = PARTIAL (2026-06-19). **006I-3** fix shipped — athlete must re-run `.\Forge.cmd` before declaring PASS or starting 005E.
+**006H** = LIVE CERT PASS. **006I** = PARTIAL (2026-06-19). **006I-3** shipped at `3cdbdd3` — re-run `.\Forge.cmd` before declaring PASS or starting 005E.
