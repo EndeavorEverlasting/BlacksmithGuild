@@ -2,20 +2,11 @@
 
 ## Verdict
 
-**SHIPPED — LIVE CERT PENDING**
+**SHIPPED — LIVE CERT PENDING (006I-3 fix shipped; re-cert required)**
 
-006I-2 implemented, built (`forge.ps1` PASS), committed at `6fb5825`. Docs checkpoint `3c2c1d8`. Live cert Paths A/B/C not yet run.
+006I-3 narrows the creation skip gate after **PARTIAL** cert on 2026-06-19. Do not mark PASS until Paths A/B/C re-run with fresh logs.
 
-Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md)
-
-## Repo context
-
-| Field | Value |
-|-------|-------|
-| HEAD | `3c2c1d8` (implementation `6fb5825`) |
-| Version | `v0.0.11` |
-| Remote | 5 commits behind local `main` — treat local git as authoritative |
-| Build | PASS via `forge.ps1`; Release DLL installed to Bannerlord Modules |
+Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md) · Plan: [docs/plans/006i-3-narrow-skip-gate.plan.md](plans/006i-3-narrow-skip-gate.plan.md)
 
 ## Sprint status
 
@@ -23,77 +14,54 @@ Handoff: [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-hando
 |--------|--------|
 | 006H | LIVE CERT PASS. Do not regress narrative/bootstrap. |
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
-| 006I-2 | SHIPPED. Live cert PENDING. |
-| 005E economics | NEXT. No plan file yet. Gated on 006I cert. |
+| 006I-2 | SHIPPED. Layer A handoff still pending formal cert. |
+| 006I-3 | SHIPPED. Re-cert PENDING after narrow gate + quit guard. |
+| 005E economics | NEXT. Gated on 006I cert PASS. |
 
-## 006I-2 (post-regression from live cert FAIL)
+## Live cert record (2026-06-19 user session)
 
-**Symptoms (00:57 session):**
+| Path | Result | Evidence |
+|------|--------|----------|
+| A — bootstrap to map | **PARTIAL PASS** | Screenshot: TBG READY, Summer 1 1084, Danustica, report ~01:22:29. Pasted 00:57 Phase1 tail FAIL (count=2 loop — stale/pre-fix). |
+| B — culture Back/Escape | **FAIL** | User: cutscene replays on Back or Escape from culture menu. |
+| C — Pause → Quit | **FAIL** | User: quit requires Task Manager. Continue via LaunchForge loads map but quit broken. |
+| Launcher handoff | **INCONCLUSIVE** | Pasted Launch.log 00:57: timeout, no `handoff:`. LaunchForge path not full Forge.cmd cert. |
 
-1. **Launcher:** `launcher-auto-nav timed out after 120s` — game already running; no handoff log.
-2. **In-game:** `intro skip via CleanAndPushState (count=2)` during Options stage → creation reset loop; no TBG READY.
+**Overall: PARTIAL** — not LIVE CERT PASS.
+
+## 006I-3 fix (post-PARTIAL cert)
 
 **Root causes:**
 
-- `CleanAndPushStatePostfix` fired campaign video skip while `Phase == CharacterCreation` (Options subStage).
-- `HasCrashReporterDialog()` false-positive blocked handoff for full timeout despite `Bannerlord.exe` running.
-
-**Fix (006I-2, commit `6fb5825`):**
-
-| Piece | Location | Behavior |
-|-------|----------|----------|
-| Creation gate (OnActivate) | `SandboxCampaignIntroSkip.cs` | `IsCharacterCreationBootstrapActive()` blocks skip during active creation |
-| Creation gate (CleanAndPush) | `SandboxCampaignIntroSkip.cs` | Block skip entirely when `Phase == CharacterCreation` |
-| Stable handoff | `launcher-auto-nav.ps1` | 3-poll stable game + launcher gone or Safe Mode/PLAY path |
-| Crash reporter handoff | `launcher-auto-nav.ps1` | Immediate handoff after No click if game running |
-| Crash reporter heuristic | `launcher-auto-nav.ps1` | Text scan disabled when game main window present |
-| Slow-path timeout | `launcher-auto-nav.ps1` | Extend to 180s when Safe Mode or crash reporter clicked |
-| Handoff logging | `launcher-auto-nav.ps1` | `handoff: <reason>` lines |
-
-Plan: [docs/plans/006i-2-creation-skip-gate.plan.md](plans/006i-2-creation-skip-gate.plan.md)
-
-## Hotfix (006I — post-006H regression, commit `3758335`)
-
-**Symptom:** Forge.cmd reached cutscene but did not skip; no TBG QUICKSTART notices; stuck before map.
-
-**Root cause (Phase1.log):** `bootstrap disarmed: returned to main menu` fired on same tick as `auto-selecting SandBoxNewGame`.
+- 006I-2 blocked all skips during `CharacterCreation`, including culture-Back campaign intro re-push.
+- Phase poll lag allowed count=2 at Options before Phase updated.
+- Intro skip could fire during quit/`InitialState` teardown.
 
 **Fix:**
 
-- `MainMenuAutoLauncher.IsForwardLaunchInProgress` blocks disarm during SandBoxNewGame transition
-- `GameState.OnActivate` Harmony prefix replaces broken `VideoPlaybackState.OnActivate` patch on v1.4.6
-
-**Partial validation:** count=1 OnActivate skip confirmed; premature disarm fixed.
-
-## Scope (006I original)
-
-Fix intro skip firing at wrong lifecycle points:
-
-- **Culture Back** replayed full `campaign_intro` cutscene because `IsSkippableVideoState` returned false once `BootstrapUsed` was set.
-- **Pause → Quit** could loop on loading/cutscene because bootstrap stayed armed during teardown.
-
-## What shipped (006I + 006I-2)
-
 | Piece | Location | Behavior |
 |-------|----------|----------|
-| Campaign-path-only skip | `SandboxCampaignIntroSkip.cs` | Skip only when `VideoPath` contains `campaign` |
-| Repeat skip hardening | `SandboxCampaignIntroSkip.cs` | Sets `_playedIntroVideo` before `OnVideoFinished`; logs skip count |
-| Creation-phase gate | `SandboxCampaignIntroSkip.cs` | Block skip during CharacterCreation (006I-2) |
-| Bootstrap disarm | `CampaignSetupStateTracker.cs` | `DisarmBootstrap`, `NotifyCampaignMapReady`, main-menu return disarm |
-| Forward launch guard | `MainMenuAutoLauncher.cs` | `IsForwardLaunchInProgress` blocks premature disarm |
-| Video skip patch | `SandboxCampaignIntroSkip.cs` | `GameState.OnActivate` prefix (v1.4.6) |
-| Launcher handoff | `launcher-auto-nav.ps1` | Robust Bannerlord.exe handoff (006I-2) |
+| Forward one-shot | `SandboxCampaignIntroSkip.cs` | `_forwardIntroSkipDone` after count=1 |
+| Narrow CleanAndPush gate | `SandboxCampaignIntroSkip.cs` | Block Options/post-forward creation; allow `CharacterCreationCultureStage` |
+| Direct subStage read | `SandboxCampaignIntroSkip.cs` | `GetCurrentCreationSubStage()` bypasses Phase lag |
+| OnActivate gate | `SandboxCampaignIntroSkip.cs` | `ShouldBlockOnActivateIntroSkip()` — same narrow rules |
+| Quit guards | `SandboxCampaignIntroSkip.cs` | No skip when Phase Complete or `InitialState` |
+| Counter reset | `SandboxCampaignIntroSkip.cs` | Reset on `Game.End` |
 
-## Live cert protocol
+Prior fixes retained: 006I hotfix (disarm + OnActivate), 006I-2 launcher handoff.
 
-**Precondition:** Close Bannerlord completely. Confirm no `Bannerlord.exe` or Launcher processes remain.
+## Live cert protocol (re-run after 006I-3)
+
+**Precondition:** Close Bannerlord completely. Confirm no `Bannerlord.exe` or Launcher processes.
 
 **Run:**
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-Forge.cmd
+.\Forge.cmd
 ```
+
+PowerShell requires `.\Forge.cmd` (not bare `Forge.cmd`).
 
 **Analyze:**
 
@@ -103,34 +71,31 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 80
 ```
 
-Paste output into next agent session for cert analysis. See [docs/checkpoints/post-006i-2-handoff.md](checkpoints/post-006i-2-handoff.md) for PASS/FAIL/PARTIAL rubric and response template.
-
 ### Path table
 
 | Path | Cert action | PASS condition |
 |------|-------------|----------------|
-| Forge exit | Forge.cmd completes launcher handoff | Launch.log has `handoff:` reason, no timeout |
-| A | Full bootstrap to map | count=1 only, narrative advances, TBG READY |
-| B | Culture stage Back | No full campaign_intro replay |
-| C | Pause then Quit | Clean exit from bootstrap/map |
+| Forge exit | `.\Forge.cmd` completes launcher handoff | Launch.log has `handoff:` reason, no timeout |
+| A | Full bootstrap to map | count=1 only before TBG READY; no Options loop; TBG READY |
+| B | Culture stage Back or Escape | No full campaign_intro replay (count=2+ after Back OK) |
+| C | Pause then Quit | Clean exit without Task Manager |
 
 ### PASS signatures
 
 - Launch.log contains `handoff:`
-- Phase1.log contains `intro skip: campaign video via OnActivate (count=1)`
-- Phase1.log contains `TBG READY: campaign map ready`
-- No launcher timeout
+- Phase1.log: `intro skip: campaign video via OnActivate (count=1)`
+- Phase1.log: `TBG READY: campaign map ready`
 - No forward-bootstrap `CleanAndPushState (count=2)` before TBG READY
-- No Options → Culture narrative restart
-
-On culture Back (Path B), expect count=2 or higher only **after** Back from culture (not during Options).
+- Phase1.log may show `intro skip blocked: CleanAndPushState` at Options (006I-3)
+- Path B: skip at Culture Back without full cutscene
 
 ### FAIL signatures
 
 - `launcher-auto-nav timed out`
-- `intro skip: campaign video via CleanAndPushState (count=2)` during forward bootstrap before TBG READY
+- `CleanAndPushState (count=2)` before TBG READY without block log
 - Options → Culture narrative restart
-- `bootstrap disarmed: returned to main menu` between auto-select and intro skip
+- Culture Back full cutscene replay
+- Quit requires Task Manager
 
 ## Output files to analyze
 
@@ -144,22 +109,20 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 
 | Gap | Status |
 |-----|--------|
-| Path A full bootstrap cert | **PENDING** — user must run `Forge.cmd` |
-| Path B culture Back regression | **PENDING** — 006I culture-back fix never re-tested; blocked by count=2 loop until 006I-2 |
-| Path C quit teardown | **PENDING** |
-| Launcher handoff | **PENDING** — verify `handoff:` log; no 120s timeout |
-| ForgeContinue.cmd post-006H | Optional regression; not re-run |
-| Launcher false positives | Mitigated in 006I-2; UIA can still flake by GPU/driver/window timing |
-| Tutorial skip | Out of scope |
-| Profile-aware narrative picks | Not implemented |
-| Version bump | Still `v0.0.11` — bump only after cert PASS |
-| 005E economics | Next feature; no plan file yet; gated on 006I cert |
+| 006I-3 re-cert Paths A/B/C | **PENDING** — close Bannerlord, run `.\Forge.cmd` |
+| Path B culture Back | **FAIL** in 2026-06-19 session — 006I-3 fix targets this |
+| Path C quit teardown | **FAIL** in 2026-06-19 session — 006I-3 quit guard; may need more |
+| Layer A handoff | **PENDING** — need `handoff:` in Launch.log from `.\Forge.cmd` |
+| Fresh log tails from ~01:22 PASS session | Not collected — re-run required |
+| ForgeContinue.cmd | Optional regression |
+| Version bump | `v0.0.11` until cert PASS |
+| 005E economics | Blocked |
 
-## Cert record
+## Cert record (updated after re-cert only)
 
 | Path | Result | Date | Notes |
 |------|--------|------|-------|
-| A — Forge.cmd bootstrap | **PENDING** | | 006H regression; 006I-2 fixes loop + launcher |
-| B — Culture Back | **PENDING** | | No cutscene replay |
-| C — Quit (bootstrap + map) | **PENDING** | | Clean exit |
-| Launcher handoff | **PENDING** | | `handoff:` log; no timeout |
+| A — bootstrap | PARTIAL PASS | 2026-06-19 | Screenshot only; re-cert after 006I-3 |
+| B — culture Back | FAIL | 2026-06-19 | Cutscene on Back/Escape |
+| C — Quit | FAIL | 2026-06-19 | Task Manager required |
+| Launcher handoff | PENDING | | Re-test via `.\Forge.cmd` |

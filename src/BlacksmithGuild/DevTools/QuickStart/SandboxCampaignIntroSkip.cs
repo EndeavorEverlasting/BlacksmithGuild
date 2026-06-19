@@ -12,6 +12,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
     {
         private static bool _probeLogged;
         private static int _campaignIntroSkipCount;
+        private static bool _forwardIntroSkipDone;
         private static FieldInfo _playedIntroVideoField;
         private static MethodInfo _launchCampaignIntroVideoMethod;
         private static MethodInfo _simulateCharacterCreationMethod;
@@ -148,6 +149,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static void GameEndPrefix()
         {
             CampaignSetupStateTracker.DisarmBootstrap("game end");
+            _forwardIntroSkipDone = false;
+            _campaignIntroSkipCount = 0;
         }
 
         private static void OnLoadFinishedIntroFlagPrefix(SandBoxGameManager __instance)
@@ -182,16 +185,73 @@ namespace BlacksmithGuild.DevTools.QuickStart
             return VideoPlaybackOnActivatePrefix(__instance);
         }
 
-        private static bool IsCharacterCreationBootstrapActive()
+        private static bool IsCharacterCreationStateActive()
         {
-            if (CampaignSetupStateTracker.Phase != SetupPhase.CharacterCreation)
+            var stateType = CharacterCreationReflection.StateType;
+            var active = GameStateManager.Current?.ActiveState;
+            return stateType != null && active?.GetType() == stateType;
+        }
+
+        private static string GetCurrentCreationSubStage()
+        {
+            if (IsCharacterCreationStateActive())
+            {
+                return CharacterCreationReflection.GetCurrentStageName(GameStateManager.Current.ActiveState);
+            }
+
+            return CampaignSetupStateTracker.SubStage;
+        }
+
+        private static bool IsCultureBackNavigation()
+        {
+            return string.Equals(
+                GetCurrentCreationSubStage(),
+                "CharacterCreationCultureStage",
+                StringComparison.Ordinal);
+        }
+
+        private static bool ShouldBlockCleanAndPushIntroSkip()
+        {
+            if (!_forwardIntroSkipDone)
             {
                 return false;
             }
 
-            var stateType = CharacterCreationReflection.StateType;
-            var active = GameStateManager.Current?.ActiveState;
-            return stateType != null && active?.GetType() == stateType;
+            if (IsCultureBackNavigation())
+            {
+                return false;
+            }
+
+            if (string.Equals(
+                    GetCurrentCreationSubStage(),
+                    "CharacterCreationOptionsStage",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (CampaignSetupStateTracker.Phase == SetupPhase.CharacterCreation)
+            {
+                return true;
+            }
+
+            return IsCharacterCreationStateActive();
+        }
+
+        private static bool ShouldBlockOnActivateIntroSkip()
+        {
+            if (!_forwardIntroSkipDone)
+            {
+                return false;
+            }
+
+            if (!IsCharacterCreationStateActive()
+                && CampaignSetupStateTracker.Phase != SetupPhase.CharacterCreation)
+            {
+                return false;
+            }
+
+            return !IsCultureBackNavigation();
         }
 
         private static bool VideoPlaybackOnActivatePrefix(object __instance)
@@ -201,7 +261,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return true;
             }
 
-            if (IsCharacterCreationBootstrapActive())
+            if (ShouldBlockOnActivateIntroSkip())
             {
                 return true;
             }
@@ -231,8 +291,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
-            if (CampaignSetupStateTracker.Phase == SetupPhase.CharacterCreation)
+            if (ShouldBlockCleanAndPushIntroSkip())
             {
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] intro skip blocked: CleanAndPushState (subStage={GetCurrentCreationSubStage() ?? "null"})",
+                    showInGame: false);
                 return;
             }
 
@@ -262,6 +325,23 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (!CampaignSetupStateTracker.IsBootstrapArmed || CampaignSetupStateTracker.DevSaveLoadUsed)
             {
                 return false;
+            }
+
+            if (CampaignSetupStateTracker.Phase == SetupPhase.Complete)
+            {
+                return false;
+            }
+
+            try
+            {
+                var activeStateName = GameSessionState.GetActiveStateName();
+                if (string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+            catch
+            {
             }
 
             if (instance != null && IsStoryModeGameManager(instance))
@@ -325,6 +405,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
         {
             TryMarkIntroVideoPlayed();
             _campaignIntroSkipCount++;
+            if (_campaignIntroSkipCount == 1)
+            {
+                _forwardIntroSkipDone = true;
+            }
+
             GuildLog.Info(
                 $"[TBG QUICKSTART] intro skip: campaign video via {source} (count={_campaignIntroSkipCount})",
                 showInGame: false);
