@@ -2,7 +2,7 @@
 
 ## Verdict
 
-**Code shipped** — live cert pending after game restart + `ApplyAutoCharacterBuild` run
+**Superseded by 006B** for profile targets and mode selection — mechanics unchanged. See [sprint-006b-live-results.md](sprint-006b-live-results.md).
 
 ## Scope
 

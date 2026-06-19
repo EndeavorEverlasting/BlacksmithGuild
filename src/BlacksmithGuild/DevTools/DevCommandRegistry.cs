@@ -34,7 +34,16 @@ namespace BlacksmithGuild.DevTools
                 ForgeRecommendationService.SetForgeDoctrineCashCrisisCommand,
                 ForgeRecommendationService.ShowForgeDoctrineCommand,
                 ForgeRecommendationService.ProbeForgeRecipesCommand,
-                AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
+                AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand,
+                AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildForgeQuartermasterWarlordCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildSmithEconomistCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildKingdomFounderCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildStewardSurgeonEngineerCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand,
+                AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand
             };
 
         public static bool IsRegistered(string commandName)

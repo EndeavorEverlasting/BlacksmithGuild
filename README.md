@@ -23,7 +23,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | 10 | **005B** | Doctrine dev commands | **Shipped** |
 | 11 | **005C** | Recipe API recon (`ProbeForgeRecipes`) | **Shipped** |
 | 12 | **005D** | Real candidate mapping + read-only economics | **Hotfix shipped** — live cert optional |
-| 13 | **006A** | Auto Protagonist Build (`ForgeQuartermasterWarlord`) | **Shipped** — live cert pending |
+| 13 | **006A** | Auto Protagonist Build (`ForgeQuartermasterWarlord`) | **Shipped** — superseded by 006B |
+| 14 | **006B** | Build profiles + mode selection (7 modes) | **Shipped** — live cert pending |
 
 ## Current Dev Status
 
@@ -35,7 +36,8 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 | Sprint 005C recipe probe | **Shipped** — [docs/sprint-005c-live-results.md](docs/sprint-005c-live-results.md) |
 | Sprint 003C QuickStart fix | **Shipped** — live cert pending — [docs/sprint-003c-live-results.md](docs/sprint-003c-live-results.md) |
 | Sprint 005D real candidates | **Hotfix shipped** — live cert optional — [docs/sprint-005d-live-results.md](docs/sprint-005d-live-results.md) |
-| Sprint 006A auto protagonist build | **Shipped** — live cert pending — [docs/sprint-006a-live-results.md](docs/sprint-006a-live-results.md) |
+| Sprint 006A auto protagonist build | **Shipped** — [docs/sprint-006a-live-results.md](docs/sprint-006a-live-results.md) |
+| Sprint 006B build profiles | **Shipped** — live cert pending — [docs/sprint-006b-live-results.md](docs/sprint-006b-live-results.md) |
 | Sprint 005A source boundary | **Shipped** — `IForgeCandidateSource`, real scaffold, stub fallback |
 | Sprint 005B doctrine commands | **Shipped** — `SetForgeDoctrine*` via file inbox |
 | Sprint 001U hotkeys (F7–F11) | **Live certified** (2026-06-18) — [docs/sprint-001u-live-results.md](docs/sprint-001u-live-results.md) |
@@ -47,9 +49,9 @@ Build/install loop first. Certification evidence second. Dev-tool safety third. 
 
 ## Current focus
 
-**Sprint 006A live cert** — close game → `Forge.cmd` → Continue → `ApplyAutoCharacterBuild` → F7 — [docs/sprint-006a-live-results.md](docs/sprint-006a-live-results.md).
+**Sprint 006B live cert** — profile selection + apply — [docs/sprint-006b-live-results.md](docs/sprint-006b-live-results.md).
 
-**Next dev sprint:** 005E — crafting orders + inventory in economics (after 006A PASS).
+**Next dev sprint:** 005E — crafting orders + inventory in economics (after 006B PASS).
 
 **Backlog:** 005D live cert (optional), F10 safety guards, player forge UI (006).
 
@@ -122,6 +124,8 @@ While a campaign is loaded, the mod polls the inbox every **0.5s** via `OnApplic
 .\forge.ps1 -Command SetForgeCandidateSourceReal -Wait
 .\forge.ps1 -Command SetForgeDoctrineRareMetalConservation -Wait
 .\forge.ps1 -Command ApplyAutoCharacterBuild -Wait
+.\forge.ps1 -Command ShowAutoCharacterBuildProfiles -Wait
+.\forge.ps1 -Command SetAutoCharacterBuildSmithEconomist -Wait
 .\forge.ps1 -Check -SkipInstall         # read status only; game may stay open
 ```
 

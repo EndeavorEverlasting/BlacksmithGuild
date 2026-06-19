@@ -8,7 +8,6 @@ namespace BlacksmithGuild.Behaviors
     public sealed class BlacksmithGuildCampaignBehavior : CampaignBehaviorBase
     {
         private static bool _hasAnnouncedCampaignMapReady;
-        private static bool _hasAppliedAutoCharacterBuild;
         private bool _hasRunGoldTest;
         private bool _loggedGoldTestBlock;
 
@@ -82,12 +81,7 @@ namespace BlacksmithGuild.Behaviors
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
                 HotkeyTraceService.OnMapReady();
                 TreasuryDeltaWatchService.OnCampaignMapReady();
-
-                if (!_hasAppliedAutoCharacterBuild)
-                {
-                    _hasAppliedAutoCharacterBuild = true;
-                    AutoCharacterBuildService.TryApplyQuickStartBootstrap();
-                }
+                AutoCharacterBuildService.OnCampaignMapReady();
             }
         }
 

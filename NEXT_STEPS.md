@@ -1,6 +1,6 @@
 # Next Steps
 
-Build the car, not the fuzzy dice. Protagonist shaping before economics polish.
+Build the car, not the fuzzy dice. Profile-driven protagonist shaping before economics polish.
 
 ---
 
@@ -8,12 +8,11 @@ Build the car, not the fuzzy dice. Protagonist shaping before economics polish.
 
 | Order | Sprint | Status |
 |-------|--------|--------|
-| 003C | QuickStart + dev save auto-load + Forge launcher | **LIVE CERT PASS** (Continue, 2026-06-18) |
-| 005D | Real candidate mapping + economics | **Hotfix shipped** — live cert optional/pending |
-| **006A** | Auto Protagonist Build (`ForgeQuartermasterWarlord`) | **Shipped** — live cert pending |
-| **005E** | Orders, inventory, doctrine tuning on real set | **After 006A PASS** |
-
-Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
+| 003C | QuickStart + dev save auto-load | **LIVE CERT PASS** |
+| 005D | Real candidate mapping | **Hotfix shipped** — live cert optional |
+| 006A | Auto Protagonist Build | **Shipped** — superseded by 006B targets |
+| **006B** | Build profiles + mode selection | **Shipped** — live cert pending |
+| **005E** | Orders, inventory, doctrine tuning | **After 006B PASS** |
 
 ---
 
@@ -21,38 +20,33 @@ Prior sprints 004A–005C: **Shipped** (004B live cert PASS 2026-06-18).
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (up to date with `origin/main`; 006A `da02c92`) |
+| Branch | `main` (006B commit pending push) |
 | Version | `v0.0.7` |
-| Working tree | **Clean** |
-| Remote | `origin/main` up to date |
+| Working tree | Source changes staged for commit |
+| Remote | `origin/main` |
 | Open PRs | None |
-| Stale branches | None |
 
 ---
 
-## Next actions (user — 006A live cert)
+## Next actions (user — 006B live cert)
 
 ```text
 Close Bannerlord → Forge.cmd → Continue → TBG READY
+.\forge.ps1 -Command ShowAutoCharacterBuildProfiles -Wait
+.\forge.ps1 -Command ShowAutoCharacterBuildProfile -Wait
+→ F7: selected/default/available BEFORE apply
+.\forge.ps1 -Command SetAutoCharacterBuildSmithEconomist -Wait
 .\forge.ps1 -Command ApplyAutoCharacterBuild -Wait
-.\forge.ps1 -Command ShowForgeStatus -Wait
-→ F7: Auto Character Build section + JSON on disk
+→ JSON profileId=SmithEconomist
+.\forge.ps1 -Command SetAutoCharacterBuildForgeQuartermasterWarlord -Wait
+.\forge.ps1 -Command ApplyAutoCharacterBuild -Wait
+→ F7 + JSON: Int 8 / End 8 / Social 7 targets
 ```
 
-Optional: new SandBox bootstrap (no dev save) → verify auto `TBG CHARACTER:` on map ready.
-
-Docs: [sprint-006a-live-results.md](docs/sprint-006a-live-results.md)
-
----
-
-## Next actions (dev — after 006A live cert PASS)
-
-**Sprint 005E:** crafting orders + hero inventory in economics; doctrine tuning on real candidates.
-
-**Backlog:** F10 safety guards, player forge UI (006), 005D live cert if still pending.
+Docs: [sprint-006b-live-results.md](docs/sprint-006b-live-results.md)
 
 ---
 
 ## Stern verdict
 
-Protagonist build is dev/disposable only. Auto-apply fires on **new-game bootstrap** only — Continue requires explicit `ApplyAutoCharacterBuild`.
+Default mode is **ForgeQuartermasterWarlord**. Auto-apply on new-game bootstrap only. Continue requires explicit `ApplyAutoCharacterBuild`.

@@ -13,15 +13,75 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
     public static class AutoCharacterBuildService
     {
         public const string ApplyAutoCharacterBuildCommand = "ApplyAutoCharacterBuild";
+        public const string ShowAutoCharacterBuildProfilesCommand = "ShowAutoCharacterBuildProfiles";
+        public const string ShowAutoCharacterBuildProfileCommand = "ShowAutoCharacterBuildProfile";
+        public const string SetAutoCharacterBuildForgeQuartermasterWarlordCommand =
+            "SetAutoCharacterBuildForgeQuartermasterWarlord";
+        public const string SetAutoCharacterBuildSmithEconomistCommand = "SetAutoCharacterBuildSmithEconomist";
+        public const string SetAutoCharacterBuildKingdomFounderCommand = "SetAutoCharacterBuildKingdomFounder";
+        public const string SetAutoCharacterBuildStewardSurgeonEngineerCommand =
+            "SetAutoCharacterBuildStewardSurgeonEngineer";
+        public const string SetAutoCharacterBuildWarCaptainCommand = "SetAutoCharacterBuildWarCaptain";
+        public const string SetAutoCharacterBuildLightTouchVanillaPlusCommand =
+            "SetAutoCharacterBuildLightTouchVanillaPlus";
+        public const string SetAutoCharacterBuildShadowTraderCommand = "SetAutoCharacterBuildShadowTrader";
 
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_AutoCharacterBuild.json");
 
         private static AutoCharacterBuildReport _lastReport = new AutoCharacterBuildReport();
         private static AutoCharacterBuildSummary _summary = new AutoCharacterBuildSummary();
+        private static bool _hasAnnouncedSelectionNotice;
+        private static bool _hasAttemptedBootstrapApply;
 
         public static AutoCharacterBuildReport LastReport => _lastReport;
         public static AutoCharacterBuildSummary Summary => _summary;
+
+        static AutoCharacterBuildService()
+        {
+            RefreshStatusSnapshot();
+        }
+
+        public static void OnCampaignMapReady()
+        {
+            RefreshStatusSnapshot();
+
+            if (!_hasAttemptedBootstrapApply)
+            {
+                _hasAttemptedBootstrapApply = true;
+                if (TryApplyQuickStartBootstrap())
+                {
+                    return;
+                }
+            }
+
+            AnnounceSelectionNoticeOnce();
+        }
+
+        public static void RefreshStatusSnapshot()
+        {
+            var selected = AutoCharacterBuildProfileRegistry.GetSelectedProfile();
+            _summary = new AutoCharacterBuildSummary
+            {
+                HasStatus = true,
+                HasReport = _lastReport != null && !string.IsNullOrEmpty(_lastReport.ProfileId),
+                SelectedProfileId = selected?.Id ?? AutoCharacterBuildProfileRegistry.DefaultProfileId,
+                DefaultProfileId = AutoCharacterBuildProfileRegistry.DefaultProfileId,
+                AutoApplyNewGame = DevToolsConfig.AutoApplyCharacterBuild,
+                ContinueAutoApply = false,
+                LastAppliedProfileId = string.IsNullOrEmpty(_lastReport?.ProfileId) ? null : _lastReport.ProfileId,
+                LastAppliedTrigger = string.IsNullOrEmpty(_lastReport?.Trigger) ? null : _lastReport.Trigger,
+                LastApplied = string.IsNullOrEmpty(_lastReport?.ProfileId) ? null : _lastReport?.Applied,
+                AvailableProfilesCsv = AutoCharacterBuildProfileRegistry.GetAvailableProfilesCsv(),
+                Profile = _lastReport?.Profile,
+                Applied = _lastReport?.Applied ?? false,
+                Trigger = _lastReport?.Trigger,
+                ReportPath = "BlacksmithGuild_AutoCharacterBuild.json",
+                GeneratedAt = ParseReportGeneratedAt(_lastReport)
+            };
+
+            ForgeStatus.RecordAutoCharacterBuild(_summary);
+        }
 
         public static bool TryApplyQuickStartBootstrap()
         {
@@ -48,12 +108,57 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             return DevCommandResult.Success;
         }
 
+        public static DevCommandResult ShowProfiles()
+        {
+            RefreshStatusSnapshot();
+            DebugLogger.Test("[TBG CHARACTER] Available auto character build profiles:", showInGame: false);
+            foreach (var profile in AutoCharacterBuildProfileRegistry.GetAllProfiles())
+            {
+                var marker = string.Equals(profile.Id, _summary.SelectedProfileId, StringComparison.OrdinalIgnoreCase)
+                    ? " [selected]"
+                    : profile.IsDefault ? " [default]" : string.Empty;
+                DebugLogger.Test($"  - {profile.Id}{marker}: {profile.Description}", showInGame: false);
+            }
+
+            InGameNotice.Info($"TBG CHARACTER: profiles={_summary.AvailableProfilesCsv}");
+            return DevCommandResult.Success;
+        }
+
+        public static DevCommandResult ShowSelectedProfile()
+        {
+            RefreshStatusSnapshot();
+            var profile = AutoCharacterBuildProfileRegistry.GetSelectedProfile();
+            DebugLogger.Test(
+                $"[TBG CHARACTER] selected={profile.Id} default={AutoCharacterBuildProfileRegistry.DefaultProfileId} desc={profile.Description}",
+                showInGame: false);
+            InGameNotice.Info($"TBG CHARACTER: selected profile {profile.Id}.");
+            return DevCommandResult.Success;
+        }
+
+        public static DevCommandResult SetSelectedProfileById(string profileId)
+        {
+            if (!AutoCharacterBuildProfileRegistry.SetSelectedProfile(profileId, out var error))
+            {
+                DebugLogger.Test($"[TBG CHARACTER] set profile failed: {error}", showInGame: false);
+                return DevCommandResult.Failed;
+            }
+
+            RefreshStatusSnapshot();
+            var profile = AutoCharacterBuildProfileRegistry.GetSelectedProfile();
+            DebugLogger.Test($"[TBG CHARACTER] selected profile set to {profile.Id}", showInGame: false);
+            InGameNotice.Info($"TBG CHARACTER: selected profile {profile.Id}.");
+            return DevCommandResult.Success;
+        }
+
         public static bool TryApply(Hero hero, string trigger, bool emitNotice)
         {
-            var profile = AutoCharacterBuildProfile.CreateDefault();
+            var profile = AutoCharacterBuildProfileRegistry.GetSelectedProfile();
             var report = new AutoCharacterBuildReport
             {
-                Profile = profile.Name,
+                ProfileId = profile.Id,
+                Profile = profile.DisplayName,
+                ProfileDescription = profile.Description,
+                SelectedProfileAtApply = profile.Id,
                 Trigger = trigger,
                 MainHeroReady = hero != null,
                 CampaignReady = Campaign.Current != null && GameSessionState.IsCampaignMapReady,
@@ -93,23 +198,48 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
 
         public static void AppendToReport(ReportFormatter report)
         {
+            RefreshStatusSnapshot();
+
             report.Section("Auto Character Build");
-            if (!_summary.HasReport)
+            report.Line("selectedProfile", _summary.SelectedProfileId ?? "unknown");
+            report.Line("defaultProfile", _summary.DefaultProfileId ?? AutoCharacterBuildProfileRegistry.DefaultProfileId);
+            report.Line("autoApplyNewGame", _summary.AutoApplyNewGame ? "on" : "off");
+            report.Line("continueAutoApply", _summary.ContinueAutoApply ? "on" : "off");
+            report.Line(
+                "lastApplied",
+                string.IsNullOrEmpty(_summary.LastAppliedProfileId)
+                    ? "none"
+                    : $"{_summary.LastAppliedProfileId} ({_summary.LastAppliedTrigger})");
+            report.Line("availableProfiles", _summary.AvailableProfilesCsv ?? string.Empty);
+            report.Line("commandHint", ApplyAutoCharacterBuildCommand);
+
+            if (_summary.HasReport)
             {
-                report.Line("status", "no build report cached (run ApplyAutoCharacterBuild)");
-                report.Verdict(ReportVerdict.Info, "Run ApplyAutoCharacterBuild to shape MainHero");
+                report.Line("lastApplyProfile", _summary.Profile ?? "unknown");
+                report.Line("lastApplyApplied", (_summary.LastApplied ?? false).ToString().ToLowerInvariant());
+                report.Line("json", _summary.ReportPath);
+            }
+
+            report.Verdict(
+                _summary.HasReport && (_summary.LastApplied ?? false)
+                    ? ReportVerdict.Pass
+                    : ReportVerdict.Info,
+                _summary.HasReport && (_summary.LastApplied ?? false)
+                    ? $"{_summary.LastAppliedProfileId} build applied"
+                    : "Run ApplyAutoCharacterBuild to shape MainHero");
+        }
+
+        private static void AnnounceSelectionNoticeOnce()
+        {
+            if (_hasAnnouncedSelectionNotice)
+            {
                 return;
             }
 
-            report.Line("profile", _summary.Profile ?? "unknown");
-            report.Line("applied", _summary.Applied.ToString().ToLowerInvariant());
-            report.Line("trigger", _summary.Trigger ?? "unknown");
-            report.Line("json", _summary.ReportPath);
-            report.Verdict(
-                _summary.Applied ? ReportVerdict.Pass : ReportVerdict.Warn,
-                _summary.Applied
-                    ? "ForgeQuartermasterWarlord build applied"
-                    : "Build incomplete — inspect JSON report");
+            _hasAnnouncedSelectionNotice = true;
+            var selected = AutoCharacterBuildProfileRegistry.GetSelectedProfile();
+            InGameNotice.Info(
+                $"TBG CHARACTER: default profile {selected.DisplayName} selected. Run ApplyAutoCharacterBuild to apply.");
         }
 
         private static void ApplyAttributes(Hero hero, AutoCharacterBuildProfile profile, AutoCharacterBuildReport report)
@@ -208,32 +338,28 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             report.Applied = applied;
             _lastReport = report;
             WriteJsonReport(report);
-            UpdateSummary(report);
+            RefreshStatusSnapshot();
 
             DebugLogger.Test(
-                $"[TBG CHARACTER] profile={report.Profile} applied={applied} trigger={report.Trigger} changes={report.Changes.Count} warnings={report.Warnings.Count} errors={report.Errors.Count}",
+                $"[TBG CHARACTER] profile={report.ProfileId} applied={applied} trigger={report.Trigger} changes={report.Changes.Count} warnings={report.Warnings.Count} errors={report.Errors.Count}",
                 showInGame: false);
 
             if (applied && emitNotice)
             {
-                InGameNotice.Info(
-                    "TBG CHARACTER: ForgeQuartermasterWarlord applied — Steward/Crafting/Leadership seeded.");
+                InGameNotice.Info(BuildAppliedNotice(report));
             }
 
             return applied;
         }
 
-        private static void UpdateSummary(AutoCharacterBuildReport report)
+        private static string BuildAppliedNotice(AutoCharacterBuildReport report)
         {
-            _summary = new AutoCharacterBuildSummary
+            if (string.Equals(report.ProfileId, AutoCharacterBuildProfileRegistry.DefaultProfileId, StringComparison.OrdinalIgnoreCase))
             {
-                HasReport = true,
-                Profile = report.Profile,
-                Applied = report.Applied,
-                Trigger = report.Trigger,
-                GeneratedAt = DateTime.Now
-            };
-            ForgeStatus.RecordAutoCharacterBuild(_summary);
+                return "TBG CHARACTER: ForgeQuartermasterWarlord applied — Steward/Crafting/Leadership seeded.";
+            }
+
+            return $"TBG CHARACTER: {report.ProfileId} applied — {report.ProfileDescription}";
         }
 
         private static void WriteJsonReport(AutoCharacterBuildReport report)
@@ -253,7 +379,10 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
+            builder.AppendLine($"  \"profileId\": \"{Escape(report.ProfileId)}\",");
             builder.AppendLine($"  \"profile\": \"{Escape(report.Profile)}\",");
+            builder.AppendLine($"  \"profileDescription\": \"{Escape(report.ProfileDescription)}\",");
+            builder.AppendLine($"  \"selectedProfileAtApply\": \"{Escape(report.SelectedProfileAtApply)}\",");
             builder.AppendLine($"  \"applied\": {report.Applied.ToString().ToLowerInvariant()},");
             builder.AppendLine($"  \"trigger\": \"{Escape(report.Trigger)}\",");
             builder.AppendLine($"  \"mainHeroReady\": {report.MainHeroReady.ToString().ToLowerInvariant()},");
@@ -369,6 +498,16 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             {
                 return 0;
             }
+        }
+
+        private static DateTime? ParseReportGeneratedAt(AutoCharacterBuildReport report)
+        {
+            if (report == null || string.IsNullOrEmpty(report.ProfileId))
+            {
+                return null;
+            }
+
+            return DateTime.TryParse(report.GeneratedUtc, out var parsed) ? parsed : DateTime.Now;
         }
 
         private static string Escape(string value)

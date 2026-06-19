@@ -169,7 +169,7 @@ namespace BlacksmithGuild.DevTools
                 commandName == ForgeRecommendationService.RankForgeCandidatesCommand ||
                 commandName == ForgeRecommendationService.ShowForgeCandidateSourceCommand ||
                 commandName == ForgeRecommendationService.ShowForgeDoctrineCommand ||
-                commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand)
+                IsAutoCharacterBuildNonMutationCommand(commandName))
             {
                 return;
             }
@@ -387,6 +387,24 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case AutoCharacterBuildService.ApplyAutoCharacterBuildCommand:
                     return AutoCharacterBuildService.TryApplyFromCommand();
+                case AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand:
+                    return AutoCharacterBuildService.ShowProfiles();
+                case AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand:
+                    return AutoCharacterBuildService.ShowSelectedProfile();
+                case AutoCharacterBuildService.SetAutoCharacterBuildForgeQuartermasterWarlordCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById(AutoCharacterBuildProfileRegistry.DefaultProfileId);
+                case AutoCharacterBuildService.SetAutoCharacterBuildSmithEconomistCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById("SmithEconomist");
+                case AutoCharacterBuildService.SetAutoCharacterBuildKingdomFounderCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById("KingdomFounder");
+                case AutoCharacterBuildService.SetAutoCharacterBuildStewardSurgeonEngineerCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById("StewardSurgeonEngineer");
+                case AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById("WarCaptain");
+                case AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById("LightTouchVanillaPlus");
+                case AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand:
+                    return AutoCharacterBuildService.SetSelectedProfileById("ShadowTrader");
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -406,6 +424,20 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
+        }
+
+        private static bool IsAutoCharacterBuildNonMutationCommand(string commandName)
+        {
+            return commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand
+                || commandName == AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildForgeQuartermasterWarlordCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildSmithEconomistCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildKingdomFounderCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildStewardSurgeonEngineerCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand;
         }
     }
 }

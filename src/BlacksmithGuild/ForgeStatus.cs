@@ -193,7 +193,7 @@ namespace BlacksmithGuild
         public static void RecordAutoCharacterBuild(AutoCharacterBuildSummary summary)
         {
             _autoCharacterBuild = summary;
-            _autoCharacterBuildRecorded = summary != null && summary.HasReport;
+            _autoCharacterBuildRecorded = summary != null && summary.HasStatus;
             Flush();
         }
 
@@ -219,6 +219,8 @@ namespace BlacksmithGuild
             var certPassed = CertificationTracker.CountPassed();
             var certRequired = CertificationTracker.RequiredCheckNames.Count;
             var treasuryGen = _treasuryWatchRecorded ? _treasuryWatch.SnapshotGeneration : 0;
+
+            AutoCharacterBuildService.RefreshStatusSnapshot();
 
             var report = ReportFormatter.BeginReport("FORGE STATUS", "F7", "forge-status");
 
@@ -553,9 +555,16 @@ namespace BlacksmithGuild
                 if (_autoCharacterBuildRecorded)
                 {
                     builder.AppendLine("  \"autoCharacterBuild\": {");
+                    builder.AppendLine($"    \"selectedProfile\": \"{Escape(_autoCharacterBuild.SelectedProfileId ?? "")}\",");
+                    builder.AppendLine($"    \"defaultProfile\": \"{Escape(_autoCharacterBuild.DefaultProfileId ?? "")}\",");
+                    builder.AppendLine($"    \"autoApplyNewGame\": {_autoCharacterBuild.AutoApplyNewGame.ToString().ToLowerInvariant()},");
+                    builder.AppendLine($"    \"continueAutoApply\": {_autoCharacterBuild.ContinueAutoApply.ToString().ToLowerInvariant()},");
+                    builder.AppendLine(
+                        $"    \"lastApplied\": {(string.IsNullOrEmpty(_autoCharacterBuild.LastAppliedProfileId) ? "null" : $"\"{Escape(_autoCharacterBuild.LastAppliedProfileId)} ({Escape(_autoCharacterBuild.LastAppliedTrigger ?? "")})\"")},");
+                    builder.AppendLine($"    \"availableProfiles\": \"{Escape(_autoCharacterBuild.AvailableProfilesCsv ?? "")}\",");
                     builder.AppendLine($"    \"profile\": \"{Escape(_autoCharacterBuild.Profile ?? "")}\",");
-                    builder.AppendLine($"    \"applied\": {_autoCharacterBuild.Applied.ToString().ToLowerInvariant()},");
-                    builder.AppendLine($"    \"trigger\": \"{Escape(_autoCharacterBuild.Trigger ?? "")}\",");
+                    builder.AppendLine($"    \"applied\": {(_autoCharacterBuild.LastApplied ?? false).ToString().ToLowerInvariant()},");
+                    builder.AppendLine($"    \"trigger\": \"{Escape(_autoCharacterBuild.LastAppliedTrigger ?? "")}\",");
                     builder.AppendLine($"    \"reportPath\": \"{Escape(_autoCharacterBuild.ReportPath ?? "")}\",");
                     builder.AppendLine($"    \"generatedAt\": \"{(_autoCharacterBuild.GeneratedAt ?? DateTime.Now):o}\"");
                     builder.AppendLine("  },");
