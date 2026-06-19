@@ -11,6 +11,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
     internal static class SandboxCampaignIntroSkip
     {
         private static bool _probeLogged;
+        private static int _campaignIntroSkipCount;
         private static FieldInfo _playedIntroVideoField;
         private static MethodInfo _launchCampaignIntroVideoMethod;
         private static MethodInfo _simulateCharacterCreationMethod;
@@ -28,6 +29,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             applied |= TryApplyVideoPlaybackActivatePatch(harmony);
             applied |= TryApplyCleanAndPushStatePatch(harmony);
             applied |= TryApplyOnLoadFinishedIntroFlagPatch(harmony);
+            applied |= TryApplyGameEndDisarmPatch(harmony);
             return applied;
         }
 
@@ -122,6 +124,32 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
+        private static bool TryApplyGameEndDisarmPatch(Harmony harmony)
+        {
+            try
+            {
+                var target = AccessTools.Method(typeof(Game), "End");
+                if (target == null)
+                {
+                    return false;
+                }
+
+                var prefix = AccessTools.Method(typeof(SandboxCampaignIntroSkip), nameof(GameEndPrefix));
+                harmony.Patch(target, prefix: new HarmonyMethod(prefix));
+                return true;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] Game.End disarm patch failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        private static void GameEndPrefix()
+        {
+            CampaignSetupStateTracker.DisarmBootstrap("game end");
+        }
+
         private static void OnLoadFinishedIntroFlagPrefix(SandBoxGameManager __instance)
         {
             if (!ShouldSkipIntroVideo(__instance))
@@ -154,7 +182,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             try
             {
                 CampaignSetupStateTracker.AnnounceCutsceneSkip();
-                FinishVideoState(__instance);
+                SkipCampaignIntroVideo(__instance, "OnActivate");
                 return false;
             }
             catch (Exception ex)
@@ -179,7 +207,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             try
             {
                 CampaignSetupStateTracker.AnnounceCutsceneSkip();
-                FinishVideoState(gameState);
+                SkipCampaignIntroVideo(gameState, "CleanAndPushState");
             }
             catch (Exception ex)
             {
@@ -236,25 +264,54 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return false;
             }
 
-            if (CampaignSetupStateTracker.BootstrapUsed)
-            {
-                return false;
-            }
-
             try
             {
                 var path = AccessTools.Property(state.GetType(), "VideoPath")?.GetValue(state) as string;
-                if (!string.IsNullOrEmpty(path)
-                    && path.IndexOf("campaign", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (!string.IsNullOrEmpty(path))
                 {
-                    return true;
+                    if (path.IndexOf("campaign", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return true;
+                    }
+
+                    return false;
                 }
             }
             catch
             {
             }
 
-            return CampaignSetupStateTracker.IsBootstrapArmed;
+            return CampaignSetupStateTracker.IsBootstrapArmed && !CampaignSetupStateTracker.BootstrapUsed;
+        }
+
+        private static void SkipCampaignIntroVideo(object videoState, string source)
+        {
+            TryMarkIntroVideoPlayed();
+            _campaignIntroSkipCount++;
+            GuildLog.Info(
+                $"[TBG QUICKSTART] intro skip: campaign video via {source} (count={_campaignIntroSkipCount})",
+                showInGame: false);
+            FinishVideoState(videoState);
+        }
+
+        private static void TryMarkIntroVideoPlayed()
+        {
+            if (_playedIntroVideoField == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (Game.Current?.GameManager is SandBoxGameManager sandbox)
+                {
+                    _playedIntroVideoField.SetValue(sandbox, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] intro flag set failed: {ex.Message}", showInGame: false);
+            }
         }
 
         private static void FinishVideoState(object videoState)

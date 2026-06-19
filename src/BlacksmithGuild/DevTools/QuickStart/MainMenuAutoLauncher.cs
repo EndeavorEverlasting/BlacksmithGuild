@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using HarmonyLib;
+using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
 
@@ -65,6 +66,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
         public static void Poll(float dt)
         {
             if (!DevToolsConfig.AutoLaunchFromMainMenu)
+            {
+                return;
+            }
+
+            if (IsCampaignLoaded())
             {
                 return;
             }
@@ -130,6 +136,18 @@ namespace BlacksmithGuild.DevTools.QuickStart
             GuildLog.Display($"TBG QUICKSTART: {message}");
             DeleteIntentFiles();
             _intentConsumed = true;
+        }
+
+        private static bool IsCampaignLoaded()
+        {
+            try
+            {
+                return Campaign.Current != null;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private static bool EnsureBindings()

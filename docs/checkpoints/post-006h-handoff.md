@@ -118,6 +118,8 @@ selectedCount=1 switchToNextMenu=false
 | Tutorial skip                 | Out of scope. Map reached, but tutorial may still trigger.                         |
 | Profile-aware narrative picks | Not implemented. Current behavior selects first valid option.                      |
 | Culture log after narrative   | Ordering quirk. Did not block PASS.                                                |
+| Culture Back cutscene replay  | **Fixed in 006I** — live cert pending ([sprint-006i-live-results.md](../sprint-006i-live-results.md)) |
+| Pause-menu quit loading loop  | **Fixed in 006I** — live cert pending ([sprint-006i-live-results.md](../sprint-006i-live-results.md)) |
 | VideoPlaybackState patch      | Fails on v1.4.6. Non-blocking because intro skip still works through another path. |
 | Story Mode                    | Still blocked.                                                                     |
 | 006A/B live cert              | Still pending in sequencing table.                                                 |

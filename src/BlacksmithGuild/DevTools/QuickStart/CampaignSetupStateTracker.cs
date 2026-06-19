@@ -135,9 +135,33 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
+        public static void DisarmBootstrap(string reason)
+        {
+            if (_setupComplete && !_bootstrapArmed)
+            {
+                return;
+            }
+
+            var wasActive = _bootstrapArmed || !_setupComplete;
+            _bootstrapArmed = false;
+            _setupComplete = true;
+            _phase = SetupPhase.Complete;
+
+            if (wasActive)
+            {
+                GuildLog.Info($"[TBG QUICKSTART] bootstrap disarmed: {reason}", showInGame: false);
+            }
+        }
+
+        public static void NotifyCampaignMapReady()
+        {
+            DisarmBootstrap("campaign map ready");
+        }
+
         public static void Poll(float dt = 0f)
         {
             MainMenuAutoLauncher.Poll(dt);
+            TryDisarmOnMainMenuReturn();
 
             if (!IsTracking)
             {
@@ -390,6 +414,32 @@ namespace BlacksmithGuild.DevTools.QuickStart
             return "unknown";
         }
 
+        private static void TryDisarmOnMainMenuReturn()
+        {
+            if (_setupComplete && !_bootstrapArmed)
+            {
+                return;
+            }
+
+            if (MainMenuAutoLauncher.HasActiveIntent)
+            {
+                return;
+            }
+
+            var activeStateName = GameSessionState.GetActiveStateName();
+            if (!string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase)
+                && Game.Current != null)
+            {
+                return;
+            }
+
+            if (string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase)
+                || Game.Current == null)
+            {
+                DisarmBootstrap("returned to main menu");
+            }
+        }
+
         private static void CompleteSetup()
         {
             if (_setupComplete)
@@ -397,8 +447,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
-            _setupComplete = true;
-            _phase = SetupPhase.Complete;
+            DisarmBootstrap("setup complete");
 
             GuildLog.Info("[TBG QUICKSTART] setup complete; handing off to map readiness gate.", showInGame: false);
 

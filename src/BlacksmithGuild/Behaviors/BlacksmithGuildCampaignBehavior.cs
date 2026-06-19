@@ -1,5 +1,6 @@
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.CampaignSystem;
 
@@ -77,6 +78,7 @@ namespace BlacksmithGuild.Behaviors
             if (!_hasAnnouncedCampaignMapReady && GameSessionState.IsCampaignMapReady)
             {
                 _hasAnnouncedCampaignMapReady = true;
+                CampaignSetupStateTracker.NotifyCampaignMapReady();
                 InGameNotice.Ready("campaign map ready. Press F8 for commands.");
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
                 HotkeyTraceService.OnMapReady();

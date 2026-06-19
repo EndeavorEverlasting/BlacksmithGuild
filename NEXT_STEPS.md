@@ -17,6 +17,7 @@ Economics (005E) is next. Zero-click bootstrap funnel is live-certified.
 | **006F** | Narrative menu sprint-through | **FAIL** — superseded by 006G/006H |
 | **006G** | Family / narrative API fix | **FAIL** — superseded by 006H |
 | **006H** | Family stall recovery | **LIVE CERT PASS** |
+| **006I** | Intro skip lifecycle (culture back / quit) | **Shipped** — live cert pending |
 | **005E** | Orders, inventory, doctrine tuning | **Next** |
 
 ---
@@ -28,6 +29,7 @@ Economics (005E) is next. Zero-click bootstrap funnel is live-certified.
 | Branch | `main` |
 | Version | `v0.0.11` |
 | Last closed sprint | [docs/sprint-006h-live-results.md](docs/sprint-006h-live-results.md) |
+| Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) — live cert pending |
 | Post-006H handoff | [docs/checkpoints/post-006h-handoff.md](docs/checkpoints/post-006h-handoff.md) |
 | Next feature | **005E** — scope from existing forge/economics code before coding |
 | Open PRs | None |
@@ -35,6 +37,16 @@ Economics (005E) is next. Zero-click bootstrap funnel is live-certified.
 ---
 
 ## Next actions
+
+**006I — Live cert (user):**
+
+```text
+Path A: Close Bannerlord → Forge.cmd → TBG READY (006H regression)
+Path B: Forge.cmd → culture stage → Back → no cutscene replay
+Path C: Pause → Quit (during bootstrap and after TBG READY)
+```
+
+See [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md).
 
 **005E — Economics sprint (plan TBD):**
 
