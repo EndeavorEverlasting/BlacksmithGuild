@@ -86,19 +86,19 @@ namespace BlacksmithGuild.DevTools.QuickStart
         {
             try
             {
-                var target = AccessTools.Method(typeof(VideoPlaybackState), "OnActivate");
+                var target = AccessTools.DeclaredMethod(typeof(GameState), "OnActivate");
                 if (target == null)
                 {
                     return false;
                 }
 
-                var prefix = AccessTools.Method(typeof(SandboxCampaignIntroSkip), nameof(VideoPlaybackOnActivatePrefix));
+                var prefix = AccessTools.Method(typeof(SandboxCampaignIntroSkip), nameof(GameStateOnActivatePrefix));
                 harmony.Patch(target, prefix: new HarmonyMethod(prefix));
                 return true;
             }
             catch (Exception ex)
             {
-                GuildLog.Info($"[TBG QUICKSTART] VideoPlaybackState patch failed: {ex.Message}", showInGame: false);
+                GuildLog.Info($"[TBG QUICKSTART] GameState.OnActivate video skip patch failed: {ex.Message}", showInGame: false);
                 return false;
             }
         }
@@ -165,6 +165,21 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 GuildLog.Info($"[TBG QUICKSTART] intro flag set failed: {ex.Message}", showInGame: false);
             }
+        }
+
+        private static bool GameStateOnActivatePrefix(GameState __instance)
+        {
+            if (__instance == null)
+            {
+                return true;
+            }
+
+            if (__instance.GetType().Name.IndexOf("Video", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return true;
+            }
+
+            return VideoPlaybackOnActivatePrefix(__instance);
         }
 
         private static bool VideoPlaybackOnActivatePrefix(object __instance)

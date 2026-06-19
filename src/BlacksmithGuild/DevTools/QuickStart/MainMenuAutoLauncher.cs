@@ -47,15 +47,24 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static float _mainMenuWaitSeconds;
         private static float _initialStateStableSeconds;
         private static List<string> _intentSourcePaths = new List<string>();
+        private static bool _forwardLaunchInProgress;
 
         private const float InitialStateWarmupSeconds = 1.0f;
 
         public static bool HasActiveIntent => !string.IsNullOrEmpty(_launchIntent) && !_intentConsumed;
 
+        public static bool IsForwardLaunchInProgress => _forwardLaunchInProgress;
+
+        public static void ClearForwardLaunchInProgress()
+        {
+            _forwardLaunchInProgress = false;
+        }
+
         public static void ResetForNewSession()
         {
             _launchIntent = null;
             _intentConsumed = false;
+            _forwardLaunchInProgress = false;
             _optionsProbed = false;
             _loggedMainMenuTimeout = false;
             _mainMenuWaitSeconds = 0f;
@@ -136,6 +145,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             GuildLog.Display($"TBG QUICKSTART: {message}");
             DeleteIntentFiles();
             _intentConsumed = true;
+            _forwardLaunchInProgress = true;
         }
 
         private static bool IsCampaignLoaded()

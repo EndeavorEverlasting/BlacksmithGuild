@@ -161,6 +161,14 @@ namespace BlacksmithGuild.DevTools.QuickStart
         public static void Poll(float dt = 0f)
         {
             MainMenuAutoLauncher.Poll(dt);
+
+            var activeStateName = GameSessionState.GetActiveStateName();
+            if (MainMenuAutoLauncher.IsForwardLaunchInProgress
+                && !string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase))
+            {
+                MainMenuAutoLauncher.ClearForwardLaunchInProgress();
+            }
+
             TryDisarmOnMainMenuReturn();
 
             if (!IsTracking)
@@ -168,7 +176,6 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
-            var activeStateName = GameSessionState.GetActiveStateName();
             var nextPhase = ResolvePhase(activeStateName, out var subStage);
 
             if (nextPhase != _phase || subStage != _subStage || activeStateName != _lastActiveStateName)
@@ -421,23 +428,23 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
-            if (MainMenuAutoLauncher.HasActiveIntent)
+            if (MainMenuAutoLauncher.HasActiveIntent || MainMenuAutoLauncher.IsForwardLaunchInProgress)
             {
                 return;
             }
 
             var activeStateName = GameSessionState.GetActiveStateName();
-            if (!string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase)
-                && Game.Current != null)
+            if (!string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            if (string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase)
-                || Game.Current == null)
+            if (!_bootstrapUsed && _phase is SetupPhase.Idle or SetupPhase.MainMenu)
             {
-                DisarmBootstrap("returned to main menu");
+                return;
             }
+
+            DisarmBootstrap("returned to main menu");
         }
 
         private static void CompleteSetup()

@@ -2,7 +2,18 @@
 
 ## Verdict
 
-**LIVE CERT PENDING** — code shipped; user must run Paths A/B/C below.
+**LIVE CERT PENDING** — 006I hotfix shipped (premature disarm + GameState.OnActivate patch); user must re-run Paths A/B/C.
+
+## Hotfix (post-regression)
+
+**Symptom:** Forge.cmd reached cutscene but did not skip; no TBG QUICKSTART notices; stuck before map.
+
+**Root cause (Phase1.log):** `bootstrap disarmed: returned to main menu` fired on the same tick as `auto-selecting SandBoxNewGame` because `TryDisarmOnMainMenuReturn` ran after intent was consumed while still on `InitialState`.
+
+**Fix:**
+- `MainMenuAutoLauncher.IsForwardLaunchInProgress` blocks disarm during SandBoxNewGame transition
+- Tightened `TryDisarmOnMainMenuReturn` (removed `Game.Current == null` branch)
+- `GameState.OnActivate` Harmony prefix replaces broken `VideoPlaybackState.OnActivate` patch on v1.4.6
 
 ## Scope
 
@@ -20,6 +31,8 @@ Fix intro skip firing at wrong lifecycle points:
 | Bootstrap disarm | `CampaignSetupStateTracker.cs` | `DisarmBootstrap`, `NotifyCampaignMapReady`, main-menu return disarm in `Poll` |
 | Map-ready disarm | `BlacksmithGuildCampaignBehavior.cs` | Calls `NotifyCampaignMapReady()` when TBG READY fires |
 | Quit disarm | `SandboxCampaignIntroSkip.cs` | Harmony prefix on `Game.End` → disarm |
+| Forward launch guard | `MainMenuAutoLauncher.cs` | `IsForwardLaunchInProgress` blocks premature disarm |
+| Video skip patch | `SandboxCampaignIntroSkip.cs` | `GameState.OnActivate` prefix (v1.4.6) |
 | Main menu guard | `MainMenuAutoLauncher.cs` | Skip auto-launch when `Campaign.Current != null` |
 
 ## Root cause
@@ -78,7 +91,11 @@ Key PASS lines:
 
 On culture Back, expect `count=2` or higher (forward skip + back skip).
 
-Must NOT see repeated `CleanAndPushState video skip` during quit after disarm.
+Must NOT appear between auto-select and intro skip:
+
+```text
+bootstrap disarmed: returned to main menu
+```
 
 ## Known gaps (post-006I ship)
 
