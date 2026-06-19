@@ -17,7 +17,7 @@
 | 005E market intel (read-only) | **SHIPPED** — F12 hotkey MVP; user cert PENDING |
 | 005E smithing posse automation | BLOCKED (006I cert) |
 
-**2026-06-19 cert: PARTIAL** — Path A PASS; Path C USER PASS; Path B + Continue load pending.
+**2026-06-19 cert: PARTIAL** — Path A PASS; Path C USER PASS. **006J agent pass:** Layer A handoff FAIL, Continue PENDING, Path B PENDING, Market F12 FAIL. See [docs/plans/006j-full-live-cert-closeout.plan.md](docs/plans/006j-full-live-cert-closeout.plan.md).
 
 ---
 
@@ -25,11 +25,12 @@
 
 006I-5 shipped fixes for Continue load hang. User re-cert required before full PASS.
 
-Current blockers:
+Current blockers (006J):
 
-- Continue load: Module Mismatch + GameLoadingState hang (fix shipped, re-test via `LaunchForgeContinue.cmd`)
+- Layer A launcher handoff: **FAIL** — Launch.log shows timeouts; no `handoff:` line
+- Continue load: 006I-5 fix shipped; **not re-tested** — need `clicked Module Mismatch Yes` in Launch.log
 - Path B culture Back: not re-certified after 006I-4
-- Layer A launcher handoff: need `handoff:` in Launch.log
+- Market F12 (005E-M): **not run** — `BlacksmithGuild_MarketIntel.json` absent
 
 Plans:
 
@@ -49,7 +50,8 @@ Plans:
 | Version | `v0.0.11` |
 | Remote sync | ahead of `origin/main` — push when user requests |
 | Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) |
-| Handoff | [docs/checkpoints/post-006i-4-handoff.md](docs/checkpoints/post-006i-4-handoff.md) |
+| Handoff | [docs/checkpoints/post-006i-4-handoff.md](docs/checkpoints/post-006i-4-handoff.md) (active until 006J PASS) |
+| Open sprint plan | [docs/plans/006j-full-live-cert-closeout.plan.md](docs/plans/006j-full-live-cert-closeout.plan.md) |
 | Next feature | **005E** — gated on 006I cert |
 | Open PRs | None |
 

@@ -2,9 +2,11 @@
 
 ## Verdict
 
-**RE-CERT PARTIAL** — Path C PASS; load paths + Path B pending.
+**RE-CERT PARTIAL** — Path A + Path C PASS; Layer A handoff, Continue, Path B, Market F12 pending.
 
-Handoff: [docs/checkpoints/post-006i-4-handoff.md](checkpoints/post-006i-4-handoff.md) · Plan (006I-5): [docs/plans/006i-5-continue-module-mismatch-load.plan.md](plans/006i-5-continue-module-mismatch-load.plan.md) · Plan (006I-4): [docs/plans/006i-4-quit-to-menu-intro-loop.plan.md](plans/006i-4-quit-to-menu-intro-loop.plan.md)
+**006J agent analysis (2026-06-19):** On-disk logs reviewed. No `handoff:`, no Module Mismatch click, no MarketIntel.json. Cannot tag `006i-live-cert-pass`.
+
+Handoff: [docs/checkpoints/post-006i-4-handoff.md](checkpoints/post-006i-4-handoff.md) · Plan (006J): [docs/plans/006j-full-live-cert-closeout.plan.md](plans/006j-full-live-cert-closeout.plan.md) · Plan (006I-5): [docs/plans/006i-5-continue-module-mismatch-load.plan.md](plans/006i-5-continue-module-mismatch-load.plan.md) · Plan (006I-4): [docs/plans/006i-4-quit-to-menu-intro-loop.plan.md](plans/006i-4-quit-to-menu-intro-loop.plan.md)
 
 Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
 
@@ -43,17 +45,18 @@ Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
 | Continue intent guard | `MainMenuAutoLauncher.cs` | Allow continue intent after bootstrap complete |
 | Block log rate limit | `MainMenuAutoLauncher.cs` | Once per reason per session |
 
-## Live cert record (2026-06-19 user session)
+## Live cert record (2026-06-19 user session + 006J agent pass)
 
 | Path | Result | Evidence |
 |------|--------|----------|
 | A — bootstrap to map | **PASS** | Phase1 ~02:32:04 — count=1, Options block, TBG READY |
-| B — culture Back/Escape | **PENDING** | Not re-certified after 006I-4 |
+| B — culture Back/Escape | **PENDING** | Not run; no culture Back lines in Phase1 tail |
 | C — Pause → Quit | **USER PASS** | User confirmed; intent consumed block log ~02:31:27 |
-| Continue load | **FAIL** | Module Mismatch hang; 006I-5 fix shipped, re-cert PENDING |
-| Launcher handoff | **PENDING** | Need `handoff:` from `.\Forge.cmd` |
+| Continue load | **PENDING** | 006I-5 shipped; no `clicked Module Mismatch Yes` in Launch.log |
+| Launcher handoff (Layer A) | **FAIL** | Launch.log tail: timeouts only; no `handoff:` |
+| Market F12 (005E-M) | **FAIL** | `BlacksmithGuild_MarketIntel.json` absent |
 
-**Overall: PARTIAL** — not LIVE CERT PASS until B + load paths certified.
+**Overall: PARTIAL** — not LIVE CERT PASS until Layer A + B + Continue + Market F12 certified.
 
 ## Load path test matrix (006I-5 cert goal)
 
@@ -114,10 +117,11 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 |-----|--------|
 | Path B culture Back | **PENDING** re-cert |
 | Continue load (006I-5) | **PENDING** user re-test via `LaunchForgeContinue.cmd` |
-| Layer A handoff | **PENDING** — need `handoff:` from `.\Forge.cmd` |
+| Layer A handoff | **FAIL** (006J) — Launch.log timeouts; no `handoff:` |
+| Market F12 (005E-M) | **FAIL** (006J) — user has not pressed F12 near town |
 | Load path matrix rows 1–5 | **PENDING** |
 | Version bump | `v0.0.11` until full cert PASS |
-| 005E economics | Blocked |
+| 005E smithing posse | Blocked on 006I LIVE CERT PASS |
 
 ## Cert record
 
