@@ -2,7 +2,7 @@
 
 ## Status
 
-**SHIPPED (MVP)** — read-only dev hotkey; user live cert PENDING.
+**SHIPPED (MVP + action plan)** — read-only dev hotkey; user live cert PENDING.
 
 | Gate | Status |
 |------|--------|
@@ -10,6 +10,8 @@
 | Nearest-town price scan | SHIPPED |
 | Inventory sell targets | SHIPPED |
 | Cross-town spread table | SHIPPED |
+| **Action plan (buy @ nearest + ride to sell)** | **SHIPPED** |
+| Expanded scan fallback (60u / 8 towns) | SHIPPED |
 | Full 005E smithing posse automation | BLOCKED (006I cert) |
 | Gauntlet trade UI panel | BACKLOG |
 
@@ -39,9 +41,13 @@ Fallback: `town.MarketData.GetPrice(item, party, isSelling, settlement.Party)`
 
 ## Report sections
 
-1. **Sell From Inventory** — party trade goods → best nearby sell town/price
-2. **Top Cross-Town Spreads** — buy@town A → sell@town B profit per unit
-3. **Nearest Town Goods** — stock + buy/sell at closest town
+1. **Action Plan** — numbered steps: enter nearest town, buy item, ride to sell town
+2. **Buy @ Nearest** — in-stock goods at nearest town ranked by profit spread (smithing inputs tagged `[smith]`)
+3. **Sell From Inventory** — party trade goods → best nearby sell town/price (zero-spread rows suppressed in feed)
+4. **Top Cross-Town Spreads** — global buy@town A → sell@town B profit per unit
+5. **Nearest Town Goods** — stock + buy/sell at closest town
+
+When no routes exist within 30 map units, scan auto-expands to 60u / 8 towns (`expandedScanUsed` in JSON).
 
 ## Output files
 
@@ -62,9 +68,10 @@ cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 In-game: press **F12**.
 
 **PASS:**
-- In-game feed shows `nearest=<town>` and spread/inventory rows
-- Phase1 tail contains `TBG REPORT: MARKET INTEL` with table lines
-- JSON written with non-empty `spreadRows` or `inventoryRows`
+- In-game feed shows `--- ACTION PLAN ---` with buy + destination (not just inventory `+0` rows)
+- Feed shows `--- BUY@NEAREST ---` when routes exist
+- Phase1 tail contains `TBG REPORT: MARKET INTEL` with Action Plan section
+- JSON written with non-empty `routeRows` and `actionPlan` (or expanded scan note if still empty)
 - Prices non-zero
 
 **FAIL:**

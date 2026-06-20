@@ -42,6 +42,26 @@ namespace BlacksmithGuild.Market
         public int Spread { get; set; }
     }
 
+    public sealed class TradeRouteRow
+    {
+        public string ItemId { get; set; }
+        public string ItemName { get; set; }
+        public string BuyTown { get; set; }
+        public int BuyPrice { get; set; }
+        public int Stock { get; set; }
+        public string SellTown { get; set; }
+        public int SellPrice { get; set; }
+        public int Spread { get; set; }
+        public float SellDistance { get; set; }
+        public bool IsSmithingInput { get; set; }
+    }
+
+    public sealed class ActionPlanStep
+    {
+        public int Step { get; set; }
+        public string Text { get; set; }
+    }
+
     public sealed class MarketIntelSummary
     {
         public bool HasScan { get; set; }
@@ -49,8 +69,11 @@ namespace BlacksmithGuild.Market
         public float NearestDistance { get; set; }
         public int TownsScanned { get; set; }
         public int SpreadCount { get; set; }
+        public int RouteCount { get; set; }
         public int InventoryCount { get; set; }
         public string TopSpreadLabel { get; set; }
+        public string TopRouteLabel { get; set; }
+        public bool ExpandedScanUsed { get; set; }
         public string ReportPath { get; set; } = "BlacksmithGuild_MarketIntel.json";
     }
 
@@ -61,9 +84,12 @@ namespace BlacksmithGuild.Market
         public string NearestTown { get; set; }
         public float NearestDistance { get; set; }
         public int TownsScanned { get; set; }
+        public bool ExpandedScanUsed { get; set; }
         public List<MarketTownSnapshot> Towns { get; set; } = new List<MarketTownSnapshot>();
         public List<InventorySellRow> InventoryRows { get; set; } = new List<InventorySellRow>();
         public List<TradeSpreadRow> SpreadRows { get; set; } = new List<TradeSpreadRow>();
+        public List<TradeRouteRow> RouteRows { get; set; } = new List<TradeRouteRow>();
+        public List<ActionPlanStep> ActionPlan { get; set; } = new List<ActionPlanStep>();
     }
 
     internal sealed class TownPriceEntry

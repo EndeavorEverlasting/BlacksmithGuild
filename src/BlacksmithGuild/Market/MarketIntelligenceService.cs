@@ -20,9 +20,13 @@ namespace BlacksmithGuild.Market
 
         private const int MaxNearbyTowns = 5;
         private const float MaxMapDistance = 30f;
+        private const int ExpandedMaxNearbyTowns = 8;
+        private const float ExpandedMaxMapDistance = 60f;
         private const int MaxSpreadRows = 15;
         private const int MaxInventoryRows = 10;
         private const int MaxTownGoodsRows = 12;
+        private const int MaxRouteRows = 5;
+        private const int MaxActionPlanSteps = 4;
 
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_MarketIntel.json");
@@ -78,7 +82,12 @@ namespace BlacksmithGuild.Market
             report.Line("distance", $"{_summary.NearestDistance:0.1}u");
             report.Line("towns", _summary.TownsScanned.ToString());
             report.Line("spreads", _summary.SpreadCount.ToString());
+            report.Line("routes", _summary.RouteCount.ToString());
             report.Line("inventory", _summary.InventoryCount.ToString());
+            if (!string.IsNullOrEmpty(_summary.TopRouteLabel))
+            {
+                report.Line("topRoute", _summary.TopRouteLabel);
+            }
             if (!string.IsNullOrEmpty(_summary.TopSpreadLabel))
             {
                 report.Line("topSpread", _summary.TopSpreadLabel);
@@ -100,13 +109,33 @@ namespace BlacksmithGuild.Market
 
         private static MarketIntelReport BuildReport(string source)
         {
+            var report = BuildReportWithScan(source, MaxNearbyTowns, MaxMapDistance, expandedScanUsed: false);
+            if (report.RouteRows.Count > 0)
+            {
+                return report;
+            }
+
+            return BuildReportWithScan(source, ExpandedMaxNearbyTowns, ExpandedMaxMapDistance, expandedScanUsed: true);
+        }
+
+        private static MarketIntelReport BuildReportWithScan(
+            string source,
+            int maxTowns,
+            float maxDistance,
+            bool expandedScanUsed)
+        {
             var party = MobileParty.MainParty;
             var partyPosition = party.GetPosition2D;
-            var nearbyTowns = ResolveNearbyTowns(partyPosition);
+            var nearbyTowns = ResolveNearbyTowns(partyPosition, maxTowns, maxDistance);
             if (nearbyTowns.Count == 0)
             {
                 throw new InvalidOperationException("no towns found");
             }
+
+            var townDistances = nearbyTowns.ToDictionary(
+                s => s.Name?.ToString() ?? s.StringId,
+                s => s.GetPosition2D.Distance(partyPosition),
+                StringComparer.OrdinalIgnoreCase);
 
             var candidateItems = CollectCandidateItems(nearbyTowns, party.ItemRoster);
             var priceMatrix = BuildPriceMatrix(nearbyTowns, candidateItems, party);
@@ -115,20 +144,27 @@ namespace BlacksmithGuild.Market
             var townSnapshots = BuildTownSnapshots(nearbyTowns, priceMatrix);
 
             var nearest = nearbyTowns[0];
+            var nearestName = nearest.Name?.ToString() ?? nearest.StringId;
+            var routeRows = BuildNearestTownRoutes(priceMatrix, nearestName, townDistances);
+            var actionPlan = BuildActionPlan(nearestName, routeRows, inventoryRows);
+
             return new MarketIntelReport
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
                 Source = source,
-                NearestTown = nearest.Name?.ToString() ?? nearest.StringId,
+                NearestTown = nearestName,
                 NearestDistance = nearest.GetPosition2D.Distance(partyPosition),
                 TownsScanned = nearbyTowns.Count,
+                ExpandedScanUsed = expandedScanUsed,
                 Towns = townSnapshots,
                 InventoryRows = inventoryRows,
-                SpreadRows = spreadRows
+                SpreadRows = spreadRows,
+                RouteRows = routeRows,
+                ActionPlan = actionPlan
             };
         }
 
-        private static List<Settlement> ResolveNearbyTowns(Vec2 partyPosition)
+        private static List<Settlement> ResolveNearbyTowns(Vec2 partyPosition, int maxTowns, float maxDistance)
         {
             var towns = Town.AllTowns
                 .Select(t => t.Settlement)
@@ -142,8 +178,8 @@ namespace BlacksmithGuild.Market
                 .ToList();
 
             var withinRange = towns
-                .Where(x => x.Distance <= MaxMapDistance)
-                .Take(MaxNearbyTowns)
+                .Where(x => x.Distance <= maxDistance)
+                .Take(maxTowns)
                 .Select(x => x.Settlement)
                 .ToList();
 
@@ -152,7 +188,7 @@ namespace BlacksmithGuild.Market
                 return withinRange;
             }
 
-            return towns.Take(MaxNearbyTowns).Select(x => x.Settlement).ToList();
+            return towns.Take(maxTowns).Select(x => x.Settlement).ToList();
         }
 
         private static HashSet<ItemObject> CollectCandidateItems(
@@ -415,6 +451,140 @@ namespace BlacksmithGuild.Market
                 .ToList();
         }
 
+        private static List<TradeRouteRow> BuildNearestTownRoutes(
+            Dictionary<string, ItemPriceMatrix> matrix,
+            string nearestTownName,
+            Dictionary<string, float> townDistances)
+        {
+            var rows = new List<TradeRouteRow>();
+
+            foreach (var priceRow in matrix.Values)
+            {
+                if (!priceRow.ByTown.TryGetValue(nearestTownName, out var nearestEntry))
+                {
+                    continue;
+                }
+
+                if (nearestEntry.Stock <= 0)
+                {
+                    continue;
+                }
+
+                TownPriceEntry bestSell = null;
+                foreach (var townEntry in priceRow.ByTown.Values)
+                {
+                    if (string.Equals(townEntry.TownName, nearestTownName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (bestSell == null || townEntry.SellPrice > bestSell.SellPrice)
+                    {
+                        bestSell = townEntry;
+                    }
+                }
+
+                if (bestSell == null)
+                {
+                    continue;
+                }
+
+                var spread = bestSell.SellPrice - nearestEntry.BuyPrice;
+                if (spread <= 0)
+                {
+                    continue;
+                }
+
+                townDistances.TryGetValue(bestSell.TownName, out var sellDistance);
+                rows.Add(new TradeRouteRow
+                {
+                    ItemId = priceRow.ItemId,
+                    ItemName = priceRow.ItemName,
+                    BuyTown = nearestTownName,
+                    BuyPrice = nearestEntry.BuyPrice,
+                    Stock = nearestEntry.Stock,
+                    SellTown = bestSell.TownName,
+                    SellPrice = bestSell.SellPrice,
+                    Spread = spread,
+                    SellDistance = sellDistance,
+                    IsSmithingInput = IsSmithingInput(priceRow.ItemId, priceRow.ItemName)
+                });
+            }
+
+            return rows
+                .OrderByDescending(r => r.Spread)
+                .Take(MaxRouteRows)
+                .ToList();
+        }
+
+        private static List<ActionPlanStep> BuildActionPlan(
+            string nearestTownName,
+            List<TradeRouteRow> routeRows,
+            List<InventorySellRow> inventoryRows)
+        {
+            var steps = new List<ActionPlanStep>();
+            var stepNum = 1;
+
+            var topRoute = routeRows.FirstOrDefault();
+            if (topRoute != null)
+            {
+                var smithTag = topRoute.IsSmithingInput ? " [smith]" : string.Empty;
+                steps.Add(new ActionPlanStep
+                {
+                    Step = stepNum++,
+                    Text =
+                        $"Enter {nearestTownName}: buy {topRoute.ItemName} @ {topRoute.BuyPrice} (stock {topRoute.Stock}){smithTag}"
+                });
+                steps.Add(new ActionPlanStep
+                {
+                    Step = stepNum++,
+                    Text =
+                        $"Ride to {topRoute.SellTown} ({topRoute.SellDistance:0.0}u): sell @ {topRoute.SellPrice} (+{topRoute.Spread})"
+                });
+            }
+
+            var inventorySell = inventoryRows
+                .Where(r => r.SpreadVsWorst > 0)
+                .OrderByDescending(r => r.SpreadVsWorst)
+                .FirstOrDefault();
+
+            if (inventorySell != null && stepNum <= MaxActionPlanSteps)
+            {
+                steps.Add(new ActionPlanStep
+                {
+                    Step = stepNum++,
+                    Text =
+                        $"Sell {inventorySell.ItemName} x{inventorySell.Quantity} @ {inventorySell.BestSellTown} {inventorySell.BestSellPrice} (+{inventorySell.SpreadVsWorst})"
+                });
+            }
+
+            if (steps.Count == 0)
+            {
+                steps.Add(new ActionPlanStep
+                {
+                    Step = 1,
+                    Text = $"No profitable routes from {nearestTownName} in scan range — ride toward another town and press F12 again."
+                });
+            }
+
+            return steps.Take(MaxActionPlanSteps).ToList();
+        }
+
+        private static bool IsSmithingInput(string itemId, string itemName)
+        {
+            var combined = $"{itemId} {itemName}".ToLowerInvariant();
+            return combined.Contains("iron")
+                || combined.Contains("hardwood")
+                || combined.Contains("charcoal")
+                || combined.Contains("ore")
+                || combined.Contains("steel");
+        }
+
+        private static string FormatSmithTag(bool isSmithingInput)
+        {
+            return isSmithingInput ? " [smith]" : string.Empty;
+        }
+
         private static List<MarketTownSnapshot> BuildTownSnapshots(
             IReadOnlyList<Settlement> towns,
             Dictionary<string, ItemPriceMatrix> matrix)
@@ -462,6 +632,7 @@ namespace BlacksmithGuild.Market
         private static void UpdateSummary(MarketIntelReport report)
         {
             var topSpread = report.SpreadRows.FirstOrDefault();
+            var topRoute = report.RouteRows.FirstOrDefault();
             _summary = new MarketIntelSummary
             {
                 HasScan = true,
@@ -469,10 +640,15 @@ namespace BlacksmithGuild.Market
                 NearestDistance = report.NearestDistance,
                 TownsScanned = report.TownsScanned,
                 SpreadCount = report.SpreadRows.Count,
+                RouteCount = report.RouteRows.Count,
                 InventoryCount = report.InventoryRows.Count,
+                ExpandedScanUsed = report.ExpandedScanUsed,
                 TopSpreadLabel = topSpread == null
                     ? null
                     : $"{topSpread.ItemName} +{topSpread.Spread} ({topSpread.BuyTown}->{topSpread.SellTown})",
+                TopRouteLabel = topRoute == null
+                    ? null
+                    : $"{topRoute.ItemName} +{topRoute.Spread} ({topRoute.BuyTown}->{topRoute.SellTown})",
                 ReportPath = "BlacksmithGuild_MarketIntel.json"
             };
             _summaryRecorded = true;
@@ -486,6 +662,36 @@ namespace BlacksmithGuild.Market
             report.Line("nearest", _cachedReport.NearestTown ?? "unknown");
             report.Line("distance", $"{_cachedReport.NearestDistance:0.1} map units");
             report.Line("townsScanned", _cachedReport.TownsScanned.ToString());
+            if (_cachedReport.ExpandedScanUsed)
+            {
+                report.Line("scan", "expanded (no routes in 30u)");
+            }
+
+            if (_cachedReport.ActionPlan.Count > 0)
+            {
+                report.Section("Action Plan");
+                foreach (var step in _cachedReport.ActionPlan)
+                {
+                    report.Line(step.Step.ToString(), step.Text);
+                }
+            }
+
+            if (_cachedReport.RouteRows.Count > 0)
+            {
+                report.Section($"Buy @ Nearest ({_cachedReport.NearestTown})");
+                foreach (var row in _cachedReport.RouteRows)
+                {
+                    var smithTag = FormatSmithTag(row.IsSmithingInput);
+                    report.Line(
+                        row.ItemName,
+                        $"buy={row.BuyPrice} stock={row.Stock} -> {row.SellTown} sell={row.SellPrice} (+{row.Spread}){smithTag}");
+                }
+            }
+            else
+            {
+                report.Section($"Buy @ Nearest ({_cachedReport.NearestTown})");
+                report.Line("rows", "none (no profitable buy routes from nearest town)");
+            }
 
             if (_cachedReport.InventoryRows.Count > 0)
             {
@@ -533,18 +739,43 @@ namespace BlacksmithGuild.Market
             report.SummaryLine(
                 $"nearest={_cachedReport.NearestTown} ({_cachedReport.NearestDistance:0.1}u) towns={_cachedReport.TownsScanned}");
 
-            foreach (var row in _cachedReport.InventoryRows.Take(3))
+            if (_cachedReport.ExpandedScanUsed)
+            {
+                report.SummaryLine("expanded scan (no routes in 30u)");
+            }
+
+            if (_cachedReport.ActionPlan.Count > 0)
+            {
+                report.SummaryLine("--- ACTION PLAN ---");
+                foreach (var step in _cachedReport.ActionPlan)
+                {
+                    report.SummaryLine($"{step.Step}. {step.Text}");
+                }
+            }
+
+            if (_cachedReport.RouteRows.Count > 0)
+            {
+                report.SummaryLine("--- BUY@NEAREST ---");
+                foreach (var row in _cachedReport.RouteRows.Take(3))
+                {
+                    var smithTag = FormatSmithTag(row.IsSmithingInput);
+                    report.SummaryLine(
+                        $"{row.ItemName}: buy {row.BuyPrice} -> {row.SellTown} {row.SellPrice} (+{row.Spread}){smithTag}");
+                }
+            }
+
+            foreach (var row in _cachedReport.InventoryRows.Where(r => r.SpreadVsWorst > 0).Take(2))
             {
                 report.SummaryLine(
                     $"{row.ItemName} x{row.Quantity} -> Sell@{row.BestSellTown} {row.BestSellPrice} (+{row.SpreadVsWorst})");
             }
 
-            if (_cachedReport.InventoryRows.Count > 0 && _cachedReport.SpreadRows.Count > 0)
+            if (_cachedReport.SpreadRows.Count > 0)
             {
                 report.SummaryLine("--- TOP SPREADS ---");
             }
 
-            foreach (var row in _cachedReport.SpreadRows.Take(5))
+            foreach (var row in _cachedReport.SpreadRows.Take(3))
             {
                 report.SummaryLine(
                     $"{row.ItemName}: Buy@{row.BuyTown} {row.BuyPrice} -> Sell@{row.SellTown} {row.SellPrice} (+{row.Spread})");
@@ -576,6 +807,16 @@ namespace BlacksmithGuild.Market
             builder.AppendLine($"  \"nearestTown\": \"{Escape(report.NearestTown)}\",");
             builder.AppendLine($"  \"nearestDistance\": {report.NearestDistance:0.##},");
             builder.AppendLine($"  \"townsScanned\": {report.TownsScanned},");
+            builder.AppendLine($"  \"expandedScanUsed\": {(report.ExpandedScanUsed ? "true" : "false")},");
+            builder.AppendLine("  \"routeRows\": [");
+            AppendRouteRows(builder, report.RouteRows);
+            builder.AppendLine("  ],");
+            builder.AppendLine("  \"actionPlan\": [");
+            AppendActionPlan(builder, report.ActionPlan);
+            builder.AppendLine("  ],");
+            builder.AppendLine("  \"towns\": [");
+            AppendTownSnapshots(builder, report.Towns);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"inventoryRows\": [");
             AppendInventoryRows(builder, report.InventoryRows);
             builder.AppendLine("  ],");
@@ -584,6 +825,69 @@ namespace BlacksmithGuild.Market
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static void AppendRouteRows(StringBuilder builder, List<TradeRouteRow> rows)
+        {
+            for (var i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                builder.AppendLine("    {");
+                builder.AppendLine($"      \"itemId\": \"{Escape(row.ItemId)}\",");
+                builder.AppendLine($"      \"itemName\": \"{Escape(row.ItemName)}\",");
+                builder.AppendLine($"      \"buyTown\": \"{Escape(row.BuyTown)}\",");
+                builder.AppendLine($"      \"buyPrice\": {row.BuyPrice},");
+                builder.AppendLine($"      \"stock\": {row.Stock},");
+                builder.AppendLine($"      \"sellTown\": \"{Escape(row.SellTown)}\",");
+                builder.AppendLine($"      \"sellPrice\": {row.SellPrice},");
+                builder.AppendLine($"      \"spread\": {row.Spread},");
+                builder.AppendLine($"      \"sellDistance\": {row.SellDistance:0.##},");
+                builder.AppendLine($"      \"isSmithingInput\": {(row.IsSmithingInput ? "true" : "false")}");
+                builder.Append(i < rows.Count - 1 ? "    }," : "    }");
+                builder.AppendLine();
+            }
+        }
+
+        private static void AppendActionPlan(StringBuilder builder, List<ActionPlanStep> steps)
+        {
+            for (var i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                builder.AppendLine("    {");
+                builder.AppendLine($"      \"step\": {step.Step},");
+                builder.AppendLine($"      \"text\": \"{Escape(step.Text)}\"");
+                builder.Append(i < steps.Count - 1 ? "    }," : "    }");
+                builder.AppendLine();
+            }
+        }
+
+        private static void AppendTownSnapshots(StringBuilder builder, List<MarketTownSnapshot> towns)
+        {
+            for (var t = 0; t < towns.Count; t++)
+            {
+                var town = towns[t];
+                builder.AppendLine("    {");
+                builder.AppendLine($"      \"settlementId\": \"{Escape(town.SettlementId)}\",");
+                builder.AppendLine($"      \"name\": \"{Escape(town.Name)}\",");
+                builder.AppendLine($"      \"distance\": {town.Distance:0.##},");
+                builder.AppendLine("      \"goods\": [");
+                for (var g = 0; g < town.Goods.Count; g++)
+                {
+                    var good = town.Goods[g];
+                    builder.AppendLine("        {");
+                    builder.AppendLine($"          \"itemId\": \"{Escape(good.ItemId)}\",");
+                    builder.AppendLine($"          \"itemName\": \"{Escape(good.ItemName)}\",");
+                    builder.AppendLine($"          \"stock\": {good.Stock},");
+                    builder.AppendLine($"          \"buyPrice\": {good.BuyPrice},");
+                    builder.AppendLine($"          \"sellPrice\": {good.SellPrice}");
+                    builder.Append(g < town.Goods.Count - 1 ? "        }," : "        }");
+                    builder.AppendLine();
+                }
+
+                builder.AppendLine("      ]");
+                builder.Append(t < towns.Count - 1 ? "    }," : "    }");
+                builder.AppendLine();
+            }
         }
 
         private static void AppendInventoryRows(StringBuilder builder, List<InventorySellRow> rows)
