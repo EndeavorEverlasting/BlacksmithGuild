@@ -67,7 +67,7 @@ Full diagnostic detail remains in:
 | **F9** | `TBG F9: Daily tick test requested.` → `TBG F9: DailyTick fired.` or `TBG F9 BLOCKED:` / `TBG F9 FAILED:` |
 | **F10** | `TBG F10: Fast-forward ON.` / `OFF.` or `TBG F10 BLOCKED:` / `FAILED:` |
 | **F11** | `TBG F11: Gold test requested.` → `TBG F11: Gold test PASS, +100000.` or `BLOCKED` / `FAILED` |
-| **F12** | `TBG REPORT: MARKET INTEL` — `ACTION PLAN`, `BUY@NEAREST`, inventory sells (spread>0 only), top spreads; full table in Phase1.log |
+| **F12** | `TBG REPORT: MARKET INTEL` — **USER PASS** — `ACTION PLAN`, `BUY@NEAREST`, top spreads; full table in Phase1.log |
 
 If a risky command is blocked, the block reason appears in-game (e.g. `TBG F11 BLOCKED: map menu open — close panel first.`) and in the file log with additional detail.
 

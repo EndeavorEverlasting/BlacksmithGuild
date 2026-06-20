@@ -10,7 +10,9 @@ Path A zero-click **USER PASS** (Forge.cmd → Danustica, `TBG READY`, PLAY coor
 
 **This sprint shipped:** F12 market intel **action plan** — tells player what to buy at nearest town and where to ride next. Profit-first ranking; smithing inputs tagged `[smith]` only.
 
-**Not yet user-certified:** F12 action plan on live map, Session 2 real forge rank, LaunchForgeContinue play loop.
+**USER PASS (2026-06-20):** F12 @ Danustica — ACTION PLAN (Felt → Husn Fulq +880), BUY@NEAREST, expanded scan. See [functionality-status.md](../functionality-status.md).
+
+**Next:** Session 2 real forge rank, then LaunchForgeContinue play loop.
 
 ---
 

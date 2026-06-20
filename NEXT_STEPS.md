@@ -1,8 +1,7 @@
 # Next Steps
 
-**Daily dev:** `Forge.cmd` should zero-click to map — full contract in [docs/forge-zero-click-contract.md](docs/forge-zero-click-contract.md). Live cert steps: [docs/sprint-006e-live-cert-runbook.md](docs/sprint-006e-live-cert-runbook.md).
-
-005E economics is next but **gated on 006I live cert PASS**. Do not start 005E until Paths A/B/C + load paths pass.
+**Daily dev:** `Forge.cmd` — [forge-zero-click-contract.md](docs/forge-zero-click-contract.md)  
+**Where we are:** [functionality-status.md](docs/functionality-status.md)
 
 ---
 
@@ -10,38 +9,118 @@
 
 | Sprint | Status |
 |--------|--------|
-| 006H | LIVE CERT PASS. Do not regress narrative/bootstrap. |
-| 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
-| 006I-2 | SHIPPED. **Layer A Path A USER PASS** (2026-06-20) — see below. |
-| 006I-3 | SHIPPED. Path B culture Back pending re-cert. |
-| 006I-4 | **Path C USER PASS** (2026-06-19). Tag `006i-4-path-c-pass` @ `57f6062`. |
-| 006I-5 | SHIPPED — Module Mismatch UIA, Continue entrypoint, load stall watchdog. Re-cert PENDING. |
-| 005E market intel (read-only) | **SHIPPED** — F12 action plan + routes; user cert PENDING |
-| 005E smithing Stage A audit | **SHIPPED** — `ProbeSmithingAudit` command + JSON; stamina automation still BLOCKED |
-
-**2026-06-19:** UTF-8 BOM fix shipped (Forge.cmd parse on PS 5.1). Zero-click contract documented. **UIA desktop click safety fix** — scoped clicks only; use **`ForgeStop.cmd`** if automation runs away. **Cert still PARTIAL** — see [post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md).
+| 006H | LIVE CERT PASS |
+| 006I-2 Path A | **USER PASS** 2026-06-20 — zero-click → Danustica map |
+| 006I-4 Path C | **USER PASS** 2026-06-19 — tag `006i-4-path-c-pass` |
+| 006I-5 Continue | SHIPPED — **re-cert PENDING** |
+| **005E market intel** | **USER PASS** 2026-06-20 — F12 action plan @ Danustica |
+| 005E real forge rank | SHIPPED — **user cert PENDING** (Session 2) |
+| 005E smithing Stage A | SHIPPED — `ProbeSmithingAudit`; stamina B–D **BLOCKED** |
+| 006J closeout | PARTIAL — Path B Back pending |
 
 ---
 
-## Active stabilization gate
+## What works right now
 
-006I-5 shipped fixes for Continue load hang. Path A zero-click **USER PASS** 2026-06-20.
+| You can… | How |
+|----------|-----|
+| Bootstrap to map | `Forge.cmd` → `TBG READY` |
+| Fund trading tests | **F11** (+100k) |
+| Get buy/sell route plan | **F12** — ACTION PLAN + BUY@NEAREST |
+| Check mod status | **F7** |
+| Rank forge (stub default) | Load → daily tick or **Ctrl+Alt+R** after real source set |
+| Probe smithing API | Session 2 script or inbox `ProbeSmithingAudit` |
 
-Current blockers (006J):
+| You cannot yet… | Why |
+|-----------------|-----|
+| Auto buy/sell | Not built — manual town trade |
+| Auto craft / stamina rotation | Stages B–D not built |
+| Trust forge rank as real recipes | Default stub until Session 2 |
 
-- Layer A launcher handoff: **Path A PASS** — `MB II: Bannerlord` coord click `(811,764)` fractions `0.34×0.90`; map + `TBG READY` (Danustica)
-- Continue load: 006I-5 fix shipped; **not re-tested** — need `clicked Module Mismatch Yes` in Launch.log
-- Path B culture Back: not re-certified after 006I-4
-- Market F12 (005E-M): **code shipped** — user cert pending (`routeRows` + `actionPlan` in JSON)
-- Session 1 dev surfaces (F11/F12): **user pending** on map after Forge.cmd
-- Session 2 real forge rank: run `scripts\run-session2-real-forge.ps1` on loaded campaign
+---
 
-Plans:
+## Next session — Session 2: Real forge rank
 
-- [006I-5 Continue / Module Mismatch / Load Watchdog](docs/plans/006i-5-continue-module-mismatch-load.plan.md)
-- [006I-4 Quit-to-Main-Menu Intro Replay Loop](docs/plans/006i-4-quit-to-menu-intro-loop.plan.md) — Path C PASS
-- [005E Market Intelligence Shop Hotkey](docs/plans/005e-market-intelligence-shop-hotkey.plan.md) — **SHIPPED (MVP)**
-- [005E Smithing Posse Stamina & Output Automation](docs/plans/005e-smithing-posse-stamina-output.plan.md) — BLOCKED
+**Precondition:** Campaign map loaded (`TBG READY`). Game can stay open.
+
+**Do not close the game** until you have checked F7 — or re-run on Continue save later.
+
+### Step 1 — Run the inbox sequence
+
+From repo root (PowerShell):
+
+```powershell
+cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+.\scripts\run-session2-real-forge.ps1
+```
+
+This runs: `ProbeForgeRecipes` → `SetForgeCandidateSourceReal` → `RankForgeCandidates` → doctrine toggle → re-rank → `ProbeSmithingAudit`.
+
+**Alt-tab is OK** — commands go through file inbox.
+
+### Step 2 — Verify in-game
+
+On campaign map:
+
+1. Press **F7** — top forge line should show **`source=real`** (not `stub`)
+2. Press **Ctrl+Alt+R** — re-rank; F7 should update
+3. Optional: change doctrine via inbox and rank again — top candidate should change
+
+### Step 3 — Verify JSON
+
+```powershell
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_ForgeRecommendations.json"
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_RecipeProbe.json"
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_SmithingAudit.json"
+```
+
+**PASS:**
+
+- `RecipeProbe.json` — template count > 0
+- `ForgeRecommendations.json` — top entry `source=real` (or mapping flag, not stub fallback)
+- Doctrine change → different top candidate
+- `SmithingAudit.json` — heroes listed, audit status not Error
+
+**FAIL:** `fallbackUsed=true` or F7 still shows Long Warblade stub — stop and debug `ForgeRealCandidateMapper.cs`; do not start stamina automation.
+
+### Step 4 — Manual smithy check (5 min)
+
+1. **Ctrl+Alt+S** if Crafting skill too low
+2. Enter a town **smithy** (you have ore or buy per F12 plan)
+3. Confirm crafting UI opens — baseline game check before any automation work
+
+---
+
+## After Session 2 — Session 3: Play on Continue save
+
+Close Bannerlord completely, then:
+
+```powershell
+.\LaunchForgeContinue.cmd
+```
+
+**PASS:** Map loads without 5-minute hang; Launch.log may show `clicked Module Mismatch Yes`.
+
+**Play loop on Continue save:**
+
+1. **F12** — trade route for current location
+2. Ride → trade manually
+3. **Ctrl+Alt+R** — forge intel refresh
+4. Smithy → craft manually
+5. Repeat
+
+Disposable `Forge.cmd` remains for cert/bootstrap only.
+
+---
+
+## Remaining 006J items (lower priority)
+
+| Step | Action | When |
+|------|--------|------|
+| Path B culture Back | Close game → `Forge.cmd` → press Back on culture screen | After Session 2–3 |
+| Collect cert logs | `.\CollectCertLogs.cmd` | After any cert session |
+
+Path B **PASS:** Back does not replay full intro cutscene.
 
 ---
 
@@ -50,109 +129,10 @@ Plans:
 | Field | Value |
 |-------|-------|
 | Branch | `main` |
-| Rollback | `git checkout 006i-4-path-c-pass` |
 | Version | `v0.0.11` |
-| Remote sync | ahead of `origin/main` — push when user requests |
-| Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) |
-| Handoff | [docs/checkpoints/post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md) (active until 006J PASS) |
-| Open sprint plan | [docs/plans/006j-full-live-cert-closeout.plan.md](docs/plans/006j-full-live-cert-closeout.plan.md) |
-| Next feature | **005E** — Session 2 real rank + Session 1 F11/F12 cert; stamina automation Stage B+ after real rank PASS |
-| Open PRs | None |
-
----
-
-## Next actions (user) — 006J cert walkthrough
-
-**Before anything:** close unrelated apps (Excel, other games). If Forge misbehaves: **`ForgeStop.cmd`**.
-
-**Suggested order** (easiest first):
-
-| Step | What | When |
-|------|------|------|
-| **1** | `.\Forge.cmd` | Wait until campaign map (`TBG READY` in Phase1.log) — **USER PASS 2026-06-20** |
-| **1b** | On map: **F11** gold, **F12** market intel (expect ACTION PLAN + BUY@NEAREST), enter Danustica buy per plan | Same session as step 1 |
-| **1c** | `.\scripts\run-session2-real-forge.ps1` (or Ctrl+Alt+R after real source set) | Campaign loaded |
-| **4** | Press **F12** on map near a town | Same session as step 1 — do **before** closing the game |
-| **2** | Close game fully → `.\LaunchForgeContinue.cmd` | Loads your dev save |
-| **3** | Close game → `.\Forge.cmd` again | Culture Back test (see below) |
-
-After all steps: **`.\CollectCertLogs.cmd`** — copies log tails into one paste block.
-
----
-
-### Step 1 — Bootstrap (zero-click)
-
-```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-.\Forge.cmd
-```
-
-Sit back. Forge builds, opens the launcher, clicks PLAY, handles dialogs, auto-builds character, lands on map.
-
-**Done when:** Phase1.log contains `TBG READY`.
-
-**If wrong apps open:** `ForgeStop.cmd`, then check `BlacksmithGuild_Launch.log` for lines starting with `UIA: CLICK` — every click is logged with window title + process name.
-
----
-
-### Step 2 — Continue load
-
-Close Bannerlord completely (not just pause — exit to desktop).
-
-```powershell
-.\LaunchForgeContinue.cmd
-```
-
-**Done when:** map loads without a 5-minute hang. Launch.log should contain `clicked Module Mismatch Yes` (if that dialog appeared).
-
----
-
-### Step 3 — Path B: culture Back (new to you)
-
-This checks that pressing **Back** during character creation does **not** replay the long opening campaign video.
-
-1. Close the game completely.
-2. Run **`.\Forge.cmd`** again (starts a **new** sandbox game — that is intentional).
-3. Wait. Forge auto-advances until you see the **culture / origin** screen (pick your culture).
-4. **You** press **Back** or **Escape** once on that screen.
-5. **PASS:** you stay in character creation — the full intro cutscene does **not** start over.
-6. **FAIL:** the long opening video plays again from the beginning.
-
-You do not need to finish the game — quit after you see PASS or FAIL. The logs record what happened.
-
----
-
-### Step 4 — Market F12 (new to you)
-
-Do this **on the campaign map** while the game is still running (easiest right after step 1).
-
-1. On the map, click a **town** and enter it, **or** stand with your party next to a town on the world map.
-2. Press **F12** once (fallback: **Ctrl+Alt+M**).
-3. **PASS:** text appears in the in-game feed (bottom-left) about trade/market; Phase1.log gets `TBG REPORT: MARKET INTEL`; file `BlacksmithGuild_MarketIntel.json` appears in the Bannerlord folder.
-4. **FAIL:** nothing happens, or message says map not ready — move closer to a town and try again.
-
-Optional: press **F7** on the map for status after F12.
-
----
-
-### Collect logs (paste to next agent)
-
-```powershell
-.\CollectCertLogs.cmd
-```
-
-Or manually:
-
-```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 220
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 120
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_MarketIntel.json"
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json"
-```
-
-**Launch.log audit keywords:** `UIA: CLICK`, `UIA: FOCUS`, `UIA: AUDIT`, `handoff:`, `ForgeStop:`
-
-**005E — Blocked until 006I cert PASS.**
+| Remote | ahead of `origin/main` — push when requested |
+| Docs | [functionality-status.md](docs/functionality-status.md), [in-game-surfaces.md](docs/in-game-surfaces.md) |
+| Handoff | [post-005e-market-action-plan-handoff.md](docs/checkpoints/post-005e-market-action-plan-handoff.md) |
 
 ---
 
@@ -161,5 +141,3 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 ```powershell
 git checkout 006i-4-path-c-pass
 ```
-
-Do not revert 006I-4 quit fix unless explicitly rolling back.

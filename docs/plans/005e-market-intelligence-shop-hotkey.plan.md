@@ -2,17 +2,17 @@
 
 ## Status
 
-**SHIPPED (MVP + action plan)** — read-only dev hotkey; user live cert PENDING.
+**USER PASS (2026-06-20)** — read-only dev hotkey; live cert complete @ Danustica.
 
 | Gate | Status |
 |------|--------|
-| F12 / Ctrl+Alt+M hotkey | SHIPPED |
-| Nearest-town price scan | SHIPPED |
-| Inventory sell targets | SHIPPED |
-| Cross-town spread table | SHIPPED |
-| **Action plan (buy @ nearest + ride to sell)** | **SHIPPED** |
-| Expanded scan fallback (60u / 8 towns) | SHIPPED |
-| Full 005E smithing posse automation | BLOCKED (006I cert) |
+| F12 / Ctrl+Alt+M hotkey | **USER PASS** |
+| Nearest-town price scan | **USER PASS** |
+| Inventory sell targets | **USER PASS** |
+| Cross-town spread table | **USER PASS** |
+| **Action plan (buy @ nearest + ride to sell)** | **USER PASS** |
+| Expanded scan fallback (60u / 8 towns) | **USER PASS** (observed: `expanded scan (no routes in 30u)`) |
+| Full 005E smithing posse automation | BLOCKED (real forge rank cert pending) |
 | Gauntlet trade UI panel | BACKLOG |
 
 ## Purpose
@@ -78,6 +78,14 @@ In-game: press **F12**.
 - `TBG MARKET: map not ready`
 - All prices 0
 - Empty town list (increase `MaxMapDistance` in service)
+
+### User cert record (2026-06-20)
+
+Location: Danustica @ 4.1u, 3 towns scanned, expanded scan used.
+
+Feed: ACTION PLAN (Felt → Husn Fulq +880), BUY@NEAREST (Felt/Planks/Oil), TOP SPREADS (Velvet Onira→Danustica +862).
+
+See [functionality-status.md](../functionality-status.md).
 
 ## Scope lock
 
