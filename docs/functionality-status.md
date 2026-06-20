@@ -2,11 +2,18 @@
 
 **Last updated:** 2026-06-20  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `03726c0`
+**Branch:** `main` (see latest commit)
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
 ---
+
+## Recent fixes (2026-06-20)
+
+| Fix | Detail |
+|-----|--------|
+| **forge.ps1 allowlist drift** | `ProbeForgeRecipes`, `ProbeSmithingAudit`, `MarketSnapshotNow`, auto-build commands now in [`scripts/dev-command-names.ps1`](scripts/dev-command-names.ps1) |
+| **Forge.cmd false FAIL** | After PLAY click, launcher waits up to 240s for `Bannerlord.exe`; polls Phase1 for `TBG READY` pre-handoff; WARN (not FAIL) if map ready at timeout |
 
 ## Certified (user PASS)
 

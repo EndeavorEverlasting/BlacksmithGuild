@@ -137,6 +137,7 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 | CAUTION not confirmed | `scripts/launcher-auto-nav.ps1` — `HasCautionDialog`, Confirm / Enter fallback |
 | Safe Mode accepted manually | `scripts/launcher-auto-nav.ps1` — `ClickSafeModeNo` |
 | No `handoff:` | `scripts/launcher-auto-nav.ps1` — timeout, stable polls |
+| **FAIL but map loads** | Slow `Bannerlord.exe` spawn after PLAY — script now extends to 240s post-PLAY and polls `TBG READY` pre-handoff; `open_launcher` = **WARN** if Phase1 ready at timeout |
 | Main menu not auto-starting | `MainMenuAutoLauncher.cs`, `BlacksmithGuild_LaunchIntent.json` |
 | Intro replay / loop | `SandboxCampaignIntroSkip.cs`, `CampaignSetupStateTracker.cs` |
 | Character creation stall | `CampaignSetupStateTracker.cs`, `CharacterCreationReflection.cs` |

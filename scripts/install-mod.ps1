@@ -163,7 +163,12 @@ try {
     & (Join-Path $PSScriptRoot 'pin-dev-save.ps1')
 
     if ($Launch) {
-        Invoke-ForgeStep -Name 'open_launcher' -Action {
+        if (-not (Get-Command Test-Phase1TbgReady -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'dev-command-names.ps1')
+        }
+
+        Set-ForgeStep -Name 'open_launcher' -Status 'RUNNING'
+        try {
             Write-Host ''
             if (-not $LaunchManual) {
                 & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
@@ -172,12 +177,30 @@ try {
             if (-not $LaunchManual) {
                 & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
             }
+            Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
+        } catch {
+            if (Test-Phase1TbgReady -BannerlordRoot $BannerlordRoot) {
+                Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message $_.Exception.Message
+                Write-Host ''
+                Write-Host 'WARN - launcher-auto-nav timed out but TBG READY found in Phase1.log (map loaded).' -ForegroundColor Yellow
+            } else {
+                Set-ForgeStep -Name 'open_launcher' -Status 'FAIL' -Message $_.Exception.Message
+                Add-ForgeError $_.Exception.Message
+                throw
+            }
         }
     }
 
     $overall = 'PASS'
     if (Test-ForgeStepBlocked -Name 'install') {
         $overall = 'WARN'
+    }
+    if ($script:ForgeStatusState.steps) {
+        foreach ($step in $script:ForgeStatusState.steps) {
+            if ($step.status -eq 'WARN') {
+                $overall = 'WARN'
+            }
+        }
     }
     if ($CheckLog -and $script:ForgeStatusState.tests) {
         foreach ($key in $script:ForgeStatusState.tests.Keys) {

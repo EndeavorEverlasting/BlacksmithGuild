@@ -47,16 +47,14 @@
 
 ### Step 1 — Run the inbox sequence
 
-From repo root (PowerShell):
+From repo root (PowerShell) with **campaign map loaded** (`TBG READY`):
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\scripts\run-session2-real-forge.ps1
 ```
 
-This runs: `ProbeForgeRecipes` → `SetForgeCandidateSourceReal` → `RankForgeCandidates` → doctrine toggle → re-rank → `ProbeSmithingAudit`.
-
-**Alt-tab is OK** — commands go through file inbox.
+Commands are sent via file inbox (alt-tab OK). Allowlist lives in [`scripts/dev-command-names.ps1`](scripts/dev-command-names.ps1) — must stay synced with `DevCommandRegistry.cs`.
 
 ### Step 2 — Verify in-game
 

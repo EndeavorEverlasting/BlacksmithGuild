@@ -380,26 +380,11 @@ function Send-ForgeCommand {
         [int]$TimeoutSec = 60
     )
 
-    $allowed = @(
-        'ListScenarios',
-        'ShowForgeStatus',
-        'AdvanceOneDay',
-        'ToggleFastForward',
-        'RichPlayerEconomyTest',
-        'RichSmithingProgressionTest',
-        'AddSmithingXp',
-        'AddSmithingFocus',
-        'AddEnduranceAttribute',
-        'TreasurySnapshotNow',
-        'RankForgeCandidates',
-        'SetForgeCandidateSourceStub',
-        'SetForgeCandidateSourceReal',
-        'ShowForgeCandidateSource',
-        'SetForgeDoctrineProfitForge',
-        'SetForgeDoctrineRareMetalConservation',
-        'SetForgeDoctrineCashCrisis',
-        'ShowForgeDoctrine'
-    )
+    if (-not (Get-Command Get-DevCommandNames -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'dev-command-names.ps1')
+    }
+
+    $allowed = Get-DevCommandNames
 
     if ($allowed -notcontains $CommandName) {
         throw "Unknown command '$CommandName'. Allowed: $($allowed -join ', ')"

@@ -1267,6 +1267,7 @@ $clickedModuleMismatch = $false
 $loggedModuleMismatchButtons = $false
 $gameStablePolls = 0
 $requiredStablePolls = 3
+$playClickUtc = $null
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -1285,6 +1286,29 @@ function Extend-DeadlineForSlowPath {
             Write-LaunchLog "extended timeout to ${extended}s (Safe Mode or crash reporter path)"
         }
     }
+}
+
+function Extend-DeadlineAfterPlayClick {
+    if (-not $script:clickedPlayContinue -or -not $script:playClickUtc) {
+        return
+    }
+
+    $extendedDeadline = $script:playClickUtc.AddSeconds(240)
+    if ($extendedDeadline -gt $script:deadline) {
+        $script:deadline = $extendedDeadline
+        $script:effectiveTimeout = [int][Math]::Ceiling(($script:deadline - $script:startTime).TotalSeconds)
+        Write-LaunchLog "extended timeout to $($script:effectiveTimeout)s (post-PLAY spawn wait)"
+    }
+}
+
+function Test-LaunchReadyNow {
+    param([ref]$StallDetected)
+
+    if ((Test-Phase1ReadyOrStall -StallDetected $StallDetected) -or (Test-StatusJsonReady)) {
+        return $true
+    }
+
+    return $false
 }
 
 function Test-GameProcessRunning {
@@ -1481,6 +1505,20 @@ while ((Get-Date) -lt $deadline) {
         $lastHeartbeat = Get-Date
     }
 
+    if ($clickedPlayContinue) {
+        Extend-DeadlineAfterPlayClick
+    }
+
+    $preHandoffStall = $false
+    if (Test-LaunchReadyNow -StallDetected ([ref]$preHandoffStall)) {
+        Write-LaunchLog 'TBG READY detected (pre-handoff) — launch success'
+        return
+    }
+
+    if ($preHandoffStall) {
+        Write-LaunchLog 'load stall signature detected before handoff — waiting for watchdog path'
+    }
+
     if (Test-HandoffWhenGameStable) {
         return
     }
@@ -1544,6 +1582,8 @@ while ((Get-Date) -lt $deadline) {
             if (Test-LaunchClickVerified -WaitSec 8) {
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
                 $clickedPlayContinue = $true
+                $script:playClickUtc = Get-Date
+                Extend-DeadlineAfterPlayClick
             } else {
                 Write-LaunchLog "click $displayName ($matchedName) NOT verified — PLAY/CONTINUE still on screen; will retry"
                 [UIAHelper]::ResetLauncherClickRetryState()
@@ -1552,6 +1592,12 @@ while ((Get-Date) -lt $deadline) {
     }
 
     Start-Sleep -Milliseconds $PollMs
+}
+
+$boundaryStall = $false
+if (Test-LaunchReadyNow -StallDetected ([ref]$boundaryStall)) {
+    Write-LaunchLog 'TBG READY detected at timeout boundary — treating as success'
+    return
 }
 
 $visibleButtons = [UIAHelper]::LogVisibleLauncherButtons()
