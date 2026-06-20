@@ -8,9 +8,9 @@ This plan is blocked until Sprint 006I live certification passes.
 
 | Gate | Status |
 |------|--------|
-| 006I live cert | PENDING |
-| 005E implementation | BLOCKED |
-| This plan | Allowed as docs-only planning |
+| 006I live cert | PARTIAL — Path A user PASS 2026-06-20 |
+| 005E Stage A audit | **SHIPPED** — `ProbeSmithingAudit` → `BlacksmithGuild_SmithingAudit.json` |
+| 005E Stages B–D automation | BLOCKED — real forge rank user cert + stamina API mapping |
 
 ## Purpose
 

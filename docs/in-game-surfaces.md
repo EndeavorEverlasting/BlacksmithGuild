@@ -49,7 +49,7 @@ If shortcut keys do not appear to work, first **close any open campaign panels**
 
 If there is no visible response, check `BlacksmithGuild_Phase1.log` for `[TBG HOTKEY TRACE]` and `[TBG COMMAND TRACE]` lines.
 
-**Fallback when F-keys are swallowed by Bannerlord menus:** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), Ctrl+Alt+M (market intel).
+**Fallback when F-keys are swallowed by Bannerlord menus:** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), Ctrl+Alt+M (market intel), **Ctrl+Alt+R (rank forge candidates)**.
 
 Windows toast notifications are separate (forge install scripts) and may appear in the Windows notification area, usually bottom-right. Toast is **not** used for shortcut feedback.
 

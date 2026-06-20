@@ -2,9 +2,9 @@
 
 ## Verdict
 
-**RE-CERT PARTIAL** — Path A + Path C PASS; Layer A handoff, Continue, Path B, Market F12 pending.
+**RE-CERT PARTIAL** — Path A + Path C PASS; Layer A Path A **USER PASS 2026-06-20**; Continue, Path B, Market F12 pending.
 
-**006J agent analysis (2026-06-19):** On-disk logs reviewed. No `handoff:`, no Module Mismatch click, no MarketIntel.json. Cannot tag `006i-live-cert-pass`.
+**Path A evidence (2026-06-20):** Forge.cmd → Danustica map, `TBG READY`, `ForgeQuartermasterWarlord`, stub forge Long Warblade 11250. Launch.log: `AUDIT coord window pick: MB II: Bannerlord`, click `(811,764)` fractions `0.34×0.90`.
 
 Handoff: [docs/checkpoints/post-006i-4-handoff.md](checkpoints/post-006i-4-handoff.md) · Plan (006J): [docs/plans/006j-full-live-cert-closeout.plan.md](plans/006j-full-live-cert-closeout.plan.md) · Plan (006I-5): [docs/plans/006i-5-continue-module-mismatch-load.plan.md](plans/006i-5-continue-module-mismatch-load.plan.md) · Plan (006I-4): [docs/plans/006i-4-quit-to-menu-intro-loop.plan.md](plans/006i-4-quit-to-menu-intro-loop.plan.md)
 
@@ -49,11 +49,11 @@ Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
 
 | Path | Result | Evidence |
 |------|--------|----------|
-| A — bootstrap to map | **PASS** | Phase1 ~02:32:04 — count=1, Options block, TBG READY |
+| A — bootstrap to map | **USER PASS** | 2026-06-20 Forge.cmd → Danustica, TBG READY, PLAY coords 0.34×0.90 @ (811,764) |
 | B — culture Back/Escape | **PENDING** | Not run; no culture Back lines in Phase1 tail |
 | C — Pause → Quit | **USER PASS** | User confirmed; intent consumed block log ~02:31:27 |
 | Continue load | **PENDING** | 006I-5 shipped; no `clicked Module Mismatch Yes` in Launch.log |
-| Launcher handoff (Layer A) | **FAIL** | Launch.log tail: timeouts only; no `handoff:` |
+| Launcher handoff (Layer A) | **Path A PASS** | 2026-06-20 user session — map reached; verify `handoff:` line on next CollectCertLogs |
 | Market F12 (005E-M) | **FAIL** | `BlacksmithGuild_MarketIntel.json` absent |
 
 **Overall: PARTIAL** — not LIVE CERT PASS until Layer A + B + Continue + Market F12 certified.

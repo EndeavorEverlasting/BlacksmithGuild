@@ -35,6 +35,7 @@ namespace BlacksmithGuild.DevTools
                 ForgeRecommendationService.SetForgeDoctrineCashCrisisCommand,
                 ForgeRecommendationService.ShowForgeDoctrineCommand,
                 ForgeRecommendationService.ProbeForgeRecipesCommand,
+                SmithingAuditService.ProbeSmithingAuditCommand,
                 AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand,

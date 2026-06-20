@@ -12,12 +12,12 @@
 |--------|--------|
 | 006H | LIVE CERT PASS. Do not regress narrative/bootstrap. |
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
-| 006I-2 | SHIPPED. Launcher handoff cert pending. |
+| 006I-2 | SHIPPED. **Layer A Path A USER PASS** (2026-06-20) — see below. |
 | 006I-3 | SHIPPED. Path B culture Back pending re-cert. |
 | 006I-4 | **Path C USER PASS** (2026-06-19). Tag `006i-4-path-c-pass` @ `57f6062`. |
 | 006I-5 | SHIPPED — Module Mismatch UIA, Continue entrypoint, load stall watchdog. Re-cert PENDING. |
 | 005E market intel (read-only) | **SHIPPED** — F12 hotkey MVP; user cert PENDING |
-| 005E smithing posse automation | BLOCKED (006I cert) |
+| 005E smithing Stage A audit | **SHIPPED** — `ProbeSmithingAudit` command + JSON; stamina automation still BLOCKED |
 
 **2026-06-19:** UTF-8 BOM fix shipped (Forge.cmd parse on PS 5.1). Zero-click contract documented. **UIA desktop click safety fix** — scoped clicks only; use **`ForgeStop.cmd`** if automation runs away. **Cert still PARTIAL** — see [post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md).
 
@@ -25,14 +25,16 @@
 
 ## Active stabilization gate
 
-006I-5 shipped fixes for Continue load hang. User re-cert required before full PASS.
+006I-5 shipped fixes for Continue load hang. Path A zero-click **USER PASS** 2026-06-20.
 
 Current blockers (006J):
 
-- Layer A launcher handoff: **FAIL** — Launch.log shows timeouts; no `handoff:` line
+- Layer A launcher handoff: **Path A PASS** — `MB II: Bannerlord` coord click `(811,764)` fractions `0.34×0.90`; map + `TBG READY` (Danustica)
 - Continue load: 006I-5 fix shipped; **not re-tested** — need `clicked Module Mismatch Yes` in Launch.log
 - Path B culture Back: not re-certified after 006I-4
 - Market F12 (005E-M): **not run** — `BlacksmithGuild_MarketIntel.json` absent
+- Session 1 dev surfaces (F11/F12): **user pending** on map after Forge.cmd
+- Session 2 real forge rank: run `scripts\run-session2-real-forge.ps1` on loaded campaign
 
 Plans:
 
@@ -54,7 +56,7 @@ Plans:
 | Open sprint | [docs/sprint-006i-live-results.md](docs/sprint-006i-live-results.md) |
 | Handoff | [docs/checkpoints/post-006j-partial-handoff.md](docs/checkpoints/post-006j-partial-handoff.md) (active until 006J PASS) |
 | Open sprint plan | [docs/plans/006j-full-live-cert-closeout.plan.md](docs/plans/006j-full-live-cert-closeout.plan.md) |
-| Next feature | **005E** — gated on 006I cert |
+| Next feature | **005E** — Session 2 real rank + Session 1 F11/F12 cert; stamina automation Stage B+ after real rank PASS |
 | Open PRs | None |
 
 ---
@@ -67,7 +69,9 @@ Plans:
 
 | Step | What | When |
 |------|------|------|
-| **1** | `.\Forge.cmd` | Wait until campaign map (`TBG READY` in Phase1.log) |
+| **1** | `.\Forge.cmd` | Wait until campaign map (`TBG READY` in Phase1.log) — **USER PASS 2026-06-20** |
+| **1b** | On map: **F11** gold, **F12** market intel, enter Danustica buy ore/horse | Same session as step 1 |
+| **1c** | `.\scripts\run-session2-real-forge.ps1` (or Ctrl+Alt+R after real source set) | Campaign loaded |
 | **4** | Press **F12** on map near a town | Same session as step 1 — do **before** closing the game |
 | **2** | Close game fully → `.\LaunchForgeContinue.cmd` | Loads your dev save |
 | **3** | Close game → `.\Forge.cmd` again | Culture Back test (see below) |

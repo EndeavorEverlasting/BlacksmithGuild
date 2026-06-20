@@ -49,9 +49,9 @@ public static class UIAHelper
     private static DateTime _firstLauncherWindowSeenUtc = DateTime.MinValue;
     private static DateTime _lastCoordClickUtc = DateTime.MinValue;
     private static int _coordAttemptIndex = 0;
-    private static readonly double[] LauncherPlayXFractions = new double[] { 0.34, 0.38, 0.30, 0.42, 0.26 };
-    private static readonly double[] LauncherContinueXFractions = new double[] { 0.20, 0.24, 0.28, 0.22, 0.18 };
-    private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88, 0.93 };
+    private static readonly double[] LauncherPlayXFractions = new double[] { 0.34, 0.38, 0.30 };
+    private static readonly double[] LauncherContinueXFractions = new double[] { 0.20, 0.24, 0.28 };
+    private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88 };
     private const int LauncherStableSecBeforeFallback = 5;
     private const int LauncherCoordClickThrottleSec = 2;
     private const int LauncherMinCoordWindowWidth = 800;
@@ -724,6 +724,24 @@ public static class UIAHelper
     public static bool HasLauncherRoot()
     {
         return FindAllLauncherWindowRoots().Count > 0 || GetLauncherProcessIds().Count > 0;
+    }
+
+    public static bool HasLauncherLoadingSurface()
+    {
+        foreach (var window in FindAllLauncherWindowRoots())
+        {
+            try
+            {
+                var title = window.Current.Name ?? string.Empty;
+                if (title.IndexOf("Singleplayer PID", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+            catch { }
+        }
+
+        return false;
     }
 
     public static bool ClickCrashReporterNo()
@@ -1439,12 +1457,13 @@ function Test-HandoffWhenGameStable {
 }
 
 function Test-LaunchClickVerified {
-    param([int]$WaitSec = 8)
+    param([int]$WaitSec = 18)
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
         if (Test-GameProcessRunning) { return $true }
         if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+        if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
         Start-Sleep -Milliseconds 250
     }
     return $false

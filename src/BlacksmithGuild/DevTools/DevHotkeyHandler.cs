@@ -1,3 +1,4 @@
+using BlacksmithGuild.Forge;
 using BlacksmithGuild.Market;
 using TaleWorlds.InputSystem;
 
@@ -23,6 +24,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _legacyXWasDown;
         private static bool _legacyCWasDown;
         private static bool _legacyMWasDown;
+        private static bool _legacyRWasDown;
 
         public static void Poll()
         {
@@ -155,6 +157,14 @@ namespace BlacksmithGuild.DevTools
                         "Ctrl+Alt+M"
                     );
                 }
+                else if (TryFireEdge(InputKey.R, ref _legacyRWasDown))
+                {
+                    RunCommand(
+                        "Ctrl+Alt+R",
+                        ForgeRecommendationService.RankForgeCandidatesCommand,
+                        "Ctrl+Alt+R"
+                    );
+                }
 
                 return;
             }
@@ -166,6 +176,7 @@ namespace BlacksmithGuild.DevTools
             _legacyXWasDown = Input.IsKeyDown(InputKey.X);
             _legacyCWasDown = Input.IsKeyDown(InputKey.C);
             _legacyMWasDown = Input.IsKeyDown(InputKey.M);
+            _legacyRWasDown = Input.IsKeyDown(InputKey.R);
         }
 
         private static bool TryHelpHotkey(InputKey key, string label, string commandName, ref bool wasDown)
