@@ -28,90 +28,44 @@
 | Fund trading tests | **F11** (+100k) |
 | Get buy/sell route plan | **F12** — ACTION PLAN + BUY@NEAREST |
 | Check mod status | **F7** |
-| Rank forge (stub default) | Load → daily tick or **Ctrl+Alt+R** after real source set |
-| Probe smithing API | Session 2 script or inbox `ProbeSmithingAudit` |
+| Rank real forge recipes | **Ctrl+Alt+R** on map (source=real after Session 2) |
+| Probe smithing API | `ProbeSmithingAudit` — Stage A PASS |
 
 | You cannot yet… | Why |
 |-----------------|-----|
 | Auto buy/sell | Not built — manual town trade |
 | Auto craft / stamina rotation | Stages B–D not built |
-| Trust forge rank as real recipes | **Done** — Session 2 PASS; use **Ctrl+Alt+R** to refresh |
 
 ---
 
-## Next session — Session 2: Real forge rank
+## Next session — Session 3: Play on Continue save
 
-**Precondition:** Campaign map loaded (`TBG READY`). Game can stay open.
-
-**Do not close the game** until you have checked F7 — or re-run on Continue save later.
-
-### Step 1 — Run the inbox sequence
-
-From repo root (PowerShell) with **campaign map loaded** (`TBG READY`):
-
-```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-.\scripts\run-session2-real-forge.ps1
-```
-
-Commands are sent via file inbox (alt-tab OK). Allowlist lives in [`scripts/dev-command-names.ps1`](scripts/dev-command-names.ps1) — must stay synced with `DevCommandRegistry.cs`.
-
-### Step 2 — Verify in-game
-
-On campaign map:
-
-1. Press **F7** — top forge line should show **`source=real`** (not `stub`)
-2. Press **Ctrl+Alt+R** — re-rank; F7 should update
-3. Optional: change doctrine via inbox and rank again — top candidate should change
-
-### Step 3 — Verify JSON
-
-```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_ForgeRecommendations.json"
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_RecipeProbe.json"
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_SmithingAudit.json"
-```
-
-**PASS:**
-
-- `RecipeProbe.json` — template count > 0
-- `ForgeRecommendations.json` — top entry `source=real` (or mapping flag, not stub fallback)
-- Doctrine change → different top candidate
-- `SmithingAudit.json` — heroes listed, audit status not Error
-
-**FAIL:** `fallbackUsed=true` or F7 still shows Long Warblade stub — stop and debug `ForgeRealCandidateMapper.cs`; do not start stamina automation.
-
-### Step 4 — Manual smithy check (5 min)
-
-1. **Ctrl+Alt+S** if Crafting skill too low
-2. Enter a town **smithy** (you have ore or buy per F12 plan)
-3. Confirm crafting UI opens — baseline game check before any automation work
-
----
-
-## After Session 2 — Session 3: Play on Continue save
+**Session 2 PASS (2026-06-20):** `source=real`, top=Javelin, templates=12, `fallbackUsed=false`, SmithingAudit Ok.
 
 Close Bannerlord completely, then:
 
 ```powershell
+cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\LaunchForgeContinue.cmd
 ```
 
-**PASS:** Map loads without 5-minute hang; Launch.log may show `clicked Module Mismatch Yes`.
+**PASS:** Map loads without hang; Launch.log may show `clicked Module Mismatch Yes`.
 
-**Play loop on Continue save:**
+**Play loop:**
 
-1. **F12** — trade route for current location
-2. Ride → trade manually
-3. **Ctrl+Alt+R** — forge intel refresh
+1. **F12** — trade route
+2. Enter town → trade manually
+3. **Ctrl+Alt+R** — refresh forge rank
 4. Smithy → craft manually
 5. Repeat
+
+Optional in-game check on disposable save: **F7** should show `source=real` and top candidate Javelin (RareMetalConservation doctrine).
 
 Disposable `Forge.cmd` remains for cert/bootstrap only.
 
 ---
 
-## Remaining 006J items (lower priority)
+## Session 2 reference (complete)
 
 | Step | Action | When |
 |------|--------|------|
