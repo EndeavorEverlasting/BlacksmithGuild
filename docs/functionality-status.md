@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20 (007B smoke cert closeout)  
+**Last updated:** 2026-06-20 (007C — table spacing + Track 2A code)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 007B USER PASS (Danustica smoke)
+**Branch:** `main` — 007B USER PASS; Track 2A **code shipped**, **USER cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -12,6 +12,8 @@ Canonical snapshot of what works today, what is certified, and what is not built
 
 | Fix | Detail |
 |-----|--------|
+| **007C market table spacing** | Wider town columns (18), ellipsis truncation, double-space text gaps — Phase1 file tables no longer show `Onirasell` / `HusnFulq` collisions |
+| **Track 2A real-first rank** | Ctrl+Alt+R on campaign map resolves Real candidates when map ready; `SetForgeCandidateSourceStub` forces stub; campaign-smoke unchanged |
 | **Module Mismatch verify-dismiss** | `52c2114` — retry until `IsAnyInquiryActive` false; `confirmed (inquiry cleared)` log line |
 | **forge.ps1 allowlist drift** | `ProbeForgeRecipes`, `ProbeSmithingAudit`, `MarketSnapshotNow`, auto-build commands now in [`scripts/dev-command-names.ps1`](scripts/dev-command-names.ps1) |
 | **Forge.cmd false FAIL** | After PLAY click, launcher waits up to 240s for `Bannerlord.exe`; polls Phase1 for `TBG READY` pre-handoff; WARN (not FAIL) if map ready at timeout |
@@ -52,8 +54,9 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
+| **Track 2A real forge on map** | **Ctrl+Alt+M** then **Ctrl+Alt+R** on campaign map | JSON: `source=real`, `fallbackUsed=false`, `mappedCount>0`; optional per-material `materialGaps` | **USER cert PENDING** — code shipped 007C |
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
-| **Session 3 play loop** | Ctrl+Alt+M + Ctrl+Alt+R + manual trade/craft on Continue | Market + forge JSON honest | **USER PASS** market/forge format (Danustica 2026-06-20); manual craft baseline optional |
+| **Session 3 play loop** | Ctrl+Alt+M + Ctrl+Alt+R + manual trade/craft on Continue | Market + forge JSON honest | **USER PASS** market/forge format (Danustica 2026-06-20); real rank cert pending Track 2A |
 
 ### Market intel cert evidence (2026-06-20, Continue save near Tevea/Zestica)
 
@@ -75,7 +78,7 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 ```text
 1. Ctrl+Alt+M on map → action plan: buy @ nearest, ride to sell town
 2. Enter town       → trade manually (no auto buy/sell)
-3. Ctrl+Alt+R       → refresh forge recommendations (stub until real source set)
+3. Ctrl+Alt+R       → forge recommendations (Real-first on map; stub if Real unavailable or SetForgeCandidateSourceStub)
 4. Enter smithy     → craft manually (game UI)
 5. Ctrl+Alt+M at next town → next route
 ```
@@ -92,7 +95,7 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 |------|----------|-------|
 | Auto buy/sell | — | Read-only market intel; scope-locked |
 | Stamina posse automation (Stages B–D) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | Blocked on real forge rank cert + API mapping |
-| Forge ↔ market bridge | — | RankForgeCandidates ignores market prices for ore sourcing |
+| Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; full `--- FORGE MATERIALS ---` market section still open (Track 2B) |
 | Gauntlet trade UI panel | [005e-market-intelligence-shop-hotkey.plan.md](plans/005e-market-intelligence-shop-hotkey.plan.md) | BACKLOG |
 | Travel cost / gold / carry weight in routes | — | Pure price spread ranking only |
 | Character doctrine (Aserai Trade-Smith) | [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) | Planned. Default target is Aserai Trade-Smith with Khuzait mounted fallback. Config/logging only after live-cert gate. |
@@ -139,4 +142,4 @@ Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & 
 
 ## Next session
 
-See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **007B USER PASS** recorded; next **Track 2A** (real forge on Ctrl+Alt+R + per-material market buy); **006J** Path B Back pending.
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **007C code shipped**; **Track 2A USER cert PENDING**; **006J** Path B Back pending.

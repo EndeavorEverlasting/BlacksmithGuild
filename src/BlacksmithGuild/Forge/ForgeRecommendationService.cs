@@ -28,6 +28,7 @@ namespace BlacksmithGuild.Forge
         private static readonly RealForgeCandidateSource RealSource = new RealForgeCandidateSource();
 
         private static ForgeCandidateSourceKind _requestedSourceKind = ForgeCandidateSourceKind.Stub;
+        private static bool _stubExplicitlyRequested;
         private static ForgeDoctrine _activeDoctrine = ForgeDoctrine.ProfitForge;
         private static ForgeRecommendationSummary _summary = new ForgeRecommendationSummary();
         private static ForgeRecommendationReport _cachedReport = new ForgeRecommendationReport();
@@ -40,6 +41,7 @@ namespace BlacksmithGuild.Forge
         public static bool SetRequestedSourceKind(ForgeCandidateSourceKind kind)
         {
             _requestedSourceKind = kind;
+            _stubExplicitlyRequested = kind == ForgeCandidateSourceKind.Stub;
             DebugLogger.Test($"[TBG FORGE] Candidate source set to {kind}.", showInGame: false);
             InGameNotice.Info(ModDisplay.CompactLine("Forge", $"candidate source set to {kind}."));
             return true;
@@ -70,7 +72,8 @@ namespace BlacksmithGuild.Forge
             try
             {
                 var doctrine = doctrineOverride ?? _activeDoctrine;
-                var resolution = ResolveCandidates(_requestedSourceKind);
+                var resolutionKind = GetResolutionKind(source);
+                var resolution = ResolveCandidates(resolutionKind);
                 if (resolution.Candidates.Count == 0)
                 {
                     DebugLogger.Test("[TBG FORGE] RankForgeCandidates failed: no candidates after source resolution.", showInGame: false);
@@ -98,7 +101,7 @@ namespace BlacksmithGuild.Forge
                     Ranked = ranked
                 };
 
-                PopulateAdvisoryFields(_cachedReport);
+                PopulateAdvisoryFields(_cachedReport, resolutionKind);
 
                 WriteJsonReport(_cachedReport);
                 UpdateSummary(_cachedReport);
@@ -161,6 +164,30 @@ namespace BlacksmithGuild.Forge
             return ModDisplay.CompactLine(
                 "Forge",
                 $"top={_summary.TopCandidateName} score={_summary.TopFinalScore:0} doctrine={_summary.Doctrine} source={_summary.Source}");
+        }
+
+        private static ForgeCandidateSourceKind GetResolutionKind(string source)
+        {
+            if (_requestedSourceKind == ForgeCandidateSourceKind.Real)
+            {
+                return ForgeCandidateSourceKind.Real;
+            }
+
+            if (_stubExplicitlyRequested)
+            {
+                return ForgeCandidateSourceKind.Stub;
+            }
+
+            if (string.Equals(source, RankForgeCandidatesCommand, StringComparison.Ordinal))
+            {
+                GameSessionState.Refresh();
+                if (GameSessionState.IsCampaignMapReady)
+                {
+                    return ForgeCandidateSourceKind.Real;
+                }
+            }
+
+            return _requestedSourceKind;
         }
 
         private static CandidateResolution ResolveCandidates(ForgeCandidateSourceKind requestedKind)
@@ -251,7 +278,7 @@ namespace BlacksmithGuild.Forge
             var top = _cachedReport.TopCandidate;
 
             report.Section("Source");
-            report.Line("requested", _requestedSourceKind.ToString());
+            report.Line("requested", (_cachedReport.SourceHonesty?.Requested ?? _requestedSourceKind.ToString()));
             report.Line("resolved", _cachedReport.Source);
             report.Line("sourceKind", _cachedReport.SourceKind);
             report.Line("sourceStatus", _cachedReport.SourceStatus);
@@ -268,7 +295,9 @@ namespace BlacksmithGuild.Forge
                 report.Line("mappedCount", _cachedReport.MappedCount.ToString());
             }
             var honesty = _cachedReport.SourceHonesty
-                ?? ForgeAdvisoryPlanner.BuildSourceHonesty(_requestedSourceKind, _cachedReport);
+                ?? ForgeAdvisoryPlanner.BuildSourceHonesty(
+                    GetResolutionKind(source),
+                    _cachedReport);
             report.Verdict(honesty.Verdict, honesty.VerdictMessage);
 
             report.Section("Doctrine");
@@ -316,14 +345,18 @@ namespace BlacksmithGuild.Forge
             report.EndReport(emitInGame: string.Equals(source, RankForgeCandidatesCommand, StringComparison.Ordinal), emitToFile: true);
         }
 
-        private static void PopulateAdvisoryFields(ForgeRecommendationReport report)
+        private static void PopulateAdvisoryFields(
+            ForgeRecommendationReport report,
+            ForgeCandidateSourceKind resolutionKind)
         {
-            report.SourceHonesty = ForgeAdvisoryPlanner.BuildSourceHonesty(_requestedSourceKind, report);
+            report.SourceHonesty = ForgeAdvisoryPlanner.BuildSourceHonesty(resolutionKind, report);
             report.MaterialGaps = ForgeAdvisoryPlanner.BuildMaterialGaps(report.TopCandidate);
-            var isStub = string.Equals(
-                report.Source,
-                StubForgeCandidateSource.SourceName,
-                StringComparison.OrdinalIgnoreCase);
+            var isStub = report.FallbackUsed
+                || string.Equals(
+                    report.Source,
+                    StubForgeCandidateSource.SourceName,
+                    StringComparison.OrdinalIgnoreCase)
+                || string.Equals(report.Source, "stub-fallback", StringComparison.OrdinalIgnoreCase);
             report.ActionPlan = ForgeAdvisoryPlanner.BuildActionPlan(
                 report.TopCandidate,
                 report.MaterialGaps,

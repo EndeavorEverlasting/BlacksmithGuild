@@ -1,6 +1,6 @@
 # Sprint 007A — Guild Loop + Advisory Automation
 
-**Status:** IN PROGRESS — 007B **USER PASS** 2026-06-20 (Danustica smoke). **Track 2A next.** 006J partial (1D Path B pending).
+**Status:** IN PROGRESS — 007B **USER PASS** 2026-06-20. **007C code shipped** (table spacing + Track 2A Real-first). **Track 2A USER cert PENDING.** 006J partial (1D Path B pending).
 
 **Overview:** Finish 006J closeout (Path B), then **Track 2A** real forge on Ctrl+Alt+R + per-material market buy bridge, then Stage C safe automation slice.
 
@@ -10,7 +10,7 @@
 
 **USER PASS (2026-06-20):** Path A bootstrap, Ctrl+Alt+M market (Continue + **Danustica smoke**), **007B** forge ACTION PLAN + Blacksmith Guild branding, Session 2 disposable real forge rank, Smithing Stage A audit, **Continue load (006I-5)**.
 
-**Still open:** Path B culture Back (1D), full 006J tag, push to origin, **Track 2A real forge on map**.
+**Still open:** Path B culture Back (1D), full 006J tag, push to origin, **Track 2A USER live cert on map**.
 
 **Your chosen scope:** Stage B advisory **+ Stage C safe automation slice** (not full Stage D rest optimizer).
 
@@ -23,23 +23,30 @@ Do this before Aserai character autobuild tuning.
 1. ~~Remap market intel hotkey from F12 to Ctrl+Alt+M.~~ **DONE (007A)**
 2. ~~Verify market intel still writes `BlacksmithGuild_MarketIntel.json`.~~ **USER PASS (Continue live cert)**
 3. ~~Forge ACTION PLAN + SOURCE HONESTY on Ctrl+Alt+R~~ **USER PASS (007B)** — stub labeled; file verdict aligned with sourceHonesty
-4. Partial forge-materials bridge — forge buy steps use **cached** Ctrl+Alt+M prices when real `MaterialNeeds[]` exist (**Track 2A**); full `--- FORGE MATERIALS ---` market section still open
+4. ~~Partial forge-materials bridge~~ **CODE SHIPPED (007C)** — Real-first Ctrl+Alt+R + per-material gaps when `MaterialNeeds[]` exist; **USER cert PENDING**; full `--- FORGE MATERIALS ---` market section still open (Track 2B)
 5. Keep all actions advisory only.
 
 **007B shared formatting:** `ModDisplay`, `AdvisoryReportText`, `AdvisoryReportSections`, `ReportLineClassifier` — reuse for future Ctrl+Alt+G guild loop report.
 
 ---
 
-## Track 2A — Real forge on Ctrl+Alt+R (NEXT)
+## Track 2A — Real forge on Ctrl+Alt+R (CODE SHIPPED — USER cert PENDING)
 
-**Goal:** Ctrl+Alt+R produces `source=real`, `fallbackUsed=false`, per-material `materialGaps` with market buy steps when Ctrl+Alt+M cached.
+**Goal:** Ctrl+Alt+R on campaign map produces `source=real`, `fallbackUsed=false`, per-material `materialGaps` with market buy steps when Ctrl+Alt+M cached.
 
-| Task | Notes |
-|------|-------|
-| Wire Real source before rank | `SetForgeCandidateSourceReal` or default Real on hotkey |
-| Cert gate | PASS only when JSON `source=real` && `fallbackUsed=false` |
-| Material bridge | `ForgeAdvisoryPlanner` + `TryFindBuyAtNearest` (already built for real candidates) |
-| Out of scope | Aserai autobuild, Ctrl+Alt+G, auto-buy/sell |
+**Shipped (007C):**
+
+| Task | File | Status |
+|------|------|--------|
+| Real-first on hotkey rank | [`ForgeRecommendationService.cs`](../../src/BlacksmithGuild/Forge/ForgeRecommendationService.cs) `GetResolutionKind` | Done — Real when map ready + not `_stubExplicitlyRequested` |
+| Preserve dev stub | same + `SetForgeCandidateSourceStub` | Done |
+| Campaign smoke unchanged | `ForgeAdvisorSmokeTest` uses `campaign-smoke` source | Done — stays stub at load |
+| Material bridge | [`ForgeAdvisoryPlanner.cs`](../../src/BlacksmithGuild/Forge/ForgeAdvisoryPlanner.cs) | Already built for real candidates |
+| Table spacing (Phase1 file) | [`MarketTableFormatter.cs`](../../src/BlacksmithGuild/Market/MarketTableFormatter.cs) | Done |
+
+**USER cert gate:** PASS only when JSON `source=real` && `fallbackUsed=false` on Continue/disposable map smoke.
+
+**Out of scope:** Aserai autobuild, Ctrl+Alt+G, auto-buy/sell, Track 2B market `FORGE MATERIALS` section.
 
 ---
 

@@ -28,7 +28,7 @@ namespace BlacksmithGuild.Forge
             var message = report.FallbackUsed
                 ? "real source unavailable — fell back to stub oracle"
                 : isStub
-                    ? "illustrative stub oracle — run SetForgeCandidateSourceReal for real candidates"
+                    ? "illustrative stub oracle — use SetForgeCandidateSourceStub to force stub on map rank"
                     : "candidate source resolved";
 
             return new SourceHonestyInfo
