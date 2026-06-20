@@ -22,6 +22,8 @@ Canonical snapshot of what works today, what is certified, and what is not built
 | **Zero-click bootstrap (Path A)** | `Forge.cmd` | Map + `TBG READY`; PLAY click `(811,764)` fractions `0.34×0.90` |
 | **Dev harness hotkeys** | F7 status, F8 command list, F11 +100k gold | Feed ack lines on campaign map |
 | **Market intel action plan** | **F12** (Ctrl+Alt+M fallback) | **USER PASS 2026-06-20** — Danustica: ACTION PLAN + BUY@NEAREST + TOP SPREADS |
+| **Real forge rank** | Session 2 script / Ctrl+Alt+R | **USER PASS 2026-06-20** — `source=real`, templates=12, top=Javelin, `fallbackUsed=false` |
+| **Smithing audit (Stage A)** | `ProbeSmithingAudit` | **USER PASS 2026-06-20** — `GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints |
 | **Path C quit loop** | Quit to main menu | Tag `006i-4-path-c-pass` |
 
 ### F12 cert evidence (2026-06-20, Danustica @ 4.1u)
@@ -41,8 +43,6 @@ JSON: `<Bannerlord>\BlacksmithGuild_MarketIntel.json` with `routeRows`, `actionP
 
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
-| **Real forge rank** | `scripts\run-session2-real-forge.ps1` or Ctrl+Alt+R after `SetForgeCandidateSourceReal` | F7 top line `source=real`; JSON changes with doctrine | Default is **stub** (Long Warblade) until real source set |
-| **Smithing audit (Stage A)** | `ProbeSmithingAudit` via inbox or Session 2 script | `BlacksmithGuild_SmithingAudit.json` written | Stamina automation not built |
 | **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | Map loads; Launch.log `clicked Module Mismatch Yes` if dialog shown | Not re-tested since 006I-5 ship |
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
 

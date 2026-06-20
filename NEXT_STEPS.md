@@ -14,8 +14,8 @@
 | 006I-4 Path C | **USER PASS** 2026-06-19 — tag `006i-4-path-c-pass` |
 | 006I-5 Continue | SHIPPED — **re-cert PENDING** |
 | **005E market intel** | **USER PASS** 2026-06-20 — F12 action plan @ Danustica |
-| 005E real forge rank | SHIPPED — **user cert PENDING** (Session 2) |
-| 005E smithing Stage A | SHIPPED — `ProbeSmithingAudit`; stamina B–D **BLOCKED** |
+| 005E real forge rank | **USER PASS** 2026-06-20 — `source=real`, Javelin top, templates=12 |
+| 005E smithing Stage A | **USER PASS** 2026-06-20 — stamina API hints in SmithingAudit.json |
 | 006J closeout | PARTIAL — Path B Back pending |
 
 ---
@@ -35,7 +35,7 @@
 |-----------------|-----|
 | Auto buy/sell | Not built — manual town trade |
 | Auto craft / stamina rotation | Stages B–D not built |
-| Trust forge rank as real recipes | Default stub until Session 2 |
+| Trust forge rank as real recipes | **Done** — Session 2 PASS; use **Ctrl+Alt+R** to refresh |
 
 ---
 
