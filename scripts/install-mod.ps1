@@ -177,7 +177,26 @@ try {
             if (-not $LaunchManual) {
                 & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
             }
-            Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
+            if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
+                $launchLogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
+                $continueVerified = $false
+                if (Test-Path -LiteralPath $launchLogPath) {
+                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 80 -ErrorAction SilentlyContinue
+                    $launchText = ($launchTail -join [Environment]::NewLine)
+                    $continueVerified = ($launchText -match 'clicked CONTINUE') -or
+                        ($launchText -match 'handoff:') -or
+                        ($launchText -match 'post-handoff: TBG READY')
+                }
+                if (-not $continueVerified) {
+                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'continue intent exited without CONTINUE click or handoff in Launch.log'
+                    Write-Host ''
+                    Write-Host 'WARN - launcher-auto-nav returned but Launch.log shows no CONTINUE click or handoff.' -ForegroundColor Yellow
+                } else {
+                    Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
+                }
+            } else {
+                Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
+            }
         } catch {
             if (Test-Phase1TbgReady -BannerlordRoot $BannerlordRoot) {
                 Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message $_.Exception.Message

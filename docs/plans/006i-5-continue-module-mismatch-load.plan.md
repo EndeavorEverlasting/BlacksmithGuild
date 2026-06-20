@@ -98,6 +98,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 
 - `load stall watchdog triggered`
 - `load stall: GameLoadingState exceeded 180s`
+- `TBG READY detected (pre-handoff)` before `clicked CONTINUE` (stale Phase1/Status — fixed 2026-06-20)
 - Manual Module Mismatch Yes still required
 - 5+ minute loading screen hang
 

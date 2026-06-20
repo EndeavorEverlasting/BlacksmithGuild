@@ -50,7 +50,7 @@ public static class UIAHelper
     private static DateTime _lastCoordClickUtc = DateTime.MinValue;
     private static int _coordAttemptIndex = 0;
     private static readonly double[] LauncherPlayXFractions = new double[] { 0.34, 0.38, 0.30 };
-    private static readonly double[] LauncherContinueXFractions = new double[] { 0.20, 0.24, 0.28 };
+    private static readonly double[] LauncherContinueXFractions = new double[] { 0.55, 0.58, 0.52, 0.62 };
     private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88 };
     private const int LauncherStableSecBeforeFallback = 5;
     private const int LauncherCoordClickThrottleSec = 2;
@@ -1276,6 +1276,13 @@ $phase1LogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
 $statusJsonPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
 $lastHeartbeat = Get-Date
 $heartbeatSec = 30
+$preHandoffSuppressedLogged = $false
+$phase1ReadyBaseline = @{}
+if (Test-Path -LiteralPath $phase1LogPath) {
+    Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue |
+        Where-Object { $_ -match 'TBG READY' } |
+        ForEach-Object { $phase1ReadyBaseline[$_] = $true }
+}
 
 function Extend-DeadlineForSlowPath {
     if ($clickedSafeMode -or $clickedCrashReporter) {
@@ -1301,8 +1308,23 @@ function Extend-DeadlineAfterPlayClick {
     }
 }
 
+function Test-PreHandoffReadyAllowed {
+    if ($script:clickedPlayContinue) { return $true }
+    if (Test-GameProcessRunning) { return $true }
+    if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+    return $false
+}
+
 function Test-LaunchReadyNow {
     param([ref]$StallDetected)
+
+    if (-not (Test-PreHandoffReadyAllowed)) {
+        if (-not $script:preHandoffSuppressedLogged) {
+            Write-LaunchLog 'pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet'
+            $script:preHandoffSuppressedLogged = $true
+        }
+        return $false
+    }
 
     if ((Test-Phase1ReadyOrStall -StallDetected $StallDetected) -or (Test-StatusJsonReady)) {
         return $true
@@ -1336,10 +1358,14 @@ function Test-Phase1ReadyOrStall {
 
     foreach ($line in $tail) {
         if ($line -match 'TBG READY') {
-            return $true
+            if (-not $script:phase1ReadyBaseline.ContainsKey($line)) {
+                return $true
+            }
         }
         if ($line -match 'load stall: GameLoadingState exceeded') {
-            $StallDetected.Value = $true
+            if ((Get-Item -LiteralPath $phase1LogPath).LastWriteTime -gt $script:startTime) {
+                $StallDetected.Value = $true
+            }
             return $false
         }
     }
@@ -1349,6 +1375,11 @@ function Test-Phase1ReadyOrStall {
 
 function Test-StatusJsonReady {
     if (-not (Test-Path -LiteralPath $statusJsonPath)) {
+        return $false
+    }
+
+    $statusMtime = (Get-Item -LiteralPath $statusJsonPath).LastWriteTime
+    if ($statusMtime -le $script:startTime) {
         return $false
     }
 

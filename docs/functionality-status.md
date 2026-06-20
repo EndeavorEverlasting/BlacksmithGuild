@@ -43,7 +43,7 @@ JSON: `<Bannerlord>\BlacksmithGuild_MarketIntel.json` with `routeRows`, `actionP
 
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
-| **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | Map loads; Launch.log `clicked Module Mismatch Yes` if dialog shown | Not re-tested since 006I-5 ship |
+| **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | Map loads; Launch.log `clicked CONTINUE` + `handoff:`; Module Mismatch auto-Yes if shown | Stale-ready false PASS fixed 2026-06-20 — **re-cert PENDING** |
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
 
 ---
