@@ -46,10 +46,16 @@ dotnet build -c Release
 **Preconditions:**
 
 - Charcoal low (below floor ~2)
-- Hardwood present (≥1)
-- Campaign map ready (town with smithy not required for headless API — map is enough)
+- Hardwood present (≥1) — if missing, buy at town Trade first
+- Campaign map ready — **no smithy UI needed** (headless from map)
 
-**Commands** (game must be running on map):
+**One-command helper** (game running on map):
+
+```powershell
+.\RunStageCCharcoalCert.cmd
+```
+
+Or manually:
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
@@ -57,6 +63,22 @@ cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\forge.ps1 -Command RunSmithingSafeActionNow -Wait
 .\CollectCertLogs.cmd
 ```
+
+### In-game setup
+
+1. Load disposable save.
+2. Reach campaign map.
+3. If hardwood = 0: enter town → **Trade** → buy 1–5 **Hardwood** (do not buy charcoal).
+4. Return to campaign map.
+5. Run `RunStageCCharcoalCert.cmd` from PowerShell.
+
+### Stale command replay (fixed)
+
+If the feed shows `blocked: hardwood shortage` **immediately on Continue load** without you running the cert, that was a **stale inbox replay** from a prior session — not a failed cert. Rebuild/install, relaunch; the inbox is now cleared after consume and before launch.
+
+If you intentionally run Stage C with hardwood = 0, the mod correctly blocks with `"blockedReason": "hardwood shortage"` — buy hardwood and rerun.
+
+**Commands** (game must be running on map):
 
 **PASS when:**
 

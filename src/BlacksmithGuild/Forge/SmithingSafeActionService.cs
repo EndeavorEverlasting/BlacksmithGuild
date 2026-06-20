@@ -16,16 +16,23 @@ namespace BlacksmithGuild.Forge
 
         private static readonly string ReportPath = Path.Combine(BasePath.Name, ReportFileName);
 
+        public static bool LastWasGuardrailBlock { get; private set; }
+
+        public static string LastBlockedReason { get; private set; }
+
         public static bool RunSafeActionNow(string source = RunSmithingSafeActionNowCommand)
         {
+            LastWasGuardrailBlock = false;
+            LastBlockedReason = null;
+
             try
             {
                 if (!GameSessionState.IsCampaignMapReady)
                 {
-                    DebugLogger.Test(
-                        $"[TBG FORGE] {RunSmithingSafeActionNowCommand} blocked: {GameSessionState.GetCampaignMapBlockDetail()}",
+                    return Block(
+                        RunSmithingSafeActionNowCommand,
+                        GameSessionState.GetCampaignMapBlockDetail(),
                         showInGame: false);
-                    return false;
                 }
 
                 var workers = SmithingWorkerSelector.GetPartyWorkers();
@@ -34,9 +41,10 @@ namespace BlacksmithGuild.Forge
                 var charcoalNeed = Math.Max(
                     0,
                     SmithingReservePolicy.CharcoalFloor - reserve.CharcoalHave);
-                var refineCount = charcoalNeed > 0 ? MaxRefinePerInvocation : 0;
+                var refineCount = 0;
 
                 var hero = ResolveHero(grunt);
+                var actorLabel = ResolveActorLabel(grunt, hero);
                 var blockedReason = (string)null;
                 var executed = false;
                 string action = "RefineCharcoal";
@@ -50,9 +58,9 @@ namespace BlacksmithGuild.Forge
                     blockedReason = "charcoal reserve already at floor";
                     action = "None";
                 }
-                else if (reserve.HardwoodHave < refineCount)
+                else if (reserve.HardwoodHave < MaxRefinePerInvocation)
                 {
-                    blockedReason = $"hardwood shortage (have {reserve.HardwoodHave}, need {refineCount})";
+                    blockedReason = "hardwood shortage";
                 }
                 else if (!SmithingStaminaReader.TrySetActiveCraftingHero(hero, out var setHeroDetail))
                 {
@@ -70,13 +78,16 @@ namespace BlacksmithGuild.Forge
 
                 if (blockedReason == null && hero != null)
                 {
+                    refineCount = MaxRefinePerInvocation;
                     executed = SmithingRefineApi.TryInvokeRefineCharcoal(hero, refineCount, out var invokeDetail);
                     charcoalAfter = SmithingPartyInventory.CountCharcoal();
                     hardwoodAfter = SmithingPartyInventory.CountHardwood();
+                    actorLabel = ResolveActorLabel(grunt, hero);
 
                     if (!executed)
                     {
                         blockedReason = invokeDetail ?? "RefineCharcoal invocation failed";
+                        refineCount = 0;
                     }
                 }
 
@@ -85,7 +96,7 @@ namespace BlacksmithGuild.Forge
                     GeneratedUtc = DateTime.UtcNow.ToString("o"),
                     Source = source,
                     Action = action,
-                    Actor = grunt?.Name,
+                    Actor = executed ? actorLabel : null,
                     Executed = executed,
                     BlockedReason = blockedReason,
                     CharcoalBefore = charcoalBefore,
@@ -99,18 +110,23 @@ namespace BlacksmithGuild.Forge
                 if (executed)
                 {
                     DebugLogger.Test(
-                        $"[TBG FORGE] action={action} actor={grunt?.Name} refineCount={refineCount} reserveBefore charcoal={charcoalBefore} hardwood={hardwoodBefore} reserveAfter charcoal={charcoalAfter} hardwood={hardwoodAfter}",
+                        $"[TBG FORGE] action={action} actor={actorLabel} refineCount={refineCount} reserveBefore charcoal={charcoalBefore} hardwood={hardwoodBefore} reserveAfter charcoal={charcoalAfter} hardwood={hardwoodAfter}",
                         showInGame: false);
                     InGameNotice.Success(
-                        ModDisplay.CompactLine("Smithing Safe Action", $"{action} by {grunt?.Name} complete."));
+                        ModDisplay.CompactLine("Smithing Safe Action", $"{action} by {actorLabel} complete."));
                     return true;
                 }
 
-                DebugLogger.Test(
-                    $"[TBG FORGE] action={action} actor={grunt?.Name} blocked={blockedReason}",
-                    showInGame: false);
-                InGameNotice.Warn(
-                    ModDisplay.CompactLine("Smithing Safe Action", $"blocked: {blockedReason}"));
+                if (blockedReason != null)
+                {
+                    if (string.Equals(blockedReason, "hardwood shortage", StringComparison.Ordinal))
+                    {
+                        return GuardrailBlock(action, blockedReason, hardwoodBefore, MaxRefinePerInvocation);
+                    }
+
+                    return GuardrailBlock(action, blockedReason);
+                }
+
                 return false;
             }
             catch (Exception ex)
@@ -118,6 +134,74 @@ namespace BlacksmithGuild.Forge
                 DebugLogger.Test($"[TBG FORGE] {RunSmithingSafeActionNowCommand} failed: {ex.Message}", showInGame: false);
                 return false;
             }
+        }
+
+        private static bool GuardrailBlock(
+            string action,
+            string reason,
+            int hardwoodHave = -1,
+            int hardwoodNeed = -1)
+        {
+            LastWasGuardrailBlock = true;
+            LastBlockedReason = reason;
+
+            if (hardwoodHave >= 0 && hardwoodNeed >= 0)
+            {
+                DebugLogger.Test(
+                    $"[TBG FORGE] action={action} blocked reason={reason} hardwood={hardwoodHave} need={hardwoodNeed}",
+                    showInGame: false);
+                InGameNotice.Warn(
+                    ModDisplay.CompactLine(
+                        "Smithing Safe Action",
+                        $"blocked: {reason} (have {hardwoodHave}, need {hardwoodNeed})"));
+            }
+            else
+            {
+                DebugLogger.Test(
+                    $"[TBG FORGE] action={action} blocked reason={reason}",
+                    showInGame: false);
+                InGameNotice.Warn(ModDisplay.CompactLine("Smithing Safe Action", $"blocked: {reason}"));
+            }
+
+            return false;
+        }
+
+        private static bool Block(string commandName, string reason, bool showInGame)
+        {
+            DebugLogger.Test(
+                $"[TBG FORGE] {commandName} blocked: {reason}",
+                showInGame: false);
+            LastWasGuardrailBlock = true;
+            LastBlockedReason = reason;
+
+            if (showInGame)
+            {
+                InGameNotice.Warn(ModDisplay.CompactLine("Smithing Safe Action", $"blocked: {reason}"));
+            }
+
+            return false;
+        }
+
+        private static string ResolveActorLabel(SmithingWorkerProfile grunt, Hero hero)
+        {
+            if (!string.IsNullOrWhiteSpace(grunt?.Name) && !string.Equals(grunt.Name, "(unnamed)", StringComparison.Ordinal))
+            {
+                return grunt.Name;
+            }
+
+            var heroName = hero?.Name?.ToString();
+            if (!string.IsNullOrWhiteSpace(heroName))
+            {
+                return heroName;
+            }
+
+            if (grunt?.IsMainHero == true)
+            {
+                return "MainHero";
+            }
+
+            var mainName = Hero.MainHero?.Name?.ToString();
+            return string.IsNullOrWhiteSpace(mainName) ? "MainHero" : mainName;
         }
 
         private static Hero ResolveHero(SmithingWorkerProfile profile)

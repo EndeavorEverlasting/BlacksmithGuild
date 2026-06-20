@@ -71,10 +71,33 @@ namespace BlacksmithGuild.DevTools
                 var commandSource = string.IsNullOrWhiteSpace(source) ? "file-inbox" : source;
                 var result = DevCommandBus.TryRun(command, commandSource, sequence: sequence);
                 WriteAck(sequence, command, result.ToString());
+                TryClearInboxAfterConsume(sequence, command, result);
             }
             catch (Exception ex)
             {
                 GuildLog.Info($"[TBG INBOX] Failed to read command inbox: {ex.Message}", showInGame: false);
+            }
+        }
+
+        private static void TryClearInboxAfterConsume(int sequence, string command, DevCommandResult result)
+        {
+            try
+            {
+                if (File.Exists(InboxPath))
+                {
+                    File.Delete(InboxPath);
+                }
+
+                _lastSeenWriteTicks = -1;
+                DebugLogger.Test(
+                    $"[TBG INBOX] consumed sequence={sequence} command={command} result={result}; inbox cleared",
+                    showInGame: false);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test(
+                    $"[TBG INBOX] consumed sequence={sequence} command={command} result={result}; inbox delete failed: {ex.Message}",
+                    showInGame: false);
             }
         }
 

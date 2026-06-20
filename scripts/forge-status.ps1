@@ -372,6 +372,48 @@ function Scan-InGameStatus {
     return $true
 }
 
+function Get-MutationDevCommands {
+    return @(
+        'RunSmithingSafeActionNow',
+        'RichPlayerEconomyTest',
+        'RichSmithingProgressionTest',
+        'AddSmithingXp',
+        'AddSmithingFocus',
+        'AddEnduranceAttribute',
+        'ApplyAutoCharacterBuild'
+    )
+}
+
+function Clear-StaleMutationCommandInbox {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot
+    )
+
+    $inboxPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandInbox.json'
+    if (-not (Test-Path -LiteralPath $inboxPath)) {
+        return $false
+    }
+
+    try {
+        $existing = Get-Content -LiteralPath $inboxPath -Raw | ConvertFrom-Json
+        $command = [string]$existing.command
+        if ([string]::IsNullOrWhiteSpace($command)) {
+            return $false
+        }
+
+        if ((Get-MutationDevCommands) -notcontains $command) {
+            return $false
+        }
+
+        Remove-Item -LiteralPath $inboxPath -Force
+        Write-Host "Cleared stale mutation command inbox: $command" -ForegroundColor Yellow
+        return $true
+    } catch {
+        Write-Host "Could not inspect command inbox: $($_.Exception.Message)" -ForegroundColor DarkYellow
+        return $false
+    }
+}
+
 function Send-ForgeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$CommandName,
@@ -389,6 +431,8 @@ function Send-ForgeCommand {
     if ($allowed -notcontains $CommandName) {
         throw "Unknown command '$CommandName'. Allowed: $($allowed -join ', ')"
     }
+
+    Clear-StaleMutationCommandInbox -BannerlordRoot $BannerlordRoot | Out-Null
 
     $inboxPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandInbox.json'
     $ackPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandAck.json'
@@ -429,6 +473,10 @@ function Send-ForgeCommand {
                 $ack = Get-Content -LiteralPath $ackPath -Raw | ConvertFrom-Json
                 if ([int]$ack.sequence -eq $sequence) {
                     Write-Host "ACK: $($ack.command) = $($ack.result)" -ForegroundColor Green
+                    if ($ack.result -eq 'Blocked') {
+                        Write-Host 'Command blocked by guardrail (expected for missing prerequisites).' -ForegroundColor Yellow
+                        return $sequence
+                    }
                     if ($ack.result -and $ack.result -ne 'Success') {
                         throw "Command '$CommandName' ack result: $($ack.result)"
                     }
@@ -442,6 +490,10 @@ function Send-ForgeCommand {
                 $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
                 if ($st.lastCommand -and [int]$st.lastCommand.sequence -eq $sequence) {
                     Write-Host "Status: $($st.lastCommand.name) = $($st.lastCommand.result)" -ForegroundColor Green
+                    if ($st.lastCommand.result -eq 'Blocked') {
+                        Write-Host 'Command blocked by guardrail (expected for missing prerequisites).' -ForegroundColor Yellow
+                        return $sequence
+                    }
                     if ($st.lastCommand.result -and $st.lastCommand.result -ne 'Success') {
                         throw "Command '$CommandName' status result: $($st.lastCommand.result)"
                     }

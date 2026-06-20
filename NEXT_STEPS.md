@@ -39,19 +39,15 @@ Live certs are **not** required for docs, formatting, or read-only reports. See 
 
 **Save:** any disposable / blacksmithing save — no precious-save flow.
 
-**Preconditions:** charcoal low, hardwood ≥1, on campaign map.
+**Preconditions:** charcoal low, hardwood ≥1, on campaign map. **No smithy UI needed.**
 
 ```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-# Launch disposable save and wait for map ready, then:
-.\forge.ps1 -Command ProbeSmithingRefineApi -Wait
-.\forge.ps1 -Command RunSmithingSafeActionNow -Wait
-.\CollectCertLogs.cmd
+.\RunStageCCharcoalCert.cmd
 ```
 
-**PASS:** `executed: true`, `charcoalAfter > charcoalBefore`, `refineCount: 1`.
+If blocked with `hardwood shortage`: enter town → Trade → buy 1–5 Hardwood → return to map → rerun.
 
-Paste SafeAction JSON + RefineProbe JSON + Phase1 tail for agent verdict.
+**PASS:** `executed: true`, `charcoalAfter > charcoalBefore`, `refineCount: 1`.
 
 ---
 

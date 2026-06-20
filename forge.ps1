@@ -82,6 +82,12 @@ if ($Command -or $Certify -or $CertifyProgression) {
 
 Invoke-SaveBackupIfNeeded
 
+if ($Launch) {
+    . (Join-Path $PSScriptRoot 'scripts\forge-status.ps1')
+    $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $PSScriptRoot
+    Clear-StaleMutationCommandInbox -BannerlordRoot $bannerlordRoot | Out-Null
+}
+
 $installParams = @{}
 if ($Launch) { $installParams.Launch = $true }
 if ($Check) { $installParams.CheckLog = $true }

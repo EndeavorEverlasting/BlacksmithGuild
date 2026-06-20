@@ -431,8 +431,13 @@ namespace BlacksmithGuild.DevTools
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case SmithingSafeActionService.RunSmithingSafeActionNowCommand:
-                    return SmithingSafeActionService.RunSafeActionNow(source: commandName)
-                        ? DevCommandResult.Success
+                    if (SmithingSafeActionService.RunSafeActionNow(source: commandName))
+                    {
+                        return DevCommandResult.Success;
+                    }
+
+                    return SmithingSafeActionService.LastWasGuardrailBlock
+                        ? DevCommandResult.Blocked
                         : DevCommandResult.Failed;
                 case GuildLoopService.RunGuildLoopNowCommand:
                     return GuildLoopService.RunGuildLoopNow(source: commandName)
