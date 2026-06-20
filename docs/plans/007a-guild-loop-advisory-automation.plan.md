@@ -8,7 +8,9 @@
 
 ## Where you are (do not re-litigate)
 
-**USER PASS (2026-06-20):** Path A bootstrap, F12 market action plan, real forge rank (`source=real`, Javelin top, templates=12), Smithing Stage A audit, **Continue load (006I-5)** — Tevea map, Phase1 `confirmed (inquiry cleared)`, tag `006i-5-continue-pass` @ `52c2114`.
+**USER PASS (2026-06-20):** Path A bootstrap, Ctrl+Alt+M market action plan (F12 Steam collision fixed), Session 2 disposable real forge rank (`source=real`, Javelin top, templates=12), Smithing Stage A audit, **Continue load (006I-5)** — Tevea map, Phase1 `confirmed (inquiry cleared)`, tag `006i-5-continue-pass` @ `52c2114`.
+
+**Continue save forge honesty:** screenshot shows `fake forge advisor` / `source=stub` on Ctrl+Alt+R until real source wired (Track 2A). Do not claim global real-forge PASS from Continue alone.
 
 **Shipped fixes:** Module Mismatch verify-dismiss (`52c2114`), deferred queue (`687cb1b`), `dev-command-names.ps1`, `forge.ps1 exit 0`, launcher guards + coord fallback.
 
@@ -18,9 +20,28 @@
 
 ---
 
+## Immediate blacksmith mechanics slice
+
+Do this before Aserai character autobuild tuning.
+
+1. Remap market intel hotkey from F12 to Ctrl+Alt+M.
+2. Verify market intel still writes `BlacksmithGuild_MarketIntel.json`.
+3. Verify Ctrl+Alt+R forge recommendations are honest:
+   - PASS only if source is real and fallback is false.
+   - If source is stub, keep it labeled stub and route Track 2A to real candidate mapping.
+4. Add forge-materials bridge to market intel:
+   - hardwood
+   - charcoal inputs
+   - ore/metals
+   - smeltable weapons
+   - cheap fodder candidates
+5. Keep all actions advisory only.
+
+---
+
 ## Sprint goal (one sentence)
 
-On **Continue save**, press one hotkey and get a **coherent guild loop**: where to trade (F12), what to craft (real rank), who should smith next (stamina advisory), and optionally **one safe automated forge action** when reserves allow — without UI click spam.
+On **Continue save**, press one hotkey and get a **coherent guild loop**: where to trade (Ctrl+Alt+M), what to craft (real rank when wired), who should smith next (stamina advisory), and optionally **one safe automated forge action** when reserves allow — without UI click spam.
 
 ---
 

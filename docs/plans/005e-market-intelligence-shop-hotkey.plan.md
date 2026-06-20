@@ -6,7 +6,8 @@
 
 | Gate | Status |
 |------|--------|
-| F12 / Ctrl+Alt+M hotkey | **USER PASS** |
+| Ctrl+Alt+M hotkey (primary) | **USER PASS** — F12 remapped due to Steam screenshot collision |
+| Legacy F12 | Off by default (`LegacyF12MarketHotkey=false`) |
 | Nearest-town price scan | **USER PASS** |
 | Inventory sell targets | **USER PASS** |
 | Cross-town spread table | **USER PASS** |
@@ -17,14 +18,14 @@
 
 ## Purpose
 
-Quick repo test on campaign map: press **F12** to see Trade-skill-style buy/sell intelligence without opening town trade UI.
+Quick repo test on campaign map: press **Ctrl+Alt+M** to see Trade-skill-style buy/sell intelligence without opening town trade UI.
 
 ## Hotkeys
 
 | Key | Command | Action |
 |-----|---------|--------|
-| F12 | `MarketSnapshotNow` | Scan nearest towns + party inventory; table report |
-| Ctrl+Alt+M | `MarketSnapshotNow` | Fallback when F12 swallowed |
+| Ctrl+Alt+M | `MarketSnapshotNow` | Primary — scan nearest towns + party inventory; table report |
+| F12 | `MarketSnapshotNow` | Legacy only when `LegacyF12MarketHotkey=true` (conflicts with Steam) |
 
 Also available via file inbox: `.\forge.ps1 -Command MarketSnapshotNow -Wait`
 
@@ -65,7 +66,7 @@ cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\Forge.cmd
 ```
 
-In-game: press **F12**.
+In-game: press **Ctrl+Alt+M**.
 
 **PASS:**
 - In-game feed shows `--- ACTION PLAN ---` with buy + destination (not just inventory `+0` rows)

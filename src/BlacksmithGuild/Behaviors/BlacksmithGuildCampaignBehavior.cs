@@ -80,6 +80,7 @@ namespace BlacksmithGuild.Behaviors
                 _hasAnnouncedCampaignMapReady = true;
                 CampaignSetupStateTracker.NotifyCampaignMapReady();
                 InGameNotice.Ready("campaign map ready. Press F8 for commands.");
+                InGameNotice.Info("TBG MARKET: Press Ctrl+Alt+M for market intel.");
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
                 HotkeyTraceService.OnMapReady();
                 TreasuryDeltaWatchService.OnCampaignMapReady();

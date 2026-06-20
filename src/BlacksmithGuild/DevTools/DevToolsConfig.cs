@@ -11,5 +11,6 @@ namespace BlacksmithGuild.DevTools
         public static bool AutoApplyCharacterBuild = true;
         public static bool HotkeyTraceEnabled = true;
         public static bool HotkeyTraceVisibleKeys = false;
+        public static bool LegacyF12MarketHotkey = false;
     }
 }

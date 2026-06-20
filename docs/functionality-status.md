@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20 (006I-5 Continue cert PASS)  
+**Last updated:** 2026-06-20 (007A market hotkey remap)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `52c2114` (Continue cert fix)
+**Branch:** `main` — 007A Ctrl+Alt+M market intel remap
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -22,8 +22,8 @@ Canonical snapshot of what works today, what is certified, and what is not built
 |---------|------------|----------|
 | **Zero-click bootstrap (Path A)** | `Forge.cmd` | Map + `TBG READY`; PLAY click `(811,764)` fractions `0.34×0.90` |
 | **Dev harness hotkeys** | F7 status, F8 command list, F11 +100k gold | Feed ack lines on campaign map |
-| **Market intel action plan** | **F12** (Ctrl+Alt+M fallback) | **USER PASS 2026-06-20** — Danustica: ACTION PLAN + BUY@NEAREST + TOP SPREADS |
-| **Real forge rank** | Session 2 script / Ctrl+Alt+R | **USER PASS 2026-06-20** — `source=real`, templates=12, top=Javelin, `fallbackUsed=false` |
+| **Market intel action plan** | **Ctrl+Alt+M** (legacy F12 off by default) | **USER PASS 2026-06-20** — Continue save: `MarketSnapshotNow`, ACTION PLAN, BUY@NEAREST, TOP SPREADS, nonzero prices. Hotkey collision with Steam F12 fixed; primary key now **Ctrl+Alt+M**. |
+| **Real forge rank (Session 2 disposable cert)** | Session 2 script with `SetForgeCandidateSourceReal` | **USER PASS 2026-06-20** — disposable cert: `source=real`, templates=12, top=Javelin, `fallbackUsed=false` |
 | **Smithing audit (Stage A)** | `ProbeSmithingAudit` | **USER PASS 2026-06-20** — `GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints |
 | **Path C quit loop** | Quit to main menu | Tag `006i-4-path-c-pass` |
 | **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | **USER PASS 2026-06-20** — Tevea map; Phase1 `confirmed (inquiry cleared)`; tag `006i-5-continue-pass` @ `52c2114` |
@@ -39,6 +39,10 @@ Phase1 (15:18:49):
 
 Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c2114` verify-dismiss resolved.
 
+**Market intel smoke test:** USER PASS with hotkey collision. F12 produced useful market action output, but F12 conflicts with Steam screenshots. Primary hotkey changed to **Ctrl+Alt+M**.
+
+**Forge recommendation status:** visible screenshot still shows `source=stub` / fake forge advisor. Real forge candidate ranking is not certified until `BlacksmithGuild_ForgeRecommendations.json` shows `source=real` and `fallbackUsed=false`. Ctrl+Alt+R alone ranks the **requested** source (default Stub) — Track 2A must wire honest real path on Continue saves.
+
 ---
 
 ## Shipped but not user-certified
@@ -46,16 +50,16 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
-| **Session 3 play loop** | F12 + manual trade + Ctrl+Alt+R on Continue save | F7 `source=real`; manual craft baseline | USER smoke pending |
+| **Session 3 play loop** | Ctrl+Alt+M + manual trade + Ctrl+Alt+R on Continue save | Market JSON + honest forge source; manual craft baseline | USER smoke pending (Ctrl+Alt+M remap confirmation) |
 
-### F12 cert evidence (2026-06-20, Danustica @ 4.1u)
+### Market intel cert evidence (2026-06-20, Continue save near Tevea/Zestica)
 
 Feed showed:
 
-- `expanded scan (no routes in 30u)` — fallback to 60u/8 towns engaged
-- **ACTION PLAN:** buy Felt @253 (stock 7) → ride Husn Fulq (52.9u) sell @1133 (+880)
-- **BUY@NEAREST:** Felt, Planks, Oil ranked by spread
-- **TOP SPREADS:** cross-town pairs including Velvet buy@Onira → sell@Danustica
+- `source: MarketSnapshotNow`
+- nearest Poros; towns=3
+- **ACTION PLAN**, **BUY@NEAREST**, **TOP SPREADS** with nonzero prices/spreads
+- (Prior Danustica cert: expanded scan fallback 60u/8 towns; Felt → Husn Fulq +880)
 
 JSON: `<Bannerlord>\BlacksmithGuild_MarketIntel.json` with `routeRows`, `actionPlan`, `towns`.
 
@@ -66,11 +70,11 @@ JSON: `<Bannerlord>\BlacksmithGuild_MarketIntel.json` with `routeRows`, `actionP
 Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 
 ```text
-1. F12 on map     → action plan: buy @ nearest, ride to sell town
-2. Enter town     → trade manually (no auto buy/sell)
-3. Ctrl+Alt+R     → refresh forge recommendations (after real source set)
-4. Enter smithy   → craft manually (game UI)
-5. F12 at next town → next route
+1. Ctrl+Alt+M on map → action plan: buy @ nearest, ride to sell town
+2. Enter town       → trade manually (no auto buy/sell)
+3. Ctrl+Alt+R       → refresh forge recommendations (stub until real source set)
+4. Enter smithy     → craft manually (game UI)
+5. Ctrl+Alt+M at next town → next route
 ```
 
 **Funding tests:** F11 (+100k gold) on disposable save only.
@@ -101,10 +105,10 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 | F9 | Advance one day |
 | F10 | Toggle fast-forward |
 | F11 | +100k gold (disposable cert) |
-| F12 | Market intel action plan |
-| Ctrl+Alt+M | Market intel fallback |
+| Ctrl+Alt+M | Market intel action plan (primary) |
 | Ctrl+Alt+R | Rank forge candidates |
 | Ctrl+Alt+S | Rich smithing progression |
+| F12 | Market intel (legacy only; `LegacyF12MarketHotkey=true`; conflicts with Steam) |
 
 Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 
@@ -115,7 +119,7 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | File | When written |
 |------|--------------|
 | `BlacksmithGuild_Phase1.log` | Always — full reports + trace |
-| `BlacksmithGuild_MarketIntel.json` | F12 |
+| `BlacksmithGuild_MarketIntel.json` | Ctrl+Alt+M |
 | `BlacksmithGuild_ForgeRecommendations.json` | Rank / daily tick |
 | `BlacksmithGuild_RecipeProbe.json` | `ProbeForgeRecipes` |
 | `BlacksmithGuild_SmithingAudit.json` | `ProbeSmithingAudit` |
@@ -128,4 +132,4 @@ Collect: `CollectCertLogs.cmd`
 
 ## Next session
 
-See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **006J partial closeout done** (Continue PASS); finish Session 3 play loop + Path B, then **Track 2** (forge materials bridge).
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **006J partial closeout done** (Continue PASS); finish Session 3 play loop + Path B, then **Track 2A/2B** (forge materials bridge + honest real forge on Continue).

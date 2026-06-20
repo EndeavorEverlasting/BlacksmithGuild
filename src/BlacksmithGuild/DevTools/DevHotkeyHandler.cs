@@ -73,7 +73,8 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (TryHelpHotkey(
+            if (DevToolsConfig.LegacyF12MarketHotkey &&
+                TryHelpHotkey(
                     InputKey.F12,
                     "F12",
                     MarketIntelligenceService.MarketSnapshotNowCommand,
@@ -84,6 +85,15 @@ namespace BlacksmithGuild.DevTools
 
             if (IsCtrlAltDown())
             {
+                if (TryHelpHotkey(
+                        InputKey.M,
+                        "Ctrl+Alt+M",
+                        MarketIntelligenceService.MarketSnapshotNowCommand,
+                        ref _legacyMWasDown))
+                {
+                    return;
+                }
+
                 if (TryHelpHotkey(InputKey.D7, "Ctrl+Alt+7", DevCommandRegistry.ShowForgeStatusCommand, ref _fallback7WasDown))
                 {
                     return;
@@ -147,14 +157,6 @@ namespace BlacksmithGuild.DevTools
                         "Ctrl+Alt+C",
                         CharacterProgressionTestScenarios.AddSmithingFocusCommand,
                         "Ctrl+Alt+C"
-                    );
-                }
-                else if (TryFireEdge(InputKey.M, ref _legacyMWasDown))
-                {
-                    RunCommand(
-                        "Ctrl+Alt+M",
-                        MarketIntelligenceService.MarketSnapshotNowCommand,
-                        "Ctrl+Alt+M"
                     );
                 }
                 else if (TryFireEdge(InputKey.R, ref _legacyRWasDown))

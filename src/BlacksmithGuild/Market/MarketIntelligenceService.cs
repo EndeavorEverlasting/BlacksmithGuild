@@ -74,7 +74,7 @@ namespace BlacksmithGuild.Market
             report.Section("Market Intel");
             if (!_summaryRecorded || !_summary.HasScan)
             {
-                report.Line("scan", "none yet (press F12 on map)");
+                report.Line("scan", "none yet (press Ctrl+Alt+M on map)");
                 return;
             }
 
@@ -563,7 +563,7 @@ namespace BlacksmithGuild.Market
                 steps.Add(new ActionPlanStep
                 {
                     Step = 1,
-                    Text = $"No profitable routes from {nearestTownName} in scan range — ride toward another town and press F12 again."
+                    Text = $"No profitable routes from {nearestTownName} in scan range — ride toward another town and press Ctrl+Alt+M again."
                 });
             }
 

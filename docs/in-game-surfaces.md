@@ -23,7 +23,7 @@ The Blacksmith Guild uses three separate channels. Do not confuse them.
 
 | Channel | Mechanism | Where it appears | Used for |
 |---------|-----------|------------------|----------|
-| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left / bottom-left game log (press **Enter** on campaign map to scroll). Colored where supported (green success, yellow blocked/warn, red fail). | F7–F12 shortcut ack, `TBG READY`, results, block reasons, compact status |
+| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left / bottom-left game log (press **Enter** on campaign map to scroll). Colored where supported (green success, yellow blocked/warn, red fail). | F7–F8 shortcut ack, Ctrl+Alt+M market intel, `TBG READY`, results, block reasons, compact status |
 | **Windows toast** | PowerShell after forge install | Windows notification area (usually bottom-right) | Build/install/reload reminders when Bannerlord is running |
 | **File logs** | Append to disk | `<Bannerlord>\BlacksmithGuild_Phase1.log`, `BlacksmithGuild_Forge.log` | Full diagnostics, certification evidence |
 
@@ -45,11 +45,11 @@ Gold test does **not** auto-run on DailyTick by default — use **F11** manually
 
 If shortcut keys do not appear to work, first **close any open campaign panels** (Training Field, settlement, encounter, or menu panels). Hotkeys are certified on the **plain campaign map** after the `TBG READY` line appears.
 
-**F7/F8/F12** are diagnostic/help keys (looser gate). **F9/F10/F11** are risky dev keys and may be blocked when the map menu is open or the campaign map is not in a safe state.
+**F7/F8** are diagnostic/help keys (looser gate). **Ctrl+Alt+M** is the primary market intel hotkey. **F9/F10/F11** are risky dev keys and may be blocked when the map menu is open or the campaign map is not in a safe state.
 
 If there is no visible response, check `BlacksmithGuild_Phase1.log` for `[TBG HOTKEY TRACE]` and `[TBG COMMAND TRACE]` lines.
 
-**Fallback when F-keys are swallowed by Bannerlord menus:** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), Ctrl+Alt+M (market intel), **Ctrl+Alt+R (rank forge candidates)**.
+**Fallback when F-keys are swallowed by Bannerlord menus:** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), **Ctrl+Alt+M (market intel — primary)**, **Ctrl+Alt+R (rank forge candidates)**.
 
 Windows toast notifications are separate (forge install scripts) and may appear in the Windows notification area, usually bottom-right. Toast is **not** used for shortcut feedback.
 
@@ -63,11 +63,11 @@ Full diagnostic detail remains in:
 | Key | Expected visible messages |
 |-----|---------------------------|
 | **F7** | `TBG STATUS: loadedVersion=… dllUtc=… reload=…`; session/preflight/last command; optional cert line |
-| **F8** | `TBG COMMANDS` + `F7 Status \| F8 Commands` + `F9 Daily tick \| F10 Fast-forward \| F11 Gold test \| F12 Market intel` + feed hint |
+| **F8** | `TBG COMMANDS` + `F7 Status \| F8 Commands` + `F9 Daily tick \| F10 Fast-forward \| F11 Gold test` + `Ctrl+Alt+M Market intel \| Ctrl+Alt+R Rank forge` + feed hint |
 | **F9** | `TBG F9: Daily tick test requested.` → `TBG F9: DailyTick fired.` or `TBG F9 BLOCKED:` / `TBG F9 FAILED:` |
 | **F10** | `TBG F10: Fast-forward ON.` / `OFF.` or `TBG F10 BLOCKED:` / `FAILED:` |
 | **F11** | `TBG F11: Gold test requested.` → `TBG F11: Gold test PASS, +100000.` or `BLOCKED` / `FAILED` |
-| **F12** | `TBG REPORT: MARKET INTEL` — **USER PASS** — `ACTION PLAN`, `BUY@NEAREST`, top spreads; full table in Phase1.log |
+| **Ctrl+Alt+M** | `TBG REPORT: MARKET INTEL` — **USER PASS** — `ACTION PLAN`, `BUY@NEAREST`, top spreads; full table in Phase1.log. Primary hotkey (avoids Steam F12 screenshot). |
 
 If a risky command is blocked, the block reason appears in-game (e.g. `TBG F11 BLOCKED: map menu open — close panel first.`) and in the file log with additional detail.
 

@@ -45,8 +45,8 @@ Tag: `006i-5-continue-pass` @ `52c2114`
 
 On current Continue map (game may be open):
 
-1. **Ctrl+Alt+R** — real forge rank (`source=real` on F7)
-2. **F12** — trade ACTION PLAN near Tevea/Zestica
+1. **Ctrl+Alt+M** — trade ACTION PLAN near Tevea/Zestica
+2. **Ctrl+Alt+R** — forge recommendations (expect `source=stub` until `SetForgeCandidateSourceReal` + JSON shows `source=real`, `fallbackUsed=false`)
 3. Manual town trade + smithy craft
 4. **F7** — snapshot
 
@@ -68,7 +68,7 @@ Canonical: [`docs/plans/007a-guild-loop-advisory-automation.plan.md`](../plans/0
 | Track | Delivers |
 |-------|----------|
 | 1.5 | `preferredCultureId=aserai` on new Forge.cmd runs |
-| 2 | F12 FORGE MATERIALS + forge-market bridge |
+| 2 | Ctrl+Alt+M FORGE MATERIALS + forge-market bridge |
 | 3 | Ctrl+Alt+G guild loop report |
 | 4 | Inbox `RunSmithingSafeActionNow` |
 

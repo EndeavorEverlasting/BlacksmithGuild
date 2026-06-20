@@ -434,8 +434,8 @@ namespace BlacksmithGuild.DevTools
 
             InGameNotice.Info("TBG COMMANDS");
             InGameNotice.Info("F7 Status | F8 Commands");
-            InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test | F12 Market intel");
-            InGameNotice.Info("Ctrl+Alt+R Rank forge | Ctrl+Alt+M Market intel");
+            InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
+            InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
         }
 
