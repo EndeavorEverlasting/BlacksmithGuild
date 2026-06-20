@@ -57,6 +57,8 @@ flowchart TD
 
 **Stale-ready guard:** While the launcher is idle and PLAY/CONTINUE has not been clicked, `Test-LaunchReadyNow` ignores prior-session `TBG READY` in Phase1.log and stale `campaignReady` in Status.json. Log: `pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet`.
 
+**Module Mismatch (Continue only):** In-game Gauntlet overlay inside `Bannerlord.exe` — not a separate Win32 window. Layer A (`launcher-auto-nav.ps1`) expands UIA + coord fallback; Layer B (`ModuleMismatchAutoConfirmService.cs`) Harmony-postfixes `InformationManager.ShowInquiry` to invoke `AffirmativeAction` when title/body contains `Module Mismatch`.
+
 Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once on miss after hwnd stable 5s. `open-bannerlord-launcher.ps1` waits 2s after `Start-Process` before first poll.
 
 **Poll order each tick** (see `launcher-auto-nav.ps1` main loop):
@@ -64,7 +66,7 @@ Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once
 | Step | Dialog / action | Expected log line (`BlacksmithGuild_Launch.log`) |
 |------|-----------------|--------------------------------------------------|
 | 1 | **PLAY** (or CONTINUE on continue path) | `clicked PLAY` / `clicked CONTINUE` |
-| 2 | **Module Mismatch** → Yes / OK / Continue | `clicked Module Mismatch Yes` |
+| 2 | **Module Mismatch** → Yes / OK / Continue | `clicked Module Mismatch Yes` (Layer A UIA) or Phase1 `Module Mismatch auto-Yes (in-game)` (Layer B) |
 | 3 | **CAUTION** (mod version) → **Confirm** | `clicked CAUTION Confirm` |
 | 4 | **Safe Mode** → **No** | `clicked Safe Mode No` |
 | 5 | Crash reporter → **No** (if shown) | `clicked crash reporter No` |

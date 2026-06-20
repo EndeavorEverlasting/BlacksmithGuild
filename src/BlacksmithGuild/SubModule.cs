@@ -22,6 +22,7 @@ namespace BlacksmithGuild
             PendingReloadWatcher.OnModuleLoad();
             HotkeyTraceService.LogVersionAtStartup();
             AutoCharacterCreationPatches.TryApply();
+            ModuleMismatchAutoConfirmService.TryApply();
             GuildLog.Info("module loaded.", showInGame: false);
         }
 
@@ -29,6 +30,7 @@ namespace BlacksmithGuild
         {
             base.OnBeforeInitialModuleScreenSetAsRoot();
             AutoCharacterCreationPatches.TryApply();
+            ModuleMismatchAutoConfirmService.TryApply();
         }
 
         protected override void OnApplicationTick(float dt)

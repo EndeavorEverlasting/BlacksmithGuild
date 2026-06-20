@@ -52,10 +52,14 @@ public static class UIAHelper
     private static readonly double[] LauncherPlayXFractions = new double[] { 0.34, 0.38, 0.30 };
     private static readonly double[] LauncherContinueXFractions = new double[] { 0.55, 0.58, 0.52, 0.62 };
     private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88 };
+    private static readonly double[] ModuleMismatchYesXFractions = new double[] { 0.54, 0.56, 0.52 };
+    private static readonly double[] ModuleMismatchYesYFractions = new double[] { 0.58, 0.56, 0.60 };
     private const int LauncherStableSecBeforeFallback = 5;
     private const int LauncherCoordClickThrottleSec = 2;
     private const int LauncherMinCoordWindowWidth = 800;
     private const int LauncherMinCoordWindowHeight = 600;
+    private static bool _moduleMismatchAuditDone;
+    private static int _moduleMismatchCoordAttemptIndex;
 
     private static void LogLine(string message)
     {
@@ -822,6 +826,29 @@ public static class UIAHelper
             }
         }
 
+        var globalElement = FindNamedElementInGameProcess(new[] { "Yes", "OK", "Continue" }, false);
+        if (globalElement != null)
+        {
+            var matchedName = globalElement.Current.Name ?? "Yes";
+            var scopeDesc = string.Format("PID-global process={0} pid={1}", GameProcessName, globalElement.Current.ProcessId);
+            if (InvokeElement(globalElement, "Module Mismatch Yes", matchedName, scopeDesc))
+            {
+                return true;
+            }
+        }
+
+        var game = FindGameMainWindowRoot();
+        if (game != null && TryClickModuleMismatchYesByCoordinates(game))
+        {
+            return true;
+        }
+
+        if (!_moduleMismatchAuditDone)
+        {
+            _moduleMismatchAuditDone = true;
+            LogLine("AUDIT Module Mismatch game elements: " + LogModuleMismatchGameElements());
+        }
+
         return false;
     }
 
@@ -893,7 +920,48 @@ public static class UIAHelper
             return game;
         }
 
+        if (FindModuleMismatchInGameProcess())
+        {
+            return FindGameMainWindowRoot();
+        }
+
         return null;
+    }
+
+    private static bool FindModuleMismatchInGameProcess()
+    {
+        var pids = GetGameProcessIds();
+        if (pids.Count == 0) return false;
+
+        var fragments = new[] { ModuleMismatchTitle, "different modules" };
+        var controlTypes = new[] { ControlType.Text, ControlType.Custom, ControlType.Button, ControlType.Group, ControlType.Pane, ControlType.Document };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    try
+                    {
+                        if (!pids.Contains(element.Current.ProcessId)) continue;
+                        var name = element.Current.Name ?? string.Empty;
+                        foreach (var fragment in fragments)
+                        {
+                            if (name.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        return false;
     }
 
     private static AutomationElement FindWindowRootByTitle(string titleFragment)
@@ -921,7 +989,37 @@ public static class UIAHelper
 
     private static bool ScopeContainsExactModuleMismatch(AutomationElement scope)
     {
-        return ScopeContainsText(scope, ModuleMismatchTitle);
+        return ScopeContainsFragment(scope, ModuleMismatchTitle, "different modules");
+    }
+
+    private static bool ScopeContainsFragment(AutomationElement scope, params string[] fragments)
+    {
+        if (scope == null || fragments == null || fragments.Length == 0) return false;
+
+        var controlTypes = new[] { ControlType.Text, ControlType.Custom, ControlType.Button, ControlType.Group, ControlType.Pane, ControlType.Document };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = scope.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    var name = element.Current.Name ?? string.Empty;
+                    foreach (var fragment in fragments)
+                    {
+                        if (!string.IsNullOrWhiteSpace(fragment)
+                            && name.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return false;
     }
 
     private static bool ScopeContainsNamedElement(AutomationElement scope, string name)
@@ -962,20 +1060,143 @@ public static class UIAHelper
     {
         if (scope == null) return;
 
-        try
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink };
+        foreach (var controlType in controlTypes)
         {
-            var buttonCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button);
-            var buttons = scope.FindAll(TreeScope.Descendants, buttonCondition);
-            foreach (AutomationElement button in buttons)
+            try
             {
-                var name = button.Current.Name;
-                if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var buttons = scope.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement button in buttons)
                 {
-                    names.Add(name);
+                    var name = button.Current.Name;
+                    if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                    {
+                        names.Add(name);
+                    }
                 }
             }
+            catch { }
         }
-        catch { }
+    }
+
+    private static HashSet<int> GetGameProcessIds()
+    {
+        var ids = new HashSet<int>();
+        foreach (var process in Process.GetProcessesByName(GameProcessName))
+        {
+            try { ids.Add(process.Id); } catch { }
+        }
+        return ids;
+    }
+
+    private static AutomationElement FindNamedElementInGameProcess(string[] names, bool requireEnabled)
+    {
+        var pids = GetGameProcessIds();
+        if (pids.Count == 0 || names == null || names.Length == 0) return null;
+
+        foreach (var targetName in names)
+        {
+            try
+            {
+                var condition = new PropertyCondition(AutomationElement.NameProperty, targetName);
+                var elements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, condition);
+                foreach (AutomationElement element in elements)
+                {
+                    try
+                    {
+                        if (!pids.Contains(element.Current.ProcessId)) continue;
+                        if (requireEnabled && !element.Current.IsEnabled) continue;
+                        return element;
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink, ControlType.Text, ControlType.ListItem };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    try
+                    {
+                        if (!pids.Contains(element.Current.ProcessId)) continue;
+                        var name = element.Current.Name ?? string.Empty;
+                        foreach (var target in names)
+                        {
+                            if (!NameMatchesTarget(name, target)) continue;
+                            if (requireEnabled && !element.Current.IsEnabled) continue;
+                            return element;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static bool TryClickModuleMismatchYesByCoordinates(AutomationElement gameWindow)
+    {
+        if (gameWindow == null) return false;
+
+        try
+        {
+            var hwnd = new IntPtr(gameWindow.Current.NativeWindowHandle);
+            if (hwnd == IntPtr.Zero) return false;
+
+            var bounds = gameWindow.Current.BoundingRectangle;
+            var xFraction = ModuleMismatchYesXFractions[_moduleMismatchCoordAttemptIndex % ModuleMismatchYesXFractions.Length];
+            var yFraction = ModuleMismatchYesYFractions[_moduleMismatchCoordAttemptIndex % ModuleMismatchYesYFractions.Length];
+            int x;
+            int y;
+            if (!TryGetLauncherClientClickPoint(hwnd, xFraction, yFraction, out x, out y))
+            {
+                x = (int)(bounds.X + bounds.Width * xFraction);
+                y = (int)(bounds.Y + bounds.Height * yFraction);
+            }
+
+            var scopeDesc = DescribeScope(gameWindow);
+            ForceForegroundWindow(hwnd);
+            Thread.Sleep(250);
+            LogLine(string.Format(
+                "CLICK \"Module Mismatch Yes\" method=coords at ({0},{1}) fractions=({2:F2},{3:F2}) in {4}",
+                x, y, xFraction, yFraction, scopeDesc));
+            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes");
+            SetCursorPos(x, y);
+            Thread.Sleep(80);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+            _moduleMismatchCoordAttemptIndex++;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogLine("CLICK FAIL Module Mismatch coords: " + ex.Message);
+            return false;
+        }
+    }
+
+    private static string LogModuleMismatchGameElements()
+    {
+        var names = new List<string>();
+        var game = FindGameMainWindowRoot();
+        if (game != null)
+        {
+            CollectButtonNames(game, names);
+            CollectInteractiveNames(game, names);
+        }
+
+        if (names.Count == 0) return "no named game elements in Bannerlord scope";
+        return string.Join(", ", names.ToArray());
     }
 
     private static void FocusScope(AutomationElement scope, string reason)
@@ -1416,6 +1637,22 @@ function Invoke-ModuleMismatchClick {
     return $true
 }
 
+function Test-PostHandoffReadyAllowed {
+    if ($LaunchIntent -ne 'continue') {
+        return $true
+    }
+
+    if ($script:clickedModuleMismatch) {
+        return $true
+    }
+
+    if ([UIAHelper]::HasModuleMismatchDialog()) {
+        return $false
+    }
+
+    return $true
+}
+
 function Wait-PostHandoffWatchdog {
     param([string]$Reason)
 
@@ -1435,9 +1672,15 @@ function Wait-PostHandoffWatchdog {
             continue
         }
 
-        if ((Test-Phase1ReadyOrStall -StallDetected ([ref]$stallDetected)) -or (Test-StatusJsonReady)) {
+        if ((Test-PostHandoffReadyAllowed) -and
+            ((Test-Phase1ReadyOrStall -StallDetected ([ref]$stallDetected)) -or (Test-StatusJsonReady))) {
             Write-LaunchLog 'post-handoff: TBG READY detected'
             return
+        }
+
+        if (-not (Test-PostHandoffReadyAllowed)) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
         }
 
         if ($stallDetected) {

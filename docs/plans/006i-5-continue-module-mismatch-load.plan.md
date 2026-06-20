@@ -8,7 +8,8 @@
 |------|--------|
 | 006I-4 Path C quit | **USER PASS** (tag `006i-4-path-c-pass` @ `57f6062`) |
 | 006I overall cert | **PARTIAL** — Path B + load paths pending |
-| Module Mismatch UIA | SHIPPED |
+| Module Mismatch UIA | SHIPPED — expanded game-scope UIA + coord fallback |
+| Module Mismatch in-game | SHIPPED — `ModuleMismatchAutoConfirmService` ShowInquiry patch |
 | LaunchForgeContinue.cmd | SHIPPED |
 | Load stall watchdog | SHIPPED (C# 180s + script post-handoff) |
 | 005E economics | BLOCKED |
@@ -89,7 +90,7 @@ C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Blacks
 
 ## PASS signatures
 
-- Launch.log: `launcher-auto: clicked Module Mismatch Yes`
+- Launch.log: `launcher-auto: clicked Module Mismatch Yes` (Layer A) **or** Phase1: `[TBG QUICKSTART] Module Mismatch auto-Yes (in-game)` (Layer B)
 - Launch.log: `post-handoff: TBG READY detected` (or Phase1 `TBG READY: campaign map ready`)
 - Phase1.log: no `load stall: GameLoadingState exceeded 180s`
 - Continue reaches map without manual Yes or Task Manager

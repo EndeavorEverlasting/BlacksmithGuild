@@ -85,6 +85,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _hasAnnouncedGameLoadingStall = false;
             CharacterCreationReflection.ResetNarrativeSession();
             MainMenuAutoLauncher.ResetForNewSession();
+            ModuleMismatchAutoConfirmService.ResetForNewSession();
         }
 
         public static void AnnounceCutsceneSkip()
@@ -194,6 +195,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         public static void Poll(float dt = 0f)
         {
             MainMenuAutoLauncher.Poll(dt);
+            ModuleMismatchAutoConfirmService.Poll(dt);
 
             var activeStateName = GameSessionState.GetActiveStateName();
             if (MainMenuAutoLauncher.IsForwardLaunchInProgress
