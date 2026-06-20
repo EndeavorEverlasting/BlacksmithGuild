@@ -1,4 +1,5 @@
 using System;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools
@@ -9,32 +10,27 @@ namespace BlacksmithGuild.DevTools
     /// </summary>
     public static class InGameNotice
     {
-        private static readonly Color InfoColor = new Color(0.9f, 0.9f, 0.9f, 1f);
-        private static readonly Color SuccessColor = new Color(0.2f, 1f, 0.2f, 1f);
-        private static readonly Color WarnColor = new Color(1f, 0.75f, 0f, 1f);
-        private static readonly Color BlockedColor = new Color(1f, 0.75f, 0f, 1f);
-        private static readonly Color FailColor = new Color(1f, 0.2f, 0.2f, 1f);
-
         public static void Info(string message) =>
-            Show(message, InfoColor, "TBG NOTICE:");
+            Show(message, ReportColors.Info, ModNoticeKind.Info);
 
         public static void Success(string message) =>
-            Show(message, SuccessColor, "TBG SUCCESS:");
+            Show(message, ReportColors.Success, ModNoticeKind.Success);
 
         public static void Warn(string message) =>
-            Show(message, WarnColor, "TBG WARN:");
+            Show(message, ReportColors.Warn, ModNoticeKind.Warn);
 
         public static void Blocked(string message) =>
-            Show(message, BlockedColor, "TBG BLOCKED:");
+            Show(message, ReportColors.Warn, ModNoticeKind.Blocked);
 
         public static void Fail(string message) =>
-            Show(message, FailColor, "TBG FAILED:");
+            Show(message, ReportColors.Fail, ModNoticeKind.Fail);
 
         public static void Ready(string message) =>
-            GuildLog.Display($"TBG READY: {message}", color: SuccessColor);
+            GuildLog.Display($"{ModDisplay.NoticePrefix(ModNoticeKind.Ready)} {message}", color: ReportColors.Success);
 
-        private static void Show(string message, Color color, string prefix)
+        private static void Show(string message, Color color, ModNoticeKind kind)
         {
+            var prefix = ModDisplay.NoticePrefix(kind);
             if (ShouldUsePrefix(message, prefix))
             {
                 GuildLog.Display($"{prefix} {message}", color: color);
@@ -51,8 +47,9 @@ namespace BlacksmithGuild.DevTools
                 return true;
             }
 
-            if (message.StartsWith("TBG ", StringComparison.Ordinal) ||
-                message.StartsWith("TBG:", StringComparison.Ordinal))
+            if (message.StartsWith($"{ModDisplay.Name}", StringComparison.Ordinal)
+                || message.StartsWith("TBG ", StringComparison.Ordinal)
+                || message.StartsWith("TBG:", StringComparison.Ordinal))
             {
                 return false;
             }

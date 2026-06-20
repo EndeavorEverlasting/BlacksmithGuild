@@ -65,7 +65,7 @@ namespace BlacksmithGuild.DevTools.Reporting
         public ReportFormatter Verdict(ReportVerdict verdict, string message)
         {
             EnsureOpen();
-            _verdictLines.Add($"{FormatVerdictMarker(verdict)} {message}");
+            _verdictLines.Add($"{AdvisoryReportText.FormatVerdictMarker(verdict)} {message}");
             return this;
         }
 
@@ -106,15 +106,7 @@ namespace BlacksmithGuild.DevTools.Reporting
             AppendHeader(builder);
             AppendLines(builder, _sectionLines);
             AppendLines(builder, _verdictLines);
-            if (IsCert)
-            {
-                AppendCertEndMarker(builder);
-            }
-            else
-            {
-                AppendEndMarker(builder);
-            }
-
+            AppendEndMarker(builder);
             return builder.ToString();
         }
 
@@ -129,8 +121,7 @@ namespace BlacksmithGuild.DevTools.Reporting
 
         private void AppendHeader(StringBuilder builder)
         {
-            var kind = IsCert ? "TBG CERT" : "TBG REPORT";
-            builder.AppendLine($"========== {kind}: {Title} ==========");
+            builder.AppendLine(IsCert ? ModDisplay.CertReportHeader(Title) : ModDisplay.ReportHeader(Title));
             builder.AppendLine($"reportId: {ReportId}");
             if (!string.IsNullOrEmpty(Source))
             {
@@ -140,14 +131,9 @@ namespace BlacksmithGuild.DevTools.Reporting
             builder.AppendLine($"time: {Time:yyyy-MM-dd HH:mm:ss}");
         }
 
-        private static void AppendEndMarker(StringBuilder builder)
+        private void AppendEndMarker(StringBuilder builder)
         {
-            builder.AppendLine("========== END TBG REPORT ==========");
-        }
-
-        private void AppendCertEndMarker(StringBuilder builder)
-        {
-            builder.AppendLine("========== END TBG CERT ==========");
+            builder.AppendLine(IsCert ? ModDisplay.CertReportEnd : ModDisplay.ReportEnd);
         }
 
         private static void AppendLines(StringBuilder builder, IEnumerable<string> lines)
@@ -180,24 +166,8 @@ namespace BlacksmithGuild.DevTools.Reporting
                     continue;
                 }
 
-                GuildLog.Display(line, showInGame: true, color: new Color(0.9f, 0.9f, 0.9f, 1f));
-            }
-        }
-
-        private static string FormatVerdictMarker(ReportVerdict verdict)
-        {
-            switch (verdict)
-            {
-                case ReportVerdict.Pass:
-                    return "[PASS]";
-                case ReportVerdict.Warn:
-                    return "[WARN]";
-                case ReportVerdict.Fail:
-                    return "[FAIL]";
-                case ReportVerdict.Unknown:
-                    return "[UNKNOWN]";
-                default:
-                    return "[INFO]";
+                var kind = ReportLineClassifier.Classify(line);
+                GuildLog.Display(line, showInGame: true, color: ReportLineClassifier.ColorFor(kind));
             }
         }
 

@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20 (007A market hotkey remap)  
+**Last updated:** 2026-06-20 (007B report UX + forge ACTION PLAN)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 007A Ctrl+Alt+M market intel remap
+**Branch:** `main` — 007B shared advisory formatting
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -22,7 +22,7 @@ Canonical snapshot of what works today, what is certified, and what is not built
 |---------|------------|----------|
 | **Zero-click bootstrap (Path A)** | `Forge.cmd` | Map + `TBG READY`; PLAY click `(811,764)` fractions `0.34×0.90` |
 | **Dev harness hotkeys** | F7 status, F8 command list, F11 +100k gold | Feed ack lines on campaign map |
-| **Market intel action plan** | **Ctrl+Alt+M** (legacy F12 off by default) | **USER PASS 2026-06-20** — Continue save: `MarketSnapshotNow`, ACTION PLAN, BUY@NEAREST, TOP SPREADS, nonzero prices. Hotkey collision with Steam F12 fixed; primary key now **Ctrl+Alt+M**. |
+| **Market intel action plan** | **Ctrl+Alt+M** | **USER PASS 2026-06-20** — Continue save live cert: `MarketSnapshotNow`, ACTION PLAN, BUY@NEAREST, TOP SPREADS, nonzero prices (Poros area). Reports use **Blacksmith Guild** headers + colored section boundaries. |
 | **Real forge rank (Session 2 disposable cert)** | Session 2 script with `SetForgeCandidateSourceReal` | **USER PASS 2026-06-20** — disposable cert: `source=real`, templates=12, top=Javelin, `fallbackUsed=false` |
 | **Smithing audit (Stage A)** | `ProbeSmithingAudit` | **USER PASS 2026-06-20** — `GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints |
 | **Path C quit loop** | Quit to main menu | Tag `006i-4-path-c-pass` |
@@ -41,7 +41,7 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 
 **Market intel smoke test:** USER PASS with hotkey collision. F12 produced useful market action output, but F12 conflicts with Steam screenshots. Primary hotkey changed to **Ctrl+Alt+M**.
 
-**Forge recommendation status:** visible screenshot still shows `source=stub` / fake forge advisor. Real forge candidate ranking is not certified until `BlacksmithGuild_ForgeRecommendations.json` shows `source=real` and `fallbackUsed=false`. Ctrl+Alt+R alone ranks the **requested** source (default Stub) — Track 2A must wire honest real path on Continue saves.
+**Forge recommendation status:** Ctrl+Alt+R now emits **SOURCE HONESTY**, **MATERIAL GAPS**, **ACTION PLAN**, and **CRAFT NEXT** sections (shared advisory format). Continue save screenshot still shows `source=stub` until JSON proves `source=real` and `fallbackUsed=false`. Material buy steps use cached market intel when Ctrl+Alt+M was run first.
 
 ---
 

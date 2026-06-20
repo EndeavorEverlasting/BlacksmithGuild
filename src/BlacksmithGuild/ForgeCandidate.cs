@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using BlacksmithGuild.Forge;
+
 namespace BlacksmithGuild
 {
     public sealed class ForgeCandidate
@@ -17,6 +20,8 @@ namespace BlacksmithGuild
         public float Score { get; set; }
 
         public string Reason { get; set; }
+
+        public List<RecipeMaterialNeed> MaterialNeeds { get; set; } = new List<RecipeMaterialNeed>();
 
         public override string ToString()
         {

@@ -287,13 +287,13 @@ namespace BlacksmithGuild
             var forgeLine = ForgeRecommendationService.BuildCompactSummaryLine();
             if (!string.IsNullOrEmpty(forgeLine))
             {
-                report.SummaryLine(forgeLine.Replace("TBG FORGE: ", string.Empty));
+                report.SummaryLine(forgeLine);
             }
 
             var marketLine = MarketIntelligenceService.BuildCompactSummaryLine();
             if (!string.IsNullOrEmpty(marketLine))
             {
-                report.SummaryLine(marketLine.Replace("TBG MARKET: ", string.Empty));
+                report.SummaryLine(marketLine);
             }
 
             report.EndReport();

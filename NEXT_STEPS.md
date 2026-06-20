@@ -18,7 +18,8 @@
 | 005E real forge rank | **Session 2 disposable PASS** — `source=real`, Javelin top; Continue save still shows stub until Track 2A |
 | 005E smithing Stage A | **USER PASS** 2026-06-20 — stamina API hints |
 | 006J closeout | **PARTIAL** — 1B PASS; 1C play loop + 1D Path B Back pending |
-| **007A hotkey remap** | **SHIPPED** — primary market intel **Ctrl+Alt+M**; pending user smoke |
+| **007A hotkey remap** | **SHIPPED** — Ctrl+Alt+M primary; USER PASS Continue live cert |
+| **007B report UX** | **SHIPPED** — Blacksmith Guild branding, colored reports, forge ACTION PLAN + market bridge |
 
 ---
 

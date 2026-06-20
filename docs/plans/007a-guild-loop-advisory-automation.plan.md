@@ -24,18 +24,13 @@
 
 Do this before Aserai character autobuild tuning.
 
-1. Remap market intel hotkey from F12 to Ctrl+Alt+M.
-2. Verify market intel still writes `BlacksmithGuild_MarketIntel.json`.
-3. Verify Ctrl+Alt+R forge recommendations are honest:
-   - PASS only if source is real and fallback is false.
-   - If source is stub, keep it labeled stub and route Track 2A to real candidate mapping.
-4. Add forge-materials bridge to market intel:
-   - hardwood
-   - charcoal inputs
-   - ore/metals
-   - smeltable weapons
-   - cheap fodder candidates
+1. ~~Remap market intel hotkey from F12 to Ctrl+Alt+M.~~ **DONE (007A)**
+2. ~~Verify market intel still writes `BlacksmithGuild_MarketIntel.json`.~~ **USER PASS (Continue live cert)**
+3. Forge ACTION PLAN + SOURCE HONESTY on Ctrl+Alt+R — **SHIPPED (007B)**; real source on Continue still Track 2A
+4. Partial forge-materials bridge — forge buy steps use **cached** Ctrl+Alt+M prices (007B); full `--- FORGE MATERIALS ---` market section still open
 5. Keep all actions advisory only.
+
+**007B shared formatting:** `ModDisplay`, `AdvisoryReportText`, `AdvisoryReportSections`, `ReportLineClassifier` — reuse for future Ctrl+Alt+G guild loop report.
 
 ---
 

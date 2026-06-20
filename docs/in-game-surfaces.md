@@ -8,9 +8,9 @@ Use these three layers while developing on a **disposable campaign** (mod ON).
 |------|---------|
 | Zero-click dev launch | **`Forge.cmd`** — PLAY, version confirm, Safe Mode No, auto character build → map. See [forge-zero-click-contract.md](forge-zero-click-contract.md) |
 | Mod loaded? | **Enter** on campaign map → look for `The forge is lit` |
-| Shortcut fired? | Wait for `TBG READY: campaign map ready. Press F8 for commands.` then **Enter** → `TBG F9:` / `TBG F10:` / `TBG F11:` or `TBG … BLOCKED:` in the **lower-left message feed** |
-| Cert / session summary? | **F7** → `TBG STATUS:` lines in the message feed |
-| New build while game open? | Build may succeed but Client DLL install can be **blocked** (file locked). In-game: `TBG RELOAD: … close Bannerlord …`; **F7** shows `reload=blocked`. After successful install: `reload=pending` — restart Bannerlord |
+| Shortcut fired? | Wait for `Blacksmith Guild — Ready: campaign map ready…` then **Enter** → colored notices in the **lower-left message feed** |
+| Cert / session summary? | **F7** → `Blacksmith Guild — Forge Status` report (colored headers/sections) |
+| New build while game open? | In-game: `Blacksmith Guild — Reload: …`; **F7** shows `reload=blocked` |
 | List dev commands? | **F8** |
 | Full test output? | Tail `BlacksmithGuild_Phase1.log` or `.\forge.ps1 -Check -SkipInstall` |
 | Engine sanity (gold/XP)? | **Alt+`** dev console on disposable save only |
@@ -23,7 +23,7 @@ The Blacksmith Guild uses three separate channels. Do not confuse them.
 
 | Channel | Mechanism | Where it appears | Used for |
 |---------|-----------|------------------|----------|
-| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left / bottom-left game log (press **Enter** on campaign map to scroll). Colored where supported (green success, yellow blocked/warn, red fail). | F7–F8 shortcut ack, Ctrl+Alt+M market intel, `TBG READY`, results, block reasons, compact status |
+| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left log (press **Enter** to scroll). **Colored** report headers (gold), footers (green), section dividers (gold), numbered steps (white). | F7–F8, Ctrl+Alt+M/R reports, ready line, compact status |
 | **Windows toast** | PowerShell after forge install | Windows notification area (usually bottom-right) | Build/install/reload reminders when Bannerlord is running |
 | **File logs** | Append to disk | `<Bannerlord>\BlacksmithGuild_Phase1.log`, `BlacksmithGuild_Forge.log` | Full diagnostics, certification evidence |
 
@@ -38,7 +38,8 @@ Shortcut feedback is displayed through Bannerlord's normal in-game message feed 
 During intro/cinematic or other non-map states, Bannerlord may render the feed differently or less prominently. **Do not certify hotkeys until** you see:
 
 ```text
-TBG READY: campaign map ready. Press F8 for commands.
+Blacksmith Guild — Ready: campaign map ready. Press F8 for commands.
+Blacksmith Guild — Market: Press Ctrl+Alt+M for market intel.
 ```
 
 Gold test does **not** auto-run on DailyTick by default — use **F11** manually after the ready message.
@@ -62,12 +63,10 @@ Full diagnostic detail remains in:
 
 | Key | Expected visible messages |
 |-----|---------------------------|
-| **F7** | `TBG STATUS: loadedVersion=… dllUtc=… reload=…`; session/preflight/last command; optional cert line |
-| **F8** | `TBG COMMANDS` + `F7 Status \| F8 Commands` + `F9 Daily tick \| F10 Fast-forward \| F11 Gold test` + `Ctrl+Alt+M Market intel \| Ctrl+Alt+R Rank forge` + feed hint |
-| **F9** | `TBG F9: Daily tick test requested.` → `TBG F9: DailyTick fired.` or `TBG F9 BLOCKED:` / `TBG F9 FAILED:` |
-| **F10** | `TBG F10: Fast-forward ON.` / `OFF.` or `TBG F10 BLOCKED:` / `FAILED:` |
-| **F11** | `TBG F11: Gold test requested.` → `TBG F11: Gold test PASS, +100000.` or `BLOCKED` / `FAILED` |
-| **Ctrl+Alt+M** | `TBG REPORT: MARKET INTEL` — **USER PASS** — `ACTION PLAN`, `BUY@NEAREST`, top spreads; full table in Phase1.log. Primary hotkey (avoids Steam F12 screenshot). |
+| **F7** | `Blacksmith Guild — Forge Status` report + compact forge/market lines |
+| **F8** | `Blacksmith Guild — Commands` + hotkey help lines |
+| **Ctrl+Alt+M** | `Blacksmith Guild — Market Intel` report — **USER PASS** — colored `--- ACTION PLAN ---`, `BUY@NEAREST`, `TOP SPREADS` |
+| **Ctrl+Alt+R** | `Blacksmith Guild — Forge Recommendations` — `SOURCE HONESTY`, `MATERIAL GAPS`, `ACTION PLAN`, `CRAFT NEXT`; stub labeled until real source set |
 
 If a risky command is blocked, the block reason appears in-game (e.g. `TBG F11 BLOCKED: map menu open — close panel first.`) and in the file log with additional detail.
 

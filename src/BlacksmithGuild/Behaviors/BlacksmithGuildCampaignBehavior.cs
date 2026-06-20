@@ -1,6 +1,7 @@
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.CampaignSystem;
 
@@ -80,7 +81,7 @@ namespace BlacksmithGuild.Behaviors
                 _hasAnnouncedCampaignMapReady = true;
                 CampaignSetupStateTracker.NotifyCampaignMapReady();
                 InGameNotice.Ready("campaign map ready. Press F8 for commands.");
-                InGameNotice.Info("TBG MARKET: Press Ctrl+Alt+M for market intel.");
+                InGameNotice.Info(ModDisplay.CompactLine("Market", "Press Ctrl+Alt+M for market intel."));
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
                 HotkeyTraceService.OnMapReady();
                 TreasuryDeltaWatchService.OnCampaignMapReady();

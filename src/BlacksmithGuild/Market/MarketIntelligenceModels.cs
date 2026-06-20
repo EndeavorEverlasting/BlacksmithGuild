@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BlacksmithGuild.DevTools.Reporting;
 
 namespace BlacksmithGuild.Market
 {
@@ -54,12 +55,6 @@ namespace BlacksmithGuild.Market
         public int Spread { get; set; }
         public float SellDistance { get; set; }
         public bool IsSmithingInput { get; set; }
-    }
-
-    public sealed class ActionPlanStep
-    {
-        public int Step { get; set; }
-        public string Text { get; set; }
     }
 
     public sealed class MarketIntelSummary

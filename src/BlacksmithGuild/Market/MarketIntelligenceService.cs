@@ -37,6 +37,69 @@ namespace BlacksmithGuild.Market
 
         public static MarketIntelSummary Summary => _summary;
 
+        public static bool HasCachedScan => _summaryRecorded && _summary.HasScan;
+
+        public static MarketAdvisorySnapshot GetAdvisorySnapshot()
+        {
+            if (!HasCachedScan)
+            {
+                return new MarketAdvisorySnapshot();
+            }
+
+            return new MarketAdvisorySnapshot
+            {
+                HasScan = true,
+                NearestTown = _cachedReport.NearestTown,
+                NearestDistance = _cachedReport.NearestDistance,
+                TownsScanned = _cachedReport.TownsScanned,
+                ExpandedScanUsed = _cachedReport.ExpandedScanUsed,
+                ActionPlan = _cachedReport.ActionPlan,
+                RouteRows = MapRouteRows(_cachedReport.RouteRows),
+                InventoryRows = MapInventoryRows(_cachedReport.InventoryRows),
+                SpreadRows = MapSpreadRows(_cachedReport.SpreadRows)
+            };
+        }
+
+        public static bool TryFindBuyAtNearest(string itemId, string itemName, out string townName, out int buyPrice, out int stock)
+        {
+            townName = null;
+            buyPrice = 0;
+            stock = 0;
+
+            if (!HasCachedScan)
+            {
+                return false;
+            }
+
+            var route = _cachedReport.RouteRows.FirstOrDefault(row =>
+                MatchesItem(row.ItemId, row.ItemName, itemId, itemName));
+            if (route != null)
+            {
+                townName = route.BuyTown;
+                buyPrice = route.BuyPrice;
+                stock = route.Stock;
+                return true;
+            }
+
+            var nearest = _cachedReport.Towns.FirstOrDefault();
+            if (nearest?.Goods == null)
+            {
+                return false;
+            }
+
+            var good = nearest.Goods.FirstOrDefault(entry =>
+                MatchesItem(entry.ItemId, entry.ItemName, itemId, itemName));
+            if (good == null)
+            {
+                return false;
+            }
+
+            townName = nearest.Name;
+            buyPrice = good.BuyPrice;
+            stock = good.Stock;
+            return true;
+        }
+
         public static bool RunScanNow(string source = MarketSnapshotNowCommand)
         {
             if (Campaign.Current == null || Hero.MainHero == null || MobileParty.MainParty == null)
@@ -49,7 +112,7 @@ namespace BlacksmithGuild.Market
             {
                 var detail = GameSessionState.GetCampaignMapBlockDetail();
                 DebugLogger.Test($"[TBG MARKET] scan blocked: {detail}", showInGame: false);
-                InGameNotice.Blocked($"TBG MARKET: map not ready ({detail}).");
+                InGameNotice.Blocked($"{ModDisplay.Name} — Market: map not ready ({detail}).");
                 return false;
             }
 
@@ -103,8 +166,9 @@ namespace BlacksmithGuild.Market
                 return null;
             }
 
-            return
-                $"TBG MARKET: nearest={_summary.NearestTown} ({_summary.NearestDistance:0.1}u) spreads={_summary.SpreadCount}";
+            return ModDisplay.CompactLine(
+                "Market",
+                $"nearest={_summary.NearestTown} ({_summary.NearestDistance:0.1}u) spreads={_summary.SpreadCount}");
         }
 
         private static MarketIntelReport BuildReport(string source)
@@ -736,50 +800,12 @@ namespace BlacksmithGuild.Market
             report.Section("Evidence");
             report.Line("json", "BlacksmithGuild_MarketIntel.json");
 
-            report.SummaryLine(
-                $"nearest={_cachedReport.NearestTown} ({_cachedReport.NearestDistance:0.1}u) towns={_cachedReport.TownsScanned}");
-
-            if (_cachedReport.ExpandedScanUsed)
-            {
-                report.SummaryLine("expanded scan (no routes in 30u)");
-            }
-
-            if (_cachedReport.ActionPlan.Count > 0)
-            {
-                report.SummaryLine("--- ACTION PLAN ---");
-                foreach (var step in _cachedReport.ActionPlan)
-                {
-                    report.SummaryLine($"{step.Step}. {step.Text}");
-                }
-            }
-
-            if (_cachedReport.RouteRows.Count > 0)
-            {
-                report.SummaryLine("--- BUY@NEAREST ---");
-                foreach (var row in _cachedReport.RouteRows.Take(3))
-                {
-                    var smithTag = FormatSmithTag(row.IsSmithingInput);
-                    report.SummaryLine(
-                        $"{row.ItemName}: buy {row.BuyPrice} -> {row.SellTown} {row.SellPrice} (+{row.Spread}){smithTag}");
-                }
-            }
-
-            foreach (var row in _cachedReport.InventoryRows.Where(r => r.SpreadVsWorst > 0).Take(2))
-            {
-                report.SummaryLine(
-                    $"{row.ItemName} x{row.Quantity} -> Sell@{row.BestSellTown} {row.BestSellPrice} (+{row.SpreadVsWorst})");
-            }
-
-            if (_cachedReport.SpreadRows.Count > 0)
-            {
-                report.SummaryLine("--- TOP SPREADS ---");
-            }
-
-            foreach (var row in _cachedReport.SpreadRows.Take(3))
-            {
-                report.SummaryLine(
-                    $"{row.ItemName}: Buy@{row.BuyTown} {row.BuyPrice} -> Sell@{row.SellTown} {row.SellPrice} (+{row.Spread})");
-            }
+            var snapshot = GetAdvisorySnapshot();
+            AdvisoryReportSections.EmitContextSummary(report, snapshot);
+            AdvisoryReportSections.EmitActionPlan(report, snapshot.ActionPlan);
+            AdvisoryReportSections.EmitBuyAtNearest(report, snapshot.RouteRows);
+            AdvisoryReportSections.EmitInventorySells(report, snapshot.InventoryRows);
+            AdvisoryReportSections.EmitTopSpreads(report, snapshot.SpreadRows);
 
             report.EndReport(
                 emitInGame: string.Equals(source, MarketSnapshotNowCommand, StringComparison.Ordinal),
@@ -929,6 +955,75 @@ namespace BlacksmithGuild.Market
         private static string Escape(string value)
         {
             return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static List<MarketBuyAtNearestRow> MapRouteRows(List<TradeRouteRow> rows)
+        {
+            return rows
+                .Select(row => new MarketBuyAtNearestRow
+                {
+                    ItemName = row.ItemName,
+                    BuyPrice = row.BuyPrice,
+                    SellTown = row.SellTown,
+                    SellPrice = row.SellPrice,
+                    Spread = row.Spread,
+                    IsSmithingInput = row.IsSmithingInput
+                })
+                .ToList();
+        }
+
+        private static List<MarketInventorySellRow> MapInventoryRows(List<InventorySellRow> rows)
+        {
+            return rows
+                .Select(row => new MarketInventorySellRow
+                {
+                    ItemName = row.ItemName,
+                    Quantity = row.Quantity,
+                    BestSellTown = row.BestSellTown,
+                    BestSellPrice = row.BestSellPrice,
+                    SpreadVsWorst = row.SpreadVsWorst
+                })
+                .ToList();
+        }
+
+        private static List<MarketSpreadRow> MapSpreadRows(List<TradeSpreadRow> rows)
+        {
+            return rows
+                .Select(row => new MarketSpreadRow
+                {
+                    ItemName = row.ItemName,
+                    BuyTown = row.BuyTown,
+                    BuyPrice = row.BuyPrice,
+                    SellTown = row.SellTown,
+                    SellPrice = row.SellPrice,
+                    Spread = row.Spread
+                })
+                .ToList();
+        }
+
+        private static bool MatchesItem(string leftId, string leftName, string rightId, string rightName)
+        {
+            if (!string.IsNullOrEmpty(leftId)
+                && !string.IsNullOrEmpty(rightId)
+                && string.Equals(leftId, rightId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrEmpty(leftName)
+                && !string.IsNullOrEmpty(rightName)
+                && string.Equals(leftName, rightName, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrEmpty(leftName) && !string.IsNullOrEmpty(rightName))
+            {
+                return leftName.IndexOf(rightName, StringComparison.OrdinalIgnoreCase) >= 0
+                    || rightName.IndexOf(leftName, StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            return false;
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.Party;
@@ -38,8 +39,10 @@ namespace BlacksmithGuild.Forge
                     showInGame: false);
 
                 InGameNotice.Info(
-                    $"TBG SMITHING AUDIT: {report.AuditStatus} heroes={report.HeroCount} hints={report.StaminaMemberHints.Count}");
-                InGameNotice.Info($"TBG SMITHING AUDIT: json={ReportFileName}");
+                    ModDisplay.CompactLine(
+                        "Smithing Audit",
+                        $"{report.AuditStatus} heroes={report.HeroCount} hints={report.StaminaMemberHints.Count}"));
+                InGameNotice.Info(ModDisplay.CompactLine("Smithing Audit", $"json={ReportFileName}"));
 
                 return !string.Equals(report.AuditStatus, "Error", StringComparison.OrdinalIgnoreCase);
             }

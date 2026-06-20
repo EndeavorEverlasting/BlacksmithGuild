@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
@@ -6,6 +7,13 @@ using TaleWorlds.Localization;
 
 namespace BlacksmithGuild.Forge
 {
+    public sealed class RecipeMaterialNeed
+    {
+        public string ItemId { get; set; }
+        public string ItemName { get; set; }
+        public int Quantity { get; set; }
+    }
+
     public sealed class ForgeRecipeEconomicsResult
     {
         public int Value { get; set; }
@@ -13,6 +21,7 @@ namespace BlacksmithGuild.Forge
         public int RareMaterialPenalty { get; set; }
         public bool UsedExactCosts { get; set; }
         public string Detail { get; set; }
+        public List<RecipeMaterialNeed> MaterialNeeds { get; set; } = new List<RecipeMaterialNeed>();
     }
 
     public static class ForgeRecipeEconomics
@@ -74,6 +83,7 @@ namespace BlacksmithGuild.Forge
                             var rarePenalty = ComputeRarePenalty(costs, smithingModel);
                             var difficulty = smithingModel.CalculateWeaponDesignDifficulty(design);
                             var value = EstimateValueFromDesign(template, design, materialCost, difficulty);
+                            var materialNeeds = BuildMaterialNeeds(costs, smithingModel);
 
                             return new ForgeRecipeEconomicsResult
                             {
@@ -81,7 +91,8 @@ namespace BlacksmithGuild.Forge
                                 MaterialCost = materialCost,
                                 RareMaterialPenalty = rarePenalty,
                                 UsedExactCosts = true,
-                                Detail = $"exact costs difficulty={difficulty}"
+                                Detail = $"exact costs difficulty={difficulty}",
+                                MaterialNeeds = materialNeeds
                             };
                         }
                     }
@@ -169,6 +180,34 @@ namespace BlacksmithGuild.Forge
             }
 
             return WeaponDesignElement.GetInvalidPieceForType(pieceType);
+        }
+
+        private static List<RecipeMaterialNeed> BuildMaterialNeeds(
+            int[] costs,
+            TaleWorlds.CampaignSystem.ComponentInterfaces.SmithingModel model)
+        {
+            var needs = new List<RecipeMaterialNeed>();
+            var limit = Math.Min(costs.Length, (int)CraftingMaterials.NumCraftingMats);
+
+            for (var index = 0; index < limit; index++)
+            {
+                var amount = costs[index];
+                if (amount <= 0)
+                {
+                    continue;
+                }
+
+                var material = (CraftingMaterials)index;
+                var item = model.GetCraftingMaterialItem(material);
+                needs.Add(new RecipeMaterialNeed
+                {
+                    ItemId = item?.StringId ?? material.ToString(),
+                    ItemName = item?.Name?.ToString() ?? material.ToString(),
+                    Quantity = amount
+                });
+            }
+
+            return needs;
         }
 
         private static int SumMaterialCost(int[] costs, TaleWorlds.CampaignSystem.ComponentInterfaces.SmithingModel model)

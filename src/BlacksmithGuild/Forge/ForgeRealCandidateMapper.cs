@@ -92,6 +92,7 @@ namespace BlacksmithGuild.Forge
                             EstimatedValue = economics.Value,
                             EstimatedMaterialCost = economics.MaterialCost,
                             RareMaterialPenalty = economics.RareMaterialPenalty,
+                            MaterialNeeds = economics.MaterialNeeds?.ToList() ?? new List<RecipeMaterialNeed>(),
                             Reason = $"economics={economics.Detail}; skill={smithingSkill}; {gateReason}"
                         });
                     }

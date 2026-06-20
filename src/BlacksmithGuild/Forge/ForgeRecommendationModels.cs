@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BlacksmithGuild.DevTools.Reporting;
 
 namespace BlacksmithGuild.Forge
 {
@@ -39,5 +40,8 @@ namespace BlacksmithGuild.Forge
         public int MappedCount { get; set; }
         public ForgeCandidate TopCandidate { get; set; }
         public List<ForgeCandidate> Ranked { get; set; } = new List<ForgeCandidate>();
+        public SourceHonestyInfo SourceHonesty { get; set; }
+        public List<ActionPlanStep> ActionPlan { get; set; } = new List<ActionPlanStep>();
+        public List<MaterialGapRow> MaterialGaps { get; set; } = new List<MaterialGapRow>();
     }
 }

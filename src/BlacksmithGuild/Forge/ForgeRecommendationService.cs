@@ -41,7 +41,7 @@ namespace BlacksmithGuild.Forge
         {
             _requestedSourceKind = kind;
             DebugLogger.Test($"[TBG FORGE] Candidate source set to {kind}.", showInGame: false);
-            InGameNotice.Info($"TBG FORGE: candidate source set to {kind}.");
+            InGameNotice.Info(ModDisplay.CompactLine("Forge", $"candidate source set to {kind}."));
             return true;
         }
 
@@ -49,19 +49,19 @@ namespace BlacksmithGuild.Forge
         {
             _activeDoctrine = doctrine;
             DebugLogger.Test($"[TBG FORGE] Doctrine set to {doctrine}.", showInGame: false);
-            InGameNotice.Info($"TBG FORGE: doctrine set to {doctrine}.");
+            InGameNotice.Info(ModDisplay.CompactLine("Forge", $"doctrine set to {doctrine}."));
             return true;
         }
 
         public static bool ShowCandidateSource()
         {
-            InGameNotice.Info($"TBG FORGE: requested source={_requestedSourceKind}");
+            InGameNotice.Info(ModDisplay.CompactLine("Forge", $"requested source={_requestedSourceKind}"));
             return true;
         }
 
         public static bool ShowDoctrine()
         {
-            InGameNotice.Info($"TBG FORGE: active doctrine={_activeDoctrine}");
+            InGameNotice.Info(ModDisplay.CompactLine("Forge", $"active doctrine={_activeDoctrine}"));
             return true;
         }
 
@@ -97,6 +97,8 @@ namespace BlacksmithGuild.Forge
                     TopCandidate = ranked.FirstOrDefault(),
                     Ranked = ranked
                 };
+
+                PopulateAdvisoryFields(_cachedReport);
 
                 WriteJsonReport(_cachedReport);
                 UpdateSummary(_cachedReport);
@@ -156,8 +158,9 @@ namespace BlacksmithGuild.Forge
                 return null;
             }
 
-            return
-                $"TBG FORGE: top={_summary.TopCandidateName} score={_summary.TopFinalScore:0} doctrine={_summary.Doctrine} source={_summary.Source}";
+            return ModDisplay.CompactLine(
+                "Forge",
+                $"top={_summary.TopCandidateName} score={_summary.TopFinalScore:0} doctrine={_summary.Doctrine} source={_summary.Source}");
         }
 
         private static CandidateResolution ResolveCandidates(ForgeCandidateSourceKind requestedKind)
@@ -300,13 +303,36 @@ namespace BlacksmithGuild.Forge
             report.Section("Evidence");
             report.Line("json", "BlacksmithGuild_ForgeRecommendations.json");
 
+            AdvisoryReportSections.EmitSourceHonesty(report, _cachedReport.SourceHonesty);
+            AdvisoryReportSections.EmitMaterialGaps(report, _cachedReport.MaterialGaps);
+            AdvisoryReportSections.EmitActionPlan(report, _cachedReport.ActionPlan);
+            AdvisoryReportSections.EmitCraftNext(
+                report,
+                ForgeAdvisoryPlanner.BuildCraftNextRows(_cachedReport.Ranked));
+
             if (top != null)
             {
                 report.SummaryLine(
-                    $"top={top.DesignName} score={top.FinalScore:0} doctrine={_cachedReport.Doctrine} source={_cachedReport.Source}");
+                    ModDisplay.CompactLine(
+                        "Forge",
+                        $"top={top.DesignName} score={top.FinalScore:0} doctrine={_cachedReport.Doctrine} source={_cachedReport.Source}"));
             }
 
             report.EndReport(emitInGame: string.Equals(source, RankForgeCandidatesCommand, StringComparison.Ordinal), emitToFile: true);
+        }
+
+        private static void PopulateAdvisoryFields(ForgeRecommendationReport report)
+        {
+            report.SourceHonesty = ForgeAdvisoryPlanner.BuildSourceHonesty(_requestedSourceKind, report);
+            report.MaterialGaps = ForgeAdvisoryPlanner.BuildMaterialGaps(report.TopCandidate);
+            var isStub = string.Equals(
+                report.Source,
+                StubForgeCandidateSource.SourceName,
+                StringComparison.OrdinalIgnoreCase);
+            report.ActionPlan = ForgeAdvisoryPlanner.BuildActionPlan(
+                report.TopCandidate,
+                report.MaterialGaps,
+                isStub);
         }
 
         private static void WriteJsonReport(ForgeRecommendationReport report)
@@ -339,6 +365,10 @@ namespace BlacksmithGuild.Forge
             builder.AppendLine($"  \"templateCount\": {report.TemplateCount},");
             builder.AppendLine($"  \"mappedCount\": {report.MappedCount},");
 
+            AppendSourceHonestyJson(builder, report.SourceHonesty);
+            AppendMaterialGapsJson(builder, report.MaterialGaps);
+            AppendActionPlanJson(builder, report.ActionPlan);
+
             if (report.TopCandidate != null)
             {
                 AppendCandidateJson(builder, "topCandidate", report.TopCandidate, trailingComma: true);
@@ -360,6 +390,67 @@ namespace BlacksmithGuild.Forge
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static void AppendSourceHonestyJson(StringBuilder builder, SourceHonestyInfo info)
+        {
+            if (info == null)
+            {
+                builder.AppendLine("  \"sourceHonesty\": null,");
+                return;
+            }
+
+            builder.AppendLine("  \"sourceHonesty\": {");
+            builder.AppendLine($"    \"requested\": \"{Escape(info.Requested)}\",");
+            builder.AppendLine($"    \"resolved\": \"{Escape(info.Resolved)}\",");
+            builder.AppendLine($"    \"fallbackUsed\": {info.FallbackUsed.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"verdict\": \"{Escape(info.Verdict.ToString())}\",");
+            builder.AppendLine($"    \"message\": \"{Escape(info.VerdictMessage)}\"");
+            builder.AppendLine("  },");
+        }
+
+        private static void AppendMaterialGapsJson(StringBuilder builder, List<MaterialGapRow> gaps)
+        {
+            builder.AppendLine("  \"materialGaps\": [");
+            if (gaps != null)
+            {
+                for (var i = 0; i < gaps.Count; i++)
+                {
+                    var gap = gaps[i];
+                    builder.AppendLine("    {");
+                    builder.AppendLine($"      \"itemId\": {(string.IsNullOrEmpty(gap.ItemId) ? "null" : $"\"{Escape(gap.ItemId)}\"")},");
+                    builder.AppendLine($"      \"itemName\": \"{Escape(gap.ItemName)}\",");
+                    builder.AppendLine($"      \"need\": {gap.Need},");
+                    builder.AppendLine($"      \"have\": {gap.Have},");
+                    builder.AppendLine($"      \"buyTown\": {(string.IsNullOrEmpty(gap.BuyTown) ? "null" : $"\"{Escape(gap.BuyTown)}\"")},");
+                    builder.AppendLine($"      \"buyPrice\": {(gap.BuyPrice.HasValue ? gap.BuyPrice.Value.ToString() : "null")},");
+                    builder.AppendLine($"      \"stock\": {(gap.Stock.HasValue ? gap.Stock.Value.ToString() : "null")},");
+                    builder.AppendLine($"      \"buyHint\": {(string.IsNullOrEmpty(gap.BuyHint) ? "null" : $"\"{Escape(gap.BuyHint)}\"")}");
+                    builder.Append(i < gaps.Count - 1 ? "    }," : "    }");
+                    builder.AppendLine();
+                }
+            }
+
+            builder.AppendLine("  ],");
+        }
+
+        private static void AppendActionPlanJson(StringBuilder builder, List<ActionPlanStep> steps)
+        {
+            builder.AppendLine("  \"actionPlan\": [");
+            if (steps != null)
+            {
+                for (var i = 0; i < steps.Count; i++)
+                {
+                    var step = steps[i];
+                    builder.AppendLine("    {");
+                    builder.AppendLine($"      \"step\": {step.Step},");
+                    builder.AppendLine($"      \"text\": \"{Escape(step.Text)}\"");
+                    builder.Append(i < steps.Count - 1 ? "    }," : "    }");
+                    builder.AppendLine();
+                }
+            }
+
+            builder.AppendLine("  ],");
         }
 
         private static void AppendCandidateJson(

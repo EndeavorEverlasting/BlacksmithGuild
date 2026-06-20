@@ -3,6 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools
@@ -139,14 +140,18 @@ namespace BlacksmithGuild.DevTools
             {
                 ForgeStatus.Log("[TBG RELOAD] blocked install detected (new build ready)");
                 GuildLog.Display(
-                    "TBG RELOAD: New build is ready, but Bannerlord must be closed before it can install. Run Forge.cmd after closing."
+                    ModDisplay.CompactLine(
+                        "Reload",
+                        "New build is ready, but Bannerlord must be closed before it can install. Run Forge.cmd after closing.")
                 );
                 return;
             }
 
             ForgeStatus.Log("[TBG RELOAD] pending install detected");
             GuildLog.Display(
-                $"TBG RELOAD: New mod build installed ({version}). Restart Bannerlord to load it."
+                ModDisplay.CompactLine(
+                    "Reload",
+                    $"New mod build installed ({version}). Restart Bannerlord to load it.")
             );
         }
 
