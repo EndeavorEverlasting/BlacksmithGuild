@@ -9,7 +9,7 @@ Copy-paste to next AI agent. **Local repo is truth** until pushed; GitHub remote
 ```text
 Path:   C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 Branch: main
-HEAD:   951f480+ (Stage C closeout commits pending push)
+HEAD:   ec40b28 (Stage C closeout complete — not pushed)
 Clean:  yes after closeout commits
 Remote: 40+ commits ahead of origin/main — NOT pushed
 PRs:    none
