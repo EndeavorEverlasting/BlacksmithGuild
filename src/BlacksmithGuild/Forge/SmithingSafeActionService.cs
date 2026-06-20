@@ -12,6 +12,7 @@ namespace BlacksmithGuild.Forge
     {
         public const string RunSmithingSafeActionNowCommand = "RunSmithingSafeActionNow";
         public const string ReportFileName = "BlacksmithGuild_SmithingSafeAction.json";
+        public const int MaxRefinePerInvocation = 1;
 
         private static readonly string ReportPath = Path.Combine(BasePath.Name, ReportFileName);
 
@@ -33,6 +34,7 @@ namespace BlacksmithGuild.Forge
                 var charcoalNeed = Math.Max(
                     0,
                     SmithingReservePolicy.CharcoalFloor - reserve.CharcoalHave);
+                var refineCount = charcoalNeed > 0 ? MaxRefinePerInvocation : 0;
 
                 var hero = ResolveHero(grunt);
                 var blockedReason = (string)null;
@@ -48,9 +50,9 @@ namespace BlacksmithGuild.Forge
                     blockedReason = "charcoal reserve already at floor";
                     action = "None";
                 }
-                else if (reserve.HardwoodHave < charcoalNeed)
+                else if (reserve.HardwoodHave < refineCount)
                 {
-                    blockedReason = $"hardwood shortage (have {reserve.HardwoodHave}, need {charcoalNeed})";
+                    blockedReason = $"hardwood shortage (have {reserve.HardwoodHave}, need {refineCount})";
                 }
                 else if (!SmithingStaminaReader.TrySetActiveCraftingHero(hero, out var setHeroDetail))
                 {
@@ -68,7 +70,7 @@ namespace BlacksmithGuild.Forge
 
                 if (blockedReason == null && hero != null)
                 {
-                    executed = SmithingRefineApi.TryInvokeRefineCharcoal(hero, charcoalNeed, out var invokeDetail);
+                    executed = SmithingRefineApi.TryInvokeRefineCharcoal(hero, refineCount, out var invokeDetail);
                     charcoalAfter = SmithingPartyInventory.CountCharcoal();
                     hardwoodAfter = SmithingPartyInventory.CountHardwood();
 
@@ -90,13 +92,14 @@ namespace BlacksmithGuild.Forge
                     CharcoalAfter = charcoalAfter,
                     HardwoodBefore = hardwoodBefore,
                     HardwoodAfter = hardwoodAfter,
-                    CharcoalNeed = charcoalNeed
+                    CharcoalNeed = charcoalNeed,
+                    RefineCount = refineCount
                 });
 
                 if (executed)
                 {
                     DebugLogger.Test(
-                        $"[TBG FORGE] action={action} actor={grunt?.Name} reserveBefore charcoal={charcoalBefore} hardwood={hardwoodBefore} reserveAfter charcoal={charcoalAfter} hardwood={hardwoodAfter}",
+                        $"[TBG FORGE] action={action} actor={grunt?.Name} refineCount={refineCount} reserveBefore charcoal={charcoalBefore} hardwood={hardwoodBefore} reserveAfter charcoal={charcoalAfter} hardwood={hardwoodAfter}",
                         showInGame: false);
                     InGameNotice.Success(
                         ModDisplay.CompactLine("Smithing Safe Action", $"{action} by {grunt?.Name} complete."));
@@ -166,7 +169,8 @@ namespace BlacksmithGuild.Forge
             sb.AppendLine($"  \"charcoalAfter\": {result.CharcoalAfter},");
             sb.AppendLine($"  \"hardwoodBefore\": {result.HardwoodBefore},");
             sb.AppendLine($"  \"hardwoodAfter\": {result.HardwoodAfter},");
-            sb.AppendLine($"  \"charcoalNeed\": {result.CharcoalNeed}");
+            sb.AppendLine($"  \"charcoalNeed\": {result.CharcoalNeed},");
+            sb.AppendLine($"  \"refineCount\": {result.RefineCount}");
             sb.AppendLine("}");
 
             File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8);
@@ -190,6 +194,7 @@ namespace BlacksmithGuild.Forge
             public int HardwoodBefore { get; set; }
             public int HardwoodAfter { get; set; }
             public int CharcoalNeed { get; set; }
+            public int RefineCount { get; set; }
         }
     }
 }

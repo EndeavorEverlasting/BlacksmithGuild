@@ -6,6 +6,8 @@
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
+**Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C is the only required USER cert now.
+
 ---
 
 ## Recent fixes (2026-06-20)
@@ -58,8 +60,8 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
-| **Stage B smithing crew** | **Ctrl+Alt+R** or **Ctrl+Alt+G** when charcoal low | SMITHING CREW names companion RefineCharcoal; ACTION PLAN prep step | **USER cert PENDING** |
-| **Stage C auto-refine** | inbox `RunSmithingSafeActionNow` on **disposable save first** | JSON `executed=true`; charcoalAfter > charcoalBefore | **API mapped; USER cert PENDING** |
+| **Stage B smithing crew** | **Ctrl+Alt+R** or **Ctrl+Alt+G** when charcoal low | SMITHING CREW + prep step | **Tier 1 — cert optional** |
+| **Stage C auto-refine** | inbox `RunSmithingSafeActionNow` on disposable save | `executed=true`, `charcoalAfter > charcoalBefore`, `refineCount=1` | **Tier 3 — USER cert next** |
 | **Track 2B forge materials** | **Ctrl+Alt+M** | `--- FORGE MATERIALS ---` party reserves + nearest buy | **CODE SHIPPED** — visual check optional |
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
 

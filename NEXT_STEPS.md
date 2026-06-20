@@ -2,7 +2,24 @@
 
 **Daily dev:** `Forge.cmd` — [forge-zero-click-contract.md](docs/forge-zero-click-contract.md)  
 **Where we are:** [functionality-status.md](docs/functionality-status.md)  
+**Cert doctrine:** [certification-doctrine.md](docs/certification-doctrine.md)  
 **Handoff:** [post-stage-b-smithing-advisory-handoff.md](docs/checkpoints/post-stage-b-smithing-advisory-handoff.md)
+
+---
+
+## Certification doctrine (summary)
+
+Live certs are **not** required for docs, formatting, or read-only reports. See [certification-doctrine.md](docs/certification-doctrine.md).
+
+| Tier | When |
+|------|------|
+| 0 | Docs/static — build only |
+| 1 | Read-only advisory — one smoke when convenient |
+| 2 | Mutation / launcher / reflection |
+| 3 | New mutation commands — **disposable save first** |
+
+**Stage B:** Tier 1 — skip ceremony unless needed.  
+**Stage C:** Tier 3 — **next USER cert**.
 
 ---
 
@@ -10,85 +27,40 @@
 
 | Sprint | Status |
 |--------|--------|
-| **Track 2A map rank** | **USER PASS** 2026-06-20 @ 16:34 — Real/Javelin/PASS on Continue; manual javelin craft |
-| **Stage B smithing advisory** | **CODE SHIPPED** — SMITHING CREW, charcoal prep steps, Ctrl+Alt+G — **USER cert PENDING** |
-| **Stage C auto-refine** | **API MAPPED** — `DoRefinement` wired; inbox `RunSmithingSafeActionNow` — **USER cert PENDING (disposable save first)** |
-| **Track 2B FORGE MATERIALS** | **CODE SHIPPED** — Ctrl+Alt+M section: party reserves + nearest smithing stock |
-| **007B / 007C** | USER PASS / shipped |
-| **006J closeout** | **PARTIAL** — 1D Path B Back pending |
+| **Track 2A map rank** | **USER PASS** 2026-06-20 @ 16:34 |
+| **Stage B smithing advisory** | Code shipped — Tier 1, cert optional |
+| **Stage C auto-refine** | API mapped; **one refine per command** — **Tier 3 USER cert next** |
+| **Track 2B FORGE MATERIALS** | Code shipped — Tier 1 |
+| **006J Path B** | USER pending (launcher path only) |
 
 ---
 
-## What works right now
+## Immediate: Stage C disposable cert
 
-| You can… | How |
-|----------|-----|
-| Real forge rank on map | **Ctrl+Alt+R** — `source=real`, Javelin-style ranks (USER PASS) |
-| Guild loop report | **Ctrl+Alt+G** — market + forge + smithing crew |
-| Charcoal prep advisory | **Ctrl+Alt+R** when low charcoal — companion RefineCharcoal in SMITHING CREW + ACTION PLAN |
-| Forge materials in market report | **Ctrl+Alt+M** — `--- FORGE MATERIALS ---` party shortfalls + nearest buy |
-| Market routes | **Ctrl+Alt+M** |
-| Refine API probe | inbox `ProbeSmithingRefineApi` |
-| Status | **F7** |
+**Save:** any disposable / blacksmithing save — no precious-save flow.
 
-| You cannot yet… | Why |
-|-----------------|-----|
-| Auto-refine charcoal (certified) | Stage C code shipped — USER cert on disposable save pending |
-| Auto buy/sell | Scope-locked |
-| Inventory spawn on Continue | Rejected — use trade/refine loop |
-
----
-
-## Next USER cert: Stage B (charcoal-short smoke)
+**Preconditions:** charcoal low, hardwood ≥1, on campaign map.
 
 ```powershell
-.\LaunchForgeContinue.cmd
-# On map with low charcoal + some hardwood:
-Ctrl+Alt+M
-Ctrl+Alt+R    # or Ctrl+Alt+G
+cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+# Launch disposable save and wait for map ready, then:
+.\forge.ps1 -Command ProbeSmithingRefineApi -Wait
+.\forge.ps1 -Command RunSmithingSafeActionNow -Wait
 .\CollectCertLogs.cmd
 ```
 
-**PASS:** feed shows `--- SMITHING CREW ---` with companion `RefineCharcoal` and ACTION PLAN prep step before craft.
+**PASS:** `executed: true`, `charcoalAfter > charcoalBefore`, `refineCount: 1`.
+
+Paste SafeAction JSON + RefineProbe JSON + Phase1 tail for agent verdict.
 
 ---
 
-## Stage C USER cert (disposable save first)
+## In-game mechanics (rusty-player reminder)
 
-```powershell
-.\Forge.cmd
-# Low charcoal + hardwood in party; on map:
-# inbox: ProbeSmithingRefineApi  (verify DoRefinement mapped)
-# inbox: RunSmithingSafeActionNow
-.\CollectCertLogs.cmd
-```
-
-**PASS:** `BlacksmithGuild_SmithingSafeAction.json` shows `"executed": true`, `charcoalAfter > charcoalBefore`.
-
-Only after disposable PASS → retry on Continue save.
-
----
-
-## Cert collection
-
-```powershell
-$bl = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord"
-Get-Content -LiteralPath "$bl\BlacksmithGuild_ForgeRecommendations.json"
-Get-Content -LiteralPath "$bl\BlacksmithGuild_SmithingAdvisory.json"
-Get-Content -LiteralPath "$bl\BlacksmithGuild_SmithingSafeAction.json"
-Get-Content -LiteralPath "$bl\BlacksmithGuild_SmithingRefineProbe.json"
-Get-Content -LiteralPath "$bl\BlacksmithGuild_Phase1.log" -Tail 220
-```
-
----
-
-## Remaining gates
-
-| Gate | Action |
-|------|--------|
-| **Stage B USER cert** | Charcoal-short Continue smoke |
-| **Stage C USER cert** | Headless refine on disposable save; then Continue |
-| **006J 1D Path B** | Quit → Forge.cmd → culture Back once |
+1. **Town → Trade** — buy hardwood if party has none
+2. **Smithy → Refining tab** — hardwood → charcoal (manual path; Stage C automates headless)
+3. **Smithy bottom-left** — switch active crafter (companions have separate stamina)
+4. **Wait in town** — recovers smithing stamina between refines
 
 ---
 
@@ -98,3 +70,4 @@ Get-Content -LiteralPath "$bl\BlacksmithGuild_Phase1.log" -Tail 220
 |-------|-------|
 | Branch | `main` only |
 | Remote | ahead of `origin/main` — push when requested |
+| GitHub | stale until push — local is truth |
