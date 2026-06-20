@@ -1,6 +1,6 @@
 # Next Steps
 
-**Daily dev:** `Forge.cmd` should zero-click to map — full contract in [docs/forge-zero-click-contract.md](docs/forge-zero-click-contract.md) (PLAY → version confirm → Safe Mode No → auto character build → `TBG READY`).
+**Daily dev:** `Forge.cmd` should zero-click to map — full contract in [docs/forge-zero-click-contract.md](docs/forge-zero-click-contract.md). Live cert steps: [docs/sprint-006e-live-cert-runbook.md](docs/sprint-006e-live-cert-runbook.md).
 
 005E economics is next but **gated on 006I live cert PASS**. Do not start 005E until Paths A/B/C + load paths pass.
 
@@ -59,33 +59,94 @@ Plans:
 
 ---
 
-## Next actions (user)
+## Next actions (user) — 006J cert walkthrough
 
-**005E Market Intel — test on map (user):**
+**Before anything:** close unrelated apps (Excel, other games). If Forge misbehaves: **`ForgeStop.cmd`**.
+
+**Suggested order** (easiest first):
+
+| Step | What | When |
+|------|------|------|
+| **1** | `.\Forge.cmd` | Wait until campaign map (`TBG READY` in Phase1.log) |
+| **4** | Press **F12** on map near a town | Same session as step 1 — do **before** closing the game |
+| **2** | Close game fully → `.\LaunchForgeContinue.cmd` | Loads your dev save |
+| **3** | Close game → `.\Forge.cmd` again | Culture Back test (see below) |
+
+After all steps: **`.\CollectCertLogs.cmd`** — copies log tails into one paste block.
+
+---
+
+### Step 1 — Bootstrap (zero-click)
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\Forge.cmd
 ```
 
-After `TBG READY`, stand near a town and press **F12** (or Ctrl+Alt+M). See [docs/plans/005e-market-intelligence-shop-hotkey.plan.md](docs/plans/005e-market-intelligence-shop-hotkey.plan.md).
+Sit back. Forge builds, opens the launcher, clicks PLAY, handles dialogs, auto-builds character, lands on map.
 
-**006I-5 — Re-cert load paths:**
+**Done when:** Phase1.log contains `TBG READY`.
+
+**If wrong apps open:** `ForgeStop.cmd`, then check `BlacksmithGuild_Launch.log` for lines starting with `UIA: CLICK` — every click is logged with window title + process name.
+
+---
+
+### Step 2 — Continue load
+
+Close Bannerlord completely (not just pause — exit to desktop).
 
 ```powershell
-Get-Process Bannerlord, TaleWorlds.MountAndBlade.Launcher -ErrorAction SilentlyContinue
-
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 .\LaunchForgeContinue.cmd
 ```
 
-Expected: Module Mismatch Yes auto-clicked, map reached, no 5min hang.
+**Done when:** map loads without a 5-minute hang. Launch.log should contain `clicked Module Mismatch Yes` (if that dialog appeared).
 
-**Path B — culture Back:** After map load, enter character creation culture stage → Back → no full cutscene replay.
+---
 
-**Path C — quit:** Pause → Quit → clean exit (already USER PASS; spot-check optional).
+### Step 3 — Path B: culture Back (new to you)
 
-Collect log tails — see [docs/checkpoints/post-006i-4-handoff.md](docs/checkpoints/post-006i-4-handoff.md).
+This checks that pressing **Back** during character creation does **not** replay the long opening campaign video.
+
+1. Close the game completely.
+2. Run **`.\Forge.cmd`** again (starts a **new** sandbox game — that is intentional).
+3. Wait. Forge auto-advances until you see the **culture / origin** screen (pick your culture).
+4. **You** press **Back** or **Escape** once on that screen.
+5. **PASS:** you stay in character creation — the full intro cutscene does **not** start over.
+6. **FAIL:** the long opening video plays again from the beginning.
+
+You do not need to finish the game — quit after you see PASS or FAIL. The logs record what happened.
+
+---
+
+### Step 4 — Market F12 (new to you)
+
+Do this **on the campaign map** while the game is still running (easiest right after step 1).
+
+1. On the map, click a **town** and enter it, **or** stand with your party next to a town on the world map.
+2. Press **F12** once (fallback: **Ctrl+Alt+M**).
+3. **PASS:** text appears in the in-game feed (bottom-left) about trade/market; Phase1.log gets `TBG REPORT: MARKET INTEL`; file `BlacksmithGuild_MarketIntel.json` appears in the Bannerlord folder.
+4. **FAIL:** nothing happens, or message says map not ready — move closer to a town and try again.
+
+Optional: press **F7** on the map for status after F12.
+
+---
+
+### Collect logs (paste to next agent)
+
+```powershell
+.\CollectCertLogs.cmd
+```
+
+Or manually:
+
+```powershell
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 220
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log" -Tail 120
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_MarketIntel.json"
+Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json"
+```
+
+**Launch.log audit keywords:** `UIA: CLICK`, `UIA: FOCUS`, `UIA: AUDIT`, `handoff:`, `ForgeStop:`
 
 **005E — Blocked until 006I cert PASS.**
 

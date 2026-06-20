@@ -1,12 +1,15 @@
 ﻿# Emergency stop for Forge / launcher UI automation (no taskbar icon — kills by command line).
 $ErrorActionPreference = 'SilentlyContinue'
 
+. (Join-Path $PSScriptRoot 'write-launch-log.ps1') -Message 'ForgeStop: emergency stop invoked'
+
 $killed = @()
 
 foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
     Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
         Stop-Process -Id $_.Id -Force
         $killed += "$name (PID $($_.Id))"
+        . (Join-Path $PSScriptRoot 'write-launch-log.ps1') -Message "ForgeStop: killed $name PID $($_.Id)"
     }
 }
 
@@ -15,6 +18,7 @@ Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'"
 } | ForEach-Object {
     Stop-Process -Id $_.ProcessId -Force
     $killed += "shell PID $($_.ProcessId)"
+    . (Join-Path $PSScriptRoot 'write-launch-log.ps1') -Message "ForgeStop: killed forge shell PID $($_.ProcessId)"
 }
 
 if ($killed.Count -eq 0) {
@@ -25,5 +29,5 @@ if ($killed.Count -eq 0) {
 }
 
 Write-Host ''
-Write-Host 'Safe to close any stray windows Forge may have opened (Excel, games, etc.) manually.' -ForegroundColor DarkGray
+Write-Host 'Audit trail: see BlacksmithGuild_Launch.log lines tagged ForgeStop: or UIA:' -ForegroundColor DarkGray
 Write-Host 'Re-run Forge only after the launcher window is visible and in front.' -ForegroundColor DarkGray

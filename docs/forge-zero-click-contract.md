@@ -148,7 +148,13 @@ cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 
 Kills Bannerlord, the TaleWorlds launcher, and any Forge shell still running. Close any unrelated windows it may have opened manually.
 
+Every kill is appended to **`BlacksmithGuild_Launch.log`** as `ForgeStop:` lines.
+
 **Safety rule (2026-06-19):** UIA must never click `AutomationElement.RootElement` buttons (`PLAY`, `Yes`, `No`, `Confirm`) — only scoped Bannerlord launcher/game/dialog windows.
+
+**Audit logging:** Every automation click/focus is logged to **`BlacksmithGuild_Launch.log`** with prefix `UIA:` — window title, process name, button name, and mouse coordinates. Session start logs all top-level window titles (`UIA: AUDIT top-level windows`). Heartbeat every 30s logs foreground window. You do not need to watch — grep the log afterward.
+
+After cert runs: **`CollectCertLogs.cmd`** prints all tails in one paste block.
 
 ---
 

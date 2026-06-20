@@ -36,4 +36,6 @@ foreach ($procName in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
 }
 
 Write-Host 'Opening Bannerlord launcher...' -ForegroundColor Cyan
+& (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: Start-Process $LauncherExe"
 Start-Process -FilePath $LauncherExe -WorkingDirectory (Split-Path -Parent $LauncherExe)
+& (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message 'open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (PID assigned by OS)'

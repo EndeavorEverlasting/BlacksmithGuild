@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Windows.Automation;
 
@@ -40,24 +41,217 @@ public static class UIAHelper
     private const string CrashReporterTitle = "* _*";
     private const string ModuleMismatchTitle = "Module Mismatch";
 
+    public static Action<string> Log;
+
+    private static bool _launcherFocused;
+    private static bool _launcherAuditDone;
+    private static DateTime _lastLauncherMissLogUtc = DateTime.MinValue;
+
+    private static void LogLine(string message)
+    {
+        if (Log == null) return;
+        try { Log(message); } catch { }
+    }
+
     // Never click AutomationElement.RootElement — only scoped Bannerlord windows/dialogs.
 
     public static string ClickButtonByNameInLauncher(string[] names, bool requireEnabled = true)
     {
         if (names == null || names.Length == 0) return null;
 
-        var launcherRoot = FindLauncherRoot();
-        if (launcherRoot == null) return null;
-
-        foreach (var name in names)
+        var windows = FindAllLauncherWindowRoots();
+        if (windows.Count == 0)
         {
-            if (TryClickButtonInScope(launcherRoot, name, requireEnabled))
+            LogLauncherMissThrottled("CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)");
+            return null;
+        }
+
+        if (!_launcherFocused)
+        {
+            FocusScope(windows[0], "launcher");
+            _launcherFocused = true;
+        }
+
+        foreach (var window in windows)
+        {
+            var element = FindClickableInScope(window, names, requireEnabled);
+            if (element == null) continue;
+
+            var matchedName = element.Current.Name ?? names[0];
+            var scopeDesc = DescribeScope(window);
+            LogLine(string.Format("CLICK \"launcher PLAY/CONTINUE\" button=\"{0}\" in {1} | foreground before {2}", matchedName, scopeDesc, DescribeForegroundWindow()));
+            if (InvokeElement(element, "launcher PLAY/CONTINUE", matchedName, scopeDesc))
             {
-                return name;
+                return matchedName;
             }
         }
 
+        if (!_launcherAuditDone)
+        {
+            _launcherAuditDone = true;
+            LogLauncherControlAudit(windows);
+            LogLine("AUDIT launcher buttons: " + LogVisibleLauncherButtons());
+        }
+
+        LogLauncherMissThrottled("CLICK SKIP launcher PLAY/CONTINUE — not found in " + windows.Count + " launcher window(s) (PID-scoped only)");
         return null;
+    }
+
+    private static void LogLauncherMissThrottled(string message)
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastLauncherMissLogUtc).TotalSeconds < 10) return;
+        _lastLauncherMissLogUtc = now;
+        LogLine(message);
+    }
+
+    private static bool NameMatchesTarget(string elementName, string targetName)
+    {
+        if (string.IsNullOrWhiteSpace(elementName) || string.IsNullOrWhiteSpace(targetName)) return false;
+        return string.Equals(elementName.Trim(), targetName.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static AutomationElement FindClickableInScope(AutomationElement scope, string[] targetNames, bool requireEnabled)
+    {
+        if (scope == null || targetNames == null || targetNames.Length == 0) return null;
+
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = scope.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    var name = element.Current.Name ?? string.Empty;
+                    foreach (var target in targetNames)
+                    {
+                        if (!NameMatchesTarget(name, target)) continue;
+                        if (requireEnabled && !element.Current.IsEnabled) continue;
+                        return element;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static HashSet<int> GetLauncherProcessIds()
+    {
+        var ids = new HashSet<int>();
+        foreach (var process in Process.GetProcessesByName(LauncherProcessName))
+        {
+            try { ids.Add(process.Id); } catch { }
+        }
+        return ids;
+    }
+
+    private static List<AutomationElement> FindAllLauncherWindowRoots()
+    {
+        var results = new List<AutomationElement>();
+        var pids = GetLauncherProcessIds();
+        if (pids.Count == 0) return results;
+
+        try
+        {
+            var windowCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window);
+            var windows = AutomationElement.RootElement.FindAll(TreeScope.Children, windowCondition);
+            foreach (AutomationElement window in windows)
+            {
+                try
+                {
+                    if (!pids.Contains(window.Current.ProcessId)) continue;
+                    if (!ContainsWindow(results, window))
+                    {
+                        results.Add(window);
+                    }
+                }
+                catch { }
+            }
+        }
+        catch { }
+
+        foreach (var pid in pids)
+        {
+            try
+            {
+                var process = Process.GetProcessById(pid);
+                var hwnd = process.MainWindowHandle;
+                if (hwnd == IntPtr.Zero) continue;
+                var fromHandle = AutomationElement.FromHandle(hwnd);
+                if (fromHandle != null && !ContainsWindow(results, fromHandle))
+                {
+                    results.Add(fromHandle);
+                }
+            }
+            catch { }
+        }
+
+        return results;
+    }
+
+    private static bool ContainsWindow(List<AutomationElement> list, AutomationElement candidate)
+    {
+        foreach (var existing in list)
+        {
+            try
+            {
+                if (existing.Current.NativeWindowHandle == candidate.Current.NativeWindowHandle)
+                {
+                    return true;
+                }
+            }
+            catch { }
+        }
+        return false;
+    }
+
+    public static void LogLauncherControlAudit(List<AutomationElement> windows)
+    {
+        var parts = new List<string>();
+        foreach (var window in windows)
+        {
+            try
+            {
+                var title = window.Current.Name ?? string.Empty;
+                var controls = new List<string>();
+                CollectInteractiveNames(window, controls);
+                parts.Add(string.Format("{0}=[{1}]", title, controls.Count == 0 ? "(none)" : string.Join(", ", controls.ToArray())));
+            }
+            catch (Exception ex)
+            {
+                parts.Add("audit-error=" + ex.Message);
+            }
+        }
+
+        LogLine("AUDIT launcher controls: " + string.Join(" | ", parts.ToArray()));
+    }
+
+    private static void CollectInteractiveNames(AutomationElement scope, List<string> names)
+    {
+        if (scope == null) return;
+
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink, ControlType.Text };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = scope.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    var name = element.Current.Name;
+                    if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                    {
+                        names.Add(name);
+                    }
+                }
+            }
+            catch { }
+        }
     }
 
     public static bool HasCrashReporterDialog()
@@ -77,7 +271,7 @@ public static class UIAHelper
 
     public static bool HasLauncherRoot()
     {
-        return FindLauncherRoot() != null;
+        return FindAllLauncherWindowRoots().Count > 0 || GetLauncherProcessIds().Count > 0;
     }
 
     public static bool ClickCrashReporterNo()
@@ -85,18 +279,23 @@ public static class UIAHelper
         var crashRoot = FindCrashReporterRoot();
         if (crashRoot == null) return false;
 
-        FocusScope(crashRoot);
-        return TryClickButtonInScope(crashRoot, "No", false);
+        FocusScope(crashRoot, "crash reporter");
+        return TryClickButtonInScope(crashRoot, "No", false, "crash reporter No");
     }
 
     public static string LogVisibleLauncherButtons()
     {
         var names = new List<string>();
-        var launcherRoot = FindLauncherRoot();
-        if (launcherRoot == null) return "launcher window not found";
+        var windows = FindAllLauncherWindowRoots();
+        if (windows.Count == 0) return "launcher window not found";
 
-        CollectButtonNames(launcherRoot, names);
-        if (names.Count == 0) return "no launcher buttons visible";
+        foreach (var window in windows)
+        {
+            CollectButtonNames(window, names);
+            CollectInteractiveNames(window, names);
+        }
+
+        if (names.Count == 0) return "no launcher buttons visible in " + windows.Count + " window(s)";
         return string.Join(", ", names.ToArray());
     }
 
@@ -105,8 +304,8 @@ public static class UIAHelper
         var safeModeRoot = FindWindowRootByTitle("Safe Mode");
         if (safeModeRoot == null) return false;
 
-        FocusScope(safeModeRoot);
-        return TryClickButtonInScope(safeModeRoot, "No", false);
+        FocusScope(safeModeRoot, "Safe Mode");
+        return TryClickButtonInScope(safeModeRoot, "No", false, "Safe Mode No");
     }
 
     public static bool HasCautionDialog()
@@ -119,8 +318,8 @@ public static class UIAHelper
         var cautionRoot = FindCautionDialogRoot();
         if (cautionRoot == null) return false;
 
-        FocusScope(cautionRoot);
-        return TryClickButtonInScope(cautionRoot, "Confirm", true);
+        FocusScope(cautionRoot, "CAUTION");
+        return TryClickButtonInScope(cautionRoot, "Confirm", true, "CAUTION Confirm");
     }
 
     public static bool HasModuleMismatchDialog()
@@ -144,10 +343,10 @@ public static class UIAHelper
         var scope = FindModuleMismatchDialogRoot();
         if (scope == null) return false;
 
-        FocusScope(scope);
+        FocusScope(scope, "Module Mismatch");
         foreach (var name in new[] { "Yes", "OK", "Continue" })
         {
-            if (TryClickButtonInScope(scope, name, false))
+            if (TryClickButtonInScope(scope, name, false, "Module Mismatch " + name))
             {
                 return true;
             }
@@ -240,6 +439,7 @@ public static class UIAHelper
                 var title = window.Current.Name ?? string.Empty;
                 if (title.IndexOf(titleFragment, StringComparison.OrdinalIgnoreCase) >= 0)
                 {
+                    LogLine(string.Format("DIALOG MATCH title=\"{0}\" matched=\"{1}\"", title, titleFragment));
                     return window;
                 }
             }
@@ -308,9 +508,11 @@ public static class UIAHelper
         catch { }
     }
 
-    private static void FocusScope(AutomationElement scope)
+    private static void FocusScope(AutomationElement scope, string reason)
     {
         if (scope == null) return;
+
+        LogLine(string.Format("FOCUS request ({0}) target={1} | before {2}", reason, DescribeScope(scope), DescribeForegroundWindow()));
 
         try
         {
@@ -321,28 +523,42 @@ public static class UIAHelper
                 Thread.Sleep(120);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            LogLine("FOCUS failed: " + ex.Message);
+            return;
+        }
+
+        LogLine(string.Format("FOCUS done ({0}) | after {1}", reason, DescribeForegroundWindow()));
     }
 
-    private static bool TryClickButtonInScope(AutomationElement scope, string name, bool requireEnabled)
+    private static bool TryClickButtonInScope(AutomationElement scope, string name, bool requireEnabled, string actionLabel)
     {
         if (scope == null || string.IsNullOrWhiteSpace(name)) return false;
+
+        var scopeDesc = DescribeScope(scope);
+        var label = string.IsNullOrWhiteSpace(actionLabel) ? name : actionLabel;
 
         try
         {
             var condition = new PropertyCondition(AutomationElement.NameProperty, name);
             var element = scope.FindFirst(TreeScope.Descendants, condition);
-            if (element == null) return false;
-            if (requireEnabled && !element.Current.IsEnabled) return false;
-            return InvokeElement(element);
+            if (element == null)
+            {
+                return false;
+            }
+
+            LogLine(string.Format("CLICK \"{0}\" button=\"{1}\" in {2} | foreground before {3}", label, name, scopeDesc, DescribeForegroundWindow()));
+            return InvokeElement(element, label, name, scopeDesc);
         }
-        catch
+        catch (Exception ex)
         {
+            LogLine(string.Format("CLICK FAIL \"{0}\" button=\"{1}\" in {2}: {3}", label, name, scopeDesc, ex.Message));
             return false;
         }
     }
 
-    private static bool InvokeElement(AutomationElement element)
+    private static bool InvokeElement(AutomationElement element, string actionLabel, string buttonName, string scopeDesc)
     {
         try
         {
@@ -353,25 +569,123 @@ public static class UIAHelper
                 if (invokePattern != null)
                 {
                     invokePattern.Invoke();
+                    LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=InvokePattern in {2} | foreground after {3}", actionLabel, buttonName, scopeDesc, DescribeForegroundWindow()));
                     return true;
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            LogLine(string.Format("CLICK InvokePattern failed \"{0}\": {1}", actionLabel, ex.Message));
+        }
 
         try
         {
             var rect = element.Current.BoundingRectangle;
-            if (rect.Width <= 0 || rect.Height <= 0) return false;
+            if (rect.Width <= 0 || rect.Height <= 0)
+            {
+                LogLine(string.Format("CLICK FAIL \"{0}\" — zero-size bounds in {1}", actionLabel, scopeDesc));
+                return false;
+            }
             var x = (int)(rect.X + rect.Width / 2);
             var y = (int)(rect.Y + rect.Height / 2);
             SetCursorPos(x, y);
             Thread.Sleep(60);
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+            LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=mouse at ({2},{3}) in {4} | foreground after {5}", actionLabel, buttonName, x, y, scopeDesc, DescribeForegroundWindow()));
             return true;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            LogLine(string.Format("CLICK FAIL \"{0}\" mouse click: {1}", actionLabel, ex.Message));
+            return false;
+        }
+    }
+
+    public static string DescribeScope(AutomationElement scope)
+    {
+        if (scope == null) return "scope=null";
+        try
+        {
+            var name = scope.Current.Name ?? string.Empty;
+            var pid = scope.Current.ProcessId;
+            var procName = "?";
+            try { procName = Process.GetProcessById(pid).ProcessName; } catch { }
+            return string.Format("window=\"{0}\" process={1} pid={2}", name, procName, pid);
+        }
+        catch
+        {
+            return "scope=unknown";
+        }
+    }
+
+    public static string DescribeForegroundWindow()
+    {
+        try
+        {
+            var hwnd = GetForegroundWindow();
+            if (hwnd == IntPtr.Zero) return "foreground=none";
+
+            var sb = new StringBuilder(512);
+            GetWindowText(hwnd, sb, sb.Capacity);
+            var title = sb.ToString();
+
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            var procName = "?";
+            try { procName = Process.GetProcessById((int)pid).ProcessName; } catch { }
+
+            return string.Format("foreground=\"{0}\" process={1} pid={2}", title, procName, pid);
+        }
+        catch
+        {
+            return "foreground=unknown";
+        }
+    }
+
+    public static string DescribeEnvironment()
+    {
+        return string.Format(
+            "env launcher={0} game={1} {2}",
+            HasLauncherRoot() ? "yes" : "no",
+            HasGameMainWindow() ? "yes" : "no",
+            DescribeForegroundWindow());
+    }
+
+    public static string LogTopLevelWindows()
+    {
+        var parts = new List<string>();
+        try
+        {
+            var windowCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window);
+            var windows = AutomationElement.RootElement.FindAll(TreeScope.Children, windowCondition);
+            foreach (AutomationElement window in windows)
+            {
+                try
+                {
+                    var title = window.Current.Name ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(title)) continue;
+                    var pid = window.Current.ProcessId;
+                    var procName = "?";
+                    try { procName = Process.GetProcessById(pid).ProcessName; } catch { }
+                    parts.Add(string.Format("\"{0}\"({1})", title, procName));
+                }
+                catch { }
+            }
+
+            var summary = parts.Count == 0
+                ? "AUDIT top-level windows: (none with titles)"
+                : "AUDIT top-level windows (" + parts.Count + "): " + string.Join("; ", parts.ToArray());
+            LogLine(summary);
+            return summary;
+        }
+        catch (Exception ex)
+        {
+            var msg = "AUDIT top-level windows: scan failed — " + ex.Message;
+            LogLine(msg);
+            return msg;
+        }
     }
 
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
@@ -386,6 +700,15 @@ public static class UIAHelper
     [DllImport("user32.dll")]
     private static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, UIntPtr dwExtraInfo);
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
     private const int MOUSEEVENTF_LEFTDOWN = 0x0002;
     private const int MOUSEEVENTF_LEFTUP = 0x0004;
 }
@@ -398,7 +721,11 @@ public static class UIAHelper
     ) -ErrorAction Stop
 }
 
-Write-LaunchLog "intent=$LaunchIntent"
+[UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
+
+Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms"
+Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
+[UIAHelper]::LogTopLevelWindows() | Out-Null
 
 $clickedPlayContinue = $false
 $clickedCaution = $false
@@ -414,6 +741,8 @@ $deadline = $startTime.AddSeconds($effectiveTimeout)
 $loadStallSec = 180
 $phase1LogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
 $statusJsonPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
+$lastHeartbeat = Get-Date
+$heartbeatSec = 30
 
 function Extend-DeadlineForSlowPath {
     if ($clickedSafeMode -or $clickedCrashReporter) {
@@ -602,6 +931,11 @@ if ($LaunchIntent -eq 'continue') {
 }
 
 while ((Get-Date) -lt $deadline) {
+    if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
+        Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
+        $lastHeartbeat = Get-Date
+    }
+
     if (Test-HandoffWhenGameStable) {
         return
     }
