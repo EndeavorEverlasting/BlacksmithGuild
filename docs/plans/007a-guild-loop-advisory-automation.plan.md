@@ -1,18 +1,18 @@
 # Sprint 007A — Guild Loop + Advisory Automation
 
-**Status:** IN PROGRESS — docs canonical as of 2026-06-20. Live cert gate open.
+**Status:** IN PROGRESS — 006I-5 Continue **USER PASS** 2026-06-20. 006J partial (1B done; 1C/1D pending). Track 2 next.
 
-**Overview:** Close 006J live cert in one session, land Continue play loop, then ship 005E Stage B advisory plus a Stage C safe automation slice (stamina-aware worker pick + one provably safe forge action via API), with market-forge integration and economics hardening — so you play a real guild loop instead of cert baby steps.
+**Overview:** Finish 006J closeout (Session 3 play loop + Path B), then ship 005E Stage B advisory plus a Stage C safe automation slice (stamina-aware worker pick + one provably safe forge action via API), with market-forge integration and economics hardening — so you play a real guild loop instead of cert baby steps.
 
 ---
 
 ## Where you are (do not re-litigate)
 
-**USER PASS (2026-06-20):** Path A bootstrap, F12 market action plan, real forge rank (`source=real`, Javelin top, templates=12), Smithing Stage A audit (`GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints in JSON).
+**USER PASS (2026-06-20):** Path A bootstrap, F12 market action plan, real forge rank (`source=real`, Javelin top, templates=12), Smithing Stage A audit, **Continue load (006I-5)** — Tevea map, Phase1 `confirmed (inquiry cleared)`, tag `006i-5-continue-pass` @ `52c2114`.
 
-**Shipped fixes:** `dev-command-names.ps1`, `forge.ps1 exit 0`, launcher 240s post-PLAY + TBG READY poll, `open_launcher` WARN.
+**Shipped fixes:** Module Mismatch verify-dismiss (`52c2114`), deferred queue (`687cb1b`), `dev-command-names.ps1`, `forge.ps1 exit 0`, launcher guards + coord fallback.
 
-**Still open:** Continue load cert, Path B culture Back, 006J tag, push to origin (~25 commits ahead), stale docs ([`docs/plans/006j-full-live-cert-closeout.plan.md`](006j-full-live-cert-closeout.plan.md) predates recent PASSes).
+**Still open:** Session 3 play loop smoke (1C), Path B culture Back (1D), full 006J tag, push to origin (~31 commits ahead).
 
 **Your chosen scope:** Stage B advisory **+ Stage C safe automation slice** (not full Stage D rest optimizer).
 
@@ -137,6 +137,8 @@ cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 
 ### 1B — Continue load (006I-5 re-cert)
 
+**USER PASS 2026-06-20** — tag `006i-5-continue-pass` @ `52c2114`.
+
 Quit Bannerlord fully →
 
 ```powershell
@@ -146,8 +148,8 @@ Quit Bannerlord fully →
 | Check | PASS |
 |-------|------|
 | No 5-min hang | Map interactive |
-| Launch.log | `clicked Module Mismatch Yes` if dialog shown |
-| Mod loaded | `TBG READY` on Continue save |
+| Phase1 | `confirmed (inquiry cleared)` + `TBG READY` |
+| No manual Yes | Dialog gone within 2s |
 
 ### 1C — Play loop smoke on Continue (Session 3 USER PASS)
 

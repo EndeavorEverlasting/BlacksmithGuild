@@ -1,7 +1,8 @@
 # Next Steps
 
 **Daily dev:** `Forge.cmd` — [forge-zero-click-contract.md](docs/forge-zero-click-contract.md)  
-**Where we are:** [functionality-status.md](docs/functionality-status.md)
+**Where we are:** [functionality-status.md](docs/functionality-status.md)  
+**Handoff:** [post-006i5-continue-cert-handoff.md](docs/checkpoints/post-006i5-continue-cert-handoff.md)
 
 ---
 
@@ -12,11 +13,11 @@
 | 006H | LIVE CERT PASS |
 | 006I-2 Path A | **USER PASS** 2026-06-20 — zero-click → Danustica map |
 | 006I-4 Path C | **USER PASS** 2026-06-19 — tag `006i-4-path-c-pass` |
-| 006I-5 Continue | SHIPPED — **re-cert PENDING** |
-| **005E market intel** | **USER PASS** 2026-06-20 — F12 action plan @ Danustica |
+| **006I-5 Continue** | **USER PASS** 2026-06-20 — tag `006i-5-continue-pass` @ `52c2114` |
+| **005E market intel** | **USER PASS** 2026-06-20 — F12 action plan |
 | 005E real forge rank | **USER PASS** 2026-06-20 — `source=real`, Javelin top, templates=12 |
-| 005E smithing Stage A | **USER PASS** 2026-06-20 — stamina API hints in SmithingAudit.json |
-| 006J closeout | PARTIAL — Path B Back pending |
+| 005E smithing Stage A | **USER PASS** 2026-06-20 — stamina API hints |
+| 006J closeout | **PARTIAL** — 1B PASS; 1C play loop + 1D Path B Back pending |
 
 ---
 
@@ -25,54 +26,40 @@
 | You can… | How |
 |----------|-----|
 | Bootstrap to map | `Forge.cmd` → `TBG READY` |
-| Fund trading tests | **F11** (+100k) |
+| **Continue cared-about save** | `LaunchForgeContinue.cmd` — zero-click Module Mismatch Yes |
 | Get buy/sell route plan | **F12** — ACTION PLAN + BUY@NEAREST |
+| Rank real forge recipes | **Ctrl+Alt+R** on map |
 | Check mod status | **F7** |
-| Rank real forge recipes | **Ctrl+Alt+R** on map (source=real after Session 2) |
-| Probe smithing API | `ProbeSmithingAudit` — Stage A PASS |
+| Fund disposable tests | **F11** (+100k) |
 
 | You cannot yet… | Why |
 |-----------------|-----|
 | Auto buy/sell | Not built — manual town trade |
+| Guild loop one-hotkey | Ctrl+Alt+G — 007A Track 3 not built |
 | Auto craft / stamina rotation | Stages B–D not built |
 
 ---
 
-## Next session — Session 3: Play on Continue save
+## Session 3 — Play on Continue save (YOU, on current map)
 
-**Session 2 PASS (2026-06-20):** `source=real`, top=Javelin, templates=12, `fallbackUsed=false`, SmithingAudit Ok.
+You are on the cared-about Continue save (Tevea/Zestica area). Module Mismatch cert **PASS**.
 
-Close Bannerlord completely, then:
-
-```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-.\LaunchForgeContinue.cmd
-```
-
-**PASS:** Map loads without hang; Launch.log may show `clicked Module Mismatch Yes`.
-
-**Play loop:**
-
-1. **F12** — trade route
-2. Enter town → trade manually
-3. **Ctrl+Alt+R** — refresh forge rank
-4. Smithy → craft manually
-5. Repeat
-
-Optional in-game check on disposable save: **F7** should show `source=real` and top candidate Javelin (RareMetalConservation doctrine).
-
-Disposable `Forge.cmd` remains for cert/bootstrap only.
+1. **Ctrl+Alt+R** — switch from stub to `source=real`
+2. **F12** — trade route near Tevea/Zestica
+3. Enter town → buy top plan item manually
+4. Smithy → craft top ranked item manually
+5. **F7** — status snapshot
 
 ---
 
-## Session 2 reference (complete)
+## Remaining 006J gates
 
-| Step | Action | When |
-|------|--------|------|
-| Path B culture Back | Close game → `Forge.cmd` → press Back on culture screen | After Session 2–3 |
-| Collect cert logs | `.\CollectCertLogs.cmd` | After any cert session |
+| Step | Action |
+|------|--------|
+| **1D Path B** | Quit → `Forge.cmd` → culture screen **Back once** (intro must NOT replay) |
+| **006J tag** | Approve full closeout tag after 1C + 1D |
 
-Path B **PASS:** Back does not replay full intro cutscene.
+Then: **007A Track 2** (F12 forge materials + market-forge bridge).
 
 ---
 
@@ -82,9 +69,9 @@ Path B **PASS:** Back does not replay full intro cutscene.
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.11` |
+| Fix commit | `52c2114` (Module Mismatch verify-dismiss) |
 | Remote | ahead of `origin/main` — push when requested |
-| Docs | [functionality-status.md](docs/functionality-status.md), [in-game-surfaces.md](docs/in-game-surfaces.md) |
-| Handoff | [post-005e-market-action-plan-handoff.md](docs/checkpoints/post-005e-market-action-plan-handoff.md) |
+| Canonical plan | [007a-guild-loop-advisory-automation.plan.md](docs/plans/007a-guild-loop-advisory-automation.plan.md) |
 
 ---
 
@@ -92,4 +79,10 @@ Path B **PASS:** Back does not replay full intro cutscene.
 
 ```powershell
 git checkout 006i-4-path-c-pass
+```
+
+Continue cert rollback:
+
+```powershell
+git checkout 006i-5-continue-pass
 ```

@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20  
+**Last updated:** 2026-06-20 (006I-5 Continue cert PASS)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` (see latest commit)
+**Branch:** `main` @ `52c2114` (Continue cert fix)
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -12,6 +12,7 @@ Canonical snapshot of what works today, what is certified, and what is not built
 
 | Fix | Detail |
 |-----|--------|
+| **Module Mismatch verify-dismiss** | `52c2114` — retry until `IsAnyInquiryActive` false; `confirmed (inquiry cleared)` log line |
 | **forge.ps1 allowlist drift** | `ProbeForgeRecipes`, `ProbeSmithingAudit`, `MarketSnapshotNow`, auto-build commands now in [`scripts/dev-command-names.ps1`](scripts/dev-command-names.ps1) |
 | **Forge.cmd false FAIL** | After PLAY click, launcher waits up to 240s for `Bannerlord.exe`; polls Phase1 for `TBG READY` pre-handoff; WARN (not FAIL) if map ready at timeout |
 
@@ -25,6 +26,27 @@ Canonical snapshot of what works today, what is certified, and what is not built
 | **Real forge rank** | Session 2 script / Ctrl+Alt+R | **USER PASS 2026-06-20** — `source=real`, templates=12, top=Javelin, `fallbackUsed=false` |
 | **Smithing audit (Stage A)** | `ProbeSmithingAudit` | **USER PASS 2026-06-20** — `GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints |
 | **Path C quit loop** | Quit to main menu | Tag `006i-4-path-c-pass` |
+| **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | **USER PASS 2026-06-20** — Tevea map; Phase1 `confirmed (inquiry cleared)`; tag `006i-5-continue-pass` @ `52c2114` |
+
+### Continue cert evidence (2026-06-20, cared-about save @ Tevea)
+
+Phase1 (15:18:49):
+
+- `Module Mismatch inquiry queued (event)`
+- `Module Mismatch auto-Yes attempt=1 inquiryActive=false`
+- `Module Mismatch auto-Yes confirmed (inquiry cleared) source=deferred`
+- `TBG READY: campaign map ready`
+
+Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c2114` verify-dismiss resolved.
+
+---
+
+## Shipped but not user-certified
+
+| Feature | How to use | PASS criteria | Blocker |
+|---------|------------|---------------|---------|
+| **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
+| **Session 3 play loop** | F12 + manual trade + Ctrl+Alt+R on Continue save | F7 `source=real`; manual craft baseline | USER smoke pending |
 
 ### F12 cert evidence (2026-06-20, Danustica @ 4.1u)
 
@@ -36,15 +58,6 @@ Feed showed:
 - **TOP SPREADS:** cross-town pairs including Velvet buy@Onira → sell@Danustica
 
 JSON: `<Bannerlord>\BlacksmithGuild_MarketIntel.json` with `routeRows`, `actionPlan`, `towns`.
-
----
-
-## Shipped but not user-certified
-
-| Feature | How to use | PASS criteria | Blocker |
-|---------|------------|---------------|---------|
-| **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | Map loads; Module Mismatch auto-Yes (UIA or in-game patch); Launch.log `clicked CONTINUE` + `handoff:` | Stale-ready fix + Module Mismatch auto-Yes shipped — **re-cert PENDING** |
-| **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
 
 ---
 
@@ -115,4 +128,4 @@ Collect: `CollectCertLogs.cmd`
 
 ## Next session
 
-See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **Track 1: 006J live cert closeout**, then Continue play loop + Stage B advisory + Stage C safe automation slice.
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **006J partial closeout done** (Continue PASS); finish Session 3 play loop + Path B, then **Track 2** (forge materials bridge).
