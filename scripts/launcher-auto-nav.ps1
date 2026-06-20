@@ -47,10 +47,15 @@ public static class UIAHelper
     private static bool _launcherAuditDone;
     private static DateTime _lastLauncherMissLogUtc = DateTime.MinValue;
     private static DateTime _firstLauncherWindowSeenUtc = DateTime.MinValue;
-    private const double LauncherCoordYFraction = 0.93;
-    private const double LauncherPlayXFraction = 0.22;
-    private const double LauncherContinueXFraction = 0.38;
+    private static DateTime _lastCoordClickUtc = DateTime.MinValue;
+    private static int _coordAttemptIndex = 0;
+    private static readonly double[] LauncherPlayXFractions = new double[] { 0.34, 0.38, 0.30, 0.42, 0.26 };
+    private static readonly double[] LauncherContinueXFractions = new double[] { 0.20, 0.24, 0.28, 0.22, 0.18 };
+    private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88, 0.93 };
     private const int LauncherStableSecBeforeFallback = 5;
+    private const int LauncherCoordClickThrottleSec = 2;
+    private const int LauncherMinCoordWindowWidth = 800;
+    private const int LauncherMinCoordWindowHeight = 600;
 
     private static void LogLine(string message)
     {
@@ -78,7 +83,8 @@ public static class UIAHelper
 
         if (!_launcherFocused)
         {
-            FocusScope(windows[0], "launcher");
+            var focusTarget = GetBestLauncherWindowForCoords(windows) ?? windows[0];
+            FocusScope(focusTarget, "launcher");
             _launcherFocused = true;
         }
 
@@ -109,14 +115,17 @@ public static class UIAHelper
         }
 
         var launcherStable = (DateTime.UtcNow - _firstLauncherWindowSeenUtc).TotalSeconds >= LauncherStableSecBeforeFallback;
-        if (launcherStable)
+        if (launcherStable && !IsCoordClickThrottled())
         {
             var coordIntent = NamesIndicateContinue(names) ? "continue" : "play";
-            foreach (var window in windows)
+            var coordWindow = GetBestLauncherWindowForCoords(windows);
+            if (coordWindow != null)
             {
-                FocusScope(window, "launcher coords prep");
-                if (TryClickLauncherByCoordinates(window, coordIntent))
+                FocusScope(coordWindow, "launcher coords prep");
+                if (TryClickLauncherByCoordinates(coordWindow, coordIntent))
                 {
+                    _lastCoordClickUtc = DateTime.UtcNow;
+                    _coordAttemptIndex++;
                     return names[0];
                 }
             }
@@ -201,12 +210,108 @@ public static class UIAHelper
         return null;
     }
 
+    public static void ResetLauncherClickRetryState()
+    {
+        _lastCoordClickUtc = DateTime.MinValue;
+    }
+
+    private static bool IsCoordClickThrottled()
+    {
+        if (_lastCoordClickUtc == DateTime.MinValue) return false;
+        return (DateTime.UtcNow - _lastCoordClickUtc).TotalSeconds < LauncherCoordClickThrottleSec;
+    }
+
+    private static AutomationElement GetBestLauncherWindowForCoords(List<AutomationElement> windows)
+    {
+        if (windows == null || windows.Count == 0) return null;
+
+        AutomationElement best = null;
+        double bestScore = -1;
+
+        foreach (var window in windows)
+        {
+            try
+            {
+                var title = window.Current.Name ?? string.Empty;
+                if (title.IndexOf("Singleplayer PID", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    continue;
+                }
+
+                var rect = window.Current.BoundingRectangle;
+                if (rect.Width < 400 || rect.Height < 300)
+                {
+                    continue;
+                }
+
+                var area = rect.Width * rect.Height;
+                var score = area;
+
+                if (title.Equals("MB II: Bannerlord", StringComparison.OrdinalIgnoreCase) ||
+                    title.Equals("M&B II: Bannerlord", StringComparison.OrdinalIgnoreCase))
+                {
+                    score *= 10;
+                }
+                else if (title.IndexOf("Bannerlord", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                         title.IndexOf("Singleplayer", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    score *= 2;
+                }
+
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = window;
+                }
+            }
+            catch { }
+        }
+
+        if (best != null)
+        {
+            LogLine("AUDIT coord window pick: " + DescribeScope(best));
+            return best;
+        }
+
+        LogLine("AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to first hwnd");
+        return windows[0];
+    }
+
+    private static bool TryGetLauncherClientClickPoint(IntPtr hwnd, double xFraction, double yFraction, out int screenX, out int screenY)
+    {
+        screenX = 0;
+        screenY = 0;
+        if (hwnd == IntPtr.Zero) return false;
+
+        RECT clientRect;
+        if (!GetClientRect(hwnd, out clientRect))
+        {
+            return false;
+        }
+
+        var clientW = clientRect.Right - clientRect.Left;
+        var clientH = clientRect.Bottom - clientRect.Top;
+        if (clientW <= 0 || clientH <= 0) return false;
+
+        var clientPoint = new POINT
+        {
+            X = (int)(clientW * xFraction),
+            Y = (int)(clientH * yFraction)
+        };
+
+        if (!ClientToScreen(hwnd, ref clientPoint))
+        {
+            return false;
+        }
+
+        screenX = clientPoint.X;
+        screenY = clientPoint.Y;
+        return true;
+    }
+
     private static bool TryClickLauncherByCoordinates(AutomationElement launcherWindow, string intent)
     {
         if (launcherWindow == null || string.IsNullOrWhiteSpace(intent)) return false;
-
-        var launcherPids = GetLauncherProcessIds();
-        if (launcherPids.Count == 0) return false;
 
         try
         {
@@ -217,46 +322,78 @@ public static class UIAHelper
                 return false;
             }
 
-            var rect = launcherWindow.Current.BoundingRectangle;
-            if (rect.Width <= 0 || rect.Height <= 0)
+            var bounds = launcherWindow.Current.BoundingRectangle;
+            if (bounds.Width <= 0 || bounds.Height <= 0)
             {
                 LogLine("CLICK SKIP launcher coords — launcher window has zero-size bounds");
                 return false;
             }
 
-            var xFraction = intent == "continue" ? LauncherContinueXFraction : LauncherPlayXFraction;
-            var x = (int)(rect.X + rect.Width * xFraction);
-            var y = (int)(rect.Y + rect.Height * LauncherCoordYFraction);
+            var xFractions = intent == "continue" ? LauncherContinueXFractions : LauncherPlayXFractions;
+            var xFraction = xFractions[_coordAttemptIndex % xFractions.Length];
+            var yFraction = LauncherCoordYFractions[_coordAttemptIndex % LauncherCoordYFractions.Length];
+            int x;
+            int y;
+            if (!TryGetLauncherClientClickPoint(hwnd, xFraction, yFraction, out x, out y))
+            {
+                x = (int)(bounds.X + bounds.Width * xFraction);
+                y = (int)(bounds.Y + bounds.Height * yFraction);
+                LogLine("CLICK WARN launcher coords — using UIA bounds fallback for client rect");
+            }
             var scopeDesc = DescribeScope(launcherWindow);
             var label = intent == "continue" ? "launcher CONTINUE" : "launcher PLAY";
 
-            LogLine(string.Format(
-                "CLICK \"{0}\" method=coords at ({1},{2}) fractions=({3:F2},{4:F2}) rect=({5:F0},{6:F0},{7:F0},{8:F0}) in {9} | foreground before {10}",
-                label, x, y, xFraction, LauncherCoordYFraction, rect.X, rect.Y, rect.Width, rect.Height, scopeDesc, DescribeForegroundWindow()));
-
-            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
-            {
-                return true;
-            }
-
             ForceForegroundWindow(hwnd);
-            if (!IsLauncherForegroundHwnd(hwnd, launcherPids))
-            {
-                LogLauncherMissThrottled("CLICK SKIP launcher coords — could not steal foreground to launcher (PID guard); hwnd click already attempted");
-                return false;
-            }
+            Thread.Sleep(250);
+
+            LogHitWindowAtPoint(x, y, label, intent);
+
+            LogLine(string.Format(
+                "CLICK \"{0}\" intent={1} attempt={2} method=coords at ({3},{4}) fractions=({5:F2},{6:F2}) bounds=({7:F0},{8:F0},{9:F0},{10:F0}) in {11} | foreground {12}",
+                label, intent, _coordAttemptIndex + 1, x, y, xFraction, yFraction, bounds.X, bounds.Y, bounds.Width, bounds.Height, scopeDesc, DescribeForegroundWindow()));
+
+            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
 
             SetCursorPos(x, y);
-            Thread.Sleep(60);
+            Thread.Sleep(80);
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" method=coords at ({0},{1}) in {2} | foreground after {3}", x, y, scopeDesc, DescribeForegroundWindow()));
+            Thread.Sleep(40);
+            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=mouse at ({1},{2}) in {3} | foreground after {4}", intent, x, y, scopeDesc, DescribeForegroundWindow()));
             return true;
         }
         catch (Exception ex)
         {
             LogLine("CLICK FAIL launcher coords: " + ex.Message);
             return false;
+        }
+    }
+
+    private static void LogHitWindowAtPoint(int screenX, int screenY, string label, string intent)
+    {
+        try
+        {
+            var point = new POINT { X = screenX, Y = screenY };
+            var hit = WindowFromPoint(point);
+            if (hit == IntPtr.Zero)
+            {
+                LogLine(string.Format("AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd=none", intent, label, screenX, screenY));
+                return;
+            }
+
+            var sb = new StringBuilder(256);
+            GetWindowText(hit, sb, sb.Capacity);
+            uint hitPid;
+            GetWindowThreadProcessId(hit, out hitPid);
+            var procName = "?";
+            try { procName = Process.GetProcessById((int)hitPid).ProcessName; } catch { }
+            LogLine(string.Format(
+                "AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd={4} title=\"{5}\" process={6} pid={7}",
+                intent, label, screenX, screenY, hit.ToInt64(), sb.ToString(), procName, hitPid));
+        }
+        catch (Exception ex)
+        {
+            LogLine("AUDIT hit-test failed: " + ex.Message);
         }
     }
 
@@ -430,7 +567,7 @@ public static class UIAHelper
             SendMessage(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lParam);
             Thread.Sleep(40);
             SendMessage(hwnd, WM_LBUTTONUP, 0, lParam);
-            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" method=hwnd at ({0},{1}) in {2}", screenX, screenY, scopeDesc));
+            LogLine(string.Format("CLICK hwnd SendMessage at ({0},{1}) in {2}", screenX, screenY, scopeDesc));
             return true;
         }
         catch (Exception ex)
@@ -469,6 +606,7 @@ public static class UIAHelper
         {
             try
             {
+                CollectLauncherWindowsFromPid(pid, results);
                 var process = Process.GetProcessById(pid);
                 var hwnd = process.MainWindowHandle;
                 if (hwnd == IntPtr.Zero) continue;
@@ -483,6 +621,29 @@ public static class UIAHelper
 
         return results;
     }
+
+    private static void CollectLauncherWindowsFromPid(int pid, List<AutomationElement> results)
+    {
+        EnumWindows((hwnd, param) =>
+        {
+            try
+            {
+                if (!IsWindowVisible(hwnd)) return true;
+                uint windowPid;
+                GetWindowThreadProcessId(hwnd, out windowPid);
+                if ((int)windowPid != pid) return true;
+                var fromHandle = AutomationElement.FromHandle(hwnd);
+                if (fromHandle != null && !ContainsWindow(results, fromHandle))
+                {
+                    results.Add(fromHandle);
+                }
+            }
+            catch { }
+            return true;
+        }, IntPtr.Zero);
+    }
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     private static bool ContainsWindow(List<AutomationElement> list, AutomationElement candidate)
     {
@@ -1019,7 +1180,31 @@ public static class UIAHelper
     private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
 
     [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll")]
+    private static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr WindowFromPoint(POINT point);
+
+    [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct POINT
@@ -1253,6 +1438,18 @@ function Test-HandoffWhenGameStable {
     return $false
 }
 
+function Test-LaunchClickVerified {
+    param([int]$WaitSec = 8)
+
+    $deadline = (Get-Date).AddSeconds($WaitSec)
+    while ((Get-Date) -lt $deadline) {
+        if (Test-GameProcessRunning) { return $true }
+        if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+        Start-Sleep -Milliseconds 250
+    }
+    return $false
+}
+
 if ($LaunchIntent -eq 'continue') {
     $targetButtonNames = @('CONTINUE', 'Continue')
 } else {
@@ -1325,8 +1522,13 @@ while ((Get-Date) -lt $deadline) {
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
-            Write-LaunchLog "clicked $displayName ($matchedName)"
-            $clickedPlayContinue = $true
+            if (Test-LaunchClickVerified -WaitSec 8) {
+                Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
+                $clickedPlayContinue = $true
+            } else {
+                Write-LaunchLog "click $displayName ($matchedName) NOT verified — PLAY/CONTINUE still on screen; will retry"
+                [UIAHelper]::ResetLauncherClickRetryState()
+            }
         }
     }
 
