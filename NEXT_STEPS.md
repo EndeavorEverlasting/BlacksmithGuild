@@ -14,12 +14,12 @@
 | 006I-2 Path A | **USER PASS** 2026-06-20 — zero-click → Danustica map |
 | 006I-4 Path C | **USER PASS** 2026-06-19 — tag `006i-4-path-c-pass` |
 | **006I-5 Continue** | **USER PASS** 2026-06-20 — tag `006i-5-continue-pass` @ `52c2114` |
-| **005E market intel** | **USER PASS** 2026-06-20 — Ctrl+Alt+M action plan (F12 Steam collision fixed) |
-| 005E real forge rank | **Session 2 disposable PASS** — `source=real`, Javelin top; Continue save still shows stub until Track 2A |
+| **005E market intel** | **USER PASS** 2026-06-20 — Ctrl+Alt+M (Continue + Danustica smoke) |
+| 005E real forge rank | **Session 2 disposable PASS** only — map default stub until **Track 2A** |
 | 005E smithing Stage A | **USER PASS** 2026-06-20 — stamina API hints |
-| 006J closeout | **PARTIAL** — 1B PASS; 1C play loop + 1D Path B Back pending |
-| **007A hotkey remap** | **SHIPPED** — Ctrl+Alt+M primary; USER PASS Continue live cert |
-| **007B report UX** | **SHIPPED** — Blacksmith Guild branding, colored reports, forge ACTION PLAN + market bridge |
+| 006J closeout | **PARTIAL** — 1B PASS; 1C format PASS; 1D Path B Back pending |
+| **007A hotkey remap** | **DONE** — Ctrl+Alt+M primary |
+| **007B report UX** | **USER PASS** 2026-06-20 — Danustica smoke (branding, ACTION PLAN, honest stub JSON) |
 
 ---
 
@@ -27,40 +27,46 @@
 
 | You can… | How |
 |----------|-----|
-| Bootstrap to map | `Forge.cmd` → `TBG READY` |
+| Bootstrap to map | `Forge.cmd` → Blacksmith Guild — Ready |
 | **Continue cared-about save** | `LaunchForgeContinue.cmd` — zero-click Module Mismatch Yes |
 | Get buy/sell route plan | **Ctrl+Alt+M** — ACTION PLAN + BUY@NEAREST |
-| Rank forge recipes | **Ctrl+Alt+R** on map (default stub; real only after `SetForgeCandidateSourceReal` + JSON proof) |
+| Rank forge recipes (advisory) | **Ctrl+Alt+R** — ACTION PLAN + SOURCE HONESTY (stub until Track 2A) |
 | Check mod status | **F7** |
 | Fund disposable tests | **F11** (+100k) |
 
 | You cannot yet… | Why |
 |-----------------|-----|
+| Real forge rank on map (default) | Requested source Stub; Track 2A must wire Real |
 | Auto buy/sell | Not built — manual town trade |
-| Guild loop one-hotkey | Ctrl+Alt+G — 007A Track 3 not built |
+| Guild loop one-hotkey | Ctrl+Alt+G — Track 3 not built |
 | Auto craft / stamina rotation | Stages B–D not built |
-| Real forge rank on Continue (default) | Ctrl+Alt+R uses requested source; default Stub until Track 2A wires real path |
 
 ---
 
-## Session 3 — Play on Continue save (YOU, on current map)
+## Next engineering: Track 2A (real forge on Ctrl+Alt+R)
 
-You are on the cared-about Continue save (Tevea/Zestica area). Module Mismatch cert **PASS**.
+1. Set requested source Real before rank (or default Real on Ctrl+Alt+R)
+2. PASS only when `BlacksmithGuild_ForgeRecommendations.json` has `source=real`, `fallbackUsed=false`
+3. Per-material `materialGaps` + buy steps from cached Ctrl+Alt+M (Hardwood, Iron Ore, Charcoal)
+4. Keep advisory only — no inventory mutation
 
-1. **Ctrl+Alt+M** — trade route near Tevea/Zestica (must work; F12 not required)
-2. **Ctrl+Alt+R** — forge recommendations (expect `source=stub` until real source set)
-3. Enter town → buy top plan item manually
-4. Smithy → craft top ranked item manually
-5. **F7** — status snapshot
+Out of scope: Aserai autobuild, Ctrl+Alt+G, auto-buy/sell.
 
-Collect JSON proof:
+---
+
+## Smoke / cert collection (use `-LiteralPath`)
 
 ```powershell
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_MarketIntel.json"
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_ForgeRecommendations.json"
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json" -Tail 120
-Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Tail 220
+$bl = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord"
+Get-Content -LiteralPath "$bl\BlacksmithGuild_MarketIntel.json"
+Get-Content -LiteralPath "$bl\BlacksmithGuild_ForgeRecommendations.json"
+Get-Content -LiteralPath "$bl\BlacksmithGuild_Status.json"
+Get-Content -LiteralPath "$bl\BlacksmithGuild_Phase1.log" -Tail 220
 ```
+
+Or: `.\CollectCertLogs.cmd`
+
+On map: **Ctrl+Alt+M** → **Ctrl+Alt+R** → **F7**
 
 ---
 
@@ -69,9 +75,7 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 | Step | Action |
 |------|--------|
 | **1D Path B** | Quit → `Forge.cmd` → culture screen **Back once** (intro must NOT replay) |
-| **006J tag** | Approve full closeout tag after 1C + 1D |
-
-Then: **007A Track 2A/2B** (honest real forge on Continue + forge materials bridge in market intel).
+| **006J tag** | Approve full closeout tag after 1D |
 
 ---
 
@@ -81,7 +85,6 @@ Then: **007A Track 2A/2B** (honest real forge on Continue + forge materials brid
 |-------|-------|
 | Branch | `main` |
 | Version | `v0.0.11` |
-| Fix commit | 007A hotkey remap on `main` (see `git log -1`) |
 | Remote | ahead of `origin/main` — push when requested |
 | Canonical plan | [007a-guild-loop-advisory-automation.plan.md](docs/plans/007a-guild-loop-advisory-automation.plan.md) |
 

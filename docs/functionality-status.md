@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20 (007B report UX + forge ACTION PLAN)  
+**Last updated:** 2026-06-20 (007B smoke cert closeout)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 007B shared advisory formatting
+**Branch:** `main` — 007B USER PASS (Danustica smoke)
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -22,7 +22,8 @@ Canonical snapshot of what works today, what is certified, and what is not built
 |---------|------------|----------|
 | **Zero-click bootstrap (Path A)** | `Forge.cmd` | Map + `TBG READY`; PLAY click `(811,764)` fractions `0.34×0.90` |
 | **Dev harness hotkeys** | F7 status, F8 command list, F11 +100k gold | Feed ack lines on campaign map |
-| **Market intel action plan** | **Ctrl+Alt+M** | **USER PASS 2026-06-20** — Continue save live cert: `MarketSnapshotNow`, ACTION PLAN, BUY@NEAREST, TOP SPREADS, nonzero prices (Poros area). Reports use **Blacksmith Guild** headers + colored section boundaries. |
+| **Market intel action plan** | **Ctrl+Alt+M** | **USER PASS 2026-06-20** — Continue (Poros) + Danustica smoke: `MarketSnapshotNow`, ACTION PLAN, BUY@NEAREST, TOP SPREADS, Hardwood `[smith]`. **Blacksmith Guild** headers + colored sections. |
+| **007B report UX + forge ACTION PLAN** | **Ctrl+Alt+R**, **F7** | **USER PASS 2026-06-20** — Danustica smoke: `sourceHonesty` Info/stub, numbered ACTION PLAN, CRAFT NEXT; Phase1 all hotkeys Success. Real forge **not** PASS (`source=stub`). |
 | **Real forge rank (Session 2 disposable cert)** | Session 2 script with `SetForgeCandidateSourceReal` | **USER PASS 2026-06-20** — disposable cert: `source=real`, templates=12, top=Javelin, `fallbackUsed=false` |
 | **Smithing audit (Stage A)** | `ProbeSmithingAudit` | **USER PASS 2026-06-20** — `GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints |
 | **Path C quit loop** | Quit to main menu | Tag `006i-4-path-c-pass` |
@@ -41,7 +42,9 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 
 **Market intel smoke test:** USER PASS with hotkey collision. F12 produced useful market action output, but F12 conflicts with Steam screenshots. Primary hotkey changed to **Ctrl+Alt+M**.
 
-**Forge recommendation status:** Ctrl+Alt+R now emits **SOURCE HONESTY**, **MATERIAL GAPS**, **ACTION PLAN**, and **CRAFT NEXT** sections (shared advisory format). Continue save screenshot still shows `source=stub` until JSON proves `source=real` and `fallbackUsed=false`. Material buy steps use cached market intel when Ctrl+Alt+M was run first.
+**Forge recommendation status:** Ctrl+Alt+R emits SOURCE HONESTY / MATERIAL GAPS / ACTION PLAN / CRAFT NEXT. Danustica JSON: `source=stub`, `sourceHonesty.verdict=Info` — honest. Real forge rank **not** certified until `source=real` and `fallbackUsed=false` (Track 2A). File report verdict aligned with sourceHonesty (no false `[PASS]` on stub).
+
+**Status.json collection:** use `Get-Content -LiteralPath` (path contains `&`) or `CollectCertLogs.cmd` — not a mod failure if bare `Get-Content` errors.
 
 ---
 
@@ -50,7 +53,7 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
-| **Session 3 play loop** | Ctrl+Alt+M + manual trade + Ctrl+Alt+R on Continue save | Market JSON + honest forge source; manual craft baseline | USER smoke pending (Ctrl+Alt+M remap confirmation) |
+| **Session 3 play loop** | Ctrl+Alt+M + Ctrl+Alt+R + manual trade/craft on Continue | Market + forge JSON honest | **USER PASS** market/forge format (Danustica 2026-06-20); manual craft baseline optional |
 
 ### Market intel cert evidence (2026-06-20, Continue save near Tevea/Zestica)
 
@@ -126,10 +129,14 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | `BlacksmithGuild_Launch.log` | Forge.cmd / Continue automation |
 | `BlacksmithGuild_Status.json` | F7 |
 
-Collect: `CollectCertLogs.cmd`
+Collect: `CollectCertLogs.cmd` (uses `-LiteralPath`). Manual:
+
+```powershell
+Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json"
+```
 
 ---
 
 ## Next session
 
-See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **006J partial closeout done** (Continue PASS); finish Session 3 play loop + Path B, then **Track 2A/2B** (forge materials bridge + honest real forge on Continue).
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **007B USER PASS** recorded; next **Track 2A** (real forge on Ctrl+Alt+R + per-material market buy); **006J** Path B Back pending.

@@ -267,14 +267,9 @@ namespace BlacksmithGuild.Forge
                 report.Line("templateCount", _cachedReport.TemplateCount.ToString());
                 report.Line("mappedCount", _cachedReport.MappedCount.ToString());
             }
-            if (_cachedReport.FallbackUsed)
-            {
-                report.Verdict(ReportVerdict.Warn, "Real source unavailable — fell back to stub oracle");
-            }
-            else
-            {
-                report.Verdict(ReportVerdict.Pass, "Candidate source resolved");
-            }
+            var honesty = _cachedReport.SourceHonesty
+                ?? ForgeAdvisoryPlanner.BuildSourceHonesty(_requestedSourceKind, _cachedReport);
+            report.Verdict(honesty.Verdict, honesty.VerdictMessage);
 
             report.Section("Doctrine");
             report.Line("active", _cachedReport.Doctrine);

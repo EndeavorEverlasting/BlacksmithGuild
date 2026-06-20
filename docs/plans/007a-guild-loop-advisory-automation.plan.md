@@ -1,20 +1,16 @@
 # Sprint 007A — Guild Loop + Advisory Automation
 
-**Status:** IN PROGRESS — 006I-5 Continue **USER PASS** 2026-06-20. 006J partial (1B done; 1C/1D pending). Track 2 next.
+**Status:** IN PROGRESS — 007B **USER PASS** 2026-06-20 (Danustica smoke). **Track 2A next.** 006J partial (1D Path B pending).
 
-**Overview:** Finish 006J closeout (Session 3 play loop + Path B), then ship 005E Stage B advisory plus a Stage C safe automation slice (stamina-aware worker pick + one provably safe forge action via API), with market-forge integration and economics hardening — so you play a real guild loop instead of cert baby steps.
+**Overview:** Finish 006J closeout (Path B), then **Track 2A** real forge on Ctrl+Alt+R + per-material market buy bridge, then Stage C safe automation slice.
 
 ---
 
 ## Where you are (do not re-litigate)
 
-**USER PASS (2026-06-20):** Path A bootstrap, Ctrl+Alt+M market action plan (F12 Steam collision fixed), Session 2 disposable real forge rank (`source=real`, Javelin top, templates=12), Smithing Stage A audit, **Continue load (006I-5)** — Tevea map, Phase1 `confirmed (inquiry cleared)`, tag `006i-5-continue-pass` @ `52c2114`.
+**USER PASS (2026-06-20):** Path A bootstrap, Ctrl+Alt+M market (Continue + **Danustica smoke**), **007B** forge ACTION PLAN + Blacksmith Guild branding, Session 2 disposable real forge rank, Smithing Stage A audit, **Continue load (006I-5)**.
 
-**Continue save forge honesty:** screenshot shows `fake forge advisor` / `source=stub` on Ctrl+Alt+R until real source wired (Track 2A). Do not claim global real-forge PASS from Continue alone.
-
-**Shipped fixes:** Module Mismatch verify-dismiss (`52c2114`), deferred queue (`687cb1b`), `dev-command-names.ps1`, `forge.ps1 exit 0`, launcher guards + coord fallback.
-
-**Still open:** Session 3 play loop smoke (1C), Path B culture Back (1D), full 006J tag, push to origin (~31 commits ahead).
+**Still open:** Path B culture Back (1D), full 006J tag, push to origin, **Track 2A real forge on map**.
 
 **Your chosen scope:** Stage B advisory **+ Stage C safe automation slice** (not full Stage D rest optimizer).
 
@@ -26,11 +22,24 @@ Do this before Aserai character autobuild tuning.
 
 1. ~~Remap market intel hotkey from F12 to Ctrl+Alt+M.~~ **DONE (007A)**
 2. ~~Verify market intel still writes `BlacksmithGuild_MarketIntel.json`.~~ **USER PASS (Continue live cert)**
-3. Forge ACTION PLAN + SOURCE HONESTY on Ctrl+Alt+R — **SHIPPED (007B)**; real source on Continue still Track 2A
-4. Partial forge-materials bridge — forge buy steps use **cached** Ctrl+Alt+M prices (007B); full `--- FORGE MATERIALS ---` market section still open
+3. ~~Forge ACTION PLAN + SOURCE HONESTY on Ctrl+Alt+R~~ **USER PASS (007B)** — stub labeled; file verdict aligned with sourceHonesty
+4. Partial forge-materials bridge — forge buy steps use **cached** Ctrl+Alt+M prices when real `MaterialNeeds[]` exist (**Track 2A**); full `--- FORGE MATERIALS ---` market section still open
 5. Keep all actions advisory only.
 
 **007B shared formatting:** `ModDisplay`, `AdvisoryReportText`, `AdvisoryReportSections`, `ReportLineClassifier` — reuse for future Ctrl+Alt+G guild loop report.
+
+---
+
+## Track 2A — Real forge on Ctrl+Alt+R (NEXT)
+
+**Goal:** Ctrl+Alt+R produces `source=real`, `fallbackUsed=false`, per-material `materialGaps` with market buy steps when Ctrl+Alt+M cached.
+
+| Task | Notes |
+|------|-------|
+| Wire Real source before rank | `SetForgeCandidateSourceReal` or default Real on hotkey |
+| Cert gate | PASS only when JSON `source=real` && `fallbackUsed=false` |
+| Material bridge | `ForgeAdvisoryPlanner` + `TryFindBuyAtNearest` (already built for real candidates) |
+| Out of scope | Aserai autobuild, Ctrl+Alt+G, auto-buy/sell |
 
 ---
 
