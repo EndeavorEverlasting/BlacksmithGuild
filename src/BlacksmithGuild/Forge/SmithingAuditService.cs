@@ -17,10 +17,15 @@ namespace BlacksmithGuild.Forge
     public static class SmithingAuditService
     {
         public const string ProbeSmithingAuditCommand = "ProbeSmithingAudit";
+        public const string ProbeSmithingRefineApiCommand = "ProbeSmithingRefineApi";
         public const string ReportFileName = "BlacksmithGuild_SmithingAudit.json";
+        public const string RefineProbeReportFileName = "BlacksmithGuild_SmithingRefineProbe.json";
 
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, ReportFileName);
+
+        private static readonly string RefineProbeReportPath =
+            Path.Combine(BasePath.Name, RefineProbeReportFileName);
 
         private static readonly string[] StaminaMemberTokens =
         {
@@ -51,6 +56,69 @@ namespace BlacksmithGuild.Forge
                 DebugLogger.Test($"[TBG SMITHING] ProbeSmithingAudit failed: {ex.Message}", showInGame: false);
                 return false;
             }
+        }
+
+        public static bool RunRefineApiProbeNow(string source = ProbeSmithingRefineApiCommand)
+        {
+            try
+            {
+                if (Campaign.Current == null || !GameSessionState.IsCampaignMapReady)
+                {
+                    DebugLogger.Test("[TBG SMITHING] ProbeSmithingRefineApi blocked: campaign map not ready.", showInGame: false);
+                    return false;
+                }
+
+                var mapped = SmithingRefineApi.RunRefineApiProbe(out var detail);
+                var canRefine = SmithingStaminaReader.CanInvokeRefineCharcoal(Hero.MainHero, out var refineDetail);
+                WriteRefineProbeJson(mapped, detail, canRefine, refineDetail);
+
+                DebugLogger.Test(
+                    $"[TBG SMITHING] ProbeSmithingRefineApi mapped={mapped} canRefine={canRefine} detail={detail}",
+                    showInGame: false);
+
+                InGameNotice.Info(
+                    ModDisplay.CompactLine(
+                        "Smithing Refine Probe",
+                        mapped
+                            ? $"DoRefinement mapped; canRefine={canRefine}"
+                            : $"blocked: {detail}"));
+                InGameNotice.Info(ModDisplay.CompactLine("Smithing Refine Probe", $"json={RefineProbeReportFileName}"));
+
+                return mapped;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG SMITHING] ProbeSmithingRefineApi failed: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        private static void WriteRefineProbeJson(
+            bool mapped,
+            string detail,
+            bool canRefine,
+            string refineDetail)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            sb.AppendLine($"  \"generatedUtc\": \"{Escape(DateTime.UtcNow.ToString("o"))}\",");
+            sb.AppendLine($"  \"doRefinementMapped\": {mapped.ToString().ToLowerInvariant()},");
+            sb.AppendLine($"  \"canRefineCharcoal\": {canRefine.ToString().ToLowerInvariant()},");
+            sb.AppendLine($"  \"detail\": \"{Escape(detail ?? string.Empty)}\",");
+            sb.AppendLine($"  \"refineDetail\": \"{Escape(refineDetail ?? string.Empty)}\",");
+            sb.AppendLine("  \"methodHints\": [");
+
+            var hints = SmithingRefineApi.LastProbeHints;
+            for (var i = 0; i < hints.Count; i++)
+            {
+                sb.Append($"    \"{Escape(hints[i])}\"");
+                sb.AppendLine(i < hints.Count - 1 ? "," : string.Empty);
+            }
+
+            sb.AppendLine("  ]");
+            sb.AppendLine("}");
+
+            File.WriteAllText(RefineProbeReportPath, sb.ToString(), Encoding.UTF8);
         }
 
         private static SmithingAuditReport BuildReport()
@@ -174,7 +242,9 @@ namespace BlacksmithGuild.Forge
                 foreach (var member in behavior.GetType().GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
                 {
                     var name = member.Name ?? string.Empty;
-                    if (!StaminaMemberTokens.Any(token => name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0))
+                    if (!StaminaMemberTokens.Any(token => name.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+                        && name.IndexOf("Refin", StringComparison.OrdinalIgnoreCase) < 0
+                        && name.IndexOf("Smelt", StringComparison.OrdinalIgnoreCase) < 0)
                     {
                         continue;
                     }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Reporting;
+using BlacksmithGuild.Forge;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Roster;
@@ -797,6 +798,8 @@ namespace BlacksmithGuild.Market
                 }
             }
 
+            AppendForgeMaterialsSection(report);
+
             report.Section("Evidence");
             report.Line("json", "BlacksmithGuild_MarketIntel.json");
 
@@ -810,6 +813,67 @@ namespace BlacksmithGuild.Market
             report.EndReport(
                 emitInGame: string.Equals(source, MarketSnapshotNowCommand, StringComparison.Ordinal),
                 emitToFile: true);
+        }
+
+        private static void AppendForgeMaterialsSection(ReportFormatter report)
+        {
+            report.Section("Forge Materials");
+
+            var charcoalHave = SmithingPartyInventory.CountCharcoal();
+            var hardwoodHave = SmithingPartyInventory.CountHardwood();
+            var ironOreHave = SmithingPartyInventory.CountItem("iron_ore", "iron ore");
+            var charcoalFloor = SmithingReservePolicy.CharcoalFloor;
+            var hardwoodFloor = SmithingReservePolicy.HardwoodFloor;
+            var charcoalShort = Math.Max(0, charcoalFloor - charcoalHave);
+            var hardwoodShort = Math.Max(0, hardwoodFloor - hardwoodHave);
+
+            report.Line(
+                "party charcoal",
+                $"x{charcoalHave} ({SmithingReservePolicy.DescribeReserveStatus(charcoalHave, charcoalFloor)}) floor={charcoalFloor}");
+            report.Line(
+                "party hardwood",
+                $"x{hardwoodHave} ({SmithingReservePolicy.DescribeReserveStatus(hardwoodHave, hardwoodFloor)}) floor={hardwoodFloor}");
+            if (ironOreHave > 0)
+            {
+                report.Line("party iron ore", $"x{ironOreHave}");
+            }
+
+            if (charcoalShort > 0 || hardwoodShort > 0)
+            {
+                report.Line(
+                    "shortfall",
+                    $"need charcoal +{charcoalShort}, hardwood +{hardwoodShort} (refine or buy @ nearest)");
+            }
+            else
+            {
+                report.Line("shortfall", "none at current floors");
+            }
+
+            var nearestSnapshot = _cachedReport.Towns.FirstOrDefault();
+            if (nearestSnapshot?.Goods == null || nearestSnapshot.Goods.Count == 0)
+            {
+                report.Line("nearest buy", "no smithing goods in scan — press Ctrl+Alt+M on map");
+                return;
+            }
+
+            var smithGoods = nearestSnapshot.Goods
+                .Where(g => IsSmithingInput(g.ItemId, g.ItemName))
+                .OrderBy(g => g.ItemName)
+                .ToList();
+
+            if (smithGoods.Count == 0)
+            {
+                report.Line("nearest buy", $"no charcoal/hardwood/ore stocked @ {nearestSnapshot.Name}");
+                return;
+            }
+
+            report.Line("nearest buy", $"{nearestSnapshot.Name}:");
+            foreach (var good in smithGoods)
+            {
+                report.Line(
+                    good.ItemName,
+                    $"stock={good.Stock} buy={good.BuyPrice} sell={good.SellPrice}");
+            }
         }
 
         private static void WriteJsonReport(MarketIntelReport report)

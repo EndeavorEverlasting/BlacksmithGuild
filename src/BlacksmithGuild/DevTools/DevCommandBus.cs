@@ -173,6 +173,7 @@ namespace BlacksmithGuild.DevTools
                 commandName == ForgeRecommendationService.ShowForgeDoctrineCommand ||
                 commandName == ForgeRecommendationService.ProbeForgeRecipesCommand ||
                 commandName == SmithingAuditService.ProbeSmithingAuditCommand ||
+                commandName == SmithingAuditService.ProbeSmithingRefineApiCommand ||
                 commandName == MarketIntelligenceService.MarketSnapshotNowCommand ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
             {
@@ -395,6 +396,10 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case SmithingAuditService.ProbeSmithingAuditCommand:
                     return SmithingAuditService.RunAuditNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case SmithingAuditService.ProbeSmithingRefineApiCommand:
+                    return SmithingAuditService.RunRefineApiProbeNow()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case AutoCharacterBuildService.ApplyAutoCharacterBuildCommand:

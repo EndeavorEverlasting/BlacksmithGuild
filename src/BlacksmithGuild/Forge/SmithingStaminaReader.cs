@@ -88,10 +88,9 @@ namespace BlacksmithGuild.Forge
             }
         }
 
-        public static bool CanInvokeRefineCharcoal(out string detail)
+        public static bool CanInvokeRefineCharcoal(Hero hero, out string detail)
         {
-            detail = "RefineCharcoal headless API not mapped — advisory only until Stage C probe succeeds";
-            return false;
+            return SmithingRefineApi.CanInvokeRefineCharcoal(hero, out detail);
         }
 
         private static bool EnsureMethodsResolved()

@@ -56,15 +56,26 @@ namespace BlacksmithGuild.Forge
                 {
                     blockedReason = setHeroDetail ?? "SetActiveCraftingHero failed";
                 }
-                else if (!SmithingStaminaReader.CanInvokeRefineCharcoal(out var refineDetail))
+                else if (!SmithingStaminaReader.CanInvokeRefineCharcoal(hero, out var refineDetail))
                 {
                     blockedReason = refineDetail;
                 }
 
+                var charcoalBefore = reserve.CharcoalHave;
+                var hardwoodBefore = reserve.HardwoodHave;
+                var charcoalAfter = charcoalBefore;
+                var hardwoodAfter = hardwoodBefore;
+
                 if (blockedReason == null && hero != null)
                 {
-                    executed = false;
-                    blockedReason = "RefineCharcoal API not mapped — use smithy UI or wait for Stage C probe";
+                    executed = SmithingRefineApi.TryInvokeRefineCharcoal(hero, charcoalNeed, out var invokeDetail);
+                    charcoalAfter = SmithingPartyInventory.CountCharcoal();
+                    hardwoodAfter = SmithingPartyInventory.CountHardwood();
+
+                    if (!executed)
+                    {
+                        blockedReason = invokeDetail ?? "RefineCharcoal invocation failed";
+                    }
                 }
 
                 WriteJsonReport(new SafeActionResult
@@ -75,15 +86,17 @@ namespace BlacksmithGuild.Forge
                     Actor = grunt?.Name,
                     Executed = executed,
                     BlockedReason = blockedReason,
-                    CharcoalBefore = reserve.CharcoalHave,
-                    HardwoodBefore = reserve.HardwoodHave,
+                    CharcoalBefore = charcoalBefore,
+                    CharcoalAfter = charcoalAfter,
+                    HardwoodBefore = hardwoodBefore,
+                    HardwoodAfter = hardwoodAfter,
                     CharcoalNeed = charcoalNeed
                 });
 
                 if (executed)
                 {
                     DebugLogger.Test(
-                        $"[TBG FORGE] action={action} actor={grunt?.Name} reserveBefore charcoal={reserve.CharcoalHave} hardwood={reserve.HardwoodHave}",
+                        $"[TBG FORGE] action={action} actor={grunt?.Name} reserveBefore charcoal={charcoalBefore} hardwood={hardwoodBefore} reserveAfter charcoal={charcoalAfter} hardwood={hardwoodAfter}",
                         showInGame: false);
                     InGameNotice.Success(
                         ModDisplay.CompactLine("Smithing Safe Action", $"{action} by {grunt?.Name} complete."));
@@ -150,7 +163,9 @@ namespace BlacksmithGuild.Forge
             sb.AppendLine($"  \"executed\": {result.Executed.ToString().ToLowerInvariant()},");
             sb.AppendLine($"  \"blockedReason\": {(result.BlockedReason == null ? "null" : $"\"{Escape(result.BlockedReason)}\"")},");
             sb.AppendLine($"  \"charcoalBefore\": {result.CharcoalBefore},");
+            sb.AppendLine($"  \"charcoalAfter\": {result.CharcoalAfter},");
             sb.AppendLine($"  \"hardwoodBefore\": {result.HardwoodBefore},");
+            sb.AppendLine($"  \"hardwoodAfter\": {result.HardwoodAfter},");
             sb.AppendLine($"  \"charcoalNeed\": {result.CharcoalNeed}");
             sb.AppendLine("}");
 
@@ -171,7 +186,9 @@ namespace BlacksmithGuild.Forge
             public bool Executed { get; set; }
             public string BlockedReason { get; set; }
             public int CharcoalBefore { get; set; }
+            public int CharcoalAfter { get; set; }
             public int HardwoodBefore { get; set; }
+            public int HardwoodAfter { get; set; }
             public int CharcoalNeed { get; set; }
         }
     }

@@ -18,7 +18,11 @@ $files = @(
     @{ Label = 'Phase1.log (tail 220)'; Path = Join-Path $root 'BlacksmithGuild_Phase1.log'; Tail = 220 },
     @{ Label = 'Launch.log (tail 120)'; Path = Join-Path $root 'BlacksmithGuild_Launch.log'; Tail = 120 },
     @{ Label = 'Status.json'; Path = Join-Path $root 'BlacksmithGuild_Status.json'; Tail = 0 },
-    @{ Label = 'MarketIntel.json'; Path = Join-Path $root 'BlacksmithGuild_MarketIntel.json'; Tail = 0 }
+    @{ Label = 'MarketIntel.json'; Path = Join-Path $root 'BlacksmithGuild_MarketIntel.json'; Tail = 0 },
+    @{ Label = 'ForgeRecommendations.json'; Path = Join-Path $root 'BlacksmithGuild_ForgeRecommendations.json'; Tail = 0 },
+    @{ Label = 'SmithingAdvisory.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingAdvisory.json'; Tail = 0 },
+    @{ Label = 'SmithingSafeAction.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingSafeAction.json'; Tail = 0 },
+    @{ Label = 'SmithingRefineProbe.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingRefineProbe.json'; Tail = 0 }
 )
 
 Write-Host ''

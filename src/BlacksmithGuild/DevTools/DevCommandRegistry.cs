@@ -36,6 +36,7 @@ namespace BlacksmithGuild.DevTools
                 ForgeRecommendationService.ShowForgeDoctrineCommand,
                 ForgeRecommendationService.ProbeForgeRecipesCommand,
                 SmithingAuditService.ProbeSmithingAuditCommand,
+                SmithingAuditService.ProbeSmithingRefineApiCommand,
                 SmithingAdvisoryService.RunSmithingAdvisoryNowCommand,
                 SmithingSafeActionService.RunSmithingSafeActionNowCommand,
                 GuildLoopService.RunGuildLoopNowCommand,

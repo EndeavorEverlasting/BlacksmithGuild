@@ -21,6 +21,7 @@ function Get-DevCommandNames {
         'ShowForgeDoctrine',
         'ProbeForgeRecipes',
         'ProbeSmithingAudit',
+        'ProbeSmithingRefineApi',
         'RunSmithingAdvisoryNow',
         'RunSmithingSafeActionNow',
         'RunGuildLoopNow',

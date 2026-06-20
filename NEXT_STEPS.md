@@ -12,7 +12,8 @@
 |--------|--------|
 | **Track 2A map rank** | **USER PASS** 2026-06-20 @ 16:34 — Real/Javelin/PASS on Continue; manual javelin craft |
 | **Stage B smithing advisory** | **CODE SHIPPED** — SMITHING CREW, charcoal prep steps, Ctrl+Alt+G — **USER cert PENDING** |
-| **Stage C auto-refine** | **FOUNDATION** — inbox `RunSmithingSafeActionNow` blocked until refine API mapped |
+| **Stage C auto-refine** | **API MAPPED** — `DoRefinement` wired; inbox `RunSmithingSafeActionNow` — **USER cert PENDING (disposable save first)** |
+| **Track 2B FORGE MATERIALS** | **CODE SHIPPED** — Ctrl+Alt+M section: party reserves + nearest smithing stock |
 | **007B / 007C** | USER PASS / shipped |
 | **006J closeout** | **PARTIAL** — 1D Path B Back pending |
 
@@ -25,12 +26,14 @@
 | Real forge rank on map | **Ctrl+Alt+R** — `source=real`, Javelin-style ranks (USER PASS) |
 | Guild loop report | **Ctrl+Alt+G** — market + forge + smithing crew |
 | Charcoal prep advisory | **Ctrl+Alt+R** when low charcoal — companion RefineCharcoal in SMITHING CREW + ACTION PLAN |
+| Forge materials in market report | **Ctrl+Alt+M** — `--- FORGE MATERIALS ---` party shortfalls + nearest buy |
 | Market routes | **Ctrl+Alt+M** |
+| Refine API probe | inbox `ProbeSmithingRefineApi` |
 | Status | **F7** |
 
 | You cannot yet… | Why |
 |-----------------|-----|
-| Auto-refine charcoal headless | Stage C API not mapped — use smithy UI or inbox shows blocked |
+| Auto-refine charcoal (certified) | Stage C code shipped — USER cert on disposable save pending |
 | Auto buy/sell | Scope-locked |
 | Inventory spawn on Continue | Rejected — use trade/refine loop |
 
@@ -50,6 +53,22 @@ Ctrl+Alt+R    # or Ctrl+Alt+G
 
 ---
 
+## Stage C USER cert (disposable save first)
+
+```powershell
+.\Forge.cmd
+# Low charcoal + hardwood in party; on map:
+# inbox: ProbeSmithingRefineApi  (verify DoRefinement mapped)
+# inbox: RunSmithingSafeActionNow
+.\CollectCertLogs.cmd
+```
+
+**PASS:** `BlacksmithGuild_SmithingSafeAction.json` shows `"executed": true`, `charcoalAfter > charcoalBefore`.
+
+Only after disposable PASS → retry on Continue save.
+
+---
+
 ## Cert collection
 
 ```powershell
@@ -57,6 +76,7 @@ $bl = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord
 Get-Content -LiteralPath "$bl\BlacksmithGuild_ForgeRecommendations.json"
 Get-Content -LiteralPath "$bl\BlacksmithGuild_SmithingAdvisory.json"
 Get-Content -LiteralPath "$bl\BlacksmithGuild_SmithingSafeAction.json"
+Get-Content -LiteralPath "$bl\BlacksmithGuild_SmithingRefineProbe.json"
 Get-Content -LiteralPath "$bl\BlacksmithGuild_Phase1.log" -Tail 220
 ```
 
@@ -67,7 +87,7 @@ Get-Content -LiteralPath "$bl\BlacksmithGuild_Phase1.log" -Tail 220
 | Gate | Action |
 |------|--------|
 | **Stage B USER cert** | Charcoal-short Continue smoke |
-| **Stage C refine API** | Map headless RefineCharcoal; disposable save first |
+| **Stage C USER cert** | Headless refine on disposable save; then Continue |
 | **006J 1D Path B** | Quit → Forge.cmd → culture Back once |
 
 ---

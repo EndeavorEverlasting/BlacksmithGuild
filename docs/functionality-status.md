@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20 (Track 2A PASS + Stage B advisory)  
+**Last updated:** 2026-06-20 (Stage C refine API mapped + Track 2B forge materials)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — Track 2A **USER PASS**; Stage B **code shipped**
+**Branch:** `main` — Track 2A **USER PASS**; Stage B **code shipped**; Stage C **API mapped, USER cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -12,6 +12,9 @@ Canonical snapshot of what works today, what is certified, and what is not built
 
 | Fix | Detail |
 |-----|--------|
+| **Stage C refine API mapped** | `SmithingRefineApi` — `DoRefinement` + `GetRefiningFormulas`; inbox `RunSmithingSafeActionNow` invokes headless hardwood→charcoal — **USER cert PENDING** (disposable save first) |
+| **Track 2B FORGE MATERIALS** | Ctrl+Alt+M report — party charcoal/hardwood shortfalls + nearest-town smithing stock/prices |
+| **ProbeSmithingRefineApi** | inbox command — writes `BlacksmithGuild_SmithingRefineProbe.json` with method hints |
 | **Stage B smithing crew advisory** | **Ctrl+Alt+R**, **Ctrl+Alt+G**, inbox `RunSmithingAdvisoryNow` | **CODE SHIPPED** — SMITHING CREW, charcoal refine prep, companion role assignment — **USER cert PENDING** |
 | **007C market table spacing** | Ctrl+Alt+M file report | Wider columns, ellipsis — visual check optional |
 | **Module Mismatch verify-dismiss** | `52c2114` — retry until `IsAnyInquiryActive` false; `confirmed (inquiry cleared)` log line |
@@ -56,7 +59,8 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
 | **Stage B smithing crew** | **Ctrl+Alt+R** or **Ctrl+Alt+G** when charcoal low | SMITHING CREW names companion RefineCharcoal; ACTION PLAN prep step | **USER cert PENDING** |
-| **Stage C auto-refine** | inbox `RunSmithingSafeActionNow` | Inventory changes after headless refine | RefineCharcoal API not mapped |
+| **Stage C auto-refine** | inbox `RunSmithingSafeActionNow` on **disposable save first** | JSON `executed=true`; charcoalAfter > charcoalBefore | **API mapped; USER cert PENDING** |
+| **Track 2B forge materials** | **Ctrl+Alt+M** | `--- FORGE MATERIALS ---` party reserves + nearest buy | **CODE SHIPPED** — visual check optional |
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
 
 ### Market intel cert evidence (2026-06-20, Continue save near Tevea/Zestica)
@@ -95,8 +99,8 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 | Area | Plan doc | Notes |
 |------|----------|-------|
 | Auto buy/sell | — | Read-only market intel; scope-locked |
-| Stamina posse automation (Stage C–D) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | Stage B advisory shipped; Stage C refine API probe pending |
-| Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; full `--- FORGE MATERIALS ---` market section still open (Track 2B) |
+| Stamina posse automation (Stage C–D) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | Stage B advisory shipped; Stage C API mapped — USER cert on disposable save |
+| Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; Track 2B FORGE MATERIALS section **shipped** |
 | Gauntlet trade UI panel | [005e-market-intelligence-shop-hotkey.plan.md](plans/005e-market-intelligence-shop-hotkey.plan.md) | BACKLOG |
 | Travel cost / gold / carry weight in routes | — | Pure price spread ranking only |
 | Character doctrine (Aserai Trade-Smith) | [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) | Planned. Default target is Aserai Trade-Smith with Khuzait mounted fallback. Config/logging only after live-cert gate. |
@@ -133,6 +137,7 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | `BlacksmithGuild_SmithingAudit.json` | `ProbeSmithingAudit` |
 | `BlacksmithGuild_SmithingAdvisory.json` | Ctrl+Alt+R / Ctrl+Alt+G / `RunSmithingAdvisoryNow` |
 | `BlacksmithGuild_SmithingSafeAction.json` | inbox `RunSmithingSafeActionNow` |
+| `BlacksmithGuild_SmithingRefineProbe.json` | inbox `ProbeSmithingRefineApi` |
 | `BlacksmithGuild_Launch.log` | Forge.cmd / Continue automation |
 | `BlacksmithGuild_Status.json` | F7 |
 
@@ -146,4 +151,4 @@ Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & 
 
 ## Next session
 
-See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **Track 2A USER PASS**; **Stage B USER cert PENDING**; Stage C refine API probe; **006J** Path B Back pending.
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **Track 2A USER PASS**; **Stage B USER cert PENDING**; **Stage C USER cert PENDING** (disposable save); **006J** Path B Back pending.

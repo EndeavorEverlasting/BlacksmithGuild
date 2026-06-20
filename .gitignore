@@ -32,6 +32,7 @@ BlacksmithGuild_MarketIntel.json
 BlacksmithGuild_SmithingAudit.json
 BlacksmithGuild_SmithingAdvisory.json
 BlacksmithGuild_SmithingSafeAction.json
+BlacksmithGuild_SmithingRefineProbe.json
 *.log
 
 # Bannerlord / game DLLs (local references only)
