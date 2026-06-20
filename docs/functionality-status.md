@@ -1,12 +1,12 @@
 # Functionality Status
 
-**Last updated:** 2026-06-20 (Stage C refine API mapped + Track 2B forge materials)  
+**Last updated:** 2026-06-20 (Stage C charcoal refine **USER PASS**)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — Track 2A **USER PASS**; Stage B **code shipped**; Stage C **API mapped, USER cert PENDING**
+**Branch:** `main` — Track 2A **USER PASS**; Stage B **code shipped (Tier 1 optional)**; Stage C **Certified (user PASS)**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
-**Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C is the only required USER cert now.
+**Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
 
 ---
 
@@ -14,7 +14,7 @@ Canonical snapshot of what works today, what is certified, and what is not built
 
 | Fix | Detail |
 |-----|--------|
-| **Stage C refine API mapped** | `SmithingRefineApi` — `DoRefinement` + `GetRefiningFormulas`; inbox `RunSmithingSafeActionNow` invokes headless hardwood→charcoal — **USER cert PENDING** (disposable save first) |
+| **Stage C charcoal refine** | `SmithingRefineApi` — headless hardwood→charcoal via inbox `RunSmithingSafeActionNow` — **USER PASS 2026-06-20 @ 17:52:13** (Continue save, Danustica area) |
 | **Track 2B FORGE MATERIALS** | Ctrl+Alt+M report — party charcoal/hardwood shortfalls + nearest-town smithing stock/prices |
 | **ProbeSmithingRefineApi** | inbox command — writes `BlacksmithGuild_SmithingRefineProbe.json` with method hints |
 | **Stage B smithing crew advisory** | **Ctrl+Alt+R**, **Ctrl+Alt+G**, inbox `RunSmithingAdvisoryNow` | **CODE SHIPPED** — SMITHING CREW, charcoal refine prep, companion role assignment — **USER cert PENDING** |
@@ -36,6 +36,28 @@ Canonical snapshot of what works today, what is certified, and what is not built
 | **Smithing audit (Stage A)** | `ProbeSmithingAudit` | **USER PASS 2026-06-20** — `GetHeroCraftingStamina`/`SetHeroCraftingStamina` hints |
 | **Path C quit loop** | Quit to main menu | Tag `006i-4-path-c-pass` |
 | **Continue load (006I-5)** | `LaunchForgeContinue.cmd` | **USER PASS 2026-06-20** — Tevea map; Phase1 `confirmed (inquiry cleared)`; tag `006i-5-continue-pass` @ `52c2114` |
+| **Stage C charcoal refine** | inbox `RunSmithingSafeActionNow` | **USER PASS 2026-06-20 @ 17:52:13** — Continue (Danustica area); charcoal 0→1, hardwood 5→3, `refineCount=1`; commit `951f480` |
+
+### Stage C cert evidence (2026-06-20, Continue save @ Danustica area)
+
+Phase1 (17:52:13):
+
+```text
+[TBG FORGE] action=RefineCharcoal actor= refineCount=1 reserveBefore charcoal=0 hardwood=5 reserveAfter charcoal=1 hardwood=3
+RunSmithingSafeActionNow succeeded
+```
+
+| Field | Value |
+|-------|-------|
+| Save | Continue (Danustica area) |
+| Command | `RunSmithingSafeActionNow` via `forge.ps1` / cert helper |
+| charcoalBefore / After | 0 → 1 |
+| hardwoodBefore / After | 5 → 3 |
+| refineCount | 1 |
+| commit | `951f480` |
+| Probe | PASS — `doRefinementMapped: true` (18:54:33 and earlier) |
+| SafeAction JSON | **Stale on disk** — later blocked run (hardwood=0 @ 21:58 UTC) overwrote success JSON; Phase1 is canonical |
+| Actor | Minor gap — blank in Phase1/JSON on success run (fix in progress) |
 
 ### Continue cert evidence (2026-06-20, cared-about save @ Tevea)
 
@@ -61,7 +83,6 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 | Feature | How to use | PASS criteria | Blocker |
 |---------|------------|---------------|---------|
 | **Stage B smithing crew** | **Ctrl+Alt+R** or **Ctrl+Alt+G** when charcoal low | SMITHING CREW + prep step | **Tier 1 — cert optional** |
-| **Stage C auto-refine** | inbox `RunSmithingSafeActionNow` on disposable save | `executed=true`, `charcoalAfter > charcoalBefore`, `refineCount=1` | **Tier 3 — USER cert next** |
 | **Track 2B forge materials** | **Ctrl+Alt+M** | `--- FORGE MATERIALS ---` party reserves + nearest buy | **CODE SHIPPED** — visual check optional |
 | **Path B culture Back** | Second `Forge.cmd`; press Back on culture screen | Intro cutscene does **not** replay | Not re-certified |
 
@@ -101,7 +122,7 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 | Area | Plan doc | Notes |
 |------|----------|-------|
 | Auto buy/sell | — | Read-only market intel; scope-locked |
-| Stamina posse automation (Stage C–D) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | Stage B advisory shipped; Stage C API mapped — USER cert on disposable save |
+| Stamina posse automation (Stage C–D) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | Stage B advisory shipped; **Stage C USER PASS** — posse stamina automation next |
 | Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; Track 2B FORGE MATERIALS section **shipped** |
 | Gauntlet trade UI panel | [005e-market-intelligence-shop-hotkey.plan.md](plans/005e-market-intelligence-shop-hotkey.plan.md) | BACKLOG |
 | Travel cost / gold / carry weight in routes | — | Pure price spread ranking only |
@@ -153,4 +174,4 @@ Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & 
 
 ## Next session
 
-See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **Track 2A USER PASS**; **Stage B USER cert PENDING**; **Stage C USER cert PENDING** (disposable save); **006J** Path B Back pending.
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **Track 2A USER PASS**; **Stage C USER PASS**; **Stage B Tier 1 optional**; **006J** Path B Back pending; Track 8 gated until user directs.

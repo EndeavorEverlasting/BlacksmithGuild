@@ -19,7 +19,7 @@ Live certs are **not** required for docs, formatting, or read-only reports. See 
 | 3 | New mutation commands — **disposable save first** |
 
 **Stage B:** Tier 1 — skip ceremony unless needed.  
-**Stage C:** Tier 3 — **next USER cert**.
+**Stage C:** Tier 3 — **USER PASS recorded 2026-06-20** (Continue save); no re-cert unless mutation code regresses.
 
 ---
 
@@ -29,27 +29,38 @@ Live certs are **not** required for docs, formatting, or read-only reports. See 
 |--------|--------|
 | **Track 2A map rank** | **USER PASS** 2026-06-20 @ 16:34 |
 | **Stage B smithing advisory** | Code shipped — Tier 1, cert optional |
-| **Stage C auto-refine** | API mapped; **one refine per command** — **Tier 3 USER cert next** |
+| **Stage C auto-refine** | **USER PASS** 2026-06-20 @ 17:52:13 — charcoal 0→1, one refine, Continue save |
 | **Track 2B FORGE MATERIALS** | Code shipped — Tier 1 |
 | **006J Path B** | USER pending (launcher path only) |
+| **Track 8 caravan/army** | Blocked until user directs |
+| **Posse stamina automation** | Stage D — see 005e plan |
 
 ---
 
-## Immediate: Stage C disposable cert
+## Stage C cert — complete
 
-**Save:** any disposable / blacksmithing save — no precious-save flow.
+**USER PASS** recorded 2026-06-20 @ 17:52:13 on Continue save (Danustica area).
 
-**Preconditions:** charcoal low, hardwood ≥1, on campaign map. **No smithy UI needed.**
+| Field | Value |
+|-------|-------|
+| charcoalBefore / After | 0 → 1 |
+| hardwoodBefore / After | 5 → 3 |
+| refineCount | 1 |
+| commit | `951f480` |
 
-```powershell
-.\RunStageCCharcoalCert.cmd
+Phase1 canonical line:
+
+```text
+[TBG FORGE] action=RefineCharcoal actor= refineCount=1 reserveBefore charcoal=0 hardwood=5 reserveAfter charcoal=1 hardwood=3
 ```
 
-If blocked with `hardwood shortage`: enter town → Trade → buy 1–5 Hardwood → return to map → rerun.
+**Note:** `SmithingSafeAction.json` on disk may lag Phase1 if a later blocked run overwrites it. Cert helper now falls back to Phase1.
 
-**PASS:** `executed: true`, `charcoalAfter > charcoalBefore`, `refineCount: 1`.
+Optional: rerun `RunStageCCharcoalCert.cmd` after actor fix for clean JSON with non-empty `actor`.
 
 ---
+
+## Next engineering (optional)
 
 ## In-game mechanics (rusty-player reminder)
 

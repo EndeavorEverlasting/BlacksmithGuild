@@ -30,14 +30,20 @@ dotnet build -c Release
 | Item | Tier | Status |
 |------|------|--------|
 | Stage B smithing crew advisory | 1 | Code shipped — skip ceremony unless needed for context |
-| Stage C charcoal refine | **3** | **Next USER cert** — disposable save, one refine per command |
+| Stage C charcoal refine | **3** | **USER PASS 2026-06-20** — Continue save; Phase1 canonical; JSON may lag |
 | Track 2B FORGE MATERIALS | 1 | Code shipped — optional smoke |
 | 006J Path B culture Back | 2 | Only when launcher/intro path touched |
-| Track 8 caravan/army | — | Blocked until Stage C evaluated |
+| Track 8 caravan/army | — | Stage C gate passed — blocked until user directs implementation |
 
 ---
 
-## Stage C cert (Tier 3)
+## Stage C cert (Tier 3) — **USER PASS recorded 2026-06-20**
+
+**Status:** PASS on Continue save (Danustica area) @ 17:52:13 UTC. Charcoal 0→1, hardwood 5→3, `refineCount=1`, commit `951f480`.
+
+**Re-cert only if** mutation code in `SmithingRefineApi`, `SmithingSafeActionService`, or refine guardrails changes.
+
+**Stale JSON caveat:** `BlacksmithGuild_SmithingSafeAction.json` reflects the **latest** run. A successful mutation followed by a blocked run (e.g. hardwood=0) leaves JSON showing `executed: false` while Phase1 retains the PASS line. Cert helper (`run-stage-c-charcoal-cert.ps1`) falls back to Phase1 when JSON is stale.
 
 **Goal:** Prove one headless hardwood→charcoal refine mutates inventory safely.
 
@@ -83,7 +89,8 @@ If you intentionally run Stage C with hardwood = 0, the mod correctly blocks wit
 **PASS when:**
 
 - `BlacksmithGuild_SmithingRefineProbe.json` — `doRefinementMapped: true`
-- `BlacksmithGuild_SmithingSafeAction.json` — `"executed": true`, `charcoalAfter > charcoalBefore`, `"refineCount": 1`
+- **Either** `BlacksmithGuild_SmithingSafeAction.json` — `"executed": true`, `charcoalAfter > charcoalBefore`, `"refineCount": 1`
+- **Or** Phase1 — latest `[TBG FORGE] action=RefineCharcoal ... reserveAfter charcoal=N` where `charcoalAfter > charcoalBefore` (when JSON is stale from a later blocked run)
 - Phase1 — `[TBG FORGE] action=RefineCharcoal ... refineCount=1 reserveBefore ... reserveAfter ...`
 
 **FAIL — smallest fixes only:**
@@ -126,5 +133,5 @@ Exact evidence lines:
 ## Scope lock
 
 - No push unless user asks
-- No Track 8 until Stage C gate evaluated
+- No Track 8 until user directs — Stage C gate **passed**
 - No auto-buy/sell, Gauntlet clicks, inventory spawn on Continue
