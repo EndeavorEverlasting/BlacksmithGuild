@@ -49,6 +49,14 @@ flowchart TD
 
 **Precondition:** No `Bannerlord.exe` or `TaleWorlds.MountAndBlade.Launcher` running.
 
+**PLAY / CONTINUE click search order** (inside `UIAHelper.ClickButtonByNameInLauncher` — PID-gated, never desktop-wide unscoped):
+
+1. **Scoped** — descendants of launcher `MainWindowHandle` / UIA window roots (fast path).
+2. **PID-global** — `RootElement.FindAll` filtered by TaleWorlds launcher PID (fixes empty main-window UIA tree).
+3. **Coordinates** — normalized fractions on launcher rect after 5s stable hwnd (`play` 0.22×0.93, `continue` 0.38×0.93), only if foreground PID is launcher.
+
+Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once on miss after hwnd stable 5s. `open-bannerlord-launcher.ps1` waits 2s after `Start-Process` before first poll.
+
 **Poll order each tick** (see `launcher-auto-nav.ps1` main loop):
 
 | Step | Dialog / action | Expected log line (`BlacksmithGuild_Launch.log`) |

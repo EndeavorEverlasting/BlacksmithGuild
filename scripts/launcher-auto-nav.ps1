@@ -46,6 +46,11 @@ public static class UIAHelper
     private static bool _launcherFocused;
     private static bool _launcherAuditDone;
     private static DateTime _lastLauncherMissLogUtc = DateTime.MinValue;
+    private static DateTime _firstLauncherWindowSeenUtc = DateTime.MinValue;
+    private const double LauncherCoordYFraction = 0.93;
+    private const double LauncherPlayXFraction = 0.22;
+    private const double LauncherContinueXFraction = 0.38;
+    private const int LauncherStableSecBeforeFallback = 5;
 
     private static void LogLine(string message)
     {
@@ -64,6 +69,11 @@ public static class UIAHelper
         {
             LogLauncherMissThrottled("CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)");
             return null;
+        }
+
+        if (_firstLauncherWindowSeenUtc == DateTime.MinValue)
+        {
+            _firstLauncherWindowSeenUtc = DateTime.UtcNow;
         }
 
         if (!_launcherFocused)
@@ -86,15 +96,208 @@ public static class UIAHelper
             }
         }
 
-        if (!_launcherAuditDone)
+        var globalElement = FindNamedElementInLauncherProcess(names, requireEnabled);
+        if (globalElement != null)
+        {
+            var matchedName = globalElement.Current.Name ?? names[0];
+            var scopeDesc = string.Format("PID-global process={0} pid={1}", LauncherProcessName, globalElement.Current.ProcessId);
+            LogLine(string.Format("CLICK \"launcher PLAY/CONTINUE\" button=\"{0}\" in {1} | foreground before {2}", matchedName, scopeDesc, DescribeForegroundWindow()));
+            if (InvokeElement(globalElement, "launcher PLAY/CONTINUE", matchedName, scopeDesc))
+            {
+                return matchedName;
+            }
+        }
+
+        var launcherStable = (DateTime.UtcNow - _firstLauncherWindowSeenUtc).TotalSeconds >= LauncherStableSecBeforeFallback;
+        if (launcherStable)
+        {
+            var coordIntent = NamesIndicateContinue(names) ? "continue" : "play";
+            foreach (var window in windows)
+            {
+                if (TryClickLauncherByCoordinates(window, coordIntent))
+                {
+                    return names[0];
+                }
+            }
+        }
+
+        if (!_launcherAuditDone && launcherStable)
         {
             _launcherAuditDone = true;
             LogLauncherControlAudit(windows);
+            LogLauncherPidNamedElementsAudit();
             LogLine("AUDIT launcher buttons: " + LogVisibleLauncherButtons());
         }
 
-        LogLauncherMissThrottled("CLICK SKIP launcher PLAY/CONTINUE — not found in " + windows.Count + " launcher window(s) (PID-scoped only)");
+        LogLauncherMissThrottled("CLICK SKIP launcher PLAY/CONTINUE — not found in " + windows.Count + " launcher window(s) (scoped + PID-global + coords)");
         return null;
+    }
+
+    private static bool NamesIndicateContinue(string[] names)
+    {
+        if (names == null) return false;
+        foreach (var name in names)
+        {
+            if (NameMatchesTarget(name, "CONTINUE") || NameMatchesTarget(name, "Continue"))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static AutomationElement FindNamedElementInLauncherProcess(string[] names, bool requireEnabled)
+    {
+        var pids = GetLauncherProcessIds();
+        if (pids.Count == 0 || names == null || names.Length == 0) return null;
+
+        foreach (var targetName in names)
+        {
+            try
+            {
+                var condition = new PropertyCondition(AutomationElement.NameProperty, targetName);
+                var elements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, condition);
+                foreach (AutomationElement element in elements)
+                {
+                    try
+                    {
+                        if (!pids.Contains(element.Current.ProcessId)) continue;
+                        if (requireEnabled && !element.Current.IsEnabled) continue;
+                        return element;
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink, ControlType.Text, ControlType.ListItem };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    try
+                    {
+                        if (!pids.Contains(element.Current.ProcessId)) continue;
+                        var name = element.Current.Name ?? string.Empty;
+                        foreach (var target in names)
+                        {
+                            if (!NameMatchesTarget(name, target)) continue;
+                            if (requireEnabled && !element.Current.IsEnabled) continue;
+                            return element;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static bool IsForegroundLauncherProcess(HashSet<int> launcherPids)
+    {
+        try
+        {
+            var hwnd = GetForegroundWindow();
+            if (hwnd == IntPtr.Zero) return false;
+
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            return launcherPids.Contains((int)pid);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool TryClickLauncherByCoordinates(AutomationElement launcherWindow, string intent)
+    {
+        if (launcherWindow == null || string.IsNullOrWhiteSpace(intent)) return false;
+
+        var launcherPids = GetLauncherProcessIds();
+        if (launcherPids.Count == 0) return false;
+
+        if (!IsForegroundLauncherProcess(launcherPids))
+        {
+            LogLine("CLICK SKIP launcher coords — foreground window is not TaleWorlds launcher (PID guard)");
+            return false;
+        }
+
+        try
+        {
+            var rect = launcherWindow.Current.BoundingRectangle;
+            if (rect.Width <= 0 || rect.Height <= 0)
+            {
+                LogLine("CLICK SKIP launcher coords — launcher window has zero-size bounds");
+                return false;
+            }
+
+            var xFraction = intent == "continue" ? LauncherContinueXFraction : LauncherPlayXFraction;
+            var x = (int)(rect.X + rect.Width * xFraction);
+            var y = (int)(rect.Y + rect.Height * LauncherCoordYFraction);
+            var scopeDesc = DescribeScope(launcherWindow);
+            var label = intent == "continue" ? "launcher CONTINUE" : "launcher PLAY";
+
+            LogLine(string.Format(
+                "CLICK \"{0}\" method=coords at ({1},{2}) fractions=({3:F2},{4:F2}) rect=({5:F0},{6:F0},{7:F0},{8:F0}) in {9} | foreground before {10}",
+                label, x, y, xFraction, LauncherCoordYFraction, rect.X, rect.Y, rect.Width, rect.Height, scopeDesc, DescribeForegroundWindow()));
+
+            SetCursorPos(x, y);
+            Thread.Sleep(60);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" method=coords at ({0},{1}) in {2} | foreground after {3}", x, y, scopeDesc, DescribeForegroundWindow()));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogLine("CLICK FAIL launcher coords: " + ex.Message);
+            return false;
+        }
+    }
+
+    public static void LogLauncherPidNamedElementsAudit()
+    {
+        var pids = GetLauncherProcessIds();
+        if (pids.Count == 0)
+        {
+            LogLine("AUDIT launcher PID-named elements: (no launcher PIDs)");
+            return;
+        }
+
+        var names = new List<string>();
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink, ControlType.Text, ControlType.ListItem };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = AutomationElement.RootElement.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    try
+                    {
+                        if (!pids.Contains(element.Current.ProcessId)) continue;
+                        var name = element.Current.Name;
+                        if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                        {
+                            names.Add(name);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+
+        LogLine(string.Format("AUDIT launcher PID-named elements: {0} (count={1})", names.Count == 0 ? "(none)" : string.Join(", ", names.ToArray()), names.Count));
     }
 
     private static void LogLauncherMissThrottled(string message)
