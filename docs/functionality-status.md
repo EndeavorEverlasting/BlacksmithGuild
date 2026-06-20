@@ -75,6 +75,7 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 | Forge ↔ market bridge | — | RankForgeCandidates ignores market prices for ore sourcing |
 | Gauntlet trade UI panel | [005e-market-intelligence-shop-hotkey.plan.md](plans/005e-market-intelligence-shop-hotkey.plan.md) | BACKLOG |
 | Travel cost / gold / carry weight in routes | — | Pure price spread ranking only |
+| Character doctrine (Aserai Trade-Smith) | [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) | Planned. Default target is Aserai Trade-Smith with Khuzait mounted fallback. Config/logging only after live-cert gate. |
 
 ---
 
@@ -114,4 +115,4 @@ Collect: `CollectCertLogs.cmd`
 
 ## Next session
 
-See [NEXT_STEPS.md](../NEXT_STEPS.md) — **Session 2: real forge rank**, then **LaunchForgeContinue** play loop.
+See [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) — **Track 1: 006J live cert closeout**, then Continue play loop + Stage B advisory + Stage C safe automation slice.
