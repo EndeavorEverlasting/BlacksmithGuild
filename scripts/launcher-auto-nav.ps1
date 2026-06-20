@@ -852,6 +852,15 @@ public static class UIAHelper
         return false;
     }
 
+    public static bool ClickModuleMismatchYesByGameCoords()
+    {
+        var game = FindGameMainWindowRoot();
+        if (game == null) return false;
+
+        FocusScope(game, "Module Mismatch coord fallback");
+        return TryClickModuleMismatchYesByCoordinates(game);
+    }
+
     private static AutomationElement FindLauncherRoot()
     {
         return FindProcessMainWindowRoot(LauncherProcessName);
@@ -1498,6 +1507,8 @@ $statusJsonPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
 $lastHeartbeat = Get-Date
 $heartbeatSec = 30
 $preHandoffSuppressedLogged = $false
+$preHandoffMismatchSuppressedLogged = $false
+$mismatchCoordAttemptMain = 0
 $phase1ReadyBaseline = @{}
 if (Test-Path -LiteralPath $phase1LogPath) {
     Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue |
@@ -1548,6 +1559,13 @@ function Test-LaunchReadyNow {
     }
 
     if ((Test-Phase1ReadyOrStall -StallDetected $StallDetected) -or (Test-StatusJsonReady)) {
+        if ($LaunchIntent -eq 'continue' -and -not (Test-PostHandoffReadyAllowed)) {
+            if (-not $script:preHandoffMismatchSuppressedLogged) {
+                Write-LaunchLog 'pre-handoff ready suppressed — Module Mismatch inquiry not cleared'
+                $script:preHandoffMismatchSuppressedLogged = $true
+            }
+            return $false
+        }
         return $true
     }
 
@@ -1653,12 +1671,31 @@ function Test-Phase1ModuleMismatchPending {
         if ($line -match 'Module Mismatch inquiry queued') {
             $queued = $true
         }
-        if ($line -match 'Module Mismatch auto-Yes \((deferred|in-game|postfix)\)') {
+        if ($line -match 'Module Mismatch auto-Yes confirmed \(inquiry cleared\)') {
             $confirmed = $true
         }
     }
 
     return $queued -and -not $confirmed
+}
+
+function Test-Phase1ModuleMismatchCleared {
+    if (-not (Test-Path -LiteralPath $phase1LogPath)) {
+        return $false
+    }
+
+    $tail = Get-Content -LiteralPath $phase1LogPath -Tail 60 -ErrorAction SilentlyContinue
+    if (-not $tail) {
+        return $false
+    }
+
+    foreach ($line in $tail) {
+        if ($line -match 'Module Mismatch auto-Yes confirmed \(inquiry cleared\)') {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Test-PostHandoffReadyAllowed {
@@ -1681,6 +1718,21 @@ function Test-PostHandoffReadyAllowed {
     return $true
 }
 
+function Invoke-ModuleMismatchCoordFallback {
+    param([int]$AttemptNumber = 0)
+
+    if (-not (Test-GameProcessRunning)) {
+        return $false
+    }
+
+    if (-not [UIAHelper]::ClickModuleMismatchYesByGameCoords()) {
+        return $false
+    }
+
+    Write-LaunchLog "post-handoff: Module Mismatch coord-click attempt $AttemptNumber"
+    return $true
+}
+
 function Wait-PostHandoffWatchdog {
     param([string]$Reason)
 
@@ -1688,6 +1740,8 @@ function Wait-PostHandoffWatchdog {
     $watchStart = Get-Date
     $gameLoadingSince = $null
     $stallDetected = $false
+    $mismatchCoordAttempt = 0
+    $mismatchWatchSec = 30
 
     while (((Get-Date) - $watchStart).TotalSeconds -lt $loadStallSec) {
         if (-not (Test-GameProcessRunning)) {
@@ -1698,6 +1752,16 @@ function Wait-PostHandoffWatchdog {
         if (Invoke-ModuleMismatchClick) {
             Start-Sleep -Milliseconds $PollMs
             continue
+        }
+
+        if ($LaunchIntent -eq 'continue' -and
+            ((Get-Date) - $watchStart).TotalSeconds -lt $mismatchWatchSec -and
+            (Test-Phase1ModuleMismatchPending)) {
+            $mismatchCoordAttempt++
+            if (Invoke-ModuleMismatchCoordFallback -AttemptNumber $mismatchCoordAttempt) {
+                Start-Sleep -Milliseconds $PollMs
+                continue
+            }
         }
 
         if ((Test-PostHandoffReadyAllowed) -and
@@ -1836,6 +1900,14 @@ while ((Get-Date) -lt $deadline) {
     if (Invoke-ModuleMismatchClick) {
         Start-Sleep -Milliseconds $PollMs
         continue
+    }
+
+    if ($LaunchIntent -eq 'continue' -and (Test-GameProcessRunning) -and (Test-Phase1ModuleMismatchPending)) {
+        $mismatchCoordAttemptMain++
+        if (Invoke-ModuleMismatchCoordFallback -AttemptNumber $mismatchCoordAttemptMain) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
+        }
     }
 
     if ([UIAHelper]::HasCrashReporterDialog()) {

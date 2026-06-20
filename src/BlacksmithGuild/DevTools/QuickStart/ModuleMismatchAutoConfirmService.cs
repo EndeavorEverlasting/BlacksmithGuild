@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using HarmonyLib;
+using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools.QuickStart
 {
@@ -9,14 +10,15 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private const string HarmonyId = "com.endeavoreverlasting.blacksmithguild.modulemismatch";
 
         private const float DeferredConfirmDelaySeconds = 0.25f;
-        private const float PollRetryIntervalSeconds = 0.15f;
-        private const float MaxConfirmRetrySeconds = 3f;
+        private const float PollRetryIntervalSeconds = 0.25f;
+        private const float MaxConfirmRetrySeconds = 30f;
         private const float PollBackupIntervalSeconds = 0.5f;
 
         private static Harmony _harmony;
         private static bool _applied;
         private static bool _confirmedThisSession;
         private static bool _probeLogged;
+        private static bool _eventSubscribed;
 
         private static object _pendingInquiry;
         private static float _deferredDelayRemaining;
@@ -26,7 +28,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _confirmFailedLogged;
         private static float _pendingQueuedElapsed;
         private static bool _queuedLogged;
+        private static int _confirmAttemptCount;
         private static MethodInfo _isAnyInquiryActiveMethod;
+        private static MethodInfo _hideInquiryMethod;
 
         public static void TryApply()
         {
@@ -53,37 +57,18 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _isAnyInquiryActiveMethod = informationManagerType.GetMethod(
                     "IsAnyInquiryActive",
                     BindingFlags.Static | BindingFlags.Public);
+                _hideInquiryMethod = informationManagerType.GetMethod(
+                    "HideInquiry",
+                    BindingFlags.Static | BindingFlags.Public);
 
-                var patched = 0;
-                foreach (var method in informationManagerType.GetMethods(BindingFlags.Static | BindingFlags.Public))
-                {
-                    if (!string.Equals(method.Name, "ShowInquiry", StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
+                var patched = PatchInquiryMethods(informationManagerType, "ShowInquiry");
+                patched += PatchInquiryMethods(informationManagerType, "ShowTextInquiry");
 
-                    var parameters = method.GetParameters();
-                    if (parameters.Length == 0)
-                    {
-                        continue;
-                    }
+                TrySubscribeOnShowInquiry();
 
-                    var firstParam = parameters[0].ParameterType;
-                    if (!firstParam.Name.Contains("Inquiry"))
-                    {
-                        continue;
-                    }
-
-                    var postfix = AccessTools.Method(
-                        typeof(ModuleMismatchAutoConfirmService),
-                        nameof(ShowInquiryPostfix));
-                    _harmony.Patch(method, postfix: new HarmonyMethod(postfix));
-                    patched++;
-                }
-
-                _applied = patched > 0;
+                _applied = patched > 0 || _eventSubscribed;
                 GuildLog.Info(
-                    $"[TBG QUICKSTART] Module Mismatch auto-Yes patch: {( _applied ? $"OK ({patched} ShowInquiry overload(s))" : "SKIP (no ShowInquiry target)")}",
+                    $"[TBG QUICKSTART] Module Mismatch auto-Yes patch: {( _applied ? $"OK ({patched} inquiry overload(s), event={(_eventSubscribed ? "yes" : "no")})" : "SKIP (no inquiry target)")}",
                     showInGame: false);
             }
             catch (Exception ex)
@@ -98,6 +83,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _queuedLogged = false;
             _pollBackupLogged = false;
             _confirmFailedLogged = false;
+            _confirmAttemptCount = 0;
             ClearPendingConfirm();
         }
 
@@ -119,17 +105,27 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static void ShowInquiryPostfix(object __0)
         {
-            if (_confirmedThisSession || __0 == null)
+            TryQueueFromInquiry(__0, "postfix");
+        }
+
+        private static void OnShowInquiryEvent(InquiryData inquiryData, bool pauseGame, bool prioritize)
+        {
+            TryQueueFromInquiry(inquiryData, "event");
+        }
+
+        private static void TryQueueFromInquiry(object inquiryData, string source)
+        {
+            if (_confirmedThisSession || inquiryData == null)
             {
                 return;
             }
 
-            if (!IsModuleMismatchInquiry(__0))
+            if (!IsModuleMismatchInquiry(inquiryData))
             {
                 return;
             }
 
-            QueueDeferredConfirm(__0, "postfix");
+            QueueDeferredConfirm(inquiryData, source);
         }
 
         private static void QueueDeferredConfirm(object inquiryData, string source)
@@ -139,12 +135,14 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
+            var isNewInquiry = !ReferenceEquals(_pendingInquiry, inquiryData);
             _pendingInquiry = inquiryData;
             _deferredDelayRemaining = DeferredConfirmDelaySeconds;
             _confirmRetryElapsed = 0f;
             _pendingQueuedElapsed = 0f;
+            _confirmFailedLogged = false;
 
-            if (_queuedLogged)
+            if (_queuedLogged && !isNewInquiry)
             {
                 return;
             }
@@ -178,13 +176,14 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 GuildLog.Info(
                     "[TBG QUICKSTART] Module Mismatch auto-Yes deferred retries exhausted",
                     showInGame: false);
+                _queuedLogged = false;
                 ClearPendingConfirm();
                 return;
             }
 
             if (!IsAnyInquiryActive())
             {
-                ClearPendingConfirm();
+                MarkConfirmed("inquiry already cleared");
                 return;
             }
 
@@ -237,17 +236,44 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return false;
             }
 
-            if (!TryInvokeAffirmativeAction(_pendingInquiry))
+            _confirmAttemptCount++;
+            var invoked = TryInvokeAffirmativeAction(_pendingInquiry);
+            if (invoked)
+            {
+                TryHideInquiry();
+            }
+
+            var inquiryActive = IsAnyInquiryActive();
+            GuildLog.Info(
+                $"[TBG QUICKSTART] Module Mismatch auto-Yes attempt={_confirmAttemptCount} inquiryActive={inquiryActive.ToString().ToLowerInvariant()}",
+                showInGame: false);
+
+            if (!inquiryActive)
+            {
+                MarkConfirmed(source);
+                return true;
+            }
+
+            if (!invoked)
             {
                 return false;
+            }
+
+            return false;
+        }
+
+        private static void MarkConfirmed(string source)
+        {
+            if (_confirmedThisSession)
+            {
+                return;
             }
 
             _confirmedThisSession = true;
             ClearPendingConfirm();
             GuildLog.Info(
-                $"[TBG QUICKSTART] Module Mismatch auto-Yes ({source})",
+                $"[TBG QUICKSTART] Module Mismatch auto-Yes confirmed (inquiry cleared) source={source}",
                 showInGame: false);
-            return true;
         }
 
         private static void ClearPendingConfirm()
@@ -257,6 +283,58 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _confirmRetryElapsed = 0f;
             _pendingQueuedElapsed = 0f;
             _confirmFailedLogged = false;
+        }
+
+        private static int PatchInquiryMethods(Type informationManagerType, string methodName)
+        {
+            var patched = 0;
+            foreach (var method in informationManagerType.GetMethods(BindingFlags.Static | BindingFlags.Public))
+            {
+                if (!string.Equals(method.Name, methodName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var parameters = method.GetParameters();
+                if (parameters.Length == 0)
+                {
+                    continue;
+                }
+
+                var firstParam = parameters[0].ParameterType;
+                if (!firstParam.Name.Contains("Inquiry"))
+                {
+                    continue;
+                }
+
+                var postfix = AccessTools.Method(
+                    typeof(ModuleMismatchAutoConfirmService),
+                    nameof(ShowInquiryPostfix));
+                _harmony.Patch(method, postfix: new HarmonyMethod(postfix));
+                patched++;
+            }
+
+            return patched;
+        }
+
+        private static void TrySubscribeOnShowInquiry()
+        {
+            if (_eventSubscribed)
+            {
+                return;
+            }
+
+            try
+            {
+                InformationManager.OnShowInquiry += OnShowInquiryEvent;
+                _eventSubscribed = true;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] Module Mismatch OnShowInquiry subscribe failed: {ex.Message}",
+                    showInGame: false);
+            }
         }
 
         private static bool IsAnyInquiryActive()
@@ -273,6 +351,22 @@ namespace BlacksmithGuild.DevTools.QuickStart
             catch
             {
                 return true;
+            }
+        }
+
+        private static void TryHideInquiry()
+        {
+            if (_hideInquiryMethod == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _hideInquiryMethod.Invoke(null, null);
+            }
+            catch
+            {
             }
         }
 
@@ -319,7 +413,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             return value.IndexOf("Module Mismatch", StringComparison.OrdinalIgnoreCase) >= 0
                 || value.IndexOf("different modules", StringComparison.OrdinalIgnoreCase) >= 0
-                || value.IndexOf("versions different", StringComparison.OrdinalIgnoreCase) >= 0;
+                || value.IndexOf("versions different", StringComparison.OrdinalIgnoreCase) >= 0
+                || value.IndexOf("versions are different", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool TryInvokeAffirmativeAction(object inquiryData)
