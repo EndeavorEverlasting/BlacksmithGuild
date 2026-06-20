@@ -114,6 +114,7 @@ public static class UIAHelper
             var coordIntent = NamesIndicateContinue(names) ? "continue" : "play";
             foreach (var window in windows)
             {
+                FocusScope(window, "launcher coords prep");
                 if (TryClickLauncherByCoordinates(window, coordIntent))
                 {
                     return names[0];
@@ -200,23 +201,6 @@ public static class UIAHelper
         return null;
     }
 
-    private static bool IsForegroundLauncherProcess(HashSet<int> launcherPids)
-    {
-        try
-        {
-            var hwnd = GetForegroundWindow();
-            if (hwnd == IntPtr.Zero) return false;
-
-            uint pid;
-            GetWindowThreadProcessId(hwnd, out pid);
-            return launcherPids.Contains((int)pid);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private static bool TryClickLauncherByCoordinates(AutomationElement launcherWindow, string intent)
     {
         if (launcherWindow == null || string.IsNullOrWhiteSpace(intent)) return false;
@@ -224,14 +208,15 @@ public static class UIAHelper
         var launcherPids = GetLauncherProcessIds();
         if (launcherPids.Count == 0) return false;
 
-        if (!IsForegroundLauncherProcess(launcherPids))
-        {
-            LogLine("CLICK SKIP launcher coords — foreground window is not TaleWorlds launcher (PID guard)");
-            return false;
-        }
-
         try
         {
+            var hwnd = new IntPtr(launcherWindow.Current.NativeWindowHandle);
+            if (hwnd == IntPtr.Zero)
+            {
+                LogLine("CLICK SKIP launcher coords — launcher hwnd is zero");
+                return false;
+            }
+
             var rect = launcherWindow.Current.BoundingRectangle;
             if (rect.Width <= 0 || rect.Height <= 0)
             {
@@ -248,6 +233,18 @@ public static class UIAHelper
             LogLine(string.Format(
                 "CLICK \"{0}\" method=coords at ({1},{2}) fractions=({3:F2},{4:F2}) rect=({5:F0},{6:F0},{7:F0},{8:F0}) in {9} | foreground before {10}",
                 label, x, y, xFraction, LauncherCoordYFraction, rect.X, rect.Y, rect.Width, rect.Height, scopeDesc, DescribeForegroundWindow()));
+
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
+            {
+                return true;
+            }
+
+            ForceForegroundWindow(hwnd);
+            if (!IsLauncherForegroundHwnd(hwnd, launcherPids))
+            {
+                LogLauncherMissThrottled("CLICK SKIP launcher coords — could not steal foreground to launcher (PID guard); hwnd click already attempted");
+                return false;
+            }
 
             SetCursorPos(x, y);
             Thread.Sleep(60);
@@ -350,6 +347,97 @@ public static class UIAHelper
             try { ids.Add(process.Id); } catch { }
         }
         return ids;
+    }
+
+    private static bool IsLauncherForegroundHwnd(IntPtr launcherHwnd, HashSet<int> launcherPids)
+    {
+        try
+        {
+            var fg = GetForegroundWindow();
+            if (fg == IntPtr.Zero) return false;
+            if (fg == launcherHwnd) return true;
+
+            var root = GetAncestor(fg, GA_ROOT);
+            if (root == launcherHwnd) return true;
+
+            uint pid;
+            GetWindowThreadProcessId(fg, out pid);
+            return launcherPids.Contains((int)pid);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void ForceForegroundWindow(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return;
+
+        try
+        {
+            var fg = GetForegroundWindow();
+            uint fgPid;
+            uint fgThread = GetWindowThreadProcessId(fg, out fgPid);
+            uint targetPid;
+            uint targetThread = GetWindowThreadProcessId(hwnd, out targetPid);
+            uint currentThread = GetCurrentThreadId();
+
+            if (fgThread != 0 && fgThread != currentThread)
+            {
+                AttachThreadInput(currentThread, fgThread, true);
+            }
+            if (targetThread != 0 && targetThread != currentThread)
+            {
+                AttachThreadInput(currentThread, targetThread, true);
+            }
+
+            ShowWindow(hwnd, SW_RESTORE);
+            BringWindowToTop(hwnd);
+            SetForegroundWindow(hwnd);
+            Thread.Sleep(200);
+
+            if (fgThread != 0 && fgThread != currentThread)
+            {
+                AttachThreadInput(currentThread, fgThread, false);
+            }
+            if (targetThread != 0 && targetThread != currentThread)
+            {
+                AttachThreadInput(currentThread, targetThread, false);
+            }
+        }
+        catch { }
+    }
+
+    private static bool TryClickLauncherHwndAtScreenPoint(IntPtr hwnd, int screenX, int screenY, string scopeDesc, string label)
+    {
+        if (hwnd == IntPtr.Zero) return false;
+
+        try
+        {
+            var point = new POINT { X = screenX, Y = screenY };
+            if (!ScreenToClient(hwnd, ref point))
+            {
+                LogLine("CLICK SKIP launcher hwnd — ScreenToClient failed for " + scopeDesc);
+                return false;
+            }
+
+            var lParam = MakeLParam(point.X, point.Y);
+            LogLine(string.Format(
+                "CLICK \"{0}\" method=hwnd SendMessage at client ({1},{2}) screen ({3},{4}) in {5}",
+                label, point.X, point.Y, screenX, screenY, scopeDesc));
+
+            SendMessage(hwnd, WM_LBUTTONDOWN, MK_LBUTTON, lParam);
+            Thread.Sleep(40);
+            SendMessage(hwnd, WM_LBUTTONUP, 0, lParam);
+            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" method=hwnd at ({0},{1}) in {2}", screenX, screenY, scopeDesc));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogLine("CLICK FAIL launcher hwnd: " + ex.Message);
+            return false;
+        }
     }
 
     private static List<AutomationElement> FindAllLauncherWindowRoots()
@@ -912,8 +1000,46 @@ public static class UIAHelper
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
+
+    [DllImport("user32.dll")]
+    private static extern bool ScreenToClient(IntPtr hWnd, ref POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT
+    {
+        public int X;
+        public int Y;
+    }
+
+    private static int MakeLParam(int x, int y)
+    {
+        return (y << 16) | (x & 0xFFFF);
+    }
+
     private const int MOUSEEVENTF_LEFTDOWN = 0x0002;
     private const int MOUSEEVENTF_LEFTUP = 0x0004;
+    private const int WM_LBUTTONDOWN = 0x0201;
+    private const int WM_LBUTTONUP = 0x0202;
+    private const int MK_LBUTTON = 0x0001;
+    private const int SW_RESTORE = 9;
+    private const uint GA_ROOT = 2;
 }
 '@
     Add-Type -TypeDefinition $uiaHelperSource -ReferencedAssemblies @(

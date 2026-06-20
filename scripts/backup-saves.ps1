@@ -72,6 +72,25 @@ function Save-BackupManifest {
     $payload | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $ManifestPath -Encoding UTF8
 }
 
+function Get-FileSha256Hex {
+    param([string]$LiteralPath)
+
+    if (Get-Command Get-FileHash -ErrorAction SilentlyContinue) {
+        return (Get-FileHash -LiteralPath $LiteralPath -Algorithm SHA256).Hash
+    }
+
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::OpenRead($LiteralPath)
+    try {
+        $bytes = $sha.ComputeHash($stream)
+        return [BitConverter]::ToString($bytes).Replace('-', '')
+    }
+    finally {
+        $stream.Close()
+        $sha.Dispose()
+    }
+}
+
 function Invoke-IncrementalSaveBackup {
     $paths = Get-SaveBackupPaths
     $counts = @{ backedUp = 0; skipped = 0; failed = 0 }
@@ -95,7 +114,7 @@ function Invoke-IncrementalSaveBackup {
 
     foreach ($sav in $savFiles) {
         try {
-            $hash = (Get-FileHash -LiteralPath $sav.FullName -Algorithm SHA256).Hash
+            $hash = Get-FileSha256Hex -LiteralPath $sav.FullName
             $existing = $manifest.files[$sav.Name]
 
             if ($existing -and $existing.sha256 -eq $hash) {

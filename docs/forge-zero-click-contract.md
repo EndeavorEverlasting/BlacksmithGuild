@@ -53,7 +53,7 @@ flowchart TD
 
 1. **Scoped** — descendants of launcher `MainWindowHandle` / UIA window roots (fast path).
 2. **PID-global** — `RootElement.FindAll` filtered by TaleWorlds launcher PID (fixes empty main-window UIA tree).
-3. **Coordinates** — normalized fractions on launcher rect after 5s stable hwnd (`play` 0.22×0.93, `continue` 0.38×0.93), only if foreground PID is launcher.
+3. **Coordinates** — normalized fractions on launcher rect after 5s stable hwnd (`play` 0.22×0.93, `continue` 0.38×0.93). Primary: `SendMessage` WM_LBUTTON to launcher hwnd (no foreground required). Fallback: force-focus + physical mouse with PID guard.
 
 Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once on miss after hwnd stable 5s. `open-bannerlord-launcher.ps1` waits 2s after `Start-Process` before first poll.
 
