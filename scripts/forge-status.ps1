@@ -429,6 +429,9 @@ function Send-ForgeCommand {
                 $ack = Get-Content -LiteralPath $ackPath -Raw | ConvertFrom-Json
                 if ([int]$ack.sequence -eq $sequence) {
                     Write-Host "ACK: $($ack.command) = $($ack.result)" -ForegroundColor Green
+                    if ($ack.result -and $ack.result -ne 'Success') {
+                        throw "Command '$CommandName' ack result: $($ack.result)"
+                    }
                     return $sequence
                 }
             } catch { }
@@ -439,6 +442,9 @@ function Send-ForgeCommand {
                 $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
                 if ($st.lastCommand -and [int]$st.lastCommand.sequence -eq $sequence) {
                     Write-Host "Status: $($st.lastCommand.name) = $($st.lastCommand.result)" -ForegroundColor Green
+                    if ($st.lastCommand.result -and $st.lastCommand.result -ne 'Success') {
+                        throw "Command '$CommandName' status result: $($st.lastCommand.result)"
+                    }
                     return $sequence
                 }
             } catch { }

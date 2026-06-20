@@ -22,7 +22,7 @@ foreach ($command in $commands) {
     & (Join-Path $RepoRoot 'forge.ps1') -Command $command -Wait
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Command failed: $command (exit $LASTEXITCODE)" -ForegroundColor Red
-        exit $LASTEXITCODE
+        exit 1
     }
 }
 

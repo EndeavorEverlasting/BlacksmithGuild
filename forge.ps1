@@ -71,8 +71,13 @@ if ($Command -or $Certify -or $CertifyProgression) {
         Invoke-ForgeProgressionCertification -BannerlordRoot $bannerlordRoot -TimeoutSec $TimeoutSec
         return
     }
-    Send-ForgeCommand -CommandName $Command -BannerlordRoot $bannerlordRoot -Wait:$Wait -TimeoutSec $TimeoutSec
-    return
+    try {
+        Send-ForgeCommand -CommandName $Command -BannerlordRoot $bannerlordRoot -Wait:$Wait -TimeoutSec $TimeoutSec | Out-Null
+        exit 0
+    } catch {
+        Write-Host $_.Exception.Message -ForegroundColor Red
+        exit 1
+    }
 }
 
 Invoke-SaveBackupIfNeeded
