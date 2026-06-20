@@ -46,3 +46,27 @@ foreach ($item in $files) {
 }
 
 Write-Host 'Tip: grep Launch.log for UIA: CLICK or AUDIT if something opened unexpectedly.' -ForegroundColor DarkGray
+
+$safeActionPath = Join-Path $root 'BlacksmithGuild_SmithingSafeAction.json'
+$phase1Path = Join-Path $root 'BlacksmithGuild_Phase1.log'
+if ((Test-Path -LiteralPath $safeActionPath) -and (Test-Path -LiteralPath $phase1Path)) {
+    try {
+        $safe = Get-Content -LiteralPath $safeActionPath -Raw | ConvertFrom-Json
+        if ($safe.executed -ne $true) {
+            $pattern = '\[TBG FORGE\] action=RefineCharcoal .* reserveBefore charcoal=(\d+) .* reserveAfter charcoal=(\d+)'
+            $phase1Matches = Select-String -LiteralPath $phase1Path -Pattern $pattern -AllMatches
+            if ($phase1Matches) {
+                $last = $phase1Matches[-1]
+                $cb = [int]$last.Matches[0].Groups[1].Value
+                $ca = [int]$last.Matches[0].Groups[2].Value
+                if ($ca -gt $cb) {
+                    Write-Host ''
+                    Write-Host 'Note: Phase1 shows Stage C mutation PASS but SafeAction JSON is blocked/stale.' -ForegroundColor DarkYellow
+                    Write-Host "  $($last.Line.Trim())" -ForegroundColor DarkYellow
+                }
+            }
+        }
+    } catch {
+        # ignore parse errors in optional hint
+    }
+}

@@ -83,6 +83,10 @@ namespace BlacksmithGuild.Forge
                     charcoalAfter = SmithingPartyInventory.CountCharcoal();
                     hardwoodAfter = SmithingPartyInventory.CountHardwood();
                     actorLabel = ResolveActorLabel(grunt, hero);
+                    if (string.IsNullOrWhiteSpace(actorLabel))
+                    {
+                        actorLabel = "MainHero";
+                    }
 
                     if (!executed)
                     {
@@ -201,7 +205,12 @@ namespace BlacksmithGuild.Forge
             }
 
             var mainName = Hero.MainHero?.Name?.ToString();
-            return string.IsNullOrWhiteSpace(mainName) ? "MainHero" : mainName;
+            if (!string.IsNullOrWhiteSpace(mainName))
+            {
+                return mainName;
+            }
+
+            return "MainHero";
         }
 
         private static Hero ResolveHero(SmithingWorkerProfile profile)
