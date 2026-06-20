@@ -118,7 +118,8 @@ namespace BlacksmithGuild.Forge
         public static List<ActionPlanStep> BuildActionPlan(
             ForgeCandidate topCandidate,
             IReadOnlyList<MaterialGapRow> materialGaps,
-            bool isStub)
+            bool isStub,
+            IReadOnlyList<ActionPlanStep> prepSteps = null)
         {
             var steps = new List<ActionPlanStep>();
             var stepNum = 1;
@@ -133,6 +134,23 @@ namespace BlacksmithGuild.Forge
                 return steps;
             }
 
+            if (prepSteps != null)
+            {
+                foreach (var prep in prepSteps)
+                {
+                    if (stepNum > MaxActionPlanSteps)
+                    {
+                        break;
+                    }
+
+                    steps.Add(new ActionPlanStep
+                    {
+                        Step = stepNum++,
+                        Text = prep.Text
+                    });
+                }
+            }
+
             foreach (var gap in materialGaps.Where(g => g.Need > g.Have || !string.IsNullOrEmpty(g.BuyHint)))
             {
                 if (stepNum > MaxActionPlanSteps)
@@ -142,6 +160,12 @@ namespace BlacksmithGuild.Forge
 
                 if (!string.IsNullOrEmpty(gap.BuyHint))
                 {
+                    if (prepSteps != null
+                        && prepSteps.Any(p => string.Equals(p.Text, gap.BuyHint, StringComparison.Ordinal)))
+                    {
+                        continue;
+                    }
+
                     steps.Add(new ActionPlanStep
                     {
                         Step = stepNum++,

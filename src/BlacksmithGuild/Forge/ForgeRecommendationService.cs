@@ -166,6 +166,11 @@ namespace BlacksmithGuild.Forge
                 $"top={_summary.TopCandidateName} score={_summary.TopFinalScore:0} doctrine={_summary.Doctrine} source={_summary.Source}");
         }
 
+        public static ForgeCandidate GetCachedTopCandidate() => _cachedReport?.TopCandidate;
+
+        public static List<ActionPlanStep> GetCachedActionPlan() =>
+            _cachedReport?.ActionPlan ?? new List<ActionPlanStep>();
+
         private static ForgeCandidateSourceKind GetResolutionKind(string source)
         {
             if (_requestedSourceKind == ForgeCandidateSourceKind.Real)
@@ -329,6 +334,7 @@ namespace BlacksmithGuild.Forge
 
             AdvisoryReportSections.EmitSourceHonesty(report, _cachedReport.SourceHonesty);
             AdvisoryReportSections.EmitMaterialGaps(report, _cachedReport.MaterialGaps);
+            AdvisoryReportSections.EmitSmithingCrew(report, _cachedReport.SmithingCrew);
             AdvisoryReportSections.EmitActionPlan(report, _cachedReport.ActionPlan);
             AdvisoryReportSections.EmitCraftNext(
                 report,
@@ -351,16 +357,34 @@ namespace BlacksmithGuild.Forge
         {
             report.SourceHonesty = ForgeAdvisoryPlanner.BuildSourceHonesty(resolutionKind, report);
             report.MaterialGaps = ForgeAdvisoryPlanner.BuildMaterialGaps(report.TopCandidate);
+
+            var workers = SmithingWorkerSelector.GetPartyWorkers();
+            var reserve = SmithingAdvisoryPlanner.BuildReserveHealth();
+            SmithingAdvisoryPlanner.EnrichMaterialGaps(
+                report.MaterialGaps,
+                reserve,
+                SmithingWorkerSelector.SelectGruntWorker(workers));
+            report.SmithingCrew = SmithingAdvisoryPlanner.BuildSmithingCrew(
+                workers,
+                report.TopCandidate,
+                report.MaterialGaps,
+                reserve);
+
             var isStub = report.FallbackUsed
                 || string.Equals(
                     report.Source,
                     StubForgeCandidateSource.SourceName,
                     StringComparison.OrdinalIgnoreCase)
                 || string.Equals(report.Source, "stub-fallback", StringComparison.OrdinalIgnoreCase);
+            var prepSteps = SmithingAdvisoryPlanner.BuildPrepActionSteps(
+                report.SmithingCrew,
+                report.MaterialGaps,
+                reserve);
             report.ActionPlan = ForgeAdvisoryPlanner.BuildActionPlan(
                 report.TopCandidate,
                 report.MaterialGaps,
-                isStub);
+                isStub,
+                prepSteps);
         }
 
         private static void WriteJsonReport(ForgeRecommendationReport report)

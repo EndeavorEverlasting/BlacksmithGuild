@@ -151,5 +151,28 @@ namespace BlacksmithGuild.DevTools.Reporting
                 report.SummaryLine(AdvisoryReportText.FormatMaterialGap(gap));
             }
         }
+
+        public static void EmitSmithingCrew(
+            ReportFormatter report,
+            IReadOnlyList<Forge.SmithingCrewRow> crew)
+        {
+            if (crew == null || crew.Count == 0)
+            {
+                return;
+            }
+
+            report.SummaryLine(AdvisoryReportText.SmithingCrewHeader);
+            foreach (var row in crew)
+            {
+                report.SummaryLine(
+                    AdvisoryReportText.FormatSmithingCrewRow(
+                        row.Rank,
+                        row.HeroName,
+                        row.Action,
+                        row.Target,
+                        row.StaminaLabel,
+                        row.Reason));
+            }
+        }
     }
 }

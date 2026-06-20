@@ -325,7 +325,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
-                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand;
+                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == SmithingSafeActionService.RunSmithingSafeActionNowCommand;
         }
 
         private static DevCommandResult Execute(string commandName)
@@ -420,6 +421,18 @@ namespace BlacksmithGuild.DevTools
                     return MarketIntelligenceService.RunScanNow(MarketIntelligenceService.MarketSnapshotNowCommand)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case SmithingAdvisoryService.RunSmithingAdvisoryNowCommand:
+                    return SmithingAdvisoryService.RunAdvisoryNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case SmithingSafeActionService.RunSmithingSafeActionNowCommand:
+                    return SmithingSafeActionService.RunSafeActionNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case GuildLoopService.RunGuildLoopNowCommand:
+                    return GuildLoopService.RunGuildLoopNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -438,7 +451,7 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info($"{ModDisplay.Name} — Commands");
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
-            InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge");
+            InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
         }
 

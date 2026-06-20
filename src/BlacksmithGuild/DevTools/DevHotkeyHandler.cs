@@ -25,6 +25,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _legacyCWasDown;
         private static bool _legacyMWasDown;
         private static bool _legacyRWasDown;
+        private static bool _legacyGWasDown;
 
         public static void Poll()
         {
@@ -90,6 +91,15 @@ namespace BlacksmithGuild.DevTools
                         "Ctrl+Alt+M",
                         MarketIntelligenceService.MarketSnapshotNowCommand,
                         ref _legacyMWasDown))
+                {
+                    return;
+                }
+
+                if (TryHelpHotkey(
+                        InputKey.G,
+                        "Ctrl+Alt+G",
+                        GuildLoopService.RunGuildLoopNowCommand,
+                        ref _legacyGWasDown))
                 {
                     return;
                 }
@@ -179,6 +189,7 @@ namespace BlacksmithGuild.DevTools
             _legacyCWasDown = Input.IsKeyDown(InputKey.C);
             _legacyMWasDown = Input.IsKeyDown(InputKey.M);
             _legacyRWasDown = Input.IsKeyDown(InputKey.R);
+            _legacyGWasDown = Input.IsKeyDown(InputKey.G);
         }
 
         private static bool TryHelpHotkey(InputKey key, string label, string commandName, ref bool wasDown)

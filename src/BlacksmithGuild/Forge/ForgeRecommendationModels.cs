@@ -43,5 +43,6 @@ namespace BlacksmithGuild.Forge
         public SourceHonestyInfo SourceHonesty { get; set; }
         public List<ActionPlanStep> ActionPlan { get; set; } = new List<ActionPlanStep>();
         public List<MaterialGapRow> MaterialGaps { get; set; } = new List<MaterialGapRow>();
+        public List<SmithingCrewRow> SmithingCrew { get; set; } = new List<SmithingCrewRow>();
     }
 }

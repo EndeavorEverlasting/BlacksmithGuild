@@ -39,7 +39,8 @@ namespace BlacksmithGuild.DevTools.Reporting
                 || line == AdvisoryReportText.TopSpreadsHeader
                 || line == AdvisoryReportText.SourceHonestyHeader
                 || line == AdvisoryReportText.CraftNextHeader
-                || line == AdvisoryReportText.MaterialGapsHeader)
+                || line == AdvisoryReportText.MaterialGapsHeader
+                || line == AdvisoryReportText.SmithingCrewHeader)
             {
                 return ReportLineKind.SectionHeader;
             }

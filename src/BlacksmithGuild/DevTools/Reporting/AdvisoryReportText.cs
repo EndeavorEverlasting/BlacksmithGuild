@@ -10,6 +10,33 @@ namespace BlacksmithGuild.DevTools.Reporting
         public const string SourceHonestyHeader = "--- SOURCE HONESTY ---";
         public const string CraftNextHeader = "--- CRAFT NEXT ---";
         public const string MaterialGapsHeader = "--- MATERIAL GAPS ---";
+        public const string SmithingCrewHeader = "--- SMITHING CREW ---";
+
+        public static string FormatRefineCharcoalStep(
+            string heroName,
+            int units,
+            int hardwoodHave,
+            string staminaLabel) =>
+            $"{heroName}: refine hardwood→charcoal x{units} at smithy ({staminaLabel}; hardwood {hardwoodHave})";
+
+        public static string FormatRefineCharcoalGap(string heroName, int units, int hardwoodHave) =>
+            $"Charcoal: need more → {heroName} refine {units} hardwood→charcoal (hardwood {hardwoodHave})";
+
+        public static string FormatBuyHardwoodForCharcoalStep(
+            string townName,
+            int buyPrice,
+            int stock,
+            int charcoalDeficit) =>
+            $"Buy hardwood @ {townName} {buyPrice} (stock {stock}) to refine {charcoalDeficit} charcoal";
+
+        public static string FormatSmithingCrewRow(
+            int rank,
+            string heroName,
+            string action,
+            string target,
+            string staminaLabel,
+            string reason) =>
+            $"[{rank}] {heroName} | {action} | {target} | {staminaLabel} — {reason}";
 
         public static string FormatContextLine(string nearestTown, float nearestDistance, int townsScanned) =>
             $"nearest={nearestTown} ({nearestDistance.ToString("0.0", CultureInfo.InvariantCulture)}u) towns={townsScanned}";
