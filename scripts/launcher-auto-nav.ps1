@@ -1637,6 +1637,30 @@ function Invoke-ModuleMismatchClick {
     return $true
 }
 
+function Test-Phase1ModuleMismatchPending {
+    if (-not (Test-Path -LiteralPath $phase1LogPath)) {
+        return $false
+    }
+
+    $tail = Get-Content -LiteralPath $phase1LogPath -Tail 60 -ErrorAction SilentlyContinue
+    if (-not $tail) {
+        return $false
+    }
+
+    $queued = $false
+    $confirmed = $false
+    foreach ($line in $tail) {
+        if ($line -match 'Module Mismatch inquiry queued') {
+            $queued = $true
+        }
+        if ($line -match 'Module Mismatch auto-Yes \((deferred|in-game|postfix)\)') {
+            $confirmed = $true
+        }
+    }
+
+    return $queued -and -not $confirmed
+}
+
 function Test-PostHandoffReadyAllowed {
     if ($LaunchIntent -ne 'continue') {
         return $true
@@ -1647,6 +1671,10 @@ function Test-PostHandoffReadyAllowed {
     }
 
     if ([UIAHelper]::HasModuleMismatchDialog()) {
+        return $false
+    }
+
+    if (Test-Phase1ModuleMismatchPending) {
         return $false
     }
 
