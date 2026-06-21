@@ -93,9 +93,9 @@ Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once
 
 **006I guards (do not break):**
 
-- Path C quit: intent consumed → no SandBox replay on return to menu.
+- Path C quit: one auto-forward per process — quit-to-menu must **not** re-trigger launch intent; full game exit + fresh `Forge.cmd` / `LaunchForgeContinue.cmd` to start again.
 - Path B culture Back: no full intro replay when pressing Back at culture stage.
-- Post-READY: permanent disarm latch; `decision=block reason=bootstrap already completed this process`.
+- Post-READY: permanent forward-launch latch; `decision=block reason=session ended` or `forward launch already completed this process`.
 
 ---
 
@@ -128,7 +128,7 @@ Get-Content "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bann
 | Intro | `count=1` only (not count=2+ on forward bootstrap) |
 | Character | Narrative/culture auto-selected; no manual clicks |
 | Map | `TBG READY` |
-| Quit (optional) | `decision=block reason=intent already consumed` after Pause → Quit |
+| Quit (optional) | `decision=block reason=session ended` after Pause → Quit (play **and** continue) |
 
 ---
 

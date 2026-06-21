@@ -313,14 +313,42 @@ module version bump
 
 After `CompleteIntent()`, `_launchIntent` remained `"play"` while `_intentConsumed` was true. On quit to main menu, `MainMenuAutoLauncher.Poll` saw non-empty intent and re-executed `SandBoxNewGame`, restarting the campaign intro path.
 
-**Fix shipped:**
+**Fix shipped (2026-06-19):**
 
 - Clear `_launchIntent` after consume; block `Poll` when `_intentConsumed` or `BootstrapCompletedThisProcess`
 - `BootstrapCompletedThisProcess` latch set at TBG READY / setup complete; blocks intro hooks and menu auto-select
 - Delete launch intent files at bootstrap complete; do not reset intro skip counters in `GameEndPrefix`
 - Diagnostic logging: intro decision, main menu intent decision, launch intent file status, state stack snapshots
 
-**Cert:** Path C re-cert pending — do not mark PASS until user confirms clean quit.
+**Fix shipped (2026-06-21) — continue exemption removed:**
+
+- **Root cause:** `continue` intent was exempt from the bootstrap-completed guard; Continue sessions never set `_bootstrapUsed`, so `_bootstrapCompletedThisProcess` stayed false and Poll could re-click Continue on quit-to-menu.
+- **Changes:**
+  - `ForwardLaunchCompletedThisProcess` latch on tracker + launcher; one auto-forward per process (play **and** continue).
+  - `MarkForwardLaunchCompleted` called unconditionally from `NotifyCampaignMapReady` (Continue path now disarms like play).
+  - `MainMenuAutoLauncher.DisarmForSessionEnd` on main-menu return and `Game.End` — deletes intent files, sets consumed + forward latch.
+  - `TryDisarmOnMainMenuReturn` no longer bails when `_setupComplete`; uses `_campaignLoadedThisProcess` instead.
+  - `_hasAnnouncedCampaignMapReady` reset on session end (secondary guard for same-process relaunch).
+
+**Cert:** Path C re-cert required for **both** `Forge.cmd` (play) and `LaunchForgeContinue.cmd` (continue).
+
+### Path C smoke (2026-06-21)
+
+| Step | Play (`Forge.cmd`) | Continue (`LaunchForgeContinue.cmd`) |
+|------|-------------------|--------------------------------------|
+| 1 | Launch fresh | Launch fresh |
+| 2 | Reach campaign map (`TBG READY`) | Reach campaign map |
+| 3 | Exit to main menu once | Exit to main menu once |
+| **PASS** | Stays on main menu; no SandBox replay | Stays on main menu; no Continue replay |
+| 4 | Exit game entirely | Exit game entirely |
+
+Log grep (Phase1.log):
+
+```powershell
+Select-String -Path "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Phase1.log" -Pattern "main menu intent decision|returned to main menu|Game\.End|forward launch complete"
+```
+
+**PASS:** after first quit-to-menu, only `decision=block reason=session ended` or `intent already consumed` / `forward launch already completed` — no second `decision=auto-select`.
 
 ## Definition of done
 
