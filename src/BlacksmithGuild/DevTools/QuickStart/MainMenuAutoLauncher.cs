@@ -48,6 +48,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static float _initialStateStableSeconds;
         private static List<string> _intentSourcePaths = new List<string>();
         private static bool _forwardLaunchInProgress;
+        private static bool _forwardLaunchCompletedThisProcess;
         private static readonly HashSet<string> LoggedBlockReasons = new HashSet<string>(StringComparer.Ordinal);
 
         private const float InitialStateWarmupSeconds = 1.0f;
@@ -55,6 +56,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
         public static bool HasActiveIntent => !string.IsNullOrEmpty(_launchIntent) && !_intentConsumed;
 
         public static bool IsForwardLaunchInProgress => _forwardLaunchInProgress;
+
+        public static bool ForwardLaunchCompletedThisProcess => _forwardLaunchCompletedThisProcess;
 
         internal static string CurrentLaunchIntentLabel =>
             string.IsNullOrEmpty(_launchIntent) ? "none" : _launchIntent;
@@ -69,6 +72,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _launchIntent = null;
             _intentConsumed = false;
             _forwardLaunchInProgress = false;
+            _forwardLaunchCompletedThisProcess = false;
             _optionsProbed = false;
             _loggedMainMenuTimeout = false;
             _mainMenuWaitSeconds = 0f;
@@ -94,22 +98,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 TryLoadLaunchIntent();
             }
 
-            if (_intentConsumed)
+            if (_intentConsumed
+                || _forwardLaunchCompletedThisProcess
+                || CampaignSetupStateTracker.ForwardLaunchCompletedThisProcess)
             {
                 if (IsOnMainMenu())
                 {
-                    LogMainMenuIntentDecision("block", "intent already consumed");
-                }
-
-                return;
-            }
-
-            if (CampaignSetupStateTracker.BootstrapCompletedThisProcess
-                && !string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
-            {
-                if (IsOnMainMenu())
-                {
-                    LogMainMenuIntentDecision("block", "bootstrap already completed this process");
+                    var blockReason = _intentConsumed
+                        ? "intent already consumed"
+                        : "forward launch already completed this process";
+                    LogMainMenuIntentDecision("block", blockReason);
                 }
 
                 return;
@@ -179,7 +177,18 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _intentConsumed = true;
             _launchIntent = null;
             _forwardLaunchInProgress = true;
+            _forwardLaunchCompletedThisProcess = true;
             LogMainMenuIntentDecision("delete", "intent consumed");
+        }
+
+        internal static void DisarmForSessionEnd(string reason)
+        {
+            DeleteIntentFiles($"session ended: {reason}");
+            _intentConsumed = true;
+            _launchIntent = null;
+            _forwardLaunchCompletedThisProcess = true;
+            _forwardLaunchInProgress = false;
+            LogMainMenuIntentDecision("block", "session ended");
         }
 
         internal static void EnsureIntentFilesCleared(string reason)

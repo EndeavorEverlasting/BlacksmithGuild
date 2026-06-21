@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Text;
+using BlacksmithGuild.Behaviors;
 using HarmonyLib;
 using SandBox;
 using TaleWorlds.Core;
@@ -153,6 +154,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
         {
             QuickStartDiagnostics.LogStateStack("Game.End");
             MainMenuAutoLauncher.LogLaunchIntentFileStatus("Game.End");
+            MainMenuAutoLauncher.DisarmForSessionEnd("game end");
+            BlacksmithGuildCampaignBehavior.ResetCampaignMapReadyAnnouncement();
             CampaignSetupStateTracker.DisarmBootstrap("game end");
         }
 

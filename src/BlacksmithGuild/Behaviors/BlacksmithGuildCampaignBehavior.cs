@@ -13,6 +13,11 @@ namespace BlacksmithGuild.Behaviors
         private bool _hasRunGoldTest;
         private bool _loggedGoldTestBlock;
 
+        internal static void ResetCampaignMapReadyAnnouncement()
+        {
+            _hasAnnouncedCampaignMapReady = false;
+        }
+
         public override void RegisterEvents()
         {
             CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);

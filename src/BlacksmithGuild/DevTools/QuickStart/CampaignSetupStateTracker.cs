@@ -1,4 +1,5 @@
 using System;
+using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
@@ -36,6 +37,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static string _creationStallSubStage;
         private static bool _hasAnnouncedCreationStall;
         private static bool _bootstrapCompletedThisProcess;
+        private static bool _forwardLaunchCompletedThisProcess;
+        private static bool _campaignLoadedThisProcess;
         private static float _gameLoadingStateStalledSeconds;
         private static bool _hasAnnouncedGameLoadingStall;
 
@@ -43,6 +46,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private const float GameLoadingStallThresholdSeconds = 180f;
 
         public static bool BootstrapCompletedThisProcess => _bootstrapCompletedThisProcess;
+
+        public static bool ForwardLaunchCompletedThisProcess => _forwardLaunchCompletedThisProcess;
 
         public static SetupPhase Phase => _phase;
 
@@ -81,6 +86,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _creationStallSubStage = null;
             _hasAnnouncedCreationStall = false;
             _bootstrapCompletedThisProcess = false;
+            _forwardLaunchCompletedThisProcess = false;
+            _campaignLoadedThisProcess = false;
             _gameLoadingStateStalledSeconds = 0f;
             _hasAnnouncedGameLoadingStall = false;
             CharacterCreationReflection.ResetNarrativeSession();
@@ -170,6 +177,24 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
         }
 
+        public static void MarkForwardLaunchCompleted(string reason)
+        {
+            if (_forwardLaunchCompletedThisProcess)
+            {
+                return;
+            }
+
+            _forwardLaunchCompletedThisProcess = true;
+            _bootstrapCompletedThisProcess = true;
+            GuildLog.Info(
+                "[TBG QUICKSTART] forward launch complete: disarming forward launch state and intro skip hooks " +
+                $"reason={reason}",
+                showInGame: false);
+            MainMenuAutoLauncher.EnsureIntentFilesCleared("forward launch complete");
+            MainMenuAutoLauncher.LogLaunchIntentFileStatus("forward launch complete");
+            QuickStartDiagnostics.LogStateStack("forward launch complete");
+        }
+
         private static void MarkBootstrapCompleted(string reason)
         {
             if (_bootstrapCompletedThisProcess)
@@ -189,6 +214,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static void NotifyCampaignMapReady()
         {
+            _campaignLoadedThisProcess = true;
+            MarkForwardLaunchCompleted("campaign map ready");
             DisarmBootstrap("campaign map ready");
         }
 
@@ -487,27 +514,28 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static void TryDisarmOnMainMenuReturn()
         {
-            if (_setupComplete && !_bootstrapArmed)
-            {
-                return;
-            }
-
-            if (MainMenuAutoLauncher.HasActiveIntent || MainMenuAutoLauncher.IsForwardLaunchInProgress)
-            {
-                return;
-            }
-
             var activeStateName = GameSessionState.GetActiveStateName();
             if (!string.Equals(activeStateName, "InitialState", StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            if (!_bootstrapUsed && _phase is SetupPhase.Idle or SetupPhase.MainMenu)
+            if (!_campaignLoadedThisProcess
+                && !_bootstrapUsed
+                && !_devSaveLoadUsed
+                && !MainMenuAutoLauncher.ForwardLaunchCompletedThisProcess
+                && _phase is SetupPhase.Idle or SetupPhase.MainMenu)
             {
                 return;
             }
 
+            if (MainMenuAutoLauncher.IsForwardLaunchInProgress)
+            {
+                return;
+            }
+
+            MainMenuAutoLauncher.DisarmForSessionEnd("returned to main menu");
+            BlacksmithGuildCampaignBehavior.ResetCampaignMapReadyAnnouncement();
             MainMenuAutoLauncher.LogLaunchIntentFileStatus("returned to main menu");
             QuickStartDiagnostics.LogStateStack("returned to main menu");
             DisarmBootstrap("returned to main menu");
