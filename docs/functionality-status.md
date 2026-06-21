@@ -19,7 +19,7 @@ Canonical snapshot of what works today, what is certified, and what is not built
 | **Stage C charcoal refine** | `SmithingRefineApi` — headless hardwood→charcoal via inbox `RunSmithingSafeActionNow` — **USER PASS 2026-06-20 @ 17:52:13** (Continue save, Danustica area) |
 | **Track 2B FORGE MATERIALS** | Ctrl+Alt+M report — party charcoal/hardwood shortfalls + nearest-town smithing stock/prices |
 | **ProbeSmithingRefineApi** | inbox command — writes `BlacksmithGuild_SmithingRefineProbe.json` with method hints |
-| **Stage B smithing crew advisory** | [`RunStageBSmithingCert.cmd`](RunStageBSmithingCert.cmd) or **Ctrl+Alt+R** / **Ctrl+Alt+G** | **CODE SHIPPED** — run cert helper before 005E |
+| **Stage B smithing crew advisory** | [`RunStageBSmithingCert.cmd`](RunStageBSmithingCert.cmd) or **Ctrl+Alt+R** / **Ctrl+Alt+G** | **USER PASS** 2026-06-21 — Danustica map, TBG READY |
 | **007C market table spacing** | Ctrl+Alt+M file report | Wider columns, ellipsis — visual check optional |
 | **Module Mismatch verify-dismiss** | `52c2114` — retry until `IsAnyInquiryActive` false; `confirmed (inquiry cleared)` log line |
 | **forge.ps1 allowlist drift** | `ProbeForgeRecipes`, `ProbeSmithingAudit`, `MarketSnapshotNow`, auto-build commands now in [`scripts/dev-command-names.ps1`](scripts/dev-command-names.ps1) |
@@ -84,7 +84,7 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 
 | Feature | How to use | PASS criteria | Status |
 |---------|------------|---------------|--------|
-| **Stage B smithing crew** | [`RunStageBSmithingCert.cmd`](RunStageBSmithingCert.cmd) | Advisory JSON + SMITHING CREW in Phase1 | Tier 1 — run cert helper before 005E |
+| **Stage B smithing crew** | [`RunStageBSmithingCert.cmd`](RunStageBSmithingCert.cmd) | Advisory JSON + SMITHING CREW in Phase1 | **USER PASS** 2026-06-21 |
 | **Track 2B forge materials** | **Ctrl+Alt+M** | `--- FORGE MATERIALS ---` | Tier 1 — optional |
 | **Guild loop Ctrl+Alt+G** | **Ctrl+Alt+G** on map | Combined market + forge advisory JSON | Tier 1 — optional |
 
@@ -182,4 +182,4 @@ Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & 
 
 ## Next session
 
-**005E smithing posse automation** — see [pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md). Run [`RunStageBSmithingCert.cmd`](RunStageBSmithingCert.cmd) (~2 min) then start 005E slice. **Future:** party travel automation on campaign map.
+**005E smithing posse automation** — **READY TO START** (pre-005E cert queue complete). See [pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md). **Future:** party travel automation on campaign map.

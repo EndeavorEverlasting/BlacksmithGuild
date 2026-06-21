@@ -30,7 +30,7 @@ dotnet build -c Release
 | Item | Tier | Status |
 |------|------|--------|
 | Launcher / bootstrap (006I) | 2 | **CLOSED** — Path A, Continue, Path C PASS; Path B waived |
-| Stage B smithing crew advisory | 1 | Code shipped — quick smoke before 005E optional |
+| Stage B smithing crew advisory | 1 | **USER PASS** 2026-06-21 |
 | Stage C charcoal refine | **3** | **USER PASS 2026-06-20** |
 | Track 2B FORGE MATERIALS | 1 | Code shipped — optional |
 | 005E smithing posse automation | 2–3 | **UNBLOCKED** — next engineering |

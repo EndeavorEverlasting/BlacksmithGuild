@@ -35,7 +35,7 @@ dotnet build -c Release src/BlacksmithGuild/BlacksmithGuild.csproj
 | **Path C-continue** | Quit to menu after Continue | [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) → map → Quit once | Menu idle; log `forward launch already completed`; no Continue re-click |
 | **Continue load** | Launcher Continue → map | [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) | Map loads; Module Mismatch cleared if shown |
 | **Stage C** | Headless charcoal refine (Tier 3 mutation) | [`RunStageCCharcoalCert.cmd`](../../RunStageCCharcoalCert.cmd) | Phase1 `RefineCharcoal` charcoal N→N+1 |
-| **Stage B** | Smithing crew advisory (Tier 1 read-only) | [`RunStageBSmithingCert.cmd`](../../RunStageBSmithingCert.cmd) | `SmithingAdvisory.json` crew/recommendations or Phase1 SMITHING ADVISORY |
+| **Stage B** | Smithing crew advisory (Tier 1 read-only) | [`RunStageBSmithingCert.cmd`](../../RunStageBSmithingCert.cmd) | **USER PASS** 2026-06-21 — Danustica map, TBG READY |
 
 **Layer A** = PowerShell launcher automation (`Launch.log`). **Layer B** = in-game C# (`Phase1.log`).
 
@@ -62,9 +62,11 @@ Do **not** block smithing work on Path B or stale 006J partials.
 | 1 | Stage C charcoal refine | 3 | **USER PASS** 2026-06-20 |
 | 2 | Track 2A real forge rank (Ctrl+Alt+R) | 1 | **USER PASS** 2026-06-20 |
 | 3 | Market intel (Ctrl+Alt+M) | 1 | **USER PASS** 2026-06-20 |
-| 4 | Stage B smithing crew advisory | 1 | Code shipped — run [`RunStageBSmithingCert.cmd`](../../RunStageBSmithingCert.cmd) (~2 min) |
-| 5 | Track 2B FORGE MATERIALS | 1 | Optional visual |
-| 6 | Guild loop (Ctrl+Alt+G) | 1 | Included in Stage B cert script |
+| 4 | Stage B smithing crew advisory | 1 | **USER PASS** (user 2026-06-21 — Danustica, map ready) |
+| 5 | Track 2B FORGE MATERIALS | 1 | Optional |
+| 6 | Guild loop (Ctrl+Alt+G) | 1 | Optional |
+
+**Pre-005E smithing cert queue: COMPLETE.**
 
 **Re-cert Stage C only** if `SmithingRefineApi` / `SmithingSafeActionService` changes.
 
@@ -72,7 +74,7 @@ Do **not** block smithing work on Path B or stale 006J partials.
 
 ## 4. Next engineering — 005E smithing posse automation
 
-**Status:** UNBLOCKED (launcher gate closed).
+**Status:** **READY TO START** — pre-005E cert queue complete (2026-06-21).
 
 **Plan:** [`docs/plans/005e-smithing-posse-stamina-output.plan.md`](../plans/005e-smithing-posse-stamina-output.plan.md)
 
@@ -165,7 +167,7 @@ Launcher (do not touch unless regression):
 
 | Gap / risk | Detail |
 |------------|--------|
-| **Stage B user cert** | Helper shipped; user smoke ~2 min before first 005E commit recommended |
+| **Stage B user cert** | **DONE** 2026-06-21 — user confirmed PASS (Danustica map) |
 | **53+ unpushed commits** | Push when user ready; branch from clean `main` |
 | **Stale JSON vs Phase1** | Latest JSON may show blocked run after PASS — Phase1 is canonical for Stage C |
 | **Build install blocked if game running** | Close Bannerlord or use Forge.cmd to install DLL |
@@ -177,16 +179,14 @@ Launcher (do not touch unless regression):
 
 ## 10. Agent mission templates
 
-### A. Run Stage B cert (user, ~2 min)
+### A. ~~Run Stage B cert~~ **DONE** (USER PASS 2026-06-21)
+
+Optional re-run:
 
 ```powershell
 cd C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild
-./LaunchForgeContinue.cmd
-# On map (optional: Ctrl+Alt+M first):
 ./RunStageBSmithingCert.cmd
 ```
-
-PASS: verdict PASS; paste output to agent if FAIL.
 
 ### B. Start 005E implementation (agent)
 

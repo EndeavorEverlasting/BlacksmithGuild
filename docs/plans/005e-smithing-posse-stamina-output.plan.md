@@ -477,6 +477,6 @@ Unbounded crafting loops
 - This file exists under docs/plans/
 - Launcher cert gate CLOSED (2026-06-21) — implementation UNBLOCKED
 - Stages A–C shipped; Stage D read-only rest plan shipped
+- Stage B Tier-1 cert: USER PASS 2026-06-21 (Danustica map)
 - Next agent implements 005E posse/stamina slice per pre-blacksmith-automation-handoff.md
-- Stage B Tier-1 cert: RunStageBSmithingCert.cmd (optional before first 005E commit)
 ```
