@@ -26,6 +26,9 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 | Stage C refine | — | `.\RunStageCCharcoalCert.cmd` | `BlacksmithGuild_SmithingSafeAction.json` | One headless hardwood→charcoal mutation (Tier 3) |
 | Stage D rest plan | — (inbox only) | `.\forge.ps1 -Command RunSmithingRestPlanNow -Wait` | `BlacksmithGuild_SmithingRestPlan.json` | Read-only rest recommendation (no time mutation) |
 | Character doctrine | — | `.\forge.ps1 -Command ShowCharacterDoctrine -Wait` | `BlacksmithGuild_CharacterDoctrine.json` | VanillaLegit + Aserai Trade-Smith doctrine |
+| Choice catalog (008C) | — | `.\scripts\run-character-build-catalog.ps1` | `BlacksmithGuild_CharacterChoiceCatalog.json` | Live menu options + parsed rewards |
+| Variant matrix (008C) | — | `.\RunCharacterBuildVariantMatrix.cmd -NoPause` | `character_runs/BlacksmithGuild_CharacterBuildRun_*.json` | Sequential VanillaLegit variant runs |
+| Best build (008C) | — | `.\forge.ps1 -Command SelectCharacterBuildBestNow -Wait` | `BlacksmithGuild_CharacterBuildBest.json` | Winner among clean VanillaLegit runs |
 | Blacksmith automation | — | `.\forge.ps1 -Command RunBlacksmithAutomationNow -Wait` | `BlacksmithGuild_BlacksmithAutomation.json` | One bounded safe action (charcoal refine or clean block) |
 | Export evidence | — | `.\ExportTbgEvidence.cmd` | `docs/evidence/latest/README.md` | Repo-local snapshot for agents |
 

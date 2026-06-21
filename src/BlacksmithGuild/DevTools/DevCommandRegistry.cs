@@ -53,6 +53,11 @@ namespace BlacksmithGuild.DevTools
                 AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand,
+                CharacterBuildVariantService.BuildCharacterChoiceCatalogNowCommand,
+                CharacterBuildVariantService.GenerateCharacterBuildCandidatesNowCommand,
+                CharacterBuildVariantService.SelectCharacterBuildBestNowCommand,
+                CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand,
+                CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand,
                 MarketIntelligenceService.MarketSnapshotNowCommand
             };
 

@@ -38,7 +38,12 @@ function Get-DevCommandNames {
         'SetAutoCharacterBuildStewardSurgeonEngineer',
         'SetAutoCharacterBuildWarCaptain',
         'SetAutoCharacterBuildLightTouchVanillaPlus',
-        'SetAutoCharacterBuildShadowTrader'
+        'SetAutoCharacterBuildShadowTrader',
+        'BuildCharacterChoiceCatalogNow',
+        'GenerateCharacterBuildCandidatesNow',
+        'SelectCharacterBuildBestNow',
+        'RunCharacterVisibleReplayNow',
+        'DumpCharacterBuildSnapshotNow'
     )
 }
 

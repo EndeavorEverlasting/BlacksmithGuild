@@ -1,12 +1,12 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (008A Vanilla-Legit Aserai Trade-Smith code shipped; USER cert pending)  
+**Last updated:** 2026-06-21 (008C character build variant runner code shipped; live cert PENDING)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 008A character + blacksmith automation **USER cert PENDING**
+**Branch:** `main` — 008C catalog/matrix/replay **USER cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
-**Next handoff:** [plans/008a-vanilla-legit-aserai-tradesmith.plan.md](plans/008a-vanilla-legit-aserai-tradesmith.plan.md)
+**Next handoff:** [plans/008c-character-choice-catalog-build-variant-runner.plan.md](plans/008c-character-choice-catalog-build-variant-runner.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
 
@@ -93,6 +93,21 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 | **Stage D rest plan (read-only)** | `RunSmithingRestPlanNow` | Shipped (pre-008A) |
 
 DevOverride: set `LegitimacyMode=DevOverride` + `AutoApplyCharacterBuild=true` + `ApplyAutoCharacterBuild` for disposable profile testing only.
+
+---
+
+## Shipped — 008C (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Live choice catalog** | `scripts/run-character-build-catalog.ps1` | Code shipped — needs live run |
+| **Offline candidate matrix** | `GenerateCharacterBuildCandidatesNow` | Code shipped — after catalog |
+| **Variant matrix runner** | `RunCharacterBuildVariantMatrix.cmd` | Code shipped — ≥3 runs or blocked evidence |
+| **Mutation audit at map-ready** | Per variant run JSON | `mutationAudit.clean` required |
+| **Best build selector** | `SelectCharacterBuildBestNow` | Code shipped — after matrix |
+| **Visible replay checkpoint** | Replay config + single launch | **USER cert PENDING** |
+
+Test saves only: `BSG_ASR_TEST_*`. Never overwrite `TBGPersonalAserai001`.
 
 ---
 

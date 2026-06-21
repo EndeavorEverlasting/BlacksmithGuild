@@ -97,6 +97,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _characterCreationPauseRemainingSeconds = 0f;
             CharacterCreationReflection.ResetNarrativeSession();
             CharacterBuildProvenanceService.ResetSession();
+            CharacterBuildVariantService.ResetSession();
             MainMenuAutoLauncher.ResetForNewSession();
             ModuleMismatchAutoConfirmService.ResetForNewSession();
         }

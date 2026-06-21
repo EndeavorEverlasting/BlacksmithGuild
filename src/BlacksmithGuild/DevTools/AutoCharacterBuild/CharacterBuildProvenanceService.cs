@@ -19,6 +19,8 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         private static readonly List<UpbringingChoiceRecord> UpbringingChoices = new List<UpbringingChoiceRecord>();
 
         private static CultureSelectionRecord _cultureSelection;
+        private static HeroBuildSnapshotCapture _observedBuild;
+        private static CharacterBuildMutationAuditResult _observedAudit;
         private static bool _finalized;
         private static bool _visibleTraversalLogged;
 
@@ -26,8 +28,34 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         {
             UpbringingChoices.Clear();
             _cultureSelection = null;
+            _observedBuild = null;
+            _observedAudit = null;
             _finalized = false;
             _visibleTraversalLogged = false;
+        }
+
+        public static void SetObservedBuild(
+            HeroBuildSnapshotCapture snapshot,
+            CharacterBuildMutationAuditResult audit)
+        {
+            _observedBuild = snapshot;
+            _observedAudit = audit;
+        }
+
+        public static void AppendSelectedOptionsJson(StringBuilder sb, int indent)
+        {
+            var pad = new string(' ', indent);
+            for (var i = 0; i < UpbringingChoices.Count; i++)
+            {
+                var choice = UpbringingChoices[i];
+                sb.Append(pad);
+                sb.Append("{ ");
+                sb.Append($"\"menuId\": \"{Escape(choice.MenuId)}\", ");
+                sb.Append($"\"optionId\": \"{Escape(choice.OptionId)}\", ");
+                sb.Append($"\"effectSource\": \"{Escape(choice.EffectSource)}\" ");
+                sb.Append("}");
+                sb.AppendLine(i < UpbringingChoices.Count - 1 ? "," : string.Empty);
+            }
         }
 
         public static void LogVisibleTraversalOnce()
@@ -85,6 +113,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
                 ExpectedBenefits = expectedBenefits ?? new List<string>(),
                 OpportunityCosts = opportunityCosts ?? new List<string>(),
                 BenefitSource = benefitSource ?? "Unavailable",
+                EffectSource = MapEffectSource(benefitSource),
                 SelectionMode = "CharacterCreationTraversal",
                 VanillaCostAccepted = true,
                 RejectedOptions = rejectedOptions ?? new List<RejectedNarrativeOption>()
@@ -159,6 +188,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             }
 
             sb.AppendLine("  ],");
+            AppendObservedBuildJson(sb);
             sb.AppendLine("  \"postMapProfileApply\": {");
             sb.AppendLine($"    \"enabled\": {CharacterDoctrineConfig.PostMapProfileApplyEnabled.ToString().ToLowerInvariant()},");
             sb.AppendLine("    \"changesApplied\": 0,");
@@ -185,6 +215,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             WriteStringArray(sb, choice.OpportunityCosts, 8);
             sb.AppendLine("      ],");
             sb.AppendLine($"      \"benefitSource\": \"{Escape(choice.BenefitSource)}\",");
+            sb.AppendLine($"      \"effectSource\": \"{Escape(choice.EffectSource)}\",");
             sb.AppendLine($"      \"selectionMode\": \"{Escape(choice.SelectionMode)}\",");
             sb.AppendLine($"      \"vanillaCostAccepted\": {choice.VanillaCostAccepted.ToString().ToLowerInvariant()},");
             sb.AppendLine("      \"rejectedOptions\": [");
@@ -244,6 +275,72 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             public int CultureCount { get; set; }
         }
 
+        private static string MapEffectSource(string benefitSource)
+        {
+            if (string.Equals(benefitSource, "RuntimeCatalog", StringComparison.OrdinalIgnoreCase))
+            {
+                return "RuntimeCatalog";
+            }
+
+            if (string.Equals(benefitSource, "FallbackSeed", StringComparison.OrdinalIgnoreCase))
+            {
+                return "FallbackSeed";
+            }
+
+            if (CharacterBuildVariantConfigService.HasActiveVariantRoute
+                || CharacterBuildVariantConfigService.IsCatalogMode)
+            {
+                return "RuntimeCatalog";
+            }
+
+            return "ObservedBuild";
+        }
+
+        private static void AppendObservedBuildJson(StringBuilder sb)
+        {
+            sb.AppendLine("  \"observedBuild\": {");
+            if (_observedBuild == null)
+            {
+                sb.AppendLine("    \"available\": false");
+                sb.AppendLine("  },");
+                return;
+            }
+
+            sb.AppendLine("    \"available\": true,");
+            WriteIntMap(sb, "skills", _observedBuild.Skills, 4, trailingComma: true);
+            WriteIntMap(sb, "attributes", _observedBuild.Attributes, 4, trailingComma: true);
+            WriteIntMap(sb, "focus", _observedBuild.Focus, 4, trailingComma: true);
+            sb.AppendLine($"    \"gold\": {_observedBuild.Gold},");
+            sb.AppendLine($"    \"renown\": {_observedBuild.Renown},");
+            sb.AppendLine($"    \"equipmentSummary\": \"{Escape(_observedBuild.EquipmentSummary)}\"");
+            sb.AppendLine("  },");
+            sb.AppendLine("  \"mutationAuditSummary\": {");
+            sb.AppendLine($"    \"clean\": {(_observedAudit?.Clean ?? false).ToString().ToLowerInvariant()},");
+            sb.AppendLine($"    \"postMapProfileApply\": {(_observedAudit?.PostMapProfileApply ?? false).ToString().ToLowerInvariant()}");
+            sb.AppendLine("  },");
+        }
+
+        private static void WriteIntMap(
+            StringBuilder sb,
+            string propertyName,
+            Dictionary<string, int> values,
+            int indent,
+            bool trailingComma)
+        {
+            var pad = new string(' ', indent);
+            sb.AppendLine($"{pad}\"{propertyName}\": {{");
+            var index = 0;
+            foreach (var entry in values)
+            {
+                sb.Append($"{pad}  \"{Escape(entry.Key)}\": {entry.Value}");
+                sb.AppendLine(index < values.Count - 1 ? "," : string.Empty);
+                index++;
+            }
+
+            sb.Append($"{pad}}}");
+            sb.AppendLine(trailingComma ? "," : string.Empty);
+        }
+
         private sealed class UpbringingChoiceRecord
         {
             public string Stage { get; set; }
@@ -254,6 +351,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             public List<string> ExpectedBenefits { get; set; }
             public List<string> OpportunityCosts { get; set; }
             public string BenefitSource { get; set; }
+            public string EffectSource { get; set; }
             public string SelectionMode { get; set; }
             public bool VanillaCostAccepted { get; set; }
             public List<RejectedNarrativeOption> RejectedOptions { get; set; }

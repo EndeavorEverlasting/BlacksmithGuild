@@ -49,7 +49,12 @@ $evidenceFiles = @(
     'BlacksmithGuild_SmithingRestPlan.json',
     'BlacksmithGuild_CharacterBuildProvenance.json',
     'BlacksmithGuild_CharacterDoctrine.json',
-    'BlacksmithGuild_BlacksmithAutomation.json'
+    'BlacksmithGuild_BlacksmithAutomation.json',
+    'BlacksmithGuild_CharacterChoiceCatalog.json',
+    'BlacksmithGuild_CharacterBuildCandidateMatrix.json',
+    'BlacksmithGuild_CharacterBuildBest.json',
+    'BlacksmithGuild_CharacterVisibleReplay.json',
+    'BlacksmithGuild_CharacterBuildVariantMatrixReport.json'
 )
 
 $phase1Source = Join-Path $bannerlordRoot 'BlacksmithGuild_Phase1.log'
@@ -96,6 +101,21 @@ if (Test-Path -LiteralPath $phase1Source) {
 } else {
     $missing += 'BlacksmithGuild_Phase1.log (tail)'
     Write-Host 'Missing BlacksmithGuild_Phase1.log' -ForegroundColor DarkYellow
+}
+
+$characterRunsSrc = Join-Path $bannerlordRoot 'character_runs'
+$characterRunsDest = Join-Path $destRoot 'character_runs'
+if (Test-Path -LiteralPath $characterRunsSrc) {
+    New-Item -ItemType Directory -Force -Path $characterRunsDest | Out-Null
+    Copy-Item -LiteralPath (Join-Path $characterRunsSrc '*') -Destination $characterRunsDest -Recurse -Force
+    Write-Host 'Copied character_runs subtree' -ForegroundColor Green
+} else {
+    $repoRuns = Join-Path $repoRoot 'docs\evidence\latest\character_runs'
+    if (Test-Path -LiteralPath $repoRuns) {
+        New-Item -ItemType Directory -Force -Path $characterRunsDest | Out-Null
+        Copy-Item -LiteralPath (Join-Path $repoRuns '*') -Destination $characterRunsDest -Recurse -Force
+        Write-Host 'Synced character_runs from repo evidence' -ForegroundColor Green
+    }
 }
 
 function Get-JsonFromDest {
@@ -282,6 +302,11 @@ if ($guildPlan.Count -gt 0) {
 $characterDoctrine = Get-JsonFromDest 'BlacksmithGuild_CharacterDoctrine.json'
 $characterProvenance = Get-JsonFromDest 'BlacksmithGuild_CharacterBuildProvenance.json'
 $blacksmithAutomation = Get-JsonFromDest 'BlacksmithGuild_BlacksmithAutomation.json'
+$choiceCatalog = Get-JsonFromDest 'BlacksmithGuild_CharacterChoiceCatalog.json'
+$candidateMatrix = Get-JsonFromDest 'BlacksmithGuild_CharacterBuildCandidateMatrix.json'
+$buildBest = Get-JsonFromDest 'BlacksmithGuild_CharacterBuildBest.json'
+$visibleReplay = Get-JsonFromDest 'BlacksmithGuild_CharacterVisibleReplay.json'
+$matrixReport = Get-JsonFromDest 'BlacksmithGuild_CharacterBuildVariantMatrixReport.json'
 
 $doctrineBuild = if ($characterDoctrine) { $characterDoctrine.defaultBuild } else { 'missing' }
 $doctrineMode = if ($characterDoctrine) { "$($characterDoctrine.legitimacyMode) + assistive=$($characterDoctrine.assistiveMode)" } else { 'missing' }
@@ -298,6 +323,29 @@ $automationExecuted = if ($blacksmithAutomation) { $blacksmithAutomation.execute
 [void]$sb.AppendLine("| Mode | $doctrineMode |")
 [void]$sb.AppendLine("| Provenance culture | $provenanceCulture |")
 [void]$sb.AppendLine("| Provenance verdict | $provenanceVerdict |")
+[void]$sb.AppendLine('')
+$catalogVerdict = if ($choiceCatalog) { $choiceCatalog.verdict } else { 'missing (run run-character-build-catalog.ps1)' }
+$catalogOptions = if ($choiceCatalog -and $choiceCatalog.options) { @($choiceCatalog.options).Count } else { 'n/a' }
+$matrixCount = if ($candidateMatrix) { $candidateMatrix.candidateCount } else { 'missing' }
+$matrixBlocked = if ($candidateMatrix -and $candidateMatrix.blockedReason) { $candidateMatrix.blockedReason } else { '(none)' }
+$bestCandidate = if ($buildBest) { $buildBest.selectedCandidateId } else { 'missing' }
+$bestVerdict = if ($buildBest) { $buildBest.legitimacyVerdict } else { 'n/a' }
+$replayCompleted = if ($visibleReplay) { $visibleReplay.completed } else { 'missing' }
+$replayVerdict = if ($visibleReplay) { $visibleReplay.legitimacyVerdict } else { 'n/a' }
+$matrixRunsSucceeded = if ($matrixReport) { $matrixReport.runsSucceeded } else { 'n/a' }
+[void]$sb.AppendLine('## Character build variant (008C)')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine("| Field | Value |")
+[void]$sb.AppendLine('|-------|-------|')
+[void]$sb.AppendLine("| Catalog verdict | $catalogVerdict |")
+[void]$sb.AppendLine("| Catalog options | $catalogOptions |")
+[void]$sb.AppendLine("| Matrix candidates | $matrixCount |")
+[void]$sb.AppendLine("| Matrix blocked | $matrixBlocked |")
+[void]$sb.AppendLine("| Matrix runs succeeded | $matrixRunsSucceeded |")
+[void]$sb.AppendLine("| Best candidate | $bestCandidate |")
+[void]$sb.AppendLine("| Best legitimacy | $bestVerdict |")
+[void]$sb.AppendLine("| Visible replay completed | $replayCompleted |")
+[void]$sb.AppendLine("| Visible replay verdict | $replayVerdict |")
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('## Blacksmith automation')
 [void]$sb.AppendLine('')

@@ -46,6 +46,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         {
             RefreshStatusSnapshot();
             CharacterDoctrineService.WriteJsonReport("MapReady");
+            CharacterBuildVariantService.OnCampaignMapReady();
             CharacterBuildProvenanceService.FinalizeOnMapReady();
 
             if (!_hasAttemptedBootstrapApply)

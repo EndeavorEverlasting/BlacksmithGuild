@@ -15,6 +15,8 @@ namespace BlacksmithGuild.DevTools
         public static bool CharacterCreationVisibleMode = true;
         public static int CharacterCreationDecisionPauseMs = 750;
         public static bool AutoApplyCharacterBuild = false;
+        public static bool CharacterBuildCatalogMode = false;
+        public static string CharacterBuildTestSavePrefix = "BSG_ASR_TEST_";
         public static bool HotkeyTraceEnabled = true;
         public static bool HotkeyTraceVisibleKeys = false;
         public static bool LegacyF12MarketHotkey = false;

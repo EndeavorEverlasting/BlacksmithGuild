@@ -460,6 +460,16 @@ namespace BlacksmithGuild.DevTools
                     return CharacterDoctrineService.ShowDoctrineNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case CharacterBuildVariantService.BuildCharacterChoiceCatalogNowCommand:
+                    return CharacterBuildVariantService.BuildCatalogNow();
+                case CharacterBuildVariantService.GenerateCharacterBuildCandidatesNowCommand:
+                    return CharacterBuildVariantService.GenerateCandidatesNow();
+                case CharacterBuildVariantService.SelectCharacterBuildBestNowCommand:
+                    return CharacterBuildVariantService.SelectBestNow();
+                case CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand:
+                    return CharacterBuildVariantService.RunVisibleReplayNow();
+                case CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand:
+                    return CharacterBuildVariantService.DumpSnapshotNow();
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -496,7 +506,12 @@ namespace BlacksmithGuild.DevTools
                 || commandName == AutoCharacterBuildService.SetAutoCharacterBuildStewardSurgeonEngineerCommand
                 || commandName == AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand
                 || commandName == AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand
-                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand;
+                || commandName == AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand
+                || commandName == CharacterBuildVariantService.BuildCharacterChoiceCatalogNowCommand
+                || commandName == CharacterBuildVariantService.GenerateCharacterBuildCandidatesNowCommand
+                || commandName == CharacterBuildVariantService.SelectCharacterBuildBestNowCommand
+                || commandName == CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand
+                || commandName == CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand;
         }
     }
 }

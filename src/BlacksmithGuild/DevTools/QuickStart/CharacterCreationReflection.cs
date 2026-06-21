@@ -103,6 +103,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return false;
             }
 
+            if (CharacterBuildVariantConfigService.IsCatalogMode)
+            {
+                CharacterCreationChoiceCatalogBuilder.RecordCultures(cultures);
+            }
+
             GuildLog.Info(
                 $"[TBG QUICKSTART] preferred culture: {CharacterDoctrineConfig.PreferredCultureId}",
                 showInGame: false);
@@ -270,13 +275,27 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
                 var options = GetSuitableMenuOptions(manager, currentMenu);
                 var suitableCount = options.Count;
+
+                if (CharacterBuildVariantConfigService.IsCatalogMode)
+                {
+                    CharacterCreationChoiceCatalogBuilder.RecordMenuVisit(manager, currentMenu, menuId);
+                }
+
                 object selected = null;
                 NarrativeOptionDecision doctrineDecision = null;
 
                 if (DevToolsConfig.LegitimacyMode == CharacterLegitimacyMode.VanillaLegit)
                 {
-                    doctrineDecision = AseraiTradeSmithDecisionMap.SelectOption(options, menuId, manager);
-                    selected = doctrineDecision.SelectedOption;
+                    if (CharacterBuildVariantConfigService.HasActiveVariantRoute)
+                    {
+                        doctrineDecision = CharacterBuildRouteSelector.SelectRouteOption(options, menuId, manager);
+                    }
+                    else
+                    {
+                        doctrineDecision = AseraiTradeSmithDecisionMap.SelectOption(options, menuId, manager);
+                    }
+
+                    selected = doctrineDecision?.SelectedOption;
                 }
                 else
                 {
@@ -417,6 +436,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 _startNarrativeStageMethod.Invoke(manager, null);
                 _narrativeStageInitialized = true;
+                if (CharacterBuildVariantConfigService.IsCatalogMode)
+                {
+                    var content = _characterCreationContentProperty?.GetValue(manager);
+                    CharacterCreationChoiceCatalogBuilder.TryEnumerateNarrativeMenus(manager, content);
+                }
+
                 if (!_narrativeStageInitLogged)
                 {
                     _narrativeStageInitLogged = true;

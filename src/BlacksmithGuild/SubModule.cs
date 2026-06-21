@@ -1,5 +1,6 @@
 using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
@@ -20,6 +21,7 @@ namespace BlacksmithGuild
             ForgeStatus.SetModLoaded(true);
             ForgeStatus.SetStep("module_load", "PASS");
             PendingReloadWatcher.OnModuleLoad();
+            CharacterBuildVariantConfigService.TryLoadAtStartup();
             HotkeyTraceService.LogVersionAtStartup();
             AutoCharacterCreationPatches.TryApply();
             ModuleMismatchAutoConfirmService.TryApply();
