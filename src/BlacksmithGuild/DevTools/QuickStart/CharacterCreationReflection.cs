@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
@@ -139,6 +140,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 preferredUsed,
                 fallbackUsed,
                 cultures.Count);
+
+            if (DevToolsConfig.CharacterCreationVisibleMode)
+            {
+                var cultureLabel = selectedCulture?.Name?.ToString() ?? selectedCulture?.StringId ?? "unknown";
+                InGameNotice.Info($"TBG: culture → {cultureLabel}");
+            }
 
             NextStage(state);
             _cultureFailureLogged = false;
@@ -362,6 +369,13 @@ namespace BlacksmithGuild.DevTools.QuickStart
                         doctrineDecision.OpportunityCosts,
                         doctrineDecision.BenefitSource,
                         doctrineDecision.RejectedOptions);
+
+                    if (DevToolsConfig.CharacterCreationVisibleMode)
+                    {
+                        var stage = AseraiTradeSmithDecisionMap.InferStage(menuId);
+                        var optionLabel = TruncateForNotice(doctrineDecision.OptionId, 48);
+                        InGameNotice.Info($"TBG: {stage} → {optionLabel}");
+                    }
                 }
 
                 progressed = true;
@@ -959,6 +973,16 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             return option.GetType().Name;
+        }
+
+        private static string TruncateForNotice(string value, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+            {
+                return value ?? string.Empty;
+            }
+
+            return value.Substring(0, maxLength - 1) + "…";
         }
 
         private static IEnumerable EnumerateMenuOptions(object optionsObject)

@@ -17,22 +17,6 @@ function Get-BannerlordRootFromRepoLocal {
     return Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
 }
 
-function Write-CatalogVariantConfig {
-    param([string]$BannerlordRoot)
-
-    $config = @{
-        mode = 'catalog'
-        catalogMode = $true
-        visibleMode = $false
-        legitimacyMode = 'VanillaLegit'
-        testSavePrefix = 'BSG_ASR_TEST_'
-    } | ConvertTo-Json -Depth 4
-
-    $path = Join-Path $BannerlordRoot 'BlacksmithGuild_CharacterBuildVariantConfig.json'
-    Set-Content -LiteralPath $path -Value $config -Encoding UTF8
-    return $path
-}
-
 function Wait-TbgReadyExtended {
     param(
         [string]$BannerlordRoot,
@@ -69,8 +53,11 @@ if ($WhatIf) {
 Write-Host '[1/4] ForgeStop (kill stale processes)' -ForegroundColor Yellow
 & (Join-Path $repoRoot 'scripts\forge-stop.ps1')
 
-Write-Host '[2/4] Write catalog variant config' -ForegroundColor Yellow
-$configPath = Write-CatalogVariantConfig -BannerlordRoot $bannerlordRoot
+Write-Host '[2/4] Write AgentHeadless catalog variant config' -ForegroundColor Yellow
+$configPath = & (Join-Path $repoRoot 'scripts\write-character-build-launch-config.ps1') `
+    -Mode AgentHeadless `
+    -AgentSubMode catalog `
+    -BannerlordRoot $bannerlordRoot
 Write-Host "  $configPath"
 
 Write-Host '[3/4] Launch new game (visible off, VanillaLegit)' -ForegroundColor Yellow

@@ -86,6 +86,12 @@ if ($Launch) {
     . (Join-Path $PSScriptRoot 'scripts\forge-status.ps1')
     $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $PSScriptRoot
     Clear-StaleMutationCommandInbox -BannerlordRoot $bannerlordRoot | Out-Null
+
+    if ($LaunchIntent -eq 'play') {
+        & (Join-Path $PSScriptRoot 'scripts\write-character-build-launch-config.ps1') `
+            -Mode UserVisible `
+            -BannerlordRoot $bannerlordRoot | Out-Null
+    }
 }
 
 $installParams = @{}

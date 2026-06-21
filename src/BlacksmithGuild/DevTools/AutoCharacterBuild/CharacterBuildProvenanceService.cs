@@ -23,6 +23,9 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         private static CharacterBuildMutationAuditResult _observedAudit;
         private static bool _finalized;
         private static bool _visibleTraversalLogged;
+        private static bool _visibleTraversalUsed;
+
+        public static bool VisibleTraversalUsed => _visibleTraversalUsed;
 
         public static void ResetSession()
         {
@@ -32,6 +35,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             _observedAudit = null;
             _finalized = false;
             _visibleTraversalLogged = false;
+            _visibleTraversalUsed = false;
         }
 
         public static void SetObservedBuild(
@@ -66,6 +70,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             }
 
             _visibleTraversalLogged = true;
+            _visibleTraversalUsed = true;
             GuildLog.Info(
                 $"[TBG CHARACTER] visible traversal: on pauseMs={DevToolsConfig.CharacterCreationDecisionPauseMs}",
                 showInGame: false);
@@ -121,6 +126,11 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
 
             UpbringingChoices.Add(choice);
 
+            if (DevToolsConfig.CharacterCreationVisibleMode)
+            {
+                _visibleTraversalUsed = true;
+            }
+
             GuildLog.Info(
                 $"[TBG CHARACTER] selected {menuId} option={optionId}",
                 showInGame: false);
@@ -173,6 +183,8 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             sb.AppendLine($"  \"build\": \"{Escape(CharacterDoctrineConfig.DefaultBuildId)}\",");
             sb.AppendLine($"  \"legitimacyMode\": \"{Escape(CharacterDoctrineConfig.LegitimacyMode.ToString())}\",");
             sb.AppendLine($"  \"assistiveMode\": {CharacterDoctrineConfig.AssistiveMode.ToString().ToLowerInvariant()},");
+            sb.AppendLine($"  \"visibleTraversalUsed\": {_visibleTraversalUsed.ToString().ToLowerInvariant()},");
+            sb.AppendLine($"  \"traversalMode\": \"{(_visibleTraversalUsed ? "VisibleAssistive" : "AgentHeadless")}\",");
             sb.AppendLine("  \"culture\": {");
             sb.AppendLine($"    \"preferredCultureId\": \"{Escape(culture.PreferredCultureId)}\",");
             sb.AppendLine($"    \"selectedCultureId\": \"{Escape(culture.SelectedCultureId)}\",");

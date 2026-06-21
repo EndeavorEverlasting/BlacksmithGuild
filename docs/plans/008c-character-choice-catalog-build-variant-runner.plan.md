@@ -1,8 +1,8 @@
 # Sprint 008C — Character Choice Catalog + Build Variant Runner
 
-**Status:** CODE SHIPPED — live catalog/matrix runs + **USER visible replay cert PENDING**  
-**Branch:** `main` (builds on 008A `0fd9bdb`)  
-**Doctrine:** Automate the hands, not the consequences.
+**Status:** 008C-Fix SHIPPED — launch-mode separation + visible cert gate; **USER visible cert PENDING**  
+**Branch:** `main`  
+**Doctrine:** Automate the hands, not the consequences. **Visible Assistive Doctrine:** personal saves must be watchable.
 
 ---
 
@@ -12,15 +12,32 @@ Stop guessing Aserai Trade-Smith upbringing routes: extract live character-creat
 
 ---
 
+## Visible Assistive Doctrine (008C-Fix)
+
+Automation must be **watchable** for personal certification. Headless runs are agent-only.
+
+| Mode | Audience | `visibleMode` | Steps/tick | Saves |
+|------|----------|---------------|------------|-------|
+| **AgentHeadless** | Catalog + matrix | `false` | 12 | `BSG_ASR_TEST_*` only |
+| **UserVisible** | Personal baseline | `true` | 1 + 750ms pause | `TBGPersonalAserai001` |
+| **Replay** | Best-route visible replay | `true` | 1 + 750ms pause | cert only |
+| **Continue** | Daily play | n/a | n/a | loads existing save |
+
+**TBGPersonalAserai001 created from AgentHeadless is UNCERTIFIED** until `RunCharacterBuildVisibleCert.cmd` passes.
+
+`Forge.cmd` / `forge.ps1 -Launch -LaunchIntent play` writes **UserVisible** config before launch (clears stale catalog config).
+
+---
+
 ## User involvement
 
 | Phase | User? |
 |-------|-------|
-| Catalog run | No |
+| Catalog run | No (AgentHeadless) |
 | Offline matrix scoring | No |
-| Variant matrix runs (3–16) | No |
+| Variant matrix runs (3–16) | No (AgentHeadless) |
 | Best selection | No |
-| **Visible replay** | **Yes — watch one run, confirm Aserai + choices + F7 VanillaLegit** |
+| **Visible personal cert** | **Yes — `RunCharacterBuildVisibleCert.cmd`; watch Aserai + choices + F7** |
 
 Game closing during matrix: `ForgeStop.cmd` / `scripts/forge-stop.ps1` between launches. Start orchestrator with no stale Bannerlord process.
 
@@ -60,9 +77,13 @@ flowchart LR
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/run-character-build-catalog.ps1` | ForgeStop → catalog config → launch → TBG READY → matrix |
-| `scripts/run-character-build-variant-matrix.ps1` | Sequential variant runs (ForgeStop loop) |
-| `RunCharacterBuildVariantMatrix.cmd` | Wrapper (`-NoPause` for agents) |
+| `scripts/write-character-build-launch-config.ps1` | AgentHeadless / UserVisible / Replay config writer |
+| `scripts/run-character-build-catalog.ps1` | ForgeStop → AgentHeadless catalog → launch → TBG READY → matrix |
+| `scripts/run-character-build-variant-matrix.ps1` | Sequential AgentHeadless variant runs (ForgeStop loop) |
+| `scripts/run-character-build-visible-cert.ps1` | UserVisible personal cert orchestrator |
+| `scripts/assert-character-legitimacy.ps1` | Read-only provenance + Phase1 legitimacy verifier |
+| `RunCharacterBuildVariantMatrix.cmd` | Matrix wrapper (`-NoPause` for agents) |
+| `RunCharacterBuildVisibleCert.cmd` | **Personal cert path for TBGPersonalAserai001** |
 
 ---
 
@@ -91,17 +112,24 @@ Export: `.\ExportTbgEvidence.cmd`
 - [ ] Best JSON with legitimacy reasoning
 - [ ] Visible replay JSON ready (`completed` may be false until user run)
 
-## Acceptance (USER PASS)
+## Acceptance (USER PASS — required for TBGPersonalAserai001)
 
-- Watch single visible replay: Aserai, ~750ms pauses, F7 VanillaLegit + Assistive, postMapInjection off
-- Build beats screenshot on Trade-Smith (Smithing > 0 preferred)
+- [ ] Run `RunCharacterBuildVisibleCert.cmd` (or `Forge.cmd` with visible notices if cert script unavailable)
+- [ ] Saw Aserai culture screen + each upbringing menu (~750ms pause)
+- [ ] Lower-left feed shows per-choice `TBG: stage → option` notices
+- [ ] F7: VanillaLegit + Assistive, postMapInjection off
+- [ ] Provenance: `visibleTraversalUsed: true`, `traversalMode: VisibleAssistive`, `upbringingChoices` populated
+- [ ] Phase1 current session: `visible traversal: on`; no `ForgeQuartermasterWarlord applied=True`
+- [ ] `CharacterVisibleReplay.json`: `completed: true`, `legitimacyVerdict: VanillaLegit`
+- [ ] Build beats screenshot on Trade-Smith (Smithing > 0 preferred) — optional skill check
 
 ---
 
 ## Hard rules
 
 - VanillaLegit only for variant runs; no post-map injection
-- Test saves: `BSG_ASR_TEST_*` only — never `TBGPersonalAserai001`
+- Test saves: `BSG_ASR_TEST_*` only — never save personal baseline after catalog/matrix scripts
+- Do **not** certify `TBGPersonalAserai001` from AgentHeadless runs
 - Full process restart between new-game runs (006I latch)
 - Block matrix if catalog `IncompleteCatalog`
 - If extraction fails: stop with `extractionErrors` — do not silently guess
@@ -125,3 +153,6 @@ Export: `.\ExportTbgEvidence.cmd`
 | Launcher timeout | 900s TBG READY poll in orchestrator |
 | Reward parse inaccurate | `confidence: Low`; prefer observed map-ready snapshot |
 | Stale JSON | Phase1 + per-run files canonical |
+| Stale catalog config poisons Forge.cmd | `forge.ps1 -Launch play` writes UserVisible config |
+| Headless baseline saved as personal | Docs + cert gate + assert script |
+| Phase1 history pollutes mutation audit | Session-scoped Phase1 scan (008C-Fix) |

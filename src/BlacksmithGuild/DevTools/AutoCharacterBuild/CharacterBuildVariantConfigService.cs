@@ -105,8 +105,19 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
                 DevToolsConfig.CharacterBuildCatalogMode = true;
                 DevToolsConfig.CharacterCreationVisibleMode = false;
             }
+            else
+            {
+                DevToolsConfig.CharacterBuildCatalogMode = false;
+            }
 
-            if (_activeConfig.ReplayMode || string.Equals(_activeConfig.Mode, "replay", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(_activeConfig.Mode, "personal", StringComparison.OrdinalIgnoreCase))
+            {
+                DevToolsConfig.CharacterCreationVisibleMode = true;
+                DevToolsConfig.CharacterCreationDecisionPauseMs = _activeConfig.DecisionPauseMs > 0
+                    ? _activeConfig.DecisionPauseMs
+                    : 750;
+            }
+            else if (_activeConfig.ReplayMode || string.Equals(_activeConfig.Mode, "replay", StringComparison.OrdinalIgnoreCase))
             {
                 DevToolsConfig.CharacterCreationVisibleMode = _activeConfig.VisibleMode;
                 DevToolsConfig.CharacterCreationDecisionPauseMs = _activeConfig.DecisionPauseMs > 0

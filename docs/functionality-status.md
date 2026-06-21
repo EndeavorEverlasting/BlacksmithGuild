@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (008C character build variant runner code shipped; live cert PENDING)  
+**Last updated:** 2026-06-21 (008C-Fix visible assistive launch separation; USER cert PENDING)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 008C catalog/matrix/replay **USER cert PENDING**
+**Branch:** `main` — 008C-Fix **USER visible cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -105,9 +105,12 @@ DevOverride: set `LegitimacyMode=DevOverride` + `AutoApplyCharacterBuild=true` +
 | **Variant matrix runner** | `RunCharacterBuildVariantMatrix.cmd` | Code shipped — ≥3 runs or blocked evidence |
 | **Mutation audit at map-ready** | Per variant run JSON | `mutationAudit.clean` required |
 | **Best build selector** | `SelectCharacterBuildBestNow` | Code shipped — after matrix |
-| **Visible replay checkpoint** | Replay config + single launch | **USER cert PENDING** |
+| **Visible replay checkpoint** | `RunCharacterBuildVisibleCert.cmd` | **USER cert PENDING** — required for TBGPersonalAserai001 |
+| **Launch mode separation** | `write-character-build-launch-config.ps1` | Forge.cmd → UserVisible; catalog/matrix → AgentHeadless |
+| **Per-choice in-game notices** | UserVisible character creation | Lower-left `TBG: stage → option` feed |
+| **Legitimacy assert script** | `assert-character-legitimacy.ps1 -PersonalCert` | Read-only provenance + session-scoped Phase1 |
 
-Test saves only: `BSG_ASR_TEST_*`. Never overwrite `TBGPersonalAserai001`.
+Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/matrix (AgentHeadless). Cert with `RunCharacterBuildVisibleCert.cmd` before `TBGPersonalAserai001`.
 
 ---
 

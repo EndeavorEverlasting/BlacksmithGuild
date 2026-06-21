@@ -29,12 +29,34 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 | Choice catalog (008C) | — | `.\scripts\run-character-build-catalog.ps1` | `BlacksmithGuild_CharacterChoiceCatalog.json` | Live menu options + parsed rewards |
 | Variant matrix (008C) | — | `.\RunCharacterBuildVariantMatrix.cmd -NoPause` | `character_runs/BlacksmithGuild_CharacterBuildRun_*.json` | Sequential VanillaLegit variant runs |
 | Best build (008C) | — | `.\forge.ps1 -Command SelectCharacterBuildBestNow -Wait` | `BlacksmithGuild_CharacterBuildBest.json` | Winner among clean VanillaLegit runs |
+| **Visible personal cert (008C-Fix)** | — | `.\RunCharacterBuildVisibleCert.cmd` | `BlacksmithGuild_CharacterVisibleReplay.json` | **Required gate for TBGPersonalAserai001** |
+| Legitimacy assert (read-only) | — | `.\scripts\assert-character-legitimacy.ps1 -PersonalCert` | stdout JSON | Provenance + Phase1 session checks |
 | Blacksmith automation | — | `.\forge.ps1 -Command RunBlacksmithAutomationNow -Wait` | `BlacksmithGuild_BlacksmithAutomation.json` | One bounded safe action (charcoal refine or clean block) |
 | Export evidence | — | `.\ExportTbgEvidence.cmd` | `docs/evidence/latest/README.md` | Repo-local snapshot for agents |
 
 ---
 
 ## Starting a real Aserai Trade-Smith save
+
+**Do not save `TBGPersonalAserai001` after catalog/matrix scripts** — those use AgentHeadless (invisible, 12 steps/tick). That path is agent-only.
+
+### Certified personal baseline (recommended)
+
+1. Close Bannerlord.
+2. Run `.\RunCharacterBuildVisibleCert.cmd` (or `.\Forge.cmd` — also writes UserVisible config).
+3. Watch culture/upbringing choices (visible traversal; ~750ms pause; lower-left `TBG:` notices).
+4. Confirm Aserai selected in Phase1: `culture auto-selected: Aserai` and `visible traversal: on`.
+5. Reach campaign map.
+6. Press **F7**.
+7. Confirm:
+   - mode: VanillaLegit + Assistive
+   - build: AseraiTradeSmith
+   - culture: Aserai
+   - postMapInjection: off
+8. Run `.\scripts\assert-character-legitimacy.ps1 -PersonalCert` — must PASS.
+9. Save as `TBGPersonalAserai001`.
+
+### Quick launch (Forge.cmd)
 
 1. Close Bannerlord.
 2. Run `.\Forge.cmd`.
@@ -51,7 +73,8 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 
 Inspect JSON:
 
-- `BlacksmithGuild_CharacterBuildProvenance.json` — upbringing choices + verdict
+- `BlacksmithGuild_CharacterBuildProvenance.json` — `visibleTraversalUsed`, `upbringingChoices`, verdict
+- `BlacksmithGuild_CharacterVisibleReplay.json` — cert completion (`completed: true`)
 - `BlacksmithGuild_CharacterDoctrine.json` — doctrine axes
 
 ---

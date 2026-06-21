@@ -20,29 +20,6 @@ function Get-BannerlordRootFromRepoLocal {
     return Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
 }
 
-function Write-VariantConfig {
-    param(
-        [string]$BannerlordRoot,
-        [object]$Candidate
-    )
-
-    $config = [ordered]@{
-        mode = 'variant'
-        candidateId = $Candidate.candidateId
-        selectedBuildMode = $Candidate.profile
-        visibleMode = $false
-        decisionPauseMs = 0
-        score = [double]$Candidate.score
-        testSavePrefix = 'BSG_ASR_TEST_'
-        testSaveName = "BSG_ASR_TEST_$($Candidate.candidateId)"
-        route = @($Candidate.route)
-    }
-
-    $path = Join-Path $BannerlordRoot 'BlacksmithGuild_CharacterBuildVariantConfig.json'
-    ($config | ConvertTo-Json -Depth 8) | Set-Content -LiteralPath $path -Encoding UTF8
-    return $path
-}
-
 function Wait-TbgReadyExtended {
     param(
         [string]$BannerlordRoot,
@@ -131,7 +108,11 @@ foreach ($candidate in $candidates) {
     Write-Host "--- Candidate $($candidate.candidateId) ($($report.runsAttempted)/$($candidates.Count)) ---" -ForegroundColor Cyan
 
     & (Join-Path $repoRoot 'scripts\forge-stop.ps1')
-    Write-VariantConfig -BannerlordRoot $bannerlordRoot -Candidate $candidate | Out-Null
+    & (Join-Path $repoRoot 'scripts\write-character-build-launch-config.ps1') `
+        -Mode AgentHeadless `
+        -AgentSubMode variant `
+        -BannerlordRoot $bannerlordRoot `
+        -Candidate $candidate | Out-Null
 
     try {
         & (Join-Path $repoRoot 'forge.ps1') -Launch -LaunchIntent play -SkipSaveBackup

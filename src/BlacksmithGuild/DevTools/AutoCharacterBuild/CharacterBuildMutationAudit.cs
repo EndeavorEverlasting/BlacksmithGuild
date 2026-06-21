@@ -43,13 +43,12 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         public static CharacterBuildMutationAuditResult AuditAtMapReady(Hero hero)
         {
             var result = new CharacterBuildMutationAuditResult();
-            result.PostMapProfileApply = CharacterDoctrineConfig.PostMapProfileApplyEnabled
-                || AutoCharacterBuildService.Summary.LastApplied == true;
+            result.PostMapProfileApply = CharacterDoctrineConfig.PostMapProfileApplyEnabled;
 
             if (!_phase1Checked)
             {
                 _phase1Checked = true;
-                if (Phase1ContainsForbiddenMutation())
+                if (Phase1ContainsForbiddenMutationInCurrentSession())
                 {
                     result.PostMapProfileApply = true;
                 }
@@ -84,7 +83,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             sb.Append($"{pad}}}");
         }
 
-        private static bool Phase1ContainsForbiddenMutation()
+        private static bool Phase1ContainsForbiddenMutationInCurrentSession()
         {
             try
             {
@@ -94,8 +93,8 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
                     return false;
                 }
 
-                var tail = File.ReadAllText(phase1Path);
-                return tail.IndexOf(
+                var sessionWindow = GetCurrentSessionPhase1Window(File.ReadAllText(phase1Path));
+                return sessionWindow.IndexOf(
                     "ForgeQuartermasterWarlord applied=True trigger=quickstart-bootstrap",
                     StringComparison.OrdinalIgnoreCase) >= 0;
             }
@@ -103,6 +102,46 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             {
                 return false;
             }
+        }
+
+        private static string GetCurrentSessionPhase1Window(string fullText)
+        {
+            if (string.IsNullOrEmpty(fullText))
+            {
+                return string.Empty;
+            }
+
+            const string marker = "TBG READY";
+            var previousReadyIndex = -1;
+            var searchStart = 0;
+
+            while (true)
+            {
+                var index = fullText.IndexOf(marker, searchStart, StringComparison.OrdinalIgnoreCase);
+                if (index < 0)
+                {
+                    break;
+                }
+
+                previousReadyIndex = index;
+                searchStart = index + marker.Length;
+            }
+
+            if (previousReadyIndex < 0)
+            {
+                return fullText;
+            }
+
+            var priorReadyIndex = fullText.LastIndexOf(
+                marker,
+                previousReadyIndex - 1,
+                StringComparison.OrdinalIgnoreCase);
+
+            var sessionStart = priorReadyIndex >= 0
+                ? priorReadyIndex + marker.Length
+                : 0;
+
+            return fullText.Substring(sessionStart);
         }
 
         private static void CompareDictionaries(
