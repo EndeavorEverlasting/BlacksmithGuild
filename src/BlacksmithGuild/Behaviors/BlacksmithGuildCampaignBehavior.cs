@@ -86,6 +86,7 @@ namespace BlacksmithGuild.Behaviors
                 HotkeyTraceService.OnMapReady();
                 TreasuryDeltaWatchService.OnCampaignMapReady();
                 AutoCharacterBuildService.OnCampaignMapReady();
+                CommandSurfaceService.WriteCommandSurface("MapReady");
             }
         }
 

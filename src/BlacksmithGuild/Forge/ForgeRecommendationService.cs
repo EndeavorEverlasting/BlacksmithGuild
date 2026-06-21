@@ -35,6 +35,7 @@ namespace BlacksmithGuild.Forge
         private static bool _summaryRecorded;
 
         public static ForgeRecommendationSummary Summary => _summary;
+        public static ForgeRecommendationReport CachedReport => _cachedReport;
         public static ForgeCandidateSourceKind RequestedSourceKind => _requestedSourceKind;
         public static ForgeDoctrine ActiveDoctrine => _activeDoctrine;
 

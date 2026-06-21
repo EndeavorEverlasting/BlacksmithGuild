@@ -24,6 +24,7 @@ function Get-DevCommandNames {
         'ProbeSmithingRefineApi',
         'RunSmithingAdvisoryNow',
         'RunSmithingSafeActionNow',
+        'RunSmithingRestPlanNow',
         'RunGuildLoopNow',
         'MarketSnapshotNow',
         'ApplyAutoCharacterBuild',

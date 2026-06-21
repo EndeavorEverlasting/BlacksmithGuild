@@ -22,7 +22,10 @@ $files = @(
     @{ Label = 'ForgeRecommendations.json'; Path = Join-Path $root 'BlacksmithGuild_ForgeRecommendations.json'; Tail = 0 },
     @{ Label = 'SmithingAdvisory.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingAdvisory.json'; Tail = 0 },
     @{ Label = 'SmithingSafeAction.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingSafeAction.json'; Tail = 0 },
-    @{ Label = 'SmithingRefineProbe.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingRefineProbe.json'; Tail = 0 }
+    @{ Label = 'SmithingRefineProbe.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingRefineProbe.json'; Tail = 0 },
+    @{ Label = 'GuildLoopReport.json'; Path = Join-Path $root 'BlacksmithGuild_GuildLoopReport.json'; Tail = 0 },
+    @{ Label = 'CommandSurface.json'; Path = Join-Path $root 'BlacksmithGuild_CommandSurface.json'; Tail = 0 },
+    @{ Label = 'SmithingRestPlan.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingRestPlan.json'; Tail = 0 }
 )
 
 Write-Host ''

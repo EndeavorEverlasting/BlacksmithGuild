@@ -39,6 +39,7 @@ namespace BlacksmithGuild.DevTools
                 SmithingAuditService.ProbeSmithingRefineApiCommand,
                 SmithingAdvisoryService.RunSmithingAdvisoryNowCommand,
                 SmithingSafeActionService.RunSmithingSafeActionNowCommand,
+                SmithingRestPlanService.RunSmithingRestPlanNowCommand,
                 GuildLoopService.RunGuildLoopNowCommand,
                 AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand,

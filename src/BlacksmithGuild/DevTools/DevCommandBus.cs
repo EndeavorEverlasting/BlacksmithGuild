@@ -443,6 +443,10 @@ namespace BlacksmithGuild.DevTools
                     return GuildLoopService.RunGuildLoopNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case SmithingRestPlanService.RunSmithingRestPlanNowCommand:
+                    return SmithingRestPlanService.RunRestPlanNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -462,7 +466,10 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
             InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop");
+            InGameNotice.Info("Inbox: RunSmithingRestPlanNow (Stage D read-only rest plan)");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
+
+            CommandSurfaceService.WriteCommandSurface(DevCommandRegistry.ListScenariosCommand);
         }
 
         private static bool IsAutoCharacterBuildNonMutationCommand(string commandName)
