@@ -1,0 +1,50 @@
+﻿{
+  "generatedUtc": "2026-06-20T23:30:40.4463446Z",
+  "source": "RunGuildLoopNow",
+  "status": "Ok",
+  "detail": "workers=1 crew=2",
+  "reserveHealth": {
+    "charcoalHave": 0,
+    "charcoalFloor": 2,
+    "hardwoodHave": 5,
+    "hardwoodFloor": 4,
+    "charcoalStatus": "low",
+    "hardwoodStatus": "ok"
+  },
+  "crew": [
+    {
+      "rank": 1,
+      "heroName": "",
+      "action": "RefineCharcoal",
+      "target": "hardwood→charcoal x2",
+      "reason": "low-skill grunt work; preserve main smith stamina",
+      "staminaLabel": "stamina 150/150"
+    },
+    {
+      "rank": 2,
+      "heroName": "",
+      "action": "CraftRanked",
+      "target": "Javelin",
+      "reason": "highest craft skill for top real rank",
+      "staminaLabel": "stamina 150/150"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": 1,
+      "heroName": "",
+      "action": "RefineCharcoal",
+      "target": "hardwood→charcoal x2",
+      "reason": "low-skill grunt work; preserve main smith stamina",
+      "reserveImpact": "stabilizes charcoal reserve"
+    },
+    {
+      "priority": 2,
+      "heroName": "",
+      "action": "CraftRanked",
+      "target": "Javelin",
+      "reason": "highest craft skill for top real rank",
+      "reserveImpact": "uses craft materials"
+    }
+  ]
+}

@@ -1,0 +1,507 @@
+{
+  "generatedUtc": "2026-06-20T23:30:40.3585557Z",
+  "source": "MarketSnapshotNow",
+  "nearestTown": "Danustica",
+  "nearestDistance": 2.51,
+  "townsScanned": 3,
+  "expandedScanUsed": true,
+  "routeRows": [
+    {
+      "itemId": "felt",
+      "itemName": "Felt",
+      "buyTown": "Danustica",
+      "buyPrice": 309,
+      "stock": 5,
+      "sellTown": "Husn Fulq",
+      "sellPrice": 1133,
+      "spread": 824,
+      "sellDistance": 50.88,
+      "isSmithingInput": false
+    },
+    {
+      "itemId": "beer",
+      "itemName": "Beer",
+      "buyTown": "Danustica",
+      "buyPrice": 213,
+      "stock": 4,
+      "sellTown": "Onira",
+      "sellPrice": 463,
+      "spread": 250,
+      "sellDistance": 50.07,
+      "isSmithingInput": false
+    },
+    {
+      "itemId": "hides",
+      "itemName": "Hides",
+      "buyTown": "Danustica",
+      "buyPrice": 96,
+      "stock": 6,
+      "sellTown": "Husn Fulq",
+      "sellPrice": 297,
+      "spread": 201,
+      "sellDistance": 50.88,
+      "isSmithingInput": false
+    },
+    {
+      "itemId": "hardwood",
+      "itemName": "Hardwood",
+      "buyTown": "Danustica",
+      "buyPrice": 11,
+      "stock": 103,
+      "sellTown": "Onira",
+      "sellPrice": 86,
+      "spread": 75,
+      "sellDistance": 50.07,
+      "isSmithingInput": true
+    },
+    {
+      "itemId": "fish",
+      "itemName": "Fish",
+      "buyTown": "Danustica",
+      "buyPrice": 23,
+      "stock": 32,
+      "sellTown": "Husn Fulq",
+      "sellPrice": 37,
+      "spread": 14,
+      "sellDistance": 50.88,
+      "isSmithingInput": false
+    }
+  ],
+  "actionPlan": [
+    {
+      "step": 1,
+      "text": "Enter Danustica: buy Felt @ 309 (stock 5)"
+    },
+    {
+      "step": 2,
+      "text": "Ride to Husn Fulq (50.9u): sell @ 1133 (+824)"
+    },
+    {
+      "step": 3,
+      "text": "Sell Hardwood x5 @ Onira 86 (+77)"
+    }
+  ],
+  "towns": [
+    {
+      "settlementId": "town_ES1",
+      "name": "Danustica",
+      "distance": 2.51,
+      "goods": [
+        {
+          "itemId": "grain",
+          "itemName": "Grain",
+          "stock": 487,
+          "buyPrice": 12,
+          "sellPrice": 10
+        },
+        {
+          "itemId": "hardwood",
+          "itemName": "Hardwood",
+          "stock": 103,
+          "buyPrice": 11,
+          "sellPrice": 9
+        },
+        {
+          "itemId": "clay",
+          "itemName": "Clay",
+          "stock": 84,
+          "buyPrice": 9,
+          "sellPrice": 7
+        },
+        {
+          "itemId": "salt",
+          "itemName": "Salt",
+          "stock": 79,
+          "buyPrice": 26,
+          "sellPrice": 22
+        },
+        {
+          "itemId": "meat",
+          "itemName": "Meat",
+          "stock": 50,
+          "buyPrice": 37,
+          "sellPrice": 32
+        },
+        {
+          "itemId": "fish",
+          "itemName": "Fish",
+          "stock": 32,
+          "buyPrice": 23,
+          "sellPrice": 19
+        },
+        {
+          "itemId": "butter",
+          "itemName": "Butter",
+          "stock": 21,
+          "buyPrice": 33,
+          "sellPrice": 28
+        },
+        {
+          "itemId": "cheese",
+          "itemName": "Cheese",
+          "stock": 16,
+          "buyPrice": 46,
+          "sellPrice": 40
+        },
+        {
+          "itemId": "cotton",
+          "itemName": "Raw Silk",
+          "stock": 12,
+          "buyPrice": 54,
+          "sellPrice": 46
+        },
+        {
+          "itemId": "flax",
+          "itemName": "Flax",
+          "stock": 8,
+          "buyPrice": 42,
+          "sellPrice": 36
+        },
+        {
+          "itemId": "hides",
+          "itemName": "Hides",
+          "stock": 6,
+          "buyPrice": 96,
+          "sellPrice": 83
+        },
+        {
+          "itemId": "date_fruit",
+          "itemName": "Date Fruit",
+          "stock": 6,
+          "buyPrice": 86,
+          "sellPrice": 74
+        }
+      ]
+    },
+    {
+      "settlementId": "town_ES5",
+      "name": "Onira",
+      "distance": 50.07,
+      "goods": [
+        {
+          "itemId": "grain",
+          "itemName": "Grain",
+          "stock": 328,
+          "buyPrice": 12,
+          "sellPrice": 10
+        },
+        {
+          "itemId": "salt",
+          "itemName": "Salt",
+          "stock": 159,
+          "buyPrice": 13,
+          "sellPrice": 11
+        },
+        {
+          "itemId": "cotton",
+          "itemName": "Raw Silk",
+          "stock": 69,
+          "buyPrice": 16,
+          "sellPrice": 13
+        },
+        {
+          "itemId": "meat",
+          "itemName": "Meat",
+          "stock": 54,
+          "buyPrice": 26,
+          "sellPrice": 22
+        },
+        {
+          "itemId": "fish",
+          "itemName": "Fish",
+          "stock": 37,
+          "buyPrice": 16,
+          "sellPrice": 14
+        },
+        {
+          "itemId": "butter",
+          "itemName": "Butter",
+          "stock": 21,
+          "buyPrice": 22,
+          "sellPrice": 19
+        },
+        {
+          "itemId": "cheese",
+          "itemName": "Cheese",
+          "stock": 21,
+          "buyPrice": 32,
+          "sellPrice": 28
+        },
+        {
+          "itemId": "clay",
+          "itemName": "Clay",
+          "stock": 17,
+          "buyPrice": 17,
+          "sellPrice": 14
+        },
+        {
+          "itemId": "hides",
+          "itemName": "Hides",
+          "stock": 16,
+          "buyPrice": 43,
+          "sellPrice": 37
+        },
+        {
+          "itemId": "silver",
+          "itemName": "Silver Ore",
+          "stock": 15,
+          "buyPrice": 45,
+          "sellPrice": 39
+        },
+        {
+          "itemId": "flax",
+          "itemName": "Flax",
+          "stock": 13,
+          "buyPrice": 22,
+          "sellPrice": 19
+        },
+        {
+          "itemId": "grape",
+          "itemName": "Grapes",
+          "stock": 4,
+          "buyPrice": 34,
+          "sellPrice": 28
+        }
+      ]
+    },
+    {
+      "settlementId": "town_A2",
+      "name": "Husn Fulq",
+      "distance": 50.88,
+      "goods": [
+        {
+          "itemId": "grain",
+          "itemName": "Grain",
+          "stock": 153,
+          "buyPrice": 11,
+          "sellPrice": 9
+        },
+        {
+          "itemId": "clay",
+          "itemName": "Clay",
+          "stock": 81,
+          "buyPrice": 8,
+          "sellPrice": 6
+        },
+        {
+          "itemId": "fish",
+          "itemName": "Fish",
+          "stock": 41,
+          "buyPrice": 42,
+          "sellPrice": 37
+        },
+        {
+          "itemId": "date_fruit",
+          "itemName": "Date Fruit",
+          "stock": 33,
+          "buyPrice": 27,
+          "sellPrice": 23
+        },
+        {
+          "itemId": "salt",
+          "itemName": "Salt",
+          "stock": 29,
+          "buyPrice": 41,
+          "sellPrice": 36
+        },
+        {
+          "itemId": "meat",
+          "itemName": "Meat",
+          "stock": 24,
+          "buyPrice": 56,
+          "sellPrice": 49
+        },
+        {
+          "itemId": "butter",
+          "itemName": "Butter",
+          "stock": 12,
+          "buyPrice": 39,
+          "sellPrice": 33
+        },
+        {
+          "itemId": "beer",
+          "itemName": "Beer",
+          "stock": 12,
+          "buyPrice": 103,
+          "sellPrice": 90
+        },
+        {
+          "itemId": "cheese",
+          "itemName": "Cheese",
+          "stock": 8,
+          "buyPrice": 63,
+          "sellPrice": 54
+        },
+        {
+          "itemId": "cotton",
+          "itemName": "Raw Silk",
+          "stock": 7,
+          "buyPrice": 67,
+          "sellPrice": 58
+        },
+        {
+          "itemId": "flax",
+          "itemName": "Flax",
+          "stock": 6,
+          "buyPrice": 42,
+          "sellPrice": 35
+        },
+        {
+          "itemId": "hardwood",
+          "itemName": "Hardwood",
+          "stock": 4,
+          "buyPrice": 57,
+          "sellPrice": 49
+        }
+      ]
+    }
+  ],
+  "inventoryRows": [
+    {
+      "itemId": "hardwood",
+      "itemName": "Hardwood",
+      "quantity": 5,
+      "bestSellTown": "Onira",
+      "bestSellPrice": 86,
+      "worstSellPrice": 9,
+      "spreadVsWorst": 77
+    }
+  ],
+  "spreadRows": [
+    {
+      "itemId": "jewelry",
+      "itemName": "Jewelry",
+      "buyTown": "Onira",
+      "buyPrice": 630,
+      "sellTown": "Danustica",
+      "sellPrice": 1558,
+      "spread": 928
+    },
+    {
+      "itemId": "felt",
+      "itemName": "Felt",
+      "buyTown": "Danustica",
+      "buyPrice": 309,
+      "sellTown": "Husn Fulq",
+      "sellPrice": 1133,
+      "spread": 824
+    },
+    {
+      "itemId": "pottery",
+      "itemName": "Pottery",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 286,
+      "sellTown": "Danustica",
+      "sellPrice": 961,
+      "spread": 675
+    },
+    {
+      "itemId": "oil",
+      "itemName": "Oil",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 702,
+      "sellTown": "Danustica",
+      "sellPrice": 1294,
+      "spread": 592
+    },
+    {
+      "itemId": "tools",
+      "itemName": "Tools",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 704,
+      "sellTown": "Danustica",
+      "sellPrice": 1282,
+      "spread": 578
+    },
+    {
+      "itemId": "linen",
+      "itemName": "Linen",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 675,
+      "sellTown": "Danustica",
+      "sellPrice": 1230,
+      "spread": 555
+    },
+    {
+      "itemId": "beer",
+      "itemName": "Beer",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 103,
+      "sellTown": "Onira",
+      "sellPrice": 463,
+      "spread": 360
+    },
+    {
+      "itemId": "leather",
+      "itemName": "Leather",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 431,
+      "sellTown": "Danustica",
+      "sellPrice": 771,
+      "spread": 340
+    },
+    {
+      "itemId": "hides",
+      "itemName": "Hides",
+      "buyTown": "Onira",
+      "buyPrice": 43,
+      "sellTown": "Husn Fulq",
+      "sellPrice": 297,
+      "spread": 254
+    },
+    {
+      "itemId": "silver",
+      "itemName": "Silver Ore",
+      "buyTown": "Onira",
+      "buyPrice": 45,
+      "sellTown": "Danustica",
+      "sellPrice": 232,
+      "spread": 187
+    },
+    {
+      "itemId": "iron",
+      "itemName": "Iron Ore",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 176,
+      "sellTown": "Danustica",
+      "sellPrice": 263,
+      "spread": 87
+    },
+    {
+      "itemId": "hardwood",
+      "itemName": "Hardwood",
+      "buyTown": "Danustica",
+      "buyPrice": 11,
+      "sellTown": "Onira",
+      "sellPrice": 86,
+      "spread": 75
+    },
+    {
+      "itemId": "date_fruit",
+      "itemName": "Date Fruit",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 27,
+      "sellTown": "Danustica",
+      "sellPrice": 74,
+      "spread": 47
+    },
+    {
+      "itemId": "olives",
+      "itemName": "Olives",
+      "buyTown": "Husn Fulq",
+      "buyPrice": 57,
+      "sellTown": "Danustica",
+      "sellPrice": 100,
+      "spread": 43
+    },
+    {
+      "itemId": "cotton",
+      "itemName": "Raw Silk",
+      "buyTown": "Onira",
+      "buyPrice": 16,
+      "sellTown": "Husn Fulq",
+      "sellPrice": 58,
+      "spread": 42
+    }
+  ]
+}

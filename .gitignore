@@ -33,7 +33,15 @@ BlacksmithGuild_SmithingAudit.json
 BlacksmithGuild_SmithingAdvisory.json
 BlacksmithGuild_SmithingSafeAction.json
 BlacksmithGuild_SmithingRefineProbe.json
+BlacksmithGuild_GuildLoopReport.json
+BlacksmithGuild_CommandSurface.json
+BlacksmithGuild_SmithingRestPlan.json
 *.log
+
+# Committed evidence snapshots (negate runtime JSON ignores above)
+!docs/evidence/
+!docs/evidence/latest/
+!docs/evidence/latest/**
 
 # Bannerlord / game DLLs (local references only)
 TaleWorlds.*.dll

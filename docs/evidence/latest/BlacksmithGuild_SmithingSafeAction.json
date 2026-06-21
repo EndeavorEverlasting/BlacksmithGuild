@@ -1,0 +1,14 @@
+﻿{
+  "generatedUtc": "2026-06-20T21:58:10.8337209Z",
+  "source": "RunSmithingSafeActionNow",
+  "action": "RefineCharcoal",
+  "actor": "",
+  "executed": false,
+  "blockedReason": "hardwood shortage (have 0, need 1)",
+  "charcoalBefore": 0,
+  "charcoalAfter": 0,
+  "hardwoodBefore": 0,
+  "hardwoodAfter": 0,
+  "charcoalNeed": 2,
+  "refineCount": 1
+}

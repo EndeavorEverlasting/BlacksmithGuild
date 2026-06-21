@@ -1,0 +1,110 @@
+{
+  "updatedAt": "2026-06-20T20:27:42.3886452-04:00",
+  "modLoaded": true,
+  "campaignReady": true,
+  "mainHeroReady": true,
+  "overall": "IN_PROGRESS",
+  "session": {
+    "phase": "MapPaused",
+    "timePaused": true,
+    "canPollFileInbox": true,
+    "canPollHotkeys": true
+  },
+  "quickStart": {
+    "enabled": true,
+    "setupPhase": "Complete",
+    "subStage": "",
+    "activeState": "GameLoadingState"
+  },
+  "certification": {
+    "sprint": "001",
+    "overall": "IN_PROGRESS",
+    "completed": 2,
+    "required": 6,
+    "nextCheck": "preflight_pass",
+    "checks": {
+      "forge_lit": { "status": "PASS", "at": "2026-06-20T19:21:38.8838732-04:00" },
+      "preflight_pass": { "status": "PENDING" },
+      "list_commands": { "status": "PASS", "at": "2026-06-20T19:28:48.0160308-04:00" },
+      "advance_one_day": { "status": "PENDING" },
+      "toggle_fast_forward": { "status": "PENDING" },
+      "gold_test": { "status": "PENDING" }
+    }
+  },
+  "certification002": {
+    "sprint": "002",
+    "overall": "WARMUP",
+    "completed": 0,
+    "required": 4,
+    "nextCheck": "rich_smithing_progression",
+    "checks": {
+      "rich_smithing_progression": { "status": "PENDING" },
+      "add_smithing_xp": { "status": "PENDING" },
+      "add_smithing_focus": { "status": "PENDING" },
+      "add_endurance_attribute": { "status": "PENDING" }
+    }
+  },
+  "lastCommand": {
+    "name": "RunGuildLoopNow",
+    "source": "Ctrl+Alt+G",
+    "sequence": -1,
+    "time": "2026-06-20T19:30:40.4568770-04:00",
+    "result": "Success"
+  },
+  "treasuryWatch": {
+    "enabled": true,
+    "lastSnapshotDay": 91077,
+    "actorsTracked": 78,
+    "snapshotCount": 1,
+    "snapshotGeneration": 1,
+    "deltaCount": 0,
+    "observedCount": 0,
+    "suspiciousCount": 0,
+    "criticalCount": 0,
+    "maxAbsDelta": 0,
+    "maxSeverity": "Observed",
+    "lastCriticalActor": "",
+    "lastCriticalDelta": 0,
+    "lastReportPath": "BlacksmithGuild_TreasuryWatch.json"
+  },
+  "forgeRecommendations": {
+    "source": "real",
+    "sourceKind": "Real",
+    "sourceStatus": "Ok",
+    "fallbackUsed": false,
+    "doctrine": "ProfitForge",
+    "topCandidateId": "real.template.Javelin",
+    "topCandidateName": "Javelin",
+    "topFinalScore": 29500,
+    "rankedCount": 5,
+    "candidateCount": 5,
+    "reportPath": "BlacksmithGuild_ForgeRecommendations.json",
+    "generatedAt": "2026-06-20T19:30:40.4304701-04:00"
+  },
+  "recipeProbe": {
+    "probeStatus": "Ok",
+    "detail": "Found 12 crafting templates and 50 matching types; real candidate mapping available via SetForgeCandidateSourceReal.",
+    "matchedTypeCount": 50,
+    "templateCount": 12,
+    "craftingOrderCount": 53,
+    "smithingSkillLevel": 100,
+    "reportPath": "BlacksmithGuild_RecipeProbe.json",
+    "generatedAt": "2026-06-20T19:30:40.4106891-04:00"
+  },
+  "autoCharacterBuild": {
+    "selectedProfile": "ForgeQuartermasterWarlord",
+    "defaultProfile": "ForgeQuartermasterWarlord",
+    "autoApplyNewGame": true,
+    "continueAutoApply": false,
+    "lastApplied": null,
+    "availableProfiles": "ForgeQuartermasterWarlord, KingdomFounder, LightTouchVanillaPlus, ShadowTrader, SmithEconomist, StewardSurgeonEngineer, WarCaptain",
+    "profile": "",
+    "applied": false,
+    "trigger": "",
+    "reportPath": "BlacksmithGuild_AutoCharacterBuild.json",
+    "generatedAt": "2026-06-20T20:27:42.3896446-04:00"
+  },
+  "tests": {
+    "forge_lit": { "status": "PASS" }
+  }
+}

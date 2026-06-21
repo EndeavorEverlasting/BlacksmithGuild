@@ -1,0 +1,300 @@
+﻿[2026-06-20 19:28:48] [TBG TEST]   - RichPlayerEconomyTest
+[2026-06-20 19:28:48] [TBG TEST]   - ListScenarios
+[2026-06-20 19:28:48] [TBG TEST]   - AdvanceOneDay
+[2026-06-20 19:28:48] [TBG TEST]   - ToggleFastForward
+[2026-06-20 19:28:48] [TBG TEST]   - ShowForgeStatus
+[2026-06-20 19:28:48] [TBG TEST]   - RichSmithingProgressionTest
+[2026-06-20 19:28:48] [TBG TEST]   - AddSmithingXp
+[2026-06-20 19:28:48] [TBG TEST]   - AddSmithingFocus
+[2026-06-20 19:28:48] [TBG TEST]   - AddEnduranceAttribute
+[2026-06-20 19:28:48] [TBG TEST]   - TreasurySnapshotNow
+[2026-06-20 19:28:48] [TBG TEST]   - RankForgeCandidates
+[2026-06-20 19:28:48] [TBG TEST]   - SetForgeCandidateSourceStub
+[2026-06-20 19:28:48] [TBG TEST]   - SetForgeCandidateSourceReal
+[2026-06-20 19:28:48] [TBG TEST]   - ShowForgeCandidateSource
+[2026-06-20 19:28:48] [TBG TEST]   - SetForgeDoctrineProfitForge
+[2026-06-20 19:28:48] [TBG TEST]   - SetForgeDoctrineRareMetalConservation
+[2026-06-20 19:28:48] [TBG TEST]   - SetForgeDoctrineCashCrisis
+[2026-06-20 19:28:48] [TBG TEST]   - ShowForgeDoctrine
+[2026-06-20 19:28:48] [TBG TEST]   - ProbeForgeRecipes
+[2026-06-20 19:28:48] [TBG TEST]   - ProbeSmithingAudit
+[2026-06-20 19:28:48] [TBG TEST]   - ProbeSmithingRefineApi
+[2026-06-20 19:28:48] [TBG TEST]   - RunSmithingAdvisoryNow
+[2026-06-20 19:28:48] [TBG TEST]   - RunSmithingSafeActionNow
+[2026-06-20 19:28:48] [TBG TEST]   - RunGuildLoopNow
+[2026-06-20 19:28:48] [TBG TEST]   - ApplyAutoCharacterBuild
+[2026-06-20 19:28:48] [TBG TEST]   - ShowAutoCharacterBuildProfiles
+[2026-06-20 19:28:48] [TBG TEST]   - ShowAutoCharacterBuildProfile
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildForgeQuartermasterWarlord
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildSmithEconomist
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildKingdomFounder
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildStewardSurgeonEngineer
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildWarCaptain
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildLightTouchVanillaPlus
+[2026-06-20 19:28:48] [TBG TEST]   - SetAutoCharacterBuildShadowTrader
+[2026-06-20 19:28:48] [TBG TEST]   - MarketSnapshotNow
+[2026-06-20 19:28:48] [TBG TEST] Press F7 for status summary (read-only).
+[2026-06-20 19:28:48] Blacksmith Guild â€” Commands
+[2026-06-20 19:28:48] Blacksmith Guild: F7 Status | F8 Commands
+[2026-06-20 19:28:48] Blacksmith Guild: F9 Daily tick | F10 Fast-forward | F11 Gold test
+[2026-06-20 19:28:48] Blacksmith Guild: Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop
+[2026-06-20 19:28:48] Blacksmith Guild: Messages appear in lower-left feed. Logs contain full detail.
+[2026-06-20 19:28:48] [TBG COMMAND TRACE] hotkey=F8 command=ListScenarios result=Success
+[2026-06-20 19:29:16] [TBG HOTKEY TRACE] key=F7 detected
+[2026-06-20 19:29:16] [TBG TEST] Command received: ShowForgeStatus (source: F7)
+[2026-06-20 19:29:16] [TBG COMMAND TRACE] hotkey=F7 command=ShowForgeStatus received
+[2026-06-20 19:29:16] [TBG TEST] Command started: ShowForgeStatus
+[2026-06-20 19:29:16] ========== Blacksmith Guild â€” FORGE STATUS ==========
+[2026-06-20 19:29:16] reportId: forge-status-20260620-192916
+[2026-06-20 19:29:16] source: F7
+[2026-06-20 19:29:16] time: 2026-06-20 19:29:16
+[2026-06-20 19:29:16] --- Session ---
+[2026-06-20 19:29:16] phase: MapPaused
+[2026-06-20 19:29:16] ready: true
+[2026-06-20 19:29:16] devTools: on
+[2026-06-20 19:29:16] preflight: unknown
+[2026-06-20 19:29:16] reload: clear
+[2026-06-20 19:29:16] loadedVersion: v0.0.11
+[2026-06-20 19:29:16] dllUtc: 2026-06-20T23:21:10.8609234Z
+[2026-06-20 19:29:16] --- Last Command ---
+[2026-06-20 19:29:16] command: ListScenarios
+[2026-06-20 19:29:16] source: F8
+[2026-06-20 19:29:16] result: Success
+[2026-06-20 19:29:16] --- Quick Start ---
+[2026-06-20 19:29:16] phase: Complete
+[2026-06-20 19:29:16] activeState: GameLoadingState
+[2026-06-20 19:29:16] --- Certification ---
+[2026-06-20 19:29:16] sprint001: IN_PROGRESS (2/6)
+[2026-06-20 19:29:16] sprint002: WARMUP (0/4)
+[2026-06-20 19:29:16] --- Treasury ---
+[2026-06-20 19:29:16] generation: 1
+[2026-06-20 19:29:16] day: 91077
+[2026-06-20 19:29:16] kingdomsTracked: 78
+[2026-06-20 19:29:16] maxDelta: 0
+[2026-06-20 19:29:16] severity: Observed
+[2026-06-20 19:29:16] --- Evidence ---
+[2026-06-20 19:29:16] json: BlacksmithGuild_TreasuryWatch.json
+[2026-06-20 19:29:16] --- Forge Recommendations ---
+[2026-06-20 19:29:16] status: no rankings cached (run RankForgeCandidates)
+[2026-06-20 19:29:16] requestedSource: Stub
+[2026-06-20 19:29:16] activeDoctrine: ProfitForge
+[2026-06-20 19:29:16] --- Recipe Probe ---
+[2026-06-20 19:29:16] status: no probe cached (run ProbeForgeRecipes)
+[2026-06-20 19:29:16] --- Auto Character Build ---
+[2026-06-20 19:29:16] selectedProfile: ForgeQuartermasterWarlord
+[2026-06-20 19:29:16] defaultProfile: ForgeQuartermasterWarlord
+[2026-06-20 19:29:16] autoApplyNewGame: on
+[2026-06-20 19:29:16] continueAutoApply: off
+[2026-06-20 19:29:16] lastApplied: none
+[2026-06-20 19:29:16] availableProfiles: ForgeQuartermasterWarlord, KingdomFounder, LightTouchVanillaPlus, ShadowTrader, SmithEconomist, StewardSurgeonEngineer, WarCaptain
+[2026-06-20 19:29:16] commandHint: ApplyAutoCharacterBuild
+[2026-06-20 19:29:16] --- Market Intel ---
+[2026-06-20 19:29:16] scan: none yet (press Ctrl+Alt+M on map)
+[2026-06-20 19:29:16] [WARN] No treasury deltas detected
+[2026-06-20 19:29:16] [INFO] Run RankForgeCandidates to cache ranked candidates
+[2026-06-20 19:29:16] [INFO] Run ProbeForgeRecipes to cache API recon results
+[2026-06-20 19:29:16] [INFO] Run ApplyAutoCharacterBuild to shape MainHero
+[2026-06-20 19:29:16] ========== End of report ==========
+[2026-06-20 19:29:16] ========== Blacksmith Guild â€” FORGE STATUS ==========
+[2026-06-20 19:29:16] reportId: forge-status-20260620-192916
+[2026-06-20 19:29:16] source: F7
+[2026-06-20 19:29:16] time: 2026-06-20 19:29:16
+[2026-06-20 19:29:16] phase: MapPaused | reload: clear | treasury: gen=1
+[2026-06-20 19:29:16] cert: IN_PROGRESS (2/6)
+[2026-06-20 19:29:16] ========== End of report ==========
+[2026-06-20 19:29:16] [TBG TEST] ShowForgeStatus displayed cached summary.
+[2026-06-20 19:29:16] [TBG COMMAND TRACE] hotkey=F7 command=ShowForgeStatus result=Success
+[2026-06-20 19:30:40] [TBG HOTKEY TRACE] key=Ctrl+Alt+G detected
+[2026-06-20 19:30:40] [TBG TEST] Command received: RunGuildLoopNow (source: Ctrl+Alt+G)
+[2026-06-20 19:30:40] [TBG COMMAND TRACE] hotkey=Ctrl+Alt+G command=RunGuildLoopNow received
+[2026-06-20 19:30:40] [TBG TEST] Command started: RunGuildLoopNow
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” MARKET INTEL ==========
+[2026-06-20 19:30:40] reportId: market-intel-20260620-193040
+[2026-06-20 19:30:40] source: MarketSnapshotNow
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] --- Context ---
+[2026-06-20 19:30:40] nearest: Danustica
+[2026-06-20 19:30:40] distance: 31 map units
+[2026-06-20 19:30:40] townsScanned: 3
+[2026-06-20 19:30:40] scan: expanded (no routes in 30u)
+[2026-06-20 19:30:40] --- Action Plan ---
+[2026-06-20 19:30:40] 1: Enter Danustica: buy Felt @ 309 (stock 5)
+[2026-06-20 19:30:40] 2: Ride to Husn Fulq (50.9u): sell @ 1133 (+824)
+[2026-06-20 19:30:40] 3: Sell Hardwood x5 @ Onira 86 (+77)
+[2026-06-20 19:30:40] --- Buy @ Nearest (Danustica) ---
+[2026-06-20 19:30:40] Felt: buy=309 stock=5 -> Husn Fulq sell=1133 (+824)
+[2026-06-20 19:30:40] Beer: buy=213 stock=4 -> Onira sell=463 (+250)
+[2026-06-20 19:30:40] Hides: buy=96 stock=6 -> Husn Fulq sell=297 (+201)
+[2026-06-20 19:30:40] Hardwood: buy=11 stock=103 -> Onira sell=86 (+75) [smith]
+[2026-06-20 19:30:40] Fish: buy=23 stock=32 -> Husn Fulq sell=37 (+14)
+[2026-06-20 19:30:40] --- Sell From Inventory ---
+[2026-06-20 19:30:40] ITEM              QTY    SELL@TOWN           SELL   VS-WORST
+[2026-06-20 19:30:40] Hardwood             5  Onira                 86      +77
+[2026-06-20 19:30:40] --- Top Cross-Town Spreads ---
+[2026-06-20 19:30:40] ITEM              BUY@TOWN            BUY    SELL@TOWN           SELL   SPREAD 
+[2026-06-20 19:30:40] Jewelry           Onira                630  Danustica           1558    +928
+[2026-06-20 19:30:40] Felt              Danustica            309  Husn Fulq           1133    +824
+[2026-06-20 19:30:40] Pottery           Husn Fulq            286  Danustica            961    +675
+[2026-06-20 19:30:40] Oil               Husn Fulq            702  Danustica           1294    +592
+[2026-06-20 19:30:40] Tools             Husn Fulq            704  Danustica           1282    +578
+[2026-06-20 19:30:40] Linen             Husn Fulq            675  Danustica           1230    +555
+[2026-06-20 19:30:40] Beer              Husn Fulq            103  Onira                463    +360
+[2026-06-20 19:30:40] Leather           Husn Fulq            431  Danustica            771    +340
+[2026-06-20 19:30:40] Hides             Onira                 43  Husn Fulq            297    +254
+[2026-06-20 19:30:40] Silver Ore        Onira                 45  Danustica            232    +187
+[2026-06-20 19:30:40] Iron Ore          Husn Fulq            176  Danustica            263     +87
+[2026-06-20 19:30:40] Hardwood          Danustica             11  Onira                 86     +75
+[2026-06-20 19:30:40] Date Fruit        Husn Fulq             27  Danustica             74     +47
+[2026-06-20 19:30:40] Olives            Husn Fulq             57  Danustica            100     +43
+[2026-06-20 19:30:40] Raw Silk          Onira                 16  Husn Fulq             58     +42
+[2026-06-20 19:30:40] --- Nearest Town Goods (Danustica) ---
+[2026-06-20 19:30:40] Grain: stock=487 buy=12 sell=10
+[2026-06-20 19:30:40] Hardwood: stock=103 buy=11 sell=9
+[2026-06-20 19:30:40] Clay: stock=84 buy=9 sell=7
+[2026-06-20 19:30:40] Salt: stock=79 buy=26 sell=22
+[2026-06-20 19:30:40] Meat: stock=50 buy=37 sell=32
+[2026-06-20 19:30:40] Fish: stock=32 buy=23 sell=19
+[2026-06-20 19:30:40] Butter: stock=21 buy=33 sell=28
+[2026-06-20 19:30:40] Cheese: stock=16 buy=46 sell=40
+[2026-06-20 19:30:40] Raw Silk: stock=12 buy=54 sell=46
+[2026-06-20 19:30:40] Flax: stock=8 buy=42 sell=36
+[2026-06-20 19:30:40] Hides: stock=6 buy=96 sell=83
+[2026-06-20 19:30:40] Date Fruit: stock=6 buy=86 sell=74
+[2026-06-20 19:30:40] --- Forge Materials ---
+[2026-06-20 19:30:40] party charcoal: x0 (low) floor=2
+[2026-06-20 19:30:40] party hardwood: x5 (ok) floor=4
+[2026-06-20 19:30:40] shortfall: need charcoal +2, hardwood +0 (refine or buy @ nearest)
+[2026-06-20 19:30:40] nearest buy: Danustica:
+[2026-06-20 19:30:40] Hardwood: stock=103 buy=11 sell=9
+[2026-06-20 19:30:40] --- Evidence ---
+[2026-06-20 19:30:40] json: BlacksmithGuild_MarketIntel.json
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” MARKET INTEL ==========
+[2026-06-20 19:30:40] reportId: market-intel-20260620-193040
+[2026-06-20 19:30:40] source: MarketSnapshotNow
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] nearest=Danustica (2.5u) towns=3
+[2026-06-20 19:30:40] expanded scan (no routes in 30u)
+[2026-06-20 19:30:40] --- ACTION PLAN ---
+[2026-06-20 19:30:40] 1. Enter Danustica: buy Felt @ 309 (stock 5)
+[2026-06-20 19:30:40] 2. Ride to Husn Fulq (50.9u): sell @ 1133 (+824)
+[2026-06-20 19:30:40] 3. Sell Hardwood x5 @ Onira 86 (+77)
+[2026-06-20 19:30:40] --- BUY@NEAREST ---
+[2026-06-20 19:30:40] Felt: buy 309 -> Husn Fulq 1133 (+824)
+[2026-06-20 19:30:40] Beer: buy 213 -> Onira 463 (+250)
+[2026-06-20 19:30:40] Hides: buy 96 -> Husn Fulq 297 (+201)
+[2026-06-20 19:30:40] Hardwood x5 -> Sell@Onira 86 (+77)
+[2026-06-20 19:30:40] --- TOP SPREADS ---
+[2026-06-20 19:30:40] Jewelry: buy@Onira 630 -> sell@Danustica 1558 (+928)
+[2026-06-20 19:30:40] Felt: buy@Danustica 309 -> sell@Husn Fulq 1133 (+824)
+[2026-06-20 19:30:40] Pottery: buy@Husn Fulq 286 -> sell@Danustica 961 (+675)
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] [TBG TEST] [TBG FORGE] Real candidate map complete mapped 5/12 templates (cap 100); economicsMode=exact; exact=5; heuristic=0
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” FORGE RECOMMENDATIONS ==========
+[2026-06-20 19:30:40] reportId: forge-recommendations-20260620-193040
+[2026-06-20 19:30:40] source: RankForgeCandidates
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] --- Source ---
+[2026-06-20 19:30:40] requested: Real
+[2026-06-20 19:30:40] resolved: real
+[2026-06-20 19:30:40] sourceKind: Real
+[2026-06-20 19:30:40] sourceStatus: Ok
+[2026-06-20 19:30:40] fallbackUsed: false
+[2026-06-20 19:30:40] candidateCount: 5
+[2026-06-20 19:30:40] economicsMode: exact
+[2026-06-20 19:30:40] templateCount: 12
+[2026-06-20 19:30:40] mappedCount: 5
+[2026-06-20 19:30:40] --- Doctrine ---
+[2026-06-20 19:30:40] active: ProfitForge
+[2026-06-20 19:30:40] --- Top Candidate ---
+[2026-06-20 19:30:40] id: real.template.Javelin
+[2026-06-20 19:30:40] name: Javelin
+[2026-06-20 19:30:40] class: Javelin
+[2026-06-20 19:30:40] netProfit: 29500
+[2026-06-20 19:30:40] doctrineScore: 0
+[2026-06-20 19:30:40] finalScore: 29500
+[2026-06-20 19:30:40] --- Top 3 ---
+[2026-06-20 19:30:40] 1: Javelin | score 29500
+[2026-06-20 19:30:40] 2: ThrowingKnife | score 17800
+[2026-06-20 19:30:40] 3: TwoHandedMace | score 15000
+[2026-06-20 19:30:40] --- Evidence ---
+[2026-06-20 19:30:40] json: BlacksmithGuild_ForgeRecommendations.json
+[2026-06-20 19:30:40] [PASS] candidate source resolved
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” FORGE RECOMMENDATIONS ==========
+[2026-06-20 19:30:40] reportId: forge-recommendations-20260620-193040
+[2026-06-20 19:30:40] source: RankForgeCandidates
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] --- SOURCE HONESTY ---
+[2026-06-20 19:30:40] [PASS] requested=Real resolved=real fallback=false candidate source resolved
+[2026-06-20 19:30:40] --- MATERIAL GAPS ---
+[2026-06-20 19:30:40] Charcoal: need more â†’  refine 2 hardwoodâ†’charcoal (hardwood 5)
+[2026-06-20 19:30:40] --- SMITHING CREW ---
+[2026-06-20 19:30:40] [1]  | RefineCharcoal | hardwoodâ†’charcoal x2 | stamina 150/150 â€” low-skill grunt work; preserve main smith stamina
+[2026-06-20 19:30:40] [2]  | CraftRanked | Javelin | stamina 150/150 â€” highest craft skill for top real rank
+[2026-06-20 19:30:40] --- ACTION PLAN ---
+[2026-06-20 19:30:40] 1. : refine hardwoodâ†’charcoal x2 at smithy (stamina 150/150; hardwood 5)
+[2026-06-20 19:30:40] 2. Charcoal: need more â†’  refine 2 hardwoodâ†’charcoal (hardwood 5)
+[2026-06-20 19:30:40] 3. Enter smithy: craft Javelin (net +29500)
+[2026-06-20 19:30:40] 4. Sell Javelin at next town (~29500) or keep for orders â€” advisory only
+[2026-06-20 19:30:40] --- CRAFT NEXT ---
+[2026-06-20 19:30:40] Javelin | score 29500 | net +29500
+[2026-06-20 19:30:40] ThrowingKnife | score 17800 | net +17800
+[2026-06-20 19:30:40] TwoHandedMace | score 15000 | net +15000
+[2026-06-20 19:30:40] Blacksmith Guild â€” Forge: top=Javelin score=29500 doctrine=ProfitForge source=real
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] [TBG TEST] [TBG FORGE] RankForgeCandidates complete source=real kind=Real doctrine=ProfitForge top=Javelin score=29500
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” SMITHING ADVISORY ==========
+[2026-06-20 19:30:40] reportId: smithing-advisory-20260620-193040
+[2026-06-20 19:30:40] source: RunGuildLoopNow
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] --- Reserve ---
+[2026-06-20 19:30:40] charcoal: 0 (low)
+[2026-06-20 19:30:40] hardwood: 5 (ok)
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” SMITHING ADVISORY ==========
+[2026-06-20 19:30:40] reportId: smithing-advisory-20260620-193040
+[2026-06-20 19:30:40] source: RunGuildLoopNow
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] --- SMITHING CREW ---
+[2026-06-20 19:30:40] [1]  | RefineCharcoal | hardwoodâ†’charcoal x2 | stamina 150/150 â€” low-skill grunt work; preserve main smith stamina
+[2026-06-20 19:30:40] [2]  | CraftRanked | Javelin | stamina 150/150 â€” highest craft skill for top real rank
+[2026-06-20 19:30:40] --- MATERIAL GAPS ---
+[2026-06-20 19:30:40] Charcoal: need more â†’  refine 2 hardwoodâ†’charcoal (hardwood 5)
+[2026-06-20 19:30:40] Blacksmith Guild â€” Smithing: top craft=Javelin crew=2
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] Blacksmith Guild â€” Smithing Advisory: crew=2 charcoal=0 hardwood=5
+[2026-06-20 19:30:40] Blacksmith Guild â€” Smithing Advisory: json=BlacksmithGuild_SmithingAdvisory.json
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” GUILD LOOP ==========
+[2026-06-20 19:30:40] reportId: guild-loop-20260620-193040
+[2026-06-20 19:30:40] source: RunGuildLoopNow
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] ========== Blacksmith Guild â€” GUILD LOOP ==========
+[2026-06-20 19:30:40] reportId: guild-loop-20260620-193040
+[2026-06-20 19:30:40] source: RunGuildLoopNow
+[2026-06-20 19:30:40] time: 2026-06-20 19:30:40
+[2026-06-20 19:30:40] nearest=Danustica (2.5u) towns=3
+[2026-06-20 19:30:40] expanded scan (no routes in 30u)
+[2026-06-20 19:30:40] --- BUY@NEAREST ---
+[2026-06-20 19:30:40] Felt: buy 309 -> Husn Fulq 1133 (+824)
+[2026-06-20 19:30:40] Beer: buy 213 -> Onira 463 (+250)
+[2026-06-20 19:30:40] Hides: buy 96 -> Husn Fulq 297 (+201)
+[2026-06-20 19:30:40] --- TOP SPREADS ---
+[2026-06-20 19:30:40] Jewelry: buy@Onira 630 -> sell@Danustica 1558 (+928)
+[2026-06-20 19:30:40] Felt: buy@Danustica 309 -> sell@Husn Fulq 1133 (+824)
+[2026-06-20 19:30:40] Pottery: buy@Husn Fulq 286 -> sell@Danustica 961 (+675)
+[2026-06-20 19:30:40] Blacksmith Guild â€” Forge: top=Javelin score=29500 doctrine=ProfitForge source=real
+[2026-06-20 19:30:40] --- SMITHING CREW ---
+[2026-06-20 19:30:40] [1]  | RefineCharcoal | hardwoodâ†’charcoal x2 | stamina 150/150 â€” low-skill grunt work; preserve main smith stamina
+[2026-06-20 19:30:40] [2]  | CraftRanked | Javelin | stamina 150/150 â€” highest craft skill for top real rank
+[2026-06-20 19:30:40] --- ACTION PLAN ---
+[2026-06-20 19:30:40] 1. : refine hardwoodâ†’charcoal x2 at smithy (stamina 150/150; hardwood 5)
+[2026-06-20 19:30:40] 2. Charcoal: need more â†’  refine 2 hardwoodâ†’charcoal (hardwood 5)
+[2026-06-20 19:30:40] 3. Enter smithy: craft Javelin (net +29500)
+[2026-06-20 19:30:40] 4. Sell Javelin at next town (~29500) or keep for orders â€” advisory only
+[2026-06-20 19:30:40] ========== End of report ==========
+[2026-06-20 19:30:40] Blacksmith Guild â€” Guild Loop: market + forge + smithing crew updated.
+[2026-06-20 19:30:40] Blacksmith Guild â€” Ctrl+Alt+G: RunGuildLoopNow completed.
+[2026-06-20 19:30:40] [TBG COMMAND TRACE] hotkey=Ctrl+Alt+G command=RunGuildLoopNow result=Success
+[2026-06-20 20:27:05] Blacksmith Guild â€” Reload: New build is ready, but Bannerlord must be closed before it can install. Run Forge.cmd after closing.

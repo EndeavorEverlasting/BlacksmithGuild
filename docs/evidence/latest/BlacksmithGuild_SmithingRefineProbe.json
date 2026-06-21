@@ -1,0 +1,11 @@
+﻿{
+  "generatedUtc": "2026-06-20T22:54:33.9445319Z",
+  "doRefinementMapped": true,
+  "canRefineCharcoal": true,
+  "detail": "DoRefinement mapped; formulaType=TaleWorlds.Core.Crafting+RefiningFormula; hints=2",
+  "refineDetail": "",
+  "methodHints": [
+    "CraftingCampaignBehavior.DoRefinement (Method)",
+    "CraftingCampaignBehavior.DoSmelting (Method)"
+  ]
+}

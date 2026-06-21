@@ -1,0 +1,130 @@
+{
+  "generatedUtc": "2026-06-20T23:30:40.4219447Z",
+  "source": "real",
+  "sourceKind": "Real",
+  "sourceStatus": "Ok",
+  "fallbackUsed": false,
+  "realDetail": "mapped 5/12 templates (cap 100); economicsMode=exact; exact=5; heuristic=0",
+  "candidateCount": 5,
+  "doctrine": "ProfitForge",
+  "economicsMode": "exact",
+  "templateCount": 12,
+  "mappedCount": 5,
+  "sourceHonesty": {
+    "requested": "Real",
+    "resolved": "real",
+    "fallbackUsed": false,
+    "verdict": "Pass",
+    "message": "candidate source resolved"
+  },
+  "materialGaps": [
+    {
+      "itemId": null,
+      "itemName": "Charcoal",
+      "need": 2,
+      "have": 0,
+      "buyTown": null,
+      "buyPrice": null,
+      "stock": null,
+      "buyHint": "Charcoal: need more →  refine 2 hardwood→charcoal (hardwood 5)"
+    }
+  ],
+  "actionPlan": [
+    {
+      "step": 1,
+      "text": ": refine hardwood→charcoal x2 at smithy (stamina 150/150; hardwood 5)"
+    },
+    {
+      "step": 2,
+      "text": "Charcoal: need more →  refine 2 hardwood→charcoal (hardwood 5)"
+    },
+    {
+      "step": 3,
+      "text": "Enter smithy: craft Javelin (net +29500)"
+    },
+    {
+      "step": 4,
+      "text": "Sell Javelin at next town (~29500) or keep for orders — advisory only"
+    }
+  ],
+  "topCandidate": {
+    "id": "real.template.Javelin",
+    "name": "Javelin",
+    "class": "Javelin",
+    "source": "real",
+    "estimatedValue": 29500,
+    "estimatedMaterialCost": 0,
+    "rareMaterialPenalty": 0,
+    "netProfit": 29500,
+    "doctrineScore": 0,
+    "finalScore": 29500,
+    "reason": "net=29500, doctrine=0, reservePolicy=preserve-rare, doctrineMode=ProfitForge."
+  },
+  "ranked": [
+    {
+    "id": "real.template.Javelin",
+    "name": "Javelin",
+    "class": "Javelin",
+    "source": "real",
+    "estimatedValue": 29500,
+    "estimatedMaterialCost": 0,
+    "rareMaterialPenalty": 0,
+    "netProfit": 29500,
+    "doctrineScore": 0,
+    "finalScore": 29500,
+    "reason": "net=29500, doctrine=0, reservePolicy=preserve-rare, doctrineMode=ProfitForge."
+  },
+    {
+    "id": "real.template.ThrowingKnife",
+    "name": "ThrowingKnife",
+    "class": "ThrowingKnife",
+    "source": "real",
+    "estimatedValue": 17800,
+    "estimatedMaterialCost": 0,
+    "rareMaterialPenalty": 0,
+    "netProfit": 17800,
+    "doctrineScore": 0,
+    "finalScore": 17800,
+    "reason": "net=17800, doctrine=0, reservePolicy=preserve-rare, doctrineMode=ProfitForge."
+  },
+    {
+    "id": "real.template.TwoHandedMace",
+    "name": "TwoHandedMace",
+    "class": "Two-Handed Mace",
+    "source": "real",
+    "estimatedValue": 15000,
+    "estimatedMaterialCost": 0,
+    "rareMaterialPenalty": 0,
+    "netProfit": 15000,
+    "doctrineScore": 0,
+    "finalScore": 15000,
+    "reason": "net=15000, doctrine=0, reservePolicy=preserve-rare, doctrineMode=ProfitForge."
+  },
+    {
+    "id": "real.template.Mace",
+    "name": "Mace",
+    "class": "Mace",
+    "source": "real",
+    "estimatedValue": 14280,
+    "estimatedMaterialCost": 0,
+    "rareMaterialPenalty": 0,
+    "netProfit": 14280,
+    "doctrineScore": 0,
+    "finalScore": 14280,
+    "reason": "net=14280, doctrine=0, reservePolicy=preserve-rare, doctrineMode=ProfitForge."
+  },
+    {
+    "id": "real.template.OneHandedAxe",
+    "name": "OneHandedAxe",
+    "class": "One-Handed Axe",
+    "source": "real",
+    "estimatedValue": 12000,
+    "estimatedMaterialCost": 0,
+    "rareMaterialPenalty": 0,
+    "netProfit": 12000,
+    "doctrineScore": 0,
+    "finalScore": 12000,
+    "reason": "net=12000, doctrine=0, reservePolicy=preserve-rare, doctrineMode=ProfitForge."
+  }
+  ]
+}
