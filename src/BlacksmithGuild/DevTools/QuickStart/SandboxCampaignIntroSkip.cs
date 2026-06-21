@@ -156,7 +156,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             MainMenuAutoLauncher.LogLaunchIntentFileStatus("Game.End");
             MainMenuAutoLauncher.DisarmForSessionEnd("game end");
             BlacksmithGuildCampaignBehavior.ResetCampaignMapReadyAnnouncement();
-            CampaignSetupStateTracker.DisarmBootstrap("game end");
+            CampaignSetupStateTracker.DisarmForGameEnd();
         }
 
         private static void OnLoadFinishedIntroFlagPrefix(SandBoxGameManager __instance)

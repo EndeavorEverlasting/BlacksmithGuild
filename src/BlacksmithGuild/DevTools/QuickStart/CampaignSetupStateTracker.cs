@@ -39,6 +39,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _bootstrapCompletedThisProcess;
         private static bool _forwardLaunchCompletedThisProcess;
         private static bool _campaignLoadedThisProcess;
+        private static bool _sessionEndDisarmed;
         private static float _gameLoadingStateStalledSeconds;
         private static bool _hasAnnouncedGameLoadingStall;
 
@@ -88,6 +89,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _bootstrapCompletedThisProcess = false;
             _forwardLaunchCompletedThisProcess = false;
             _campaignLoadedThisProcess = false;
+            _sessionEndDisarmed = false;
             _gameLoadingStateStalledSeconds = 0f;
             _hasAnnouncedGameLoadingStall = false;
             CharacterCreationReflection.ResetNarrativeSession();
@@ -175,6 +177,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 MarkBootstrapCompleted(reason);
             }
+        }
+
+        internal static void DisarmForGameEnd()
+        {
+            _sessionEndDisarmed = true;
+            DisarmBootstrap("game end");
         }
 
         public static void MarkForwardLaunchCompleted(string reason)
@@ -529,11 +537,17 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return;
             }
 
+            if (_sessionEndDisarmed)
+            {
+                return;
+            }
+
             if (MainMenuAutoLauncher.IsForwardLaunchInProgress)
             {
                 return;
             }
 
+            _sessionEndDisarmed = true;
             MainMenuAutoLauncher.DisarmForSessionEnd("returned to main menu");
             BlacksmithGuildCampaignBehavior.ResetCampaignMapReadyAnnouncement();
             MainMenuAutoLauncher.LogLaunchIntentFileStatus("returned to main menu");
