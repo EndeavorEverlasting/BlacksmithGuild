@@ -266,6 +266,8 @@ namespace BlacksmithGuild
             TreasuryDeltaWatchService.AppendToReport(report);
             ForgeRecommendationService.AppendToReport(report);
             ForgeRecipeProbeService.AppendToReport(report);
+            CharacterBuildProvenanceService.AppendToReport(report);
+            CharacterDoctrineService.AppendToReport(report);
             AutoCharacterBuildService.AppendToReport(report);
             MarketIntelligenceService.AppendToReport(report);
 

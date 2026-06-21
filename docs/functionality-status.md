@@ -1,12 +1,12 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (launcher cert closed; 005E unblocked)  
+**Last updated:** 2026-06-21 (008A Vanilla-Legit Aserai Trade-Smith code shipped; USER cert pending)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — launcher cert **CLOSED**; smithing automation **NEXT**
+**Branch:** `main` — 008A character + blacksmith automation **USER cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
-**Next handoff:** [checkpoints/pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md)
+**Next handoff:** [plans/008a-vanilla-legit-aserai-tradesmith.plan.md](plans/008a-vanilla-legit-aserai-tradesmith.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
 
@@ -80,6 +80,22 @@ Fix history: `687cb1b` deferred invoke logged success but dialog persisted; `52c
 
 ---
 
+## Shipped — 008A (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **VanillaLegit Aserai culture default** | `Forge.cmd` Path A | Code shipped — USER cert pending |
+| **Character build provenance JSON** | Map ready after bootstrap | `BlacksmithGuild_CharacterBuildProvenance.json` |
+| **Character doctrine JSON + command** | `ShowCharacterDoctrine` / F7 | `BlacksmithGuild_CharacterDoctrine.json` |
+| **Visible character creation pacing** | `CharacterCreationVisibleMode=true` (default) | 1 step/tick, 750ms pause |
+| **Post-map injection off (VanillaLegit)** | Default bootstrap | `postMapProfileApply skipped: VanillaLegit` |
+| **Blacksmith automation orchestrator** | `RunBlacksmithAutomationNow` | Wraps Stage C; USER cert pending |
+| **Stage D rest plan (read-only)** | `RunSmithingRestPlanNow` | Shipped (pre-008A) |
+
+DevOverride: set `LegitimacyMode=DevOverride` + `AutoApplyCharacterBuild=true` + `ApplyAutoCharacterBuild` for disposable profile testing only.
+
+---
+
 ## Shipped — optional smoke before 005E automation
 
 | Feature | How to use | PASS criteria | Status |
@@ -131,7 +147,9 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 | Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; Track 2B FORGE MATERIALS section **shipped** |
 | Gauntlet trade UI panel | [005e-market-intelligence-shop-hotkey.plan.md](plans/005e-market-intelligence-shop-hotkey.plan.md) | BACKLOG |
 | Travel cost / gold / carry weight in routes | — | Pure price spread ranking only |
-| Character doctrine (Aserai Trade-Smith) | [007a-guild-loop-advisory-automation.plan.md](plans/007a-guild-loop-advisory-automation.plan.md) | Planned. Default target is Aserai Trade-Smith with Khuzait mounted fallback. Config/logging only after live-cert gate. |
+| Headless safe **craft** mutation | 008A Track 7 | Automation blocks with `CraftManual` until API proven |
+| Stage D rest/time mutation | — | Read-only rest plan only; no wait/rest mutation |
+| Character creation menu ID discovery snapshot | 008A Track 4A | Run Path A once; capture narrative menu IDs to evidence |
 
 ---
 
@@ -169,6 +187,9 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | `BlacksmithGuild_GuildLoopReport.json` | **Ctrl+Alt+G** / inbox `RunGuildLoopNow` |
 | `BlacksmithGuild_CommandSurface.json` | **F8** / map ready |
 | `BlacksmithGuild_SmithingRestPlan.json` | inbox `RunSmithingRestPlanNow` (Stage D read-only) |
+| `BlacksmithGuild_CharacterBuildProvenance.json` | Path A bootstrap / map ready |
+| `BlacksmithGuild_CharacterDoctrine.json` | map ready / `ShowCharacterDoctrine` |
+| `BlacksmithGuild_BlacksmithAutomation.json` | inbox `RunBlacksmithAutomationNow` |
 | `BlacksmithGuild_Launch.log` | Forge.cmd / Continue automation |
 | `BlacksmithGuild_Status.json` | F7 |
 
@@ -182,4 +203,4 @@ Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & 
 
 ## Next session
 
-**005E smithing posse automation** — **READY TO START** (pre-005E cert queue complete). See [pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md). **Future:** party travel automation on campaign map.
+**008A USER live cert** — Path A Aserai bootstrap + `RunBlacksmithAutomationNow` on Continue/disposable map. See [008a plan](plans/008a-vanilla-legit-aserai-tradesmith.plan.md). **Future:** Stage D rest/time mutation, headless craft API, party travel automation.

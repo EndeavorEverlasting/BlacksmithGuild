@@ -447,6 +447,19 @@ namespace BlacksmithGuild.DevTools
                     return SmithingRestPlanService.RunRestPlanNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case BlacksmithAutomationService.RunBlacksmithAutomationNowCommand:
+                    if (BlacksmithAutomationService.RunAutomationNow(source: commandName))
+                    {
+                        return DevCommandResult.Success;
+                    }
+
+                    return BlacksmithAutomationService.LastWasGuardrailBlock
+                        ? DevCommandResult.Blocked
+                        : DevCommandResult.Failed;
+                case CharacterDoctrineService.ShowCharacterDoctrineCommand:
+                    return CharacterDoctrineService.ShowDoctrineNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     return DevCommandResult.Unknown;
             }
@@ -466,7 +479,7 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
             InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop");
-            InGameNotice.Info("Inbox: RunSmithingRestPlanNow (Stage D read-only rest plan)");
+            InGameNotice.Info("Inbox: RunSmithingRestPlanNow | RunBlacksmithAutomationNow | ShowCharacterDoctrine");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
 
             CommandSurfaceService.WriteCommandSurface(DevCommandRegistry.ListScenariosCommand);
@@ -474,7 +487,7 @@ namespace BlacksmithGuild.DevTools
 
         private static bool IsAutoCharacterBuildNonMutationCommand(string commandName)
         {
-            return commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+            return commandName == CharacterDoctrineService.ShowCharacterDoctrineCommand
                 || commandName == AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand
                 || commandName == AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand
                 || commandName == AutoCharacterBuildService.SetAutoCharacterBuildForgeQuartermasterWarlordCommand

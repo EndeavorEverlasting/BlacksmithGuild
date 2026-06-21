@@ -26,7 +26,8 @@ namespace BlacksmithGuild.DevTools
             CharacterProgressionTestScenarios.AddSmithingFocusCommand,
             CharacterProgressionTestScenarios.AddEnduranceAttributeCommand,
             AutoCharacterBuild.AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
-            SmithingSafeActionService.RunSmithingSafeActionNowCommand
+            SmithingSafeActionService.RunSmithingSafeActionNowCommand,
+            BlacksmithAutomationService.RunBlacksmithAutomationNowCommand
         };
 
         public static void WriteCommandSurface(string source)

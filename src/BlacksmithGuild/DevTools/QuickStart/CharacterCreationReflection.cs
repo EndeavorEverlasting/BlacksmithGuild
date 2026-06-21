@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
@@ -102,20 +103,54 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return false;
             }
 
-            TrySetSelectedCulture(content, cultures[0], manager);
+            GuildLog.Info(
+                $"[TBG QUICKSTART] preferred culture: {CharacterDoctrineConfig.PreferredCultureId}",
+                showInGame: false);
+            CharacterBuildProvenanceService.LogVisibleTraversalOnce();
+
+            var selectedCulture = CharacterCultureResolver.ResolvePreferredCulture(
+                cultures,
+                out var preferredUsed,
+                out var fallbackUsed,
+                out _,
+                out _);
+            if (selectedCulture == null)
+            {
+                LogCultureFailureOnce("culture resolver returned null");
+                return false;
+            }
+
+            TrySetSelectedCulture(content, selectedCulture, manager);
             TryApplyCulture(content, manager);
 
             if (TryGetSelectedCulture(content) == null)
             {
-                LogCultureFailureOnce($"SelectedCulture still null after SetSelectedCulture ({cultures[0]?.Name})");
+                LogCultureFailureOnce($"SelectedCulture still null after SetSelectedCulture ({selectedCulture?.Name})");
                 return false;
             }
 
+            CharacterBuildProvenanceService.RecordCultureSelection(
+                selectedCulture,
+                preferredUsed,
+                fallbackUsed,
+                cultures.Count);
+
             NextStage(state);
             _cultureFailureLogged = false;
-            GuildLog.Info(
-                $"[TBG QUICKSTART] culture auto-selected: {cultures[0]?.Name} (count={cultures.Count})",
-                showInGame: false);
+
+            if (fallbackUsed)
+            {
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] culture auto-selected fallback: {selectedCulture?.Name} (count={cultures.Count})",
+                    showInGame: false);
+            }
+            else
+            {
+                GuildLog.Info(
+                    $"[TBG QUICKSTART] culture auto-selected: {selectedCulture?.Name} (count={cultures.Count})",
+                    showInGame: false);
+            }
+
             return true;
         }
 
@@ -201,7 +236,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             var progressed = false;
-            const int maxStepsPerTick = 12;
+            var maxStepsPerTick = DevToolsConfig.CharacterCreationVisibleMode ? 1 : 12;
 
             for (var step = 0; step < maxStepsPerTick; step++)
             {
@@ -235,24 +270,40 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
                 var options = GetSuitableMenuOptions(manager, currentMenu);
                 var suitableCount = options.Count;
-                var onConditionFailures = 0;
                 object selected = null;
+                NarrativeOptionDecision doctrineDecision = null;
 
-                foreach (var option in options)
+                if (DevToolsConfig.LegitimacyMode == CharacterLegitimacyMode.VanillaLegit)
                 {
-                    if (IsOptionAvailable(option, manager))
+                    doctrineDecision = AseraiTradeSmithDecisionMap.SelectOption(options, menuId, manager);
+                    selected = doctrineDecision.SelectedOption;
+                }
+                else
+                {
+                    var onConditionFailures = 0;
+                    foreach (var option in options)
                     {
-                        selected = option;
-                        break;
+                        if (IsOptionAvailable(option, manager))
+                        {
+                            selected = option;
+                            break;
+                        }
+
+                        onConditionFailures++;
                     }
 
-                    onConditionFailures++;
+                    if (selected == null)
+                    {
+                        _lastNarrativeFailureDetail =
+                            $"currentMenu={menuId} suitableCount={suitableCount} selectedCount={selectedCount} onConditionFailures={onConditionFailures}";
+                        break;
+                    }
                 }
 
                 if (selected == null)
                 {
                     _lastNarrativeFailureDetail =
-                        $"currentMenu={menuId} suitableCount={suitableCount} selectedCount={selectedCount} onConditionFailures={onConditionFailures}";
+                        $"currentMenu={menuId} suitableCount={suitableCount} selectedCount={selectedCount} doctrineSelection=failed";
                     break;
                 }
 
@@ -278,6 +329,20 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     GuildLog.Info(
                         $"[TBG QUICKSTART] narrative auto-selected menu={menuId} option={DescribeNarrativeOption(selected)} (suitable={suitableCount})",
                         showInGame: false);
+                }
+
+                if (doctrineDecision != null)
+                {
+                    CharacterBuildProvenanceService.RecordUpbringingChoice(
+                        AseraiTradeSmithDecisionMap.InferStage(menuId),
+                        menuId,
+                        doctrineDecision.OptionId,
+                        doctrineDecision.OptionText,
+                        doctrineDecision.Reason,
+                        doctrineDecision.ExpectedBenefits,
+                        doctrineDecision.OpportunityCosts,
+                        doctrineDecision.BenefitSource,
+                        doctrineDecision.RejectedOptions);
                 }
 
                 progressed = true;

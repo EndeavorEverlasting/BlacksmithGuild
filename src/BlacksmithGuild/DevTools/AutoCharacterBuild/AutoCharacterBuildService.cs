@@ -45,6 +45,8 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         public static void OnCampaignMapReady()
         {
             RefreshStatusSnapshot();
+            CharacterDoctrineService.WriteJsonReport("MapReady");
+            CharacterBuildProvenanceService.FinalizeOnMapReady();
 
             if (!_hasAttemptedBootstrapApply)
             {
@@ -85,6 +87,12 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
 
         public static bool TryApplyQuickStartBootstrap()
         {
+            if (CharacterDoctrineConfig.LegitimacyMode == CharacterLegitimacyMode.VanillaLegit)
+            {
+                GuildLog.Info("[TBG CHARACTER] postMapProfileApply skipped: VanillaLegit", showInGame: false);
+                return false;
+            }
+
             if (!DevToolsConfig.AutoApplyCharacterBuild)
             {
                 return false;
@@ -201,6 +209,9 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             RefreshStatusSnapshot();
 
             report.Section("Auto Character Build");
+            report.Line("mode", CharacterDoctrineConfig.LegitimacyMode == CharacterLegitimacyMode.DevOverride
+                ? "DevOverride"
+                : "VanillaLegit (profile apply disabled)");
             report.Line("selectedProfile", _summary.SelectedProfileId ?? "unknown");
             report.Line("defaultProfile", _summary.DefaultProfileId ?? AutoCharacterBuildProfileRegistry.DefaultProfileId);
             report.Line("autoApplyNewGame", _summary.AutoApplyNewGame ? "on" : "off");
@@ -211,7 +222,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
                     ? "none"
                     : $"{_summary.LastAppliedProfileId} ({_summary.LastAppliedTrigger})");
             report.Line("availableProfiles", _summary.AvailableProfilesCsv ?? string.Empty);
-            report.Line("commandHint", ApplyAutoCharacterBuildCommand);
+            report.Line("commandHint", $"{ApplyAutoCharacterBuildCommand} (DevOverride)");
 
             if (_summary.HasReport)
             {
@@ -225,8 +236,10 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
                     ? ReportVerdict.Pass
                     : ReportVerdict.Info,
                 _summary.HasReport && (_summary.LastApplied ?? false)
-                    ? $"{_summary.LastAppliedProfileId} build applied"
-                    : "Run ApplyAutoCharacterBuild to shape MainHero");
+                    ? $"{_summary.LastAppliedProfileId} build applied (DevOverride)"
+                    : CharacterDoctrineConfig.LegitimacyMode == CharacterLegitimacyMode.VanillaLegit
+                        ? "VanillaLegit: no post-map injection; use ApplyAutoCharacterBuild for DevOverride testing"
+                        : "Run ApplyAutoCharacterBuild to shape MainHero (DevOverride)");
         }
 
         private static void AnnounceSelectionNoticeOnce()
@@ -237,9 +250,16 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
             }
 
             _hasAnnouncedSelectionNotice = true;
+            if (CharacterDoctrineConfig.LegitimacyMode == CharacterLegitimacyMode.VanillaLegit)
+            {
+                InGameNotice.Info(
+                    $"TBG CHARACTER: {CharacterDoctrineConfig.DefaultBuildId} | VanillaLegit + Assistive | postMapInjection off.");
+                return;
+            }
+
             var selected = AutoCharacterBuildProfileRegistry.GetSelectedProfile();
             InGameNotice.Info(
-                $"TBG CHARACTER: default profile {selected.DisplayName} selected. Run ApplyAutoCharacterBuild to apply.");
+                $"TBG CHARACTER: DevOverride profile {selected.DisplayName} selected. Run ApplyAutoCharacterBuild to apply.");
         }
 
         private static void ApplyAttributes(Hero hero, AutoCharacterBuildProfile profile, AutoCharacterBuildReport report)

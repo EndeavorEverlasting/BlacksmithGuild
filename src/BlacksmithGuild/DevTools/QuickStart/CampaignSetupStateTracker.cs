@@ -1,6 +1,7 @@
 using System;
 using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 
@@ -42,6 +43,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _sessionEndDisarmed;
         private static float _gameLoadingStateStalledSeconds;
         private static bool _hasAnnouncedGameLoadingStall;
+        private static float _characterCreationPauseRemainingSeconds;
 
         private const float CreationStageStallThresholdSeconds = 5f;
         private const float GameLoadingStallThresholdSeconds = 180f;
@@ -92,7 +94,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _sessionEndDisarmed = false;
             _gameLoadingStateStalledSeconds = 0f;
             _hasAnnouncedGameLoadingStall = false;
+            _characterCreationPauseRemainingSeconds = 0f;
             CharacterCreationReflection.ResetNarrativeSession();
+            CharacterBuildProvenanceService.ResetSession();
             MainMenuAutoLauncher.ResetForNewSession();
             ModuleMismatchAutoConfirmService.ResetForNewSession();
         }
@@ -346,10 +350,24 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 CharacterCreationReflection.ResetNarrativeSession();
             }
 
+            if (DevToolsConfig.CharacterCreationVisibleMode
+                && _characterCreationPauseRemainingSeconds > 0f
+                && dt > 0f)
+            {
+                _characterCreationPauseRemainingSeconds -= dt;
+                return;
+            }
+
             var advanced = TryAdvanceCreationStage(activeState, stageName);
 
             if (advanced)
             {
+                if (DevToolsConfig.CharacterCreationVisibleMode)
+                {
+                    _characterCreationPauseRemainingSeconds =
+                        DevToolsConfig.CharacterCreationDecisionPauseMs / 1000f;
+                }
+
                 AnnounceCreationAdvance();
                 _creationStageStalledSeconds = 0f;
                 _hasAnnouncedCreationStall = false;

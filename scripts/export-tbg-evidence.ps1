@@ -46,7 +46,10 @@ $evidenceFiles = @(
     'BlacksmithGuild_GuildLoopReport.json',
     'BlacksmithGuild_SmithingSafeAction.json',
     'BlacksmithGuild_SmithingRefineProbe.json',
-    'BlacksmithGuild_SmithingRestPlan.json'
+    'BlacksmithGuild_SmithingRestPlan.json',
+    'BlacksmithGuild_CharacterBuildProvenance.json',
+    'BlacksmithGuild_CharacterDoctrine.json',
+    'BlacksmithGuild_BlacksmithAutomation.json'
 )
 
 $phase1Source = Join-Path $bannerlordRoot 'BlacksmithGuild_Phase1.log'
@@ -274,6 +277,34 @@ if ($guildPlan.Count -gt 0) {
 [void]$sb.AppendLine("| Exposed in CommandSurface | $stageDExposed |")
 [void]$sb.AppendLine("| Recommendation | $restAction |")
 [void]$sb.AppendLine("| Reason | $restReason |")
+[void]$sb.AppendLine('')
+
+$characterDoctrine = Get-JsonFromDest 'BlacksmithGuild_CharacterDoctrine.json'
+$characterProvenance = Get-JsonFromDest 'BlacksmithGuild_CharacterBuildProvenance.json'
+$blacksmithAutomation = Get-JsonFromDest 'BlacksmithGuild_BlacksmithAutomation.json'
+
+$doctrineBuild = if ($characterDoctrine) { $characterDoctrine.defaultBuild } else { 'missing' }
+$doctrineMode = if ($characterDoctrine) { "$($characterDoctrine.legitimacyMode) + assistive=$($characterDoctrine.assistiveMode)" } else { 'missing' }
+$provenanceCulture = if ($characterProvenance -and $characterProvenance.culture) { $characterProvenance.culture.selectedCultureName } else { 'missing' }
+$provenanceVerdict = if ($characterProvenance) { $characterProvenance.verdict } else { 'missing (run Forge.cmd Path A)' }
+$automationAction = if ($blacksmithAutomation) { $blacksmithAutomation.action } else { 'missing (run RunBlacksmithAutomationNow)' }
+$automationExecuted = if ($blacksmithAutomation) { $blacksmithAutomation.executed } else { 'n/a' }
+
+[void]$sb.AppendLine('## Character (008A)')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine("| Field | Value |")
+[void]$sb.AppendLine('|-------|-------|')
+[void]$sb.AppendLine("| Doctrine build | $doctrineBuild |")
+[void]$sb.AppendLine("| Mode | $doctrineMode |")
+[void]$sb.AppendLine("| Provenance culture | $provenanceCulture |")
+[void]$sb.AppendLine("| Provenance verdict | $provenanceVerdict |")
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine('## Blacksmith automation')
+[void]$sb.AppendLine('')
+[void]$sb.AppendLine("| Field | Value |")
+[void]$sb.AppendLine('|-------|-------|')
+[void]$sb.AppendLine("| Last action | $automationAction |")
+[void]$sb.AppendLine("| Executed | $automationExecuted |")
 [void]$sb.AppendLine('')
 [void]$sb.AppendLine('## Re-export')
 [void]$sb.AppendLine('')

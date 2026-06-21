@@ -25,7 +25,50 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 | Guild loop | **Ctrl+Alt+G** | `.\forge.ps1 -Command RunGuildLoopNow -Wait` | `BlacksmithGuild_GuildLoopReport.json` | Unified market + forge + crew + action plan |
 | Stage C refine | — | `.\RunStageCCharcoalCert.cmd` | `BlacksmithGuild_SmithingSafeAction.json` | One headless hardwood→charcoal mutation (Tier 3) |
 | Stage D rest plan | — (inbox only) | `.\forge.ps1 -Command RunSmithingRestPlanNow -Wait` | `BlacksmithGuild_SmithingRestPlan.json` | Read-only rest recommendation (no time mutation) |
+| Character doctrine | — | `.\forge.ps1 -Command ShowCharacterDoctrine -Wait` | `BlacksmithGuild_CharacterDoctrine.json` | VanillaLegit + Aserai Trade-Smith doctrine |
+| Blacksmith automation | — | `.\forge.ps1 -Command RunBlacksmithAutomationNow -Wait` | `BlacksmithGuild_BlacksmithAutomation.json` | One bounded safe action (charcoal refine or clean block) |
 | Export evidence | — | `.\ExportTbgEvidence.cmd` | `docs/evidence/latest/README.md` | Repo-local snapshot for agents |
+
+---
+
+## Starting a real Aserai Trade-Smith save
+
+1. Close Bannerlord.
+2. Run `.\Forge.cmd`.
+3. Watch culture/upbringing choices (visible traversal; ~750ms pause between steps).
+4. Confirm Aserai selected in Phase1: `culture auto-selected: Aserai`.
+5. Reach campaign map.
+6. Press **F7**.
+7. Confirm:
+   - mode: VanillaLegit + Assistive
+   - build: AseraiTradeSmith
+   - culture: Aserai
+   - postMapInjection: off
+8. Save as `TBGPersonalAserai001`.
+
+Inspect JSON:
+
+- `BlacksmithGuild_CharacterBuildProvenance.json` — upbringing choices + verdict
+- `BlacksmithGuild_CharacterDoctrine.json` — doctrine axes
+
+---
+
+## Blacksmith automation
+
+Run:
+
+```powershell
+.\forge.ps1 -Command RunBlacksmithAutomationNow -Wait
+```
+
+Expected:
+
+- Refines one charcoal if hardwood exists and charcoal is low.
+- Blocks cleanly if hardwood is missing (`BuyMaterialsFirst`).
+- Recommends manual craft if crafting mutation is not yet proven (`CraftManual`).
+- Does **not** auto-buy, auto-rest, or loop unbounded.
+
+Regression for Stage C alone: `.\RunStageCCharcoalCert.cmd`
 
 ---
 
