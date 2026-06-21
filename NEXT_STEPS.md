@@ -3,7 +3,8 @@
 **Daily dev:** `Forge.cmd` — [forge-zero-click-contract.md](docs/forge-zero-click-contract.md)  
 **Where we are:** [functionality-status.md](docs/functionality-status.md)  
 **Cert doctrine:** [certification-doctrine.md](docs/certification-doctrine.md)  
-**Handoff:** [post-stage-b-smithing-advisory-handoff.md](docs/checkpoints/post-stage-b-smithing-advisory-handoff.md)
+**Handoff:** [post-stage-b-smithing-advisory-handoff.md](docs/checkpoints/post-stage-b-smithing-advisory-handoff.md)  
+**Commands:** [player-command-guide.md](docs/player-command-guide.md)
 
 ---
 
@@ -31,7 +32,8 @@ Live certs are **not** required for docs, formatting, or read-only reports. See 
 | **Stage B smithing advisory** | Code shipped — Tier 1, cert optional |
 | **Stage C auto-refine** | **USER PASS** 2026-06-20 @ 17:52:13 — charcoal 0→1, one refine, Continue save |
 | **Track 2B FORGE MATERIALS** | Code shipped — Tier 1 |
-| **006J Path B** | USER pending (launcher path only) |
+| **Stage D rest plan** | Read-only — inbox `RunSmithingRestPlanNow` |
+| **Evidence export** | `ExportTbgEvidence.cmd` → `docs/evidence/latest/` |
 | **Track 8 caravan/army** | Blocked until user directs |
 | **Posse stamina automation** | Stage D — see 005e plan |
 

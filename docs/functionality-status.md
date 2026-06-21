@@ -161,10 +161,13 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | `BlacksmithGuild_SmithingAdvisory.json` | Ctrl+Alt+R / Ctrl+Alt+G / `RunSmithingAdvisoryNow` |
 | `BlacksmithGuild_SmithingSafeAction.json` | inbox `RunSmithingSafeActionNow` |
 | `BlacksmithGuild_SmithingRefineProbe.json` | inbox `ProbeSmithingRefineApi` |
+| `BlacksmithGuild_GuildLoopReport.json` | **Ctrl+Alt+G** / inbox `RunGuildLoopNow` |
+| `BlacksmithGuild_CommandSurface.json` | **F8** / map ready |
+| `BlacksmithGuild_SmithingRestPlan.json` | inbox `RunSmithingRestPlanNow` (Stage D read-only) |
 | `BlacksmithGuild_Launch.log` | Forge.cmd / Continue automation |
 | `BlacksmithGuild_Status.json` | F7 |
 
-Collect: `CollectCertLogs.cmd` (uses `-LiteralPath`). Manual:
+Collect: `CollectCertLogs.cmd` (uses `-LiteralPath`). Export to repo: `ExportTbgEvidence.cmd` → `docs/evidence/latest/`. Player guide: [player-command-guide.md](player-command-guide.md).
 
 ```powershell
 Get-Content -LiteralPath "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Status.json"
