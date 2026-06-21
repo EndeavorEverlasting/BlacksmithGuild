@@ -475,8 +475,8 @@ Unbounded crafting loops
 
 ```text
 - This file exists under docs/plans/
-- NEXT_STEPS.md links to it as a future 005E subplan
-- It is clearly gated behind 006I cert PASS
-- It does not mark implementation started
-- It does not claim stamina automation is currently working
+- Launcher cert gate CLOSED (2026-06-21) — implementation UNBLOCKED
+- Stages A–C shipped; Stage D read-only rest plan shipped
+- Next agent implements 005E posse/stamina slice per pre-blacksmith-automation-handoff.md
+- Stage B Tier-1 cert: RunStageBSmithingCert.cmd (optional before first 005E commit)
 ```

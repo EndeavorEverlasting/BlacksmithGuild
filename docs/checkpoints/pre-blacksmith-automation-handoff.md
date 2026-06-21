@@ -1,101 +1,223 @@
-# Handoff — Pre–Blacksmith Automation (Launcher cert closed)
+# BlacksmithGuild — Master Agent Handoff (copy-paste entire file)
 
 **Last updated:** 2026-06-21  
-**Authority:** User ruling — Path A passed; Path B waived (obsolete); Continue load + quit passed; Path C passed.
-
-Copy-paste this document to the next AI agent.
+**HEAD after this sprint:** run `git log -1 --oneline` — expect Stage B cert helper + doc closeout  
+**Authority:** User — launcher certs CLOSED; Path B WAIVED; 005E UNBLOCKED.
 
 ---
 
-## Repo
+## 1. Repo
 
 | Field | Value |
 |-------|-------|
 | Root | [`C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild`](C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild) |
-| Branch | `main` (clean) |
-| HEAD | `9780797` (Path C cert docs) + fix commits `286df1e`, `f318f3a` |
-| Remote | 53 commits ahead — push only when user asks |
+| Remote | `https://github.com/EndeavorEverlasting/BlacksmithGuild.git` |
+| Branch | `main` only — no stale feature branches |
+| Open PRs | None |
+| Push | **HOLD** until user explicitly requests (50+ commits ahead of origin) |
+| Working tree | Must be clean before next feature branch |
+
+```powershell
+cd C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild
+git status --short
+dotnet build -c Release src/BlacksmithGuild/BlacksmithGuild.csproj
+```
 
 ---
 
-## Launcher / bootstrap cert matrix — **CLOSED**
+## 2. Named cert scenarios (NOT file paths)
 
-These are **named test scenarios** (not file paths). All required launcher gates are **USER PASS** or **WAIVED**.
+| Name | Plain English | Entry command | PASS means |
+|------|---------------|---------------|------------|
+| **Path A** | Zero-click new campaign → map | [`Forge.cmd`](../../Forge.cmd) | `TBG READY` on map; no manual launcher/creation clicks |
+| **Path B** | Culture Back does not replay intro | [`Forge.cmd`](../../Forge.cmd) → Back at culture | **WAIVED** — auto-skip past creation; no cert required |
+| **Path C-play** | Quit to menu after play bootstrap | [`Forge.cmd`](../../Forge.cmd) → map → Pause → Quit once | Menu idle; log `decision=block reason=session ended` |
+| **Path C-continue** | Quit to menu after Continue | [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) → map → Quit once | Menu idle; log `forward launch already completed`; no Continue re-click |
+| **Continue load** | Launcher Continue → map | [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) | Map loads; Module Mismatch cleared if shown |
+| **Stage C** | Headless charcoal refine (Tier 3 mutation) | [`RunStageCCharcoalCert.cmd`](../../RunStageCCharcoalCert.cmd) | Phase1 `RefineCharcoal` charcoal N→N+1 |
+| **Stage B** | Smithing crew advisory (Tier 1 read-only) | [`RunStageBSmithingCert.cmd`](../../RunStageBSmithingCert.cmd) | `SmithingAdvisory.json` crew/recommendations or Phase1 SMITHING ADVISORY |
 
-| Name | Plain English | Entry | Status |
-|------|---------------|-------|--------|
-| **Path A** | Zero-click new campaign → map | [`Forge.cmd`](../../Forge.cmd) | **USER PASS** (2026-06-20) — `TBG READY`, PLAY click |
-| **Path B** | Culture Back does not replay intro | [`Forge.cmd`](../../Forge.cmd) → Back at culture | **WAIVED / OBSOLETE** — auto-skip loads past character creation; guard remains in code but no cert required |
-| **Path C-play** | Quit to menu stays idle (play) | [`Forge.cmd`](../../Forge.cmd) → map → Pause → Quit | **USER PASS** (2026-06-21) — `session ended` |
-| **Path C-continue** | Quit to menu stays idle (continue) | [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) → map → Quit | **USER PASS** (2026-06-21) — `forward launch already completed` |
-| **Continue load** | Launcher Continue → map (Module Mismatch) | [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) | **USER PASS** (2026-06-20 + 2026-06-21 user confirm) |
-| **Continue quit** | Same as Path C-continue | — | **USER PASS** |
-
-**006I / 006J launcher gate:** **CLOSED.** Do not block 005E or smithing work on Path B or stale 006J partials.
-
-Optional only: Layer A `handoff:` line in Launch.log — nice-to-have, not a blocker.
+**Layer A** = PowerShell launcher automation (`Launch.log`). **Layer B** = in-game C# (`Phase1.log`).
 
 ---
 
-## Smithing cert queue (before 005E automation expansion)
+## 3. Certification status (user-confirmed 2026-06-21)
 
-Work **top to bottom**. Tier 3 mutation already passed; remaining items are lightweight or advisory.
+### Launcher / bootstrap — **CLOSED**
 
-| # | Cert | Tier | Entry / trigger | PASS criteria | Status |
-|---|------|------|-----------------|---------------|--------|
-| 1 | **Stage C charcoal refine** | 3 | [`RunStageCCharcoalCert.cmd`](../../RunStageCCharcoalCert.cmd) | Phase1 `RefineCharcoal` charcoal N→N+1, `refineCount=1` | **USER PASS** 2026-06-20 |
-| 2 | **Track 2A real forge rank** | 1 | **Ctrl+Alt+M** then **Ctrl+Alt+R** on map | JSON `source=real`, `fallbackUsed=false` | **USER PASS** 2026-06-20 |
-| 3 | **Market intel** | 1 | **Ctrl+Alt+M** | ACTION PLAN, BUY@NEAREST, `MarketIntel.json` | **USER PASS** 2026-06-20 |
-| 4 | **Stage B smithing crew advisory** | 1 | **Ctrl+Alt+R** or **Ctrl+Alt+G** when charcoal low | Phase1 shows SMITHING CREW + prep; `SmithingAdvisory.json` | Code shipped — **quick smoke recommended** before first 005E automation commit |
-| 5 | **Track 2B FORGE MATERIALS** | 1 | **Ctrl+Alt+M** | `--- FORGE MATERIALS ---` section in report | Code shipped — optional visual |
-| 6 | **Guild loop report** | 1 | **Ctrl+Alt+G** | `GuildLoopReport.json` + coherent combined advisory | Code shipped — optional smoke |
+| Item | Status |
+|------|--------|
+| Path A | **USER PASS** 2026-06-20 |
+| Path B | **WAIVED** (obsolete) |
+| Path C-play | **USER PASS** 2026-06-21 |
+| Path C-continue | **USER PASS** 2026-06-21 |
+| Continue load + quit | **USER PASS** (user 2026-06-21) |
 
-**Re-cert Stage C only** if `SmithingRefineApi` / `SmithingSafeActionService` mutation code changes.
+Do **not** block smithing work on Path B or stale 006J partials.
 
-After rows 4–6 smoke (or explicit user skip), proceed to **[005E smithing posse automation](../plans/005e-smithing-posse-stamina-output.plan.md)** implementation.
+### Smithing / forge — pre-005E queue
 
----
+| # | Item | Tier | Status |
+|---|------|------|--------|
+| 1 | Stage C charcoal refine | 3 | **USER PASS** 2026-06-20 |
+| 2 | Track 2A real forge rank (Ctrl+Alt+R) | 1 | **USER PASS** 2026-06-20 |
+| 3 | Market intel (Ctrl+Alt+M) | 1 | **USER PASS** 2026-06-20 |
+| 4 | Stage B smithing crew advisory | 1 | Code shipped — run [`RunStageBSmithingCert.cmd`](../../RunStageBSmithingCert.cmd) (~2 min) |
+| 5 | Track 2B FORGE MATERIALS | 1 | Optional visual |
+| 6 | Guild loop (Ctrl+Alt+G) | 1 | Included in Stage B cert script |
 
-## 005E — next engineering sprint
-
-**Unblocked** as of 2026-06-21 (launcher gate closed).
-
-Goal: coordinated forge crew — who acts, what action, when to rest, reserve protection. Stage C proved **headless map mutation** works; 005E extends to stamina rotation and multi-hero roles.
-
-Plan: [`docs/plans/005e-smithing-posse-stamina-output.plan.md`](../plans/005e-smithing-posse-stamina-output.plan.md)
-
----
-
-## Future — travel / party map automation (not started)
-
-**User goal (later):** Watch the hero traverse the campaign map and enact orders — proves the same automation substrate can drive **party movement and map-level will**, not just inbox commands on a static map.
-
-This builds on:
-
-- Map-ready gate (`TBG READY`, `GameSessionState.IsCampaignMapReady`)
-- Campaign tick / daily tick hooks
-- Dev command bus + evidence JSON pattern
-- Stage C proof that game APIs can be invoked without Gauntlet clicks
-
-**Not in scope** until 005E smithing automation slice is stable. Track informally as **party travel automation** — no plan file yet.
+**Re-cert Stage C only** if `SmithingRefineApi` / `SmithingSafeActionService` changes.
 
 ---
 
-## Runtime log paths
+## 4. Next engineering — 005E smithing posse automation
+
+**Status:** UNBLOCKED (launcher gate closed).
+
+**Plan:** [`docs/plans/005e-smithing-posse-stamina-output.plan.md`](../plans/005e-smithing-posse-stamina-output.plan.md)
+
+**Already shipped:**
+
+| Stage | What | Key files |
+|-------|------|-----------|
+| A | Read-only audit | `SmithingAuditService.cs` → `SmithingAudit.json` |
+| B | Crew advisory | `SmithingAdvisoryService.cs`, `SmithingAdvisoryPlanner.cs` |
+| C | Safe single refine | `SmithingSafeActionService.cs`, `SmithingRefineApi.cs` |
+| D (read-only) | Rest plan | `SmithingRestPlanService.cs` → `SmithingRestPlan.json` |
+
+**Next slice (005E):** multi-hero stamina rotation, role assignment beyond single charcoal refine, explained actions with reserve guards. Stage C proved headless map mutation works.
+
+**Scope lock for 005E:** no Gauntlet UI clicks, no auto buy/sell, no launcher changes unless regression.
+
+---
+
+## 5. Future — party travel / map automation
+
+**User goal (later):** Hero traverses campaign map and enacts orders — proves party-level automation (same substrate as inbox commands + campaign tick, extended to movement).
+
+**Not started.** After 005E smithing slice is stable. No plan file yet.
+
+Builds on: `GameSessionState.IsCampaignMapReady`, campaign tick hooks, `DevCommandBus`, evidence JSON pattern.
+
+---
+
+## 6. Runtime output paths (Bannerlord install dir)
+
+Default Steam root: `C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/`
 
 | Artifact | Path |
 |----------|------|
-| Phase1 | `C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/BlacksmithGuild_Phase1.log` |
-| Launch | `C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/BlacksmithGuild_Launch.log` |
-| Smithing safe action | `C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/BlacksmithGuild_SmithingSafeAction.json` |
-| Forge recommendations | `C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/BlacksmithGuild_ForgeRecommendations.json` |
-| Collect all | [`CollectCertLogs.cmd`](../../CollectCertLogs.cmd) from repo root |
+| Phase1 (primary evidence) | `.../BlacksmithGuild_Phase1.log` |
+| Launch (Layer A) | `.../BlacksmithGuild_Launch.log` |
+| Status | `.../BlacksmithGuild_Status.json` |
+| Market intel | `.../BlacksmithGuild_MarketIntel.json` |
+| Forge rank | `.../BlacksmithGuild_ForgeRecommendations.json` |
+| Smithing advisory | `.../BlacksmithGuild_SmithingAdvisory.json` |
+| Safe action (Stage C) | `.../BlacksmithGuild_SmithingSafeAction.json` |
+| Refine probe | `.../BlacksmithGuild_SmithingRefineProbe.json` |
+| Guild loop | `.../BlacksmithGuild_GuildLoopReport.json` |
+| Rest plan (Stage D) | `.../BlacksmithGuild_SmithingRestPlan.json` |
+| Command surface | `.../BlacksmithGuild_CommandSurface.json` |
+
+Collect all: [`CollectCertLogs.cmd`](../../CollectCertLogs.cmd) from repo root.
+
+Export to repo: [`ExportTbgEvidence.cmd`](../../ExportTbgEvidence.cmd) → [`docs/evidence/latest/`](../../docs/evidence/latest/)
 
 ---
 
-## Scope lock
+## 7. Repo entrypoints (from repo root)
 
-- No Path B cert work unless auto-skip is disabled by user
-- No launcher rewrite unless regression
+| Script | Purpose |
+|--------|---------|
+| [`Forge.cmd`](../../Forge.cmd) | Daily dev — play intent → map |
+| [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) | Continue via launcher |
+| [`ForgeStop.cmd`](../../ForgeStop.cmd) | Kill game + launcher + forge shell |
+| [`CollectCertLogs.cmd`](../../CollectCertLogs.cmd) | Paste block for agent |
+| [`RunStageCCharcoalCert.cmd`](../../RunStageCCharcoalCert.cmd) | Tier 3 Stage C cert |
+| [`RunStageBSmithingCert.cmd`](../../RunStageBSmithingCert.cmd) | Tier 1 Stage B cert |
+| [`ExportTbgEvidence.cmd`](../../ExportTbgEvidence.cmd) | Snapshot JSON to docs/evidence |
+
+---
+
+## 8. Key source files (005E / smithing)
+
+| Path | Role |
+|------|------|
+| [`src/BlacksmithGuild/Forge/SmithingRefineApi.cs`](../../src/BlacksmithGuild/Forge/SmithingRefineApi.cs) | Headless DoRefinement |
+| [`src/BlacksmithGuild/Forge/SmithingSafeActionService.cs`](../../src/BlacksmithGuild/Forge/SmithingSafeActionService.cs) | Stage C safe action cap |
+| [`src/BlacksmithGuild/Forge/SmithingAdvisoryService.cs`](../../src/BlacksmithGuild/Forge/SmithingAdvisoryService.cs) | Stage B crew advisory |
+| [`src/BlacksmithGuild/Forge/SmithingAdvisoryPlanner.cs`](../../src/BlacksmithGuild/Forge/SmithingAdvisoryPlanner.cs) | Reserve + crew doctrine |
+| [`src/BlacksmithGuild/Forge/SmithingWorkerSelector.cs`](../../src/BlacksmithGuild/Forge/SmithingWorkerSelector.cs) | Party worker profiles |
+| [`src/BlacksmithGuild/Forge/SmithingRestPlanService.cs`](../../src/BlacksmithGuild/Forge/SmithingRestPlanService.cs) | Stage D read-only rest |
+| [`src/BlacksmithGuild/Forge/GuildLoopService.cs`](../../src/BlacksmithGuild/Forge/GuildLoopService.cs) | Ctrl+Alt+G combined loop |
+| [`src/BlacksmithGuild/DevTools/DevCommandBus.cs`](../../src/BlacksmithGuild/DevTools/DevCommandBus.cs) | Inbox command dispatch |
+
+Launcher (do not touch unless regression):
+
+| Path | Role |
+|------|------|
+| [`src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs`](../../src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs) | Path C fix — forward-launch latch |
+| [`scripts/launcher-auto-nav.ps1`](../../scripts/launcher-auto-nav.ps1) | Layer A PLAY/CONTINUE |
+
+---
+
+## 9. Known gaps & risks
+
+| Gap / risk | Detail |
+|------------|--------|
+| **Stage B user cert** | Helper shipped; user smoke ~2 min before first 005E commit recommended |
+| **53+ unpushed commits** | Push when user ready; branch from clean `main` |
+| **Stale JSON vs Phase1** | Latest JSON may show blocked run after PASS — Phase1 is canonical for Stage C |
+| **Build install blocked if game running** | Close Bannerlord or use Forge.cmd to install DLL |
+| **005E stamina API unknowns** | Per-hero stamina read/assign may be advisory-only first |
+| **Travel automation** | Future — not scoped until 005E stable |
+| **Path B guard in code** | Remains; no cert required |
+
+---
+
+## 10. Agent mission templates
+
+### A. Run Stage B cert (user, ~2 min)
+
+```powershell
+cd C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild
+./LaunchForgeContinue.cmd
+# On map (optional: Ctrl+Alt+M first):
+./RunStageBSmithingCert.cmd
+```
+
+PASS: verdict PASS; paste output to agent if FAIL.
+
+### B. Start 005E implementation (agent)
+
+1. Read [`005e-smithing-posse-stamina-output.plan.md`](../plans/005e-smithing-posse-stamina-output.plan.md)
+2. Smallest slice: extend `SmithingSafeActionService` or worker rotation with logging `[TBG FORGE] worker=... action=... reason=...`
+3. Tier 3 mutation → disposable save first
+4. No launcher / Path C regressions
+5. `dotnet build -c Release`; user cert on map
+
+### C. If launcher regression
+
+Inspect [`MainMenuAutoLauncher.cs`](../../src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs) first; grep Phase1 for `decision=auto-select` after quit.
+
+---
+
+## 11. Related docs
+
+| Doc | Purpose |
+|-----|---------|
+| [`docs/functionality-status.md`](../functionality-status.md) | What works today |
+| [`docs/certification-doctrine.md`](../certification-doctrine.md) | Tier 0–3 model |
+| [`docs/plans/006i-4-quit-to-menu-intro-loop.plan.md`](../plans/006i-4-quit-to-menu-intro-loop.plan.md) | Path C fix record |
+| [`docs/plans/006j-full-live-cert-closeout.plan.md`](../plans/006j-full-live-cert-closeout.plan.md) | Launcher closeout (CLOSED) |
+| [`docs/forge-zero-click-contract.md`](../forge-zero-click-contract.md) | Forge.cmd contract |
+
+---
+
+## 12. Scope lock
+
+- No Path B cert unless user disables auto-skip
 - No push unless user asks
-- No travel automation until user directs after 005E slice
+- No travel automation until user directs post-005E
+- No Gauntlet trade/smithy UI clicking
+- No economics auto-buy/sell
