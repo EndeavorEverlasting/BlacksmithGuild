@@ -147,7 +147,7 @@ Select-String -Path "C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade
 
 | Gap / risk | Detail |
 |------------|--------|
-| **Path C user cert PENDING** | 2026-06-21 fix not live-verified this session |
+| **Path C user cert** | **DONE** 2026-06-21 — play + continue USER PASS |
 | **Path C-continue is the critical repro** | Old bug was continue-specific; must cert both play and continue |
 | **Same-process relaunch by design** | Quit-to-menu stays on menu; new session = full game exit + fresh Forge |
 | **50 unpushed commits** | Push when user ready; next feature should branch from clean `main` |
