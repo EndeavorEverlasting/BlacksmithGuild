@@ -2,17 +2,18 @@
 
 ## Status
 
-SHIPPED — RE-CERT PENDING.
+**USER PASS — Path C-play + Path C-continue (2026-06-21).**
 
-Fix implemented at code review + Hypothesis A diagnosis. User Path C re-cert required before PASS.
+Fix shipped 2026-06-21 (continue exemption removed). User confirmed clean quit-to-menu on play and continue.
 
 | Gate | Status |
 |------|--------|
 | 006I-3 implementation | SHIPPED |
 | 006I-3 re-cert | PENDING |
-| Path C quit | FAIL in prior session — fix shipped, re-cert pending |
-| 006I-4 implementation | SHIPPED (diagnostics + guards) |
-| 005E economics | BLOCKED |
+| Path C-play | **USER PASS** 2026-06-21 |
+| Path C-continue | **USER PASS** 2026-06-21 |
+| 006I-4 implementation | SHIPPED + certed |
+| 005E economics | UNBLOCKED for user direction (006I-4 gate cleared) |
 
 ## Problem
 
@@ -330,7 +331,15 @@ After `CompleteIntent()`, `_launchIntent` remained `"play"` while `_intentConsum
   - `TryDisarmOnMainMenuReturn` no longer bails when `_setupComplete`; uses `_campaignLoadedThisProcess` instead.
   - `_hasAnnouncedCampaignMapReady` reset on session end (secondary guard for same-process relaunch).
 
-**Cert:** Path C re-cert required for **both** `Forge.cmd` (play) and `LaunchForgeContinue.cmd` (continue).
+**Cert:** Path C **USER PASS 2026-06-21** — play and continue. Evidence in [`BlacksmithGuild_Phase1.log`](file:///C:/Program%20Files%20(x86)/Steam/steamapps/common/Mount%20&%20Blade%20II%20Bannerlord/BlacksmithGuild_Phase1.log):
+
+| Path | Timestamp | Key lines |
+|------|-----------|-----------|
+| Path C-play | 2026-06-21 15:36:56 | `decision=block reason=session ended`; `returned to main menu` InitialState; no second `auto-select` after map ready |
+| Path C-play (repeat) | 2026-06-21 15:43:19 | `decision=block reason=session ended` |
+| Path C-continue | 2026-06-21 15:51:12 | `decision=block reason=forward launch already completed this process`; `decision=block reason=session ended`; **no** `auto-select reason=continue intent` on quit |
+
+Contrast pre-fix fail (same log): 2026-06-20 18:00:40 — `phase=Complete` then `decision=auto-select reason=continue intent` (re-arm bug).
 
 ### Path C smoke (2026-06-21)
 

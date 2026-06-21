@@ -1,8 +1,8 @@
 # BlacksmithGuild — 006I-4 Quit-to-Menu Fix — Agent Handoff
 
-**Last updated:** 2026-06-21  
-**HEAD:** `f318f3a` — fix: guard session-end disarm against per-frame main menu spam  
-**Prior:** `286df1e` (core fix), `6e99c36` (docs)
+**Last updated:** 2026-06-21 (Path C USER PASS recorded)  
+**HEAD:** `31571e1` — docs: refresh 006I-4 handoff with path glossary and portable paths  
+**Fix commits:** `286df1e`, `f318f3a`
 
 ---
 
@@ -75,29 +75,18 @@ After quit-to-main-menu, `MainMenuAutoLauncher.Poll` re-clicked **Continue** or 
 
 ## User cert still required (Tier 2)
 
-Code + Release build **PASS**. In-game Path C re-cert **PENDING** for both play and continue after the 2026-06-21 continue-exemption removal.
+~~Path C-play + Path C-continue PENDING.~~
 
-### Path C-play procedure
+### Path C — **USER PASS 2026-06-21** (user confirmed)
 
-1. Close Bannerlord completely ([`ForgeStop.cmd`](../../ForgeStop.cmd) if needed).
-2. `cd` to repo root; run [`Forge.cmd`](../../Forge.cmd).
-3. Wait for **`TBG READY`** on campaign map.
-4. Pause → **Quit to main menu** (once).
-5. **PASS:** main menu idle; no SandBox auto-start; no intro replay.
-6. Exit game entirely.
-7. Run [`CollectCertLogs.cmd`](../../CollectCertLogs.cmd); paste output if FAIL.
+| Path | Verdict | Evidence timestamp |
+|------|---------|-------------------|
+| Path C-play | **PASS** | 15:36:56 — `session ended`; menu stayed idle |
+| Path C-continue | **PASS** | 15:51:12 — `forward launch already completed this process`; no Continue auto-select on quit |
 
-### Path C-continue procedure
+Log file: `C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/BlacksmithGuild_Phase1.log`
 
-1. Close Bannerlord completely.
-2. Run [`LaunchForgeContinue.cmd`](../../LaunchForgeContinue.cmd) (requires existing save).
-3. Wait for **`TBG READY`**.
-4. Pause → **Quit to main menu** (once).
-5. **PASS:** main menu idle; no Continue auto-click.
-6. Exit game entirely.
-7. Run [`CollectCertLogs.cmd`](../../CollectCertLogs.cmd); paste output if FAIL.
-
-### Optional regression (after Path C PASS)
+### Optional regression (when touching related code)
 
 | Path | When to run |
 |------|-------------|
@@ -189,6 +178,6 @@ Select-String -Path "C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade
 
 ## After Path C PASS
 
-1. Update [`docs/plans/006i-4-quit-to-menu-intro-loop.plan.md`](../plans/006i-4-quit-to-menu-intro-loop.plan.md) status to USER PASS with date + log lines.
-2. Update [`docs/sprint-006i-live-results.md`](../sprint-006i-live-results.md) — note continue-exemption removal superseded 2026-06-19 Path C PASS for continue.
-3. Proceed to [`docs/plans/006j-full-live-cert-closeout.plan.md`](../plans/006j-full-live-cert-closeout.plan.md) or 005E per user direction.
+1. ~~Update 006I-4 plan → USER PASS~~ **Done 2026-06-21**
+2. Update [`docs/sprint-006i-live-results.md`](../sprint-006i-live-results.md) with 2026-06-21 continue re-cert
+3. Proceed to [`docs/plans/006j-full-live-cert-closeout.plan.md`](../plans/006j-full-live-cert-closeout.plan.md) (Path B, Layer A handoff, Market F12) or **005E** per user direction

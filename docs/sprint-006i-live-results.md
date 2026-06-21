@@ -2,13 +2,15 @@
 
 ## Verdict
 
-**RE-CERT PARTIAL** — Path A + Path C PASS; Layer A Path A **USER PASS 2026-06-20**; Continue, Path B, Market F12 pending.
+**RE-CERT PARTIAL** — Path A + **Path C-play + Path C-continue USER PASS 2026-06-21**; Path B, Continue load (006I-5), Market F12 pending.
+
+**Path C evidence (2026-06-21):** Play quit @ 15:36:56 `decision=block reason=session ended`. Continue quit @ 15:51:12 `decision=block reason=forward launch already completed this process` — no second `auto-select reason=continue intent`. Pre-fix contrast: 2026-06-20 18:00:40 re-armed Continue on quit.
 
 **Path A evidence (2026-06-20):** Forge.cmd → Danustica map, `TBG READY`, `ForgeQuartermasterWarlord`, stub forge Long Warblade 11250. Launch.log: `AUDIT coord window pick: MB II: Bannerlord`, click `(811,764)` fractions `0.34×0.90`.
 
 Handoff: [docs/checkpoints/post-006i-4-handoff.md](checkpoints/post-006i-4-handoff.md) · Plan (006J): [docs/plans/006j-full-live-cert-closeout.plan.md](plans/006j-full-live-cert-closeout.plan.md) · Plan (006I-5): [docs/plans/006i-5-continue-module-mismatch-load.plan.md](plans/006i-5-continue-module-mismatch-load.plan.md) · Plan (006I-4): [docs/plans/006i-4-quit-to-menu-intro-loop.plan.md](plans/006i-4-quit-to-menu-intro-loop.plan.md)
 
-Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
+Rollback anchor (pre-2026-06-21 fix): tag `006i-4-path-c-pass` @ `57f6062` · Current fix HEAD: `31571e1`
 
 ## Sprint status
 
@@ -18,17 +20,25 @@ Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Layer A handoff still pending formal cert. |
 | 006I-3 | SHIPPED. Path B culture Back pending re-cert. |
-| 006I-4 | **Path C USER PASS** (2026-06-19). Quit re-arm fix confirmed. |
+| 006I-4 | **Path C USER PASS** (play 2026-06-19, **continue re-cert 2026-06-21**). Forward-launch latch fix certed. |
 | 006I-5 | SHIPPED — Continue/Module Mismatch/watchdog; user re-cert PENDING. |
 | 005E economics | NEXT. Gated on 006I cert PASS. |
 
-## 006I-4 fix (quit-to-menu intro replay) — CONFIRMED
+## 006I-4 fix (quit-to-menu intro replay) — CONFIRMED + RE-CERTED 2026-06-21
 
-**Diagnosis:** Hypothesis A — `MainMenuAutoLauncher` re-selected `SandBoxNewGame` on return to main menu because `_launchIntent` stayed `"play"` after first consume.
+**Diagnosis:** Hypothesis A — `MainMenuAutoLauncher` re-selected SandBox/Continue on return to main menu. Continue path worse: explicit exemption + `_bootstrapUsed` never set.
 
-**Fix:** Clear intent memory after consume; block menu auto-select when intent consumed or bootstrap completed; permanent post-READY disarm latch; diagnostic logging.
+**Fix (2026-06-19):** Clear intent after consume; block when consumed or bootstrap completed (play only).
 
-**Cert:** Path C **USER PASS** 2026-06-19 — `decision=block reason=intent already consumed`; no intro replay; no Task Manager.
+**Fix (2026-06-21):** Remove continue exemption; `ForwardLaunchCompletedThisProcess` latch; `DisarmForSessionEnd` on quit/Game.End. Commits `286df1e`, `f318f3a`.
+
+**Cert:**
+
+| Session | Path | Result | Key log |
+|---------|------|--------|---------|
+| 2026-06-19 | Path C-play | USER PASS | `decision=block reason=intent already consumed` |
+| 2026-06-21 | Path C-play | USER PASS | `decision=block reason=session ended` @ 15:36:56 |
+| 2026-06-21 | Path C-continue | USER PASS | `decision=block reason=forward launch already completed this process` @ 15:51:12 |
 
 ## 006I-5 fix (Continue load hang) — SHIPPED, RE-CERT PENDING
 
@@ -42,7 +52,7 @@ Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
 | Post-handoff watchdog | `launcher-auto-nav.ps1` | Poll Phase1/Status.json; kill Bannerlord after 180s stall |
 | C# load stall log | `CampaignSetupStateTracker.cs` | Log + state stack after 180s in GameLoadingState |
 | Continue entrypoint | `LaunchForgeContinue.cmd` | `-Launch -LaunchIntent continue` via launcher |
-| Continue intent guard | `MainMenuAutoLauncher.cs` | Allow continue intent after bootstrap complete |
+| Forward-launch latch | `MainMenuAutoLauncher.cs` | One auto-forward per process (play **and** continue); blocks re-arm on quit |
 | Block log rate limit | `MainMenuAutoLauncher.cs` | Once per reason per session |
 
 ## Live cert record (2026-06-19 user session + 006J agent pass)
@@ -51,7 +61,8 @@ Rollback anchor: tag `006i-4-path-c-pass` @ `57f6062`
 |------|--------|----------|
 | A — bootstrap to map | **USER PASS** | 2026-06-20 Forge.cmd → Danustica, TBG READY, PLAY coords 0.34×0.90 @ (811,764) |
 | B — culture Back/Escape | **PENDING** | Not run; no culture Back lines in Phase1 tail |
-| C — Pause → Quit | **USER PASS** | User confirmed; intent consumed block log ~02:31:27 |
+| C — Pause → Quit (play) | **USER PASS** | 2026-06-21 @ 15:36:56 — `session ended` |
+| C — Pause → Quit (continue) | **USER PASS** | 2026-06-21 @ 15:51:12 — `forward launch already completed`; no Continue re-click |
 | Continue load | **PENDING** | 006I-5 shipped; no `clicked Module Mismatch Yes` in Launch.log |
 | Launcher handoff (Layer A) | **Path A PASS** | 2026-06-20 user session — map reached; verify `handoff:` line on next CollectCertLogs |
 | Market F12 (005E-M) | **FAIL** | `BlacksmithGuild_MarketIntel.json` absent |
