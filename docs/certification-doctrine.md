@@ -1,9 +1,9 @@
 # Certification Doctrine
 
-**Last updated:** 2026-06-20  
+**Last updated:** 2026-06-21  
 **Authority:** User-directed — live certs are reserved for mutation boundaries, not report surfaces.
 
-Local repo state is canonical until pushed. Public GitHub may be stale relative to local `main`.
+Local repo state is canonical until pushed. **Launcher cert gate CLOSED** — see [pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md).
 
 ---
 
@@ -29,11 +29,12 @@ dotnet build -c Release
 
 | Item | Tier | Status |
 |------|------|--------|
-| Stage B smithing crew advisory | 1 | Code shipped — skip ceremony unless needed for context |
-| Stage C charcoal refine | **3** | **USER PASS 2026-06-20** — Continue save; Phase1 canonical; JSON may lag |
-| Track 2B FORGE MATERIALS | 1 | Code shipped — optional smoke |
-| 006J Path B culture Back | 2 | Only when launcher/intro path touched |
-| Track 8 caravan/army | — | Stage C gate passed — blocked until user directs implementation |
+| Launcher / bootstrap (006I) | 2 | **CLOSED** — Path A, Continue, Path C PASS; Path B waived |
+| Stage B smithing crew advisory | 1 | Code shipped — quick smoke before 005E optional |
+| Stage C charcoal refine | **3** | **USER PASS 2026-06-20** |
+| Track 2B FORGE MATERIALS | 1 | Code shipped — optional |
+| 005E smithing posse automation | 2–3 | **UNBLOCKED** — next engineering |
+| Party travel automation | — | Future — after 005E slice |
 
 ---
 

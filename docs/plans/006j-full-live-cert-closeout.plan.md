@@ -2,23 +2,20 @@
 
 ## Status
 
-**IN PROGRESS** — agent analyzed on-disk logs (2026-06-19); **RE-CERT PARTIAL**; user matrix incomplete.
+**LAUNCHER CERT CLOSED (2026-06-21)** — Path B waived; Continue + Path C user confirmed. Smithing queue next.
 
-**Zero-click spec:** [docs/forge-zero-click-contract.md](../forge-zero-click-contract.md)
+**Handoff:** [docs/checkpoints/pre-blacksmith-automation-handoff.md](../checkpoints/pre-blacksmith-automation-handoff.md)
 
 | Gate | Status |
 |------|--------|
-| Path A bootstrap | **PASS** (Phase1 ~02:32:04) |
-| Path B culture Back | **PENDING** — not run this session |
-| Path C quit | **USER PASS** (006I-4) |
-| Layer A handoff | **FAIL** — no `handoff:` in Launch.log |
-| Continue load (006I-5) | **PENDING** — no `clicked Module Mismatch Yes` |
-| Market F12 (005E-M) | **FAIL** — `BlacksmithGuild_MarketIntel.json` absent |
-| 006I LIVE CERT PASS tag | **BLOCKED** |
-| 005E smithing posse | **BLOCKED** |
-| UTF-8 BOM (PS 5.1 Forge) | **SHIPPED** — `scripts/tools/Add-Utf8Bom.ps1` |
-| Zero-click contract doc | **SHIPPED** — `docs/forge-zero-click-contract.md` |
-| Module Mismatch UIA scope | **RISK** — false positive on desktop `mismatch` text |
+| Path A bootstrap | **USER PASS** |
+| Path B culture Back | **WAIVED** — obsolete (auto-skip) |
+| Path C quit (play + continue) | **USER PASS** 2026-06-21 |
+| Continue load (006I-5) | **USER PASS** |
+| Layer A handoff | Optional — not blocking |
+| Market Ctrl+Alt+M | **USER PASS** 2026-06-20 |
+| 006I LIVE CERT tag | **CLOSED** — use pre-blacksmith handoff instead |
+| 005E smithing posse | **UNBLOCKED** |
 
 ## Agent analysis (2026-06-19)
 

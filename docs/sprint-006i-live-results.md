@@ -2,7 +2,9 @@
 
 ## Verdict
 
-**RE-CERT PARTIAL** — Path A + **Path C-play + Path C-continue USER PASS 2026-06-21**; Path B, Continue load (006I-5), Market F12 pending.
+**LAUNCHER CERT CLOSED (2026-06-21)** — Path A, Continue load, Path C-play, Path C-continue **USER PASS**. **Path B WAIVED** (obsolete — auto-skip past character creation).
+
+Handoff for next work: [docs/checkpoints/pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md)
 
 **Path C evidence (2026-06-21):** Play quit @ 15:36:56 `decision=block reason=session ended`. Continue quit @ 15:51:12 `decision=block reason=forward launch already completed this process` — no second `auto-select reason=continue intent`. Pre-fix contrast: 2026-06-20 18:00:40 re-armed Continue on quit.
 
@@ -19,10 +21,10 @@ Rollback anchor (pre-2026-06-21 fix): tag `006i-4-path-c-pass` @ `57f6062` · Cu
 | 006H | LIVE CERT PASS. Do not regress narrative/bootstrap. |
 | 006I hotfix | Partial PASS. Disarm fix and count=1 OnActivate skip confirmed. |
 | 006I-2 | SHIPPED. Layer A handoff still pending formal cert. |
-| 006I-3 | SHIPPED. Path B culture Back pending re-cert. |
-| 006I-4 | **Path C USER PASS** (play 2026-06-19, **continue re-cert 2026-06-21**). Forward-launch latch fix certed. |
-| 006I-5 | SHIPPED — Continue/Module Mismatch/watchdog; user re-cert PENDING. |
-| 005E economics | NEXT. Gated on 006I cert PASS. |
+| 006I-3 | SHIPPED. Path B **WAIVED** (obsolete — untestable with auto-skip). |
+| 006I-4 | **CLOSED** — Path C play + continue USER PASS 2026-06-21. |
+| 006I-5 | **CLOSED** — Continue load + quit USER PASS (user 2026-06-21). |
+| 005E economics | **UNBLOCKED** — proceed smithing automation per [pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md). |
 
 ## 006I-4 fix (quit-to-menu intro replay) — CONFIRMED + RE-CERTED 2026-06-21
 
@@ -40,34 +42,25 @@ Rollback anchor (pre-2026-06-21 fix): tag `006i-4-path-c-pass` @ `57f6062` · Cu
 | 2026-06-21 | Path C-play | USER PASS | `decision=block reason=session ended` @ 15:36:56 |
 | 2026-06-21 | Path C-continue | USER PASS | `decision=block reason=forward launch already completed this process` @ 15:51:12 |
 
-## 006I-5 fix (Continue load hang) — SHIPPED, RE-CERT PENDING
+## 006I-5 fix (Continue load hang) — CLOSED
 
-**Problem:** LaunchForge → Continue → Module Mismatch (manual Yes) → infinite `GameLoadingState` loading screen.
+**User confirm 2026-06-21:** Continue load and quit both work (`LaunchForgeContinue.cmd`).
 
-**Fix:**
-
-| Piece | Location | Behavior |
-|-------|----------|----------|
-| Module Mismatch UIA | `launcher-auto-nav.ps1` | Auto-click Yes/OK/Continue; log visible buttons |
-| Post-handoff watchdog | `launcher-auto-nav.ps1` | Poll Phase1/Status.json; kill Bannerlord after 180s stall |
-| C# load stall log | `CampaignSetupStateTracker.cs` | Log + state stack after 180s in GameLoadingState |
-| Continue entrypoint | `LaunchForgeContinue.cmd` | `-Launch -LaunchIntent continue` via launcher |
-| Forward-launch latch | `MainMenuAutoLauncher.cs` | One auto-forward per process (play **and** continue); blocks re-arm on quit |
-| Block log rate limit | `MainMenuAutoLauncher.cs` | Once per reason per session |
+Prior fix (Module Mismatch UIA, watchdog, forward-launch latch) — evidence 2026-06-20 Tevea + 2026-06-21 Path C-continue.
 
 ## Live cert record (2026-06-19 user session + 006J agent pass)
 
 | Path | Result | Evidence |
 |------|--------|----------|
 | A — bootstrap to map | **USER PASS** | 2026-06-20 Forge.cmd → Danustica, TBG READY, PLAY coords 0.34×0.90 @ (811,764) |
-| B — culture Back/Escape | **PENDING** | Not run; no culture Back lines in Phase1 tail |
+| B — culture Back/Escape | **WAIVED** | Auto-skip past creation — obsolete; no cert required |
 | C — Pause → Quit (play) | **USER PASS** | 2026-06-21 @ 15:36:56 — `session ended` |
-| C — Pause → Quit (continue) | **USER PASS** | 2026-06-21 @ 15:51:12 — `forward launch already completed`; no Continue re-click |
-| Continue load | **PENDING** | 006I-5 shipped; no `clicked Module Mismatch Yes` in Launch.log |
+| C — Pause → Quit (continue) | **USER PASS** | 2026-06-21 @ 15:51:12 — `forward launch already completed` |
+| Continue load | **USER PASS** | User 2026-06-21; prior Tevea evidence 2026-06-20 |
 | Launcher handoff (Layer A) | **Path A PASS** | 2026-06-20 user session — map reached; verify `handoff:` line on next CollectCertLogs |
 | Market F12 (005E-M) | **FAIL** | `BlacksmithGuild_MarketIntel.json` absent |
 
-**Overall: PARTIAL** — not LIVE CERT PASS until Layer A + B + Continue + Market F12 certified.
+**Overall: LAUNCHER CERT CLOSED** — smithing cert queue is next ([pre-blacksmith-automation-handoff.md](checkpoints/pre-blacksmith-automation-handoff.md)).
 
 ## Load path test matrix (006I-5 cert goal)
 

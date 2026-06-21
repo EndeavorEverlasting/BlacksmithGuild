@@ -2,15 +2,14 @@
 
 ## Status
 
-PLANNING ONLY.
-
-This plan is blocked until Sprint 006I live certification passes.
+**UNBLOCKED (2026-06-21)** — Launcher cert gate closed. Implementation may proceed after optional Stage B / guild loop smoke.
 
 | Gate | Status |
 |------|--------|
-| 006I live cert | PARTIAL — Path A user PASS 2026-06-20 |
+| 006I launcher cert | **CLOSED** — Path A, Continue, Path C USER PASS; Path B waived |
 | 005E Stage A audit | **SHIPPED** — `ProbeSmithingAudit` → `BlacksmithGuild_SmithingAudit.json` |
-| 005E Stages B–D automation | BLOCKED — real forge rank user cert + stamina API mapping |
+| Stage C headless refine | **USER PASS** 2026-06-20 |
+| 005E Stages B–D automation | **NEXT** — see [pre-blacksmith-automation-handoff.md](../checkpoints/pre-blacksmith-automation-handoff.md) |
 
 ## Purpose
 
