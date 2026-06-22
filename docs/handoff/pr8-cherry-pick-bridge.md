@@ -2,6 +2,29 @@
 
 This document exists because PR #8 contains useful coordination ideas **and** dangerous script stubs. Agents must treat PR #8 as source material, not truth. Cherry-pick deliberately. No wholesale merge while the F7 gate is RED.
 
+## Status of this bridge
+
+This is a doc-only coordination bridge for the F7 recovery sprint. It does not certify PR #7 or PR #8. It exists to keep Agents A, B, and C from replacing working recovery code with Codex-generated stubs while still allowing safe salvage of good documentation, grep-guard, and coordination ideas.
+
+Core rule:
+
+```text
+PR #8 is a parts bin. Do not install the painted cardboard engine.
+```
+
+## How agents must use this document
+
+At the start of every PR #8 salvage sprint:
+
+1. Read this file before touching code.
+2. Identify your lane: A, B, or C.
+3. Cherry-pick only the categories owned by your lane.
+4. Reject stubs, reduced implementations, and any code that weakens evidence requirements.
+5. Update the coordination doc before handing off.
+6. Leave a clean repo state or explain every remaining modified/untracked file.
+
+If PR #8 and PR #7 disagree, PR #7 live recovery behavior wins unless a manifest-backed failure proves otherwise.
+
 ## Current topology
 
 | PR | Branch | Role | Merge posture |
@@ -11,7 +34,7 @@ This document exists because PR #8 contains useful coordination ideas **and** da
 
 ## Why PR #8 is not safe wholesale
 
-PR #8 adds good coordination material, but it also adds script files that can replace working recovery tooling with stubs. The key example is `scripts/run-f7-gate-continue.ps1`: PR #8 introduces it as a 16-line wrapper that logs the hook mask and exits `0` even when it does not launch Continue, wait for map-ready, poll the stability window, or write a manifest.
+PR #8 adds good coordination material, but it also adds script files that can replace working recovery tooling with stubs. The key example is `scripts/run-f7-gate-continue.ps1`: PR #8 introduces it as a small wrapper that logs the hook mask and exits `0` even when it does not launch Continue, wait for map-ready, poll the stability window, or write a manifest.
 
 That violates the core rule:
 
@@ -37,6 +60,21 @@ Agents may salvage PR #8 content only by category.
 | Evidence summary JSON | Accept as summary only | A | Summary is not proof; manifests are proof. |
 | `Run-F7GateContinue.cmd` | Do not promote until wrapper safety is proven | C | Direct PowerShell is primary until wrapper forwarding/encoding is validated. |
 
+## Stub rejection checklist
+
+Reject any PR #8 code if any answer is yes:
+
+| Question | Reject if yes |
+|---|---|
+| Does it replace a richer PR #7 implementation with a smaller wrapper? | Yes. |
+| Can it return exit `0` without writing or validating manifest evidence? | Yes. |
+| Does it hide child command failures behind an overall success result? | Yes. |
+| Does it require an already-running game unless the mode name says attach existing game? | Yes. |
+| Does it mutate caller/global shell state when dot-sourced? | Yes. |
+| Does it write shared logs without confirming lock ownership? | Yes. |
+| Does it narrow grep/path handling compared to PR #7 helpers? | Yes. |
+| Does it make docs say the wrapper is safe before Agent C proves it? | Yes. |
+
 ## Agent ownership while cherry-picking
 
 ### Agent A: gatekeeper / evidence
@@ -46,12 +84,14 @@ Agent A may cherry-pick:
 - `docs/evidence/live-cert/f7-bisect-summary.json` concepts
 - coordination doc message-log entries
 - merge-gate language
+- PR status tables
 
 Agent A must reject:
 
 - any exit `0` without a gate manifest
 - any bisect summary that records child failures but returns overall success
 - any evidence path that does not exist locally after pull
+- any merge posture that treats PR #8 as F7 certification
 
 Agent A next useful action after C/B land fixes:
 
@@ -69,6 +109,7 @@ Agent B may cherry-pick:
 - launch/load stage taxonomy
 - docs pointers into control/coordination files
 - grep guard concept
+- PR #8 wording that clarifies PLAY vs CONTINUE
 
 Agent B must fix before accepting:
 
@@ -76,6 +117,7 @@ Agent B must fix before accepting:
 - `TBG READY` shorthand presented as canonical current ready line
 - verifier scope limited only to `scripts/`
 - docs that say wrapper is safe while runner says direct PowerShell only
+- stale PR #8 tables that overwrite PR #7 live state
 
 Agent B owns the runtime interpretation after trustworthy evidence shows:
 
@@ -92,6 +134,7 @@ Agent C may cherry-pick:
 - wrapper argument ideas
 - mutex/logging concepts
 - command help strings
+- fail-closed semantics
 
 Agent C must not accept stubs.
 
@@ -156,6 +199,16 @@ powershell -NoProfile -Command "[scriptblock]::Create((Get-Content -Raw scripts\
 ```
 
 If the runner is intentionally fail-closed, the parse check can pass while the smoke run exits `1`. That is acceptable. A fake `0` is not.
+
+## Parallel work protocol
+
+| Agent | May proceed while others work? | Constraint |
+|---|---|---|
+| A | Yes, as reviewer/gatekeeper | Do not run F7 until C clears runner safety. |
+| B | Yes | Do not edit C-owned runner/logging scripts. |
+| C | Yes | Do not edit B-owned docs except command snippets that describe changed behavior. |
+
+Only one agent may hold the automation/game lock at a time. Do not run `ForgeContinue`, `Run-F7GateContinue`, `Run-LauncherNavNow`, or game-launching smoke tests while another lock is active.
 
 ## Final review checklist
 
