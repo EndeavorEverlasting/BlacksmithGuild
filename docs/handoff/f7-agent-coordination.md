@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `f7b90ad` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (wave 3 cert commit) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `150405` wave 2 FAIL (MapTransition death before MapReady; useful trace + CrashContext) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-150405/` — honest FAIL (useful trace; manifest had `harvestError` — **fixed in harvest module**) |
-| Launcher cert | **PASS** @ `135217`; `150405` `continue_escalate` is friction only when `launchPath=continue` |
-| Next cert command | **UNBLOCKED for A** — MapTransition survival (B) landed; rerun F7 `HookMask 0x0F` |
+| Gate verdict | **RED** — session `154012` wave 3 FAIL (timeout; Refresh storm; no map-ready) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-154012/` — honest FAIL (harvest sufficient; B markers early, tail Refresh flood) |
+| Launcher cert | **PASS** @ `135217`; `154012` `continue_escalate` + nav timeout (friction, not target mismatch) |
+| Next cert command | **HOLD** — B fix Refresh storm + map-ready; C fix game process detection |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -41,9 +41,9 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 cert `150405` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `DONE` | MapTransition survival @ session `150405` theory | `src/.../Reporting/*`, orchestrator, GSS, ForgeStatus, SubModule | — | `f7b90ad` |
-| **C** | Launcher / F7 runner | `DONE` | Harvest bug fix + offline regression `150405` | `scripts/f7-evidence-harvest.ps1` | — | `8185034` |
+| **A** | Cert / evidence / git / PR | `IDLE` | Wave 3 cert `154012` committed; gate RED | — | — | pending |
+| **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** Refresh storm + map-ready gate (`154012`) | `src/.../GameSessionState.cs`, guards | — | `f7b90ad` |
+| **C** | Launcher / F7 runner | `IDLE` | **NEXT:** `gameProcessRunning` false while game alive (`154012`) | `scripts/run-f7-gate-continue.ps1` | — | `8185034` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -79,6 +79,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A Wave 3 Cert → B, C (session `154012`)
+
+- **Preflight:** Release build PASS; grep guard PASS; runner contract PASS (incl. harvest regression).
+- **Ran:** `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` — exit **2** (~11 min).
+- **Launch path:** `launchPath=continue`, `launchSelectedBy=automation`, `targetMismatch=false`, `continueEscalated=true`.
+- **Gate FAIL:** Timeout — runner saw `gameProcessRunning=false` entire poll; golden path `firstMissingStep=MapTransition -> MapReady`.
+- **Harvest (C fix verified):** `evidenceCompleteness.score=sufficient`, no `harvestError`; `lastTraceMarker=GameSessionState Refresh stage=ok` (tail Refresh storm seq ~164k).
+- **New B markers (early Phase1 @ 15:42:03):** `AfterFlushWrite stage=ok`, `MapTransitionGuard CampaignTick stage=defer`, `EvaluateMapReady stage=defer` — **past FlushWrite** but never reached orchestrator/map-ready in golden path.
+- **User observation:** Game reached Quyaz town — runner did not detect `Bannerlord.exe` → **@AgentC** process detection gap.
+- **Status at harvest:** `campaignReady=false`, `phase=ModuleOnly`, `activeState=GameLoadingState`.
+- **PR #7:** **NOT MERGED** (gate RED).
 
 ### 2026-06-22 — Agent B → A, C (MapTransition survival @ session `150405`)
 
@@ -275,6 +287,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] Clean cert `135217` committed (honest FAIL — `instrumentation_insufficient`)
 - [x] `f7-evidence-requirements.md` (wave 1)
 - [x] F7 wave 2 cert `150405` — honest FAIL (MapTransition; harvest partial)
+- [x] F7 wave 3 cert `154012` — honest FAIL (Refresh storm; harvest sufficient; user Quyaz vs runner game=gone)
 - [ ] Merge PR #7 only on manifest PASS
 
 **B**
