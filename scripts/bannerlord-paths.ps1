@@ -263,15 +263,76 @@ function Test-BannerlordExecutablePath {
     return $false
 }
 
-function Test-LauncherHostedWindowTitle {
+function Test-LauncherMenuWindowTitle {
     param([string]$Title)
 
     if (-not $Title) { return $false }
-    return $Title -match 'Mount and Blade II Bannerlord' `
-        -or $Title -match 'M&B II: Bannerlord' `
-        -or $Title -match 'Bannerlord - Singleplayer' `
+    if ($Title -match 'Singleplayer PID:' -or $Title -match 'Multiplayer PID:') { return $false }
+    if ($Title -match 'Bannerlord - Singleplayer' -or $Title -match 'Bannerlord - Multiplayer') { return $false }
+    return $Title -match '^M&B II: Bannerlord$' `
+        -or $Title -match '^MB II: Bannerlord$' `
+        -or $Title -match '^Mount and Blade II Bannerlord$'
+}
+
+function Test-LauncherSingleplayerHostedTitle {
+    param([string]$Title)
+
+    if (-not $Title) { return $false }
+    return $Title -match 'Bannerlord - Singleplayer' `
         -or $Title -match 'Bannerlord - Multiplayer' `
-        -or ($Title -match 'Singleplayer PID:' -and $Title -match 'Bannerlord')
+        -or ($Title -match 'Singleplayer PID:' -and $Title -match 'Bannerlord') `
+        -or ($Title -match 'Multiplayer PID:' -and $Title -match 'Bannerlord')
+}
+
+function Test-LauncherHostedWindowTitle {
+    param([string]$Title)
+
+    return Test-LauncherSingleplayerHostedTitle -Title $Title
+}
+
+function Test-F7PreflightCleanState {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BannerlordRoot
+    )
+
+    $script:BannerlordProcessDetectionCache = $null
+    $script:BannerlordProcessDetectionCacheUtc = [datetime]::MinValue
+    $det = Get-BannerlordProcessDetection -BannerlordRoot $BannerlordRoot -CacheSec 0
+
+    $pids = New-Object System.Collections.Generic.List[int]
+    foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher', 'Watchdog')) {
+        foreach ($p in @(Get-Process -Name $name -ErrorAction SilentlyContinue)) {
+            $pids.Add([int]$p.Id) | Out-Null
+        }
+    }
+
+    $hostedWindow = $false
+    foreach ($p in @(Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)) {
+        if (Test-LauncherSingleplayerHostedTitle -Title $p.MainWindowTitle) {
+            $hostedWindow = $true
+        }
+    }
+
+    $clean = ($pids.Count -eq 0) -and -not $det.gameProcessRunning -and -not $hostedWindow
+    $reason = $null
+    if (-not $clean) {
+        if ($pids.Count -gt 0) {
+            $reason = "residual_pids=$($pids -join ',')"
+        } elseif ($det.gameProcessRunning) {
+            $reason = "detection_still_running method=$($det.gameProcessDetectionMethod)"
+        } else {
+            $reason = 'hosted_window_present'
+        }
+    }
+
+    return [PSCustomObject]@{
+        clean = [bool]$clean
+        pids = @($pids)
+        detection = $det
+        hostedWindow = [bool]$hostedWindow
+        reason = $reason
+    }
 }
 
 function Test-BannerlordLogFresh {
@@ -351,7 +412,7 @@ function Get-BannerlordProcessCandidates {
     }
 
     foreach ($p in @(Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)) {
-        if (Test-LauncherHostedWindowTitle -Title $p.MainWindowTitle) {
+        if (Test-LauncherSingleplayerHostedTitle -Title $p.MainWindowTitle) {
             Add-Candidate -Proc $p -Method 'launcher_hosted_window' -IsLauncherHosted $true
         }
     }

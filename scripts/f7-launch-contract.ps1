@@ -43,6 +43,72 @@ function Test-F7ContinueLaunchEligible {
     return $false
 }
 
+function Test-F7StrongPreIntentGameSignal {
+    param(
+        $Detection,
+        [bool]$LoadingSurface = $false,
+        [bool]$LauncherGone = $false
+    )
+
+    if ($LoadingSurface -and $LauncherGone) { return $true }
+    if (-not $Detection) { return $false }
+
+    foreach ($c in @($Detection.gameProcessCandidates)) {
+        if ($c.method -in @('process_name_bannerlord', 'process_name_taleworlds')) { return $true }
+        if ($c.method -eq 'launcher_child_executable') {
+            if ((Get-Command Test-BannerlordGameExecutableLeaf -ErrorAction SilentlyContinue) `
+                    -and (Test-BannerlordGameExecutableLeaf -Path $c.path)) {
+                return $true
+            }
+            if (-not (Get-Command Test-BannerlordGameExecutableLeaf -ErrorAction SilentlyContinue)) {
+                return $true
+            }
+        }
+        if ($c.method -eq 'launcher_hosted_window' -and $c.isLauncherHosted) {
+            if ((Get-Command Test-LauncherSingleplayerHostedTitle -ErrorAction SilentlyContinue) `
+                    -and (Test-LauncherSingleplayerHostedTitle -Title $c.windowTitle)) {
+                return $true
+            }
+        }
+    }
+
+    if ($Detection.gameProcessDetectionMethod -in @(
+            'process_name_bannerlord', 'process_name_taleworlds', 'launcher_child_executable', 'executable_path'
+        )) {
+        return $true
+    }
+
+    if ($Detection.gameProcessDetectionMethod -eq 'launcher_hosted_window') {
+        foreach ($c in @($Detection.gameProcessCandidates)) {
+            if ($c.method -eq 'launcher_hosted_window' `
+                    -and (Get-Command Test-LauncherSingleplayerHostedTitle -ErrorAction SilentlyContinue) `
+                    -and (Test-LauncherSingleplayerHostedTitle -Title $c.windowTitle)) {
+                return $true
+            }
+        }
+    }
+
+    return $false
+}
+
+function Get-F7PreIntentContaminationResult {
+    param(
+        [string]$Reason = 'game_running_before_automation_continue',
+        [string]$SpawnAttribution = 'preautomation_spawn'
+    )
+
+    return [ordered]@{
+        contaminated = $true
+        failureReason = 'contaminated_launch_path'
+        targetMismatch = $true
+        targetMismatchReason = [string]$Reason
+        gameSpawnAccepted = $false
+        gameSpawnRejectedReason = 'pre_intent_game_spawn'
+        readinessJudged = $false
+        spawnAttribution = [string]$SpawnAttribution
+    }
+}
+
 function Get-F7LaunchContaminationResult {
     param(
         [string]$CertTarget,
@@ -50,7 +116,8 @@ function Get-F7LaunchContaminationResult {
         [string]$LaunchSelectedBy,
         [bool]$AutomationContinueSuccess = $false,
         [bool]$ContaminatedLaunchLogSeen = $false,
-        [string]$ContaminatedLaunchLogReason = $null
+        [string]$ContaminatedLaunchLogReason = $null,
+        [string]$SpawnAttribution = $null
     )
 
     $result = [ordered]@{
@@ -61,6 +128,7 @@ function Get-F7LaunchContaminationResult {
         gameSpawnAccepted = $false
         gameSpawnRejectedReason = $null
         readinessJudged = $true
+        spawnAttribution = $null
     }
 
     if ($CertTarget -eq 'any') {
@@ -78,7 +146,14 @@ function Get-F7LaunchContaminationResult {
             'launcher logged contaminated_launch_path during continue cert'
         }
         $result.gameSpawnAccepted = $false
-        $result.gameSpawnRejectedReason = 'contaminated_launch_path'
+        if ($ContaminatedLaunchLogReason -eq 'game_running_before_automation_continue') {
+            $result.gameSpawnRejectedReason = 'pre_intent_game_spawn'
+        } else {
+            $result.gameSpawnRejectedReason = 'contaminated_launch_path'
+        }
+        if ($SpawnAttribution) {
+            $result.spawnAttribution = [string]$SpawnAttribution
+        }
         $result.readinessJudged = $false
         return $result
     }

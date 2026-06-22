@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `77059f8` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (pre-intent spawn fix) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `175909` fast FAIL (`contaminated_launch_path`; game before automation Continue) |
+| Gate verdict | **RED** — session `175909` fast FAIL (`pre_intent_game_spawn`; game before automation Continue) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-175909/` — honest FAIL (C fast-fail works; spawn timing gap) |
-| Launcher cert | **PASS** @ `135217`; C contamination detection @ `77059f8` verified on `175909` |
-| Next cert command | **BLOCKED** — Agent C: prevent `game_running_before_automation_continue` on clean launcher |
+| Launcher cert | **PASS** @ `135217`; C pre-intent barrier landed (pending SHA push) |
+| Next cert command | **UNBLOCKED for A** — rerun F7 Continue after pull; expect pre-intent fail-fast or clean Continue path |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -43,7 +43,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Clean cert `175909` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
-| **C** | Launcher / F7 runner | `DONE` | Contamination fix (`163921`) landed | — | — | `77059f8` |
+| **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | pending |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -79,6 +79,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A (pre-intent spawn fix @ session `175909`)
+
+- **Root cause:** Menu title `M&B II: Bannerlord` matched `launcher_hosted_window` → premature `game_spawned` before automation Continue; contamination wrongly attributed `selectedBy=user`; nav loop continued and clicked Continue after contamination.
+- **Landed:** `bannerlord-paths.ps1` — split `Test-LauncherMenuWindowTitle` vs `Test-LauncherSingleplayerHostedTitle`; `Test-F7PreflightCleanState`; hosted detection only on Singleplayer/Multiplayer PID titles.
+- **Landed:** `f7-launch-contract.ps1` — `Test-F7StrongPreIntentGameSignal`, `Get-F7PreIntentContaminationResult`; `gameSpawnRejectedReason=pre_intent_game_spawn` for `game_running_before_automation_continue`.
+- **Landed:** `run-f7-gate-continue.ps1` — `Stop-F7CertProcesses` (incl. Watchdog), `Confirm-F7PreflightCleanState`, single controlled retry with `preRetry*` manifest fields; deduped `launcherDecisionEvents`.
+- **Landed:** `launcher-auto-nav.ps1` — intent barrier (`automationContinueIntentDeclared`), immediate return on contamination, `spawnAttribution=` log format, strict Continue click verification.
+- **Regression:** `test-f7-contaminated-launch-175909.ps1` offline PASS; `150405`/`154012`/`163921` preserved in runner contract.
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS (no F7 game cert).
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** F7 Continue cert rerun; expect no Continue click after pre-intent contamination; manifest `gameSpawnRejectedReason=pre_intent_game_spawn` if spawn recurs.
 
 ### 2026-06-22 — Agent A Clean Cert → C (session `175909`)
 

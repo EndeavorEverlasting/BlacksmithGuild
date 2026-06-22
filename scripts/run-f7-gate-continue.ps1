@@ -16,6 +16,7 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
+# Gate uses f7-launch-contract helpers: Test-F7StrongPreIntentGameSignal, Get-F7PreIntentContaminationResult, pre_intent_game_spawn
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
@@ -64,6 +65,13 @@ $script:LaunchAutomation = [ordered]@{
     readinessJudged = $true
     contaminatedLaunchPath = $false
     contaminatedLaunchReason = $null
+    spawnAttribution = $null
+    retryCount = 0
+    retryReason = $null
+    preRetryFailureReason = $null
+    preRetryGameProcessDetectionMethod = $null
+    preRetryGameProcessCandidates = @()
+    launcherDecisionEventKeys = @{}
 }
 
 $script:F7ProcessTimestamps = [ordered]@{
@@ -87,19 +95,39 @@ function Write-F7LaunchState {
     & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $bannerlordRoot -Message $line
 }
 
-function Stop-BannerlordProcesses {
+function Stop-F7CertProcesses {
     $lockPath = Get-NavLockPath -BannerlordRoot $bannerlordRoot
     if (Test-Path -LiteralPath $lockPath) {
         Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
         Write-Host "Cleared nav lock for F7 cert: $lockPath" -ForegroundColor DarkYellow
     }
-    foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
+    foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher', 'Watchdog')) {
         Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Host "Stopping $name (PID $($_.Id))..." -ForegroundColor DarkYellow
             Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
         }
     }
     Start-Sleep -Seconds 3
+}
+
+function Confirm-F7PreflightCleanState {
+    $state = Test-F7PreflightCleanState -BannerlordRoot $bannerlordRoot
+    if ($state.clean) { return $state }
+
+    Write-Host "Preflight not clean ($($state.reason)) - retrying process stop once..." -ForegroundColor Yellow
+    foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher', 'Watchdog')) {
+        Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
+            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+    Start-Sleep -Seconds 3
+    $script:BannerlordProcessDetectionCache = $null
+    $script:BannerlordProcessDetectionCacheUtc = [datetime]::MinValue
+    return Test-F7PreflightCleanState -BannerlordRoot $bannerlordRoot
+}
+
+function Stop-BannerlordProcesses {
+    Stop-F7CertProcesses | Out-Null
 }
 
 function Invoke-BannerlordFocusHelper {
@@ -146,7 +174,7 @@ function Get-F7GameGoneFailNotes {
     if (Test-F7GameAliveUncertain -Detection $Detection) {
         $method = [string]$Detection.gameProcessDetectionMethod
         if ($EverMapReady) {
-            return "F7 FAIL: process_detection_uncertain after map-ready (method=$method; Bannerlord.exe not matched)"
+            return ('F7 FAIL: process_detection_uncertain after map-ready (method={0}; Bannerlord.exe not matched)' -f $method)
         }
         return "F7 FAIL: process_detection_uncertain; logs active but Bannerlord.exe not matched (method=$method)"
     }
@@ -318,7 +346,10 @@ function Get-LaunchAutomationSignals {
             if ($line -match 'reason=([^\s]+)') {
                 $script:LaunchAutomation.contaminatedLaunchReason = [string]$Matches[1]
             }
-            Add-F7LauncherDecisionEvent -Event 'contaminated_launch_path' -Detail $line
+            if ($line -match 'spawnAttribution=([^\s]+)') {
+                $script:LaunchAutomation.spawnAttribution = [string]$Matches[1]
+            }
+            Add-F7LauncherDecisionEvent -EventName 'contaminated_launch_path' -Detail $line
         }
         if ($line -match 'LAUNCH_STATE=continue_clicked|clicked CONTINUE') {
             $script:LaunchAutomation.continueClick.attempted = $true
@@ -342,7 +373,7 @@ function Get-LaunchAutomationSignals {
             } else {
                 $script:LaunchAutomation.continueClick.method = 'uia-scoped'
             }
-            Add-F7LauncherDecisionEvent -Event 'continue_clicked' -Detail "selectedBy=$($script:LaunchAutomation.launchSelectedBy)"
+            Add-F7LauncherDecisionEvent -EventName 'continue_clicked' -Detail "selectedBy=$($script:LaunchAutomation.launchSelectedBy)"
         }
         if ($line -match 'LAUNCH_STATE=play_clicked|clicked PLAY') {
             $script:LaunchAutomation.playClick.attempted = $true
@@ -358,7 +389,7 @@ function Get-LaunchAutomationSignals {
             } else {
                 $script:LaunchAutomation.launchSelectedBy = 'automation'
             }
-            Add-F7LauncherDecisionEvent -Event 'play_clicked' -Detail "selectedBy=$($script:LaunchAutomation.launchSelectedBy)"
+            Add-F7LauncherDecisionEvent -EventName 'play_clicked' -Detail "selectedBy=$($script:LaunchAutomation.launchSelectedBy)"
         }
         if ($line -match 'LAUNCH_STATE=game_spawned|handoff:|LAUNCH_STATE=handoff') {
             if ($line -match 'handoff:|LAUNCH_STATE=handoff') {
@@ -500,13 +531,17 @@ function Resolve-F7LaunchPath {
 
 function Add-F7LauncherDecisionEvent {
     param(
-        [string]$Event,
+        [string]$EventName,
         [string]$Detail = $null
     )
 
+    $key = ('{0}|{1}' -f $EventName, $Detail)
+    if ($script:LaunchAutomation.launcherDecisionEventKeys.ContainsKey($key)) { return }
+    $script:LaunchAutomation.launcherDecisionEventKeys[$key] = $true
+
     $entry = [ordered]@{
         utc = (Get-Date).ToUniversalTime().ToString('o')
-        event = [string]$Event
+        event = [string]$EventName
         detail = if ($Detail) { [string]$Detail } else { $null }
     }
     $script:LaunchAutomation.launcherDecisionEvents += ,$entry
@@ -524,7 +559,8 @@ function Get-F7LaunchContamination {
         -LaunchSelectedBy ([string]$script:LaunchAutomation.launchSelectedBy) `
         -AutomationContinueSuccess ([bool]$script:LaunchAutomation.continueClick.success) `
         -ContaminatedLaunchLogSeen ([bool]$script:LaunchAutomation.contaminatedLaunchPath) `
-        -ContaminatedLaunchLogReason ([string]$script:LaunchAutomation.contaminatedLaunchReason)
+        -ContaminatedLaunchLogReason ([string]$script:LaunchAutomation.contaminatedLaunchReason) `
+        -SpawnAttribution ([string]$script:LaunchAutomation.spawnAttribution)
 }
 
 function Apply-F7LaunchContaminationState {
@@ -543,6 +579,9 @@ function Apply-F7LaunchContaminationState {
     $script:LaunchAutomation.gameSpawnAccepted = $false
     $script:LaunchAutomation.gameSpawnRejectedReason = [string]$Contamination.gameSpawnRejectedReason
     $script:LaunchAutomation.readinessJudged = $false
+    if ($Contamination.spawnAttribution) {
+        $script:LaunchAutomation.spawnAttribution = [string]$Contamination.spawnAttribution
+    }
 }
 
 function Invoke-F7ContaminationFail {
@@ -764,6 +803,12 @@ function Save-CheckpointEvidence {
         failureReason = if ($script:LaunchAutomation.failureReason) { [string]$script:LaunchAutomation.failureReason } else { $null }
         gameSpawnAccepted = [bool]$script:LaunchAutomation.gameSpawnAccepted
         gameSpawnRejectedReason = if ($script:LaunchAutomation.gameSpawnRejectedReason) { [string]$script:LaunchAutomation.gameSpawnRejectedReason } else { $null }
+        spawnAttribution = if ($script:LaunchAutomation.spawnAttribution) { [string]$script:LaunchAutomation.spawnAttribution } else { $null }
+        retryCount = [int]$script:LaunchAutomation.retryCount
+        retryReason = if ($script:LaunchAutomation.retryReason) { [string]$script:LaunchAutomation.retryReason } else { $null }
+        preRetryFailureReason = if ($script:LaunchAutomation.preRetryFailureReason) { [string]$script:LaunchAutomation.preRetryFailureReason } else { $null }
+        preRetryGameProcessDetectionMethod = if ($script:LaunchAutomation.preRetryGameProcessDetectionMethod) { [string]$script:LaunchAutomation.preRetryGameProcessDetectionMethod } else { $null }
+        preRetryGameProcessCandidates = @($script:LaunchAutomation.preRetryGameProcessCandidates)
         launcherDecisionEvents = @($script:LaunchAutomation.launcherDecisionEvents)
         readinessJudged = [bool]$script:LaunchAutomation.readinessJudged
         phase1ArtifactState = if ($LastSignals.phase1ArtifactState) { [string]$LastSignals.phase1ArtifactState } else { $null }
@@ -851,16 +896,20 @@ function Exit-F7Gate {
     exit $Code
 }
 
-function Invoke-F7NoClickLaunch {
+function Invoke-F7NavLaunchAttempt {
     param(
         [int]$TimeoutSec,
-        [datetime]$SinceLocal
+        [datetime]$SinceLocal,
+        [bool]$OpenLauncher = $true,
+        [int]$CertRetryAttempt = 0
     )
 
-    Write-F7LaunchState 'polling'
-    & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent continue -BannerlordRoot $bannerlordRoot
-    & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $bannerlordRoot
-    Write-F7LaunchState 'launcher_spawned'
+    if ($OpenLauncher) {
+        Write-F7LaunchState 'polling'
+        & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent continue -BannerlordRoot $bannerlordRoot
+        & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $bannerlordRoot
+        Write-F7LaunchState 'launcher_spawned'
+    }
 
     $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
     $navParams = @{
@@ -868,11 +917,15 @@ function Invoke-F7NoClickLaunch {
         BannerlordRoot         = $bannerlordRoot
         TimeoutSec             = $TimeoutSec
         PollMs                 = 180
-        RespectUserForeground = $true
+        RespectUserForeground  = $true
         CertTarget             = $CertTarget
+        CertRetryAttempt       = $CertRetryAttempt
+    }
+    if ($script:LaunchAutomation.retryCount -gt 0) {
+        $navParams.AllowCertRetry = $true
     }
 
-    Write-Host 'Starting launcher-auto-nav inline (avoids & path / subprocess UIA issues)...' -ForegroundColor DarkGray
+    Write-Host "Starting launcher-auto-nav inline (retryAttempt=$CertRetryAttempt)..." -ForegroundColor DarkGray
     $navExitCode = 0
     try {
         & $navScript @navParams
@@ -887,6 +940,46 @@ function Invoke-F7NoClickLaunch {
 
     $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
     Resolve-F7LaunchPath -SinceLocal $SinceLocal
+    return $navExitCode
+}
+
+function Test-F7PreIntentContamination {
+    return ($script:LaunchAutomation.contaminatedLaunchPath `
+        -and $script:LaunchAutomation.contaminatedLaunchReason -eq 'game_running_before_automation_continue')
+}
+
+function Invoke-F7NoClickLaunch {
+    param(
+        [int]$TimeoutSec,
+        [datetime]$SinceLocal
+    )
+
+    $navExitCode = Invoke-F7NavLaunchAttempt -TimeoutSec $TimeoutSec -SinceLocal $SinceLocal -OpenLauncher $true -CertRetryAttempt 0
+
+    if (Test-F7PreIntentContamination -and $script:LaunchAutomation.retryCount -eq 0) {
+        $preDet = Get-F7ProcessDetection
+        $script:LaunchAutomation.preRetryFailureReason = 'pre_intent_game_spawn'
+        $script:LaunchAutomation.preRetryGameProcessDetectionMethod = [string]$preDet.gameProcessDetectionMethod
+        $script:LaunchAutomation.preRetryGameProcessCandidates = @($preDet.gameProcessCandidates)
+        Write-Host 'Pre-intent game spawn detected — controlled cert retry after clean preflight...' -ForegroundColor Yellow
+
+        Stop-F7CertProcesses
+        $preflight = Confirm-F7PreflightCleanState
+        if (-not $preflight.clean) {
+            $script:LaunchAutomation.launchError = "preflight_not_clean after pre-intent contamination: $($preflight.reason)"
+            return $false
+        }
+
+        $script:LaunchAutomation.retryCount = 1
+        $script:LaunchAutomation.retryReason = 'pre_intent_game_spawn'
+        $script:LaunchAutomation.contaminatedLaunchPath = $false
+        $script:LaunchAutomation.contaminatedLaunchReason = $null
+        $script:LaunchAutomation.spawnAttribution = $null
+        $script:LaunchAutomation.launcherDecisionEventKeys = @{}
+
+        $navExitCode = Invoke-F7NavLaunchAttempt -TimeoutSec $TimeoutSec -SinceLocal $SinceLocal `
+            -OpenLauncher $true -CertRetryAttempt 1
+    }
 
     if (Test-GameProcessRunning) {
         Write-F7LaunchState 'game_spawned'
@@ -898,9 +991,24 @@ function Invoke-F7NoClickLaunch {
         return $true
     }
 
+    $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
+    $navParams = @{
+        LaunchIntent           = 'continue'
+        BannerlordRoot         = $bannerlordRoot
+        TimeoutSec             = $TimeoutSec
+        PollMs                 = 180
+        RespectUserForeground  = $true
+        CertTarget             = $CertTarget
+        CertRetryAttempt       = [int]$script:LaunchAutomation.retryCount
+    }
+    if ($script:LaunchAutomation.retryCount -gt 0) {
+        $navParams.AllowCertRetry = $true
+    }
+
     $skipNavRetry = $script:LaunchAutomation.launchPathAdopted `
         -or $script:LaunchAutomation.launchSelectedBy -eq 'user' `
-        -or $script:LaunchAutomation.launchPath -eq 'play'
+        -or $script:LaunchAutomation.launchPath -eq 'play' `
+        -or (Test-F7PreIntentContamination)
 
     if (-not $skipNavRetry -and -not $script:LaunchAutomation.continueClick.success -and (Test-LauncherProcessRunning)) {
         Write-Host 'Launcher still running without Continue — retrying launcher-auto-nav once...' -ForegroundColor Yellow
@@ -1035,7 +1143,18 @@ try {
     if ($resolvedHookMask) { Write-Host "HookMask: $resolvedHookMask" }
     Write-Host ''
 
-    Stop-BannerlordProcesses
+    Stop-F7CertProcesses
+
+    $preflight = Confirm-F7PreflightCleanState
+    if (-not $preflight.clean) {
+        Write-Host "F7 FAIL: preflight_not_clean - $($preflight.reason)" -ForegroundColor Red
+        $script:LaunchAutomation.failureReason = 'preflight_not_clean'
+        $script:LaunchAutomation.readinessJudged = $false
+        $signals = Get-F7GateSignals -SkipReadinessJudgement $true
+        $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 1 -StableSec 0 -LastSignals $signals `
+            -Notes ('F7 FAIL: preflight_not_clean; {0}' -f $preflight.reason) -SinceLocal (Get-Date)
+        Exit-F7Gate -Code 1 -CheckpointDir $dir
+    }
 
     Write-Host 'Building Release...' -ForegroundColor Cyan
     dotnet build (Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj') -c Release

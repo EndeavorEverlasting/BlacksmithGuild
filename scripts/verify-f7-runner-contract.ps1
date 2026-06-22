@@ -53,7 +53,9 @@ if (Test-Path -LiteralPath $gatePath) {
         'launchPath', 'launchSelectedBy', 'certTarget', 'targetMismatch',
         'Resolve-F7LaunchPath', 'continueEscalated', 'harvest_failed',
         'Get-BannerlordProcessDetection', 'gameProcessDetectionMethod', 'gameAliveConfidence', 'process_detection_uncertain',
-        'contaminated_launch_path', 'f7-launch-contract.ps1', 'readinessJudged', 'targetMismatchReason', 'failureReason'
+        'contaminated_launch_path', 'f7-launch-contract.ps1', 'readinessJudged', 'targetMismatchReason', 'failureReason',
+        'Stop-F7CertProcesses', 'spawnAttribution', 'pre_intent_game_spawn', 'retryCount',
+        'Test-F7StrongPreIntentGameSignal'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -85,6 +87,8 @@ if (Test-Path -LiteralPath $pathsPath) {
     $pathsText = Get-Content -LiteralPath $pathsPath -Raw
     foreach ($needle in @(
         'Get-BannerlordProcessDetection', 'Test-LauncherHostedWindowTitle',
+        'Test-LauncherMenuWindowTitle', 'Test-LauncherSingleplayerHostedTitle',
+        'Test-F7PreflightCleanState',
         'Get-BannerlordProcessCandidates', 'Test-BannerlordGameProcessRunning'
     )) {
         if ($pathsText -notmatch [regex]::Escape($needle)) {
@@ -101,8 +105,21 @@ if (Test-Path -LiteralPath $navPath) {
         Add-Failure 'launcher-auto-nav.ps1 missing Get-LaunchNavProcessDetection'
     } elseif ($navText -notmatch 'contaminated_launch_path|Write-ContaminatedLaunchPath') {
         Add-Failure 'launcher-auto-nav.ps1 missing Continue-cert contamination guard'
+    } elseif ($navText -notmatch 'Test-PreIntentGameSpawnAndContaminate|automationContinueIntentDeclared') {
+        Add-Failure 'launcher-auto-nav.ps1 missing pre-intent intent barrier'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
+    }
+}
+
+if (Test-Path -LiteralPath $launchContractPath) {
+    $contractText = Get-Content -LiteralPath $launchContractPath -Raw
+    foreach ($needle in @('Test-F7StrongPreIntentGameSignal', 'Get-F7PreIntentContaminationResult', 'pre_intent_game_spawn')) {
+        if ($contractText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "f7-launch-contract.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS contract contains: $needle" -ForegroundColor Green
+        }
     }
 }
 
@@ -189,6 +206,19 @@ if (Test-Path -LiteralPath $contaminatedLaunchRegression) {
     }
 } else {
     Add-Failure 'Missing test-f7-contaminated-launch-163921.ps1 offline regression'
+}
+
+$preIntentRegression = Join-Path $PSScriptRoot 'test-f7-contaminated-launch-175909.ps1'
+if (Test-Path -LiteralPath $preIntentRegression) {
+    Write-Host 'Running test-f7-contaminated-launch-175909.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $preIntentRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-contaminated-launch-175909.ps1 failed (pre-intent spawn regression)'
+    } else {
+        Write-Host 'PASS offline pre-intent contaminated launch regression 175909' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-contaminated-launch-175909.ps1 offline regression'
 }
 
 Write-Host ''

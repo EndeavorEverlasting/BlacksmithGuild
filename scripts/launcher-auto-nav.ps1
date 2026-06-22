@@ -11,11 +11,14 @@ param(
     [int]$PollMs = 180,
     [bool]$RespectUserForeground = $true,
     [ValidateSet('continue', 'play', 'any')]
-    [string]$CertTarget = 'any'
+    [string]$CertTarget = 'any',
+    [bool]$AllowCertRetry = $false,
+    [int]$CertRetryAttempt = 0
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
@@ -1961,6 +1964,8 @@ $script:adoptedLaunchPath = $null
 $script:adoptedSelectedBy = $null
 $script:contaminatedLaunchPath = $false
 $script:contaminatedLaunchReason = $null
+$script:automationContinueIntentDeclared = $false
+$script:launcherReadyLogged = $false
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2074,6 +2079,23 @@ function Get-LaunchNavEnvironmentLine {
     $base = [UIAHelper]::DescribeEnvironment()
     $det = Get-LaunchNavProcessDetection
     if ($det.gameProcessRunning) {
+        if ((Test-F7ContinueCertStrict) -and -not $script:automationContinueIntentDeclared) {
+            $launcherProc = Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($launcherProc -and (Test-LauncherMenuWindowTitle -Title $launcherProc.MainWindowTitle)) {
+                return ($base -replace 'game=(yes|no|hosted|phase1|uncertain)', 'game=menu')
+            }
+            if (Test-F7StrongPreIntentGameSignal -Detection $det) {
+                $tag = switch ([string]$det.gameAliveConfidence) {
+                    'definite' { 'yes' }
+                    'launcher_hosted' { 'hosted' }
+                    'phase1_active' { 'phase1' }
+                    'process_detection_uncertain' { 'uncertain' }
+                    default { 'yes' }
+                }
+                return ($base -replace 'game=(yes|no)', "game=$tag")
+            }
+            return ($base -replace 'game=(yes|no|hosted|phase1|uncertain)', 'game=menu')
+        }
         $tag = switch ([string]$det.gameAliveConfidence) {
             'definite' { 'yes' }
             'launcher_hosted' { 'hosted' }
@@ -2090,16 +2112,55 @@ function Test-F7ContinueCertStrict {
     return ($CertTarget -eq 'continue')
 }
 
+function Get-F7SpawnAttribution {
+    if (Test-Path -LiteralPath $logPath) {
+        $tail = Get-Content -LiteralPath $logPath -Tail 200 -ErrorAction SilentlyContinue
+        foreach ($line in @($tail)) {
+            if ($line -match 'LAUNCH_STATE=play_clicked selectedBy=user|play_clicked selectedBy=user') {
+                return 'user'
+            }
+        }
+    }
+
+    if ([UIAHelper]::IsLauncherPlayContinueVisible()) {
+        $launcherProc = Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($launcherProc -and (Test-LauncherSingleplayerHostedTitle -Title $launcherProc.MainWindowTitle)) {
+            return 'launcher_auto_resume'
+        }
+    }
+
+    return 'preautomation_spawn'
+}
+
 function Write-ContaminatedLaunchPath {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Reason,
-        [string]$SelectedBy = 'unknown'
+        [string]$SpawnAttribution = 'external_or_unknown'
     )
 
     $script:contaminatedLaunchPath = $true
     $script:contaminatedLaunchReason = [string]$Reason
-    Write-LaunchLog "LAUNCH_STATE=contaminated_launch_path reason=$Reason certTarget=$CertTarget selectedBy=$SelectedBy"
+    Write-LaunchLog "LAUNCH_STATE=contaminated_launch_path reason=$Reason certTarget=$CertTarget spawnAttribution=$SpawnAttribution"
+}
+
+function Test-PreIntentGameSpawnAndContaminate {
+    if (-not (Test-F7ContinueCertStrict)) { return $false }
+    if ($script:automationContinueIntentDeclared) { return $false }
+    if ($script:contaminatedLaunchPath) { return $true }
+
+    $det = Get-LaunchNavProcessDetection
+    $loading = [UIAHelper]::HasLauncherLoadingSurface()
+    $launcherGone = -not [UIAHelper]::HasLauncherRoot()
+
+    if (-not (Test-F7StrongPreIntentGameSignal -Detection $det -LoadingSurface $loading -LauncherGone $launcherGone)) {
+        return $false
+    }
+
+    $attr = Get-F7SpawnAttribution
+    Write-ContaminatedLaunchPath -Reason 'game_running_before_automation_continue' -SpawnAttribution $attr
+    Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+    return $true
 }
 
 function Invoke-AdoptLaunchPath {
@@ -2116,11 +2177,12 @@ function Invoke-AdoptLaunchPath {
 
     if (Test-F7ContinueCertStrict) {
         if ($Path -eq 'play') {
-            Write-ContaminatedLaunchPath -Reason 'user_or_observed_play' -SelectedBy $SelectedBy
+            $attr = if ($SelectedBy -eq 'user') { 'user' } else { 'external_or_unknown' }
+            Write-ContaminatedLaunchPath -Reason 'user_or_observed_play' -SpawnAttribution $attr
             return
         }
         if ($SelectedBy -eq 'user') {
-            Write-ContaminatedLaunchPath -Reason 'user_handoff' -SelectedBy $SelectedBy
+            Write-ContaminatedLaunchPath -Reason 'user_handoff' -SpawnAttribution 'user'
             return
         }
     }
@@ -2131,6 +2193,7 @@ function Invoke-AdoptLaunchPath {
     $script:clickedPlayContinue = $true
     $script:playClickUtc = Get-Date
     if ($Path -eq 'continue') {
+        $script:automationContinueIntentDeclared = $true
         Write-LaunchLog "LAUNCH_STATE=continue_clicked selectedBy=$SelectedBy"
     } else {
         Write-LaunchLog "LAUNCH_STATE=play_clicked selectedBy=$SelectedBy"
@@ -2140,9 +2203,6 @@ function Invoke-AdoptLaunchPath {
 function Test-UserLaunchPathAdopted {
     if (Test-F7ContinueCertStrict) {
         if ($script:contaminatedLaunchPath) { return $false }
-        if ((Test-GameProcessRunning) -and -not $script:automationClickedPlayContinue) {
-            Write-ContaminatedLaunchPath -Reason 'game_running_before_automation_continue' -SelectedBy 'user'
-        }
         return $false
     }
 
@@ -2475,10 +2535,18 @@ function Test-LaunchClickVerified {
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
         $det = Get-LaunchNavProcessDetection
-        if ($det.gameProcessRunning) { return $true }
+        if ($det.gameProcessRunning) {
+            if ($Intent -eq 'continue' -and (Test-F7ContinueCertStrict)) {
+                if ($det.gameAliveConfidence -eq 'definite') { return $true }
+                if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
+                if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+            } else {
+                return $true
+            }
+        }
 
         if ($Intent -eq 'continue') {
-            if ($det.gameAliveConfidence -eq 'launcher_hosted') { return $true }
+            if (-not (Test-F7ContinueCertStrict) -and $det.gameAliveConfidence -eq 'launcher_hosted') { return $true }
             if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
             if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
         }
@@ -2504,6 +2572,10 @@ if ($LaunchIntent -eq 'continue') {
 
 try {
 while ((Get-Date) -lt $deadline) {
+    if (Test-PreIntentGameSpawnAndContaminate) {
+        return
+    }
+
     if ($script:contaminatedLaunchPath -and (Test-F7ContinueCertStrict)) {
         Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
         return
@@ -2515,19 +2587,32 @@ while ((Get-Date) -lt $deadline) {
         if ($envDesc -match 'launcher=no' -and (Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue)) {
             Write-LaunchLog 'LAUNCH_STATE=waiting_launcher_hwnd'
         }
+        if (-not $script:launcherReadyLogged -and [UIAHelper]::IsLauncherPlayContinueVisible()) {
+            Write-LaunchLog 'LAUNCH_STATE=launcher_ready'
+            $script:launcherReadyLogged = $true
+        }
         $lastHeartbeat = Get-Date
     }
 
     if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
-        Write-LaunchLog 'LAUNCH_STATE=game_spawned'
-        $script:gameSpawnLogged = $true
-        if (Test-Path -LiteralPath $focusHelperPath) {
-            try {
-                $raised = & $focusHelperPath
-                if ($raised) {
-                    Write-LaunchLog 'raised Bannerlord window on game spawn'
-                }
-            } catch { }
+        if ((Test-F7ContinueCertStrict) -and -not $script:automationContinueIntentDeclared) {
+            $det = Get-LaunchNavProcessDetection
+            if (Test-F7StrongPreIntentGameSignal -Detection $det `
+                    -LoadingSurface ([UIAHelper]::HasLauncherLoadingSurface()) `
+                    -LauncherGone (-not [UIAHelper]::HasLauncherRoot())) {
+                if (Test-PreIntentGameSpawnAndContaminate) { return }
+            }
+        } else {
+            Write-LaunchLog 'LAUNCH_STATE=game_spawned'
+            $script:gameSpawnLogged = $true
+            if (Test-Path -LiteralPath $focusHelperPath) {
+                try {
+                    $raised = & $focusHelperPath
+                    if ($raised) {
+                        Write-LaunchLog 'raised Bannerlord window on game spawn'
+                    }
+                } catch { }
+            }
         }
     }
 
@@ -2677,6 +2762,10 @@ while ((Get-Date) -lt $deadline) {
     }
 
     if (-not $clickedPlayContinue) {
+        if ($script:contaminatedLaunchPath) {
+            Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+            return
+        }
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
@@ -2684,6 +2773,7 @@ while ((Get-Date) -lt $deadline) {
                 $script:automationClickedPlayContinue = $true
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
                 if ($LaunchIntent -eq 'continue') {
+                    $script:automationContinueIntentDeclared = $true
                     Write-LaunchLog 'LAUNCH_STATE=continue_clicked selectedBy=automation'
                 } else {
                     Write-LaunchLog 'LAUNCH_STATE=play_clicked selectedBy=automation'
@@ -2693,6 +2783,10 @@ while ((Get-Date) -lt $deadline) {
                 Extend-DeadlineAfterPlayClick
                 if (-not $RespectUserForeground) {
                     Invoke-BannerlordFocusHelper -Context 'after-play-continue-click' | Out-Null
+                }
+                if ($script:contaminatedLaunchPath -and (Test-F7ContinueCertStrict)) {
+                    Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+                    return
                 }
             } else {
                 Write-LaunchLog "click $displayName ($matchedName) NOT verified — PLAY/CONTINUE still on screen; will retry"
