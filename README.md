@@ -167,6 +167,7 @@ BlacksmithGuild/
   ForgeAndLaunch.cmd        <- build + install + open launcher on clean PASS only
   ForgeWatch.cmd            <- double-click: auto rebuild on source changes
   LaunchForge.cmd           <- first install / explicit: build + install + open launcher
+  tools/LaunchControl/      <- TBG Launch Control desktop/Start Menu launcher
   CollectDiagnostics.cmd    <- double-click: collect crash/log diagnostic bundle
   BackupSaves.cmd           <- double-click: incremental save backup
   forge.ps1                 <- install, backup, diagnostics, log scan, -Watch
@@ -248,6 +249,34 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 Release builds auto-install to `Modules/BlacksmithGuild` and write `BlacksmithGuild_PendingReload.json`. **Restart Bannerlord** to load a new DLL — there is no hot reload. While Bannerlord is running, the loaded Client DLL is **locked**; install may be **blocked** until you close the game.
 
 **Double-click:** `Forge.cmd` (build + install, window stays open). **Close Bannerlord first** for a reliable install. **`ForgeAndLaunch.cmd`** — same build/install, then opens the Bannerlord launcher only on clean PASS (not if install blocked or game running). **First install / explicit launcher:** `LaunchForge.cmd`. **Auto rebuild:** `ForgeWatch.cmd` or `.\forge.ps1 -Watch` (can build while the game is open; install may block until you close Bannerlord).
+
+## TBG Launch Control
+
+TBG Launch Control is the player-facing launch surface for starting the existing Blacksmith Guild new-campaign or continue workflow without digging through repository files. It wraps the current commands instead of replacing developer workflows.
+
+Install from the repository root:
+
+```powershell
+.\tools\LaunchControl\Install-LaunchControl.ps1
+```
+
+Use by double-clicking **The Blacksmith Guild - Launch Control** on the Desktop or from the Start Menu. The default mode is **New** so a fresh character/bootstrap path is favored first; once that save exists, switch the persisted default to **Continue** from option 3 in the menu.
+
+Modes:
+
+- **New**: starts the existing new character/autoload path through `Forge.cmd`.
+- **Continue**: starts the existing continue/autoload path through `ForgeContinue.cmd`.
+
+Direct commands:
+
+```powershell
+.\tools\LaunchControl\Launch-Control.ps1 -SetMode New
+.\tools\LaunchControl\Launch-Control.ps1 -SetMode Continue
+.\tools\LaunchControl\Launch-Control.ps1 -Mode New -Launch
+.\tools\LaunchControl\Launch-Control.ps1 -Mode Continue -Launch
+```
+
+Evidence is written to `BlacksmithGuild_LaunchControlInstall.json`, `BlacksmithGuild_LaunchControlStatus.json`, and `BlacksmithGuild_LaunchControlLastRun.json`, with a mirror under `docs/evidence/latest/` when that folder exists. Windows taskbar pinning is documented as a manual step because modern Windows can block automated pinning; right-click the Desktop shortcut or Start Menu entry and choose **Pin to taskbar**.
 
 ## One-step clean launch
 

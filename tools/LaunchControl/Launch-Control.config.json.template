@@ -1,0 +1,17 @@
+{
+  "launchMode": "New",
+  "bannerlordInstallPath": null,
+  "repoPath": null,
+  "lastCommand": null,
+  "lastRunUtc": null,
+  "createDesktopShortcut": true,
+  "createStartMenuShortcut": true,
+  "createTaskbarHelper": true,
+  "showConsole": true,
+  "writeEvidence": true,
+  "defaultNewCommand": "LaunchNew",
+  "defaultContinueCommand": "LaunchContinue",
+  "oneClickLaunch": false,
+  "postLaunchCommand": null,
+  "notes": []
+}
