@@ -43,6 +43,18 @@
 
 **Verdict:** Continue gets further than disposable (map-ready in Phase1) but **still hard-crashes before stable F7 gate**. Do **not** run `-SkipLaunch` cert marathon until process stays alive ≥60s past map-ready with `campaignReady: true`.
 
+### Continue `ForgeContinue.cmd` (00:50) — Agent B agent shell **FAIL**
+
+| Signal | Detail |
+|--------|--------|
+| Launch.log | CONTINUE handoff **00:50:32**; `no game or launcher hwnd` from **00:50:45** |
+| Phase1 | Stops at `MapTransition` **00:50:38–43** — **no map-ready**, no `[TBG MAPREADY]` |
+| Status.json | Stale: `campaignReady: false`, `canPollFileInbox: false` |
+| Focus | Cursor foreground during launch — same early-death pattern as 00:32 agent repro |
+| Evidence | `docs/evidence/live-cert/20260622-004953/` |
+
+**Verdict:** Agent shell cannot pass F7 gate. **USER terminal required** before cert marathon or hook bisect.
+
 ### Investigation suspects (next agent)
 
 1. **Mod reload / Safe Mode loop** — every launch hits Safe Mode; check `BlacksmithGuild_PendingReload.json`, Steam verify, close game before `dotnet build`
@@ -55,7 +67,9 @@
 | Cert | Verdict | Evidence |
 |------|---------|----------|
 | Disposable bootstrap | **CRASH** | Phase1 stops at MapTransition 00:13:40; Launch.log process gone 00:14:06 |
-| Continue bootstrap | **CRASH** | Phase1 map-ready Quyaz 00:20:34; process gone 00:20:36; manifest `docs/evidence/live-cert/20260622-002034/` |
+| Continue bootstrap (pre-fix) | **CRASH** | Phase1 map-ready Quyaz 00:20:34; process gone 00:20:36; `live-cert/20260622-002034/` |
+| Continue F7 gate (Agent B, post-fix) | **FAIL (agent shell)** | MapTransition death 00:50:45; no map-ready; `live-cert/20260622-004953/` |
+| Continue F7 gate (USER) | **PENDING** | Must run from user terminal with game focused |
 | Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked — no stable map-ready |
 | Disposable marathon (-SkipLaunch) | **NOT RUN** | Blocked — no stable map-ready |
 | 006B abort | **PENDING** | Blocked on crash |

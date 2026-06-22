@@ -1,10 +1,10 @@
 # Functionality Status
 
-**Last updated:** 2026-06-22 (crash fix merged to `main` @ `9d1dc98` — USER verify pending)  
+**Last updated:** 2026-06-22 (Agent B sprint — agent-shell F7 FAIL @ MapTransition; USER verify still required)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `9d1dc98` — live certs blocked until stable F7 USER PASS
+**Branch:** `main` @ `0c9f171` — live certs blocked until stable F7 USER PASS
 
-**Next handoff:** [handoff/continue-map-crash-bisect-agent-handoff.md](handoff/continue-map-crash-bisect-agent-handoff.md)  
+**Next handoff:** [handoff/f7-gate-cert-marathon-agent-handoff.md](handoff/f7-gate-cert-marathon-agent-handoff.md)  
 **Live cert marathon:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
 **006C roadmap:** [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md)
 
@@ -14,20 +14,21 @@
 
 ## Live cert marathon — current verdict (2026-06-22)
 
-**Not cert-complete.** Map-ready crash fix shipped; **USER must verify** stable F7 before cert marathon. See [continue-map-crash-bisect handoff](handoff/continue-map-crash-bisect-agent-handoff.md).
+**Not cert-complete.** Map-ready crash fix shipped; **USER must verify** stable F7 before cert marathon. Agent B agent-shell attempt **FAIL** @ MapTransition (evidence `live-cert/20260622-004953/`).
 
 | Check | Verdict | Notes |
 |-------|---------|-------|
-| `dotnet build -c Release` | **PASS** | 2026-06-22 |
+| `dotnet build -c Release` | **PASS** | 2026-06-22 Agent B (`main` @ `0c9f171`) |
 | Map-ready orchestrator fix | **SHIPPED** | Deferred hooks + F7 sync + bisect mask |
+| Continue F7 (agent shell) | **FAIL** | MapTransition death; no map-ready; Cursor focus |
 | Continue F7 (USER) | **PENDING VERIFY** | `campaignReady:true` + `canPollFileInbox:true` ≥60s |
-| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked until F7 verify |
-| Prior Continue crash | **CRASH** | Evidence `live-cert/20260622-002034/` |
+| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked until USER F7 verify |
+| Prior Continue crash (pre-fix) | **CRASH** | Evidence `live-cert/20260622-002034/` |
 | 006B / 006C / 009A | **BLOCKED** | No stable map-ready |
 
 **Cold rule:** no stable map-ready → no verdict. Fix crash first; do not burn time on launcher UIA.
 
-**Crash triage notes:** Continue reaches map-ready in Phase1 then dies ~2s later (town menu open at Quyaz). Safe Mode on every launch. No engine crash dump captured. See [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md).
+**Crash triage notes:** Pre-fix Continue reached map-ready then died ~2s later (Quyaz). Post-fix agent-shell dies at MapTransition before map-ready (Cursor focus). No engine crash dump. See [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md).
 
 **Next local path (after crash fix):**
 
@@ -39,7 +40,7 @@
 .\ExportTbgEvidence.cmd
 ```
 
-Stale evidence: `docs/evidence/latest/README.md` predates marathon (`2026-06-21T00:27:42Z`). Re-export after stable cert run.
+Partial evidence export 2026-06-22 Agent B (12 JSON; crash before map-ready). Re-export after stable cert run.
 
 ---
 
