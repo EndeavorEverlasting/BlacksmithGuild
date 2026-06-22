@@ -29,10 +29,9 @@ Every agent **must**:
 | Branch / HEAD | `fix/f7-gate-stability` @ `f6370fa` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `185813` FAIL (clean Continue; game died MapTransition; ~8min cert wall time) |
+| Gate verdict | **RED** — session `185813` FAIL; poll waste fixed @ runner (obvious post-spawn death) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-185813/` — honest FAIL (SyncForgeStatus begin-only seq=29) |
-| Launcher cert | **PASS** @ `135217`; pre-intent barrier verified on `185813` |
-| Next cert command | **Agent A** — F7 Continue after B fail-soft lands; expect seq=29 `stage=end` or `stage=failed`, not silent begin-only |
+| Next cert command | **UNBLOCKED** — rerun F7; expect fail within ~1 poll tick when game_spawned + gone + last=e |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -41,7 +40,7 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Cert `185813` committed; gate RED | — | — | pending |
+| **A** | Cert / evidence / git / PR | `IDLE` | Runner obvious-fail fix; cert `192811` interrupted | — | — | pending |
 | **B** | C# map-ready / instrumentation | `DONE` | SyncForgeStatus fail-soft @ session `185813` | — | — | `f6370fa` |
 | **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | `740b604` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |

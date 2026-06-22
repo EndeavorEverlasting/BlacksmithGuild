@@ -618,6 +618,43 @@ function Get-F7GamePhaseAtEnd {
     return 'unknown'
 }
 
+function Test-F7LaunchGameWasSpawned {
+    if ($script:LaunchAutomation.handoffSeen) { return $true }
+    if ($script:LaunchAutomation.launchState -in @('game_spawned', 'handoff', 'stable', 'tbg_ready', 'map_ready')) {
+        return $true
+    }
+    return $false
+}
+
+function Test-F7ObviousPostSpawnDeath {
+    param(
+        $Signals,
+        [bool]$EverMapReady
+    )
+
+    if ($EverMapReady) { return $false }
+    if (-not (Test-F7LaunchGameWasSpawned)) { return $false }
+    if ($Signals.gameRunning) { return $false }
+    if ([string]$Signals.phase1LastSignal -match '^e$') { return $true }
+    return $false
+}
+
+function Invoke-F7PollFail {
+    param(
+        [string]$LaunchState,
+        [string]$Notes,
+        $LastSignals,
+        [datetime]$LaunchStartedLocal
+    )
+
+    Write-F7LaunchState $LaunchState
+    $launchSignals = Get-LaunchAutomationSignals -SinceLocal $LaunchStartedLocal
+    $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $LastSignals `
+        -Notes $Notes -LaunchSignals $launchSignals -SinceLocal $LaunchStartedLocal
+    Write-Host "$Notes. Evidence: $dir" -ForegroundColor Red
+    Exit-F7Gate -Code 2 -CheckpointDir $dir
+}
+
 function Test-F7MapTransitionLoadingStall {
     param(
         [bool]$EverMapReady,
@@ -1142,6 +1179,9 @@ function Test-LaunchStillStarting {
     )
     if ($GameRunning) { return $false }
     if ($GameWasSeen) { return $false }
+    if ((Get-Command Test-F7LaunchGameWasSpawned -ErrorAction SilentlyContinue) -and (Test-F7LaunchGameWasSpawned)) {
+        return $false
+    }
 
     $det = Get-F7ProcessDetection
     if (Test-F7GameAliveUncertain -Detection $det) { return $true }
@@ -1255,7 +1295,7 @@ try {
     $stableSince = $null
     $lastSignals = $null
     $everMapReady = $false
-    $gameEverSeen = $false
+    $gameEverSeen = Test-F7LaunchGameWasSpawned
     $lastHeartbeatSec = -1
 
     Write-Host "Readiness poll (timeout ${PollTimeoutSec}s, stable ${StableSeconds}s required, passive - no refocus)..." -ForegroundColor Cyan
@@ -1263,8 +1303,20 @@ try {
     while ((Get-Date) -lt $deadline) {
         $lastSignals = Get-F7GateSignals
         Update-F7ProcessTimestamps
+        if (-not $script:F7ProcessTimestamps.gameStartUtc -and (Test-F7LaunchGameWasSpawned)) {
+            $script:F7ProcessTimestamps.gameStartUtc = $certStartedUtc.ToString('o')
+        }
+        if ((Test-F7LaunchGameWasSpawned) -and -not (Test-F7BannerlordExeRunning) -and -not $script:F7ProcessTimestamps.gameEndUtc) {
+            $script:F7ProcessTimestamps.gameEndUtc = (Get-Date).ToUniversalTime().ToString('o')
+        }
         $lastSignals.phase1QuickStartMapReady = Test-Phase1QuickStartMapReady -SinceLocal $launchStartedLocal
         if ($lastSignals.gameRunning) { $gameEverSeen = $true }
+
+        if (Test-F7ObviousPostSpawnDeath -Signals $lastSignals -EverMapReady $everMapReady) {
+            Invoke-F7PollFail -LaunchState 'fail_obvious_post_spawn_death' `
+                -Notes 'F7 FAIL: process died before map-ready (game_spawned then gone; phase1 last=e)' `
+                -LastSignals $lastSignals -LaunchStartedLocal $launchStartedLocal
+        }
 
         if ($lastSignals.phase1TbgReady -or $lastSignals.mapReadyStatus -eq 'PASS' -or $lastSignals.phase1QuickStartMapReady) {
             $everMapReady = $true
