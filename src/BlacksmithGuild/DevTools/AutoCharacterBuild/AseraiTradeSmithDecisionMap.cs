@@ -222,7 +222,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
         {
             if (score < winnerScore)
             {
-                return $"lower doctrine score than {winnerId} for trade-smith identity";
+                return $"lower doctrine score than {winnerId} for trade-smith role doctrine";
             }
 
             return "tie-breaker kept earlier candidate";

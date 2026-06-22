@@ -5,6 +5,7 @@
 **Cert doctrine:** [certification-doctrine.md](docs/certification-doctrine.md)  
 **Handoff:** [post-stage-b-smithing-advisory-handoff.md](docs/checkpoints/post-stage-b-smithing-advisory-handoff.md)  
 **Commands:** [player-command-guide.md](docs/player-command-guide.md)  
+**Narrative schema:** [identity-disposition-schema.md](docs/identity-disposition-schema.md)  
 **Play now (skip certs):** [play-now-cert-triage.md](docs/checkpoints/play-now-cert-triage.md)
 
 ---
