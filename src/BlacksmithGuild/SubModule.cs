@@ -52,6 +52,16 @@ namespace BlacksmithGuild
             if (IsCampaignActive())
             {
                 GameSessionState.Refresh();
+
+                if (GameSessionState.IsMainHeroReady
+                    && GameSessionState.IsCampaignMapReady
+                    && !CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && (CampaignSetupStateTracker.Phase == SetupPhase.MapReady
+                        || CampaignSetupStateTracker.Phase == SetupPhase.Complete))
+                {
+                    CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+                }
+
                 if (GameSessionState.IsSettlementInteriorReady
                     || (GameSessionState.IsCampaignMapReady
                         && CampaignMapReadyOrchestrator.ImmediateHooksCompleted))
@@ -67,7 +77,18 @@ namespace BlacksmithGuild
             }
 
             _inboxPollAccumulator = 0f;
-            DevCommandFileInbox.Poll();
+            if (IsCampaignActive())
+            {
+                GameSessionState.Refresh();
+            }
+
+            if (GameSessionState.IsSettlementInteriorReady
+                || (IsCampaignActive()
+                    && GameSessionState.IsCampaignMapReady
+                    && CampaignMapReadyOrchestrator.ImmediateHooksCompleted))
+            {
+                DevCommandFileInbox.Poll();
+            }
         }
 
         private static bool IsCampaignActive()
