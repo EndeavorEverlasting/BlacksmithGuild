@@ -1,4 +1,4 @@
-# Session 2 remainder — skip ProbeForgeRecipes if already run.
+﻿# Session 2 remainder — skip ProbeForgeRecipes if already run.
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 

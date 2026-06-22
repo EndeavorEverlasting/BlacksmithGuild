@@ -1,4 +1,4 @@
-# Session 2: switch forge ranking from stub to real recipe candidates (campaign must be loaded).
+﻿# Session 2: switch forge ranking from stub to real recipe candidates (campaign must be loaded).
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 

@@ -1,4 +1,4 @@
-# Stage C disposable charcoal refine cert — clears stale inbox, runs probe + safe action, collects logs.
+﻿# Stage C disposable charcoal refine cert — clears stale inbox, runs probe + safe action, collects logs.
 $ErrorActionPreference = 'Stop'
 
 function Get-StageCPhase1MutationPass {

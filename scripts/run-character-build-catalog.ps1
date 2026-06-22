@@ -1,4 +1,4 @@
-# Sprint 008C — live character choice catalog run (ForgeStop + launch + export).
+﻿# Sprint 008C — live character choice catalog run (ForgeStop + launch + export).
 param(
     [int]$ReadyTimeoutSec = 900,
     [switch]$WhatIf

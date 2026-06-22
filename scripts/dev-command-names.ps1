@@ -1,4 +1,4 @@
-# Keep in sync with DevCommandRegistry.cs (C#).
+﻿# Keep in sync with DevCommandRegistry.cs (C#).
 function Get-DevCommandNames {
     return @(
         'ListScenarios',

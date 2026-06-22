@@ -33,7 +33,8 @@ Headless 008C catalog runs (`visibleMode: false`, 12 steps/tick) can produce leg
 5. Provenance: `visibleTraversalUsed`, `traversalMode`
 6. Session-scoped Phase1 mutation audit (no stale `LastApplied` false positives)
 7. `RunCharacterBuildVisibleCert.cmd` + `assert-character-legitimacy.ps1`
-8. `forge-stop.ps1` excludes caller `$PID` — orchestrators no longer suicide at step [1/5]
+8. `forge-stop.ps1` excludes caller `$PID` - orchestrators no longer suicide at step [1/5]
+9. ASCII-safe strings + UTF-8 BOM on orchestration scripts (PS 5.1 parse fix for step [2/5])
 
 ---
 

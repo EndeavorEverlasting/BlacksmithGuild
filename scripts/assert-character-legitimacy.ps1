@@ -1,4 +1,4 @@
-# Read-only verifier for personal TBGPersonalAserai001 legitimacy (008C-Fix).
+﻿# Read-only verifier for personal TBGPersonalAserai001 legitimacy (008C-Fix).
 param(
     [string]$BannerlordRoot,
     [switch]$PersonalCert
@@ -96,7 +96,7 @@ if ($PersonalCert -and (Test-Path -LiteralPath $configPath)) {
 
 $sessionWindow = Get-CurrentSessionPhase1Window -Phase1Path $phase1Path
 if ($null -eq $sessionWindow) {
-    $warnings += 'Phase1 log missing — injection scan skipped'
+    $warnings += 'Phase1 log missing - injection scan skipped'
 } elseif ($sessionWindow -match 'ForgeQuartermasterWarlord applied=True trigger=quickstart-bootstrap') {
     $failures += 'Phase1 current session contains quickstart-bootstrap profile injection'
 } elseif ($PersonalCert -and $sessionWindow -notmatch 'visible traversal: on') {

@@ -1,4 +1,4 @@
-# Sprint 008C — sequential variant matrix runs (ForgeStop loop per candidate).
+﻿# Sprint 008C — sequential variant matrix runs (ForgeStop loop per candidate).
 param(
     [int]$MaxCandidates = 16,
     [int]$MinSuccessfulRuns = 3,

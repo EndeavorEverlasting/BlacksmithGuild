@@ -1,4 +1,4 @@
-# Export Bannerlord runtime evidence into docs/evidence/latest for agent inspection.
+﻿# Export Bannerlord runtime evidence into docs/evidence/latest for agent inspection.
 param(
     [switch]$WhatIf
 )

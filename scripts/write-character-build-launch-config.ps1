@@ -1,4 +1,4 @@
-# Writes BlacksmithGuild_CharacterBuildVariantConfig.json for launch-mode separation (008C-Fix).
+﻿# Writes BlacksmithGuild_CharacterBuildVariantConfig.json for launch-mode separation (008C-Fix).
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('AgentHeadless', 'UserVisible', 'Replay')]
@@ -69,7 +69,7 @@ switch ($Mode) {
             }
         }
 
-        Write-Host 'AGENT HEADLESS — not valid for TBGPersonalAserai001 cert' -ForegroundColor Yellow
+        Write-Host 'AGENT HEADLESS - not valid for TBGPersonalAserai001 cert' -ForegroundColor Yellow
     }
 
     'UserVisible' {
@@ -89,7 +89,7 @@ switch ($Mode) {
         }
 
         if (-not (Test-Path -LiteralPath $BestJsonPath)) {
-            throw "Best JSON missing: $BestJsonPath — run SelectCharacterBuildBestNow first."
+            throw "Best JSON missing: $BestJsonPath - run SelectCharacterBuildBestNow first."
         }
 
         $best = Get-Content -LiteralPath $BestJsonPath -Raw | ConvertFrom-Json

@@ -1,4 +1,4 @@
-# Sprint 008C-Fix — visible assistive personal cert for TBGPersonalAserai001.
+﻿# Sprint 008C-Fix - visible assistive personal cert for TBGPersonalAserai001.
 param(
     [ValidateSet('UserVisible', 'Replay')]
     [string]$Mode = 'UserVisible',
@@ -87,12 +87,12 @@ if ($Mode -eq 'Replay') {
         -BannerlordRoot $bannerlordRoot | Out-Null
 }
 
-Write-Host '[3/5] Launch new game (UserVisible — personal cert path)' -ForegroundColor Yellow
+Write-Host '[3/5] Launch new game (UserVisible - personal cert path)' -ForegroundColor Yellow
 & (Join-Path $repoRoot 'forge.ps1') -Launch -LaunchIntent play -SkipSaveBackup
 
 Write-Host "[4/5] Wait for TBG READY (timeout ${ReadyTimeoutSec}s)" -ForegroundColor Yellow
 if (-not (Wait-TbgReadyExtended -BannerlordRoot $bannerlordRoot -TimeoutSec $ReadyTimeoutSec)) {
-    Write-Host 'BLOCKED — TBG READY not observed within timeout.' -ForegroundColor Red
+    Write-Host 'BLOCKED - TBG READY not observed within timeout.' -ForegroundColor Red
     $replayPath = Write-VisibleReplayResult -BannerlordRoot $bannerlordRoot -Verdict 'FAIL' `
         -Failures @('TBG READY timeout') -Warnings @()
     & (Join-Path $repoRoot 'scripts\export-tbg-evidence.ps1')
@@ -101,8 +101,8 @@ if (-not (Wait-TbgReadyExtended -BannerlordRoot $bannerlordRoot -TimeoutSec $Rea
 }
 
 Write-Host ''
-Write-Host 'Map ready — press F7 in-game to confirm VanillaLegit + Assistive + postMapInjection off.' -ForegroundColor Cyan
-Write-Host 'Waiting 15s for manual F7 check (optional)…' -ForegroundColor DarkGray
+Write-Host 'Map ready - press F7 in-game to confirm VanillaLegit + Assistive + postMapInjection off.' -ForegroundColor Cyan
+Write-Host 'Waiting 15s for manual F7 check (optional)...' -ForegroundColor DarkGray
 Start-Sleep -Seconds 15
 
 Write-Host '[5/5] Assert legitimacy + export evidence' -ForegroundColor Yellow
@@ -121,9 +121,9 @@ Write-Host ''
 Write-Host "Replay JSON: $replayPath" -ForegroundColor Cyan
 
 if ($assertJson.verdict -ne 'PASS') {
-    Write-Host 'VISIBLE CERT FAIL — review failures above before saving TBGPersonalAserai001.' -ForegroundColor Red
+    Write-Host 'VISIBLE CERT FAIL - review failures above before saving TBGPersonalAserai001.' -ForegroundColor Red
     exit 1
 }
 
-Write-Host 'VISIBLE CERT PASS — save TBGPersonalAserai001 when satisfied with on-screen choices.' -ForegroundColor Green
+Write-Host 'VISIBLE CERT PASS - save TBGPersonalAserai001 when satisfied with on-screen choices.' -ForegroundColor Green
 exit 0
