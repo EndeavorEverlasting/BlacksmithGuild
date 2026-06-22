@@ -1,7 +1,7 @@
 # 006C-4b — Second-Leg Auto-Travel (Buy Town → Sell Town)
 
-**Branch:** `feat/006c-4b-second-leg-travel` (stacked on `feat/006c-4-sell-loop` @ `575aaee`)  
-**Status:** CODE SHIPPED — Release build PASS — USER live cert pending (F7 gate)  
+**Branch:** `feat/006c-4b-second-leg-travel` @ `e9b1c09` (stacked on `feat/006c-4-sell-loop` @ `b2b18bb`)  
+**Status:** CODE SHIPPED — build PASS — **USER live cert PENDING** (F7 gate)  
 **PR:** [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) (draft) → #5
 
 ---
@@ -18,11 +18,12 @@
 
 ---
 
-## PASS rubric
+## PASS rubric (Track B)
 
 | Check | PASS when |
 |-------|-----------|
 | Build | `dotnet build -c Release` — 0 errors |
+| F7 gate | `campaignReady: true`, `canPollFileInbox: true`, stable ≥60s |
 | Guild loop | `TravelToSellTown: Success` then `TryVanillaSell: Success` |
 | Map trade | Steps include `TravelToSellTarget:` + `ExecuteSell:Success` |
 | Delta | `sellExecution.goldDelta > 0`, `quantitySold > 0` |
@@ -33,30 +34,39 @@
 
 ```powershell
 git checkout feat/006c-4b-second-leg-travel
+git pull origin feat/006c-4b-second-leg-travel
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 .\ForgeContinue.cmd
 .\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
+# Long timeout — travel to sell town may take several minutes
 .\ExportTbgEvidence.cmd
 ```
+
+**Setup:** spread row where buy town ≠ sell town (`BlacksmithGuild_MarketIntel.json`).
 
 ---
 
 ## Output paths
 
-- `BlacksmithGuild_AutonomousGuildLoop.json` — `TravelToSellTown`, `sellExecution`
-- `BlacksmithGuild_MapTradeCert.json` — `TravelToSellTarget`, `sellExecution`
-- `BlacksmithGuild_MarketIntel.json` — `spreadRows` (buy town ≠ sell town)
+| File | Purpose |
+|------|---------|
+| `BlacksmithGuild_AutonomousGuildLoop.json` | `TravelToSellTown`, `sellExecution` |
+| `BlacksmithGuild_MapTradeCert.json` | `TravelToSellTarget`, `sellExecution` |
+| `BlacksmithGuild_MarketIntel.json` | `spreadRows` |
+| `BlacksmithGuild_Phase1.log` | `TBG GUILD LOOP MOVE` lines |
+| `docs/evidence/latest/` | After ExportTbgEvidence |
 
 ---
 
 ## Known gaps
 
-- Live cert blocked until crash fix (Agent B/C on `fix/continue-map-crash-bisect`)
+- **Live cert not run** — F7 gate pending Agent B USER verify
 - Same-town spreads skip second leg (correct)
-- Config `false` reverts to 006C-4 honest Blocked at buy town
+- Config `false` → 006C-4 honest `TryVanillaSell: Blocked` at buy town
+- PR #6 merge blocked until Track B PASS and PR #5 merged (or USER waives)
 
 ---
 
-## Agent C stash note
+## Rebase note (2026-06-22)
 
-Agent C WIP is stashed on `main` as `agent-c-wip-main` — do not merge into 006C-4b branch.
+Rebased onto `main` @ `0c9f171` via `feat/006c-4-sell-loop`; no duplicate crash commit.
