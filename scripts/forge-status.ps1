@@ -463,15 +463,19 @@ function Send-ForgeCommand {
         return $sequence
     }
 
+    if (Test-Path -LiteralPath $ackPath) {
+        Remove-Item -LiteralPath $ackPath -Force -ErrorAction SilentlyContinue
+    }
+
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
-    Write-Host "Waiting up to ${TimeoutSec}s for ack (alt-tab OK if campaign is loaded)..." -ForegroundColor Cyan
+    Write-Host "Waiting up to ${TimeoutSec}s for ack (campaign map required; alt-tab OK)..." -ForegroundColor Cyan
     while ((Get-Date) -lt $deadline) {
         Start-Sleep -Milliseconds 500
 
         if (Test-Path -LiteralPath $ackPath) {
             try {
                 $ack = Get-Content -LiteralPath $ackPath -Raw | ConvertFrom-Json
-                if ([int]$ack.sequence -eq $sequence) {
+                if ([int]$ack.sequence -eq $sequence -and $ack.command -eq $CommandName) {
                     Write-Host "ACK: $($ack.command) = $($ack.result)" -ForegroundColor Green
                     if ($ack.result -eq 'Blocked') {
                         Write-Host 'Command blocked by guardrail (expected for missing prerequisites).' -ForegroundColor Yellow
@@ -482,13 +486,19 @@ function Send-ForgeCommand {
                     }
                     return $sequence
                 }
-            } catch { }
+            } catch {
+                if ($_.Exception.Message -match "ack result:") {
+                    throw
+                }
+            }
         }
 
         if (Test-Path -LiteralPath $statusPath) {
             try {
                 $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
-                if ($st.lastCommand -and [int]$st.lastCommand.sequence -eq $sequence) {
+                if ($st.lastCommand -and
+                    [int]$st.lastCommand.sequence -eq $sequence -and
+                    $st.lastCommand.name -eq $CommandName) {
                     Write-Host "Status: $($st.lastCommand.name) = $($st.lastCommand.result)" -ForegroundColor Green
                     if ($st.lastCommand.result -eq 'Blocked') {
                         Write-Host 'Command blocked by guardrail (expected for missing prerequisites).' -ForegroundColor Yellow
@@ -499,11 +509,16 @@ function Send-ForgeCommand {
                     }
                     return $sequence
                 }
-            } catch { }
+            } catch {
+                if ($_.Exception.Message -match 'status result:') {
+                    throw
+                }
+            }
         }
     }
 
-    throw "Timeout waiting for command '$CommandName' (sequence $sequence). Is campaign loaded with mod ON?"
+    $mapHint = 'Is campaign on map with mod ON? (F7: campaignReady=true). Commands do not run during character creation.'
+    throw "Timeout waiting for command '$CommandName' (sequence $sequence). $mapHint"
 }
 
 function Invoke-ForgeCertification {

@@ -4,7 +4,19 @@
 **Where we are:** [functionality-status.md](docs/functionality-status.md)  
 **Cert doctrine:** [certification-doctrine.md](docs/certification-doctrine.md)  
 **Handoff:** [post-stage-b-smithing-advisory-handoff.md](docs/checkpoints/post-stage-b-smithing-advisory-handoff.md)  
-**Commands:** [player-command-guide.md](docs/player-command-guide.md)
+**Commands:** [player-command-guide.md](docs/player-command-guide.md)  
+**Play now (skip certs):** [play-now-cert-triage.md](docs/checkpoints/play-now-cert-triage.md)
+
+---
+
+## Play now (recommended)
+
+```powershell
+.\ForgeStop.cmd
+.\ForgeContinue.cmd
+```
+
+Map ready → **Ctrl+Alt+M** / **Ctrl+Alt+R** / **Ctrl+Alt+G**. Skip cert CMD files unless you want a new certified baseline save.
 
 ---
 

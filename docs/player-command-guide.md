@@ -13,6 +13,43 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 
 ---
 
+## Play now (skip cert ceremony)
+
+**Fastest path to gameplay on an existing save:**
+
+```powershell
+.\ForgeStop.cmd
+.\ForgeContinue.cmd
+```
+
+Wait for **campaign map** (not character creation). Press **F7** — confirm `campaignReady: true`.
+
+**Play loop (no cert CMD files):**
+
+1. **Ctrl+Alt+M** on map → trade action plan (read-only)
+2. Enter town → Trade manually
+3. **Ctrl+Alt+R** or **Ctrl+Alt+G** → forge/guild advisory (read-only)
+4. Enter smithy → craft manually
+
+**Skip unless you explicitly want them:** `RunCharacterBuildVisibleCert.cmd`, `RunStageCCharcoalCert.cmd`, `RunStageBSmithingCert.cmd`, catalog/matrix scripts, Sprint 001/002 harness checks in Status.json.
+
+See [checkpoints/play-now-cert-triage.md](checkpoints/play-now-cert-triage.md).
+
+---
+
+## Inbox commands require campaign map
+
+`.\forge.ps1 -Command <Name> -Wait` only works when:
+
+- Mod is loaded and **campaign map is ready** (`campaignReady: true` in F7 / `BlacksmithGuild_Status.json`)
+- `session.canPollFileInbox: true`
+
+Commands **do not run** during character creation, main menu, or loading. A stale `BlacksmithGuild_CommandAck.json` used to cause false PASS; `Send-ForgeCommand` now clears the ack file and requires matching `command` name.
+
+If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M/R/G) instead, or finish `ForgeContinue.cmd` first.
+
+---
+
 ## Quick reference
 
 | Goal | In-game input | PowerShell command | Output JSON | What it proves |
