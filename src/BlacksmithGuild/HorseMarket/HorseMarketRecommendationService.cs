@@ -19,6 +19,10 @@ namespace BlacksmithGuild.HorseMarket
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_HorseMarketIntel.json");
 
+        private static HorseMarketReport _lastReport;
+
+        public static bool HasCachedReport => _lastReport != null;
+
         public static bool RunAnalyzeNow(string source = AnalyzeHorseMarketCommand)
         {
             if (Campaign.Current == null || Hero.MainHero == null || MobileParty.MainParty == null)
@@ -27,11 +31,13 @@ namespace BlacksmithGuild.HorseMarket
                 return false;
             }
 
-            if (!GameSessionState.IsCampaignMapReady)
+            GameSessionState.Refresh();
+
+            if (!GameSessionState.IsCampaignMapReady && !GameSessionState.IsSettlementInteriorReady)
             {
-                var detail = GameSessionState.GetCampaignMapBlockDetail();
+                var detail = GameSessionState.GetCommandReadyBlockDetail();
                 DebugLogger.Test($"[TBG HORSE] analyze blocked: {detail}", showInGame: false);
-                InGameNotice.Blocked($"{ModDisplay.Name} — Horse market: map not ready ({detail}).");
+                InGameNotice.Blocked($"{ModDisplay.Name} — Horse market: {detail}.");
                 return false;
             }
 
@@ -40,8 +46,19 @@ namespace BlacksmithGuild.HorseMarket
                 var party = MobileParty.MainParty;
                 var context = HorseMarketAnalyzer.BuildContext(party, Hero.MainHero);
                 var report = BuildReport(source, context);
+                _lastReport = report;
                 WriteJsonReport(report);
-                WriteStructuredReport(source, report);
+
+                var fromInterior = GameSessionState.IsSettlementInteriorReady && !GameSessionState.IsCampaignMapReady;
+                WriteStructuredReport(source, report, suppressInGameFeed: fromInterior);
+
+                if (fromInterior)
+                {
+                    var top = report.TopRecommendation?.ItemName ?? report.Verdict ?? "scan complete";
+                    InGameNotice.Info(
+                        $"TBG HORSE: {report.Settlement?.Name} — {top}. JSON saved. Exit to map → ShowHorseMarketIntel for full feed.");
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -49,6 +66,26 @@ namespace BlacksmithGuild.HorseMarket
                 DebugLogger.Test($"[TBG HORSE] analyze failed: {ex.Message}", showInGame: false);
                 return false;
             }
+        }
+
+        public static bool ShowLastIntel()
+        {
+            if (_lastReport == null)
+            {
+                return RunAnalyzeNow(ShowHorseMarketIntelCommand);
+            }
+
+            GameSessionState.Refresh();
+            if (!GameSessionState.IsCampaignMapReady)
+            {
+                var detail = GameSessionState.GetCampaignMapBlockDetail();
+                InGameNotice.Blocked(
+                    $"{ModDisplay.Name} — Horse market: exit to campaign map for feed replay ({detail}). JSON cached at BlacksmithGuild_HorseMarketIntel.json.");
+                return false;
+            }
+
+            WriteStructuredReport(ShowHorseMarketIntelCommand, _lastReport);
+            return true;
         }
 
         private static HorseMarketReport BuildReport(string source, HorseMarketAnalysisContext context)
@@ -70,6 +107,8 @@ namespace BlacksmithGuild.HorseMarket
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
                 Source = source,
+                SessionPhase = context.SessionPhase,
+                SettlementResolveMethod = context.SettlementResolveMethod,
                 ReadOnly = true,
                 MutationApplied = false,
                 Settlement = context.Settlement,
@@ -478,10 +517,12 @@ namespace BlacksmithGuild.HorseMarket
             }
         }
 
-        private static void WriteStructuredReport(string source, HorseMarketReport report)
+        private static void WriteStructuredReport(string source, HorseMarketReport report, bool suppressInGameFeed = false)
         {
             var formatter = ReportFormatter.BeginReport("HORSE MARKET", source, "horse-market");
             formatter.Section("Context");
+            formatter.Line("sessionPhase", report.SessionPhase ?? string.Empty);
+            formatter.Line("settlementResolve", report.SettlementResolveMethod ?? string.Empty);
             formatter.Line("settlement", report.Settlement?.Name ?? "unknown");
             formatter.Line("market", report.Settlement?.MarketAvailable == true ? "available" : "blocked");
             formatter.Line(
@@ -493,7 +534,7 @@ namespace BlacksmithGuild.HorseMarket
             EmitSummaryLines(formatter, report);
 
             formatter.EndReport(
-                emitInGame: IsPrimaryHorseCommand(source),
+                emitInGame: !suppressInGameFeed && IsPrimaryHorseCommand(source),
                 emitToFile: true);
         }
 

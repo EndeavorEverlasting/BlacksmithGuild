@@ -11,6 +11,8 @@ namespace BlacksmithGuild.HorseMarket
             builder.AppendLine("{");
             builder.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
             builder.AppendLine($"  \"source\": \"{Escape(report.Source)}\",");
+            builder.AppendLine($"  \"sessionPhase\": \"{Escape(report.SessionPhase)}\",");
+            builder.AppendLine($"  \"settlementResolveMethod\": \"{Escape(report.SettlementResolveMethod)}\",");
             builder.AppendLine($"  \"readOnly\": {(report.ReadOnly ? "true" : "false")},");
             builder.AppendLine($"  \"mutationApplied\": {(report.MutationApplied ? "true" : "false")},");
             AppendSettlement(builder, report.Settlement);

@@ -13,12 +13,14 @@ namespace BlacksmithGuild.Behaviors
     public sealed class BlacksmithGuildCampaignBehavior : CampaignBehaviorBase
     {
         private static bool _hasAnnouncedCampaignMapReady;
+        private static bool _hasRunAgentAutoLoop;
         private bool _hasRunGoldTest;
         private bool _loggedGoldTestBlock;
 
         internal static void ResetCampaignMapReadyAnnouncement()
         {
             _hasAnnouncedCampaignMapReady = false;
+            _hasRunAgentAutoLoop = false;
         }
 
         public override void RegisterEvents()
@@ -99,7 +101,37 @@ namespace BlacksmithGuild.Behaviors
                 TreasuryDeltaWatchService.OnCampaignMapReady();
                 AutoCharacterBuildService.OnCampaignMapReady();
                 CommandSurfaceService.WriteCommandSurface("MapReady");
+                TryRunAgentAutoLoopOnce();
             }
+        }
+
+        private static void TryRunAgentAutoLoopOnce()
+        {
+            if (_hasRunAgentAutoLoop || !DevToolsConfig.AgentAutoLoop)
+            {
+                return;
+            }
+
+            _hasRunAgentAutoLoop = true;
+
+            if (!CampaignSetupStateTracker.UsedDisposableQuickStartPath)
+            {
+                DebugLogger.Test(
+                    "[TBG AGENT] AgentAutoLoop skipped: requires disposable Forge.cmd bootstrap path.",
+                    showInGame: false);
+                return;
+            }
+
+            DebugLogger.Test("[TBG AGENT] AgentAutoLoop starting RunAutonomousGuildLoopNow.", showInGame: false);
+            if (AutonomousGuildLoopService.StartNow("AgentAutoLoop"))
+            {
+                InGameNotice.Info($"{ModDisplay.Name} — Agent auto-loop started (one bounded cycle).");
+                return;
+            }
+
+            var reason = AutonomousGuildLoopService.LastFailReason ?? "unknown";
+            DebugLogger.Test($"[TBG AGENT] AgentAutoLoop blocked: {reason}", showInGame: false);
+            InGameNotice.Blocked($"{ModDisplay.Name} — Agent auto-loop blocked: {reason}.");
         }
 
         public override void SyncData(IDataStore dataStore)

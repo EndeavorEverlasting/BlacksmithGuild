@@ -35,7 +35,9 @@ The Blacksmith Guild uses three separate channels. Do not confuse them.
 
 Shortcut feedback is displayed through Bannerlord's normal in-game message feed (`InformationManager.DisplayMessage`). In the game UI this is the **lower-left / bottom-left message log area** — press **Enter** on the campaign map to open and scroll.
 
-During intro/cinematic or other non-map states, Bannerlord may render the feed differently or less prominently. **Do not certify hotkeys until** you see:
+During intro/cinematic or other non-map states, Bannerlord may render the feed differently or less prominently. **Inside a settlement** (marketplace, tavern, lord's hall), the lower-left feed is often hidden behind menus — press **Enter** to scroll if visible, or exit to the campaign map and use `ShowHorseMarketIntel` / **F7** + `ExportTbgEvidence.cmd` for full output. See [automation-playbook.md](automation-playbook.md) command context matrix.
+
+**Do not certify hotkeys until** you see:
 
 ```text
 Blacksmith Guild — Ready: campaign map ready. Press F8 for commands.

@@ -68,6 +68,8 @@ namespace BlacksmithGuild.HorseMarket
 
     public sealed class HorseMarketAnalysisContext
     {
+        public string SessionPhase { get; set; }
+        public string SettlementResolveMethod { get; set; }
         public bool UpgradeDemandAvailable { get; set; }
         public HorseMarketSettlementSnapshot Settlement { get; set; } = new HorseMarketSettlementSnapshot();
         public HorseMarketPlayerSnapshot Player { get; set; } = new HorseMarketPlayerSnapshot();

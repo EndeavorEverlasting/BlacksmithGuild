@@ -56,7 +56,7 @@ Only when **campaign map is ready** (`F7` → `campaignReady: true`):
 
 Primary JSON: `docs/evidence/latest/BlacksmithGuild_AutonomousGuildLoop.json`
 
-Commands and hotkeys: [player-command-guide.md](player-command-guide.md) (Launch Control, Cohesion, Map Trade, Autonomous Guild Loop sections).
+Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [player-command-guide.md](player-command-guide.md).
 
 ---
 
@@ -68,11 +68,13 @@ Commands and hotkeys: [player-command-guide.md](player-command-guide.md) (Launch
 | `Forge.cmd` vs `ForgeContinue.cmd` | [dev-disposable-save.md](dev-disposable-save.md) |
 | Zero-click pipeline internals | [forge-zero-click-contract.md](forge-zero-click-contract.md) |
 | Desktop shortcut / Launch Control | [../tools/LaunchControl/README.md](../tools/LaunchControl/README.md) |
+| **Automation explained** | [automation-playbook.md](automation-playbook.md) |
 | Hotkeys (F7, Ctrl+Alt+M, etc.) | [player-command-guide.md](player-command-guide.md) + [in-game-surfaces.md](in-game-surfaces.md) |
 | All dev command names | [../scripts/dev-command-names.ps1](../scripts/dev-command-names.ps1) |
 | Cohesion / map trade / guild loop | [player-command-guide.md](player-command-guide.md) (bottom sections) |
 | Copy-paste prompt for another AI agent | [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md) |
 | Sprint 006B scope + known gaps | [plans/006b-map-trade-cohesion.plan.md](plans/006b-map-trade-cohesion.plan.md) |
+| Sprint 006C roadmap | [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md) |
 | What is shipped vs not built | [functionality-status.md](functionality-status.md) |
 | Build / install mod | [../README.md](../README.md) § Two environments |
 | Export JSON evidence | `.\ExportTbgEvidence.cmd` → [evidence/latest/README.md](evidence/latest/README.md) |
@@ -95,5 +97,5 @@ Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Laun
 Ready:    F7 → campaignReady: true
 Loop:     forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
 Evidence: ExportTbgEvidence.cmd → docs/evidence/latest/
-Docs:     docs/launch-and-doc-index.md (this file) | docs/player-command-guide.md (human) | docs/handoff/006b-map-trade-cohesion-agent-handoff.md (AI)
+Docs:     docs/automation-playbook.md | docs/launch-and-doc-index.md | docs/handoff/006b-map-trade-cohesion-agent-handoff.md (AI)
 ```

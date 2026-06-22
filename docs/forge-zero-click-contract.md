@@ -8,7 +8,7 @@ Related: [006E launch funnel plan](plans/006e-main-menu-auto-launch.plan.md) · 
 
 ## User expectation (one sentence)
 
-Click **`Forge.cmd`** → wait → land on **campaign map** with **`TBG READY`** and **ForgeQuartermasterWarlord** applied — no manual launcher clicks, no Safe Mode acceptance, no character-creation clicks.
+Click **`Forge.cmd`** → wait → land on **campaign map** with **`TBG READY`** and **VanillaLegit Aserai Trade-Smith** upbringing (visible culture/upbringing choices) — no manual launcher clicks, no Safe Mode acceptance, no character-creation clicks. Optional **DevOverride** applies test profiles on disposable saves only; personal saves use vanilla menus with no post-map stat injection.
 
 ---
 
@@ -88,7 +88,7 @@ Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once
 | Main menu | Auto-select **SandBox → New Campaign** (play) or **Continue** (continue intent) | `[TBG QUICKSTART] main menu intent decision` |
 | Intro video | **Single** campaign video skip (006I — no replay loop) | `intro skip: campaign video via OnActivate (count=1)` |
 | Character creation | Auto culture, narrative menus, face, banner, clan name, review, options | `auto-advancing character creation`, stage transitions |
-| Protagonist build | Apply **ForgeQuartermasterWarlord** on bootstrap | `TBG CHARACTER: ForgeQuartermasterWarlord applied` |
+| Protagonist build | Visible Aserai culture + upbringing (VanillaLegit); optional DevOverride profile on disposable cert | `culture auto-selected: Aserai`, `postMapProfileApply skipped: VanillaLegit` |
 | Done | Map ready, bootstrap disarmed | `TBG READY: campaign map ready. Press F8 for commands.` |
 
 **006I guards (do not break):**

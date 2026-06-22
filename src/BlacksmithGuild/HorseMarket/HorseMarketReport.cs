@@ -6,6 +6,8 @@ namespace BlacksmithGuild.HorseMarket
     {
         public string GeneratedUtc { get; set; }
         public string Source { get; set; }
+        public string SessionPhase { get; set; }
+        public string SettlementResolveMethod { get; set; }
         public bool ReadOnly { get; set; } = true;
         public bool MutationApplied { get; set; }
         public HorseMarketSettlementSnapshot Settlement { get; set; } = new HorseMarketSettlementSnapshot();

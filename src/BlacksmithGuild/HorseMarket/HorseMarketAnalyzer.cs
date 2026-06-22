@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BlacksmithGuild.DevTools;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Roster;
@@ -13,25 +14,56 @@ namespace BlacksmithGuild.HorseMarket
     {
         public static HorseMarketAnalysisContext BuildContext(MobileParty party, Hero hero)
         {
+            var (settlement, resolveMethod) = ResolveSettlement(party);
             var context = new HorseMarketAnalysisContext
             {
+                SessionPhase = GameSessionState.Phase.ToString(),
+                SettlementResolveMethod = resolveMethod,
                 UpgradeDemandAvailable = false,
-                Settlement = BuildSettlementSnapshot(party),
+                Settlement = BuildSettlementSnapshot(settlement),
                 Player = BuildPlayerSnapshot(hero),
                 Capacity = BuildCapacitySnapshot(party),
                 Herd = BuildHerdSnapshot(party),
                 PlayerAnimals = BuildPlayerAnimals(party?.ItemRoster),
-                MarketAnimals = BuildMarketAnimals(party)
+                MarketAnimals = BuildMarketAnimals(settlement, party)
             };
 
             ScoreMarketAnimals(context.MarketAnimals, context.Capacity);
             return context;
         }
 
-        private static HorseMarketSettlementSnapshot BuildSettlementSnapshot(MobileParty party)
+        private static (Settlement settlement, string resolveMethod) ResolveSettlement(MobileParty party)
+        {
+            try
+            {
+                var partySettlement = party?.CurrentSettlement;
+                if (partySettlement != null)
+                {
+                    return (partySettlement, "partyCurrentSettlement");
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                var encounterSettlement = GameSessionState.ResolveCurrentSettlement();
+                if (encounterSettlement != null)
+                {
+                    return (encounterSettlement, "playerEncounter");
+                }
+            }
+            catch
+            {
+            }
+
+            return (null, "none");
+        }
+
+        private static HorseMarketSettlementSnapshot BuildSettlementSnapshot(Settlement settlement)
         {
             var snapshot = new HorseMarketSettlementSnapshot();
-            var settlement = party?.CurrentSettlement;
             if (settlement == null)
             {
                 snapshot.MarketAvailable = false;
@@ -183,11 +215,15 @@ namespace BlacksmithGuild.HorseMarket
             return animals;
         }
 
-        private static List<HorseAnimalSnapshot> BuildMarketAnimals(MobileParty party)
+        private static List<HorseAnimalSnapshot> BuildMarketAnimals(Settlement settlement, MobileParty party)
         {
             var animals = new List<HorseAnimalSnapshot>();
-            var settlement = party?.CurrentSettlement;
-            var roster = settlement?.ItemRoster;
+            if (settlement == null)
+            {
+                return animals;
+            }
+
+            var roster = settlement.ItemRoster;
             if (roster == null)
             {
                 return animals;

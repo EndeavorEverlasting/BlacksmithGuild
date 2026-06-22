@@ -62,6 +62,7 @@ If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M
 | Command list | **F8** (`ListScenarios`) | — (F8 writes surface) | `BlacksmithGuild_CommandSurface.json` | All hotkeys + inbox commands + Stage D exposed |
 | Market intel | **Ctrl+Alt+M** | `.\forge.ps1 -Command MarketSnapshotNow -Wait` | `BlacksmithGuild_MarketIntel.json` | Nearest towns, spreads, buy/sell action plan |
 | Horse market intel | — | `.\forge.ps1 -Command AnalyzeHorseMarket -Wait` | `BlacksmithGuild_HorseMarketIntel.json` | Read-only capacity buffer + pack/war mount buy/hold/sell advice |
+| Horse market replay | — | `.\forge.ps1 -Command ShowHorseMarketIntel -Wait` | Same (cached) | Re-displays last scan on **campaign map** without re-scan |
 | Forge rank | **Ctrl+Alt+R** | `.\forge.ps1 -Command RankForgeCandidates -Wait` | `BlacksmithGuild_ForgeRecommendations.json` | Real/stub source honesty, top craft, material gaps |
 | Smithing crew | — | `.\forge.ps1 -Command RunSmithingAdvisoryNow -Wait` | `BlacksmithGuild_SmithingAdvisory.json` | Crew roles, reserves, refine/craft prep |
 | Guild loop | **Ctrl+Alt+G** | `.\forge.ps1 -Command RunGuildLoopNow -Wait` | `BlacksmithGuild_GuildLoopReport.json` | Unified market + forge + crew + action plan |
@@ -300,6 +301,32 @@ Primary sprint entrypoint after map is ready:
 JSON: `BlacksmithGuild_AutonomousGuildLoop.json` — check `capabilities` block for honest trade/smelt/capacity gaps.
 
 Note: `RunGuildLoopNow` (Ctrl+Alt+G) remains **advisory-only** (market + forge rank). Do not confuse with `RunAutonomousGuildLoopNow`.
+
+---
+
+## Horse market (capacity / pack animals)
+
+**Read-only advisory** — no auto buy/sell. Analyzes settlement market roster for pack animals, war mounts, herd pressure.
+
+### Location rules
+
+| State | `AnalyzeHorseMarket` | `ShowHorseMarketIntel` | Feed |
+|-------|---------------------|------------------------|------|
+| Campaign map at town gate | Yes | Yes (replay) | Full colored report |
+| Inside settlement (market UI) | Yes | No — exit to map first | Compact summary + JSON |
+| Open map, not at town | Blocked | Replay only if prior scan cached | — |
+
+```powershell
+# At town on map or inside marketplace
+.\forge.ps1 -Command AnalyzeHorseMarket -Wait
+
+# After interior scan — exit to map, then:
+.\forge.ps1 -Command ShowHorseMarketIntel -Wait
+```
+
+**JSON cert fields:** `sessionPhase`, `settlementResolveMethod` (`partyCurrentSettlement` | `playerEncounter`).
+
+Full context matrix: [automation-playbook.md](automation-playbook.md).
 
 ---
 

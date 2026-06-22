@@ -1,12 +1,14 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (006A tavern hero intel + visible recruit — Tier 1/2 smoke PENDING)  
+**Last updated:** 2026-06-21 (006B autonomous loop + assistive playbook + horse market interior UX)  
 **Mod version:** `v0.0.11`  
-**Branch:** `feat/006a-tavern-hero` — 006A **Tier 1/2 cert PENDING**
+**Branch:** `feat/006b-map-trade-cohesion` — 006B **USER cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
-**Next handoff:** [plans/006a-tavern-hero-visible-recruitment.plan.md](plans/006a-tavern-hero-visible-recruitment.plan.md)
+**Automation playbook (NEW):** [automation-playbook.md](automation-playbook.md)  
+**Next handoff:** [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)  
+**006C roadmap:** [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
 
@@ -124,6 +126,33 @@ Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/ma
 
 ---
 
+## Shipped — 006B (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Cohesion analyze + visible move** | `AnalyzeCohesionOpportunities`, `RunVisibleCohesionMoveNow` | Code shipped — Tier 2 smoke PENDING |
+| **Map trade route safety + probe** | `AnalyzeMapTradeRouteSafety`, `RunAutonomousVisibleTradeRouteNow` | Code shipped — trade **execution** not proven |
+| **Autonomous guild loop (one cycle)** | `RunAutonomousGuildLoopNow` | Code shipped — primary 006B deliverable |
+| **Agent auto-loop on map ready** | `write-agent-iteration-config.ps1 -Mode AutoLoop` + `Forge.cmd` | **Off by default**; disposable-save gated |
+| **Launch + doc index** | [launch-and-doc-index.md](launch-and-doc-index.md) | Shipped |
+| **Automation playbook** | [automation-playbook.md](automation-playbook.md) | Shipped — command context matrix, Smithing 275 |
+
+**Advisory vs autonomous:** `RunGuildLoopNow` (Ctrl+Alt+G) = market + forge rank only. `RunAutonomousGuildLoopNow` = travel + cohesion + blocked trade handoff.
+
+---
+
+## Shipped — Horse market advisory (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Horse / pack capacity intel** | `AnalyzeHorseMarket` | Read-only — map at town **or inside settlement** |
+| **Replay last scan** | `ShowHorseMarketIntel` | Campaign map only — cached report |
+| **JSON cert fields** | `BlacksmithGuild_HorseMarketIntel.json` | `sessionPhase`, `settlementResolveMethod` |
+
+**Location caveat (fixed 2026-06-21):** Interior scans write JSON + compact feed line; full colored feed on map via `ShowHorseMarketIntel`. Pack-animal **buy execution** not built (006C-2).
+
+---
+
 ## Shipped — 006A (Tier 1/2 smoke PENDING)
 
 | Feature | How to use | Status |
@@ -173,7 +202,12 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 
 | Area | Plan doc | Notes |
 |------|----------|-------|
-| Auto buy/sell | — | Read-only market intel; scope-locked |
+| Auto buy/sell (trade execution) | [006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md) | Read-only market intel + map trade **probe**; 006C-1 |
+| Pack-animal buy automation | 006C-2 | Horse market advisory only |
+| Weapon smelt execution | 006C-3 | Smelt **probe** may run; execution not proven |
+| Food / steward provisioning | 006D | **Not built** — no advisor or buy |
+| Multi-cycle guild loop | 006C-4 | `guildLoopMaxCyclesPerCommand = 1` |
+| Hero churn in guild loop | 006E | Tavern intel separate from loop |
 | Stamina posse automation (005E) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | **UNBLOCKED** — Stage C proved headless mutation; crew rotation next |
 | Party travel / map automation | [007-auto-travel.plan.md](plans/007-auto-travel.plan.md) | **Shipped (Tier 2 smoke pending)** — inbox `ShowAutoTravelChoices`, `AutoTravelChoice1-5`, `AutoTravel:<town>`; hostile pause monitor on campaign tick |
 | Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; Track 2B FORGE MATERIALS section **shipped** |
@@ -216,7 +250,12 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | `BlacksmithGuild_SmithingAdvisory.json` | Ctrl+Alt+R / Ctrl+Alt+G / `RunSmithingAdvisoryNow` |
 | `BlacksmithGuild_SmithingSafeAction.json` | inbox `RunSmithingSafeActionNow` |
 | `BlacksmithGuild_SmithingRefineProbe.json` | inbox `ProbeSmithingRefineApi` |
-| `BlacksmithGuild_GuildLoopReport.json` | **Ctrl+Alt+G** / inbox `RunGuildLoopNow` |
+| `BlacksmithGuild_GuildLoopReport.json` | **Ctrl+Alt+G** / `RunGuildLoopNow` |
+| `BlacksmithGuild_AutonomousGuildLoop.json` | `RunAutonomousGuildLoopNow` |
+| `BlacksmithGuild_HorseMarketIntel.json` | `AnalyzeHorseMarket` / `ShowHorseMarketIntel` |
+| `BlacksmithGuild_CohesionOpportunities.json` | `AnalyzeCohesionOpportunities` |
+| `BlacksmithGuild_MapTradeRouteSafety.json` | `AnalyzeMapTradeRouteSafety` |
+| `BlacksmithGuild_MapTradeCert.json` | `RunAutonomousVisibleTradeRouteNow` |
 | `BlacksmithGuild_CommandSurface.json` | **F8** / map ready |
 | `BlacksmithGuild_SmithingRestPlan.json` | inbox `RunSmithingRestPlanNow` (Stage D read-only) |
 | `BlacksmithGuild_CharacterBuildProvenance.json` | Path A bootstrap / map ready |

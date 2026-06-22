@@ -33,6 +33,8 @@ Double-click **The Blacksmith Guild - Launch Control**. The default behavior ope
 
 The default mode is **New**, so a fresh character/bootstrap flow is favored first. After that character exists, use option 3 to switch the persisted default to **Continue**.
 
+**After launch:** see [docs/automation-playbook.md](../../docs/automation-playbook.md) for map-ready commands, autonomous guild loop, horse market location rules, and Smithing 275 expectations.
+
 ## Commands
 
 ```powershell

@@ -525,9 +525,12 @@ namespace BlacksmithGuild.DevTools
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case HorseMarketRecommendationService.AnalyzeHorseMarketCommand:
-                case HorseMarketRecommendationService.ShowHorseMarketIntelCommand:
                 case HorseMarketRecommendationService.RankHorseMarketActionsCommand:
                     return HorseMarketRecommendationService.RunAnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HorseMarketRecommendationService.ShowHorseMarketIntelCommand:
+                    return HorseMarketRecommendationService.ShowLastIntel()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case SmithingAdvisoryService.RunSmithingAdvisoryNowCommand:
