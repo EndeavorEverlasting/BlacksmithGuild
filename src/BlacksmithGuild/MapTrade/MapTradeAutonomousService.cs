@@ -17,6 +17,8 @@ namespace BlacksmithGuild.MapTrade
         public const string ShowTacticalConvergenceCommand = "ShowTacticalConvergence";
 
         private static MapTradeCertReport _activeReport;
+        private static MapTradeMission _originalRouteMission;
+        private static bool _routeSellLegPending;
         private static bool _abortRequested;
 
         public static string LastFailReason { get; private set; }
@@ -106,6 +108,8 @@ namespace BlacksmithGuild.MapTrade
 
             _activeReport.Steps.Add("MarketScan:Success");
             _activeReport.Mission = MapTradeMissionSelector.SelectBestMission();
+            _originalRouteMission = _activeReport.Mission;
+            _routeSellLegPending = false;
             _activeReport.State = MapTradeRouteState.SelectMission;
 
             if (_activeReport.Mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
@@ -222,11 +226,18 @@ namespace BlacksmithGuild.MapTrade
             }
 
             _activeReport.State = MapTradeRouteState.EnterSettlement;
-            _activeReport.Steps.Add("ArrivedAtTarget");
-            TryTradeAndFinish();
+            _activeReport.Steps.Add(_routeSellLegPending ? "ArrivedAtSellTarget" : "ArrivedAtTarget");
+
+            if (_routeSellLegPending)
+            {
+                TrySellAndFinish();
+                return;
+            }
+
+            TryBuyLegAndMaybeTravelToSell();
         }
 
-        private static void TryTradeAndFinish()
+        private static void TryBuyLegAndMaybeTravelToSell()
         {
             _activeReport.State = MapTradeRouteState.ExecuteTrade;
             MapTradeVanillaTradeDriver.ProbeTradeApi(out var probeDetail);
@@ -249,6 +260,29 @@ namespace BlacksmithGuild.MapTrade
                 _activeReport.Steps.Add(successStep);
                 _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
                 _activeReport.MutationApplied = _activeReport.TradeExecution != null;
+
+                var current = MobileParty.MainParty?.CurrentSettlement;
+                if (DevToolsConfig.MapTradeAutoTravelToSellTown
+                    && MapTradeMissionSelector.NeedsSecondLegSellTravel(_originalRouteMission, current))
+                {
+                    var sellLeg = MapTradeMissionSelector.TryBuildSellLegTravelMission(_originalRouteMission);
+                    string travelDetail = null;
+                    if (sellLeg?.TargetSettlement != null
+                        && MapTradeVisibleMovementDriver.TryStartTravel(sellLeg, out travelDetail))
+                    {
+                        _routeSellLegPending = true;
+                        _activeReport.Mission = sellLeg;
+                        _activeReport.State = MapTradeRouteState.TravelToTarget;
+                        _activeReport.Steps.Add($"TravelToSellTarget:{sellLeg.TargetSettlementName}");
+                        InGameNotice.Info($"TBG MAP TRADE MOVE: riding toward sell town {sellLeg.TargetSettlementName}.");
+                        MapTradeEvidenceWriter.WriteCert(_activeReport);
+                        return;
+                    }
+
+                    _activeReport.Steps.Add($"TravelToSellTarget:Blocked:{travelDetail ?? "sell leg travel failed"}");
+                }
+
+                TrySellAtCurrentSettlement();
                 RunForgeHandoffIfConfigured();
                 Finish(MapTradeRouteState.Complete, "Complete", null);
                 return;
@@ -270,6 +304,34 @@ namespace BlacksmithGuild.MapTrade
                 MapTradeRouteState.Complete,
                 "Complete",
                 buyDetail ?? "VisibleTradeDriverUnavailable");
+        }
+
+        private static void TrySellAndFinish()
+        {
+            _activeReport.State = MapTradeRouteState.ExecuteTrade;
+            TrySellAtCurrentSettlement();
+            RunForgeHandoffIfConfigured();
+            Finish(MapTradeRouteState.Complete, "Complete", null);
+        }
+
+        private static void TrySellAtCurrentSettlement()
+        {
+            if (!MapTradeMissionSelector.ShouldAttemptSell(_originalRouteMission, out var sellMission))
+            {
+                _activeReport.Steps.Add("ExecuteSell:Skipped");
+                return;
+            }
+
+            if (MapTradeVanillaTradeDriver.TryExecuteSell(sellMission, out var sellDetail))
+            {
+                _activeReport.Steps.Add("ExecuteSell:Success");
+                _activeReport.SellExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
+                _activeReport.MutationApplied = true;
+            }
+            else
+            {
+                _activeReport.Steps.Add($"ExecuteSell:Blocked:{sellDetail ?? "sell driver unavailable"}");
+            }
         }
 
         private static void RunForgeHandoffIfConfigured()
@@ -324,6 +386,8 @@ namespace BlacksmithGuild.MapTrade
             }
 
             _activeReport = null;
+            _originalRouteMission = null;
+            _routeSellLegPending = false;
         }
 
         private static void PauseIfVisible(string label)
