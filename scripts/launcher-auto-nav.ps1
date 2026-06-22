@@ -7,8 +7,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$BannerlordRoot,
 
-    [int]$TimeoutSec = 120,
-    [int]$PollMs = 450
+    [int]$TimeoutSec = 300,
+    [int]$PollMs = 180
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,8 +59,8 @@ public static class UIAHelper
     private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88 };
     private static readonly double[] ModuleMismatchYesXFractions = new double[] { 0.54, 0.56, 0.52 };
     private static readonly double[] ModuleMismatchYesYFractions = new double[] { 0.58, 0.56, 0.60 };
-    private const int LauncherStableSecBeforeFallback = 5;
-    private const int LauncherCoordClickThrottleSec = 2;
+    private const int LauncherStableSecBeforeFallback = 1;
+    private const int LauncherCoordClickThrottleSec = 1;
     private const int LauncherMinCoordWindowWidth = 800;
     private const int LauncherMinCoordWindowHeight = 600;
     private static bool _moduleMismatchAuditDone;
@@ -205,7 +205,7 @@ public static class UIAHelper
                         var name = element.Current.Name ?? string.Empty;
                         foreach (var target in names)
                         {
-                            if (!NameMatchesTarget(name, target)) continue;
+                            if (!NameMatchesTargetLoose(name, target)) continue;
                             if (requireEnabled && !element.Current.IsEnabled) continue;
                             return element;
                         }
@@ -353,7 +353,7 @@ public static class UIAHelper
             var label = intent == "continue" ? "launcher CONTINUE" : "launcher PLAY";
 
             ForceForegroundWindow(hwnd);
-            Thread.Sleep(250);
+            Thread.Sleep(100);
 
             LogHitWindowAtPoint(x, y, label, intent);
 
@@ -458,6 +458,37 @@ public static class UIAHelper
         return string.Equals(elementName.Trim(), targetName.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
+    private static string NormalizeButtonName(string elementName)
+    {
+        if (string.IsNullOrWhiteSpace(elementName)) return string.Empty;
+        return elementName.Trim().TrimStart('&');
+    }
+
+    private static bool NameMatchesTargetLoose(string elementName, string targetName)
+    {
+        if (string.IsNullOrWhiteSpace(elementName) || string.IsNullOrWhiteSpace(targetName)) return false;
+        if (NameMatchesTarget(elementName, targetName)) return true;
+
+        var normalized = NormalizeButtonName(elementName);
+        var target = NormalizeButtonName(targetName);
+        if (string.Equals(normalized, target, StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (target.Equals("CONTINUE", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0
+                && normalized.IndexOf("Play", StringComparison.OrdinalIgnoreCase) < 0;
+        }
+
+        if (target.Equals("PLAY", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.Equals("Play", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("PLAY", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
+
     private static AutomationElement FindClickableInScope(AutomationElement scope, string[] targetNames, bool requireEnabled)
     {
         if (scope == null || targetNames == null || targetNames.Length == 0) return null;
@@ -474,7 +505,7 @@ public static class UIAHelper
                     var name = element.Current.Name ?? string.Empty;
                     foreach (var target in targetNames)
                     {
-                        if (!NameMatchesTarget(name, target)) continue;
+                        if (!NameMatchesTargetLoose(name, target)) continue;
                         if (requireEnabled && !element.Current.IsEnabled) continue;
                         return element;
                     }
@@ -817,13 +848,126 @@ public static class UIAHelper
         return string.Join(", ", names.ToArray());
     }
 
+    public static bool HasSafeModeDialog()
+    {
+        return FindWindowRootByTitle("Safe Mode") != null;
+    }
+
+    public static bool IsLauncherPlayContinueVisible()
+    {
+        var names = new List<string>();
+        var windows = FindAllLauncherWindowRoots();
+        if (windows.Count == 0) return false;
+
+        foreach (var window in windows)
+        {
+            CollectButtonNames(window, names);
+            CollectInteractiveNames(window, names);
+        }
+
+        foreach (var name in names)
+        {
+            var normalized = NormalizeButtonName(name);
+            if (normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return true;
+            }
+
+            if (normalized.Equals("Play", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("PLAY", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static bool ClickSafeModeNo()
     {
         var safeModeRoot = FindWindowRootByTitle("Safe Mode");
         if (safeModeRoot == null) return false;
 
         FocusScope(safeModeRoot, "Safe Mode");
-        return TryClickButtonInScope(safeModeRoot, "No", false, "Safe Mode No");
+        foreach (var name in new[] { "No", "&No", "NO" })
+        {
+            if (TryClickButtonInScope(safeModeRoot, name, false, "Safe Mode No"))
+            {
+                return true;
+            }
+        }
+
+        var noButton = FindNoButtonInScope(safeModeRoot);
+        if (noButton != null)
+        {
+            var scopeDesc = DescribeScope(safeModeRoot);
+            if (InvokeElement(noButton, "Safe Mode No", NormalizeButtonName(noButton.Current.Name), scopeDesc))
+            {
+                return true;
+            }
+        }
+
+        return TryClickSafeModeNoByCoords(safeModeRoot);
+    }
+
+    private static AutomationElement FindNoButtonInScope(AutomationElement scope)
+    {
+        if (scope == null) return null;
+
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = scope.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    var normalized = NormalizeButtonName(element.Current.Name ?? string.Empty);
+                    if (normalized.Equals("No", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return element;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static bool TryClickSafeModeNoByCoords(AutomationElement safeModeRoot)
+    {
+        if (safeModeRoot == null) return false;
+
+        try
+        {
+            var hwnd = new IntPtr(safeModeRoot.Current.NativeWindowHandle);
+            if (hwnd == IntPtr.Zero) return false;
+
+            var bounds = safeModeRoot.Current.BoundingRectangle;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return false;
+
+            var x = (int)(bounds.X + bounds.Width * 0.32);
+            var y = (int)(bounds.Y + bounds.Height * 0.72);
+            var scopeDesc = DescribeScope(safeModeRoot);
+
+            ForceForegroundWindow(hwnd);
+            Thread.Sleep(80);
+            LogLine(string.Format("CLICK \"Safe Mode No\" method=coords at ({0},{1}) in {2}", x, y, scopeDesc));
+            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No");
+            SetCursorPos(x, y);
+            Thread.Sleep(40);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogLine("CLICK FAIL Safe Mode coords: " + ex.Message);
+            return false;
+        }
     }
 
     public static bool HasCautionDialog()
@@ -1183,7 +1327,7 @@ public static class UIAHelper
                         var name = element.Current.Name ?? string.Empty;
                         foreach (var target in names)
                         {
-                            if (!NameMatchesTarget(name, target)) continue;
+                            if (!NameMatchesTargetLoose(name, target)) continue;
                             if (requireEnabled && !element.Current.IsEnabled) continue;
                             return element;
                         }
@@ -1264,7 +1408,7 @@ public static class UIAHelper
             if (hwnd != IntPtr.Zero)
             {
                 SetForegroundWindow(hwnd);
-                Thread.Sleep(120);
+                Thread.Sleep(60);
             }
         }
         catch (Exception ex)
@@ -1929,20 +2073,23 @@ function Test-HandoffWhenGameStable {
 }
 
 function Test-LaunchClickVerified {
-    param([int]$WaitSec = 18)
+    param([int]$WaitSec = 4)
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
         if (Test-GameProcessRunning) { return $true }
-        if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
         if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
-        Start-Sleep -Milliseconds 250
+        if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+        if (-not [UIAHelper]::HasSafeModeDialog() -and -not [UIAHelper]::IsLauncherPlayContinueVisible()) {
+            return $true
+        }
+        Start-Sleep -Milliseconds 150
     }
     return $false
 }
 
 if ($LaunchIntent -eq 'continue') {
-    $targetButtonNames = @('CONTINUE', 'Continue')
+    $targetButtonNames = @('CONTINUE', 'Continue', 'Continue Campaign', 'Resume', 'Resume Game')
 } else {
     $targetButtonNames = @('PLAY', 'Play')
 }
@@ -2042,7 +2189,8 @@ while ((Get-Date) -lt $deadline) {
             Extend-DeadlineForSlowPath
             Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
         }
-        Start-Sleep -Milliseconds $PollMs
+    } elseif ([UIAHelper]::HasSafeModeDialog()) {
+        Start-Sleep -Milliseconds 120
         continue
     }
 
@@ -2063,7 +2211,7 @@ while ((Get-Date) -lt $deadline) {
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
-            if (Test-LaunchClickVerified -WaitSec 8) {
+            if (Test-LaunchClickVerified -WaitSec 4) {
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
                 if ($LaunchIntent -eq 'continue') {
                     Write-LaunchLog 'LAUNCH_STATE=continue_clicked'
@@ -2082,7 +2230,12 @@ while ((Get-Date) -lt $deadline) {
         }
     }
 
-    Start-Sleep -Milliseconds $PollMs
+    $loopPollMs = if ([UIAHelper]::HasSafeModeDialog() -or (-not $clickedPlayContinue -and [UIAHelper]::IsLauncherPlayContinueVisible())) {
+        120
+    } else {
+        $PollMs
+    }
+    Start-Sleep -Milliseconds $loopPollMs
 }
 
 $boundaryStall = $false

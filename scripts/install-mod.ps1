@@ -175,7 +175,7 @@ try {
             }
             & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot
             if (-not $LaunchManual) {
-                & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
+                & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -TimeoutSec 300 -PollMs 180
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'

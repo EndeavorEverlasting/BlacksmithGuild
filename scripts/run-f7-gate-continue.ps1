@@ -413,7 +413,8 @@ function Invoke-F7NoClickLaunch {
         '-File', $navScript,
         '-LaunchIntent', 'continue',
         '-BannerlordRoot', $bannerlordRoot,
-        '-TimeoutSec', [string]$TimeoutSec
+        '-TimeoutSec', [string]$TimeoutSec,
+        '-PollMs', '180'
     )
 
     Write-Host 'Starting launcher-auto-nav in hidden subprocess (avoids IDE focus theft)...' -ForegroundColor DarkGray
