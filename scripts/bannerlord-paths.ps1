@@ -117,6 +117,65 @@ function Test-Phase1ReadyLine {
         -or $Line -match 'map_ready.*PASS'
 }
 
+function Get-F7GateManifestPath {
+    param([string]$CheckpointDir)
+    return Join-Path $CheckpointDir 'manifest.json'
+}
+
+function Confirm-F7GateManifestWritten {
+    param([string]$CheckpointDir)
+
+    $path = Get-F7GateManifestPath -CheckpointDir $CheckpointDir
+    if (-not (Test-Path -LiteralPath $path)) {
+        throw "F7 gate manifest missing: $path"
+    }
+    try {
+        Get-Content -LiteralPath $path -Raw | ConvertFrom-Json | Out-Null
+    } catch {
+        throw "F7 gate manifest unreadable: $path - $($_.Exception.Message)"
+    }
+    return $path
+}
+
+function Test-F7GateManifestPass {
+    param(
+        [string]$ManifestPath,
+        [int]$RequiredStableSeconds = 60
+    )
+
+    if (-not $ManifestPath -or -not (Test-Path -LiteralPath $ManifestPath)) { return $false }
+    try {
+        $m = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    } catch { return $false }
+
+    return ($m.passFail -eq 'PASS') -and ([int]$m.exitCode -eq 0) -and ([int]$m.stableSeconds -ge $RequiredStableSeconds)
+}
+
+function Get-LatestF7GateManifestPath {
+    param(
+        [string]$RepoRoot,
+        [string]$SessionId = $null
+    )
+
+    if ($SessionId) {
+        $explicit = Join-Path $RepoRoot "docs\evidence\live-cert\$SessionId\checkpoint-01-f7-gate\manifest.json"
+        if (Test-Path -LiteralPath $explicit) { return $explicit }
+    }
+
+    $evidenceRoot = Join-Path $RepoRoot 'docs\evidence\live-cert'
+    if (-not (Test-Path -LiteralPath $evidenceRoot)) { return $null }
+
+    $latest = Get-ChildItem -LiteralPath $evidenceRoot -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^\d{8}-\d{6}$' } |
+        Sort-Object Name -Descending |
+        Select-Object -First 1
+    if (-not $latest) { return $null }
+
+    $path = Join-Path $latest.FullName 'checkpoint-01-f7-gate\manifest.json'
+    if (Test-Path -LiteralPath $path) { return $path }
+    return $null
+}
+
 function Write-ForgeRunLogPaths {
     param([string]$BannerlordRoot)
 

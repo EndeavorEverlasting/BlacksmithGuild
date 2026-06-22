@@ -6,33 +6,40 @@ param(
     [string]$BannerlordRoot
 )
 
-function Get-BannerlordRootFromRepo {
-    param([string]$RepoRoot)
-    $csproj = Join-Path $RepoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
-    if ($csproj -match '<GameFolder>([^<]+)</GameFolder>') {
-        $fromCsproj = $Matches[1] -replace '&amp;', '&'
-        if (Test-Path -LiteralPath $fromCsproj) { return $fromCsproj }
+$previousErrorActionPreference = $ErrorActionPreference
+try {
+    $ErrorActionPreference = 'Stop'
+    . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+
+    if (-not $BannerlordRoot) {
+        $RepoRoot = Split-Path -Parent $PSScriptRoot
+        $BannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
     }
-    $default = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord'
-    if (Test-Path -LiteralPath $default) { return $default }
-    return $null
-}
 
-if (-not $BannerlordRoot) {
-    $RepoRoot = Split-Path -Parent $PSScriptRoot
-    $BannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
-}
+    if (-not $BannerlordRoot) { return }
 
-if (-not $BannerlordRoot) { return }
+    $logPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
+    $line = "[{0}] {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
+    $parent = Split-Path -Parent $logPath
+    if ($parent -and -not (Test-Path -LiteralPath $parent)) {
+        New-Item -ItemType Directory -Path $parent -Force | Out-Null
+    }
 
-$logPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
-$line = "[{0}] {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
-for ($attempt = 0; $attempt -lt 3; $attempt++) {
+    $mutexName = 'Global\BlacksmithGuildLaunchLogWrite'
+    $mutex = New-Object System.Threading.Mutex($false, $mutexName)
+    $hasLock = $false
     try {
-        Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8 -ErrorAction Stop
-        break
-    } catch {
-        if ($attempt -ge 2) { throw }
-        Start-Sleep -Milliseconds 150
+        $hasLock = $mutex.WaitOne([TimeSpan]::FromSeconds(10))
+        if (-not $hasLock) {
+            throw 'Launch log mutex timeout after 10s'
+        }
+        Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
+    } finally {
+        if ($hasLock) {
+            try { $mutex.ReleaseMutex() | Out-Null } catch { }
+        }
+        $mutex.Dispose()
     }
+} finally {
+    $ErrorActionPreference = $previousErrorActionPreference
 }

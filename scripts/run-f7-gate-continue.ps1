@@ -377,7 +377,45 @@ function Save-CheckpointEvidence {
     $manifest | ConvertTo-Json -Depth 8 |
         Set-Content -LiteralPath (Join-Path $checkpointDir 'manifest.json') -Encoding UTF8
 
+    $writtenPath = Join-Path $checkpointDir 'manifest.json'
+    if (-not (Test-Path -LiteralPath $writtenPath)) {
+        throw "manifest write failed: $writtenPath"
+    }
+    Confirm-F7GateManifestWritten -CheckpointDir $checkpointDir | Out-Null
+
     return $checkpointDir
+}
+
+function Exit-F7Gate {
+    param(
+        [int]$Code,
+        [string]$CheckpointDir
+    )
+
+    if ($Code -eq 0) {
+        if (-not $CheckpointDir) {
+            Write-Host 'F7 FAIL-CLOSED: exit 0 rejected — no checkpoint directory.' -ForegroundColor Red
+            exit 1
+        }
+        try {
+            $manifestPath = Confirm-F7GateManifestWritten -CheckpointDir $CheckpointDir
+        } catch {
+            Write-Host "F7 FAIL-CLOSED: $($_.Exception.Message)" -ForegroundColor Red
+            exit 1
+        }
+        if (-not (Test-F7GateManifestPass -ManifestPath $manifestPath -RequiredStableSeconds $StableSeconds)) {
+            Write-Host "F7 FAIL-CLOSED: exit 0 rejected — manifest not PASS (stable >= ${StableSeconds}s required)." -ForegroundColor Red
+            exit 1
+        }
+    } elseif ($CheckpointDir) {
+        try {
+            Confirm-F7GateManifestWritten -CheckpointDir $CheckpointDir | Out-Null
+        } catch {
+            Write-Host "F7 WARN: manifest missing for exit $Code — $($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+
+    exit $Code
 }
 
 function Invoke-F7NoClickLaunch {
@@ -441,10 +479,6 @@ function Invoke-F7NoClickLaunch {
 
     if (Test-GameProcessRunning -or $script:LaunchAutomation.handoffSeen) {
         if (Test-GameProcessRunning) { Write-F7LaunchState 'game_spawned' }
-        return $true
-    }
-
-    if ($navExitCode -eq 0 -or $script:LaunchAutomation.continueClick.success) {
         return $true
     }
 
@@ -530,6 +564,8 @@ function Write-F7PollHeartbeat {
         $ElapsedSec, $LaunchState, $state, $phase, $script:LaunchAutomation.lastFocusResult, $last) -ForegroundColor DarkGray
 }
 
+$launchStartedLocal = $null
+
 try {
     Write-Host ''
     Write-Host '=== F7 Continue Gate (no-click) ===' -ForegroundColor Cyan
@@ -547,7 +583,7 @@ try {
         $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 1 -StableSec 0 -LastSignals $signals `
             -Notes 'build failed' -SinceLocal (Get-Date)
         Write-Host "Build failed. Evidence: $dir" -ForegroundColor Red
-        exit 1
+        Exit-F7Gate -Code 1 -CheckpointDir $dir
     }
 
     $launchStarted = Get-Date
@@ -569,7 +605,7 @@ try {
             $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 1 -StableSec 0 -LastSignals $signals `
                 -Notes "LAUNCH FAIL: $toolingFail" -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
             Write-Host "Launch automation FAIL (exit 1): $toolingFail. Evidence: $dir" -ForegroundColor Red
-            exit 1
+            Exit-F7Gate -Code 1 -CheckpointDir $dir
         }
         Write-Host 'WARN: launcher-auto-nav returned error but handoff/continue may have occurred — continuing F7 poll' -ForegroundColor Yellow
     }
@@ -621,7 +657,7 @@ try {
             $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $lastSignals `
                 -Notes $notes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
             Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
-            exit 2
+            Exit-F7Gate -Code 2 -CheckpointDir $dir
         }
 
         if (Test-F7GateCondition -Signals $lastSignals) {
@@ -635,7 +671,7 @@ try {
                 $dir = Save-CheckpointEvidence -PassFail 'PASS' -ExitCode 0 -StableSec $stableSec -LastSignals $lastSignals `
                     -Notes "F7 gate stable for >=${StableSeconds}s" -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
                 Write-Host "F7 gate PASS ($stableSec s stable). Evidence: $dir" -ForegroundColor Green
-                exit 0
+                Exit-F7Gate -Code 0 -CheckpointDir $dir
             }
         } else {
             $stableSince = $null
@@ -665,7 +701,20 @@ try {
     $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $lastSignals `
         -Notes $notes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
     Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
-    exit 2
+    Exit-F7Gate -Code 2 -CheckpointDir $dir
+}
+catch {
+    Write-Host "F7 gate tooling exception: $($_.Exception.Message)" -ForegroundColor Red
+    try {
+        $signals = Get-F7GateSignals
+        $sinceLocal = if ($launchStartedLocal) { $launchStartedLocal } else { Get-Date }
+        $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 1 -StableSec 0 -LastSignals $signals `
+            -Notes "F7 tooling exception: $($_.Exception.Message)" -SinceLocal $sinceLocal
+        Exit-F7Gate -Code 1 -CheckpointDir $dir
+    } catch {
+        Write-Host "F7 FAIL-CLOSED: could not write manifest after exception: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
+    }
 }
 finally {
     if ($hookMaskWasSet) {

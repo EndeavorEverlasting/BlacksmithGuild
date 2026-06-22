@@ -1,5 +1,7 @@
 @echo off
 setlocal
+REM Primary F7 invocation (Unicode-safe): powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0xNN
+REM This wrapper forwards %* to the PS script; bisect uses direct PowerShell.
 
 echo.
 echo The Blacksmith Guild - F7 Continue Gate (no-click)

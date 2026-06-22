@@ -23,13 +23,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `4218842` (+ Agent A uncommitted cert fixes) |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent C fail-closed runner) |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — map-ready seen then crash (session `095326` mask `0x01`); prior `030915` MapTransition-only |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-095140/` + bisect summary; session `095326` reached TBG READY (no manifest — log write race) |
 | Launcher cert | **PASS** — `continue_clicked`, Safe Mode No, `game_spawned` (session `030915`) |
-| Next cert command | `.\Run-F7GateContinue.cmd -HookMask 0x0F` (external PS; stop other Forge terminals first) |
+| Next cert command | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F` (or `Run-F7GateContinue.cmd` after pull) |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -40,7 +40,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Bisect partial @ `095326`; commit fixes; re-run after C PLAY/CONTINUE hwnd fix | `docs/evidence/live-cert/**`, PR #7 | — | pending |
 | **B** | C# map-ready / MapTransition | `IDLE` | Interpret `095326` (map-ready then die); em-dash helpers landed | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `4218842` |
-| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | PLAY verify + CONTINUE hwnd target (no Cursor false-positive) | `launcher-auto-nav.ps1`, `Run-LauncherNavPlay.cmd` | Coordinate with A before F7 re-run | `a28ae61` |
+| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | Fail-closed F7 gate runner (manifest required for exit 0) | `run-f7-gate-continue.ps1`, `run-agent-a-f7-bisect.ps1`, `write-launch-log.ps1`, `Run-F7GateContinue.cmd` | A: wait for C commit before F7 cert | pending |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -72,6 +72,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A, B (fail-closed F7 gate runner)
+
+- **Landed:** `Exit-F7Gate` — exit 0 only when manifest `passFail=PASS` and `stableSeconds >= StableSeconds`; catch writes FAIL manifest on tooling exceptions; removed loose `Invoke-F7NoClickLaunch` success path.
+- **Bisect:** `run-agent-a-f7-bisect.ps1` uses direct PowerShell (no `-SkipLaunch`); rejects `FAKE_PASS_REJECTED` when child exit 0 lacks manifest PASS.
+- **Launch log:** `write-launch-log.ps1` — scoped `$ErrorActionPreference`, mutex `WaitOne` enforced.
+- **Paths:** `Test-F7GateManifestPass`, `Confirm-F7GateManifestWritten`, `Get-LatestF7GateManifestPath` in `bannerlord-paths.ps1` (@Agent B: manifest helpers only).
+- **Wrapper:** `Run-F7GateContinue.cmd` forwards `%*`; primary doctrine = direct PowerShell.
+- **Need from A:** Pull, run static validation, then F7 cert / bisect; reject any exit 0 without manifest. PR #8 still HOLD.
+- **Need from B:** Align playbook to direct-PS-primary; `verify-log-grep-patterns.ps1` scope (not on this branch).
 
 ### 2026-06-22 — Agent A → B, C (bisect partial @ `4218842`)
 
@@ -145,7 +155,8 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] RespectUserForeground policy + delete minimize script
 - [x] Create this coordination doc (with B plan)
 - [x] Pushed @ `8c18ecd`
-- [ ] CONTINUE: reject hit-test when hwnd process is not launcher; mirror PLAY spawn verify (`a28ae61`)
+- [x] Fail-closed F7 gate runner + bisect manifest gate + write-launch-log mutex
+- [ ] CONTINUE hwnd hit-test fix (`a28ae61`) — deferred; separate from gate fail-closed sprint
 
 ---
 
