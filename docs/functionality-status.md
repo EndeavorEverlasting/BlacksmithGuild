@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (live cert marathon — 006C-3 smelt + faction power posture)  
+**Last updated:** 2026-06-22 (Agent B cert sprint — build PASS; live certs BLOCKED pending manual launch)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — live assistive certs **USER PENDING** (orchestrator shipped)
+**Branch:** `main` @ `15d1611` — **not cert-complete**; all 006B/006C/009A USER certs **PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -11,6 +11,38 @@ Canonical snapshot of what works today, what is certified, and what is not built
 **006C roadmap:** [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
+
+---
+
+## Live cert marathon — current verdict (2026-06-22)
+
+**Not cert-complete.** No honest PASS/FAIL for 006B / 006C-1 / 006C-2 / 006C-3 / 009A until fresh evidence after manual-launch `-SkipLaunch` run + `ExportTbgEvidence.cmd`.
+
+| Check | Verdict | Notes |
+|-------|---------|-------|
+| `dotnet build -c Release` | **PASS** | Verified 2026-06-22 — 0 warnings, mod installed |
+| Disposable marathon bootstrap | **BLOCKED** | Checkpoint 1 map-ready timeout — launcher focus/UIA, not feature failure |
+| Continue marathon | **NOT RUN** | Needs manual `ForgeContinue.cmd` + F7 ready + `-SkipLaunch` |
+| 006B abort | **PENDING** | Needs `AutonomousGuildLoop.json` → `verdict: Aborted` |
+| 006C-1 vanilla buy | **PENDING** | Needs `goldDelta < 0`, `quantityBought > 0` |
+| 006C-2 pack animal | **PENDING** | Needs pack-animal probe/exec success |
+| 006C-3 weapon smelt | **PENDING** | Needs weapon count down + material up in smelt JSON |
+| 009A clan intel | **PENDING** | Needs 6 clan JSON files |
+| Faction posture | **PENDING** | Needs `ClanContext.factionPowerPosture.powerVerdict` |
+
+**Cold rule:** no map-ready → no verdict. Do not “fix” launcher automation for this sprint.
+
+**Next local path:**
+
+```powershell
+.\Forge.cmd   # keep launcher focused; F7 campaignReady:true + canPollFileInbox:true
+.\Run-LiveAssistiveCert.cmd -Session disposable -SkipLaunch -FromCheckpoint 2
+.\ForgeContinue.cmd   # same F7 gate
+.\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
+.\ExportTbgEvidence.cmd
+```
+
+Stale evidence: `docs/evidence/latest/README.md` predates failed marathon (`2026-06-21T00:27:42Z`). Re-export after cert run.
 
 ---
 
