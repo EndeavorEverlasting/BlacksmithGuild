@@ -21,7 +21,7 @@
 | Check | Verdict | Notes |
 |-------|---------|-------|
 | `dotnet build -c Release` | **PASS** | 2026-06-22 F7 sprint |
-| F7 runner (`Run-F7GateContinue.cmd`) | **SHIPPED** | Detached launch + 60s stability checkpoint |
+| F7 runner (`Run-F7GateContinue.cmd`) | **SHIPPED** | No-click synchronous launch; `-HookMask`; fail-fast exit 1 on tooling; golden-path manifest |
 | Refocus + C# load gates | **SHIPPED** | MapTransition hotkey/inbox/orchestrator gating |
 | Continue F7 (agent shell) | **FAIL** | `20260622-011418`; Safe Mode No; MapTransition death |
 | Continue F7 (USER) | **PENDING VERIFY** | `Run-F7GateContinue.cmd` exit 0 required |
@@ -37,7 +37,8 @@
 **Next local path (after crash fix):**
 
 ```powershell
-# User terminal — close Bannerlord, minimize Cursor
+# Autonomous F7 — no manual launch steps
+.\Run-F7GateContinue.cmd -HookMask 0x0F
 .\Run-F7GateContinue.cmd
 # PASS: exit 0; then:
 .\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch

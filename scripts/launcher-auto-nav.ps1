@@ -1550,6 +1550,8 @@ $preHandoffSuppressedLogged = $false
 $preHandoffMismatchSuppressedLogged = $false
 $handoffStarted = $false
 $lastRefocusUtc = $null
+$cursorTheftSince = $null
+$gameSpawnLogged = $false
 $mismatchCoordAttemptMain = 0
 $phase1ReadyBaseline = @{}
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
@@ -1644,6 +1646,7 @@ function Invoke-Handoff {
     param([string]$Reason)
     $script:handoffStarted = $true
     Write-LaunchLog "handoff: $Reason"
+    Write-LaunchLog 'LAUNCH_STATE=handoff'
     Wait-PostHandoffWatchdog -Reason $Reason
 }
 
@@ -1941,8 +1944,24 @@ if ($LaunchIntent -eq 'continue') {
 
 while ((Get-Date) -lt $deadline) {
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
-        Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
+        $envDesc = [UIAHelper]::DescribeEnvironment()
+        Write-LaunchLog $envDesc
+        if ($envDesc -match 'foreground="[^"]*Cursor[^"]*"' -and -not [UIAHelper]::HasLauncherRoot() -and -not (Test-GameProcessRunning)) {
+            if (-not $script:cursorTheftSince) {
+                $script:cursorTheftSince = Get-Date
+            } elseif (((Get-Date) - $script:cursorTheftSince).TotalSeconds -ge 60) {
+                Write-LaunchLog 'LAUNCH_STATE=fail_foreground_theft'
+                throw 'launcher automation impossible: Cursor foreground >60s with no launcher/game hwnd'
+            }
+        } else {
+            $script:cursorTheftSince = $null
+        }
         $lastHeartbeat = Get-Date
+    }
+
+    if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
+        Write-LaunchLog 'LAUNCH_STATE=game_spawned'
+        $script:gameSpawnLogged = $true
     }
 
     if ($clickedPlayContinue) {
@@ -2011,6 +2030,7 @@ while ((Get-Date) -lt $deadline) {
     if ([UIAHelper]::ClickSafeModeNo()) {
         if (-not $clickedSafeMode) {
             Write-LaunchLog 'clicked Safe Mode No'
+            Write-LaunchLog 'LAUNCH_STATE=safe_mode_no_clicked'
             Write-LaunchLog 'Safe Mode: No selected — prior session unexpected shutdown; crash on last run suspected (full mod load retained)'
             $clickedSafeMode = $true
             Extend-DeadlineForSlowPath
@@ -2039,6 +2059,11 @@ while ((Get-Date) -lt $deadline) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
             if (Test-LaunchClickVerified -WaitSec 8) {
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
+                if ($LaunchIntent -eq 'continue') {
+                    Write-LaunchLog 'LAUNCH_STATE=continue_clicked'
+                } else {
+                    Write-LaunchLog 'LAUNCH_STATE=play_clicked'
+                }
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
                 Extend-DeadlineAfterPlayClick

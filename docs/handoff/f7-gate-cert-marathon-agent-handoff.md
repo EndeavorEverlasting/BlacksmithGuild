@@ -1,13 +1,26 @@
 # F7 Gate + Cert Marathon — Agent Handoff
 
 **Last updated:** 2026-06-22  
-**Branch:** `fix/f7-gate-stability` (PR → `main`)  
-**Sprint outcome:** Build PASS; F7 gate **FAIL (agent shell)**; Continue cert / Track A/B **NOT RUN**
+**Branch:** `fix/f7-gate-stability` / `fix/f7-no-click-launch-runner` (PR #7 → `main`)  
+**Sprint outcome:** No-click F7 runner shipped; launch automation owns Safe Mode / Continue / refocus
+
+## F7 runner (no-click)
+
+```powershell
+.\Run-F7GateContinue.cmd -HookMask 0x0F
+.\Run-F7GateContinue.cmd -HookMask 0x00 -TimeoutSeconds 300 -StableSeconds 60
+```
+
+`Run-F7GateContinue.cmd` owns launch automation end-to-end. If automation cannot click/dismiss/focus, it **fails fast (exit 1)** with manifest classification — not a blind 300s wait.
+
+Exit codes: **0** PASS · **1** build/launch/tooling · **2** game reached F7 path but failed/timeout
+
+Manifest fields: `hookMask`, `launchState`, `safeModeDetected`, `safeModeNoClicked`, `continueClick`, `goldenPathCheck`, `LAUNCH_STATE=*` in Launch.log
 
 ## What this sprint shipped
 
 1. **Refocus hardening** — `launcher-auto-nav.ps1` post-handoff + after PLAY/CONTINUE/Safe Mode; `run-live-assistive-cert.ps1` `Wait-MapReady`
-2. **F7 runner** — `Run-F7GateContinue.cmd` + `scripts/run-f7-gate-continue.ps1` (detached launch, 60s stability, checkpoint manifest)
+2. **F7 runner** — `Run-F7GateContinue.cmd` + `run-f7-gate-continue.ps1` (synchronous no-click launch, 30s heartbeats, golden-path check, fail-fast exit 1 on tooling)
 3. **C# load gates** — no help hotkeys / orchestrator during MapTransition half-ready window
 4. **Safe Mode trail** — launch log + manifest `launchSignals.priorSessionCrashLikely`
 
@@ -63,20 +76,14 @@ Prior agent-shell FAIL (pre-fix runner): `20260622-004953/`
 # Track B: forge.ps1 -Command RunAutonomousGuildLoopNow on feat/006c-4b-second-leg-travel
 ```
 
-## Exact next path — USER terminal (preferred)
+## Next step — autonomous F7
 
 ```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-git fetch origin
-git checkout fix/f7-gate-stability && git pull
-# Close Bannerlord completely; minimize Cursor after launch starts
-$env:TBG_MAP_READY_HOOK_MASK = "0x0F"   # immediate hooks only (first bisect)
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-.\Run-F7GateContinue.cmd
-# PASS: exit 0 + manifest passFail PASS + stableSeconds >= 60 + [TBG MAPREADY] or TBG READY
-.\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
-.\ExportTbgEvidence.cmd
+git pull origin fix/f7-no-click-launch-runner   # or fix/f7-gate-stability after merge
+.\Run-F7GateContinue.cmd -HookMask 0x0F
 ```
+
+No manual clicks, Safe Mode dismiss, or terminal focus required — runner owns launch. Exit 1 = tooling; exit 2 = game/mod path.
 
 ## If USER reaches map-ready but still crashes
 

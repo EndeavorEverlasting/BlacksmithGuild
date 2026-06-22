@@ -28,14 +28,11 @@ Continue load crash chain on F7 Continue gate. USER path (@ `80ffa31`) now reach
 Best USER repro: `docs/evidence/live-cert/20260622-013214/checkpoint-01-f7-gate/`  
 Post-gate agent: `docs/evidence/live-cert/20260622-015132/` — see [f7-golden-path-diff-agent-handoff.md](f7-golden-path-diff-agent-handoff.md)
 
-## Next step — USER terminal (required)
+## Next step — autonomous F7
 
 ```powershell
-git checkout fix/f7-gate-stability && git pull   # expect 376fb3c
-$env:TBG_MAP_READY_HOOK_MASK = "0x0F"
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-.\Run-F7GateContinue.cmd
-# Minimize Cursor + PowerShell once game appears
+git checkout fix/f7-no-click-launch-runner && git pull
+.\Run-F7GateContinue.cmd -HookMask 0x0F
 ```
 
 If still fails after MapReady: try `0x1DF`, `0x1BF`, `0x00`. See `docs/handoff/f7-gate-cert-marathon-agent-handoff.md`.

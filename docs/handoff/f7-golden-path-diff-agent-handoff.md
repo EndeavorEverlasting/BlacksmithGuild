@@ -53,21 +53,19 @@ Live logs (always): `<Bannerlord>/BlacksmithGuild_Phase1.log`, `BlacksmithGuild_
 ## Next sprint — USER terminal (required)
 
 ```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-git pull origin fix/f7-gate-stability   # 376fb3c+
-# Close Bannerlord completely; minimize Cursor
-
-$env:TBG_MAP_READY_HOOK_MASK = "0x0F"
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-.\Run-F7GateContinue.cmd
+git pull origin fix/f7-no-click-launch-runner
+.\Run-F7GateContinue.cmd -HookMask 0x0F
 ```
+
+Runner owns Safe Mode No, Continue click, refocus. Fail-fast exit 1 when hwnd/foreground theft blocks automation.
 
 **PASS:** exit 0, manifest PASS, Phase1 shows `[TBG MAPREADY] StatusFlush ok` then `TBG READY`, stable 60s.
 
 **If MapReady but no MAPREADY (like 015132):**
-1. `$env:TBG_MAP_READY_HOOK_MASK = "0x00"` — diagnostic: skip all hooks
-2. If `0x00` PASS → bisect immediate flags (`0x01`..`0x08`)
-3. If still no MAPREADY → audit `BlacksmithGuildCampaignBehavior.OnCampaignTick` vs `SubModule.OnApplicationTick` ordering
+```powershell
+.\Run-F7GateContinue.cmd -HookMask 0x00   # diagnostic: skip all hooks
+.\Run-F7GateContinue.cmd -HookMask 0x01   # StatusFlush only
+```
 
 **Capture golden baseline after first USER PASS:**
 ```powershell
