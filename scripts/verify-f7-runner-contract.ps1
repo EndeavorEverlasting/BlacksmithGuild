@@ -55,7 +55,7 @@ if (Test-Path -LiteralPath $gatePath) {
         'Get-BannerlordProcessDetection', 'gameProcessDetectionMethod', 'gameAliveConfidence', 'process_detection_uncertain',
         'contaminated_launch_path', 'f7-launch-contract.ps1', 'readinessJudged', 'targetMismatchReason', 'failureReason',
         'Stop-F7CertProcesses', 'spawnAttribution', 'pre_intent_game_spawn', 'retryCount',
-        'Test-F7StrongPreIntentGameSignal'
+        'Test-F7StrongPreIntentGameSignal', 'Test-F7GameGoneDefinitive', 'fail_game_gone_definitive'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -107,6 +107,8 @@ if (Test-Path -LiteralPath $navPath) {
         Add-Failure 'launcher-auto-nav.ps1 missing Continue-cert contamination guard'
     } elseif ($navText -notmatch 'Test-PreIntentGameSpawnAndContaminate|automationContinueIntentDeclared') {
         Add-Failure 'launcher-auto-nav.ps1 missing pre-intent intent barrier'
+    } elseif ($navText -notmatch 'Invoke-LauncherSafeModeAndCrashDialogs|safe_mode_visible|ContinueClickVerifySec') {
+        Add-Failure 'launcher-auto-nav.ps1 missing Safe Mode early detect / reduced verify timeout'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
     }

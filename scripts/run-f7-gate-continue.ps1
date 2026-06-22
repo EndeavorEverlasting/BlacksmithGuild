@@ -618,13 +618,45 @@ function Get-F7GamePhaseAtEnd {
     return 'unknown'
 }
 
+function Test-F7BannerlordExeRunning {
+    return [bool](Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
+}
+
+function Test-F7GameGoneDefinitive {
+    param(
+        [bool]$GameWasSeen,
+        $Detection
+    )
+
+    if (-not $GameWasSeen) { return $false }
+    if (Test-F7BannerlordExeRunning) { return $false }
+    if (-not $script:F7ProcessTimestamps.gameEndUtc) { return $false }
+
+    $ended = [datetime]::Parse(
+        [string]$script:F7ProcessTimestamps.gameEndUtc,
+        $null,
+        [Globalization.DateTimeStyles]::RoundtripKind)
+    $goneSec = ((Get-Date).ToUniversalTime() - $ended).TotalSeconds
+    if ($goneSec -lt 5) { return $false }
+
+    if ([string]$Detection.gameAliveConfidence -in @('phase1_active', 'process_detection_uncertain')) {
+        return $true
+    }
+
+    if (-not (Test-LauncherProcessRunning)) {
+        return $true
+    }
+
+    return $false
+}
+
 function Update-F7ProcessTimestamps {
-    $running = [bool](Get-F7ProcessDetection).gameProcessRunning
+    $exeRunning = Test-F7BannerlordExeRunning
     $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
-    if ($running -and -not $script:F7ProcessTimestamps.gameStartUtc) {
+    if ($exeRunning -and -not $script:F7ProcessTimestamps.gameStartUtc) {
         $script:F7ProcessTimestamps.gameStartUtc = $nowUtc
     }
-    if (-not $running -and $script:F7ProcessTimestamps.gameStartUtc -and -not $script:F7ProcessTimestamps.gameEndUtc) {
+    if (-not $exeRunning -and $script:F7ProcessTimestamps.gameStartUtc -and -not $script:F7ProcessTimestamps.gameEndUtc) {
         $script:F7ProcessTimestamps.gameEndUtc = $nowUtc
     }
 }
@@ -1141,6 +1173,8 @@ try {
     Write-Host "Session: $sessionId"
     Write-Host "Bannerlord root: $bannerlordRoot"
     if ($resolvedHookMask) { Write-Host "HookMask: $resolvedHookMask" }
+    $certWallMaxSec = $LaunchTimeoutSec + $PollTimeoutSec
+    Write-Host "Timeouts: launch phase ${LaunchTimeoutSec}s, readiness poll ${PollTimeoutSec}s, stable ${StableSeconds}s (cert wall ~${certWallMaxSec}s max)"
     Write-Host ''
 
     Stop-F7CertProcesses
@@ -1169,7 +1203,7 @@ try {
     $launchStarted = Get-Date
     $launchStartedLocal = $launchStarted
 
-    Write-Host "Launching Continue (synchronous no-click, timeout ${LaunchTimeoutSec}s)..." -ForegroundColor Cyan
+    Write-Host "Launch phase (nav timeout ${LaunchTimeoutSec}s)..." -ForegroundColor Cyan
     $launchOk = Invoke-F7NoClickLaunch -TimeoutSec $LaunchTimeoutSec -SinceLocal $launchStartedLocal
     $null = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
 
@@ -1207,7 +1241,7 @@ try {
     $gameEverSeen = $false
     $lastHeartbeatSec = -1
 
-    Write-Host "Polling up to ${PollTimeoutSec}s (stable ${StableSeconds}s required, passive - no refocus)..." -ForegroundColor Cyan
+    Write-Host "Readiness poll (timeout ${PollTimeoutSec}s, stable ${StableSeconds}s required, passive - no refocus)..." -ForegroundColor Cyan
 
     while ((Get-Date) -lt $deadline) {
         $lastSignals = Get-F7GateSignals
@@ -1228,6 +1262,20 @@ try {
             Write-F7PollHeartbeat -ElapsedSec $elapsedSec -Signals $lastSignals -EverMapReady $everMapReady `
                 -LaunchState $script:LaunchAutomation.launchState
             $lastHeartbeatSec = $heartbeatSec
+        }
+
+        if ($gameEverSeen) {
+            $goneDet = Get-F7ProcessDetection
+            if (Test-F7GameGoneDefinitive -GameWasSeen $gameEverSeen -Detection $goneDet) {
+                Write-F7LaunchState 'fail_game_gone_definitive'
+                $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
+                $notes = Get-F7GameGoneFailNotes -Detection $goneDet -EverMapReady $everMapReady `
+                    -PriorSessionCrashLikely $launchSignals.priorSessionCrashLikely
+                $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $lastSignals `
+                    -Notes $notes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
+                Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
+                Exit-F7Gate -Code 2 -CheckpointDir $dir
+            }
         }
 
         if (-not $lastSignals.gameRunning -and -not (Test-LaunchStillStarting -GameRunning $lastSignals.gameRunning `

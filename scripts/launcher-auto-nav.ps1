@@ -1966,6 +1966,9 @@ $script:contaminatedLaunchPath = $false
 $script:contaminatedLaunchReason = $null
 $script:automationContinueIntentDeclared = $false
 $script:launcherReadyLogged = $false
+$script:safeModeVisibleLogged = $false
+$script:ContinueClickVerifySec = 8
+$script:PlayClickVerifySec = 12
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2522,18 +2525,72 @@ function Test-HandoffWhenGameStable {
     return $false
 }
 
+function Invoke-LauncherSafeModeAndCrashDialogs {
+    if ([UIAHelper]::HasCrashReporterDialog()) {
+        if ([UIAHelper]::ClickCrashReporterNo()) {
+            if (-not $clickedCrashReporter) {
+                Write-LaunchLog 'clicked crash reporter No'
+                $clickedCrashReporter = $true
+                Extend-DeadlineForSlowPath
+            }
+            if (Test-GameProcessRunning) {
+                Invoke-Handoff 'Bannerlord.exe running after crash reporter No'
+                return $true
+            }
+        }
+        Start-Sleep -Milliseconds $PollMs
+        return $true
+    }
+
+    if ($clickedSafeMode -and -not $clickedPlayContinue) {
+        [UIAHelper]::ResetLauncherClickRetryState()
+    }
+
+    if ([UIAHelper]::HasSafeModeDialog() -and -not $script:safeModeVisibleLogged) {
+        Write-LaunchLog 'LAUNCH_STATE=safe_mode_visible'
+        $script:safeModeVisibleLogged = $true
+    }
+
+    if ([UIAHelper]::ClickSafeModeNo()) {
+        if (-not $clickedSafeMode) {
+            Write-LaunchLog 'clicked Safe Mode No'
+            Write-LaunchLog 'LAUNCH_STATE=safe_mode_no_clicked'
+            Write-LaunchLog 'Safe Mode: No selected - prior session unexpected shutdown; crash on last run suspected (full mod load retained)'
+            $clickedSafeMode = $true
+            Extend-DeadlineForSlowPath
+            if (-not $RespectUserForeground) {
+                Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
+            }
+        }
+        return $true
+    }
+
+    if ([UIAHelper]::HasSafeModeDialog()) {
+        Start-Sleep -Milliseconds 120
+        return $true
+    }
+
+    return $false
+}
+
 function Test-LaunchClickVerified {
     param(
         [int]$WaitSec = 4,
         [string]$Intent = 'continue'
     )
 
-    if ($Intent -eq 'play' -or $Intent -eq 'continue') {
-        $WaitSec = [Math]::Max($WaitSec, 30)
+    if ($Intent -eq 'continue') {
+        $WaitSec = [Math]::Max($WaitSec, $script:ContinueClickVerifySec)
+    } elseif ($Intent -eq 'play') {
+        $WaitSec = [Math]::Max($WaitSec, $script:PlayClickVerifySec)
     }
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
+        if ([UIAHelper]::HasSafeModeDialog()) {
+            return $false
+        }
+
         $det = Get-LaunchNavProcessDetection
         if ($det.gameProcessRunning) {
             if ($Intent -eq 'continue' -and (Test-F7ContinueCertStrict)) {
@@ -2579,6 +2636,10 @@ while ((Get-Date) -lt $deadline) {
     if ($script:contaminatedLaunchPath -and (Test-F7ContinueCertStrict)) {
         Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
         return
+    }
+
+    if (Invoke-LauncherSafeModeAndCrashDialogs) {
+        continue
     }
 
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
@@ -2644,9 +2705,9 @@ while ((Get-Date) -lt $deadline) {
 
     if ($clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc -and -not $script:launchPathAdopted) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
-        if ($sinceClick -ge 12 -and ([UIAHelper]::IsLauncherPlayContinueVisible() -or [UIAHelper]::HasSafeModeDialog())) {
+        if ($sinceClick -ge 12 -and [UIAHelper]::IsLauncherPlayContinueVisible() -and -not [UIAHelper]::HasSafeModeDialog()) {
             $retryLabel = if ($LaunchIntent -eq 'continue') { 'continue_retry' } else { 'play_retry' }
-            Write-LaunchLog "LAUNCH_STATE=$retryLabel — game never spawned; resetting clickedPlayContinue"
+            Write-LaunchLog "LAUNCH_STATE=$retryLabel - game never spawned; resetting clickedPlayContinue"
             $clickedPlayContinue = $false
             $script:playClickUtc = $null
             [UIAHelper]::ResetLauncherClickRetryState()
@@ -2701,42 +2762,6 @@ while ((Get-Date) -lt $deadline) {
         }
     }
 
-    if ([UIAHelper]::HasCrashReporterDialog()) {
-        if ([UIAHelper]::ClickCrashReporterNo()) {
-            if (-not $clickedCrashReporter) {
-                Write-LaunchLog 'clicked crash reporter No'
-                $clickedCrashReporter = $true
-                Extend-DeadlineForSlowPath
-            }
-            if (Test-GameProcessRunning) {
-                Invoke-Handoff 'Bannerlord.exe running after crash reporter No'
-                return
-            }
-        }
-        Start-Sleep -Milliseconds $PollMs
-        continue
-    }
-
-    if ($clickedSafeMode -and -not $clickedPlayContinue) {
-        [UIAHelper]::ResetLauncherClickRetryState()
-    }
-
-    if ([UIAHelper]::ClickSafeModeNo()) {
-        if (-not $clickedSafeMode) {
-            Write-LaunchLog 'clicked Safe Mode No'
-            Write-LaunchLog 'LAUNCH_STATE=safe_mode_no_clicked'
-            Write-LaunchLog 'Safe Mode: No selected — prior session unexpected shutdown; crash on last run suspected (full mod load retained)'
-            $clickedSafeMode = $true
-            Extend-DeadlineForSlowPath
-            if (-not $RespectUserForeground) {
-                Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
-            }
-        }
-    } elseif ([UIAHelper]::HasSafeModeDialog()) {
-        Start-Sleep -Milliseconds 120
-        continue
-    }
-
     if ([UIAHelper]::HasCautionDialog()) {
         if ([UIAHelper]::ClickCautionConfirm()) {
             if (-not $clickedCaution) {
@@ -2765,6 +2790,10 @@ while ((Get-Date) -lt $deadline) {
         if ($script:contaminatedLaunchPath) {
             Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
             return
+        }
+        if ([UIAHelper]::HasSafeModeDialog()) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
         }
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
