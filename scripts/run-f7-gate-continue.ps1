@@ -211,6 +211,7 @@ function Save-CheckpointEvidence {
                 safeModePromptText = $LaunchSignals.safeModePromptText
             }
         } else { $null }
+        mapReadyHookMask = $env:TBG_MAP_READY_HOOK_MASK
         notes = $Notes
     }
     $manifest | ConvertTo-Json -Depth 6 |

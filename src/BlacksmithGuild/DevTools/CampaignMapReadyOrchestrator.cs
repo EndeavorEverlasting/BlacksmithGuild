@@ -14,13 +14,18 @@ namespace BlacksmithGuild.DevTools
     public static class CampaignMapReadyOrchestrator
     {
         private static bool _immediateCompleted;
+        private static bool _immediateHooksCompleted;
         private static bool _deferredCompleted;
         private static bool _deferredScheduled;
         private static bool _hasRunAgentAutoLoop;
 
+        /// <summary>True after immediate map-ready hooks finish (deferred may still be pending).</summary>
+        public static bool ImmediateHooksCompleted => _immediateHooksCompleted;
+
         internal static void ResetForNewCampaign()
         {
             _immediateCompleted = false;
+            _immediateHooksCompleted = false;
             _deferredCompleted = false;
             _deferredScheduled = false;
             _hasRunAgentAutoLoop = false;
@@ -76,10 +81,12 @@ namespace BlacksmithGuild.DevTools
                 DebugLogger.Test(
                     "[TBG MAPREADY] deferred heavy hooks scheduled for next campaign tick.",
                     showInGame: false);
+                _immediateHooksCompleted = true;
                 return;
             }
 
             RunDeferredHooks();
+            _immediateHooksCompleted = true;
         }
 
         private static void RunDeferredHooks()
