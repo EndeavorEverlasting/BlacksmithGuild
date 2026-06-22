@@ -1,0 +1,40 @@
+{
+    "checkpoint": "checkpoint-01-f7-gate",
+    "sessionId": "20260622-131237",
+    "passFail": "FAIL",
+    "exitCode": 2,
+    "startedAtUtc": "2026-06-22T17:12:37.0000000Z",
+    "endedAtUtc": "2026-06-22T17:17:30.0000000Z",
+    "stableSeconds": 0,
+    "hookMask": "0x0F",
+    "mapReadyHookMask": "0x0F",
+    "launchState": "continue_escalate",
+    "safeModeDetected": true,
+    "safeModeNoClicked": true,
+    "continueClick": {
+        "attempted": true,
+        "success": true,
+        "method": "hwnd SendMessage-first"
+    },
+    "lastFocusResult": null,
+    "launchAutomationError": "F7 run interrupted; launcher_obscured_by_cursor ~4min; manual_user_clicks required; game died MapTransition before MapReady",
+    "campaignReady": false,
+    "canPollFileInbox": false,
+    "mapReadyStatus": null,
+    "phase1TbgReady": false,
+    "phase1QuickStartMapReady": false,
+    "phase1LastSignal": "MapTransition",
+    "gameProcessRunning": false,
+    "goldenPathCheck": {
+        "available": false,
+        "reason": "post-hoc evidence capture; golden-path script not run at session end"
+    },
+    "launchSignals": {
+        "safeModeDismissed": true,
+        "safeModePromptSeen": true,
+        "priorSessionCrashLikely": true,
+        "crashReporterDismissed": false,
+        "safeModePromptText": "Safe Mode"
+    },
+    "notes": "contaminated_cert: manual_user_clicks; launcher_obscured_by_cursor (RespectUserForeground + WindowFromPoint hit-test); crash_map_transition_no_orchestrator; no [TBG MAPREADY] tick"
+}

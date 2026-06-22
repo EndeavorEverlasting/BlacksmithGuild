@@ -2,7 +2,7 @@
 
 Read [f7-agent-coordination.md](f7-agent-coordination.md) first. This playbook explains which launch command to use, where a failure belongs, and how to avoid misleading F7 evidence.
 
-Related: [em-dashes-and-log-grep.md](../conventions/em-dashes-and-log-grep.md) · [f7-recovery-sprint-handoff.md](f7-recovery-sprint-handoff.md)
+Related: [em-dashes-and-log-grep.md](../conventions/em-dashes-and-log-grep.md) · [launcher-foreground-doctrine.md](../conventions/launcher-foreground-doctrine.md) · [f7-recovery-sprint-handoff.md](f7-recovery-sprint-handoff.md)
 
 ---
 

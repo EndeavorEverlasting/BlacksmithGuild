@@ -404,13 +404,12 @@ public static class UIAHelper
             var label = intent == "continue" ? "launcher CONTINUE" : "launcher PLAY";
 
             LogHitWindowAtPoint(x, y, label, intent);
-
-            if (!IsScreenPointOnLauncherHwnd(hwnd, x, y))
+            var visuallyObscured = !IsScreenPointOnLauncherHwnd(hwnd, x, y);
+            if (visuallyObscured)
             {
                 LogLine(string.Format(
-                    "CLICK SKIP launcher coords — hit-test not {0} at ({1},{2}); another window (e.g. IDE) may obscure launcher",
+                    "CLICK NOTE launcher coords — visual hit-test not {0} at ({1},{2}); proceeding with hwnd-target SendMessage (background-safe per doctrine)",
                     LauncherProcessName, x, y));
-                return false;
             }
 
             LogLine(string.Format(
@@ -420,7 +419,8 @@ public static class UIAHelper
             if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
             {
                 Thread.Sleep(200);
-                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=hwnd SendMessage-first at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+                var method = visuallyObscured ? "hwnd SendMessage-background" : "hwnd SendMessage-first";
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method={1} at ({2},{3}) in {4}", intent, method, x, y, scopeDesc));
                 if (!RespectUserForeground)
                 {
                     TryFocusGameOrLauncher();
@@ -428,22 +428,28 @@ public static class UIAHelper
                 return true;
             }
 
-            if (!RespectUserForeground)
+            var savedUserForeground = GetForegroundWindow();
+            ForceForegroundWindow(hwnd);
+            Thread.Sleep(100);
+            var clicked = TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
+            if (!clicked)
             {
-                ForceForegroundWindow(hwnd);
-                Thread.Sleep(100);
-                TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
                 SetCursorPos(x, y);
                 Thread.Sleep(40);
                 mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
                 mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=coords+foreground at ({1},{2}) in {3}", intent, x, y, scopeDesc));
-                TryFocusGameOrLauncher();
-                return true;
+                clicked = true;
             }
-
-            LogLine("CLICK FAIL launcher coords — SendMessage failed and RespectUserForeground=true (no foreground fallback)");
-            return false;
+            if (clicked)
+            {
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=brief-focus+restore at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+            }
+            if (savedUserForeground != IntPtr.Zero && savedUserForeground != hwnd)
+            {
+                ForceForegroundWindow(savedUserForeground);
+                LogLine("FOCUS restored user foreground after brief launcher click");
+            }
+            return clicked;
         }
         catch (Exception ex)
         {
@@ -1158,22 +1164,29 @@ public static class UIAHelper
                 LogLine("CLICK OK \"Safe Mode No\" method=hwnd-only");
                 return true;
             }
-            if (!RespectUserForeground)
+            var savedUserForeground = GetForegroundWindow();
+            ForceForegroundWindow(hwnd);
+            Thread.Sleep(80);
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
             {
-                ForceForegroundWindow(hwnd);
-                Thread.Sleep(80);
-                if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
+                if (savedUserForeground != IntPtr.Zero && savedUserForeground != hwnd)
                 {
-                    LogLine("CLICK OK \"Safe Mode No\" method=hwnd+foreground");
-                    return true;
+                    ForceForegroundWindow(savedUserForeground);
+                    LogLine("FOCUS restored user foreground after Safe Mode click");
                 }
-                SetCursorPos(x, y);
-                Thread.Sleep(40);
-                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                LogLine("CLICK OK \"Safe Mode No\" method=brief-focus+restore");
                 return true;
             }
-            return false;
+            SetCursorPos(x, y);
+            Thread.Sleep(40);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+            if (savedUserForeground != IntPtr.Zero && savedUserForeground != hwnd)
+            {
+                ForceForegroundWindow(savedUserForeground);
+                LogLine("FOCUS restored user foreground after Safe Mode click");
+            }
+            return true;
         }
         catch (Exception ex)
         {
