@@ -1,6 +1,10 @@
 # 006C-4 — Sell Driver + Multi-Cycle Guild Loop
 
+<<<<<<< Updated upstream
 **Branch:** `feat/006c-4-sell-loop` @ `027ac31` (rebased on `main` @ `2dfff05`)  
+=======
+**Branch:** `feat/006c-4-sell-loop` @ `8316b74` (rebased on `main` @ `5fe3a31`)  
+>>>>>>> Stashed changes
 **Status:** CODE SHIPPED — build PASS — **USER live cert PENDING** (F7 gate FAIL in agent shell; USER verify required)  
 **PR:** #5 (draft) → `main`
 
