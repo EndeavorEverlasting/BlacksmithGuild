@@ -23,7 +23,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent C fail-closed runner) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `325aacd` |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — map-ready seen then crash (session `095326` mask `0x01`); prior `030915` MapTransition-only |
@@ -40,7 +40,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Bisect partial @ `095326`; commit fixes; re-run after C PLAY/CONTINUE hwnd fix | `docs/evidence/live-cert/**`, PR #7 | — | pending |
 | **B** | C# map-ready / MapTransition | `IDLE` | Interpret `095326` (map-ready then die); em-dash helpers landed | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `4218842` |
-| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | Fail-closed F7 gate runner (manifest required for exit 0) | `run-f7-gate-continue.ps1`, `run-agent-a-f7-bisect.ps1`, `write-launch-log.ps1`, `Run-F7GateContinue.cmd` | A: wait for C commit before F7 cert | pending |
+| **C** | Launcher / focus / nav scripts | `DONE` | Fail-closed F7 gate runner landed @ `325aacd` | — | A may run F7 after pull + static checks | `325aacd` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
