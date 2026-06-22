@@ -1,8 +1,20 @@
 # 006C-4 — Sell Driver + Multi-Cycle Guild Loop
 
-**Branch:** `feat/006c-4-sell-loop`  
-**Status:** CODE SHIPPED — USER live cert pending (map-ready gate)  
+**Branch:** `feat/006c-4-sell-loop` @ `518f4bd` (+ cert script commits)  
+**Status:** CODE SHIPPED — USER live cert **BLOCKED** (Continue + disposable crash on `main`)  
 **Baseline fork:** `main` @ `8a00313` (2026-06-22)
+
+---
+
+## Coordination (2026-06-22)
+
+| Agent | Branch | Owns |
+|-------|--------|------|
+| **Agent B** | `main` | Crash triage, Continue certs, `functionality-status.md`, live-cert handoff |
+| **Agent A (this sprint)** | `feat/006c-4-sell-loop` | 006C-4 sell + multi-cycle code, sell cert script, feature handoff |
+| **Agent C** | TBD | Parallel sprint — avoid overlapping `main` doc commits with B |
+
+**Merge gate:** Rebase `feat/006c-4-sell-loop` on `origin/main` before merge PR. Do **not** merge until map-ready + sell probe PASS or USER waives.
 
 ---
 
@@ -10,12 +22,13 @@
 
 | Deliverable | Path / command |
 |-------------|----------------|
-| Sell reflection (delta proof) | `MapTradeTradeActionReflection.TryExecuteSell` — PASS = `goldDelta > 0`, `inventoryDelta < 0` |
+| Sell reflection | `MapTradeTradeActionReflection.TryExecuteSell` — PASS = `goldDelta > 0`, inventory down |
 | Sell driver | `MapTradeVanillaTradeDriver.TryExecuteSell` |
-| Sell probe | `ProbeVanillaSellExecutionNow` → `<Bannerlord>/BlacksmithGuild_MapTradeSellProbe.json` |
-| Sell missions | `BuyProfitGoodAndSell`, `BuySmithingMaterialThenSellSurplus` in `MapTradeMissionSelector` |
-| Guild loop sell step | `TryVanillaSell` + `capabilities.tradeSell` in `BlacksmithGuild_AutonomousGuildLoop.json` |
-| Multi-cycle | `GuildLoopMaxCyclesPerCommand` wired; JSON fields `cycleIndex`, `cyclesCompleted`, `maxCycles` |
+| Sell probe | `ProbeVanillaSellExecutionNow` → `BlacksmithGuild_MapTradeSellProbe.json` |
+| Sell cert script | `Run-VanillaSellCert.cmd` / `scripts/run-vanilla-sell-cert.ps1` |
+| Sell missions | `BuyProfitGoodAndSell`, `BuySmithingMaterialThenSellSurplus` |
+| Guild loop sell | `TryVanillaSell`, `capabilities.tradeSell`, `sellExecution` JSON |
+| Multi-cycle | `GuildLoopMaxCyclesPerCommand`; `cycleIndex`, `cyclesCompleted`, `maxCycles` |
 
 ---
 
@@ -25,18 +38,20 @@
 |-------|-----------|
 | Build | `dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release` — 0 errors |
 | Sell probe | `BlacksmithGuild_MapTradeSellProbe.json`: `attemptSuccess: true`, `goldDelta > 0`, `quantitySold > 0` |
-| Guild loop sell | `cycleSteps` contains `TryVanillaSell: Success` or honest `Blocked` |
-| Multi-cycle | Set `GuildLoopMaxCyclesPerCommand = 2`, run `RunAutonomousGuildLoopNow` → `cyclesCompleted: 2`, no infinite loop |
+| Sell cert script | `Run-VanillaSellCert.cmd` exit 0 |
+| Guild loop sell | `TryVanillaSell: Success` or honest `Blocked` in guild loop JSON |
+| Multi-cycle | `GuildLoopMaxCyclesPerCommand = 2` → `cyclesCompleted: 2`, no infinite loop |
 
 ---
 
-## USER cert steps (after map-ready)
+## USER cert steps (after map-ready / crash fix)
 
 ```powershell
+git checkout feat/006c-4-sell-loop
+dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 .\ForgeContinue.cmd
-# F7: campaignReady:true, canPollFileInbox:true
-# At town with trade goods in inventory:
-.\forge.ps1 -Command ProbeVanillaSellExecutionNow -Wait
+# F7 stable ≥60s: campaignReady:true, canPollFileInbox:true
+.\Run-VanillaSellCert.cmd
 .\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
 .\ExportTbgEvidence.cmd
 ```
@@ -44,9 +59,8 @@
 Multi-cycle cert (optional):
 
 ```powershell
-# Temporarily set GuildLoopMaxCyclesPerCommand = 2 in DevToolsConfig or agent config
+# Set GuildLoopMaxCyclesPerCommand = 2 in DevToolsConfig (cert only)
 .\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
-# Expect cycleSteps with two CycleBoundary entries and cyclesCompleted: 2
 ```
 
 ---
@@ -58,25 +72,26 @@ Multi-cycle cert (optional):
 | `<Bannerlord>/BlacksmithGuild_MapTradeSellProbe.json` | Sell probe verdict + delta proof |
 | `<Bannerlord>/BlacksmithGuild_MapTradeProbe.json` | Buy probe (006C-1 baseline) |
 | `<Bannerlord>/BlacksmithGuild_AutonomousGuildLoop.json` | Guild loop steps, sellExecution, cycle fields |
-| `<Bannerlord>/BlacksmithGuild_MarketIntel.json` | Mission selection inputs (spreadRows, inventoryRows) |
-| `docs/evidence/latest/` | Mirrored evidence after ExportTbgEvidence |
+| `<Bannerlord>/BlacksmithGuild_MarketIntel.json` | Mission selection (spreadRows, inventoryRows) |
+| `<Bannerlord>/BlacksmithGuild_Phase1.log` | `TBG MAP TRADE SELL PROBE` lines |
+| `docs/evidence/latest/` | Mirrored after ExportTbgEvidence |
 
 ---
 
 ## Known gaps (honest)
 
-- **USER live sell cert** — blocked until Continue/disposable map loads without crash (Agent B backlog)
-- **Two-leg `BuyProfitGoodAndSell`** — buy at buy town works on first arrival; sell at sell town requires travel to `SellSettlement` (honest `TryVanillaSell: Blocked` until second leg or multi-cycle reaches sell town)
-- **006D food/steward**, **006E hero churn**, **006C-3b interior smelt** — out of scope
-- **PR merge** — wait for Agent B Continue cert verdicts on `main`, then `git rebase origin/main` before PR
+- **USER live sell cert** — blocked: both Forge.cmd and ForgeContinue.cmd crash before stable F7 (Agent B triage on `main`)
+- **Two-leg `BuyProfitGoodAndSell`** — sell at `SellSettlement` requires travel; honest `TryVanillaSell: Blocked` until second leg or multi-cycle reaches sell town
+- **PR merge** — draft PR OK; merge after crash fix + cert or USER waives
+- **006D food**, **006E hero churn**, **006C-3b interior smelt**, **006C-4b auto second-leg travel** — out of scope
 
 ---
 
-## Do NOT touch (coordination)
+## Do NOT touch
 
-- `docs/functionality-status.md` on `main` (Agent B owns)
-- `docs/handoff/live-cert-marathon-agent-handoff.md`
-- Launcher automation / disposable Forge.cmd crash fix
+- `docs/functionality-status.md` on `main` (Agent B)
+- `docs/handoff/live-cert-marathon-agent-handoff.md` (Agent B)
+- Launcher UIA / disposable bootstrap crash fix (Agent B / Agent C per assignment)
 - 006C-3 smelt code (shipped on main)
 
 ---
@@ -85,7 +100,8 @@ Multi-cycle cert (optional):
 
 | Risk | Mitigation |
 |------|------------|
-| `SellItemsAction` overload drift | Signatures logged in probe JSON; same reflection loop as buy |
-| Party role inversion | `TryInvokeSellItemsAction` uses player=seller, settlement=buyer |
-| Multi-cycle infinite loop | Hard cap `GuildLoopMaxCyclesPerCommand`; re-enter only from `Complete` path |
-| Sell before buy on spread mission | Buy runs first at buy town; sell blocked until at sell settlement |
+| `SellItemsAction` overload drift | Signatures in probe JSON |
+| Party role inversion | Player = seller, settlement = buyer |
+| Multi-cycle infinite loop | Hard cap `GuildLoopMaxCyclesPerCommand` |
+| Merge conflict with B doc commits | Rebase feature branch before PR |
+| Cert before map-ready | Run-VanillaSellCert exits 2 with honest BLOCKED |
