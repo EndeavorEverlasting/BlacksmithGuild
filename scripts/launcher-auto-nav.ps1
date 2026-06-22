@@ -29,7 +29,7 @@ function Write-LaunchLog {
     Write-Host $line -ForegroundColor DarkGray
 }
 
-if (-not (Get-Module -Name UIAHelper -ErrorAction SilentlyContinue)) {
+if (-not ('UIAHelper' -as [type])) {
     $uiaHelperSource = @'
 using System;
 using System.Collections.Generic;
@@ -282,8 +282,31 @@ public static class UIAHelper
             return best;
         }
 
-        LogLine("AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to first hwnd");
-        return windows[0];
+        foreach (var window in windows)
+        {
+            try
+            {
+                var title = window.Current.Name ?? string.Empty;
+                var rect = window.Current.BoundingRectangle;
+                var minW = title.IndexOf("Singleplayer PID", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? 400
+                    : LauncherMinCoordWindowWidth;
+                var minH = title.IndexOf("Singleplayer PID", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? 300
+                    : LauncherMinCoordWindowHeight;
+                if (rect.Width < minW || rect.Height < minH)
+                {
+                    continue;
+                }
+
+                LogLine("AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to " + DescribeScope(window));
+                return window;
+            }
+            catch { }
+        }
+
+        LogLine("AUDIT coord window pick: no suitable launcher window for coords");
+        return null;
     }
 
     private static bool TryGetLauncherClientClickPoint(IntPtr hwnd, double xFraction, double yFraction, out int screenX, out int screenY)
@@ -363,12 +386,14 @@ public static class UIAHelper
 
             TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
 
-            SetCursorPos(x, y);
-            Thread.Sleep(80);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            Thread.Sleep(40);
-            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=mouse at ({1},{2}) in {3} | foreground after {4}", intent, x, y, scopeDesc, DescribeForegroundWindow()));
+            Thread.Sleep(200);
+            if (DescribeForegroundWindow().IndexOf("Cursor", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                LogLine("CLICK WARN launcher coords — foreground stole to IDE after hwnd click");
+                return false;
+            }
+
+            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=hwnd at ({1},{2}) in {3} | foreground after {4}", intent, x, y, scopeDesc, DescribeForegroundWindow()));
             TryFocusGameOrLauncher();
             return true;
         }
@@ -1664,12 +1689,16 @@ public static class UIAHelper
     private const uint GA_ROOT = 2;
 }
 '@
-    Add-Type -TypeDefinition $uiaHelperSource -ReferencedAssemblies @(
-        'UIAutomationClient',
-        'UIAutomationTypes',
-        'System.Windows.Forms',
-        'WindowsBase'
-    ) -ErrorAction Stop
+    try {
+        Add-Type -TypeDefinition $uiaHelperSource -ReferencedAssemblies @(
+            'UIAutomationClient',
+            'UIAutomationTypes',
+            'System.Windows.Forms',
+            'WindowsBase'
+        ) -ErrorAction Stop
+    } catch {
+        if (-not ('UIAHelper' -as [type])) { throw }
+    }
 }
 
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
@@ -1702,6 +1731,7 @@ $lastRefocusUtc = $null
 $cursorTheftSince = $null
 $gameSpawnLogged = $false
 $mismatchCoordAttemptMain = 0
+$lastIdeMinimizeUtc = $null
 $phase1ReadyBaseline = @{}
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 if (Test-Path -LiteralPath $phase1LogPath) {
@@ -2072,11 +2102,24 @@ function Test-HandoffWhenGameStable {
     return $false
 }
 
+function Test-ForegroundIsAutomationHost {
+    $fg = [UIAHelper]::DescribeForegroundWindow()
+    return $fg -match 'process=(Cursor|Code|WindowsTerminal|Notepad|chrome|msedge)' -or
+        $fg -match 'foreground="[^"]*(Cursor|Chrome|Edge|Notepad|Windows Terminal)'
+}
+
+function Invoke-MinimizeCompetingForeground {
+    if (Test-Path -LiteralPath $minimizeIdePath) {
+        try { & $minimizeIdePath | Out-Null } catch { }
+    }
+}
+
 function Test-LaunchClickVerified {
     param([int]$WaitSec = 4)
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
+        if (Test-ForegroundIsAutomationHost) { return $false }
         if (Test-GameProcessRunning) { return $true }
         if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
         if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
@@ -2095,6 +2138,8 @@ if ($LaunchIntent -eq 'continue') {
 }
 
 while ((Get-Date) -lt $deadline) {
+    Invoke-MinimizeCompetingForeground
+
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
         $envDesc = [UIAHelper]::DescribeEnvironment()
         Write-LaunchLog $envDesc
@@ -2115,6 +2160,16 @@ while ((Get-Date) -lt $deadline) {
     if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
         Write-LaunchLog 'LAUNCH_STATE=game_spawned'
         $script:gameSpawnLogged = $true
+    }
+
+    if ($clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
+        $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
+        if ($sinceClick -ge 12 -and ([UIAHelper]::IsLauncherPlayContinueVisible() -or [UIAHelper]::HasSafeModeDialog())) {
+            Write-LaunchLog 'LAUNCH_STATE=continue_retry — game never spawned; resetting clickedPlayContinue'
+            $clickedPlayContinue = $false
+            $script:playClickUtc = $null
+            [UIAHelper]::ResetLauncherClickRetryState()
+        }
     }
 
     if ($clickedPlayContinue) {
@@ -2178,6 +2233,20 @@ while ((Get-Date) -lt $deadline) {
         }
         Start-Sleep -Milliseconds $PollMs
         continue
+    }
+
+    if ($clickedSafeMode -and -not $clickedPlayContinue) {
+        [UIAHelper]::ResetLauncherClickRetryState()
+    }
+
+    if ([UIAHelper]::HasSafeModeDialog() -or (-not $clickedPlayContinue -and [UIAHelper]::IsLauncherPlayContinueVisible())) {
+        $nowMinimizeUtc = [DateTime]::UtcNow
+        if (-not $lastIdeMinimizeUtc -or ($nowMinimizeUtc - $lastIdeMinimizeUtc).TotalSeconds -ge 2) {
+            if (Test-Path -LiteralPath $minimizeIdePath) {
+                try { & $minimizeIdePath | Out-Null } catch { }
+            }
+            $lastIdeMinimizeUtc = $nowMinimizeUtc
+        }
     }
 
     if ([UIAHelper]::ClickSafeModeNo()) {

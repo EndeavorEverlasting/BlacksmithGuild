@@ -42,7 +42,10 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (!_immediateCompleted && GameSessionState.IsCampaignMapReady)
+            if (!_immediateCompleted
+                && (GameSessionState.IsCampaignMapReady
+                    || CampaignSetupStateTracker.Phase == SetupPhase.MapReady
+                    || CampaignSetupStateTracker.Phase == SetupPhase.Complete))
             {
                 DebugLogger.Test("[TBG MAPREADY] orchestrator tick entered", showInGame: false);
                 RunImmediateHooks();
@@ -82,7 +85,19 @@ namespace BlacksmithGuild.DevTools
 
             RunHook(MapReadyHookFlags.StatusFlush, "StatusFlush", () =>
             {
-                GameSessionState.SyncForgeStatus();
+                var phaseReady = CampaignSetupStateTracker.Phase == SetupPhase.MapReady
+                    || CampaignSetupStateTracker.Phase == SetupPhase.Complete;
+                var heroReady = false;
+                try
+                {
+                    heroReady = GameSessionState.IsMainHeroReady;
+                }
+                catch
+                {
+                    heroReady = false;
+                }
+
+                ForgeStatus.UpdateReadiness(phaseReady, heroReady);
                 ForgeStatus.SetTest("map_ready", "PASS", "campaign map ready (immediate status flush)");
             });
 
