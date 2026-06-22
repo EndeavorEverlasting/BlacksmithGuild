@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending push |
+| Branch / HEAD | `fix/f7-gate-stability` @ `9b40b96` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `131237` MapTransition crash + contaminated launcher; prior `101016` post-map-ready crash |
@@ -41,9 +41,9 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Committed `131237` FAIL evidence; F7 rerun pending | `docs/evidence/live-cert/**`, PR #7/#8 | — | pending |
+| **A** | Cert / evidence / git / PR | `IDLE` | Committed `131237` FAIL evidence; F7 rerun pending | `docs/evidence/live-cert/**`, PR #7/#8 | — | `9b40b96` |
 | **B** | C# map-ready / post-map survival | `IDLE` | Post-map-ready hardening @ `5fac5e9`; watch MapTransition pattern (`131237`) | — | — | `5fac5e9` |
-| **C** | Launcher / F7 runner | `DONE` | hwnd-background clicks + brief focus+restore; doctrine doc | `launcher-auto-nav.ps1`, `launcher-foreground-doctrine.md` | A may F7 cert | pending |
+| **C** | Launcher / F7 runner | `DONE` | hwnd-background clicks + brief focus+restore; doctrine doc | `launcher-auto-nav.ps1`, `launcher-foreground-doctrine.md` | A may F7 cert | `9b40b96` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
