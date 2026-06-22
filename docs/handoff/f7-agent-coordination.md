@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B SyncForgeStatus fail-soft) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `f6370fa` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `185813` FAIL (clean Continue; game died MapTransition; ~8min cert wall time) |
@@ -42,7 +42,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Cert `185813` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `DONE` | SyncForgeStatus fail-soft @ session `185813` | `RuntimeTrace.cs`, `GameSessionState.cs`, `ForgeStatus.cs`, `CampaignMapReadyOrchestrator.cs` | — | pending |
+| **B** | C# map-ready / instrumentation | `DONE` | SyncForgeStatus fail-soft @ session `185813` | — | — | `f6370fa` |
 | **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | `740b604` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
