@@ -22,7 +22,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` — pending Agent C commit (RespectUserForeground) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `8c18ecd` |
 | Prior baseline | `ff823a6` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — MapTransition crash (session `030915`) |
@@ -38,7 +38,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Hook mask bisect `0x01`–`0x0F`; commit evidence on attempt | `docs/evidence/live-cert/**`, PR #7 | — | — |
 | **B** | C# map-ready / MapTransition | `DONE` @ `ff823a6` | Interpret bisect; C# fix if mask isolates hook | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `ff823a6` |
-| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | RespectUserForeground policy landed; await F7 re-run | `launcher-auto-nav.ps1`, `run-f7-gate-continue.ps1`, `focus-bannerlord-window.ps1` | @AgentA: re-run F7 after C push | pending |
+| **C** | Launcher / focus / nav scripts | `DONE` @ `8c18ecd` | Monitor only unless focus regression in Launch.log | `launcher-auto-nav.ps1`, `run-f7-gate-continue.ps1` | — | `8c18ecd` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -111,7 +111,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 - [x] RespectUserForeground policy + delete minimize script
 - [x] Create this coordination doc (with B plan)
-- [ ] Set board row `DONE` after A confirms F7 launcher phase with user foreground elsewhere
+- [x] Pushed @ `8c18ecd`
 - [ ] Only revisit launcher if `Launch.tail.txt` shows new focus regression
 
 ---
