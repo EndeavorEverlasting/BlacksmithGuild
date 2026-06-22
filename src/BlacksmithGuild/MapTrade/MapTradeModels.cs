@@ -101,6 +101,7 @@ namespace BlacksmithGuild.MapTrade
         public string TradeDriverMethod { get; set; }
         public bool TradeDriverAvailable { get; set; }
         public MapTradeExecutionResult TradeExecution { get; set; }
+        public MapTradeExecutionResult SellExecution { get; set; }
         public string BlockedReason { get; set; }
         public string Verdict { get; set; }
     }

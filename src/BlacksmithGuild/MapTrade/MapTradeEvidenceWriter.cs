@@ -92,6 +92,9 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine("  \"tradeExecution\": ");
             AppendTradeExecution(sb, report.TradeExecution, "  ");
             sb.AppendLine(",");
+            sb.AppendLine("  \"sellExecution\": ");
+            AppendTradeExecution(sb, report.SellExecution, "  ");
+            sb.AppendLine(",");
             sb.AppendLine("  \"mission\": {");
             var mission = report.Mission;
             sb.AppendLine($"    \"missionType\": \"{(mission?.MissionType.ToString() ?? "None")}\",");

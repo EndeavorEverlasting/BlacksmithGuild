@@ -179,6 +179,58 @@ namespace BlacksmithGuild.MapTrade
                 || !string.IsNullOrWhiteSpace(mission.SellItemId);
         }
 
+        public static bool NeedsSecondLegSellTravel(MapTradeMission mission, Settlement currentSettlement)
+        {
+            if (mission == null || currentSettlement == null || mission.SellSettlement == null)
+            {
+                return false;
+            }
+
+            if (!NeedsSellExecution(mission))
+            {
+                return false;
+            }
+
+            if (mission.MissionType != MapTradeMissionType.BuyProfitGoodAndSell
+                && mission.MissionType != MapTradeMissionType.BuySmithingMaterialThenSellSurplus)
+            {
+                return false;
+            }
+
+            var sellName = mission.SellSettlement.Name?.ToString() ?? mission.SellSettlement.StringId;
+            var currentName = currentSettlement.Name?.ToString() ?? currentSettlement.StringId;
+            return !string.Equals(sellName, currentName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static MapTradeMission TryBuildSellLegTravelMission(MapTradeMission original)
+        {
+            if (original?.SellSettlement == null)
+            {
+                return null;
+            }
+
+            var sellItemId = !string.IsNullOrWhiteSpace(original.SellItemId)
+                ? original.SellItemId
+                : original.ItemId;
+
+            return new MapTradeMission
+            {
+                MissionType = original.MissionType,
+                ItemId = sellItemId,
+                ItemName = !string.IsNullOrWhiteSpace(original.SellItemName)
+                    ? original.SellItemName
+                    : original.ItemName,
+                TargetSettlement = original.SellSettlement,
+                TargetSettlementName = original.SellSettlementName
+                    ?? original.SellSettlement.Name?.ToString()
+                    ?? original.SellSettlement.StringId,
+                SellSettlement = original.SellSettlement,
+                SellSettlementName = original.SellSettlementName,
+                SellPrice = original.SellPrice,
+                Distance = original.Distance
+            };
+        }
+
         public static bool ShouldAttemptSell(MapTradeMission mission, out MapTradeMission sellMission)
         {
             sellMission = null;

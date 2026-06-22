@@ -24,6 +24,8 @@ namespace BlacksmithGuild.GuildLoop
 
         private static GuildLoopRunReport _activeReport;
         private static MapTradeMission _mission;
+        private static MapTradeMission _originalMission;
+        private static MapTradeMission _sellTravelMission;
         private static bool _abortRequested;
 
         public static string LastFailReason { get; private set; }
@@ -101,7 +103,15 @@ namespace BlacksmithGuild.GuildLoop
                 && _mission != null
                 && MapTradeVisibleMovementDriver.HasArrived(_mission))
             {
-                ContinueFromArrival(_activeReport.Source);
+                ContinueFromBuyLegArrival(_activeReport.Source);
+                return;
+            }
+
+            if (_activeReport.Phase == GuildLoopPhase.TravelToSellTown
+                && _sellTravelMission != null
+                && MapTradeVisibleMovementDriver.HasArrived(_sellTravelMission))
+            {
+                ContinueFromSellLegArrival(_activeReport.Source);
             }
         }
 
@@ -132,6 +142,8 @@ namespace BlacksmithGuild.GuildLoop
             AddStep("MarketScan", "Success", MarketIntelligenceService.Summary?.NearestTown ?? "scan ok");
             _activeReport.Phase = GuildLoopPhase.SelectMission;
             _mission = MapTradeMissionSelector.SelectBestMission();
+            _originalMission = _mission;
+            _sellTravelMission = null;
             if (_mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
             {
                 AddStep("SelectMission", "Blocked", _mission.BlockReason);
@@ -195,9 +207,9 @@ namespace BlacksmithGuild.GuildLoop
             return true;
         }
 
-        private static void ContinueFromArrival(string source)
+        private static void ContinueFromBuyLegArrival(string source)
         {
-            AddStep("TravelToTown", "Success", "arrived");
+            AddStep("TravelToTown", "Success", "arrived at buy town");
             _activeReport.Phase = GuildLoopPhase.EnterTown;
 
             MapTradeVanillaTradeDriver.ProbeTradeApi(out var probeDetail);
@@ -243,6 +255,44 @@ namespace BlacksmithGuild.GuildLoop
                 }
             }
 
+            var current = MobileParty.MainParty?.CurrentSettlement;
+            if (DevToolsConfig.GuildLoopAutoTravelToSellTown
+                && MapTradeMissionSelector.NeedsSecondLegSellTravel(_originalMission ?? _mission, current))
+            {
+                BeginSellLegTravel(source);
+                return;
+            }
+
+            RunSellStep(source);
+        }
+
+        private static bool BeginSellLegTravel(string source)
+        {
+            _sellTravelMission = MapTradeMissionSelector.TryBuildSellLegTravelMission(_originalMission ?? _mission);
+            if (_sellTravelMission?.TargetSettlement == null)
+            {
+                AddStep("TravelToSellTown", "Blocked", "sell leg settlement not resolved");
+                RunSellStep(source);
+                return false;
+            }
+
+            _activeReport.Phase = GuildLoopPhase.TravelToSellTown;
+            if (!MapTradeVisibleMovementDriver.TryStartTravel(_sellTravelMission, out var detail))
+            {
+                AddStep("TravelToSellTown", "Blocked", detail ?? "sell leg travel failed");
+                RunSellStep(source);
+                return false;
+            }
+
+            AddStep("TravelToSellTown", "Started", _sellTravelMission.TargetSettlementName);
+            InGameNotice.Info($"TBG GUILD LOOP MOVE: riding toward sell town {_sellTravelMission.TargetSettlementName}.");
+            WriteReport();
+            return true;
+        }
+
+        private static void ContinueFromSellLegArrival(string source)
+        {
+            AddStep("TravelToSellTown", "Success", "arrived at sell town");
             RunSellStep(source);
         }
 
@@ -250,7 +300,8 @@ namespace BlacksmithGuild.GuildLoop
         {
             _activeReport.Phase = GuildLoopPhase.TryVanillaSell;
 
-            if (!MapTradeMissionSelector.ShouldAttemptSell(_mission, out var sellMission))
+            var missionForSell = _originalMission ?? _mission;
+            if (!MapTradeMissionSelector.ShouldAttemptSell(missionForSell, out var sellMission))
             {
                 RunForgeHandoff(source);
                 return;
@@ -334,6 +385,8 @@ namespace BlacksmithGuild.GuildLoop
                 _activeReport.ForgeHandoff = null;
                 _activeReport.CohesionSummary = null;
                 _mission = null;
+                _originalMission = null;
+                _sellTravelMission = null;
                 WriteReport();
                 InGameNotice.Info($"TBG GUILD LOOP: starting cycle {_activeReport.CycleIndex + 1} of {_activeReport.MaxCycles}.");
                 ContinueFromMarketScan(source);
@@ -379,6 +432,8 @@ namespace BlacksmithGuild.GuildLoop
 
             _activeReport = null;
             _mission = null;
+            _originalMission = null;
+            _sellTravelMission = null;
         }
 
         private static void WriteTerminal(string source, string verdict, string reason)
@@ -535,6 +590,7 @@ namespace BlacksmithGuild.GuildLoop
         SelectMission,
         CohesionCheck,
         TravelToTown,
+        TravelToSellTown,
         EnterTown,
         TryVanillaBuy,
         TryVanillaSell,
