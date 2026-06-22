@@ -1,5 +1,35 @@
 # F7 gate evidence harvest helpers — dot-sourced from run-f7-gate-continue.ps1 only.
 
+function New-F7JsonSafeValue {
+    param($Value)
+
+    if ($null -eq $Value) { return $null }
+    if ($Value -is [bool]) { return [bool]$Value }
+    if ($Value -is [int] -or $Value -is [long] -or $Value -is [double]) { return [long]$Value }
+    if ($Value -is [string]) { return [string]$Value }
+    if ($Value -is [datetime]) { return $Value.ToUniversalTime().ToString('o') }
+    if ($Value -is [System.Collections.IDictionary]) {
+        $safe = [ordered]@{}
+        foreach ($key in $Value.Keys) {
+            $safe[[string]$key] = New-F7JsonSafeValue -Value $Value[$key]
+        }
+        return $safe
+    }
+    if ($Value -is [System.Collections.IEnumerable] -and $Value -isnot [string]) {
+        return @($Value | ForEach-Object { New-F7JsonSafeValue -Value $_ })
+    }
+    return [string]$Value
+}
+
+function Add-F7HarvestWarning {
+    param(
+        [System.Collections.Generic.List[string]]$Warnings,
+        [string]$Message
+    )
+    if (-not $Warnings) { return }
+    $Warnings.Add([string]$Message) | Out-Null
+}
+
 function Copy-F7EvidenceArtifact {
     param(
         [Parameter(Mandatory = $true)]
@@ -11,9 +41,9 @@ function Copy-F7EvidenceArtifact {
     )
 
     $result = [ordered]@{
-        name = $DestName
+        name = [string]$DestName
         copied = $false
-        sourcePath = $SourcePath
+        sourcePath = [string]$SourcePath
         sizeBytes = $null
         lastWriteUtc = $null
         reason = $null
@@ -21,7 +51,7 @@ function Copy-F7EvidenceArtifact {
 
     if (-not (Test-Path -LiteralPath $SourcePath)) {
         $result.reason = 'not_present'
-        return [pscustomobject]$result
+        return $result
     }
 
     try {
@@ -30,12 +60,12 @@ function Copy-F7EvidenceArtifact {
         $item = Get-Item -LiteralPath $destPath
         $result.copied = $true
         $result.sizeBytes = [long]$item.Length
-        $result.lastWriteUtc = $item.LastWriteTimeUtc.ToString('o')
+        $result.lastWriteUtc = [string]$item.LastWriteTimeUtc.ToString('o')
     } catch {
-        $result.reason = $_.Exception.Message
+        $result.reason = [string]$_.Exception.Message
     }
 
-    return [pscustomobject]$result
+    return $result
 }
 
 function Write-F7FilteredTimestampTail {
@@ -61,7 +91,7 @@ function Write-F7FilteredTimestampTail {
         if ($line -notmatch '^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]') { continue }
         $lineTime = [datetime]::ParseExact($Matches[1], 'yyyy-MM-dd HH:mm:ss', $null)
         if ($lineTime -lt $SinceLocal) { continue }
-        $filtered.Add($line)
+        $filtered.Add([string]$line)
     }
 
     if ($filtered.Count -gt $MaxLines) {
@@ -73,7 +103,7 @@ function Write-F7FilteredTimestampTail {
         $lineCount = $filtered.Count
     }
 
-    return $lineCount
+    return [int]$lineCount
 }
 
 function Write-F7UnfilteredTail {
@@ -89,7 +119,7 @@ function Write-F7UnfilteredTail {
         $raw = Get-Content -LiteralPath $InputPath -Tail $MaxLines -ErrorAction Stop
         if ($raw) {
             $raw | Set-Content -LiteralPath $OutputPath -Encoding UTF8
-            return @($raw).Count
+            return [int]@($raw).Count
         }
     } catch { }
     return 0
@@ -103,8 +133,8 @@ function Get-F7Phase1Markers {
     $lastReady = $null
     $lastPhase1 = $null
 
-    if (-not $TailLines) {
-        return [pscustomobject]@{
+    if (-not $TailLines -or $TailLines.Count -eq 0) {
+        return [ordered]@{
             lastTraceMarker = $null
             lastMapReadyMarker = $null
             lastReadyMarker = $null
@@ -113,36 +143,37 @@ function Get-F7Phase1Markers {
     }
 
     foreach ($line in $TailLines) {
-        if ($line -match '\[TBG TRACE\]') {
-            $lastTrace = $line
-            $lastPhase1 = $line
+        $text = [string]$line
+        if ($text -match '\[TBG TRACE\]') {
+            $lastTrace = $text
+            $lastPhase1 = $text
         }
-        if ($line -match '\[TBG MAPREADY\]') {
-            $lastMapReady = $line
-            $lastPhase1 = $line
+        if ($text -match '\[TBG MAPREADY\]') {
+            $lastMapReady = $text
+            $lastPhase1 = $text
         }
-        if (Test-Phase1ReadyLine -Line $line) {
-            $lastReady = $line
-            $lastPhase1 = $line
+        if (Test-Phase1ReadyLine -Line $text) {
+            $lastReady = $text
+            $lastPhase1 = $text
         }
     }
 
     if (-not $lastPhase1) {
-        $lastPhase1 = $TailLines[-1]
+        $lastPhase1 = [string]$TailLines[-1]
     }
 
-    return [pscustomobject]@{
-        lastTraceMarker = $lastTrace
-        lastMapReadyMarker = $lastMapReady
-        lastReadyMarker = $lastReady
-        lastPhase1Marker = $lastPhase1
+    return [ordered]@{
+        lastTraceMarker = if ($lastTrace) { [string]$lastTrace } else { $null }
+        lastMapReadyMarker = if ($lastMapReady) { [string]$lastMapReady } else { $null }
+        lastReadyMarker = if ($lastReady) { [string]$lastReady } else { $null }
+        lastPhase1Marker = [string]$lastPhase1
     }
 }
 
 function Read-F7CrashContextSummary {
     param([string]$CrashContextPath)
 
-    $empty = [pscustomobject]@{
+    $empty = [ordered]@{
         operation = $null
         stage = $null
         area = $null
@@ -159,7 +190,7 @@ function Read-F7CrashContextSummary {
 
     try {
         $ctx = Get-Content -LiteralPath $CrashContextPath -Raw | ConvertFrom-Json
-        return [pscustomobject]@{
+        return [ordered]@{
             operation = if ($ctx.operation) { [string]$ctx.operation } else { $null }
             stage = if ($ctx.stage) { [string]$ctx.stage } else { $null }
             area = if ($ctx.area) { [string]$ctx.area } else { $null }
@@ -185,49 +216,60 @@ function Get-F7WindowsCrashEventSummary {
         windowsCrashEventStatus = 'not_available'
         windowsCrashEventCopied = $false
         eventCount = 0
+        queryError = $null
     }
 
     if (-not (Get-Command Get-WinEvent -ErrorAction SilentlyContinue)) {
-        $result.windowsCrashEventStatus = 'not_available'
-        return [pscustomobject]$result
+        return $result
     }
 
     try {
+        $start = if ($StartUtc.Kind -eq [Globalization.DateTimeKind]::Unspecified) {
+            [datetime]::SpecifyKind($StartUtc, [Globalization.DateTimeKind]::Utc)
+        } else {
+            $StartUtc.ToUniversalTime()
+        }
+        $end = if ($EndUtc.Kind -eq [Globalization.DateTimeKind]::Unspecified) {
+            [datetime]::SpecifyKind($EndUtc, [Globalization.DateTimeKind]::Utc)
+        } else {
+            $EndUtc.ToUniversalTime()
+        }
+
         $events = Get-WinEvent -FilterHashtable @{
             LogName = 'Application'
             ProviderName = 'Application Error'
-            StartTime = $StartUtc
-            EndTime = $EndUtc
+            StartTime = $start
+            EndTime = $end
         } -MaxEvents 20 -ErrorAction Stop
 
-        $matched = @()
+        $matched = New-Object System.Collections.Generic.List[object]
         foreach ($ev in $events) {
-            $msg = $ev.Message
+            $msg = [string]$ev.Message
             if ($msg -match 'Bannerlord|TaleWorlds') {
-                $matched += [ordered]@{
-                    timeCreatedUtc = $ev.TimeCreated.ToUniversalTime().ToString('o')
-                    id = $ev.Id
+                $matched.Add([ordered]@{
+                    timeCreatedUtc = [string]$ev.TimeCreated.ToUniversalTime().ToString('o')
+                    id = [int]$ev.Id
                     message = $msg
-                }
+                }) | Out-Null
             }
         }
 
         if ($matched.Count -eq 0) {
             $result.windowsCrashEventStatus = 'none_found'
-            return [pscustomobject]$result
+            return $result
         }
 
         $destPath = Join-Path $CheckpointDir 'WindowsCrashEvents.json'
-        $matched | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $destPath -Encoding UTF8
+        @($matched) | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $destPath -Encoding UTF8
         $result.windowsCrashEventStatus = 'copied'
         $result.windowsCrashEventCopied = $true
-        $result.eventCount = $matched.Count
+        $result.eventCount = [int]$matched.Count
     } catch {
         $result.windowsCrashEventStatus = 'query_failed'
-        $result.queryError = $_.Exception.Message
+        $result.queryError = [string]$_.Exception.Message
     }
 
-    return [pscustomobject]$result
+    return $result
 }
 
 function Get-F7EvidenceCompleteness {
@@ -240,13 +282,15 @@ function Get-F7EvidenceCompleteness {
         [int]$LaunchTailLineCount,
         [string]$LastTraceMarker,
         [string]$LastPhase1Marker,
-        [string]$PassFail
+        [string]$PassFail,
+        [bool]$HarvestFailed = $false,
+        [bool]$HarvestPartial = $false
     )
 
     $required = @(
-        @{ name = 'manifest.json'; present = $true }
-        @{ name = 'Launch.tail.txt'; present = ($LaunchTailLineCount -gt 0) }
-        @{ name = 'Phase1.tail.txt'; present = ($Phase1TailLineCount -gt 0) }
+        [ordered]@{ name = 'manifest.json'; present = $true }
+        [ordered]@{ name = 'Launch.tail.txt'; present = ([bool]($LaunchTailLineCount -gt 0)) }
+        [ordered]@{ name = 'Phase1.tail.txt'; present = ([bool]($Phase1TailLineCount -gt 0)) }
     )
 
     $missing = New-Object System.Collections.Generic.List[string]
@@ -255,11 +299,8 @@ function Get-F7EvidenceCompleteness {
     }
 
     $instrumentationGap = $false
-    if ($PassFail -eq 'FAIL') {
+    if ($PassFail -eq 'FAIL' -and -not $HarvestFailed) {
         if ($LastPhase1Marker -match 'StatusFlush begin' -and -not $LastTraceMarker) {
-            $instrumentationGap = $true
-        }
-        if ($LastPhase1Marker -match '\[TBG MAPREADY\]' -and -not $LastTraceMarker -and $LastPhase1Marker -notmatch 'immediate hooks complete|TBG READY') {
             $instrumentationGap = $true
         }
         if ($Phase1TailLineCount -lt 50 -and $Phase1TailLineCount -gt 0) {
@@ -268,17 +309,39 @@ function Get-F7EvidenceCompleteness {
     }
 
     $score = 'sufficient'
-    if ($missing.Count -gt 0 -or $instrumentationGap) {
+    if ($HarvestFailed) {
+        $score = 'harvest_failed'
+    } elseif ($missing.Count -gt 0 -or $instrumentationGap -or $HarvestPartial) {
         $score = if ($instrumentationGap) { 'insufficient' } else { 'partial' }
     }
 
     return [ordered]@{
-        score = $score
-        instrumentationGap = $instrumentationGap
+        score = [string]$score
+        instrumentationGap = [bool]$instrumentationGap
         traceMarkersPresent = [bool]$LastTraceMarker
         missing = @($missing)
         required = $required
+        harvestFailed = [bool]$HarvestFailed
+        harvestPartial = [bool]$HarvestPartial
     }
+}
+
+function Write-F7ArtifactsSidecar {
+    param(
+        [string]$CheckpointDir,
+        [array]$ArtifactMeta,
+        [int]$Phase1TailLineCount,
+        [int]$LaunchTailLineCount
+    )
+
+    $safeArtifacts = @($ArtifactMeta | ForEach-Object { New-F7JsonSafeValue -Value $_ })
+    $sidecar = [ordered]@{
+        artifacts = $safeArtifacts
+        phase1TailLineCount = [int]$Phase1TailLineCount
+        launchTailLineCount = [int]$LaunchTailLineCount
+    }
+    $sidecar | ConvertTo-Json -Depth 8 |
+        Set-Content -LiteralPath (Join-Path $CheckpointDir 'artifacts.json') -Encoding UTF8
 }
 
 function Invoke-F7EvidenceHarvest {
@@ -301,98 +364,170 @@ function Invoke-F7EvidenceHarvest {
         [string]$GamePhaseAtEnd
     )
 
+    $warnings = New-Object System.Collections.Generic.List[string]
     $artifactMeta = New-Object System.Collections.Generic.List[object]
     $phase1MaxLines = if ($PassFail -eq 'FAIL') { 300 } else { 220 }
-
-    $statusArtifact = Copy-F7EvidenceArtifact -SourcePath (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) `
-        -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_Status.json'
-    $artifactMeta.Add($statusArtifact) | Out-Null
-
-    $crashPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
-    $crashArtifact = Copy-F7EvidenceArtifact -SourcePath $crashPath `
-        -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_CrashContext.json'
-    $artifactMeta.Add($crashArtifact) | Out-Null
-
     $phase1TailLineCount = 0
     $launchTailLineCount = 0
-    if ($Phase1Path -and (Test-Path -LiteralPath $Phase1Path)) {
-        $phase1TailLineCount = Write-F7FilteredTimestampTail `
-            -InputPath $Phase1Path `
-            -OutputPath (Join-Path $CheckpointDir 'Phase1.tail.txt') `
-            -SinceLocal $SinceLocal -MaxLines $phase1MaxLines
-        if ($phase1TailLineCount -lt 50) {
-            Write-F7UnfilteredTail -InputPath $Phase1Path `
-                -OutputPath (Join-Path $CheckpointDir 'Phase1.full.tail.txt') -MaxLines 300 | Out-Null
+    $markers = [ordered]@{
+        lastTraceMarker = $null
+        lastMapReadyMarker = $null
+        lastReadyMarker = $null
+        lastPhase1Marker = $null
+    }
+    $crashSummary = Read-F7CrashContextSummary -CrashContextPath $null
+    $winEvent = [ordered]@{
+        windowsCrashEventStatus = 'not_available'
+        windowsCrashEventCopied = $false
+        eventCount = 0
+        queryError = $null
+    }
+    $statusArtifact = [ordered]@{ name = 'BlacksmithGuild_Status.json'; copied = $false; reason = 'not_attempted' }
+    $crashArtifact = [ordered]@{ name = 'BlacksmithGuild_CrashContext.json'; copied = $false; reason = 'not_attempted' }
+    $crashPath = $null
+
+    try {
+        $statusArtifact = Copy-F7EvidenceArtifact -SourcePath (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) `
+            -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_Status.json'
+        $artifactMeta.Add($statusArtifact) | Out-Null
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "status copy: $($_.Exception.Message)"
+    }
+
+    try {
+        $crashPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
+        $crashArtifact = Copy-F7EvidenceArtifact -SourcePath $crashPath `
+            -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_CrashContext.json'
+        $artifactMeta.Add($crashArtifact) | Out-Null
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "crash context copy: $($_.Exception.Message)"
+    }
+
+    try {
+        if ($Phase1Path -and (Test-Path -LiteralPath $Phase1Path)) {
+            $phase1TailLineCount = Write-F7FilteredTimestampTail `
+                -InputPath $Phase1Path `
+                -OutputPath (Join-Path $CheckpointDir 'Phase1.tail.txt') `
+                -SinceLocal $SinceLocal -MaxLines $phase1MaxLines
+            if ($phase1TailLineCount -lt 50) {
+                Write-F7UnfilteredTail -InputPath $Phase1Path `
+                    -OutputPath (Join-Path $CheckpointDir 'Phase1.full.tail.txt') -MaxLines 300 | Out-Null
+            }
         }
-    }
-    if ($LaunchLogPath -and (Test-Path -LiteralPath $LaunchLogPath)) {
-        $launchTailLineCount = Write-F7FilteredTimestampTail `
-            -InputPath $LaunchLogPath `
-            -OutputPath (Join-Path $CheckpointDir 'Launch.tail.txt') `
-            -SinceLocal $SinceLocal -MaxLines 220
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "phase1 tail: $($_.Exception.Message)"
     }
 
-    $tailLines = @()
-    $phase1TailPath = Join-Path $CheckpointDir 'Phase1.tail.txt'
-    if (Test-Path -LiteralPath $phase1TailPath) {
-        $tailLines = @(Get-Content -LiteralPath $phase1TailPath -ErrorAction SilentlyContinue)
+    try {
+        if ($LaunchLogPath -and (Test-Path -LiteralPath $LaunchLogPath)) {
+            $launchTailLineCount = Write-F7FilteredTimestampTail `
+                -InputPath $LaunchLogPath `
+                -OutputPath (Join-Path $CheckpointDir 'Launch.tail.txt') `
+                -SinceLocal $SinceLocal -MaxLines 220
+        }
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "launch tail: $($_.Exception.Message)"
     }
-    $markers = Get-F7Phase1Markers -TailLines $tailLines
 
-    $crashSummary = Read-F7CrashContextSummary -CrashContextPath $crashPath
-    $endUtc = (Get-Date).ToUniversalTime()
-    $winEvent = Get-F7WindowsCrashEventSummary -StartUtc $StartedAtUtc -EndUtc $endUtc -CheckpointDir $CheckpointDir
+    try {
+        $phase1TailPath = Join-Path $CheckpointDir 'Phase1.tail.txt'
+        if (Test-Path -LiteralPath $phase1TailPath) {
+            $tailLines = @(Get-Content -LiteralPath $phase1TailPath -ErrorAction SilentlyContinue)
+            $markers = Get-F7Phase1Markers -TailLines $tailLines
+        }
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "marker scan: $($_.Exception.Message)"
+    }
 
-    $copiedCount = @($artifactMeta | Where-Object { $_.copied }).Count
+    try {
+        if (-not $crashPath) {
+            $crashPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
+        }
+        $crashSummary = Read-F7CrashContextSummary -CrashContextPath $crashPath
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "crash context parse: $($_.Exception.Message)"
+    }
+
+    try {
+        $endUtc = (Get-Date).ToUniversalTime()
+        $winEvent = Get-F7WindowsCrashEventSummary -StartUtc $StartedAtUtc -EndUtc $endUtc -CheckpointDir $CheckpointDir
+    } catch {
+        $winEvent = [ordered]@{
+            windowsCrashEventStatus = 'query_failed'
+            windowsCrashEventCopied = $false
+            eventCount = 0
+            queryError = [string]$_.Exception.Message
+        }
+        Add-F7HarvestWarning -Warnings $warnings -Message "windows events: $($_.Exception.Message)"
+    }
+
+    $copiedCount = 0
+    foreach ($artifact in $artifactMeta) {
+        if ($artifact -and $artifact.copied -eq $true) { $copiedCount++ }
+    }
     if ($phase1TailLineCount -gt 0) { $copiedCount++ }
     if ($launchTailLineCount -gt 0) { $copiedCount++ }
-    if ($winEvent.windowsCrashEventCopied) { $copiedCount++ }
+    if ($winEvent.windowsCrashEventCopied -eq $true) { $copiedCount++ }
 
     $missingArtifacts = New-Object System.Collections.Generic.List[string]
-    if (-not $statusArtifact.copied) { $missingArtifacts.Add('BlacksmithGuild_Status.json') | Out-Null }
-    if (-not $crashArtifact.copied) { $missingArtifacts.Add('BlacksmithGuild_CrashContext.json') | Out-Null }
+    if ($statusArtifact.copied -ne $true) { $missingArtifacts.Add('BlacksmithGuild_Status.json') | Out-Null }
+    if ($crashArtifact.copied -ne $true) { $missingArtifacts.Add('BlacksmithGuild_CrashContext.json') | Out-Null }
     if ($phase1TailLineCount -eq 0) { $missingArtifacts.Add('Phase1.tail.txt') | Out-Null }
     if ($launchTailLineCount -eq 0) { $missingArtifacts.Add('Launch.tail.txt') | Out-Null }
 
-    $completeness = Get-F7EvidenceCompleteness `
-        -StatusJsonCopied $statusArtifact.copied `
-        -CrashContextCopied $crashArtifact.copied `
-        -WindowsCrashEventCopied $winEvent.windowsCrashEventCopied `
-        -WindowsCrashEventStatus $winEvent.windowsCrashEventStatus `
-        -Phase1TailLineCount $phase1TailLineCount `
-        -LaunchTailLineCount $launchTailLineCount `
-        -LastTraceMarker $markers.lastTraceMarker `
-        -LastPhase1Marker $markers.lastPhase1Marker `
-        -PassFail $PassFail
+    $harvestPartial = ($warnings.Count -gt 0)
 
-    $artifactsSidecar = [ordered]@{
-        artifacts = @($artifactMeta)
-        phase1TailLineCount = $phase1TailLineCount
-        launchTailLineCount = $launchTailLineCount
+    $completeness = Get-F7EvidenceCompleteness `
+        -StatusJsonCopied ([bool]($statusArtifact.copied -eq $true)) `
+        -CrashContextCopied ([bool]($crashArtifact.copied -eq $true)) `
+        -WindowsCrashEventCopied ([bool]($winEvent.windowsCrashEventCopied -eq $true)) `
+        -WindowsCrashEventStatus ([string]$winEvent.windowsCrashEventStatus) `
+        -Phase1TailLineCount ([int]$phase1TailLineCount) `
+        -LaunchTailLineCount ([int]$launchTailLineCount) `
+        -LastTraceMarker ([string]$markers.lastTraceMarker) `
+        -LastPhase1Marker ([string]$markers.lastPhase1Marker) `
+        -PassFail ([string]$PassFail) `
+        -HarvestPartial ([bool]$harvestPartial)
+
+    try {
+        Write-F7ArtifactsSidecar -CheckpointDir $CheckpointDir `
+            -ArtifactMeta @($artifactMeta) `
+            -Phase1TailLineCount ([int]$phase1TailLineCount) `
+            -LaunchTailLineCount ([int]$launchTailLineCount)
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "artifacts sidecar: $($_.Exception.Message)"
+        $harvestPartial = $true
     }
-    $artifactsSidecar | ConvertTo-Json -Depth 6 |
-        Set-Content -LiteralPath (Join-Path $CheckpointDir 'artifacts.json') -Encoding UTF8
+
+    $safeProcessTimestamps = New-F7JsonSafeValue -Value $ProcessTimestamps
+    $safeArtifactMeta = @()
+    foreach ($artifact in $artifactMeta) {
+        $safeArtifactMeta += ,(New-F7JsonSafeValue -Value $artifact)
+    }
 
     return [ordered]@{
         evidenceCompleteness = $completeness
-        lastPhase1Marker = $markers.lastPhase1Marker
-        lastTraceMarker = $markers.lastTraceMarker
-        lastMapReadyMarker = $markers.lastMapReadyMarker
-        lastCrashContextOperation = $crashSummary.operation
-        lastCrashContextStage = $crashSummary.stage
-        lastCrashContextArea = $crashSummary.area
-        statusJsonCopied = [bool]$statusArtifact.copied
-        crashContextCopied = [bool]$crashArtifact.copied
-        windowsCrashEventCopied = [bool]$winEvent.windowsCrashEventCopied
-        windowsCrashEventStatus = $winEvent.windowsCrashEventStatus
-        phase1TailLineCount = $phase1TailLineCount
-        launchTailLineCount = $launchTailLineCount
-        runnerCommandLine = $RunnerCommandLine
-        processTimestamps = $ProcessTimestamps
-        artifactMeta = @($artifactMeta)
-        copiedArtifactCount = $copiedCount
+        lastPhase1Marker = [string]$markers.lastPhase1Marker
+        lastTraceMarker = if ($markers.lastTraceMarker) { [string]$markers.lastTraceMarker } else { $null }
+        lastMapReadyMarker = if ($markers.lastMapReadyMarker) { [string]$markers.lastMapReadyMarker } else { $null }
+        lastCrashContextOperation = if ($crashSummary.operation) { [string]$crashSummary.operation } else { $null }
+        lastCrashContextStage = if ($crashSummary.stage) { [string]$crashSummary.stage } else { $null }
+        lastCrashContextArea = if ($crashSummary.area) { [string]$crashSummary.area } else { $null }
+        statusJsonCopied = [bool]($statusArtifact.copied -eq $true)
+        crashContextCopied = [bool]($crashArtifact.copied -eq $true)
+        windowsCrashEventCopied = [bool]($winEvent.windowsCrashEventCopied -eq $true)
+        windowsCrashEventStatus = [string]$winEvent.windowsCrashEventStatus
+        phase1TailLineCount = [int]$phase1TailLineCount
+        launchTailLineCount = [int]$launchTailLineCount
+        runnerCommandLine = if ($RunnerCommandLine) { [string]$RunnerCommandLine } else { $null }
+        hookMask = if ($HookMask) { [string]$HookMask } else { $null }
+        processTimestamps = $safeProcessTimestamps
+        artifactMeta = $safeArtifactMeta
+        copiedArtifactCount = [int]$copiedCount
         missingArtifacts = @($missingArtifacts)
-        gamePhaseAtEnd = $GamePhaseAtEnd
+        gamePhaseAtEnd = if ($GamePhaseAtEnd) { [string]$GamePhaseAtEnd } else { $null }
         instrumentationGap = [bool]$completeness.instrumentationGap
+        harvestPartial = [bool]$harvestPartial
+        harvestWarnings = @($warnings)
     }
 }

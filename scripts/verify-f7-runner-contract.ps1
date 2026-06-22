@@ -48,7 +48,7 @@ if (Test-Path -LiteralPath $gatePath) {
         'Invoke-F7NoClickLaunch', 'Save-CheckpointEvidence', 'function Exit-F7Gate', 'Test-F7GateManifestPass',
         'f7-evidence-harvest.ps1', 'Invoke-F7EvidenceHarvest', 'evidenceCompleteness',
         'launchPath', 'launchSelectedBy', 'certTarget', 'targetMismatch',
-        'Resolve-F7LaunchPath'
+        'Resolve-F7LaunchPath', 'continueEscalated', 'harvest_failed'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -78,7 +78,7 @@ if (Test-Path -LiteralPath $gatePath) {
 
 if (Test-Path -LiteralPath $harvestPath) {
     $harvestText = Get-Content -LiteralPath $harvestPath -Raw
-    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker')) {
+    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed')) {
         if ($harvestText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-evidence-harvest.ps1 missing: $needle"
         } else {
@@ -120,6 +120,19 @@ if (Test-Path -LiteralPath $grepGuard) {
     }
 } else {
     Write-Host 'WARN: verify-log-grep-patterns.ps1 not present (Agent B lane)' -ForegroundColor Yellow
+}
+
+$harvestRegression = Join-Path $PSScriptRoot 'test-f7-harvest-150405.ps1'
+if (Test-Path -LiteralPath $harvestRegression) {
+    Write-Host 'Running test-f7-harvest-150405.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $harvestRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-harvest-150405.ps1 failed (Argument types / enrichment regression)'
+    } else {
+        Write-Host 'PASS offline harvest regression 150405' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-harvest-150405.ps1 offline harvest regression'
 }
 
 Write-Host ''

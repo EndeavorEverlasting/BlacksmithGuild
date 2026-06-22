@@ -26,14 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `a794e87` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending C push |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `150405` wave 2 FAIL (MapTransition death before MapReady; useful trace + CrashContext) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-150405/` — honest FAIL (`launchPath=continue`, `targetMismatch=false`, `harvestError`) |
-| Launcher cert | **PASS** @ `135217`; wave 2 `150405` had `continue_escalate` + nav timeout (investigate @ Agent C) |
-| Evidence requirements | [`f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md) — landed |
-| Next cert command | **HOLD** — fix harvest bug (C) + MapTransition survival (B) before rerun |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-150405/` — honest FAIL (useful trace; manifest had `harvestError` — **fixed in harvest module**) |
+| Launcher cert | **PASS** @ `135217`; `150405` `continue_escalate` is friction only when `launchPath=continue` |
+| Next cert command | **HOLD** — MapTransition survival (B) before rerun; harvest repair landed (C) |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -44,7 +43,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 cert `150405` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** MapTransition → MapReady survival (`150405`) | `src/.../Reporting/*`, orchestrator | — | `f8bcd6a` |
-| **C** | Launcher / F7 runner | `IDLE` | **NEXT:** fix harvest `Argument types do not match`; launcher `continue_escalate` | `scripts/f7-evidence-harvest.ps1` | — | `8ae7afd` |
+| **C** | Launcher / F7 runner | `DONE` | Harvest bug fix + offline regression `150405` | `scripts/f7-evidence-harvest.ps1` | — | pending |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)

@@ -51,6 +51,9 @@ $script:LaunchAutomation = [ordered]@{
     certTarget = $CertTarget
     targetMismatch = $false
     launchPathAdopted = $false
+    continueEscalated = $false
+    continueClickUtc = $null
+    continueLatencySeconds = $null
 }
 
 $script:F7ProcessTimestamps = [ordered]@{
@@ -210,9 +213,15 @@ function Get-LaunchAutomationSignals {
             $signals.crashReporterDismissed = $true
             $signals.priorSessionCrashLikely = $true
         }
+        if ($line -match 'LAUNCH_STATE=continue_escalate') {
+            $script:LaunchAutomation.continueEscalated = $true
+        }
         if ($line -match 'LAUNCH_STATE=continue_clicked|clicked CONTINUE') {
             $script:LaunchAutomation.continueClick.attempted = $true
             $script:LaunchAutomation.continueClick.success = $true
+            if (-not $script:LaunchAutomation.continueClickUtc) {
+                $script:LaunchAutomation.continueClickUtc = $lineTime
+            }
             $script:LaunchAutomation.launchPath = 'continue'
             $script:LaunchAutomation.launchPathAdopted = $true
             if ($line -match 'selectedBy=user') {
@@ -245,10 +254,15 @@ function Get-LaunchAutomationSignals {
                 $script:LaunchAutomation.launchSelectedBy = 'automation'
             }
         }
-        if ($line -match 'handoff:|LAUNCH_STATE=handoff') {
-            $script:LaunchAutomation.handoffSeen = $true
-            if ($script:LaunchAutomation.launchSelectedBy -eq 'unknown' -and -not $script:LaunchAutomation.launchPathAdopted) {
-                $script:LaunchAutomation.launchSelectedBy = 'attach_existing'
+        if ($line -match 'LAUNCH_STATE=game_spawned|handoff:|LAUNCH_STATE=handoff') {
+            if ($line -match 'handoff:|LAUNCH_STATE=handoff') {
+                $script:LaunchAutomation.handoffSeen = $true
+                if ($script:LaunchAutomation.launchSelectedBy -eq 'unknown' -and -not $script:LaunchAutomation.launchPathAdopted) {
+                    $script:LaunchAutomation.launchSelectedBy = 'attach_existing'
+                }
+            }
+            if ($script:LaunchAutomation.continueClickUtc -and -not $script:LaunchAutomation.continueLatencySeconds) {
+                $script:LaunchAutomation.continueLatencySeconds = [int][Math]::Max(0, ($lineTime - $script:LaunchAutomation.continueClickUtc).TotalSeconds)
             }
         }
         if ($line -match 'LAUNCH_STATE=fail_foreground_theft|foreground theft') {
@@ -416,6 +430,29 @@ function Write-FilteredTimestampTail {
     $filtered | Set-Content -LiteralPath $OutputPath -Encoding UTF8
 }
 
+function Get-F7LauncherAuditFields {
+    param([datetime]$SinceLocal)
+
+    $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+
+    $launcherWarnings = New-Object System.Collections.Generic.List[string]
+    if ($script:LaunchAutomation.launchError) {
+        $launcherWarnings.Add([string]$script:LaunchAutomation.launchError) | Out-Null
+    }
+    if (($script:LaunchAutomation.continueEscalated -or $script:LaunchAutomation.launchState -match 'continue_escalate') `
+            -and $script:LaunchAutomation.launchPath -eq 'continue' -and -not $script:LaunchAutomation.targetMismatch) {
+        $launcherWarnings.Add('continue_escalate: hwnd-only Continue did not spawn game within 15s; foreground retry used (not cert failure cause)') | Out-Null
+    }
+
+    return [ordered]@{
+        continueEscalated = [bool]($script:LaunchAutomation.continueEscalated -or ($script:LaunchAutomation.launchState -match 'continue_escalate'))
+        continueClickMethod = [string]$script:LaunchAutomation.continueClick.method
+        continueLatencySeconds = if ($null -ne $script:LaunchAutomation.continueLatencySeconds) { [int]$script:LaunchAutomation.continueLatencySeconds } else { $null }
+        launcherTimeoutStage = [string]$script:LaunchAutomation.launchState
+        launcherWarnings = @($launcherWarnings)
+    }
+}
+
 function Save-CheckpointEvidence {
     param(
         [string]$PassFail,
@@ -460,9 +497,39 @@ function Save-CheckpointEvidence {
             $harvestFields[$key] = $harvestResult[$key]
         }
     } catch {
-        $harvestFields.harvestError = $_.Exception.Message
-        $harvestFields.evidenceCompleteness = [ordered]@{ score = 'partial'; harvestError = $true }
+        $harvestFields.harvestError = [string]$_.Exception.Message
+        $harvestFields.harvestPartial = $false
+        $harvestFields.harvestWarnings = @()
+        $harvestFields.windowsCrashEventStatus = 'not_available'
+        $harvestFields.windowsCrashEventCopied = $false
+        $harvestFields.statusJsonCopied = $false
+        $harvestFields.crashContextCopied = $false
+        $harvestFields.missingArtifacts = @('harvest_enrichment_failed')
+        $harvestFields.copiedArtifactCount = 0
+        $harvestFields.artifactMeta = @()
+        try {
+            $tailPath = Join-Path $checkpointDir 'Phase1.tail.txt'
+            if (Test-Path -LiteralPath $tailPath) {
+                $m = Get-F7Phase1Markers -TailLines @(Get-Content -LiteralPath $tailPath -ErrorAction SilentlyContinue)
+                $harvestFields.lastPhase1Marker = [string]$m.lastPhase1Marker
+                $harvestFields.lastTraceMarker = if ($m.lastTraceMarker) { [string]$m.lastTraceMarker } else { $null }
+                $harvestFields.lastMapReadyMarker = if ($m.lastMapReadyMarker) { [string]$m.lastMapReadyMarker } else { $null }
+                $harvestFields.phase1TailLineCount = [int]@(Get-Content -LiteralPath $tailPath).Count
+            }
+            $launchTailPath = Join-Path $checkpointDir 'Launch.tail.txt'
+            if (Test-Path -LiteralPath $launchTailPath) {
+                $harvestFields.launchTailLineCount = [int]@(Get-Content -LiteralPath $launchTailPath).Count
+            }
+        } catch { }
+        $harvestFields.evidenceCompleteness = [ordered]@{
+            score = 'harvest_failed'
+            harvestError = $true
+            harvestFailed = $true
+            harvestPartial = $false
+        }
     }
+
+    $launcherAudit = Get-F7LauncherAuditFields -SinceLocal $SinceLocal
 
     $manifest = [ordered]@{
         checkpoint = 'checkpoint-01-f7-gate'
@@ -503,6 +570,11 @@ function Save-CheckpointEvidence {
             }
         } else { $null }
         notes = $Notes
+        continueEscalated = [bool]$launcherAudit.continueEscalated
+        continueClickMethod = $launcherAudit.continueClickMethod
+        continueLatencySeconds = $launcherAudit.continueLatencySeconds
+        launcherTimeoutStage = $launcherAudit.launcherTimeoutStage
+        launcherWarnings = @($launcherAudit.launcherWarnings)
     }
     foreach ($key in $harvestFields.Keys) {
         $manifest[$key] = $harvestFields[$key]
