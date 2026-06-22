@@ -1,0 +1,13 @@
+{
+  "generatedUtc": "2026-06-22T04:53:21.2667171Z",
+  "sessionId": "20260622-004953",
+  "checkpoint": 1,
+  "name": "map-ready",
+  "phase": "continue-load",
+  "commands": [
+    "ForgeContinue.cmd"
+  ],
+  "passFail": "FAIL",
+  "notes": "Agent B sprint 2026-06-22: main @ 0c9f171. Build PASS. CONTINUE handoff 00:50:32; process vanished ~00:50:45 (no game/launcher hwnd). Phase1 stops at MapTransition (00:50:38-43); no [TBG MAPREADY] or campaign map ready. Status.json stale: campaignReady=false, canPollFileInbox=false. Cursor stole foreground during launch. Same early-death pattern as 9d1dc98 agent repro — not post-map hook bisect territory. Cert marathon NOT RUN.",
+  "factionPowerPosture": null
+}

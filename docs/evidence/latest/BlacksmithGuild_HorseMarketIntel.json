@@ -1,0 +1,83 @@
+{
+  "generatedUtc": "2026-06-22T01:57:33.6926524Z",
+  "source": "AnalyzeHorseMarket",
+  "readOnly": true,
+  "mutationApplied": false,
+  "settlement": {
+    "name": "",
+    "stringId": "",
+    "type": "",
+    "marketAvailable": false,
+    "blockedReason": "party not at a settlement"
+  },
+  "player": {
+    "gold": 1000,
+    "safeGoldReserve": 500,
+    "spendableGold": 500
+  },
+  "capacity": {
+    "targetBufferPercent": 25,
+    "currentCapacity": 30,
+    "currentCarriedWeight": 10,
+    "currentFreeCapacity": 20,
+    "currentBufferPercent": 66.67,
+    "capacityDeficit": 0,
+    "projectedBufferAfterRecommendedBuys": 66.67
+  },
+  "herd": {
+    "herdModelAvailable": true,
+    "herdPenaltyObserved": null,
+    "herdPenaltyText": null,
+    "footmenOnHorsesBonus": null,
+    "speedSummary": "speed=5.56"
+  },
+  "upgradeDemandAvailable": false,
+  "playerAnimals": [
+  ],
+  "marketAnimals": [
+  ],
+  "recommendations": [
+    {
+      "actionType": "BlockedNoMarket",
+      "itemStringId": "",
+      "itemName": "BlockedNoMarket",
+      "classification": "PackAnimal",
+      "quantity": 0,
+      "unitPrice": 0,
+      "totalCost": 0,
+      "expectedProfit": 0,
+      "capacityDeltaEstimate": 0,
+      "projectedBufferPercent": 0,
+      "score": -1000,
+      "confidence": "High",
+      "reasons": [
+        "party not at a settlement"
+      ],
+      "riskFlags": [
+      ]
+    }
+  ],
+  "topRecommendation": 
+  {
+    "actionType": "BlockedNoMarket",
+    "itemStringId": "",
+    "itemName": "BlockedNoMarket",
+    "classification": "PackAnimal",
+    "quantity": 0,
+    "unitPrice": 0,
+    "totalCost": 0,
+    "expectedProfit": 0,
+    "capacityDeltaEstimate": 0,
+    "projectedBufferPercent": 0,
+    "score": -1000,
+    "confidence": "High",
+    "reasons": [
+      "party not at a settlement"
+    ],
+    "riskFlags": [
+    ]
+  }
+,
+  "blockedReason": "party not at a settlement",
+  "verdict": "blocked — no settlement market"
+}
