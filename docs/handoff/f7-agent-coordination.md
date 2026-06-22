@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `35b8dd5` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `08608c0` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `154012` wave 3 FAIL (timeout; Refresh storm; no map-ready) |
@@ -42,7 +42,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 3 cert `154012` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | pending |
+| **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
 | **C** | Launcher / F7 runner | `DONE` | Process detection fix (`154012`) landed | — | — | `35b8dd5` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
