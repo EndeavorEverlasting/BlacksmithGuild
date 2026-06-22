@@ -35,6 +35,8 @@ Headless 008C catalog runs (`visibleMode: false`, 12 steps/tick) can produce leg
 7. `RunCharacterBuildVisibleCert.cmd` + `assert-character-legitimacy.ps1`
 8. `forge-stop.ps1` excludes caller `$PID` - orchestrators no longer suicide at step [1/5]
 9. ASCII-safe strings + UTF-8 BOM on orchestration scripts (PS 5.1 parse fix for step [2/5])
+10. Visible cert dot-sources dev-command-names.ps1 (Test-Phase1TbgReady fix for step [4/5])
+11. Pre-choice dwell (~2s) per culture/upbringing menu + dwell blocks dt=0 burst
 
 ---
 

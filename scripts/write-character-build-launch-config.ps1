@@ -76,7 +76,7 @@ switch ($Mode) {
         $config = [ordered]@{
             mode              = 'personal'
             visibleMode       = $true
-            decisionPauseMs   = 750
+            decisionPauseMs   = 2000
             catalogMode       = $false
             replayMode        = $false
             selectedBuildMode = 'AseraiTradeSmith'

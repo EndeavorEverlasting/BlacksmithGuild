@@ -115,7 +115,7 @@ namespace BlacksmithGuild.DevTools.AutoCharacterBuild
                 DevToolsConfig.CharacterCreationVisibleMode = true;
                 DevToolsConfig.CharacterCreationDecisionPauseMs = _activeConfig.DecisionPauseMs > 0
                     ? _activeConfig.DecisionPauseMs
-                    : 750;
+                    : 2000;
             }
             else if (_activeConfig.ReplayMode || string.Equals(_activeConfig.Mode, "replay", StringComparison.OrdinalIgnoreCase))
             {

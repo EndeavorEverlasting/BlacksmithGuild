@@ -45,6 +45,40 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _hasAnnouncedGameLoadingStall;
         private static float _characterCreationPauseRemainingSeconds;
 
+        public static bool IsVisibleCreationDwellActive()
+        {
+            return DevToolsConfig.CharacterCreationVisibleMode && _characterCreationPauseRemainingSeconds > 0f;
+        }
+
+        public static void ArmVisibleCreationDwell()
+        {
+            if (!DevToolsConfig.CharacterCreationVisibleMode)
+            {
+                return;
+            }
+
+            _characterCreationPauseRemainingSeconds = DevToolsConfig.CharacterCreationDecisionPauseMs / 1000f;
+        }
+
+        private static bool TryConsumeVisibleCreationDwell(float dt)
+        {
+            if (!DevToolsConfig.CharacterCreationVisibleMode || _characterCreationPauseRemainingSeconds <= 0f)
+            {
+                return false;
+            }
+
+            if (dt > 0f)
+            {
+                _characterCreationPauseRemainingSeconds -= dt;
+                if (_characterCreationPauseRemainingSeconds < 0f)
+                {
+                    _characterCreationPauseRemainingSeconds = 0f;
+                }
+            }
+
+            return true;
+        }
+
         private const float CreationStageStallThresholdSeconds = 5f;
         private const float GameLoadingStallThresholdSeconds = 180f;
 
@@ -96,6 +130,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _hasAnnouncedGameLoadingStall = false;
             _characterCreationPauseRemainingSeconds = 0f;
             CharacterCreationReflection.ResetNarrativeSession();
+            CharacterCreationReflection.ResetVisibleAssistSession();
             CharacterBuildProvenanceService.ResetSession();
             CharacterBuildVariantService.ResetSession();
             MainMenuAutoLauncher.ResetForNewSession();
@@ -269,6 +304,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     _creationStallSubStage = subStage;
                     _hasAnnouncedCreationStall = false;
                     CharacterCreationReflection.ResetNarrativeSession();
+                    if (DevToolsConfig.CharacterCreationVisibleMode)
+                    {
+                        ArmVisibleCreationDwell();
+                    }
                 }
             }
 
@@ -307,6 +346,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _creationStallSubStage = stageName;
                 _hasAnnouncedCreationStall = false;
                 CharacterCreationReflection.ResetNarrativeSession();
+                if (DevToolsConfig.CharacterCreationVisibleMode)
+                {
+                    ArmVisibleCreationDwell();
+                }
             }
 
             TryAdvanceCurrentCreationStage(0f);
@@ -349,13 +392,14 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _creationStallSubStage = stageName;
                 _hasAnnouncedCreationStall = false;
                 CharacterCreationReflection.ResetNarrativeSession();
+                if (DevToolsConfig.CharacterCreationVisibleMode)
+                {
+                    ArmVisibleCreationDwell();
+                }
             }
 
-            if (DevToolsConfig.CharacterCreationVisibleMode
-                && _characterCreationPauseRemainingSeconds > 0f
-                && dt > 0f)
+            if (TryConsumeVisibleCreationDwell(dt))
             {
-                _characterCreationPauseRemainingSeconds -= dt;
                 return;
             }
 
@@ -365,8 +409,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             {
                 if (DevToolsConfig.CharacterCreationVisibleMode)
                 {
-                    _characterCreationPauseRemainingSeconds =
-                        DevToolsConfig.CharacterCreationDecisionPauseMs / 1000f;
+                    ArmVisibleCreationDwell();
                 }
 
                 AnnounceCreationAdvance();

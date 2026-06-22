@@ -40,6 +40,9 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _narrativeStageInitLogged;
         private static readonly HashSet<string> LoggedNarrativeMenuSelections =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> VisiblePresentedMenus =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static bool _visibleCulturePresented;
         private static int _narrativeMenusCompleted;
         private static string _lastNarrativeFailureDetail;
 
@@ -107,6 +110,19 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (CharacterBuildVariantConfigService.IsCatalogMode)
             {
                 CharacterCreationChoiceCatalogBuilder.RecordCultures(cultures);
+            }
+
+            if (DevToolsConfig.CharacterCreationVisibleMode && !_visibleCulturePresented)
+            {
+                _visibleCulturePresented = true;
+                InGameNotice.Info("TBG: culture - review cultures (assistive selects Aserai next)");
+                CampaignSetupStateTracker.ArmVisibleCreationDwell();
+                return false;
+            }
+
+            if (CampaignSetupStateTracker.IsVisibleCreationDwellActive())
+            {
+                return false;
             }
 
             GuildLog.Info(
@@ -180,6 +196,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _lastNarrativeFailureDetail = null;
         }
 
+        public static void ResetVisibleAssistSession()
+        {
+            VisiblePresentedMenus.Clear();
+            _visibleCulturePresented = false;
+        }
+
         public static string GetNarrativeStallDiagnostics()
         {
             return _lastNarrativeFailureDetail ?? "no narrative failure detail recorded";
@@ -247,6 +269,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 return false;
             }
 
+            if (CampaignSetupStateTracker.IsVisibleCreationDwellActive())
+            {
+                return false;
+            }
+
             var progressed = false;
             var maxStepsPerTick = DevToolsConfig.CharacterCreationVisibleMode ? 1 : 12;
 
@@ -286,6 +313,15 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 if (CharacterBuildVariantConfigService.IsCatalogMode)
                 {
                     CharacterCreationChoiceCatalogBuilder.RecordMenuVisit(manager, currentMenu, menuId);
+                }
+
+                if (DevToolsConfig.CharacterCreationVisibleMode && !VisiblePresentedMenus.Contains(menuId))
+                {
+                    var stageLabel = AseraiTradeSmithDecisionMap.InferStage(menuId);
+                    InGameNotice.Info($"TBG: {stageLabel} - review options ({suitableCount} available)");
+                    VisiblePresentedMenus.Add(menuId);
+                    CampaignSetupStateTracker.ArmVisibleCreationDwell();
+                    return false;
                 }
 
                 object selected = null;
@@ -373,8 +409,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     if (DevToolsConfig.CharacterCreationVisibleMode)
                     {
                         var stage = AseraiTradeSmithDecisionMap.InferStage(menuId);
-                        var optionLabel = TruncateForNotice(doctrineDecision.OptionId, 48);
-                        InGameNotice.Info($"TBG: {stage} → {optionLabel}");
+                        var optionLabel = TruncateForNotice(
+                            string.IsNullOrWhiteSpace(doctrineDecision.OptionText)
+                                ? doctrineDecision.OptionId
+                                : doctrineDecision.OptionText,
+                            64);
+                        InGameNotice.Info($"TBG: {stage} -> {optionLabel}");
                     }
                 }
 

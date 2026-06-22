@@ -12,6 +12,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 
 . (Join-Path $PSScriptRoot 'forge-status.ps1')
+. (Join-Path $PSScriptRoot 'dev-command-names.ps1')
 
 function Wait-TbgReadyExtended {
     param(
@@ -43,7 +44,7 @@ function Write-VisibleReplayResult {
         generatedUtc      = (Get-Date).ToUniversalTime().ToString('o')
         completed         = ($Verdict -eq 'PASS')
         visibleMode       = $true
-        decisionPauseMs   = 750
+        decisionPauseMs   = 2000
         certMode          = $Mode
         blockedReason     = if ($Failures.Count -gt 0) { ($Failures -join '; ') } else { '' }
         legitimacyVerdict = if ($Verdict -eq 'PASS') { 'VanillaLegit' } else { 'Failed' }
@@ -64,7 +65,7 @@ Write-Host "Mode: $Mode"
 Write-Host "Repo: $repoRoot"
 Write-Host "Game: $bannerlordRoot"
 Write-Host ''
-Write-Host 'Watch Aserai culture + each upbringing choice (~750ms pause + lower-left notices).' -ForegroundColor DarkGray
+Write-Host 'Watch Aserai culture + each upbringing choice (~2s dwell per step + lower-left notices).' -ForegroundColor DarkGray
 Write-Host 'On map: press F7, then save as TBGPersonalAserai001 if verdict PASS.' -ForegroundColor DarkGray
 Write-Host ''
 
