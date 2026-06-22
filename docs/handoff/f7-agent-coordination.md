@@ -29,6 +29,7 @@ Every agent **must**:
 | Last F7 evidence | `docs/evidence/live-cert/20260622-030915/checkpoint-01-f7-gate/` |
 | Launcher cert | **PASS** — `continue_clicked`, Safe Mode No, `game_spawned` (session `030915`) |
 | Next cert command | `.\Run-F7GateContinue.cmd -HookMask 0x0F` (external PS; stop other Forge terminals first) |
+| Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
 
@@ -38,7 +39,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Hook mask bisect `0x01`–`0x0F`; commit evidence | `docs/evidence/live-cert/**`, PR #7 | F7/nav lock active | — |
 | **B** | C# map-ready / MapTransition | `IDLE` | Await bisect results; C# fix if mask isolates hook | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `ff823a6` |
-| **C** | Launcher / focus / nav scripts | `IDLE` | Monitor only unless focus regression in Launch.log | `launcher-auto-nav.ps1`, `run-f7-gate-continue.ps1` | — | `8c18ecd` |
+| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | Forge.cmd PLAY spawn fix | `launcher-auto-nav.ps1`, `install-mod.ps1`, `Run-LauncherNavPlay.cmd` | Do not run Forge while A holds automation lock | — |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -70,6 +71,14 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent B → A, C (Forge.cmd / fresh PLAY baseline)
+
+- **Problem:** Session `09:02` — `play_clicked` verified but `Bannerlord.exe` never spawned (hwnd SendMessage false-positive).
+- **Fix (launcher):** PLAY requires `Bannerlord.exe` within 30s to verify; after 15s stall escalates to foreground clicks (`play_escalate`); raises game window on `game_spawned`.
+- **Added:** `Run-LauncherNavPlay.cmd` — launcher-only PLAY smoke (no build).
+- **Need from user:** Stop Agent A F7 bisect / release automation lock before `Forge.cmd` or `Run-LauncherNavPlay.cmd`.
+- **Need from A:** Continue bisect on Continue path; use fresh PLAY only as vanilla-style control when isolating save vs mod.
 
 ### 2026-06-22 — Agent B → A, C (coordination plan verified)
 

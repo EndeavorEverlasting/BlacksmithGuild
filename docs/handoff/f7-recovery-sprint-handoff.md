@@ -122,7 +122,15 @@ git checkout fix/f7-gate-stability && git pull
 .\Run-F7GateContinue.cmd -HookMask 0x0F
 ```
 
-**Smoke launcher only:** `.\Run-LauncherNavNow.cmd` or `.\ForgeContinue.cmd` — not bare `powershell -File launcher-auto-nav.ps1`.
+**Fresh game baseline (PLAY — no dev save):**
+```
+.\Forge.cmd
+# or launcher-only smoke:
+.\Run-LauncherNavPlay.cmd
+```
+Do not run PLAY and F7/Continue concurrently (nav lock + coordination machine lock).
+
+**Smoke launcher only:** `.\Run-LauncherNavNow.cmd` (continue) or `.\Run-LauncherNavPlay.cmd` (play)
 
 **Logs (check BOTH Phase1 paths):**
 - `%USERPROFILE%\Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log`

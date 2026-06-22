@@ -1885,6 +1885,7 @@ $loggedModuleMismatchButtons = $false
 $gameStablePolls = 0
 $requiredStablePolls = 3
 $playClickUtc = $null
+$playEscalated = $false
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2270,16 +2271,27 @@ function Test-HandoffWhenGameStable {
 }
 
 function Test-LaunchClickVerified {
-    param([int]$WaitSec = 4)
+    param(
+        [int]$WaitSec = 4,
+        [string]$Intent = 'continue'
+    )
+
+    if ($Intent -eq 'play') {
+        $WaitSec = [Math]::Max($WaitSec, 30)
+    }
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
         if (Test-GameProcessRunning) { return $true }
-        if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
-        if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
-        if (-not [UIAHelper]::HasSafeModeDialog() -and -not [UIAHelper]::IsLauncherPlayContinueVisible()) {
-            return $true
+
+        if ($Intent -eq 'continue') {
+            if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
+            if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+            if (-not [UIAHelper]::HasSafeModeDialog() -and -not [UIAHelper]::IsLauncherPlayContinueVisible()) {
+                return $true
+            }
         }
+
         Start-Sleep -Milliseconds 150
     }
     return $false
@@ -2305,12 +2317,34 @@ while ((Get-Date) -lt $deadline) {
     if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
         Write-LaunchLog 'LAUNCH_STATE=game_spawned'
         $script:gameSpawnLogged = $true
+        if (Test-Path -LiteralPath $focusHelperPath) {
+            try {
+                $raised = & $focusHelperPath
+                if ($raised) {
+                    Write-LaunchLog 'raised Bannerlord window on game spawn'
+                }
+            } catch { }
+        }
+    }
+
+    if ($LaunchIntent -eq 'play' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
+        $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
+        if ($sinceClick -ge 15 -and -not $script:playEscalated) {
+            Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks'
+            $script:playEscalated = $true
+            $clickedPlayContinue = $false
+            $script:playClickUtc = $null
+            $RespectUserForeground = $false
+            [UIAHelper]::RespectUserForeground = $false
+            [UIAHelper]::ResetLauncherClickRetryState()
+        }
     }
 
     if ($clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
         if ($sinceClick -ge 12 -and ([UIAHelper]::IsLauncherPlayContinueVisible() -or [UIAHelper]::HasSafeModeDialog())) {
-            Write-LaunchLog 'LAUNCH_STATE=continue_retry — game never spawned; resetting clickedPlayContinue'
+            $retryLabel = if ($LaunchIntent -eq 'continue') { 'continue_retry' } else { 'play_retry' }
+            Write-LaunchLog "LAUNCH_STATE=$retryLabel — game never spawned; resetting clickedPlayContinue"
             $clickedPlayContinue = $false
             $script:playClickUtc = $null
             [UIAHelper]::ResetLauncherClickRetryState()
@@ -2418,7 +2452,7 @@ while ((Get-Date) -lt $deadline) {
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
-            if (Test-LaunchClickVerified -WaitSec 4) {
+            if (Test-LaunchClickVerified -WaitSec 4 -Intent $LaunchIntent) {
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
                 if ($LaunchIntent -eq 'continue') {
                     Write-LaunchLog 'LAUNCH_STATE=continue_clicked'

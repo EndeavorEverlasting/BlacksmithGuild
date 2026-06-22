@@ -182,6 +182,23 @@ try {
                 } else {
                     Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
                 }
+            } elseif ($LaunchIntent -eq 'play' -and -not $LaunchManual) {
+                $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
+                $playVerified = $false
+                if (Test-Path -LiteralPath $launchLogPath) {
+                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 80 -ErrorAction SilentlyContinue
+                    $launchText = ($launchTail -join [Environment]::NewLine)
+                    $playVerified = ($launchText -match 'LAUNCH_STATE=play_clicked') -or
+                        ($launchText -match 'LAUNCH_STATE=game_spawned') -or
+                        ($launchText -match 'handoff:')
+                }
+                if (-not $playVerified) {
+                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'play intent exited without PLAY click or game_spawned in Launch.log'
+                    Write-Host ''
+                    Write-Host 'WARN - launcher-auto-nav returned but Launch.log shows no PLAY click or game spawn.' -ForegroundColor Yellow
+                } else {
+                    Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
+                }
             } else {
                 Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
             }

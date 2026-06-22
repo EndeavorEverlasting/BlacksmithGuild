@@ -9,6 +9,7 @@ Only one of `ForgeContinue.cmd`, `Run-F7GateContinue.cmd`, or `Run-LauncherNavNo
 - **Daily dev (`ForgeContinue`)** uses `RespectUserForeground=$true` — hwnd clicks without minimizing your other apps.
 - **F7 cert (`Run-F7GateContinue.cmd`)** also uses background-first policy; passive stability poll (no 2s refocus loop).
 - Before F7 cert: stop any running `ForgeContinue` terminal (nav lock applies).
+- **Fresh game troubleshooting:** `Forge.cmd` (build+PLAY) or `Run-LauncherNavPlay.cmd` (PLAY only) — use when Continue/MapTransition is ambiguous.
 
 ## Install
 
