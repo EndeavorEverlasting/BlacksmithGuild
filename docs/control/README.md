@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `3ca823b` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ `a8e99b9` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
 **Gate:** RED — no F7 PASS manifest yet  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)
@@ -24,9 +24,10 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Phase | Owner | Status |
 |-------|-------|--------|
 | Commit session `20260622-131237` FAIL evidence | Agent A | DONE (see evidence path) |
-| Launcher foreground doctrine + hwnd-background clicks | Agent C | DONE (code); **not game-certified** |
+| Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
 | Control doc organization (index-only) | Archivist | DONE |
-| Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **NEXT** — requires game |
+| Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **DONE** — FAIL `135217` (StatusFlush begin) |
+| Agent B StatusFlush / MapTransition survival | Agent B | **NEXT** |
 | PR #7 merge | Agent A | HOLD until manifest PASS |
 | PR #8 | All | HOLD |
 
@@ -58,4 +59,4 @@ Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/manifest.json` — FAIL (`contaminated_cert`, `MapTransition`)
+`docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json` — FAIL (`clean_cert`, StatusFlush begin, `@AgentB`)

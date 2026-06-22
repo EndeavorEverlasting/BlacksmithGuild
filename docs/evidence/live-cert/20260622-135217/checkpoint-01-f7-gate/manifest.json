@@ -1,0 +1,40 @@
+﻿{
+    "checkpoint": "checkpoint-01-f7-gate",
+    "sessionId": "20260622-135217",
+    "passFail": "FAIL",
+    "exitCode": 2,
+    "startedAtUtc": "2026-06-22T17:52:17.8828264Z",
+    "endedAtUtc": "2026-06-22T18:03:31.2319749Z",
+    "stableSeconds": 0,
+    "hookMask": "0x0F",
+    "mapReadyHookMask": "0x0F",
+    "launchState": "game_spawned",
+    "safeModeDetected": false,
+    "safeModeNoClicked": true,
+    "continueClick": {
+        "attempted": true,
+        "success": true,
+        "method": "uia-scoped"
+    },
+    "lastFocusResult": null,
+    "launchAutomationError": "launcher-auto-nav timed out after 364s (see C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord\\BlacksmithGuild_Launch.log)",
+    "campaignReady": false,
+    "canPollFileInbox": false,
+    "mapReadyStatus": null,
+    "phase1TbgReady": false,
+    "phase1QuickStartMapReady": false,
+    "phase1LastSignal": "n",
+    "gameProcessRunning": false,
+    "goldenPathCheck": {
+        "available": false,
+        "reason": "compare-phase1-golden-path.ps1 not present"
+    },
+    "launchSignals": {
+        "safeModeDismissed": true,
+        "safeModePromptSeen": false,
+        "priorSessionCrashLikely": true,
+        "crashReporterDismissed": false,
+        "safeModePromptText": null
+    },
+    "notes": "clean_cert: hwnd SendMessage-background with Chrome/Cursor foreground; no manual user clicks. F7 FAIL: process died before map-ready during StatusFlush begin; @AgentB"
+}

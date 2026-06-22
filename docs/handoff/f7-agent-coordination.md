@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `3ca823b` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `a8e99b9` (pending evidence commit) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `131237` MapTransition crash + contaminated launcher; prior `101016` post-map-ready crash |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-131237/` — honest FAIL (`contaminated_cert`, `crash_map_transition_no_orchestrator`) |
-| Launcher cert | **PARTIAL** — `continue_clicked` after manual user clicks; hwnd-background fix landed this sprint |
-| Next cert command | Static preflight then `run-f7-gate-continue.ps1 -HookMask 0x0F` (see [playbook](agent-launch-and-load-playbook.md) + [launcher doctrine](../conventions/launcher-foreground-doctrine.md)) |
+| Gate verdict | **RED** — session `135217` clean FAIL (StatusFlush begin, game gone); prior `101016` post-map-ready crash |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-135217/` — honest FAIL (`clean_cert`, `fail_statusflush_begin`) |
+| Launcher cert | **PASS** — `hwnd SendMessage-background` with Chrome/Cursor foreground; `continue_clicked` unattended (session `135217`) |
+| Next cert command | Agent B runtime — MapTransition/StatusFlush survival; no F7 rerun until B lands fix |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -41,9 +41,9 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Clean F7 cert @ `3ca823b` HookMask 0x0F | `docs/evidence/live-cert/**`, PR #7/#8 | automation lock held | pending |
-| **B** | C# map-ready / post-map survival | `IDLE` | Post-map-ready hardening @ `5fac5e9`; watch MapTransition pattern (`131237`) | — | — | `5fac5e9` |
-| **C** | Launcher / F7 runner | `DONE` | hwnd-background clicks + brief focus+restore; doctrine doc | `launcher-auto-nav.ps1`, `launcher-foreground-doctrine.md` | A may F7 cert | `9b40b96` |
+| **A** | Cert / evidence / git / PR | `IDLE` | Clean cert `135217` committed; gate RED | `docs/evidence/live-cert/**`, PR #7/#8 | — | pending |
+| **B** | C# map-ready / post-map survival | `IDLE` | **NEXT:** StatusFlush begin crash (`135217`) + post-map `101016` | — | — | `5fac5e9` |
+| **C** | Launcher / F7 runner | `DONE` | Launcher **game-certified** @ `135217` (hwnd-background unattended) | — | — | `9b40b96` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -71,13 +71,22 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | **Agent A Cert** | F7 cert in progress | `run-f7-gate-continue.ps1 -HookMask 0x0F` |
+| `automation` | — | — | — |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A Cert → B, C (clean cert session `135217`)
+
+- **Ran:** static preflight PASS; F7 `HookMask 0x0F` exit `2` (~11 min).
+- **Launcher PASS (game-certified):** `hwnd SendMessage-background` at 13:52:38 with Chrome foreground; no manual user clicks; Safe Mode No via InvokePattern; `continue_clicked`.
+- **Gate FAIL:** `game_spawned` then process died; Phase1 reached `[TBG MAPREADY] orchestrator tick entered` + `StatusFlush begin` then silence; `campaignReady=false`, `stableSeconds=0`.
+- **Evidence:** `docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json`
+- **Need from B:** Survival through StatusFlush / MapTransition (earlier than `101016` post-map-ready pattern).
+- **PR #7 / #8:** HOLD unchanged.
 
 ### 2026-06-22 — Agent D Archivist → A, B, C (control index-only layout)
 
