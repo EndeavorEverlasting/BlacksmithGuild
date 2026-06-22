@@ -1,0 +1,1442 @@
+﻿{
+  "generatedUtc": "2026-06-21T23:39:53.2281197Z",
+  "build": "AseraiTradeSmith",
+  "preferredCultureId": "aserai",
+  "verdict": "CompleteCatalog",
+  "cultures": [
+    "empire",
+    "vlandia",
+    "aserai",
+    "battania",
+    "khuzait",
+    "sturgia"
+  ],
+  "extractionErrors": [
+  ],
+  "options": [
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "empire_lanlord_option",
+      "optionIndex": 0,
+      "optionText": "A landlord's retainers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "A landlord's retainers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "A landlord's retainers | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "empire_merchant_option",
+      "optionIndex": 1,
+      "optionText": "Urban merchants | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban merchants | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban merchants | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "empire_farmer_option",
+      "optionIndex": 2,
+      "optionText": "Freeholders | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Freeholders | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Freeholders | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "empire_artisan_option",
+      "optionIndex": 3,
+      "optionText": "Urban artisans | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban artisans | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban artisans | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "empire_hunter_option",
+      "optionIndex": 4,
+      "optionText": "Foresters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Foresters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Foresters | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "empire_vagabond_option",
+      "optionIndex": 5,
+      "optionText": "Urban vagabonds | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban vagabonds | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban vagabonds | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "vlandia_retainer_option",
+      "optionIndex": 6,
+      "optionText": "A baron's retainers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "A baron's retainers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "A baron's retainers | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "vlandia_merchant_option",
+      "optionIndex": 7,
+      "optionText": "Urban merchants | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban merchants | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban merchants | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "vlandia_farmer_option",
+      "optionIndex": 8,
+      "optionText": "Yeomen | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Yeomen | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Yeomen | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "vlandia_blacksmith_option",
+      "optionIndex": 9,
+      "optionText": "Urban blacksmith | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban blacksmith | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban blacksmith | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "vlandia_hunter_option",
+      "optionIndex": 10,
+      "optionText": "Hunters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Hunters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Hunters | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "vlandia_mercenary_option",
+      "optionIndex": 11,
+      "optionText": "Mercenaries | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Mercenaries | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Mercenaries | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "sturgia_companion_option",
+      "optionIndex": 12,
+      "optionText": "A boyar's companions | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "A boyar's companions | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "A boyar's companions | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "sturgia_trader_option",
+      "optionIndex": 13,
+      "optionText": "Urban traders | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban traders | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban traders | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "sturgia_farmer_option",
+      "optionIndex": 14,
+      "optionText": "Free farmers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Free farmers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Free farmers | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "sturgia_artisan_option",
+      "optionIndex": 15,
+      "optionText": "Urban artisans | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban artisans | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban artisans | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "sturgia_hunter_option",
+      "optionIndex": 16,
+      "optionText": "Hunters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Hunters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Hunters | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "sturgia_vagabond_option",
+      "optionIndex": 17,
+      "optionText": "Vagabonds | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Vagabonds | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Vagabonds | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_kinsfolk_option",
+      "optionIndex": 18,
+      "optionText": "Kinsfolk of an emir | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Kinsfolk of an emir | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Kinsfolk of an emir | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_slave_option",
+      "optionIndex": 19,
+      "optionText": "Warrior-slaves | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Warrior-slaves | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Warrior-slaves | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_physician_option",
+      "optionIndex": 20,
+      "optionText": "Physician | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Physician | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Physician | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_farmer_option",
+      "optionIndex": 21,
+      "optionText": "Oasis farmers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Oasis farmers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Oasis farmers | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_herder_option",
+      "optionIndex": 22,
+      "optionText": "Bedouin | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Bedouin | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Bedouin | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_artisan_option",
+      "optionIndex": 23,
+      "optionText": "Urban back-alley thugs | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Urban back-alley thugs | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Urban back-alley thugs | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "battania_retainer_option",
+      "optionIndex": 24,
+      "optionText": "Members of the chieftain's hearthguard | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Members of the chieftain's hearthguard | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Members of the chieftain's hearthguard | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "battania_healer_option",
+      "optionIndex": 25,
+      "optionText": "Healers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Healers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Healers | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "battania_farmer_option",
+      "optionIndex": 26,
+      "optionText": "Tribespeople | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Tribespeople | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Tribespeople | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "battania_artisan_option",
+      "optionIndex": 27,
+      "optionText": "Smiths | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Smiths | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Smiths | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "battania_hunter_option",
+      "optionIndex": 28,
+      "optionText": "Foresters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Foresters | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Foresters | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "battania_bard_option",
+      "optionIndex": 29,
+      "optionText": "Bards | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Bards | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Bards | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "khuzait_retainer_option",
+      "optionIndex": 30,
+      "optionText": "A noyan's kinsfolk | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "A noyan's kinsfolk | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "A noyan's kinsfolk | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "khuzait_merhant_option",
+      "optionIndex": 31,
+      "optionText": "Merchants | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Merchants | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Merchants | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "khuzait_mercenary_option",
+      "optionIndex": 32,
+      "optionText": "Tribespeople | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Tribespeople | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Tribespeople | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "khuzait_farmer_option",
+      "optionIndex": 33,
+      "optionText": "Farmers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Farmers | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Farmers | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "khuzait_healer_option",
+      "optionIndex": 34,
+      "optionText": "Shamans | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Shamans | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Shamans | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "khuzait_herder_option",
+      "optionIndex": 35,
+      "optionText": "Nomads | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "Nomads | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "Nomads | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_leadership_option",
+      "optionIndex": 0,
+      "optionText": "your leadership skills. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "your leadership skills. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "your leadership skills. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_brawn_option",
+      "optionIndex": 1,
+      "optionText": "your brawn. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "your brawn. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "your brawn. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_detail_option",
+      "optionIndex": 2,
+      "optionText": "your attention to detail. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "your attention to detail. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "your attention to detail. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_smart_option",
+      "optionIndex": 3,
+      "optionText": "your aptitude for numbers. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "your aptitude for numbers. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "your aptitude for numbers. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_leader_option",
+      "optionIndex": 4,
+      "optionText": "your way with people. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "your way with people. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "your way with people. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_horse_option",
+      "optionIndex": 5,
+      "optionText": "your skill with horses. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "your skill with horses. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "your skill with horses. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_herder_option",
+      "optionIndex": 0,
+      "optionText": "herded the sheep. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "herded the sheep. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "herded the sheep. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_smith_option",
+      "optionIndex": 1,
+      "optionText": "worked in the village smithy. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "worked in the village smithy. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "worked in the village smithy. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_engineer_option",
+      "optionIndex": 2,
+      "optionText": "repaired projects. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "repaired projects. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "repaired projects. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_doctor_option",
+      "optionIndex": 3,
+      "optionText": "gathered herbs in the wild. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "gathered herbs in the wild. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "gathered herbs in the wild. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_hunter_option",
+      "optionIndex": 4,
+      "optionText": "hunted small game. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "hunted small game. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "hunted small game. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_merchant_option",
+      "optionIndex": 5,
+      "optionText": "sold product at the market. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "sold product at the market. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "sold product at the market. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_watcher_option",
+      "optionIndex": 6,
+      "optionText": "watched the militia training. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "watched the militia training. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "watched the militia training. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_ganger_option",
+      "optionIndex": 7,
+      "optionText": "hung out with the gangs in the alleys. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "hung out with the gangs in the alleys. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "hung out with the gangs in the alleys. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_docker_option",
+      "optionIndex": 8,
+      "optionText": "helped at building sites. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "helped at building sites. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "helped at building sites. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_marketer_option",
+      "optionIndex": 9,
+      "optionText": "worked in the markets and caravanserais. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "worked in the markets and caravanserais. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "worked in the markets and caravanserais. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_tutor_option",
+      "optionIndex": 10,
+      "optionText": "studied with your private tutor. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "studied with your private tutor. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "studied with your private tutor. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_horser_option",
+      "optionIndex": 11,
+      "optionText": "cared for the horses. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "cared for the horses. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "cared for the horses. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_staff_first_option",
+      "optionIndex": 0,
+      "optionText": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_staff_second_option",
+      "optionIndex": 1,
+      "optionText": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_groom_option",
+      "optionIndex": 2,
+      "optionText": "served as a baron's groom. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "served as a baron's groom. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "served as a baron's groom. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_servant_first_option",
+      "optionIndex": 3,
+      "optionText": "were a chieftain's servant. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "were a chieftain's servant. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "were a chieftain's servant. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_servant_second_option",
+      "optionIndex": 4,
+      "optionText": "were a chieftain's servant. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "were a chieftain's servant. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "were a chieftain's servant. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_cavalry_option",
+      "optionIndex": 5,
+      "optionText": "trained with the cavalry. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "trained with the cavalry. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "trained with the cavalry. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_hearth_option",
+      "optionIndex": 6,
+      "optionText": "trained with the hearth guard. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "trained with the hearth guard. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "trained with the hearth guard. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_guard_high_register_option",
+      "optionIndex": 7,
+      "optionText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_guard_low_register_option",
+      "optionIndex": 8,
+      "optionText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_guard_garrisons_register_option",
+      "optionIndex": 9,
+      "optionText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_guard_empire_register_option",
+      "optionIndex": 10,
+      "optionText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "stood guard with the garrisons. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_rider_high_register_option",
+      "optionIndex": 11,
+      "optionText": "rode with the scouts. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "rode with the scouts. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "rode with the scouts. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_rider_low_register_option",
+      "optionIndex": 12,
+      "optionText": "rode with the scouts. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "rode with the scouts. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "rode with the scouts. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_infantry_option",
+      "optionIndex": 13,
+      "optionText": "trained with the infantry. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "trained with the infantry. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "trained with the infantry. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_skirmisher_option",
+      "optionIndex": 14,
+      "optionText": "joined the skirmishers. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "joined the skirmishers. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "joined the skirmishers. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_kern_option",
+      "optionIndex": 15,
+      "optionText": "joined the kern. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "joined the kern. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "joined the kern. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_camp_option",
+      "optionIndex": 16,
+      "optionText": "marched with the camp followers. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "marched with the camp followers. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "marched with the camp followers. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_envoys_guard_first_option",
+      "optionIndex": 17,
+      "optionText": "served in an envoy's entourage | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "served in an envoy's entourage | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "served in an envoy's entourage | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_envoys_guard_second_option",
+      "optionIndex": 18,
+      "optionText": "served in an envoy's entourage | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "served in an envoy's entourage | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "served in an envoy's entourage | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_defeated_enemy_option",
+      "optionIndex": 0,
+      "optionText": "you defeated an enemy in battle. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you defeated an enemy in battle. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you defeated an enemy in battle. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_manhunt_option",
+      "optionIndex": 1,
+      "optionText": "you led a successful manhunt. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you led a successful manhunt. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you led a successful manhunt. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_caravan_leader_option",
+      "optionIndex": 2,
+      "optionText": "you led a caravan. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you led a caravan. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you led a caravan. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_saved_village_option",
+      "optionIndex": 3,
+      "optionText": "you saved your village from a flood. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you saved your village from a flood. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you saved your village from a flood. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_saved_city_option",
+      "optionIndex": 4,
+      "optionText": "you saved your city quarter from a fire. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you saved your city quarter from a fire. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you saved your city quarter from a fire. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_workshop_option",
+      "optionIndex": 5,
+      "optionText": "you invested some money in a workshop. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you invested some money in a workshop. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you invested some money in a workshop. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_investor_option",
+      "optionIndex": 6,
+      "optionText": "you invested some money in land. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you invested some money in land. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you invested some money in land. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_hunter_option",
+      "optionIndex": 7,
+      "optionText": "you hunted a dangerous animal. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you hunted a dangerous animal. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you hunted a dangerous animal. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_siege_survivor_option",
+      "optionIndex": 8,
+      "optionText": "you survived a siege. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you survived a siege. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you survived a siege. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_escapade_high_register_option",
+      "optionIndex": 9,
+      "optionText": "you had a famous escapade in town. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you had a famous escapade in town. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you had a famous escapade in town. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_escapade_low_register_option",
+      "optionIndex": 10,
+      "optionText": "you had a famous escapade. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you had a famous escapade. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you had a famous escapade. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": false,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_nice_person_option",
+      "optionIndex": 11,
+      "optionText": "you treated people well. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "you treated people well. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "you treated people well. | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "age",
+      "menuId": "narrative_age_selection_menu",
+      "optionId": "age_selection_young_adult_option",
+      "optionIndex": 0,
+      "optionText": "20 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "20 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "20 | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "age",
+      "menuId": "narrative_age_selection_menu",
+      "optionId": "age_selection_adult_option",
+      "optionIndex": 1,
+      "optionText": "30 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "30 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "30 | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "age",
+      "menuId": "narrative_age_selection_menu",
+      "optionId": "age_selection_middle_age_option",
+      "optionIndex": 2,
+      "optionText": "40 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "40 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "40 | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    },
+    {
+      "stage": "age",
+      "menuId": "narrative_age_selection_menu",
+      "optionId": "age_selection_elder_option",
+      "optionIndex": 3,
+      "optionText": "50 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "visibleDescription": "50 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "parsedRewards": null,
+      "rawRewardText": "50 | 0 unspent Focus Point\n0 unspent Attribute Point | 0 unspent Focus Point\n0 unspent Attribute Point |",
+      "enabled": true,
+      "selectionMode": "RuntimeCatalog",
+      "extractionMethod": "Reflection",
+      "extractionErrors": [
+        "no +N Skill/Attribute tokens matched"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # Sprint 005E-1 — Horse Market Intelligence + Semantic Color Output
 
-**Status:** CODE SHIPPED — Tier 1 smoke optional  
+**Status:** CODE SHIPPED — build PASS; Tier 1 in-game smoke PENDING USER  
 **Branch:** `main`
 
 ---
@@ -38,11 +38,17 @@ Aliases: `ShowHorseMarketIntel`, `RankHorseMarketActions`
 
 With campaign loaded at a settlement market:
 
-- [ ] Build succeeds
-- [ ] Command runs from inbox
+- [x] Build succeeds (`94780a1`, Release 0 warnings)
+- [ ] Command runs from inbox — **PENDING** (needs `campaignReady` + party at settlement market)
 - [ ] JSON: `readOnly: true`, `mutationApplied: false`, `capacity.targetBufferPercent: 25`
 - [ ] In-game lines use semantic colors (buy=green, sell/warn=amber, blocked=red)
 - [ ] No inventory/gold/time mutation
+
+**Smoke command:**
+```powershell
+.\forge.ps1 -Command AnalyzeHorseMarket -Wait
+.\ExportTbgEvidence.cmd
+```
 
 ---
 

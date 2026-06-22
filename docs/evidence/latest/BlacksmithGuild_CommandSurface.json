@@ -1,0 +1,246 @@
+﻿{
+  "generatedUtc": "2026-06-22T00:17:37.0996742Z",
+  "source": "MapReady",
+  "hotkeys": [
+    {
+      "input": "F7",
+      "command": "ShowForgeStatus",
+      "description": "Status snapshot"
+    },
+    {
+      "input": "F8",
+      "command": "ListScenarios",
+      "description": "Command list"
+    },
+    {
+      "input": "F9",
+      "command": "AdvanceOneDay",
+      "description": "Advance one day"
+    },
+    {
+      "input": "F10",
+      "command": "ToggleFastForward",
+      "description": "Toggle fast-forward"
+    },
+    {
+      "input": "F11",
+      "command": "RichPlayerEconomyTest",
+      "description": "Gold test (+100k)"
+    },
+    {
+      "input": "Ctrl+Alt+M",
+      "command": "MarketSnapshotNow",
+      "description": "Market intel"
+    },
+    {
+      "input": "Ctrl+Alt+R",
+      "command": "RankForgeCandidates",
+      "description": "Rank forge candidates"
+    },
+    {
+      "input": "Ctrl+Alt+G",
+      "command": "RunGuildLoopNow",
+      "description": "Guild loop (market + forge + crew)"
+    },
+    {
+      "input": "Ctrl+Alt+S",
+      "command": "RichSmithingProgressionTest",
+      "description": "Rich smithing progression"
+    },
+    {
+      "input": "Ctrl+Alt+D",
+      "command": "AdvanceOneDay",
+      "description": "Daily tick (fallback)"
+    },
+    {
+      "input": "Ctrl+Alt+7",
+      "command": "ShowForgeStatus",
+      "description": "Status (fallback)"
+    },
+    {
+      "input": "Ctrl+Alt+8",
+      "command": "ListScenarios",
+      "description": "Commands (fallback)"
+    }
+  ],
+  "inboxCommands": [
+    {
+      "command": "AddEnduranceAttribute",
+      "mutation": true
+    },
+    {
+      "command": "AddSmithingFocus",
+      "mutation": true
+    },
+    {
+      "command": "AddSmithingXp",
+      "mutation": true
+    },
+    {
+      "command": "AdvanceOneDay",
+      "mutation": false
+    },
+    {
+      "command": "ApplyAutoCharacterBuild",
+      "mutation": true
+    },
+    {
+      "command": "BuildCharacterChoiceCatalogNow",
+      "mutation": false
+    },
+    {
+      "command": "DumpCharacterBuildSnapshotNow",
+      "mutation": false
+    },
+    {
+      "command": "GenerateCharacterBuildCandidatesNow",
+      "mutation": false
+    },
+    {
+      "command": "ListScenarios",
+      "mutation": false
+    },
+    {
+      "command": "MarketSnapshotNow",
+      "mutation": false
+    },
+    {
+      "command": "ProbeForgeRecipes",
+      "mutation": false
+    },
+    {
+      "command": "ProbeSmithingAudit",
+      "mutation": false
+    },
+    {
+      "command": "ProbeSmithingRefineApi",
+      "mutation": false
+    },
+    {
+      "command": "RankForgeCandidates",
+      "mutation": false
+    },
+    {
+      "command": "RichPlayerEconomyTest",
+      "mutation": true
+    },
+    {
+      "command": "RichSmithingProgressionTest",
+      "mutation": true
+    },
+    {
+      "command": "RunBlacksmithAutomationNow",
+      "mutation": true
+    },
+    {
+      "command": "RunCharacterVisibleReplayNow",
+      "mutation": false
+    },
+    {
+      "command": "RunGuildLoopNow",
+      "mutation": false
+    },
+    {
+      "command": "RunSmithingAdvisoryNow",
+      "mutation": false
+    },
+    {
+      "command": "RunSmithingRestPlanNow",
+      "mutation": false
+    },
+    {
+      "command": "RunSmithingSafeActionNow",
+      "mutation": true
+    },
+    {
+      "command": "SelectCharacterBuildBestNow",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildForgeQuartermasterWarlord",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildKingdomFounder",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildLightTouchVanillaPlus",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildShadowTrader",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildSmithEconomist",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildStewardSurgeonEngineer",
+      "mutation": false
+    },
+    {
+      "command": "SetAutoCharacterBuildWarCaptain",
+      "mutation": false
+    },
+    {
+      "command": "SetForgeCandidateSourceReal",
+      "mutation": false
+    },
+    {
+      "command": "SetForgeCandidateSourceStub",
+      "mutation": false
+    },
+    {
+      "command": "SetForgeDoctrineCashCrisis",
+      "mutation": false
+    },
+    {
+      "command": "SetForgeDoctrineProfitForge",
+      "mutation": false
+    },
+    {
+      "command": "SetForgeDoctrineRareMetalConservation",
+      "mutation": false
+    },
+    {
+      "command": "ShowAutoCharacterBuildProfile",
+      "mutation": false
+    },
+    {
+      "command": "ShowAutoCharacterBuildProfiles",
+      "mutation": false
+    },
+    {
+      "command": "ShowCharacterDoctrine",
+      "mutation": false
+    },
+    {
+      "command": "ShowForgeCandidateSource",
+      "mutation": false
+    },
+    {
+      "command": "ShowForgeDoctrine",
+      "mutation": false
+    },
+    {
+      "command": "ShowForgeStatus",
+      "mutation": false
+    },
+    {
+      "command": "ToggleFastForward",
+      "mutation": false
+    },
+    {
+      "command": "TreasurySnapshotNow",
+      "mutation": false
+    }
+  ],
+  "stageD": {
+    "exposed": true,
+    "command": "RunSmithingRestPlanNow",
+    "hotkey": null,
+    "reason": "Read-only rest plan via forge.ps1 inbox"
+  }
+}

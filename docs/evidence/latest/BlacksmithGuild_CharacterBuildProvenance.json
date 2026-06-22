@@ -1,0 +1,299 @@
+﻿{
+  "generatedUtc": "2026-06-22T00:17:37.0938079Z",
+  "build": "AseraiTradeSmith",
+  "legitimacyMode": "VanillaLegit",
+  "assistiveMode": true,
+  "visibleTraversalUsed": true,
+  "traversalMode": "VisibleAssistive",
+  "culture": {
+    "preferredCultureId": "aserai",
+    "selectedCultureId": "aserai",
+    "selectedCultureName": "Aserai",
+    "selectionMode": "CharacterCreationTraversal",
+    "fallbackUsed": false
+  },
+  "upbringingChoices": [
+    {
+      "stage": "parent",
+      "menuId": "narrative_parent_menu",
+      "optionId": "aserai_artisan_option",
+      "optionText": "Urban back-alley thugs | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "reason": "doctrine-weighted Aserai Trade-Smith path",
+      "expectedBenefits": [
+        "menu text suggests: Urban back-alley thugs | 0 unspent Focus Point\n0 unspent Attribute Point"
+      ],
+      "opportunityCosts": [
+        "vanilla upbringing tradeoff accepted via menu selection"
+      ],
+      "benefitSource": "MenuText",
+      "effectSource": "ObservedBuild",
+      "selectionMode": "CharacterCreationTraversal",
+      "vanillaCostAccepted": true,
+      "rejectedOptions": [
+        {
+          "optionId": "aserai_slave_option",
+          "reasonRejected": "lower doctrine score than aserai_kinsfolk_option for trade-smith identity"
+        },
+        {
+          "optionId": "aserai_physician_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "aserai_farmer_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "aserai_kinsfolk_option",
+          "reasonRejected": "lower doctrine score than aserai_herder_option for trade-smith identity"
+        },
+        {
+          "optionId": "aserai_herder_option",
+          "reasonRejected": "lower doctrine score than aserai_artisan_option for trade-smith identity"
+        }
+      ]
+    },
+    {
+      "stage": "childhood",
+      "menuId": "narrative_childhood_menu",
+      "optionId": "childhood_horse_option",
+      "optionText": "your skill with horses. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "reason": "doctrine-weighted Aserai Trade-Smith path",
+      "expectedBenefits": [
+        "menu text suggests: your skill with horses. | 0 unspent Focus Point\n0 unspent Attribute Point"
+      ],
+      "opportunityCosts": [
+        "vanilla upbringing tradeoff accepted via menu selection"
+      ],
+      "benefitSource": "MenuText",
+      "effectSource": "ObservedBuild",
+      "selectionMode": "CharacterCreationTraversal",
+      "vanillaCostAccepted": true,
+      "rejectedOptions": [
+        {
+          "optionId": "childhood_brawn_option",
+          "reasonRejected": "lower doctrine score than childhood_leadership_option for trade-smith identity"
+        },
+        {
+          "optionId": "childhood_detail_option",
+          "reasonRejected": "lower doctrine score than childhood_leadership_option for trade-smith identity"
+        },
+        {
+          "optionId": "childhood_smart_option",
+          "reasonRejected": "lower doctrine score than childhood_leadership_option for trade-smith identity"
+        },
+        {
+          "optionId": "childhood_leader_option",
+          "reasonRejected": "lower doctrine score than childhood_leadership_option for trade-smith identity"
+        },
+        {
+          "optionId": "childhood_leadership_option",
+          "reasonRejected": "lower doctrine score than childhood_horse_option for trade-smith identity"
+        }
+      ]
+    },
+    {
+      "stage": "education",
+      "menuId": "narrative_education_menu",
+      "optionId": "education_marketer_option",
+      "optionText": "worked in the markets and caravanserais. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "reason": "doctrine-weighted Aserai Trade-Smith path",
+      "expectedBenefits": [
+        "menu text suggests: worked in the markets and caravanserais. | 0 unspent Focus Point\n0 unspent Attribute Point"
+      ],
+      "opportunityCosts": [
+        "vanilla upbringing tradeoff accepted via menu selection"
+      ],
+      "benefitSource": "MenuText",
+      "effectSource": "ObservedBuild",
+      "selectionMode": "CharacterCreationTraversal",
+      "vanillaCostAccepted": true,
+      "rejectedOptions": [
+        {
+          "optionId": "education_ganger_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "education_docker_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "education_watcher_option",
+          "reasonRejected": "lower doctrine score than education_marketer_option for trade-smith identity"
+        },
+        {
+          "optionId": "education_tutor_option",
+          "reasonRejected": "lower doctrine score than education_marketer_option for trade-smith identity"
+        },
+        {
+          "optionId": "education_horser_option",
+          "reasonRejected": "lower doctrine score than education_marketer_option for trade-smith identity"
+        }
+      ]
+    },
+    {
+      "stage": "youth",
+      "menuId": "narrative_youth_menu",
+      "optionId": "youth_staff_second_option",
+      "optionText": "joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "reason": "doctrine-weighted Aserai Trade-Smith path",
+      "expectedBenefits": [
+        "menu text suggests: joined a commander's staff. | 0 unspent Focus Point\n0 unspent Attribute Point"
+      ],
+      "opportunityCosts": [
+        "vanilla upbringing tradeoff accepted via menu selection"
+      ],
+      "benefitSource": "MenuText",
+      "effectSource": "ObservedBuild",
+      "selectionMode": "CharacterCreationTraversal",
+      "vanillaCostAccepted": true,
+      "rejectedOptions": [
+        {
+          "optionId": "youth_guard_garrisons_register_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "youth_rider_low_register_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "youth_infantry_option",
+          "reasonRejected": "lower doctrine score than youth_staff_second_option for trade-smith identity"
+        },
+        {
+          "optionId": "youth_skirmisher_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "youth_envoys_guard_second_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        }
+      ]
+    },
+    {
+      "stage": "adulthood",
+      "menuId": "narrative_adulthood_menu",
+      "optionId": "adulthood_caravan_leader_option",
+      "optionText": "you led a caravan. | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "reason": "doctrine-weighted Aserai Trade-Smith path",
+      "expectedBenefits": [
+        "menu text suggests: you led a caravan. | 0 unspent Focus Point\n0 unspent Attribute Point"
+      ],
+      "opportunityCosts": [
+        "vanilla upbringing tradeoff accepted via menu selection"
+      ],
+      "benefitSource": "MenuText",
+      "effectSource": "ObservedBuild",
+      "selectionMode": "CharacterCreationTraversal",
+      "vanillaCostAccepted": true,
+      "rejectedOptions": [
+        {
+          "optionId": "adulthood_defeated_enemy_option",
+          "reasonRejected": "lower doctrine score than adulthood_caravan_leader_option for trade-smith identity"
+        },
+        {
+          "optionId": "adulthood_workshop_option",
+          "reasonRejected": "lower doctrine score than adulthood_caravan_leader_option for trade-smith identity"
+        },
+        {
+          "optionId": "adulthood_siege_survivor_option",
+          "reasonRejected": "lower doctrine score than adulthood_caravan_leader_option for trade-smith identity"
+        },
+        {
+          "optionId": "adulthood_escapade_low_register_option",
+          "reasonRejected": "lower doctrine score than adulthood_caravan_leader_option for trade-smith identity"
+        },
+        {
+          "optionId": "adulthood_nice_person_option",
+          "reasonRejected": "lower doctrine score than adulthood_caravan_leader_option for trade-smith identity"
+        }
+      ]
+    },
+    {
+      "stage": "age",
+      "menuId": "narrative_age_selection_menu",
+      "optionId": "age_selection_young_adult_option",
+      "optionText": "20 | 0 unspent Focus Point\n0 unspent Attribute Point",
+      "reason": "doctrine-weighted Aserai Trade-Smith path",
+      "expectedBenefits": [
+        "menu text suggests: 20 | 0 unspent Focus Point\n0 unspent Attribute Point"
+      ],
+      "opportunityCosts": [
+        "vanilla upbringing tradeoff accepted via menu selection"
+      ],
+      "benefitSource": "MenuText",
+      "effectSource": "ObservedBuild",
+      "selectionMode": "CharacterCreationTraversal",
+      "vanillaCostAccepted": true,
+      "rejectedOptions": [
+        {
+          "optionId": "age_selection_adult_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "age_selection_middle_age_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        },
+        {
+          "optionId": "age_selection_elder_option",
+          "reasonRejected": "tie-breaker kept earlier candidate"
+        }
+      ]
+    }
+  ],
+  "observedBuild": {
+    "available": true,
+    "skills": {
+      "OneHanded": 0,
+      "TwoHanded": 0,
+      "Polearm": 10,
+      "Bow": 0,
+      "Crossbow": 0,
+      "Throwing": 0,
+      "Riding": 10,
+      "Athletics": 0,
+      "Crafting": 0,
+      "Tactics": 10,
+      "Scouting": 0,
+      "Roguery": 10,
+      "Charm": 10,
+      "Leadership": 10,
+      "Trade": 20,
+      "Steward": 10,
+      "Medicine": 10,
+      "Engineering": 0
+    },
+    "attributes": {
+      "vigor": 2,
+      "control": 3,
+      "endurance": 3,
+      "cunning": 4,
+      "social": 3,
+      "intelligence": 2
+    },
+    "focus": {
+      "Crafting": 0,
+      "Trade": 2,
+      "Steward": 1,
+      "Leadership": 1,
+      "Riding": 1,
+      "Polearm": 1,
+      "Charm": 1,
+      "Tactics": 1,
+      "Roguery": 1,
+      "Medicine": 1
+    },
+    "gold": 1000,
+    "renown": 10,
+    "equipmentSummary": "Light Mace, Small Flat Heater Shield, Open Head Scarf, Long Padded Robe, Curved Boots, Sumpter Horse, Bedouin Common Saddle"
+  },
+  "mutationAuditSummary": {
+    "clean": false,
+    "postMapProfileApply": true
+  },
+  "postMapProfileApply": {
+    "enabled": false,
+    "changesApplied": 0,
+    "mode": "DisabledForVanillaLegit"
+  },
+  "verdict": "Vanilla-derived build; no hidden post-map stat injection"
+}

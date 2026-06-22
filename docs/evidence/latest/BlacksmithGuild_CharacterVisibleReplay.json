@@ -1,0 +1,13 @@
+﻿{
+    "generatedUtc":  "2026-06-22T00:31:59.7191690Z",
+    "completed":  false,
+    "visibleMode":  true,
+    "decisionPauseMs":  2000,
+    "certMode":  "UserVisible",
+    "blockedReason":  "TBG READY timeout",
+    "legitimacyVerdict":  "Failed",
+    "warnings":  [
+
+                 ],
+    "finalVerdict":  "blocked"
+}

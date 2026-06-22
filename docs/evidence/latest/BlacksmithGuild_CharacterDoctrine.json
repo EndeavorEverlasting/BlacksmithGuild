@@ -1,0 +1,41 @@
+﻿{
+  "generatedUtc": "2026-06-22T00:17:37.0637580Z",
+  "source": "MapReady",
+  "defaultBuild": "AseraiTradeSmith",
+  "legitimacyMode": "VanillaLegit",
+  "assistiveMode": true,
+  "preferredCultureId": "aserai",
+  "fallbackCultureIds": [
+    "khuzait",
+    "empire",
+    "vlandia",
+    "battania",
+    "sturgia"
+  ],
+  "primaryAxis": [
+    "Trade",
+    "Smithing",
+    "Riding"
+  ],
+  "secondaryAxis": [
+    "Steward",
+    "Charm",
+    "Leadership"
+  ],
+  "combatSupport": [
+    "Bow",
+    "Polearm"
+  ],
+  "economicDoctrine": [
+    "Caravans",
+    "TownTrade",
+    "Hardwood",
+    "Charcoal",
+    "Ore"
+  ],
+  "communityLegitimacy": {
+    "noHiddenStatInjection": true,
+    "noFreeResources": true,
+    "accessibilityRationale": "reduces repetitive input while preserving vanilla costs"
+  }
+}
