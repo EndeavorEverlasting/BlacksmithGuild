@@ -15,7 +15,7 @@
 | P1 movement API | **FIXED** — `MobileParty.SetMoveGoToSettlement(..., NavigationType.Default, false)` (v1.4.6 DLL verified; not on `party.Ai`) |
 | Review fixes | **DONE** — try/catch invoke, hold-before-clear, empty FindSettlement guard, hostile throttle + pre-filter, aligned messaging |
 | Wiring | **DONE** — `dev-command-names.ps1`, player guide, functionality-status, certification-doctrine, `plans/007-auto-travel.plan.md` |
-| `dotnet build -c Release` | Run after rebase continue |
+| `dotnet build -c Release` | **PASS** (`bae7fbe`) — also fixed `GetPosition2D` vs `Position2D` |
 | Tier 2 smoke | **PENDING** — requires campaign map + `[TBG TRAVEL] auto-travel started` in Phase1 |
 | Merge to `main` / PR #1 | **BLOCKED** until smoke PASS |
 
