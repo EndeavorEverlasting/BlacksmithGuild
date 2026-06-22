@@ -20,7 +20,8 @@ Every Agent A/B/C reads this file before touching F7 launch, Continue, bisect, o
 | Branch | `fix/f7-gate-stability` |
 | Local HEAD rule | Run `git log -1 --oneline`; do not trust this table if it differs. |
 | Known recent HEADs | `ff823a6`, `78abee0`, `4218842`, `dda7c61`, `7516c8c` depending local pull |
-| PR | `https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7` — merge only on F7 PASS. |
+| PR #7 | `https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7` — merge only on F7 PASS. |
+| PR #8 | `https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8` — base `fix/f7-gate-stability`; runner stub replaced `bc0d033` (fail-closed gate restored from fix branch). |
 | Gate verdict | **RED** |
 | Known issue | F7/Continue reaches map-ready on some masks, then the game dies before the 60s stability window. |
 | Prior partial progress | `0x01` reached `MapReady` plus `[TBG MAPREADY] StatusFlush ok`, then died during the 60s stability poll. |
@@ -62,6 +63,7 @@ Summary file: [../evidence/live-cert/f7-bisect-summary.json](../evidence/live-ce
 | `docs/conventions/em-dashes-and-log-grep.md` | Agent C | Ready-line and grep/encoding guidance. |
 | `scripts/bannerlord-paths.ps1` | Agent C | Shared paths plus `Get-TbgReadyGoldenPathPattern`. |
 | `scripts/verify-log-grep-patterns.ps1` | Agent C | Guard only; do not rewrite prose titles. |
+| `scripts/verify-f7-runner-contract.ps1` | Agent C | Fail-closed static guard; run after runner edits; no game launch. |
 | `scripts/run-f7-gate-continue.ps1` | Agent A | Canonical gate wrapper; no concurrent ForgeContinue. |
 | `scripts/run-agent-a-f7-bisect.ps1` | Agent A | No concurrent launcher runs; no `forge-stop.ps1` during child run. |
 | `scripts/write-launch-log.ps1` | Coordinator | Shared append path; keep race-safe. |
@@ -82,6 +84,7 @@ Summary file: [../evidence/live-cert/f7-bisect-summary.json](../evidence/live-ce
 - 2026-06-22: `0x01` had partial progress but was not PASS; it died during the 60s stability poll.
 - 2026-06-22: Agent C full loop finished after about 19 minutes with exit code `2`; `0x07` and `0x0F` reached MapReady/`tbg_ready` and then failed as game-gone-after-map-ready.
 - 2026-06-22: Evidence manifests reported at `docs/evidence/live-cert/20260622-095957/checkpoint-01-f7-gate/` and `docs/evidence/live-cert/20260622-101016/checkpoint-01-f7-gate/`; local agents must still trust `git log -1 --oneline` after pulling.
+- 2026-06-22: Agent C restored fail-closed F7 runner on PR #8 (`bc0d033` on `codex/stabilize-f7-launch-tooling-and-open-pr`); 16-line `exit 0` stub removed; `verify-f7-runner-contract.ps1` PASS; F7 game PASS still **Not proven**.
 
 ## Per-agent next actions
 
