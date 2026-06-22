@@ -1,6 +1,7 @@
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.HorseMarket;
 using BlacksmithGuild.Market;
+using BlacksmithGuild.TavernHeroes;
 using BlacksmithGuild.Treasury;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.Reporting;
@@ -64,8 +65,12 @@ namespace BlacksmithGuild.DevTools
 
             if (RequiresRiskyGate(commandName))
             {
-                if (!GameReadinessService.CanRunRiskyCommands(out var blockReason))
+                var canRun = commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
+                    ? GameReadinessService.CanRunTavernRecruitment(out var tavernBlockReason)
+                    : GameReadinessService.CanRunRiskyCommands(out tavernBlockReason);
+                if (!canRun)
                 {
+                    var blockReason = tavernBlockReason;
                     DebugLogger.Test($"{commandName} blocked: {blockReason}");
                     ForgeStatus.RecordCommand(commandName, source, "BLOCKED", blockReason, sequence);
                     ForgeStatus.SetTest(commandName, "BLOCKED", blockReason);
@@ -186,6 +191,11 @@ namespace BlacksmithGuild.DevTools
                 commandName == HorseMarketRecommendationService.ShowHorseMarketIntelCommand ||
                 commandName == HorseMarketRecommendationService.RankHorseMarketActionsCommand ||
                 commandName == AutoTravelService.ShowAutoTravelChoicesCommand ||
+                commandName == TavernHeroIntelService.AnalyzeTavernHeroesCommand ||
+                commandName == TavernHeroIntelService.ShowTavernHeroIntelCommand ||
+                commandName == TavernHeroRecruitmentProbeService.ProbeTavernRecruitmentApiCommand ||
+                commandName == SettlementNavigationService.NavigateToSettlementTavernNowCommand ||
+                IsTavernDoctrineCommand(commandName) ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
             {
                 return;
@@ -331,6 +341,20 @@ namespace BlacksmithGuild.DevTools
                 return AutoTravelService.LastFailReason ?? "auto-travel failed";
             }
 
+            if (commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand)
+            {
+                return TavernHeroRecruitmentService.LastFailReason
+                       ?? TavernHeroRecruitmentService.LastBlockedReason
+                       ?? "tavern recruitment failed";
+            }
+
+            if (commandName == TavernHeroIntelService.AnalyzeTavernHeroesCommand
+                || commandName == TavernHeroIntelService.ShowTavernHeroIntelCommand
+                || commandName == SettlementNavigationService.NavigateToSettlementTavernNowCommand)
+            {
+                return "tavern command failed";
+            }
+
             return "command failed";
         }
 
@@ -350,7 +374,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == AutoTravelService.AutoTravelChoice3Command
                 || commandName == AutoTravelService.AutoTravelChoice4Command
                 || commandName == AutoTravelService.AutoTravelChoice5Command
-                || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix));
+                || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
+                || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand;
         }
 
         private static bool IsMutationCommand(string commandName)
@@ -368,7 +393,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == AutoTravelService.AutoTravelChoice3Command
                 || commandName == AutoTravelService.AutoTravelChoice4Command
                 || commandName == AutoTravelService.AutoTravelChoice5Command
-                || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix));
+                || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
+                || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand;
         }
 
         private static DevCommandResult Execute(string commandName)
@@ -531,6 +557,46 @@ namespace BlacksmithGuild.DevTools
                     return AutoTravelService.TravelByChoiceNumber(4);
                 case AutoTravelService.AutoTravelChoice5Command:
                     return AutoTravelService.TravelByChoiceNumber(5);
+                case TavernHeroIntelService.AnalyzeTavernHeroesCommand:
+                    return TavernHeroIntelService.RunAnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case TavernHeroIntelService.ShowTavernHeroIntelCommand:
+                    return TavernHeroIntelService.ShowLastIntel()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case TavernHeroRecruitmentProbeService.ProbeTavernRecruitmentApiCommand:
+                    return TavernHeroRecruitmentProbeService.RunProbeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case SettlementNavigationService.NavigateToSettlementTavernNowCommand:
+                {
+                    var navActions = new System.Collections.Generic.List<TavernHeroRecruitmentActionStep>();
+                    return SettlementNavigationService.TryNavigateToTavernNow(out _, navActions)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                }
+                case TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand:
+                    if (TavernHeroRecruitmentService.RunRecruitVisibleNow(source: commandName))
+                    {
+                        return DevCommandResult.Success;
+                    }
+
+                    return TavernHeroRecruitmentService.LastWasGuardrailBlock
+                        ? DevCommandResult.Blocked
+                        : DevCommandResult.Failed;
+                case TavernHeroDoctrine.SetSmithingCrewCommand:
+                    return TavernHeroDoctrine.SetDoctrine(TavernHeroDoctrineKind.SmithingCrew)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case TavernHeroDoctrine.SetScoutQuartermasterCommand:
+                    return TavernHeroDoctrine.SetDoctrine(TavernHeroDoctrineKind.ScoutQuartermaster)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case TavernHeroDoctrine.SetCombatEscortCommand:
+                    return TavernHeroDoctrine.SetDoctrine(TavernHeroDoctrineKind.CombatEscort)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 default:
                     if (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
                     {
@@ -567,6 +633,7 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop");
             InGameNotice.Info("Inbox: RunSmithingRestPlanNow | RunBlacksmithAutomationNow | ShowCharacterDoctrine");
             InGameNotice.Info("Travel: ShowAutoTravelChoices, AutoTravelChoice1-5, AutoTravel:<town>");
+            InGameNotice.Info("Tavern: AnalyzeTavernHeroes, NavigateToSettlementTavernNow, RecruitTavernHeroVisibleNow");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
 
             CommandSurfaceService.WriteCommandSurface(DevCommandRegistry.ListScenariosCommand);
@@ -589,6 +656,13 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterBuildVariantService.SelectCharacterBuildBestNowCommand
                 || commandName == CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand
                 || commandName == CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand;
+        }
+
+        private static bool IsTavernDoctrineCommand(string commandName)
+        {
+            return commandName == TavernHeroDoctrine.SetSmithingCrewCommand
+                || commandName == TavernHeroDoctrine.SetScoutQuartermasterCommand
+                || commandName == TavernHeroDoctrine.SetCombatEscortCommand;
         }
     }
 }

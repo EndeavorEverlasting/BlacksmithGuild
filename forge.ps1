@@ -23,6 +23,8 @@ param(
     [switch]$Wait,
     [switch]$Certify,
     [switch]$CertifyProgression,
+    [ValidateSet('AutoLoop', 'Manual')]
+    [string]$IterationMode,
     [string]$Command,
     [int]$TimeoutSec = 60,
     [int]$WatchDebounceSec = 2
@@ -91,6 +93,13 @@ if ($Launch) {
         & (Join-Path $PSScriptRoot 'scripts\write-character-build-launch-config.ps1') `
             -Mode UserVisible `
             -BannerlordRoot $bannerlordRoot | Out-Null
+    }
+
+    if ($IterationMode) {
+        & (Join-Path $PSScriptRoot 'scripts\write-agent-iteration-config.ps1') `
+            -Mode $IterationMode `
+            -BannerlordRoot $bannerlordRoot `
+            -LaunchIntent $LaunchIntent | Out-Null
     }
 }
 

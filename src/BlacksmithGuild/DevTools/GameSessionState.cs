@@ -1,7 +1,11 @@
 using System;
 using System.Reflection;
 using TaleWorlds.CampaignSystem;
+using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.GameState;
+using TaleWorlds.CampaignSystem.Party;
+using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.CampaignSystem.Settlements.Locations;
 using TaleWorlds.Core;
 
 namespace BlacksmithGuild.DevTools
@@ -13,6 +17,7 @@ namespace BlacksmithGuild.DevTools
         CampaignReady,
         MapPaused,
         MapActive,
+        SettlementInterior,
         Unknown
     }
 
@@ -28,9 +33,21 @@ namespace BlacksmithGuild.DevTools
 
         public static bool IsCampaignMapReady { get; private set; }
 
+        public static bool IsSettlementInteriorReady { get; private set; }
+
+        public static bool IsTavernLocationReady { get; private set; }
+
         public static bool IsMapMenuOpen { get; private set; }
 
         public static string MapMenuId { get; private set; }
+
+        public static string ActiveMenuId { get; private set; }
+
+        public static string CurrentLocationId { get; private set; }
+
+        public static string CurrentSettlementName { get; private set; }
+
+        public static string CurrentSettlementStringId { get; private set; }
 
         public static bool CanPollHelpHotkeys { get; private set; }
 
@@ -44,6 +61,12 @@ namespace BlacksmithGuild.DevTools
         {
             IsMapMenuOpen = false;
             MapMenuId = null;
+            ActiveMenuId = null;
+            CurrentLocationId = null;
+            CurrentSettlementName = null;
+            CurrentSettlementStringId = null;
+            IsSettlementInteriorReady = false;
+            IsTavernLocationReady = false;
 
             try
             {
@@ -56,14 +79,7 @@ namespace BlacksmithGuild.DevTools
 
             if (!IsCampaignLoaded)
             {
-                Phase = SessionPhase.ModuleOnly;
-                IsMainHeroReady = false;
-                IsTimePaused = false;
-                IsCampaignMapReady = false;
-                CanPollHelpHotkeys = false;
-                CanPollRiskyHotkeys = false;
-                CanPollFileInbox = false;
-                CanPollHotkeys = false;
+                ResetToModuleOnly();
                 return;
             }
 
@@ -97,20 +113,158 @@ namespace BlacksmithGuild.DevTools
                 IsTimePaused = false;
             }
 
-            ReadMapMenuState();
+            ReadMenuState();
             IsCampaignMapReady = EvaluateCampaignMapReady(out _);
+            EvaluateSettlementInteriorReady();
+            IsTavernLocationReady = EvaluateTavernLocationReady();
 
-            Phase = IsCampaignMapReady
-                ? (IsTimePaused ? SessionPhase.MapPaused : SessionPhase.MapActive)
-                : SessionPhase.CampaignReady;
+            if (IsSettlementInteriorReady)
+            {
+                Phase = SessionPhase.SettlementInterior;
+            }
+            else if (IsCampaignMapReady)
+            {
+                Phase = IsTimePaused ? SessionPhase.MapPaused : SessionPhase.MapActive;
+            }
+            else
+            {
+                Phase = SessionPhase.CampaignReady;
+            }
 
             CanPollHelpHotkeys = true;
             CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
-            CanPollFileInbox = IsCampaignMapReady;
+            CanPollFileInbox = IsCampaignMapReady || IsSettlementInteriorReady;
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;
         }
 
         public static bool EvaluateCampaignMapReady(out string blockDetail)
+        {
+            blockDetail = null;
+
+            if (!TryEnsureHeroReady(out blockDetail))
+            {
+                return false;
+            }
+
+            if (IsMissionActive())
+            {
+                blockDetail = "mission active";
+                return false;
+            }
+
+            try
+            {
+                var activeState = GameStateManager.Current?.ActiveState;
+                if (activeState is MapState)
+                {
+                    return true;
+                }
+
+                blockDetail = activeState == null
+                    ? "active game state is null"
+                    : $"active state: {activeState.GetType().Name}";
+                return false;
+            }
+            catch
+            {
+                blockDetail = "game state unavailable";
+                return false;
+            }
+        }
+
+        public static bool EvaluateSettlementInteriorReady(out string blockDetail)
+        {
+            blockDetail = null;
+            EvaluateSettlementInteriorReady();
+            if (IsSettlementInteriorReady)
+            {
+                return true;
+            }
+
+            blockDetail = BuildSettlementBlockDetail();
+            return false;
+        }
+
+        public static string GetCampaignMapBlockDetail()
+        {
+            EvaluateCampaignMapReady(out var blockDetail);
+            return blockDetail ?? "campaign map ready";
+        }
+
+        public static string GetCommandReadyBlockDetail()
+        {
+            if (IsCampaignMapReady || IsSettlementInteriorReady)
+            {
+                return "command ready";
+            }
+
+            if (IsMainHeroReady && IsSettlementInteriorReady == false)
+            {
+                var settlementDetail = BuildSettlementBlockDetail();
+                if (!string.IsNullOrEmpty(settlementDetail))
+                {
+                    return settlementDetail;
+                }
+            }
+
+            return GetCampaignMapBlockDetail();
+        }
+
+        public static string GetActiveStateName()
+        {
+            try
+            {
+                return GameStateManager.Current?.ActiveState?.GetType().Name ?? "null";
+            }
+            catch
+            {
+                return "unknown";
+            }
+        }
+
+        public static bool IsMissionActiveForTrace()
+        {
+            return IsMissionActive();
+        }
+
+        public static Settlement ResolveCurrentSettlement()
+        {
+            try
+            {
+                var partySettlement = MobileParty.MainParty?.CurrentSettlement;
+                if (partySettlement != null)
+                {
+                    return partySettlement;
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                return PlayerEncounter.LocationEncounter?.Settlement
+                       ?? PlayerEncounter.EncounterSettlement;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void ResetToModuleOnly()
+        {
+            Phase = SessionPhase.ModuleOnly;
+            IsMainHeroReady = false;
+            IsTimePaused = false;
+            IsCampaignMapReady = false;
+            CanPollHelpHotkeys = false;
+            CanPollRiskyHotkeys = false;
+            CanPollFileInbox = false;
+            CanPollHotkeys = false;
+        }
+
+        private static bool TryEnsureHeroReady(out string blockDetail)
         {
             blockDetail = null;
 
@@ -142,56 +296,160 @@ namespace BlacksmithGuild.DevTools
                 return false;
             }
 
-            if (IsMissionActive())
+            return true;
+        }
+
+        private static void EvaluateSettlementInteriorReady()
+        {
+            if (!TryEnsureHeroReady(out _) || IsMissionActive())
             {
-                blockDetail = "mission active";
-                return false;
+                return;
             }
 
             try
             {
-                var activeState = GameStateManager.Current?.ActiveState;
-                if (activeState is MapState)
+                if (PlayerEncounter.InsideSettlement)
                 {
-                    return true;
+                    IsSettlementInteriorReady = true;
+                    CaptureSettlementSnapshot(ResolveCurrentSettlement());
+                    return;
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                var settlement = MobileParty.MainParty?.CurrentSettlement;
+                if (settlement != null)
+                {
+                    IsSettlementInteriorReady = true;
+                    CaptureSettlementSnapshot(settlement);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static bool EvaluateTavernLocationReady()
+        {
+            if (!IsSettlementInteriorReady)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(CurrentLocationId)
+                && CurrentLocationId.IndexOf("tavern", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrEmpty(ActiveMenuId)
+                && ActiveMenuId.IndexOf("tavern", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            try
+            {
+                var settlement = ResolveCurrentSettlement();
+                var complex = settlement?.LocationComplex;
+                var tavern = complex?.GetLocationWithId("tavern");
+                if (tavern == null)
+                {
+                    return false;
                 }
 
-                blockDetail = activeState == null
-                    ? "active game state is null"
-                    : $"active state: {activeState.GetType().Name}";
-                return false;
+                var encounter = PlayerEncounter.LocationEncounter;
+                if (encounter != null && encounter.IsTavern(tavern))
+                {
+                    CurrentLocationId = tavern.StringId;
+                    return true;
+                }
             }
             catch
             {
-                blockDetail = "game state unavailable";
-                return false;
             }
+
+            return false;
         }
 
-        public static string GetCampaignMapBlockDetail()
+        private static void CaptureSettlementSnapshot(Settlement settlement)
         {
-            EvaluateCampaignMapReady(out var blockDetail);
-            return blockDetail ?? "campaign map ready";
+            if (settlement == null)
+            {
+                return;
+            }
+
+            CurrentSettlementName = settlement.Name?.ToString() ?? settlement.StringId;
+            CurrentSettlementStringId = settlement.StringId;
+            CurrentLocationId = TryResolveCurrentLocationId(settlement);
         }
 
-        public static string GetActiveStateName()
+        private static string TryResolveCurrentLocationId(Settlement settlement)
         {
             try
             {
-                return GameStateManager.Current?.ActiveState?.GetType().Name ?? "null";
+                var menuId = Campaign.Current?.CurrentMenuContext?.StringId;
+                if (!string.IsNullOrEmpty(menuId))
+                {
+                    ActiveMenuId = menuId;
+                    if (menuId.IndexOf("tavern", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return "tavern";
+                    }
+                }
             }
             catch
             {
-                return "unknown";
             }
+
+            try
+            {
+                var hero = Hero.MainHero;
+                var complex = settlement?.LocationComplex;
+                if (hero != null && complex != null)
+                {
+                    var location = complex.GetLocationOfCharacter(hero);
+                    return location?.StringId;
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
         }
 
-        public static bool IsMissionActiveForTrace()
+        private static string BuildSettlementBlockDetail()
         {
-            return IsMissionActive();
+            if (IsMissionActive())
+            {
+                return "mission active";
+            }
+
+            var settlement = ResolveCurrentSettlement();
+            if (settlement == null)
+            {
+                return "party not at a settlement";
+            }
+
+            if (!IsSettlementInteriorReady)
+            {
+                return $"outside settlement {settlement.Name} — enter town first";
+            }
+
+            if (!IsTavernLocationReady)
+            {
+                return $"inside {settlement.Name} but not in tavern location";
+            }
+
+            return "settlement interior ready";
         }
 
-        private static void ReadMapMenuState()
+        private static void ReadMenuState()
         {
             try
             {
@@ -199,12 +457,25 @@ namespace BlacksmithGuild.DevTools
                 {
                     IsMapMenuOpen = mapState.AtMenu;
                     MapMenuId = mapState.GameMenuId;
+                    ActiveMenuId = mapState.GameMenuId;
                 }
             }
             catch
             {
                 IsMapMenuOpen = false;
                 MapMenuId = null;
+            }
+
+            try
+            {
+                var menuId = Campaign.Current?.CurrentMenuContext?.StringId;
+                if (!string.IsNullOrEmpty(menuId))
+                {
+                    ActiveMenuId = menuId;
+                }
+            }
+            catch
+            {
             }
         }
 

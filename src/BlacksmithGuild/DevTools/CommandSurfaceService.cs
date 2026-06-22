@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.Market;
+using BlacksmithGuild.TavernHeroes;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools
@@ -27,7 +28,8 @@ namespace BlacksmithGuild.DevTools
             CharacterProgressionTestScenarios.AddEnduranceAttributeCommand,
             AutoCharacterBuild.AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
             SmithingSafeActionService.RunSmithingSafeActionNowCommand,
-            BlacksmithAutomationService.RunBlacksmithAutomationNowCommand
+            BlacksmithAutomationService.RunBlacksmithAutomationNowCommand,
+            TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
         };
 
         public static void WriteCommandSurface(string source)

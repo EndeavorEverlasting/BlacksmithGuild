@@ -53,7 +53,15 @@ function Get-DevCommandNames {
         'AutoTravelChoice2',
         'AutoTravelChoice3',
         'AutoTravelChoice4',
-        'AutoTravelChoice5'
+        'AutoTravelChoice5',
+        'AnalyzeTavernHeroes',
+        'ShowTavernHeroIntel',
+        'ProbeTavernRecruitmentApi',
+        'NavigateToSettlementTavernNow',
+        'RecruitTavernHeroVisibleNow',
+        'SetTavernHeroDoctrineSmithingCrew',
+        'SetTavernHeroDoctrineScoutQuartermaster',
+        'SetTavernHeroDoctrineCombatEscort'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

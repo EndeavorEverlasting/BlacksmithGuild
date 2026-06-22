@@ -23,7 +23,7 @@ The Blacksmith Guild uses three separate channels. Do not confuse them.
 
 | Channel | Mechanism | Where it appears | Used for |
 |---------|-----------|------------------|----------|
-| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left log (press **Enter** to scroll). **Colored** report headers (gold), footers (green), section dividers (gold), numbered steps (white). | F7–F8, Ctrl+Alt+M/R reports, ready line, compact status |
+| **In-game message feed** | `InformationManager.DisplayMessage(...)` via `GuildLog` / `InGameNotice` | Lower-left log (press **Enter** to scroll). **Colored** report headers (gold), footers (green), section dividers (gold), numbered steps (white). | F7–F8, Ctrl+Alt+M/R reports, ready line, compact status, **`TBG TAVERN:`** tavern intel/recruit notices |
 | **Windows toast** | PowerShell after forge install | Windows notification area (usually bottom-right) | Build/install/reload reminders when Bannerlord is running |
 | **File logs** | Append to disk | `<Bannerlord>\BlacksmithGuild_Phase1.log`, `BlacksmithGuild_Forge.log` | Full diagnostics, certification evidence |
 
@@ -97,6 +97,7 @@ Via `GuildLog` / `InGameNotice` → `InformationManager.DisplayMessage`:
 - `[The Blacksmith Guild] Mod loaded. The forge is lit.`
 - **`TBG READY: campaign map ready. Press F8 for commands.`** (once per session, after stable map)
 - Fake forge advisor lines on daily tick
+- **`TBG TAVERN:`** / **`TBG TAVERN RECRUIT:`** — tavern intel, navigation dwell, recruit success/blocked (006A)
 - **F7–F11** shortcut feedback (`TBG STATUS:`, `TBG COMMANDS`, `TBG F9:`, etc.)
 - **`TBG RELOAD: …`** when a newer build exists:
   - `installStatus: installed` — new DLL copied; restart Bannerlord to load it

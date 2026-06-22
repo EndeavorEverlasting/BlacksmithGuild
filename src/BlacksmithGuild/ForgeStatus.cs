@@ -371,6 +371,11 @@ namespace BlacksmithGuild
                 builder.AppendLine("  \"session\": {");
                 builder.AppendLine($"    \"phase\": \"{Escape(_sessionPhase.ToString())}\",");
                 builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"activeState\": \"{Escape(GameSessionState.GetActiveStateName())}\",");
+                builder.AppendLine($"    \"settlementReady\": {GameSessionState.IsSettlementInteriorReady.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"tavernReady\": {GameSessionState.IsTavernLocationReady.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"settlementName\": \"{Escape(GameSessionState.CurrentSettlementName ?? "")}\",");
+                builder.AppendLine($"    \"locationId\": \"{Escape(GameSessionState.CurrentLocationId ?? "")}\",");
                 builder.AppendLine($"    \"canPollFileInbox\": {GameSessionState.CanPollFileInbox.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"canPollHotkeys\": {GameSessionState.CanPollHotkeys.ToString().ToLowerInvariant()}");
                 builder.AppendLine("  },");

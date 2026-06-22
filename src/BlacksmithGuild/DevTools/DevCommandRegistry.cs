@@ -3,6 +3,7 @@ using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.HorseMarket;
 using BlacksmithGuild.Market;
+using BlacksmithGuild.TavernHeroes;
 using BlacksmithGuild.Treasury;
 
 namespace BlacksmithGuild.DevTools
@@ -69,7 +70,15 @@ namespace BlacksmithGuild.DevTools
                 AutoTravelService.AutoTravelChoice2Command,
                 AutoTravelService.AutoTravelChoice3Command,
                 AutoTravelService.AutoTravelChoice4Command,
-                AutoTravelService.AutoTravelChoice5Command
+                AutoTravelService.AutoTravelChoice5Command,
+                TavernHeroIntelService.AnalyzeTavernHeroesCommand,
+                TavernHeroIntelService.ShowTavernHeroIntelCommand,
+                TavernHeroRecruitmentProbeService.ProbeTavernRecruitmentApiCommand,
+                SettlementNavigationService.NavigateToSettlementTavernNowCommand,
+                TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand,
+                TavernHeroDoctrine.SetSmithingCrewCommand,
+                TavernHeroDoctrine.SetScoutQuartermasterCommand,
+                TavernHeroDoctrine.SetCombatEscortCommand
             };
 
         public static bool IsRegistered(string commandName)

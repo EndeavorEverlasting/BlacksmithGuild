@@ -1,12 +1,12 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (008C-Fix visible assistive launch separation; USER cert PENDING)  
+**Last updated:** 2026-06-21 (006A tavern hero intel + visible recruit — Tier 1/2 smoke PENDING)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 008C-Fix **USER visible cert PENDING**
+**Branch:** `feat/006a-tavern-hero` — 006A **Tier 1/2 cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
-**Next handoff:** [plans/008c-character-choice-catalog-build-variant-runner.plan.md](plans/008c-character-choice-catalog-build-variant-runner.plan.md)
+**Next handoff:** [plans/006a-tavern-hero-visible-recruitment.plan.md](plans/006a-tavern-hero-visible-recruitment.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
 
@@ -122,6 +122,20 @@ Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/ma
 | **Track 2B forge materials** | **Ctrl+Alt+M** | `--- FORGE MATERIALS ---` | Tier 1 — optional |
 | **Guild loop Ctrl+Alt+G** | **Ctrl+Alt+G** on map | Combined market + forge advisory JSON | Tier 1 — optional |
 
+---
+
+## Shipped — 006A (Tier 1/2 smoke PENDING)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Settlement/tavern command polling** | F7 `session.settlementReady` / `tavernReady` | Code shipped — enables inbox inside towns |
+| **Tavern hero intel** | `AnalyzeTavernHeroes` / `RunTavernHeroIntelCert.cmd` | Code shipped — **Tier 1 cert PENDING** |
+| **Tavern hero probe** | `ProbeTavernRecruitmentApi` | Code shipped — reflection hints JSON |
+| **Visible settlement→tavern nav** | `NavigateToSettlementTavernNow` | Code shipped — **smoke PENDING** |
+| **Visible vanilla recruit** | `RecruitTavernHeroVisibleNow` / `RunTavernHeroRecruitCert.cmd` | Code shipped — **Tier 2 cert PENDING** (disposable) |
+| **Agent autoloop toggle** | `write-agent-iteration-config.ps1` / `forge.ps1 -IterationMode` | Code shipped |
+| **Auto-travel (007)** | `ShowAutoTravelChoices`, `AutoTravelChoice1-5` | Merged to `main` — **Tier 2 travel smoke PENDING** |
+
 **Path B culture Back:** **WAIVED** — auto-skip loads past character creation; guard in code, no cert required.
 
 ### Market intel cert evidence (2026-06-20, Continue save near Tevea/Zestica)
@@ -210,6 +224,10 @@ Full detail: [in-game-surfaces.md](in-game-surfaces.md)
 | `BlacksmithGuild_BlacksmithAutomation.json` | inbox `RunBlacksmithAutomationNow` |
 | `BlacksmithGuild_Launch.log` | Forge.cmd / Continue automation |
 | `BlacksmithGuild_Status.json` | F7 |
+| `BlacksmithGuild_TavernHeroIntel.json` | `AnalyzeTavernHeroes` |
+| `BlacksmithGuild_TavernHeroRecruitment.json` | `RecruitTavernHeroVisibleNow` |
+| `BlacksmithGuild_TavernHeroRecruitmentProbe.json` | `ProbeTavernRecruitmentApi` |
+| `BlacksmithGuild_AgentIterationConfig.json` | `write-agent-iteration-config.ps1` / startup loader |
 
 Collect: `CollectCertLogs.cmd` (uses `-LiteralPath`). Export to repo: `ExportTbgEvidence.cmd` → `docs/evidence/latest/`. Player guide: [player-command-guide.md](player-command-guide.md).
 

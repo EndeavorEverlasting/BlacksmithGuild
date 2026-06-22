@@ -48,6 +48,8 @@ Commands **do not run** during character creation, main menu, or loading. A stal
 
 If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M/R/G) instead, or finish `ForgeContinue.cmd` first.
 
+**Settlement interior (006A):** tavern commands poll when `session.canPollFileInbox: true` on the **campaign map or inside a town**. Check F7 / `BlacksmithGuild_Status.json` for `settlementReady`, `tavernReady`, `locationId`.
+
 ---
 
 ## Quick reference
@@ -72,6 +74,8 @@ If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M
 | Blacksmith automation | — | `.\forge.ps1 -Command RunBlacksmithAutomationNow -Wait` | `BlacksmithGuild_BlacksmithAutomation.json` | One bounded safe action (charcoal refine or clean block) |
 | Auto-travel choices | — | `.\forge.ps1 -Command ShowAutoTravelChoices -Wait` | Phase1 `[TBG TRAVEL]` lines | Read-only ranked town/village list (campaign map required) |
 | Auto-travel move | — | `.\forge.ps1 -Command AutoTravelChoice1 -Wait` | Phase1 `[TBG TRAVEL] auto-travel started` | Tier 2 mutation — main party map movement + hostile pause monitor |
+| Tavern hero intel | — | `.\RunTavernHeroIntelCert.cmd` or `AnalyzeTavernHeroes` | `BlacksmithGuild_TavernHeroIntel.json` | Read-only wanderer scan + doctrine scoring (settlement/tavern) |
+| Tavern hero recruit | — | `.\RunTavernHeroRecruitCert.cmd` (disposable) | `BlacksmithGuild_TavernHeroRecruitment.json` | Tier 2 visible vanilla hire — no direct injection |
 | Export evidence | — | `.\ExportTbgEvidence.cmd` | `docs/evidence/latest/README.md` | Repo-local snapshot for agents |
 
 ---
@@ -135,6 +139,50 @@ Expected:
 - Does **not** auto-buy, auto-rest, or loop unbounded.
 
 Regression for Stage C alone: `.\RunStageCCharcoalCert.cmd`
+
+---
+
+## Tavern hero automation (006A)
+
+**Tier 1 (read-only intel):**
+
+```powershell
+# Manual — game in town or tavern
+.\RunTavernHeroIntelCert.cmd
+
+# AutoLoop — launch Continue, travel, enter tavern, analyze
+.\scripts\run-tavern-hero-intel-cert.ps1 -Mode AutoLoop -Launch
+```
+
+**Tier 2 (visible recruit — disposable save only):**
+
+```powershell
+.\RunTavernHeroRecruitCert.cmd
+# or
+.\scripts\run-tavern-hero-recruit-cert.ps1 -Mode AutoLoop -Launch
+```
+
+**Agent iteration toggle:**
+
+```powershell
+.\scripts\write-agent-iteration-config.ps1 -Mode Manual   # stop at gates
+.\scripts\write-agent-iteration-config.ps1 -Mode AutoLoop # chain cert steps
+.\forge.ps1 -Launch -IterationMode AutoLoop
+```
+
+**Inbox commands (settlement or map):**
+
+| Command | Mutation? | JSON |
+|---------|-----------|------|
+| `AnalyzeTavernHeroes` | No | `BlacksmithGuild_TavernHeroIntel.json` |
+| `ShowTavernHeroIntel` | No | Re-displays last intel |
+| `ProbeTavernRecruitmentApi` | No | `BlacksmithGuild_TavernHeroRecruitmentProbe.json` |
+| `NavigateToSettlementTavernNow` | No (visible traversal) | Phase1 `[TBG TAVERN]` |
+| `RecruitTavernHeroVisibleNow` | **Yes** (risky gate) | `BlacksmithGuild_TavernHeroRecruitment.json` |
+
+Doctrine setters: `SetTavernHeroDoctrineSmithingCrew`, `SetTavernHeroDoctrineScoutQuartermaster`, `SetTavernHeroDoctrineCombatEscort`.
+
+Plan: [plans/006a-tavern-hero-visible-recruitment.plan.md](plans/006a-tavern-hero-visible-recruitment.plan.md)
 
 ---
 

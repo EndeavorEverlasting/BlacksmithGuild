@@ -22,6 +22,7 @@ namespace BlacksmithGuild
             ForgeStatus.SetStep("module_load", "PASS");
             PendingReloadWatcher.OnModuleLoad();
             CharacterBuildVariantConfigService.TryLoadAtStartup();
+            AgentIterationConfigService.TryLoadAtStartup();
             HotkeyTraceService.LogVersionAtStartup();
             AutoCharacterCreationPatches.TryApply();
             ModuleMismatchAutoConfirmService.TryApply();

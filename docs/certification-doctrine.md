@@ -35,6 +35,8 @@ dotnet build -c Release
 | Track 2B FORGE MATERIALS | 1 | Code shipped — optional |
 | 005E smithing posse automation | 2–3 | **UNBLOCKED** — next engineering |
 | Party travel automation | **2** | **Shipped (Tier 2 smoke pending)** — see [007-auto-travel.plan.md](plans/007-auto-travel.plan.md) |
+| Tavern hero intel (006A) | **1** | **Shipped (Tier 1 smoke pending)** — `RunTavernHeroIntelCert.cmd` |
+| Tavern hero visible recruit (006A) | **2–3** | **Shipped (Tier 2 smoke pending)** — disposable `RunTavernHeroRecruitCert.cmd`; no direct injection |
 
 ---
 
@@ -159,3 +161,48 @@ Exact evidence lines:
 - No push unless user asks
 - No Track 8 until user directs — Stage C gate **passed**
 - No auto-buy/sell, Gauntlet clicks, inventory spawn on Continue
+
+---
+
+## 006A Tavern hero cert rubrics
+
+### Tier 1 — Intel (read-only)
+
+**Save:** Continue or disposable — no mutation.
+
+**Preconditions:** Campaign loaded; settlement or tavern reachable (autoloop: `AutoTravelChoice1` + `NavigateToSettlementTavernNow`).
+
+**One-command:**
+
+```powershell
+.\RunTavernHeroIntelCert.cmd
+# autoloop:
+.\scripts\run-tavern-hero-intel-cert.ps1 -Mode AutoLoop -Launch
+```
+
+**PASS when** `BlacksmithGuild_TavernHeroIntel.json` has:
+
+- `readOnly: true`
+- `mutationApplied: false`
+- `settlement` block populated or `blockedReason` explains missing context
+- Phase1 contains `TBG TAVERN` intel lines (optional but preferred)
+
+### Tier 2 — Visible recruit (mutation)
+
+**Save:** **Disposable only** unless `requireDisposableSaveForRecruit=false` in agent config.
+
+**Preconditions:** Tier 1 PASS; tavern has wanderer; gold above reserve; companion slot available.
+
+```powershell
+.\RunTavernHeroRecruitCert.cmd
+```
+
+**PASS when** `BlacksmithGuild_TavernHeroRecruitment.json` has:
+
+- `directHeroInjectionUsed: false`
+- `before` / `after` gold and companion counts
+- `verdict` success or explicit guardrail block (not silent failure)
+- Phase1 `[TBG TAVERN SUCCESS]` or `[TBG TAVERN BLOCKED]`
+
+**Re-cert only if** recruitment driver, guardrails, or settlement navigation code changes.
+

@@ -20,5 +20,14 @@ namespace BlacksmithGuild.DevTools
         public static bool HotkeyTraceEnabled = true;
         public static bool HotkeyTraceVisibleKeys = false;
         public static bool LegacyF12MarketHotkey = false;
+
+        public static bool AgentAutoLoop = false;
+        public static bool TavernHeroVisibleMode = true;
+        public static int TavernHeroDecisionPauseMs = 750;
+        public static int TavernHeroSafeGoldReserve = 500;
+        public static int TavernHeroMaxRecruitmentsPerCommand = 1;
+        public static bool TavernHeroAllowDirectInjection = false;
+        public static bool TavernHeroRequireDisposableSaveForRecruit = true;
     }
 }
+
