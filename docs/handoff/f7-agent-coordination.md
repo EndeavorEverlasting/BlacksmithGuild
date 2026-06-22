@@ -32,7 +32,7 @@ Every agent **must**:
 | Gate verdict | **RED** — session `154012` wave 3 FAIL (timeout; Refresh storm; no map-ready) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-154012/` — honest FAIL (harvest sufficient; B markers early, tail Refresh flood) |
 | Launcher cert | **PASS** @ `135217`; `154012` `continue_escalate` + nav timeout (friction, not target mismatch) |
-| Next cert command | **HOLD** — B map-ready survival; A rerun after B + C process detection land |
+| Next cert command | **UNBLOCKED for A** after B push — rerun F7 `HookMask 0x0F` (C process detection landed) |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -42,7 +42,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 3 cert `154012` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** Refresh storm + map-ready gate (`154012`) | `src/.../GameSessionState.cs`, guards | — | `f7b90ad` |
+| **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | pending |
 | **C** | Launcher / F7 runner | `DONE` | Process detection fix (`154012`) landed | — | — | `35b8dd5` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
@@ -91,6 +91,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - **F7 game cert:** **NOT RUN** (Agent A).
 - **Need from A:** F7 rerun after B map-ready fix; expect `gameProcessRunning=true`, `gameProcessDetectionMethod=launcher_hosted` or `phase1_active`, timeout notes `MapTransition` not `process died`.
 - **Need from B:** MapTransition → MapReady survival (root gameplay blocker for `154012`).
+
+### 2026-06-22 — Agent B → A, C (readiness storm fix @ session `154012`)
+
+- **Root cause:** `MapTransitionGuard` circular Continue check + unconditional `GameLoadingState` block kept `RefreshLightweight` active; per-tick `RuntimeTrace.Run(Refresh)` flooded Phase1 (~164k seq) while Quyaz town loaded.
+- **Landed:** `RuntimeTrace.LogSuppress` / `LogSuppressInterval` (`stage=suppress`); `CrashContextWriter.RecordSuppress`.
+- **Landed:** `MapTransitionGuard.TryDetectCampaignSessionLoaded` — stale `GameLoadingState` + settlement/menu signals clear guard; `GuardCleared`, `CampaignSessionDetected`, `SettlementMenuDetected`.
+- **Landed:** `GameSessionState` — fingerprint throttle (`RefreshSuppressed`), `IsCampaignSessionReady`, `IsSettlementMenuReady`, `ReadinessPromoted`; duplicate SubModule refresh skip.
+- **Landed:** Orchestrator/behavior gates use `IsCampaignSessionReady`; `OrchestratorAllowed` marker; setup tracker promotes to `MapReady` on session detect.
+- **Landed:** `ForgeStatus` session block — `sessionReady`, `mapReady`, `settlementReady` (honest; no fake map ready).
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS.
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** F7 rerun; tail must show transition markers (`ReadinessPromoted`, `GuardCleared`, `RefreshSuppressed`) not Refresh-only storm; status `sessionReady=true` when town loaded.
 
 ### 2026-06-22 — Agent A Wave 3 Cert → B, C (session `154012`)
 
@@ -307,6 +319,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] Grep guard + playbook @ `29730b9`
 - [x] Post-map-ready C# hardening (StatusFlush alignment, stabilization window)
 - [x] MapTransition survival — defer/lightweight refresh, guard, `stage=defer` trace (`150405`)
+- [x] Readiness storm fix — session detect, Refresh suppress, `IsCampaignSessionReady` (`154012`)
 - [ ] Agent A F7 cert to validate survival fix
 
 **C**

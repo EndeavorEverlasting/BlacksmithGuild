@@ -11,6 +11,12 @@ namespace BlacksmithGuild.DevTools.Reporting
         private static readonly HashSet<string> DeferOnceKeys =
             new HashSet<string>(StringComparer.Ordinal);
 
+        private static readonly HashSet<string> SuppressOnceKeys =
+            new HashSet<string>(StringComparer.Ordinal);
+
+        private static readonly Dictionary<string, DateTime> SuppressIntervalLastUtc =
+            new Dictionary<string, DateTime>(StringComparer.Ordinal);
+
         public static void Run(string area, string operation, Action action)
         {
             var seq = InterlockedIncrement();
@@ -67,6 +73,42 @@ namespace BlacksmithGuild.DevTools.Reporting
             LogDefer(area, operation, reason);
         }
 
+        public static void LogSuppressOnce(string key, string area, string operation, string reason)
+        {
+            if (!SuppressOnceKeys.Add(key))
+            {
+                return;
+            }
+
+            LogSuppress(area, operation, reason);
+        }
+
+        public static void LogSuppressInterval(
+            string key,
+            string area,
+            string operation,
+            string reason,
+            double minIntervalSec)
+        {
+            var now = DateTime.UtcNow;
+            if (SuppressIntervalLastUtc.TryGetValue(key, out var last)
+                && (now - last).TotalSeconds < minIntervalSec)
+            {
+                return;
+            }
+
+            SuppressIntervalLastUtc[key] = now;
+            LogSuppress(area, operation, reason);
+        }
+
+        public static void LogSuppress(string area, string operation, string reason)
+        {
+            var seq = InterlockedIncrement();
+            var path = LaunchPathInference.GetPathLabel();
+            LogSuppress(seq, area, operation, reason, path);
+            CrashContextWriter.RecordSuppress(seq, area, operation, reason, path);
+        }
+
         private static void LogFail(int seq, string area, string operation, Exception ex, string path)
         {
             var type = ex?.GetType().Name ?? "unknown";
@@ -95,6 +137,13 @@ namespace BlacksmithGuild.DevTools.Reporting
         {
             DebugLogger.Test(
                 $"[TBG TRACE] seq={seq} area={area} op={operation} stage=defer reason={Sanitize(reason)} path={path}",
+                showInGame: false);
+        }
+
+        private static void LogSuppress(int seq, string area, string operation, string reason, string path)
+        {
+            DebugLogger.Test(
+                $"[TBG TRACE] seq={seq} area={area} op={operation} stage=suppress reason={Sanitize(reason)} path={path}",
                 showInGame: false);
         }
 

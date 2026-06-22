@@ -403,7 +403,10 @@ namespace BlacksmithGuild
             builder.AppendLine($"  \"overall\": \"{Escape(topOverall)}\",");
             builder.AppendLine("  \"session\": {");
             builder.AppendLine($"    \"phase\": \"{Escape(_sessionPhase.ToString())}\",");
-            builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()}");
+            builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"sessionReady\": {SafeSessionBool(() => GameSessionState.IsCampaignSessionReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"mapReady\": {SafeSessionBool(() => GameSessionState.IsCampaignMapReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()}");
             builder.AppendLine("  },");
             builder.AppendLine("  \"quickStart\": {");
             builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
@@ -469,8 +472,10 @@ namespace BlacksmithGuild
                 builder.AppendLine("  \"session\": {");
                 builder.AppendLine($"    \"phase\": \"{Escape(_sessionPhase.ToString())}\",");
                 builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"sessionReady\": {SafeSessionBool(() => GameSessionState.IsCampaignSessionReady).ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"mapReady\": {SafeSessionBool(() => GameSessionState.IsCampaignMapReady).ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"activeState\": \"{SafeSessionValue(() => GameSessionState.GetActiveStateName())}\",");
-                builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady).ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"tavernReady\": {SafeSessionBool(() => GameSessionState.IsTavernLocationReady).ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"settlementName\": \"{SafeSessionValue(() => GameSessionState.CurrentSettlementName)}\",");
                 builder.AppendLine($"    \"locationId\": \"{SafeSessionValue(() => GameSessionState.CurrentLocationId)}\",");

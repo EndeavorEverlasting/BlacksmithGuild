@@ -16,6 +16,7 @@ namespace BlacksmithGuild
 
         private float _inboxPollAccumulator;
         private static bool _afterFlushWriteTraced;
+        private int _refreshGenerationAtCampaignTick;
 
         protected override void OnSubModuleLoad()
         {
@@ -63,6 +64,7 @@ namespace BlacksmithGuild
                 MapTransitionGuard.TraceGuardCheck("CampaignTick");
 
                 GameSessionState.Refresh();
+                _refreshGenerationAtCampaignTick = GameSessionState.RefreshGeneration;
 
                 if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
                     && CampaignMapReadyOrchestrator.ShouldRunOrchestratorTick())
@@ -71,15 +73,14 @@ namespace BlacksmithGuild
                 }
                 else if (CampaignMapReadyOrchestrator.ImmediateHooksCompleted
                     && GameSessionState.IsMainHeroReady
-                    && GameSessionState.IsCampaignMapReady)
+                    && GameSessionState.IsCampaignSessionReady)
                 {
                     CampaignMapReadyOrchestrator.OnCampaignTick(dt);
                 }
 
                 if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
                     && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
-                    && (GameSessionState.IsSettlementInteriorReady
-                        || GameSessionState.IsCampaignMapReady))
+                    && GameSessionState.IsCampaignSessionReady)
                 {
                     RuntimeTrace.Run("SubModule", "NextOperation", () => DevHotkeyHandler.Poll());
                 }
@@ -92,20 +93,17 @@ namespace BlacksmithGuild
             }
 
             _inboxPollAccumulator = 0f;
-            if (IsCampaignActive())
+            if (IsCampaignActive()
+                && !MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                && GameSessionState.RefreshGeneration != _refreshGenerationAtCampaignTick)
             {
-                if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
-                {
-                    GameSessionState.Refresh();
-                }
+                GameSessionState.Refresh();
             }
 
             if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
-                && (GameSessionState.IsSettlementInteriorReady
-                    || (IsCampaignActive()
-                        && GameSessionState.IsCampaignMapReady
-                        && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
-                        && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)))
+                && GameSessionState.IsCampaignSessionReady
+                && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
             {
                 RuntimeTrace.Run("SubModule", "NextOperation", DevCommandFileInbox.Poll);
             }

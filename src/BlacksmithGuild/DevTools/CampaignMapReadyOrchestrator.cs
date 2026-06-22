@@ -87,7 +87,7 @@ namespace BlacksmithGuild.DevTools
 
             GameSessionState.Refresh();
 
-            if (_stabilizationSecRemaining > 0f && GameSessionState.IsCampaignMapReady)
+            if (_stabilizationSecRemaining > 0f && GameSessionState.IsCampaignSessionReady)
             {
                 RuntimeTrace.Run("MapReady", "SyncForgeStatusHeartbeat", GameSessionState.SyncForgeStatus);
             }
@@ -100,6 +100,12 @@ namespace BlacksmithGuild.DevTools
                     return;
                 }
 
+                RuntimeTrace.LogDeferOnce(
+                    "orchestrator_allowed",
+                    "MapReady",
+                    "OrchestratorAllowed",
+                    GameSessionState.GetCommandReadyBlockDetail());
+
                 RuntimeTrace.Run("MapReady", "OrchestratorTickEntered", () =>
                 {
                     DebugLogger.Test("[TBG MAPREADY] orchestrator tick entered", showInGame: false);
@@ -110,7 +116,7 @@ namespace BlacksmithGuild.DevTools
 
             if (_deferredScheduled && !_deferredCompleted)
             {
-                if (!GameSessionState.IsCampaignMapReady)
+                if (!GameSessionState.IsCampaignSessionReady)
                 {
                     DebugLogger.Test(
                         "[TBG MAPREADY] deferred hooks skipped: campaign no longer ready.",
@@ -143,13 +149,14 @@ namespace BlacksmithGuild.DevTools
                 return true;
             }
 
-            if (!GameSessionState.IsCampaignMapReady)
+            if (!GameSessionState.IsCampaignSessionReady)
             {
-                reason = "campaign_map_not_ready";
+                reason = "campaign_session_not_ready";
                 return true;
             }
 
-            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow
+                && !MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
             {
                 reason = "map_load_transition";
                 return true;

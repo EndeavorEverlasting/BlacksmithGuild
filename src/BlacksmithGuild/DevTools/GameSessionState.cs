@@ -58,21 +58,79 @@ namespace BlacksmithGuild.DevTools
 
         public static bool CanPollHotkeys { get; private set; }
 
+        public static bool IsSettlementMenuReady { get; private set; }
+
+        public static bool IsCampaignSessionReady =>
+            IsMainHeroReady
+            && (IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady);
+
+        public static int RefreshGeneration { get; private set; }
+
+        private const double RefreshTraceIntervalSec = 2.0;
+        private const double ReadHeroTraceIntervalSec = 5.0;
+
+        private static string _lastRefreshFingerprint;
+        private static DateTime _lastRefreshTraceUtc = DateTime.MinValue;
+        private static bool _lastHeroReadyProbe;
+        private static DateTime _lastReadHeroTraceUtc = DateTime.MinValue;
+        private static string _lastPromotionFingerprint;
+
         public static void Refresh()
         {
-            RuntimeTrace.Run("GameSessionState", "Refresh", () =>
-            {
-                if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
-                {
-                    RefreshLightweight();
-                    return;
-                }
+            var fingerprint = BuildRefreshFingerprint();
+            var fingerprintChanged = !string.Equals(fingerprint, _lastRefreshFingerprint, StringComparison.Ordinal);
+            var traceDue = fingerprintChanged
+                || (DateTime.UtcNow - _lastRefreshTraceUtc).TotalSeconds >= RefreshTraceIntervalSec;
 
-                RefreshFull();
-            });
+            if (!traceDue)
+            {
+                RefreshInternal(traceSubOps: false);
+                RuntimeTrace.LogSuppressInterval(
+                    $"refresh|{fingerprint}",
+                    "GameSessionState",
+                    "RefreshSuppressed",
+                    fingerprint,
+                    RefreshTraceIntervalSec);
+                RefreshGeneration++;
+                return;
+            }
+
+            _lastRefreshFingerprint = fingerprint;
+            _lastRefreshTraceUtc = DateTime.UtcNow;
+
+            RuntimeTrace.Run("GameSessionState", "Refresh", () => RefreshInternal(traceSubOps: true));
+            MaybeTraceReadinessPromotion();
+            RefreshGeneration++;
         }
 
-        private static void RefreshLightweight()
+        private static string BuildRefreshFingerprint()
+        {
+            var guardActive = MapTransitionGuard.IsUnsafeContinueLoadWindow();
+            return string.Join(
+                "|",
+                IsCampaignLoaded ? "1" : "0",
+                IsMainHeroReady ? "1" : "0",
+                guardActive ? "g" : "-",
+                GetActiveStateName(),
+                IsCampaignMapReady ? "m" : "-",
+                IsSettlementInteriorReady ? "s" : "-",
+                IsSettlementMenuReady ? "u" : "-",
+                Phase.ToString());
+        }
+
+        private static void RefreshInternal(bool traceSubOps)
+        {
+            if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                && !MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
+            {
+                RefreshLightweight(traceSubOps);
+                return;
+            }
+
+            RefreshFull(traceSubOps);
+        }
+
+        private static void RefreshLightweight(bool traceSubOps)
         {
             IsMapMenuOpen = false;
             MapMenuId = null;
@@ -82,6 +140,7 @@ namespace BlacksmithGuild.DevTools
             CurrentSettlementStringId = null;
             IsSettlementInteriorReady = false;
             IsTavernLocationReady = false;
+            IsSettlementMenuReady = false;
 
             try
             {
@@ -98,21 +157,12 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            RuntimeTrace.Run("GameSessionState", "ReadHero", () =>
-            {
-                try
-                {
-                    IsMainHeroReady = Hero.MainHero != null;
-                }
-                catch
-                {
-                    IsMainHeroReady = false;
-                }
-            });
+            ReadHeroInternal(traceSubOps);
 
             Phase = SessionPhase.CampaignLoading;
             IsTimePaused = false;
             IsCampaignMapReady = false;
+            IsSettlementMenuReady = false;
             CanPollHelpHotkeys = false;
             CanPollRiskyHotkeys = false;
             CanPollFileInbox = false;
@@ -125,7 +175,7 @@ namespace BlacksmithGuild.DevTools
             RuntimeTrace.LogDeferOnce("refresh_eval_tavern", "GameSessionState", "EvaluateTavernLocation", reason);
         }
 
-        private static void RefreshFull()
+        private static void RefreshFull(bool traceSubOps)
         {
             IsMapMenuOpen = false;
             MapMenuId = null;
@@ -135,6 +185,7 @@ namespace BlacksmithGuild.DevTools
             CurrentSettlementStringId = null;
             IsSettlementInteriorReady = false;
             IsTavernLocationReady = false;
+            IsSettlementMenuReady = false;
 
             try
             {
@@ -151,17 +202,7 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            RuntimeTrace.Run("GameSessionState", "ReadHero", () =>
-            {
-                try
-                {
-                    IsMainHeroReady = Hero.MainHero != null;
-                }
-                catch
-                {
-                    IsMainHeroReady = false;
-                }
-            });
+            ReadHeroInternal(traceSubOps);
 
             if (!IsMainHeroReady)
             {
@@ -184,16 +225,28 @@ namespace BlacksmithGuild.DevTools
                 IsTimePaused = false;
             }
 
-            RuntimeTrace.Run("GameSessionState", "ReadMenuState", ReadMenuState);
-            IsCampaignMapReady = RuntimeTrace.Run(
-                "GameSessionState",
-                "EvaluateMapReady",
-                () => EvaluateCampaignMapReady(out _));
-            RuntimeTrace.Run("GameSessionState", "EvaluateSettlementInterior", EvaluateSettlementInteriorReady);
-            IsTavernLocationReady = RuntimeTrace.Run(
-                "GameSessionState",
-                "EvaluateTavernLocation",
-                EvaluateTavernLocationReady);
+            if (traceSubOps)
+            {
+                RuntimeTrace.Run("GameSessionState", "ReadMenuState", ReadMenuState);
+                IsCampaignMapReady = RuntimeTrace.Run(
+                    "GameSessionState",
+                    "EvaluateMapReady",
+                    () => EvaluateCampaignMapReady(out _));
+                RuntimeTrace.Run("GameSessionState", "EvaluateSettlementInterior", EvaluateSettlementInteriorReady);
+                IsTavernLocationReady = RuntimeTrace.Run(
+                    "GameSessionState",
+                    "EvaluateTavernLocation",
+                    EvaluateTavernLocationReady);
+            }
+            else
+            {
+                ReadMenuState();
+                IsCampaignMapReady = EvaluateCampaignMapReady(out _);
+                EvaluateSettlementInteriorReady();
+                IsTavernLocationReady = EvaluateTavernLocationReady();
+            }
+
+            EvaluateSettlementMenuReady();
 
             if (IsSettlementInteriorReady)
             {
@@ -203,15 +256,94 @@ namespace BlacksmithGuild.DevTools
             {
                 Phase = IsTimePaused ? SessionPhase.MapPaused : SessionPhase.MapActive;
             }
+            else if (IsSettlementMenuReady)
+            {
+                Phase = SessionPhase.SettlementInterior;
+            }
             else
             {
                 Phase = SessionPhase.CampaignReady;
             }
 
-            CanPollHelpHotkeys = IsCampaignMapReady || IsSettlementInteriorReady;
+            CanPollHelpHotkeys = IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady;
             CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
-            CanPollFileInbox = IsCampaignMapReady || IsSettlementInteriorReady;
+            CanPollFileInbox = IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady;
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;
+        }
+
+        private static void ReadHeroInternal(bool traceSubOps)
+        {
+            bool heroReady;
+            try
+            {
+                heroReady = Hero.MainHero != null;
+            }
+            catch
+            {
+                heroReady = false;
+            }
+
+            var heroChanged = heroReady != _lastHeroReadyProbe;
+            var heroTraceDue = heroChanged
+                || (DateTime.UtcNow - _lastReadHeroTraceUtc).TotalSeconds >= ReadHeroTraceIntervalSec;
+
+            if (traceSubOps && heroTraceDue)
+            {
+                RuntimeTrace.Run("GameSessionState", "ReadHero", () => { IsMainHeroReady = heroReady; });
+                _lastReadHeroTraceUtc = DateTime.UtcNow;
+                _lastHeroReadyProbe = heroReady;
+                return;
+            }
+
+            IsMainHeroReady = heroReady;
+            if (heroChanged)
+            {
+                _lastHeroReadyProbe = heroReady;
+            }
+        }
+
+        private static void EvaluateSettlementMenuReady()
+        {
+            IsSettlementMenuReady = false;
+
+            if (!IsMainHeroReady || IsSettlementInteriorReady)
+            {
+                return;
+            }
+
+            if (!MapTransitionGuard.TryDetectSettlementMenuSignal(out _))
+            {
+                return;
+            }
+
+            IsSettlementMenuReady = true;
+            var settlement = ResolveCurrentSettlement();
+            if (settlement != null)
+            {
+                CaptureSettlementSnapshot(settlement);
+            }
+        }
+
+        private static void MaybeTraceReadinessPromotion()
+        {
+            if (!IsCampaignSessionReady)
+            {
+                return;
+            }
+
+            var fingerprint =
+                $"{IsCampaignMapReady}|{IsSettlementInteriorReady}|{IsSettlementMenuReady}|{Phase}";
+            if (string.Equals(fingerprint, _lastPromotionFingerprint, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastPromotionFingerprint = fingerprint;
+            var detail = GetCommandReadyBlockDetail();
+            RuntimeTrace.Run("GameSessionState", "ReadinessPromoted", () =>
+            {
+                DebugLogger.Test($"[TBG READINESS] promoted: {detail}", showInGame: false);
+            });
         }
 
         public static bool EvaluateCampaignMapReady(out string blockDetail)
@@ -270,8 +402,24 @@ namespace BlacksmithGuild.DevTools
 
         public static string GetCommandReadyBlockDetail()
         {
-            if (IsCampaignMapReady || IsSettlementInteriorReady)
+            if (IsCampaignSessionReady)
             {
+                if (IsCampaignMapReady)
+                {
+                    return "campaign map ready";
+                }
+
+                if (IsSettlementInteriorReady)
+                {
+                    return "settlement interior ready";
+                }
+
+                if (IsSettlementMenuReady)
+                {
+                    var settlement = CurrentSettlementName ?? CurrentSettlementStringId ?? "settlement";
+                    return $"settlement menu ready ({settlement})";
+                }
+
                 return "command ready";
             }
 
@@ -335,6 +483,7 @@ namespace BlacksmithGuild.DevTools
             IsMainHeroReady = false;
             IsTimePaused = false;
             IsCampaignMapReady = false;
+            IsSettlementMenuReady = false;
             CanPollHelpHotkeys = false;
             CanPollRiskyHotkeys = false;
             CanPollFileInbox = false;
@@ -585,7 +734,7 @@ namespace BlacksmithGuild.DevTools
         {
             Refresh();
             ForgeStatus.UpdateSession(Phase, IsTimePaused);
-            ForgeStatus.UpdateReadiness(IsCampaignMapReady, IsMainHeroReady);
+            ForgeStatus.UpdateReadiness(IsCampaignSessionReady, IsMainHeroReady);
         }
     }
 }

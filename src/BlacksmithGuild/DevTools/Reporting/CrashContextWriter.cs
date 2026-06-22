@@ -55,6 +55,11 @@ namespace BlacksmithGuild.DevTools.Reporting
             WriteSnapshot(sequence, area, operation, "defer", path, deferReason: reason);
         }
 
+        public static void RecordSuppress(int sequence, string area, string operation, string reason, string path)
+        {
+            WriteSnapshot(sequence, area, operation, "suppress", path, suppressReason: reason);
+        }
+
         private static void WriteSnapshot(
             int sequence,
             string area,
@@ -63,7 +68,8 @@ namespace BlacksmithGuild.DevTools.Reporting
             string path,
             string exceptionType = null,
             string exceptionMessage = null,
-            string deferReason = null)
+            string deferReason = null,
+            string suppressReason = null)
         {
             try
             {
@@ -83,9 +89,15 @@ namespace BlacksmithGuild.DevTools.Reporting
                     builder.AppendLine($"  \"deferReason\": \"{Escape(deferReason)}\",");
                 }
 
+                if (!string.IsNullOrEmpty(suppressReason))
+                {
+                    builder.AppendLine($"  \"suppressReason\": \"{Escape(suppressReason)}\",");
+                }
+
                 builder.AppendLine($"  \"inferredLaunchPath\": \"{Escape(path)}\",");
                 builder.AppendLine($"  \"activeState\": \"{Escape(Safe(() => GameSessionState.GetActiveStateName()))}\",");
                 builder.AppendLine($"  \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");
+                builder.AppendLine($"  \"sessionReady\": {GameSessionState.IsCampaignSessionReady.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"campaignReady\": {GameSessionState.IsCampaignMapReady.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"mainHeroReady\": {GameSessionState.IsMainHeroReady.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"stabilizationActive\": {stabilizationActive.ToString().ToLowerInvariant()},");

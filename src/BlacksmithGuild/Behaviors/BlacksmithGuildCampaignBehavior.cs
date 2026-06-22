@@ -86,7 +86,7 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            if (!GameSessionState.IsCampaignMapReady)
+            if (!GameSessionState.IsCampaignSessionReady)
             {
                 return;
             }
