@@ -12,18 +12,25 @@
 - `scripts/run-live-assistive-cert.ps1`, `run-weapon-smelt-cert.ps1`
 - Export/collect scripts include smelt + marathon JSONs
 
-## Live cert results
+## Live cert results (2026-06-21 agent run)
 
 | Cert | Verdict | Evidence |
 |------|---------|----------|
-| 006B abort | USER PENDING | `AutonomousGuildLoop.json` → `verdict: Aborted` |
+| Marathon disposable bootstrap | **FAIL** | `docs/evidence/live-cert/20260621-235604/checkpoint-01-map-ready` — map ready timeout; launcher UIA could not find hwnd (foreground=Windows Terminal) |
+| 006B abort | USER PENDING | Run with `-SkipLaunch` after manual `Forge.cmd` |
 | 006C-1 trade buy | USER PENDING | `MapTradeCert.json` / `MapTradeProbe.json` |
 | 006C-2 pack buy | USER PENDING | `MapTradePackAnimalProbe.json` |
 | 006C-3 smelt | USER PENDING | `SmithingSmeltProbe.json`, `SmithingSmeltExecution.json` |
 | 009A clan intel | USER PENDING | `Run-ClanIntelCert.cmd` (6 JSON files) |
 | Faction posture | USER PENDING | `ClanContext.json` → `factionPowerPosture` |
 
-Record PASS/FAIL after `Run-LiveAssistiveCert.cmd -Session all`.
+**Baseline commit:** `3c5bbba` on `origin/main`
+
+**Recommended cert flow:** launch game manually (`Forge.cmd`), wait for F7 `campaignReady:true`, then:
+
+```powershell
+.\Run-LiveAssistiveCert.cmd -Session disposable -SkipLaunch -FromCheckpoint 2
+```
 
 ## Verify commands
 
