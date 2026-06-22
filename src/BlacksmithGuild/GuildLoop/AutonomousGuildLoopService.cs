@@ -16,6 +16,7 @@ namespace BlacksmithGuild.GuildLoop
     public static class AutonomousGuildLoopService
     {
         public const string RunAutonomousGuildLoopNowCommand = "RunAutonomousGuildLoopNow";
+        public const string AbortAutonomousGuildLoopNowCommand = "AbortAutonomousGuildLoopNow";
         public const string ReportFileName = "BlacksmithGuild_AutonomousGuildLoop.json";
 
         private static readonly string ReportPath = Path.Combine(BasePath.Name, ReportFileName);
@@ -96,12 +97,13 @@ namespace BlacksmithGuild.GuildLoop
         {
             if (_activeReport == null)
             {
-                return true;
+                return false;
             }
 
             _abortRequested = true;
             MapTradeVisibleMovementDriver.Hold();
             Complete("Aborted", "Aborted by command");
+            InGameNotice.Blocked("TBG GUILD LOOP: aborted.");
             return true;
         }
 

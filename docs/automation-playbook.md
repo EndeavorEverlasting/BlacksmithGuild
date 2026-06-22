@@ -118,6 +118,27 @@ JSON cert fields: `sessionPhase`, `settlementResolveMethod` (`partyCurrentSettle
 
 ---
 
+## Stopping automation (exit ladder)
+
+Automation is certified for **single-player SandBox/Continue campaign** only (not custom battle / multiplayer).
+
+| Tier | When | Action |
+|------|------|--------|
+| **Natural** | Default | Wait — one cycle ends; check `BlacksmithGuild_AutonomousGuildLoop.json` → `verdict` |
+| **Safe in-game** | Campaign map open, dev tools on | **Ctrl+Alt+B** or `.\forge.ps1 -Command AbortAutonomousGuildLoopNow -Wait` |
+| **Disable next launch** | Agent auto-loop armed | `.\scripts\write-agent-iteration-config.ps1 -Mode Manual` before next `Forge.cmd` |
+| **Emergency** | Launcher/script runaway or UI trap | `.\ForgeStop.cmd` from repo root |
+
+**Ctrl+Alt+B** stops all active TBG movement automation: autonomous guild loop, cohesion move, map trade route, and auto-travel. Party holds on the map; JSON shows `verdict: Aborted` where applicable.
+
+**Not an abort:** right-click hold on the map pauses vanilla movement but does **not** clear the guild-loop FSM — use **Ctrl+Alt+B**.
+
+**Cheat console (disposable saves only):** `cheat_mode = 1` in `engine_config.txt` enables Alt+` sanity checks; not required for **Ctrl+Alt+B**. See [in-game-surfaces.md](in-game-surfaces.md).
+
+Legacy per-FSM inbox aborts still work: `AbortCohesionMoveNow`, `AbortMapTradeRouteNow`.
+
+---
+
 ## Optional launch-time auto-loop (off by default)
 
 For **disposable `Forge.cmd` bootstrap only** — not Continue / personal saves:

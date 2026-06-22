@@ -68,6 +68,9 @@ CohesionEngine.BuildPlanForObjective(CohesionObjective objective) → CohesionOp
 | Command | Type | JSON |
 |---------|------|------|
 | `RunAutonomousGuildLoopNow` | **mutation + risky gate** | `BlacksmithGuild_AutonomousGuildLoop.json` |
+| `AbortAutonomousGuildLoopNow` | control (campaign map) | same JSON if loop was active — `verdict: Aborted` |
+
+**Hotkey:** **Ctrl+Alt+B** on open campaign map stops guild loop, cohesion move, map trade route, and auto-travel in one action.
 
 ---
 

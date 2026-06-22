@@ -1,4 +1,5 @@
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.Market;
 using TaleWorlds.InputSystem;
 
@@ -26,6 +27,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _legacyMWasDown;
         private static bool _legacyRWasDown;
         private static bool _legacyGWasDown;
+        private static bool _legacyBWasDown;
 
         public static void Poll()
         {
@@ -133,6 +135,11 @@ namespace BlacksmithGuild.DevTools
                     return;
                 }
 
+                if (TryMovementAbortHotkey(InputKey.B, "Ctrl+Alt+B", ref _legacyBWasDown))
+                {
+                    return;
+                }
+
                 if (TryFireEdge(InputKey.D, ref _legacyDWasDown))
                 {
                     RunCommand("Ctrl+Alt+D", DevCommandRegistry.AdvanceOneDayCommand, "Ctrl+Alt+D");
@@ -190,6 +197,7 @@ namespace BlacksmithGuild.DevTools
             _legacyMWasDown = Input.IsKeyDown(InputKey.M);
             _legacyRWasDown = Input.IsKeyDown(InputKey.R);
             _legacyGWasDown = Input.IsKeyDown(InputKey.G);
+            _legacyBWasDown = Input.IsKeyDown(InputKey.B);
         }
 
         private static bool TryHelpHotkey(InputKey key, string label, string commandName, ref bool wasDown)
@@ -205,6 +213,22 @@ namespace BlacksmithGuild.DevTools
             }
 
             RunCommand(label, commandName, label);
+            return true;
+        }
+
+        private static bool TryMovementAbortHotkey(InputKey key, string label, ref bool wasDown)
+        {
+            if (!GameSessionState.CanPollRiskyHotkeys)
+            {
+                return false;
+            }
+
+            if (!TryFireEdge(key, ref wasDown))
+            {
+                return false;
+            }
+
+            RunCommand(label, AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand, label);
             return true;
         }
 

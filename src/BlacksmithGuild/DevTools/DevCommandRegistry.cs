@@ -97,7 +97,8 @@ namespace BlacksmithGuild.DevTools
                 MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand,
                 MapTradeAutonomousService.ShowTacticalConvergenceCommand,
                 MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand,
-                AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand
+                AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand,
+                AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand
             };
 
         public static bool IsRegistered(string commandName)

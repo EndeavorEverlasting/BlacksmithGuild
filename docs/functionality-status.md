@@ -231,6 +231,7 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 | Ctrl+Alt+M | Market intel action plan (primary) |
 | Ctrl+Alt+R | Rank forge candidates + smithing crew |
 | Ctrl+Alt+G | Guild loop (market + forge + crew) |
+| Ctrl+Alt+B | Abort all movement automation |
 | Ctrl+Alt+S | Rich smithing progression |
 | F12 | Market intel (legacy only; `LegacyF12MarketHotkey=true`; conflicts with Steam) |
 

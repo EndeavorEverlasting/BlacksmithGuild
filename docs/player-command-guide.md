@@ -66,6 +66,7 @@ If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M
 | Forge rank | **Ctrl+Alt+R** | `.\forge.ps1 -Command RankForgeCandidates -Wait` | `BlacksmithGuild_ForgeRecommendations.json` | Real/stub source honesty, top craft, material gaps |
 | Smithing crew | — | `.\forge.ps1 -Command RunSmithingAdvisoryNow -Wait` | `BlacksmithGuild_SmithingAdvisory.json` | Crew roles, reserves, refine/craft prep |
 | Guild loop | **Ctrl+Alt+G** | `.\forge.ps1 -Command RunGuildLoopNow -Wait` | `BlacksmithGuild_GuildLoopReport.json` | Unified market + forge + crew + action plan |
+| Abort automation | **Ctrl+Alt+B** | `.\forge.ps1 -Command AbortAutonomousGuildLoopNow -Wait` | `BlacksmithGuild_AutonomousGuildLoop.json` | Stops guild loop / cohesion / map trade / auto-travel |
 | Stage C refine | — | `.\RunStageCCharcoalCert.cmd` | `BlacksmithGuild_SmithingSafeAction.json` | One headless hardwood→charcoal mutation (Tier 3) |
 | Stage D rest plan | — (inbox only) | `.\forge.ps1 -Command RunSmithingRestPlanNow -Wait` | `BlacksmithGuild_SmithingRestPlan.json` | Read-only rest recommendation (no time mutation) |
 | Character doctrine | — | `.\forge.ps1 -Command ShowCharacterDoctrine -Wait` | `BlacksmithGuild_CharacterDoctrine.json` | VanillaLegit + Aserai Trade-Smith doctrine |
@@ -301,6 +302,16 @@ Primary sprint entrypoint after map is ready:
 JSON: `BlacksmithGuild_AutonomousGuildLoop.json` — check `capabilities` block for honest trade/smelt/capacity gaps.
 
 Note: `RunGuildLoopNow` (Ctrl+Alt+G) remains **advisory-only** (market + forge rank). Do not confuse with `RunAutonomousGuildLoopNow`.
+
+### Stop automation (safe exit)
+
+On the **open campaign map** (close panels first if hotkey is swallowed):
+
+- **Ctrl+Alt+B** — abort all TBG movement automation (guild loop, cohesion, map trade, auto-travel)
+- Inbox: `.\forge.ps1 -Command AbortAutonomousGuildLoopNow -Wait`
+- **Emergency:** `.\ForgeStop.cmd` (kills game — unsaved progress)
+
+Full exit ladder: [automation-playbook.md](automation-playbook.md) § Stopping automation.
 
 ---
 

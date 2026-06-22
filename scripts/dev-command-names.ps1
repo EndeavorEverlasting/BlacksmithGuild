@@ -77,7 +77,8 @@ function Get-DevCommandNames {
         'AnalyzeTacticalConvergence',
         'ShowTacticalConvergence',
         'RunForgeHandoffAfterTradeNow',
-        'RunAutonomousGuildLoopNow'
+        'RunAutonomousGuildLoopNow',
+        'AbortAutonomousGuildLoopNow'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

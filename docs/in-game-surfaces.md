@@ -52,7 +52,7 @@ If shortcut keys do not appear to work, first **close any open campaign panels**
 
 If there is no visible response, check `BlacksmithGuild_Phase1.log` for `[TBG HOTKEY TRACE]` and `[TBG COMMAND TRACE]` lines.
 
-**Fallback when F-keys are swallowed by Bannerlord menus:** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), **Ctrl+Alt+M (market intel — primary)**, **Ctrl+Alt+R (rank forge candidates)**.
+**Fallback when F-keys are swallowed by Bannerlord menus:** Ctrl+Alt+7 (status), Ctrl+Alt+8 (commands), Ctrl+Alt+9 (daily tick), Ctrl+Alt+0 (fast-forward), Ctrl+Alt+1 (gold test), **Ctrl+Alt+M (market intel — primary)**, **Ctrl+Alt+R (rank forge candidates)**, **Ctrl+Alt+B (abort movement automation)**.
 
 Windows toast notifications are separate (forge install scripts) and may appear in the Windows notification area, usually bottom-right. Toast is **not** used for shortcut feedback.
 
@@ -69,6 +69,7 @@ Full diagnostic detail remains in:
 | **F8** | `Blacksmith Guild — Commands` + hotkey help lines |
 | **Ctrl+Alt+M** | `Blacksmith Guild — Market Intel` report — **USER PASS** — colored `--- ACTION PLAN ---`, `BUY@NEAREST`, `TOP SPREADS` |
 | **Ctrl+Alt+R** | `Blacksmith Guild — Forge Recommendations` — `SOURCE HONESTY`, `MATERIAL GAPS`, `ACTION PLAN`, `CRAFT NEXT`; stub labeled until real source set |
+| **Ctrl+Alt+B** | `TBG GUILD LOOP: aborted.` / `TBG AUTOMATION: all movement automation aborted.` — stops active travel FSMs |
 
 If a risky command is blocked, the block reason appears in-game (e.g. `TBG F11 BLOCKED: map menu open — close panel first.`) and in the file log with additional detail.
 
@@ -149,6 +150,7 @@ Achievements are disabled with unofficial modules. Console commands can corrupt 
 | **Ctrl+Alt+X** | `AddSmithingXp` |
 | **Ctrl+Alt+C** | `AddSmithingFocus` |
 | **Ctrl+Alt+L/D/F** | Legacy list / day / fast-forward |
+| **Ctrl+Alt+B** | `AbortAutonomousGuildLoopNow` — stop all movement automation |
 
 ### File inbox (alt-tab OK)
 

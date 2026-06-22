@@ -152,6 +152,9 @@ namespace BlacksmithGuild.DevTools
                 case "Ctrl+Alt+C":
                     InGameNotice.Info(ModDisplay.CompactLine("Ctrl+Alt+C", "Smithing focus test requested."));
                     break;
+                case "Ctrl+Alt+B":
+                    InGameNotice.Info(ModDisplay.CompactLine("Ctrl+Alt+B", "Abort movement automation requested."));
+                    break;
             }
         }
 
@@ -307,6 +310,14 @@ namespace BlacksmithGuild.DevTools
                     {
                         InGameNotice.Fail(ModDisplay.CompactLine("F11", $"FAILED: {GetFailReason(commandName)}"));
                     }
+                    break;
+
+                case "Ctrl+Alt+B":
+                    if (result == DevCommandResult.Blocked || result == DevCommandResult.Failed)
+                    {
+                        InGameNotice.Fail(ModDisplay.CompactLine(hotkeyLabel, $"FAILED: {GetFailReason(commandName)}"));
+                    }
+
                     break;
 
                 default:
@@ -694,6 +705,10 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand:
                     return AutonomousGuildLoopService.StartNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand:
+                    return AutomationAbortService.AbortAllMovementAutomationNow()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 default:

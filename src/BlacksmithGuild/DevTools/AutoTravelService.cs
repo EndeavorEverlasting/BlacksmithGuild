@@ -30,6 +30,8 @@ namespace BlacksmithGuild.DevTools
 
         public static string LastFailReason => _lastFailReason;
 
+        public static bool HasActiveRoute => _activeDestination != null;
+
         public static void OnCampaignTick()
         {
             if (_activeDestination == null || !GameSessionState.IsCampaignMapReady || MobileParty.MainParty == null)
@@ -127,6 +129,22 @@ namespace BlacksmithGuild.DevTools
             }
 
             return StartTravel(destination, "name");
+        }
+
+        public static bool AbortNow()
+        {
+            if (_activeDestination == null)
+            {
+                return false;
+            }
+
+            var destination = _activeDestination.Name?.ToString() ?? _activeDestination.StringId;
+            TryInvokeHold(MobileParty.MainParty);
+            _activeDestination = null;
+            _lastFailReason = "Aborted by command";
+            InGameNotice.Blocked($"TBG TRAVEL: route to {destination} aborted.");
+            DebugLogger.Test("[TBG TRAVEL] route aborted by command.", showInGame: false);
+            return true;
         }
 
         private static bool ShouldCheckHostilesThisTick()

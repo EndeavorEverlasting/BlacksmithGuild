@@ -97,6 +97,7 @@ namespace BlacksmithGuild.DevTools
                 new HotkeyBinding("Ctrl+Alt+M", MarketIntelligenceService.MarketSnapshotNowCommand, "Market intel"),
                 new HotkeyBinding("Ctrl+Alt+R", ForgeRecommendationService.RankForgeCandidatesCommand, "Rank forge candidates"),
                 new HotkeyBinding("Ctrl+Alt+G", GuildLoopService.RunGuildLoopNowCommand, "Guild loop (market + forge + crew)"),
+                new HotkeyBinding("Ctrl+Alt+B", AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand, "Abort all movement automation"),
                 new HotkeyBinding("Ctrl+Alt+S", CharacterProgressionTestScenarios.RichSmithingProgressionTestName, "Rich smithing progression"),
                 new HotkeyBinding("Ctrl+Alt+D", DevCommandRegistry.AdvanceOneDayCommand, "Daily tick (fallback)"),
                 new HotkeyBinding("Ctrl+Alt+7", DevCommandRegistry.ShowForgeStatusCommand, "Status (fallback)"),
