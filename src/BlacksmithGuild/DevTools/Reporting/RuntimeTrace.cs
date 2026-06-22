@@ -1,0 +1,88 @@
+using System;
+using System.Diagnostics;
+using BlacksmithGuild.DevTools;
+
+namespace BlacksmithGuild.DevTools.Reporting
+{
+    public static class RuntimeTrace
+    {
+        private static int _sequence;
+
+        public static void Run(string area, string operation, Action action)
+        {
+            var seq = InterlockedIncrement();
+            var path = LaunchPathInference.GetPathLabel();
+            var sw = Stopwatch.StartNew();
+            Log(seq, area, operation, "begin", path);
+            CrashContextWriter.RecordBegin(seq, area, operation, path);
+
+            try
+            {
+                action();
+                sw.Stop();
+                Log(seq, area, operation, "ok", path, sw.ElapsedMilliseconds);
+                CrashContextWriter.RecordOk(seq, area, operation, path);
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                LogFail(seq, area, operation, ex, path);
+                CrashContextWriter.RecordFail(seq, area, operation, ex, path);
+                throw;
+            }
+        }
+
+        public static T Run<T>(string area, string operation, Func<T> func)
+        {
+            T result = default;
+            Run(area, operation, () => { result = func(); });
+            return result;
+        }
+
+        public static void LogFail(string area, string operation, Exception ex)
+        {
+            var seq = _sequence;
+            LogFail(seq, area, operation, ex, LaunchPathInference.GetPathLabel());
+            CrashContextWriter.RecordFail(seq, area, operation, ex, LaunchPathInference.GetPathLabel());
+        }
+
+        private static void LogFail(int seq, string area, string operation, Exception ex, string path)
+        {
+            var type = ex?.GetType().Name ?? "unknown";
+            var message = Sanitize(ex?.Message);
+            DebugLogger.Test(
+                $"[TBG TRACE] seq={seq} area={area} op={operation} stage=fail exception={type} message={message} path={path}",
+                showInGame: false);
+        }
+
+        private static void Log(int seq, string area, string operation, string stage, string path, long elapsedMs = -1)
+        {
+            if (stage == "ok" && elapsedMs >= 0)
+            {
+                DebugLogger.Test(
+                    $"[TBG TRACE] seq={seq} area={area} op={operation} stage=ok elapsedMs={elapsedMs} path={path}",
+                    showInGame: false);
+                return;
+            }
+
+            DebugLogger.Test(
+                $"[TBG TRACE] seq={seq} area={area} op={operation} stage={stage} path={path}",
+                showInGame: false);
+        }
+
+        private static int InterlockedIncrement()
+        {
+            return System.Threading.Interlocked.Increment(ref _sequence);
+        }
+
+        private static string Sanitize(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return "";
+            }
+
+            return message.Replace("\r", " ").Replace("\n", " ").Replace("\"", "'");
+        }
+    }
+}

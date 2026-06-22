@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `f975312` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ pending (Agent B instrumentation push)  
 **Gate:** RED — no F7 PASS manifest yet  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
@@ -27,11 +27,11 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 |-------|-------|--------|
 | F7 evidence requirements spec | Agent A | **DONE** @ `f975312` |
 | Failure atlas + evidence matrix | Agent D | **DONE** (this commit) |
-| Runtime trace + CrashContext (StatusFlush sub-ops) | Agent B | **NEXT** (wave 1 parallel) |
-| Runner evidence harvest enrichment | Agent C | **NEXT** (wave 1 parallel) |
+| Runtime trace + CrashContext (StatusFlush sub-ops) | Agent B | **DONE** (this commit) |
+| Runner evidence harvest (`f7-evidence-harvest.ps1`) | Agent C | **DONE** (this commit) |
 | Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
 | Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **DONE** — FAIL `135217` (`instrumentation_insufficient`) |
-| F7 cert wave 2 (post B+C) | Agent A | **BLOCKED** until B+C on origin |
+| F7 cert wave 2 (post B+C) | Agent A | **READY** after this push — preflight then cert |
 | PR #7 merge | Agent A | HOLD until manifest PASS |
 | PR #8 | All | HOLD |
 

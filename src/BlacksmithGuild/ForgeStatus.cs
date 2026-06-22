@@ -328,8 +328,9 @@ namespace BlacksmithGuild
             {
                 Flush();
             }
-            catch
+            catch (Exception ex)
             {
+                RuntimeTrace.LogFail("ForgeStatus", "UpdateReadinessFlush", ex);
             }
         }
 
@@ -643,10 +644,11 @@ namespace BlacksmithGuild
                 }
 
                 builder.AppendLine("}");
-                File.WriteAllText(StatusPath, builder.ToString());
+                RuntimeTrace.Run("ForgeStatus", "FlushWrite", () => File.WriteAllText(StatusPath, builder.ToString()));
             }
-            catch
+            catch (Exception ex)
             {
+                RuntimeTrace.LogFail("ForgeStatus", "Flush", ex);
             }
         }
 

@@ -1,6 +1,7 @@
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Treasury;
@@ -12,6 +13,7 @@ namespace BlacksmithGuild.Behaviors
     {
         private bool _hasRunGoldTest;
         private bool _loggedGoldTestBlock;
+        private string _lastDriverBlockKey;
 
         internal static void ResetCampaignMapReadyAnnouncement()
         {
@@ -96,17 +98,37 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            if (CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow
-                || CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            if (LaunchPathInference.AreAutonomousDriversBlocked(
+                    CampaignMapReadyOrchestrator.ImmediateHooksCompleted,
+                    CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow))
+            {
+                LogDriverBlockedOnce();
+                return;
+            }
+
+            RuntimeTrace.Run("CampaignTick", "AutonomousDrivers", () =>
+            {
+                TreasuryDeltaWatchService.ProcessPendingSnapshot();
+                AutoTravelService.OnCampaignTick();
+                CohesionExecutionDriver.OnCampaignTick();
+                MapTradeAutonomousService.OnCampaignTick();
+                AutonomousGuildLoopService.OnCampaignTick();
+            });
+        }
+
+        private void LogDriverBlockedOnce()
+        {
+            var key =
+                $"{LaunchPathInference.GetPathLabel()}|{CampaignSetupStateTracker.Phase}|stabilization={CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow}";
+            if (string.Equals(_lastDriverBlockKey, key, System.StringComparison.Ordinal))
             {
                 return;
             }
 
-            TreasuryDeltaWatchService.ProcessPendingSnapshot();
-            AutoTravelService.OnCampaignTick();
-            CohesionExecutionDriver.OnCampaignTick();
-            MapTradeAutonomousService.OnCampaignTick();
-            AutonomousGuildLoopService.OnCampaignTick();
+            _lastDriverBlockKey = key;
+            DebugLogger.Test(
+                $"[TBG TRACE] area=CampaignTick op=AutonomousDrivers stage=blocked path={LaunchPathInference.GetPathLabel()} phase={CampaignSetupStateTracker.Phase}",
+                showInGame: false);
         }
 
         public override void SyncData(IDataStore dataStore)

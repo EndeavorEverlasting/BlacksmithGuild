@@ -26,14 +26,14 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `8ae7afd` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B instrumentation) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `135217` clean FAIL (`instrumentation_insufficient`: StatusFlush begin, no sub-ops) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-135217/` — honest FAIL (`clean_cert`, `fail_statusflush_begin`) |
 | Launcher cert | **PASS** — `hwnd SendMessage-background` with Chrome/Cursor foreground; `continue_clicked` unattended (session `135217`) |
 | Evidence requirements | [`f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md) — **landed wave 1** |
-| Next cert command | **BLOCKED** — Agent A F7 wave 2 until B (RuntimeTrace/CrashContext) on origin; C harvest **landed** @ `8ae7afd` |
+| Next cert command | Agent A wave 2 — **READY** after B push (C harvest @ `8ae7afd`; B RuntimeTrace pending this commit) |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -42,10 +42,10 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Wave 1 evidence requirements; wave 2 F7 **BLOCKED** until B+C | `docs/control/indexes/f7-evidence-requirements.md`, coordination | F7 cert until B+C land | pending |
-| **B** | C# map-ready / post-map survival | `IDLE` | **NEXT (wave 1):** RuntimeTrace + CrashContext + StatusFlush sub-ops | `src/.../DevTools/*`, orchestrator | A blocked on F7 wave 2 | `5fac5e9` |
-| **C** | Launcher / F7 runner | `DONE` | Wave 1 harvest + user path adoption landed | `scripts/f7-evidence-harvest.ps1`, gate runner | A blocked on F7 wave 2 until B lands | `8ae7afd` |
-| **D** | Docs atlas | `IDLE` | Wave 1: failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | — |
+| **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 F7 cert after B push | — | — | `f975312` |
+| **B** | C# map-ready / instrumentation | `DONE` | RuntimeTrace + CrashContext + Play/Continue guards | `src/.../Reporting/*`, orchestrator | — | pending |
+| **C** | Launcher / F7 runner | `DONE` | Wave 1 harvest + launch path adoption | `scripts/f7-evidence-harvest.ps1`, gate runner | — | `8ae7afd` |
+| **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -80,6 +80,14 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — general_agent → A, B, C (Agent B runtime instrumentation)
+
+- **Landed:** `RuntimeTrace.cs`, `CrashContextWriter.cs`, `LaunchPathInference.cs` — `[TBG TRACE] seq=… path=play|continue|unknown`; `BlacksmithGuild_CrashContext.json` at game root.
+- **Landed:** StatusFlush sub-ops (Refresh, ReadCampaignMapReady, UpdateReadiness, FlushWrite, SyncForgeStatus); map-transition + Play-setup orchestrator guards; autonomous driver block traces.
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS.
+- **F7 game cert:** **NOT RUN** (Agent A wave 2).
+- **Need from A:** Pull, preflight, F7 cert `HookMask 0x0F`; commit evidence; PR #7 merge only on manifest PASS.
 
 ### 2026-06-22 — Agent C → A, B (runner evidence harvest + launch path adoption)
 

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using BlacksmithGuild.DevTools.Reporting;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
@@ -171,6 +172,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static void CompleteIntent(string message)
         {
+            LaunchPathInference.RecordIntent(_launchIntent);
             GuildLog.Info($"[TBG QUICKSTART] {message}", showInGame: false);
             GuildLog.Display($"TBG QUICKSTART: {message}");
             DeleteIntentFiles("intent consumed after main menu action");
@@ -484,6 +486,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     }
 
                     _launchIntent = match.Groups["intent"].Value.ToLowerInvariant();
+                    LaunchPathInference.RecordIntent(_launchIntent);
                     if (!_intentSourcePaths.Contains(path, StringComparer.OrdinalIgnoreCase))
                     {
                         _intentSourcePaths.Add(path);

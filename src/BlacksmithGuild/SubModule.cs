@@ -55,6 +55,11 @@ namespace BlacksmithGuild
                 GameSessionState.Refresh();
 
                 if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && CampaignMapReadyOrchestrator.ShouldRunOrchestratorTick())
+                {
+                    CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+                }
+                else if (CampaignMapReadyOrchestrator.ImmediateHooksCompleted
                     && GameSessionState.IsMainHeroReady
                     && GameSessionState.IsCampaignMapReady)
                 {
