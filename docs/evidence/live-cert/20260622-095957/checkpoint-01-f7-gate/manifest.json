@@ -1,0 +1,16 @@
+{
+  "generatedUtc": "2026-06-22T09:59:57Z",
+  "sessionId": "20260622-095957",
+  "checkpoint": 1,
+  "name": "f7-gate",
+  "phase": "continue-load",
+  "commands": [
+    "powershell -File scripts\\run-f7-gate-continue.ps1 -HookMask 0x07"
+  ],
+  "hookMask": "0x07",
+  "passFail": "FAIL",
+  "exitCode": 2,
+  "launcher": "continue_clicked plus Safe Mode No",
+  "gateResult": "tbg_ready / MapReady reached, then game=gone-after-map-ready around 601s",
+  "notes": "Agent C bisect evidence: launcher automation under RespectUserForeground worked with Continue and Safe Mode No while non-game windows had foreground. Completed run shares post-MapReady failure pattern; hook mask did not isolate the crash."
+}
