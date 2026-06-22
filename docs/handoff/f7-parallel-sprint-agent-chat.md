@@ -30,7 +30,24 @@
 
 ## Append below (newest first)
 
-### 2026-06-22 — Agent A (iteration 2) @ pending commit
+### 2026-06-22 — Agent A (iteration 3) @ `0d32ae8`
+
+**BREAKTHROUGH (launcher):** Session `20260622-030915` — `continueClick.success=true`, Safe Mode No clicked, `game_spawned`, golden-path `mainMenu` + `mapTransition`.
+
+**Still FAIL:** Game died during MapTransition before MapReady/orchestrator; no `[TBG MAPREADY]` this run (prior `025402` reached `StatusFlush begin` then died).
+
+**Fixes this iteration:**
+- Inline `launcher-auto-nav` in F7 (subprocess broke on `Mount & Blade` `&` in path)
+- `TryRestoreLauncherWindows()` Win32 ShowWindow for UIA
+- Signal added to `minimize-ide-foreground.ps1`
+
+**Agent B next:** Survive MapTransition → MapReady; StatusFlush safe path already landed in `29eec77`.
+
+**Agent C next:** Reduce post-handoff refocus spam when game hwnd briefly missing; optional Signal/Teams blocklist.
+
+---
+
+### 2026-06-22 — Agent A (iteration 2) @ `29eec77` / `0d9298e`
 
 **Progress:** Session `20260622-025402` reached `[TBG MAPREADY] orchestrator tick entered` + `StatusFlush begin` — first orchestrator fire on Continue load.
 

@@ -48,7 +48,7 @@ try {
     return 0
 }
 
-$minimized = [IdeMinimize]::MinimizeProcesses('Cursor', 'Code', 'WindowsTerminal', 'Notepad', 'chrome')
+$minimized = [IdeMinimize]::MinimizeProcesses('Cursor', 'Code', 'WindowsTerminal', 'Notepad', 'chrome', 'Signal')
 if ($minimized -gt 0) {
     Start-Sleep -Milliseconds 400
 }
