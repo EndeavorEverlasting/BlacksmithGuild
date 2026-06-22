@@ -190,21 +190,49 @@ When `autoLoop: true` in `BlacksmithGuild_AgentIterationConfig.json`, the mod ru
 | File | Purpose |
 |------|---------|
 | `BlacksmithGuild_AutonomousGuildLoop.json` | Primary automation cert |
+| `BlacksmithGuild_MapTradeCert.json` | Trade route + `tradeExecution` delta |
+| `BlacksmithGuild_MapTradeProbe.json` | Isolated buy probe (`ProbeVanillaTradeExecutionNow`) |
 | `BlacksmithGuild_HorseMarketIntel.json` | Capacity / pack-animal advice |
 | `BlacksmithGuild_MarketIntel.json` | Trade routes and action plan |
+| `BlacksmithGuild_ClanContext.json` | Clan tier, renown, social priorities |
+| `BlacksmithGuild_NobleNetwork.json` | Ranked relation targets |
+| `BlacksmithGuild_MarriageCandidates.json` | Spouse candidates (read-only) |
+| `BlacksmithGuild_CourtshipPlan.json` | Courtship brief + cert gaps |
 | `BlacksmithGuild_Status.json` | F7 / session phase |
 | `docs/evidence/latest/README.md` | After `ExportTbgEvidence.cmd` |
 
 ---
 
+## Clan intel (009A — read-only, campaign map)
+
+After **F7** shows `campaignReady: true`:
+
+```powershell
+.\Run-ClanIntelCert.cmd
+# or individually:
+.\forge.ps1 -Command AnalyzeClanContext -Wait
+.\forge.ps1 -Command AnalyzeNobleNetwork -Wait
+.\forge.ps1 -Command AnalyzeMarriageCandidates -Wait
+.\forge.ps1 -Command ShowCourtshipPlan -Wait
+```
+
+**Not built:** `RunVisibleCourtshipAttemptNow`, guild-loop wiring, relation injection.
+
+See [handoff/009a-clan-intel-agent-handoff.md](handoff/009a-clan-intel-agent-handoff.md).
+
+---
+
 ## Known gaps (honest — not bugs)
 
-- Vanilla town buy/sell execution (probe only)  
-- Pack-animal purchase automation  
-- Weapon smelt execution  
+- Vanilla town **sell** execution (`TryExecuteSell` stub)  
+- Pack-animal purchase automation (006C-2)  
+- Weapon smelt execution (006C-3)  
 - Food / steward provisioning  
 - Multi-cycle guild loop (`guildLoopMaxCyclesPerCommand = 1`)  
 - Hero churn in guild loop  
+- Visible courtship / marriage execution (009A T3)  
 - Smithing 275 shortcut on VanillaLegit (**intentionally none**)
+
+**006C-1 buy:** code shipped — USER cert pending (`tradeExecution.goldDelta < 0` on disposable save).
 
 Roadmap: [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md)

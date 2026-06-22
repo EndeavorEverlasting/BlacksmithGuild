@@ -1,8 +1,8 @@
 # Sprint 006C — Assistive Guild Loop (close the vision)
 
-**Status:** PLAN — depends on 006B USER cert + PR merge  
+**Status:** 006C-1 CODE SHIPPED @ `main` — USER cert pending  
 **Doctrine:** VanillaLegit — automate hands (travel, scan, refine), not skill levels or hidden stat injection  
-**Branch target:** `feat/006c-assistive-guild-loop` from merged `main`
+**Branch:** `main` (006C-2+ from `feat/006c-2-pack-animal-buy` when started)
 
 ---
 
@@ -16,7 +16,7 @@ Launch → safe map travel → capacity / horses → food diversity → hero chu
 
 | Phase | Deliverable | Depends on | Honest gap today |
 |-------|-------------|------------|------------------|
-| **006C-1** | Vanilla trade driver (buy/sell with gold/inventory delta proof) | Gauntlet/menu walk | Map trade probe only |
+| **006C-1** | Vanilla trade driver (buy with gold/inventory delta proof) | Gauntlet/menu walk | **CODE SHIPPED** — USER cert pending |
 | **006C-2** | Pack-animal buy mission + horse market → MapTrade integration | 006C-1 | Horse market advisory only |
 | **006C-3** | Weapon smelt probe → execution if API proven | Smithing API research | `GuildLoopProbeWeaponSmeltOnStart` stub |
 | **006C-4** | Multi-cycle guild loop (`guildLoopMaxCyclesPerCommand` + cooldown) | 006C-1 stable | Max 1 cycle per command |
