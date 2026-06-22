@@ -3,6 +3,7 @@ $ErrorActionPreference = 'SilentlyContinue'
 
 . (Join-Path $PSScriptRoot 'write-launch-log.ps1') -Message 'ForgeStop: emergency stop invoked'
 
+$callerPid = $PID
 $killed = @()
 
 foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
@@ -14,6 +15,7 @@ foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
 }
 
 Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" | Where-Object {
+    $_.ProcessId -ne $callerPid -and
     $_.CommandLine -match 'BlacksmithGuild|forge\.ps1|Forge\.cmd|launcher-auto-nav|ForgeWatch|ForgeContinue|forge-stop'
 } | ForEach-Object {
     Stop-Process -Id $_.ProcessId -Force

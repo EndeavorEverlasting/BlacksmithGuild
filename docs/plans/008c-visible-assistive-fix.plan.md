@@ -33,6 +33,7 @@ Headless 008C catalog runs (`visibleMode: false`, 12 steps/tick) can produce leg
 5. Provenance: `visibleTraversalUsed`, `traversalMode`
 6. Session-scoped Phase1 mutation audit (no stale `LastApplied` false positives)
 7. `RunCharacterBuildVisibleCert.cmd` + `assert-character-legitimacy.ps1`
+8. `forge-stop.ps1` excludes caller `$PID` — orchestrators no longer suicide at step [1/5]
 
 ---
 
@@ -59,3 +60,4 @@ docs/evidence/latest/BlacksmithGuild_Phase1.tail.txt
 - Best-route Replay cert blocked until `CharacterBuildBest.json` exists
 - Existing `TBGPersonalAserai001` on disk is disposable/uncertified if created headless
 - USER must manually save after cert PASS (script does not auto-save)
+- **USER visible cert PENDING** — re-run `RunCharacterBuildVisibleCert.cmd` after forge-stop fix
