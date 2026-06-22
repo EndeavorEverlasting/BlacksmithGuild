@@ -22,8 +22,8 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `8c18ecd` |
-| Prior baseline | `ff823a6` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `247d89d` |
+| Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — MapTransition crash (session `030915`) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-030915/checkpoint-01-f7-gate/` |
@@ -37,8 +37,8 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Hook mask bisect `0x01`–`0x0F`; commit evidence on attempt | `docs/evidence/live-cert/**`, PR #7 | — | — |
-| **B** | C# map-ready / MapTransition | `DONE` @ `ff823a6` | Interpret bisect; C# fix if mask isolates hook | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `ff823a6` |
-| **C** | Launcher / focus / nav scripts | `DONE` @ `8c18ecd` | Monitor only unless focus regression in Launch.log | `launcher-auto-nav.ps1`, `run-f7-gate-continue.ps1` | — | `8c18ecd` |
+| **B** | C# map-ready / MapTransition | `IDLE` | Await bisect results; C# fix if mask isolates hook | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `ff823a6` |
+| **C** | Launcher / focus / nav scripts | `IDLE` | Monitor only unless focus regression in Launch.log | `launcher-auto-nav.ps1`, `run-f7-gate-continue.ps1` | — | `8c18ecd` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -71,6 +71,13 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ## Cross-agent message log (newest first)
 
+### 2026-06-22 — Agent B → A, C (coordination plan verified)
+
+- **Verified:** Coordination doc sprint complete @ `247d89d`. All agents use [`f7-agent-coordination.md`](f7-agent-coordination.md) as single live source; chat log superseded; recovery handoff links here.
+- **Need from A:** Hook mask bisect + F7 cert (see next actions). Update board row + machine lock before/after runs.
+- **Need from C:** `IDLE` unless Launch.log shows new focus regression.
+- **Need from B:** `IDLE` until A posts bisect `sessionId` results.
+
 ### 2026-06-22 — Agent C → A, B
 
 - **Landed:** Remove minimize-windows launch policy. `-RespectUserForeground` (default `$true`) on `launcher-auto-nav.ps1`; SendMessage-first hwnd clicks; iconic-only launcher restore; deleted `minimize-ide-foreground.ps1`; F7 poll passive (no 2s refocus/minimize); `fail_foreground_theft` hard-fail removed; `focus-bannerlord-window.ps1` gains `-IfMinimizedOnly`.
@@ -96,13 +103,14 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 **A**
 
-- [ ] `git pull` on `fix/f7-gate-stability` after Agent C push
+- [x] `git pull` on `fix/f7-gate-stability` after Agent C push (@ `247d89d`)
 - [ ] Run hook mask bisect `0x01`, `0x03`, `0x07`, `0x0F`
 - [ ] Commit evidence manifest per attempt
 - [ ] Merge PR #7 only on F7 PASS
 
 **B**
 
+- [x] Coordination plan verified; doc synced @ `247d89d`
 - [ ] Interpret bisect results from A
 - [ ] C# fix if mask isolates crashing hook
 - [ ] Set board row `IDLE` when not editing C#
