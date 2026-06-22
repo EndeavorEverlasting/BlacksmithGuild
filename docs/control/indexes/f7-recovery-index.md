@@ -1,8 +1,10 @@
 # F7 recovery index
 
-**Branch:** `fix/f7-gate-stability` @ `3ca823b`  
+**Branch:** `fix/f7-gate-stability` @ `f975312`  
 **Gate:** **RED** — no `passFail: PASS` manifest under `docs/evidence/live-cert/`  
 **Authority (living):** [`docs/handoff/f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
+**Failure map:** [`f7-failure-atlas.md`](f7-failure-atlas.md) · **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
+**Evidence gate:** [`f7-evidence-requirements.md`](f7-evidence-requirements.md)  
 **Policy:** Index-only — handoff and evidence paths are **not moved**.
 
 ---
@@ -34,16 +36,18 @@
 | [pr8-runner-salvage.md](../plans/open/pr8-runner-salvage.md) | [pr8-cherry-pick-bridge.md](../../handoff/pr8-cherry-pick-bridge.md) | A/C | PR #8 HOLD; gate RED |
 | [agent-launch-playbook.md](../plans/open/agent-launch-playbook.md) | [agent-launch-and-load-playbook.md](../../handoff/agent-launch-and-load-playbook.md) | B/C | F7 not certified |
 | [f7-gate-cert-marathon.md](../plans/open/f7-gate-cert-marathon.md) | [f7-gate-cert-marathon-agent-handoff.md](../../handoff/f7-gate-cert-marathon-agent-handoff.md) | A | Marathon incomplete |
-| [map-transition-bisect.md](../plans/open/map-transition-bisect.md) | [continue-map-crash-bisect-agent-handoff.md](../../handoff/continue-map-crash-bisect-agent-handoff.md) | B/A | `131237` MapTransition |
-| [golden-path-diff.md](../plans/open/golden-path-diff.md) | [f7-golden-path-diff-agent-handoff.md](../../handoff/f7-golden-path-diff-agent-handoff.md) | A | Clean cert pending |
+| [map-transition-bisect.md](../plans/open/map-transition-bisect.md) | [continue-map-crash-bisect-agent-handoff.md](../../handoff/continue-map-crash-bisect-agent-handoff.md) | B/A | StatusFlush / MapTransition |
+| [golden-path-diff.md](../plans/open/golden-path-diff.md) | [f7-golden-path-diff-agent-handoff.md](../../handoff/f7-golden-path-diff-agent-handoff.md) | A | Wave-2 cert pending |
 
-### Open work items (not separate plan files)
+### Open work items
 
 | Item | Status | Evidence |
 |------|--------|----------|
-| Launcher hwnd-background clicks | Implemented @ `9b40b96`; **not game-certified** | `131237` still FAIL / contaminated |
-| Post-map-ready C# hardening | Implemented @ `5fac5e9`; **not F7-certified** | `101016` `fail_game_gone_after_map_ready` |
-| MapTransition crash investigation | OPEN | `131237`, `030915` |
+| Launcher hwnd-background | **DONE** game-certified @ `135217` | clean Continue cert |
+| Runtime StatusFlush instrumentation | **NEXT** Agent B | `135217` `instrumentation_insufficient` |
+| Runner evidence harvest | **NEXT** Agent C | matrix gaps (tails, CrashContext, manifest fields) |
+| F7 wave-2 cert | **BLOCKED** Agent A | until B+C on origin |
+| Post-map-ready survival | OPEN | `101016` `fail_game_gone_after_map_ready` |
 
 ---
 
@@ -61,19 +65,23 @@
 
 ## Open logs
 
-| Control pointer | Session / source | passFail | Evidence path |
-|-----------------|------------------|----------|---------------|
-| [session-20260622-131237.md](../logs/open/session-20260622-131237.md) | `20260622-131237` | FAIL | `docs/evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/` |
-| [session-20260622-101016.md](../logs/open/session-20260622-101016.md) | `20260622-101016` | FAIL | `docs/evidence/live-cert/20260622-101016/checkpoint-01-f7-gate/` |
-| [superseded-parallel-sprint-chat.md](../logs/open/superseded-parallel-sprint-chat.md) | archived chat | n/a | [f7-parallel-sprint-agent-chat.md](../../handoff/f7-parallel-sprint-agent-chat.md) |
-| [live-cert-marathon.md](../logs/open/live-cert-marathon.md) | marathon handoff | n/a | [live-cert-marathon-agent-handoff.md](../../handoff/live-cert-marathon-agent-handoff.md) |
+| Control pointer | Session | passFail | Notes |
+|-----------------|---------|----------|-------|
+| [session-20260622-135217.md](../logs/open/session-20260622-135217.md) | `135217` | FAIL | **clean** Continue; `instrumentation_insufficient` |
+| [session-20260622-131237.md](../logs/open/session-20260622-131237.md) | `131237` | FAIL | contaminated |
+| [session-20260622-101016.md](../logs/open/session-20260622-101016.md) | `101016` | FAIL | post-map-ready |
+| [superseded-parallel-sprint-chat.md](../logs/open/superseded-parallel-sprint-chat.md) | archive | n/a | superseded chat |
+| [live-cert-marathon.md](../logs/open/live-cert-marathon.md) | marathon | n/a | pre-recovery |
 
-### Other key FAIL sessions (raw evidence only — no control log stub yet)
+### Other FAIL sessions (atlas only — no control stub)
 
-| Session | launchState / notes | Manifest |
-|---------|---------------------|----------|
-| `20260622-095326` | Died after TBG READY (~83s), mask `0x01` | `docs/evidence/live-cert/20260622-095326/checkpoint-01-f7-gate/manifest.json` |
-| `20260622-030915` | MapTransition before MapReady | `docs/evidence/live-cert/20260622-030915/checkpoint-01-f7-gate/manifest.json` |
+| Session | Notes | In repo? |
+|---------|-------|----------|
+| `20260622-095957` | mask `0x07`; MapTransition / claimed map-ready | yes |
+| `20260622-030915` | MapTransition before orchestrator | yes |
+| `20260622-095326` | handoff: died after TBG READY | **no checkpoint dir** |
+
+See [`f7-failure-atlas.md`](f7-failure-atlas.md) for full session table.
 
 ---
 
@@ -83,61 +91,30 @@
 
 ---
 
-## Handoff files left in place (13)
-
-All remain under `docs/handoff/` — heavily cross-linked; Agent A coordination lane active.
-
-| File | Why not moved |
-|------|---------------|
-| `f7-agent-coordination.md` | Living authority + agent board |
-| `f7-recovery-sprint-handoff.md` | Stable DoD reference; linked from coordination |
-| `agent-launch-and-load-playbook.md` | Launch doctrine; many inbound links |
-| `pr8-cherry-pick-bridge.md` | PR #8 salvage policy |
-| `f7-gate-cert-marathon-agent-handoff.md` | Marathon context |
-| `continue-map-crash-bisect-agent-handoff.md` | Bisect reference |
-| `f7-golden-path-diff-agent-handoff.md` | Golden-path analysis |
-| `f7-parallel-sprint-agent-chat.md` | Superseded archive |
-| `live-cert-marathon-agent-handoff.md` | Pre-recovery triage |
-| `006b-map-trade-cohesion-agent-handoff.md` | Prior sprint; out of F7 lane |
-| `006c-assistive-guild-loop-agent-handoff.md` | Prior sprint |
-| `009a-clan-intel-agent-handoff.md` | Prior sprint |
-| `launch-and-doc-index-agent-handoff.md` | Prior sprint |
-
----
-
 ## Raw evidence paths (unmoved)
 
 ```
-docs/evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/manifest.json  ← latest honest FAIL
-docs/evidence/live-cert/20260622-101016/checkpoint-01-f7-gate/manifest.json  ← post-map-ready FAIL
-docs/evidence/live-cert/20260622-095326/checkpoint-01-f7-gate/manifest.json
+docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json  ← latest clean FAIL (instrumentation_insufficient)
+docs/evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/manifest.json  ← contaminated
+docs/evidence/live-cert/20260622-101016/checkpoint-01-f7-gate/manifest.json  ← post-map-ready
+docs/evidence/live-cert/20260622-095957/checkpoint-01-f7-gate/manifest.json
 docs/evidence/live-cert/20260622-030915/checkpoint-01-f7-gate/manifest.json
 ```
 
-**PASS manifests in repo:** none (verified: `rg '"passFail":\s*"PASS"' docs/evidence/live-cert` → no matches).
+**PASS manifests:** none (`rg '"passFail":\s*"PASS"' docs/evidence/live-cert` → no matches).
 
 ---
 
-## Next required cert action
+## Next required action
 
-1. Static preflight on `fix/f7-gate-stability`:
-
-```powershell
-cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-git checkout fix/f7-gate-stability
-git pull origin fix/f7-gate-stability
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
-```
-
-2. **Agent A** — stop `ForgeContinue` / release automation lock; run clean F7 cert (game required):
+**Wave 1 (parallel):** Agent B + Agent C push instrumentation/harvest to `origin`.  
+**Wave 2 (serial):** Agent A — preflight + F7 cert only after B+C land.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F
 ```
 
-3. Judge: exit 0 without manifest `passFail=PASS` and `stableSeconds>=60` is forgery.
+Judge: exit 0 without manifest `passFail=PASS` and `stableSeconds>=60` is forgery.
 
 ---
 
@@ -146,10 +123,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 ```
 docs/control/
   README.md
-  indexes/f7-recovery-index.md    ← this file
-  indexes/f7-evidence-requirements.md  ← Agent A evidence gate
-  plans/open/                     ← pointer stubs → handoff
-  plans/successful/               ← empty (no F7 PASS)
-  logs/open/                      ← pointer stubs → evidence / handoff
-  logs/successful/                ← empty
+  indexes/
+    f7-recovery-index.md       ← this file
+    f7-evidence-requirements.md
+    f7-failure-atlas.md
+    f7-evidence-matrix.md
+  plans/open|successful/
+  logs/open|successful/
 ```

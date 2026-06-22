@@ -1,10 +1,11 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `bc57802` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ `f975312` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
 **Gate:** RED — no F7 PASS manifest yet  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
-**Evidence gate:** [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md)
+**Evidence gate:** [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md)  
+**Failure map:** [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) · **Artifact matrix:** [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md)
 
 ## Layout (index-only policy)
 
@@ -16,7 +17,7 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | [`plans/successful/`](plans/successful/) | Proven complete (F7 lane: empty — no PASS manifest) |
 | [`logs/open/`](logs/open/) | FAIL / partial sessions → `docs/evidence/live-cert/` |
 | [`logs/successful/`](logs/successful/) | PASS manifests (F7 lane: empty) |
-| [`indexes/`](indexes/) | Master indexes |
+| [`indexes/`](indexes/) | Master indexes + failure atlas + evidence matrix |
 
 **Rule:** No manifest, no medal. Ambiguous → open.
 
@@ -24,10 +25,10 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 
 | Phase | Owner | Status |
 |-------|-------|--------|
-| F7 evidence requirements spec | Agent A | **IN_PROGRESS** (wave 1) |
+| F7 evidence requirements spec | Agent A | **DONE** @ `f975312` |
+| Failure atlas + evidence matrix | Agent D | **DONE** (this commit) |
 | Runtime trace + CrashContext (StatusFlush sub-ops) | Agent B | **NEXT** (wave 1 parallel) |
 | Runner evidence harvest enrichment | Agent C | **NEXT** (wave 1 parallel) |
-| Failure atlas + evidence matrix | Agent D | **NEXT** (wave 1 parallel) |
 | Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
 | Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **DONE** — FAIL `135217` (`instrumentation_insufficient`) |
 | F7 cert wave 2 (post B+C) | Agent A | **BLOCKED** until B+C on origin |
@@ -45,7 +46,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patt
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 ```
 
-## F7 cert (after launcher fix)
+## F7 cert (wave 2 — after B+C on origin)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F
@@ -55,12 +56,14 @@ Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is
 
 ## Key docs
 
-- [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)
-- [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md)
-- [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)
-- [`launcher-foreground-doctrine.md`](../conventions/launcher-foreground-doctrine.md)
-- [`agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md)
+| Doc | Role |
+|-----|------|
+| [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) | Where failures occur; Play/Continue labeling |
+| [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md) | Per-session artifact completeness |
+| [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md) | Normative PASS/FAIL gate (Agent A) |
+| [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md) | Sprint posture, PR status |
+| [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md) | Living agent board |
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json` — FAIL (`clean_cert`, StatusFlush begin, `@AgentB`)
+`docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json` — FAIL (`clean_cert`, `instrumentation_insufficient`, StatusFlush begin)

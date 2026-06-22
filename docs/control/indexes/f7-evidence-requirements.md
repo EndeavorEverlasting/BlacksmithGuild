@@ -185,14 +185,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 | `095326` | yes | yes | varies | no | no | died after TBG READY |
 | `030915` | yes | yes | varies | no | no | MapTransition FAIL |
 
-See [`f7-evidence-matrix.md`](f7-evidence-matrix.md) (Agent D) and [`f7-failure-atlas.md`](f7-failure-atlas.md) when landed.
+See [`f7-evidence-matrix.md`](f7-evidence-matrix.md) and [`f7-failure-atlas.md`](f7-failure-atlas.md).
 
 ---
 
 ## Related docs
 
 - [`f7-recovery-index.md`](f7-recovery-index.md)
-- [`f7-failure-atlas.md`](f7-failure-atlas.md) *(Agent D)*
-- [`f7-evidence-matrix.md`](f7-evidence-matrix.md) *(Agent D)*
+- [`f7-failure-atlas.md`](f7-failure-atlas.md)
+- [`f7-evidence-matrix.md`](f7-evidence-matrix.md)
 - [`../README.md`](../README.md)
 - [`../../conventions/em-dashes-and-log-grep.md`](../../conventions/em-dashes-and-log-grep.md)
