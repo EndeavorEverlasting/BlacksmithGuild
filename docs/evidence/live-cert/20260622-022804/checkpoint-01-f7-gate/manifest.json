@@ -1,0 +1,51 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-022804",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T06:28:04.0181980Z",
+    "endedAtUtc":  "2026-06-22T06:38:13.8920604Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x1DF",
+    "mapReadyHookMask":  "0x1DF",
+    "launchState":  "launcher_spawned",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  true,
+    "continueClick":  {
+                          "attempted":  true,
+                          "success":  true,
+                          "method":  "uia-scoped"
+                      },
+    "lastFocusResult":  true,
+    "launchAutomationError":  "launcher-auto-nav timed out after 300s (see C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Launch.log)",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  "n",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "MapTransition -\u003e MapReady",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  true,
+                                          "mapTransition":  true,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  true,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  true,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "F7 FAIL: process died before map-ready (timeout); Safe Mode No on launch â€” prior session crash likely"
+}

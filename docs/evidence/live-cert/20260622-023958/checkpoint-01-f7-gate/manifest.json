@@ -1,0 +1,51 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-023958",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T06:39:58.4291927Z",
+    "endedAtUtc":  "2026-06-22T06:40:49.5586637Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x0F",
+    "mapReadyHookMask":  "0x0F",
+    "launchState":  "launcher_spawned",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  false,
+    "continueClick":  {
+                          "attempted":  false,
+                          "success":  false,
+                          "method":  "unknown"
+                      },
+    "lastFocusResult":  false,
+    "launchAutomationError":  "launcher-auto-nav exit code 1",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  "n",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "fresh module load ([TBG VERSION])",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  false,
+                                          "mapTransition":  false,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  false,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  false,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "F7 FAIL: process died before map-ready"
+}

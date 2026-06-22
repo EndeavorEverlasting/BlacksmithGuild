@@ -1,0 +1,82 @@
+﻿{
+    "generatedUtc":  "2026-06-22T06:40:04.6004950Z",
+    "branch":  "fix/f7-gate-stability",
+    "commit":  "08c8a55",
+    "masks":  [
+                  {
+                      "mask":  "0x0F",
+                      "exitCode":  2,
+                      "elapsedSec":  916,
+                      "sessionId":  "20260622-021332",
+                      "passFail":  "FAIL",
+                      "stableSeconds":  0,
+                      "campaignReady":  false,
+                      "canPollFileInbox":  false,
+                      "phase1TbgReady":  false,
+                      "phase1QuickStartMapReady":  true,
+                      "phase1LastSignal":  ".",
+                      "notes":  "F7 FAIL: map-ready occurred then process died (timeout boundary)",
+                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-021332\\checkpoint-01-f7-gate\\manifest.json"
+                  },
+                  {
+                      "mask":  "0x01",
+                      "exitCode":  1,
+                      "elapsedSec":  100,
+                      "sessionId":  "20260622-022352",
+                      "passFail":  "FAIL",
+                      "stableSeconds":  0,
+                      "campaignReady":  false,
+                      "canPollFileInbox":  false,
+                      "phase1TbgReady":  false,
+                      "phase1QuickStartMapReady":  false,
+                      "phase1LastSignal":  ".",
+                      "notes":  "LAUNCH FAIL: Cursor foreground theft â€” launcher automation could not obtain hwnd",
+                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-022352\\checkpoint-01-f7-gate\\manifest.json"
+                  },
+                  {
+                      "mask":  "0x00",
+                      "exitCode":  1,
+                      "elapsedSec":  131,
+                      "sessionId":  "20260622-022542",
+                      "passFail":  "FAIL",
+                      "stableSeconds":  0,
+                      "campaignReady":  false,
+                      "canPollFileInbox":  false,
+                      "phase1TbgReady":  false,
+                      "phase1QuickStartMapReady":  false,
+                      "phase1LastSignal":  ".",
+                      "notes":  "LAUNCH FAIL: Cursor foreground theft â€” launcher automation could not obtain hwnd",
+                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-022542\\checkpoint-01-f7-gate\\manifest.json"
+                  },
+                  {
+                      "mask":  "0x1DF",
+                      "exitCode":  2,
+                      "elapsedSec":  611,
+                      "sessionId":  "20260622-023620",
+                      "passFail":  "FAIL",
+                      "stableSeconds":  0,
+                      "campaignReady":  false,
+                      "canPollFileInbox":  false,
+                      "phase1TbgReady":  false,
+                      "phase1QuickStartMapReady":  false,
+                      "phase1LastSignal":  "n",
+                      "notes":  "F7 FAIL: process died before map-ready",
+                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-023620\\checkpoint-01-f7-gate\\manifest.json"
+                  },
+                  {
+                      "mask":  "0x1BF",
+                      "exitCode":  2,
+                      "elapsedSec":  95,
+                      "sessionId":  "20260622-023824",
+                      "passFail":  "FAIL",
+                      "stableSeconds":  0,
+                      "campaignReady":  false,
+                      "canPollFileInbox":  false,
+                      "phase1TbgReady":  false,
+                      "phase1QuickStartMapReady":  false,
+                      "phase1LastSignal":  "n",
+                      "notes":  "F7 FAIL: process died before map-ready",
+                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-023824\\checkpoint-01-f7-gate\\manifest.json"
+                  }
+              ]
+}
