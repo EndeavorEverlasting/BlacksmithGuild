@@ -13,10 +13,13 @@ namespace BlacksmithGuild.DevTools
     /// </summary>
     public static class CampaignMapReadyOrchestrator
     {
+        private const int DeferredHookMinTicks = 2;
+
         private static bool _immediateCompleted;
         private static bool _immediateHooksCompleted;
         private static bool _deferredCompleted;
         private static bool _deferredScheduled;
+        private static int _deferredTicksWaited;
         private static bool _hasRunAgentAutoLoop;
 
         /// <summary>True after immediate map-ready hooks finish (deferred may still be pending).</summary>
@@ -28,6 +31,7 @@ namespace BlacksmithGuild.DevTools
             _immediateHooksCompleted = false;
             _deferredCompleted = false;
             _deferredScheduled = false;
+            _deferredTicksWaited = 0;
             _hasRunAgentAutoLoop = false;
         }
 
@@ -40,12 +44,32 @@ namespace BlacksmithGuild.DevTools
 
             if (!_immediateCompleted && GameSessionState.IsCampaignMapReady)
             {
+                DebugLogger.Test("[TBG MAPREADY] orchestrator tick entered", showInGame: false);
                 RunImmediateHooks();
                 return;
             }
 
             if (_deferredScheduled && !_deferredCompleted)
             {
+                if (!GameSessionState.IsCampaignMapReady)
+                {
+                    DebugLogger.Test(
+                        "[TBG MAPREADY] deferred hooks skipped: campaign no longer ready.",
+                        showInGame: false);
+                    _deferredCompleted = true;
+                    _deferredScheduled = false;
+                    return;
+                }
+
+                if (_deferredTicksWaited < DeferredHookMinTicks)
+                {
+                    _deferredTicksWaited++;
+                    DebugLogger.Test(
+                        $"[TBG MAPREADY] deferred hooks waiting tick {_deferredTicksWaited}",
+                        showInGame: false);
+                    return;
+                }
+
                 RunDeferredHooks();
             }
         }
@@ -53,6 +77,8 @@ namespace BlacksmithGuild.DevTools
         private static void RunImmediateHooks()
         {
             _immediateCompleted = true;
+
+            DebugLogger.Test("[TBG MAPREADY] immediate hooks begin", showInGame: false);
 
             RunHook(MapReadyHookFlags.StatusFlush, "StatusFlush", () =>
             {
@@ -74,23 +100,28 @@ namespace BlacksmithGuild.DevTools
 
             RunHook(MapReadyHookFlags.HotkeyTrace, "HotkeyTrace", HotkeyTraceService.OnMapReady);
 
-            if (DevToolsConfig.MapReadyDeferHeavyHooks
-                && HasAnyEnabled(DevToolsConfig.MapReadyHookMask & MapReadyHookFlags.Deferred))
+            DebugLogger.Test("[TBG MAPREADY] immediate hooks complete", showInGame: false);
+            _immediateHooksCompleted = true;
+
+            if (HasAnyEnabled(DevToolsConfig.MapReadyHookMask & MapReadyHookFlags.Deferred))
             {
                 _deferredScheduled = true;
+                _deferredTicksWaited = 0;
                 DebugLogger.Test(
-                    "[TBG MAPREADY] deferred heavy hooks scheduled for next campaign tick.",
+                    $"[TBG MAPREADY] deferred hooks scheduled (min {DeferredHookMinTicks} campaign ticks).",
                     showInGame: false);
-                _immediateHooksCompleted = true;
-                return;
             }
-
-            RunDeferredHooks();
-            _immediateHooksCompleted = true;
+            else
+            {
+                _deferredCompleted = true;
+                DebugLogger.Test("[TBG MAPREADY] deferred hooks skipped (mask)", showInGame: false);
+            }
         }
 
         private static void RunDeferredHooks()
         {
+            DebugLogger.Test("[TBG MAPREADY] deferred hooks begin", showInGame: false);
+
             _deferredCompleted = true;
             _deferredScheduled = false;
 
@@ -104,7 +135,7 @@ namespace BlacksmithGuild.DevTools
             RunHook(MapReadyHookFlags.AgentAutoLoop, "AgentAutoLoop", TryRunAgentAutoLoopOnce);
 
             GameSessionState.SyncForgeStatus();
-            DebugLogger.Test("[TBG MAPREADY] deferred hooks complete.", showInGame: false);
+            DebugLogger.Test("[TBG MAPREADY] deferred hooks complete", showInGame: false);
         }
 
         private static void RunHook(MapReadyHookFlags flag, string name, Action action)
@@ -117,12 +148,13 @@ namespace BlacksmithGuild.DevTools
 
             try
             {
+                DebugLogger.Test($"[TBG MAPREADY] {name} begin", showInGame: false);
                 action();
                 DebugLogger.Test($"[TBG MAPREADY] {name} ok", showInGame: false);
             }
             catch (Exception ex)
             {
-                DebugLogger.Test($"[TBG MAPREADY] {name} failed: {ex.Message}", showInGame: false);
+                DebugLogger.Test($"[TBG MAPREADY] {name} failed: {ex}", showInGame: false);
                 ForgeStatus.SetTest("map_ready", "WARN", $"{name}: {ex.Message}");
             }
         }

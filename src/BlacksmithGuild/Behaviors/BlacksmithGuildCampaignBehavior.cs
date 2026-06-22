@@ -89,12 +89,17 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+
+            if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted)
             {
                 return;
             }
 
-            CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            {
+                return;
+            }
 
             TreasuryDeltaWatchService.ProcessPendingSnapshot();
             AutoTravelService.OnCampaignTick();
