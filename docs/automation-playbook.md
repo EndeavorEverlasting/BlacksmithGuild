@@ -225,7 +225,7 @@ See [handoff/009a-clan-intel-agent-handoff.md](handoff/009a-clan-intel-agent-han
 ## Known gaps (honest — not bugs)
 
 - Vanilla town **sell** execution (`TryExecuteSell` stub)  
-- Pack-animal purchase automation (006C-2)  
+- Pack-animal purchase automation (006C-2) — **code shipped**; USER cert pending  
 - Weapon smelt execution (006C-3)  
 - Food / steward provisioning  
 - Multi-cycle guild loop (`guildLoopMaxCyclesPerCommand = 1`)  

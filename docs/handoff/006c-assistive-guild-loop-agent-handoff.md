@@ -18,6 +18,18 @@
 .\ExportTbgEvidence.cmd
 ```
 
-PASS: `tradeExecution.goldDelta < 0`, `quantityBought > 0`, step `ExecuteTrade:Success`
+PASS: `tradeExecution.goldDelta < 0`, `quantityBought > 0`, step `ExecuteTrade:Success` or `ExecutePackAnimalBuy:Success`
 
-## Next: 006C-2 pack animals, 006C-3 smelt, 006C-4 multi-cycle
+## 006C-2 pack-animal USER verify
+
+```powershell
+.\Forge.cmd
+# Low capacity / few pack animals — or travel to town with sumpter/mule stock
+.\forge.ps1 -Command ProbePackAnimalBuyNow -Wait
+.\forge.ps1 -Command RunAutonomousVisibleTradeRouteNow -Wait
+.\ExportTbgEvidence.cmd
+```
+
+PASS: `missionType: BuyPackAnimalForCapacityThenTrade`, `tradeExecution.itemClassification: PackAnimal`, gold delta negative.
+
+## Next: 006C-3 smelt, 006C-4 multi-cycle

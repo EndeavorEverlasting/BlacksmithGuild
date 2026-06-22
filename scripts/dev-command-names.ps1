@@ -78,6 +78,7 @@ function Get-DevCommandNames {
         'ShowTacticalConvergence',
         'RunForgeHandoffAfterTradeNow',
         'ProbeVanillaTradeExecutionNow',
+        'ProbePackAnimalBuyNow',
         'RunAutonomousGuildLoopNow',
         'AbortAutonomousGuildLoopNow',
         'AnalyzeClanContext',

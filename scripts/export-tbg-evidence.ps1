@@ -64,6 +64,7 @@ $evidenceFiles = @(
     'BlacksmithGuild_MapTradeForgeHandoff.json',
     'BlacksmithGuild_AutonomousGuildLoop.json',
     'BlacksmithGuild_MapTradeProbe.json',
+    'BlacksmithGuild_MapTradePackAnimalProbe.json',
     'BlacksmithGuild_ClanContext.json',
     'BlacksmithGuild_NobleNetwork.json',
     'BlacksmithGuild_MarriageCandidates.json',

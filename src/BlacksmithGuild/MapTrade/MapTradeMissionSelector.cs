@@ -33,6 +33,12 @@ namespace BlacksmithGuild.MapTrade
             var main = MobileParty.MainParty;
             var candidates = new List<MapTradeMission>();
 
+            var packMission = MapTradePackAnimalMissionHelper.TryBuildPackAnimalMission(main);
+            if (packMission != null)
+            {
+                candidates.Add(packMission);
+            }
+
             foreach (var input in SmithingInputs)
             {
                 if (!MarketIntelligenceService.TryFindBuyAtNearest(input.Id, input.Name, out var townName, out var buyPrice, out var stock))

@@ -142,6 +142,18 @@ Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/ma
 
 ---
 
+## Shipped — 006C-2 pack-animal buy (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Pack-animal mission** | `RunAutonomousVisibleTradeRouteNow` when under capacity buffer | `BuyPackAnimalForCapacityThenTrade` in mission selector |
+| **Pack buy probe** | `ProbePackAnimalBuyNow` at town with pack stock | Writes `BlacksmithGuild_MapTradePackAnimalProbe.json` |
+| **Horse market integration** | `MapTradePackAnimalMissionHelper` + `HorseMarketClassifier` | Scans town rosters for `PackAnimal` class |
+
+**USER cert:** disposable save with low capacity buffer → route selects pack mission → `ExecutePackAnimalBuy:Success` + `itemClassification: PackAnimal`.
+
+---
+
 ## Shipped — 006C-1 trade driver (USER cert pending)
 
 | Feature | How to use | Status |

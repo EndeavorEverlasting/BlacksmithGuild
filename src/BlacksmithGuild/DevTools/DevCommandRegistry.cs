@@ -99,6 +99,7 @@ namespace BlacksmithGuild.DevTools
                 MapTradeAutonomousService.ShowTacticalConvergenceCommand,
                 MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand,
                 MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand,
+                MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand,
                 AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand,
                 AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand,
                 ClanContextService.AnalyzeClanContextCommand,

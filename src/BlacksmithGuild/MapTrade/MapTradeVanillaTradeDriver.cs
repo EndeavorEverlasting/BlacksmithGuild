@@ -15,10 +15,12 @@ namespace BlacksmithGuild.MapTrade
     public static class MapTradeVanillaTradeDriver
     {
         public const string ProbeVanillaTradeExecutionNowCommand = "ProbeVanillaTradeExecutionNow";
+        public const string ProbePackAnimalBuyNowCommand = "ProbePackAnimalBuyNow";
 
         public static string LastProbeMethod { get; private set; }
         public static bool LastProbeAvailable { get; private set; }
         public static string LastProbeDetail { get; private set; }
+        public static bool LastPackAnimalProbeAvailable { get; private set; }
         public static MapTradeExecutionResult LastExecutionResult { get; private set; }
 
         public static bool ProbeTradeApi(out string detail)
@@ -133,6 +135,11 @@ namespace BlacksmithGuild.MapTrade
             if (MapTradeTradeActionReflection.TryExecuteBuy(settlement, item, 1, out var result, out detail))
             {
                 LastExecutionResult = result;
+                if (mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade)
+                {
+                    LastExecutionResult.ItemClassification = "PackAnimal";
+                }
+
                 LastProbeMethod = result.ExecutionMethod;
                 LastProbeAvailable = true;
                 LastProbeDetail = detail;
@@ -204,7 +211,128 @@ namespace BlacksmithGuild.MapTrade
         public static bool ProbePackAnimalBuyApi(out string detail)
         {
             detail = "pack-animal buy API not proven";
+            LastPackAnimalProbeAvailable = false;
+
+            if (!ProbeTradeApi(out detail))
+            {
+                return false;
+            }
+
+            var party = MobileParty.MainParty;
+            var settlement = party?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+            if (settlement != null && MapTradePackAnimalMissionHelper.HasPackAnimalStockAt(settlement, party))
+            {
+                detail = "pack-animal stock at settlement + BuyItemsAction probe OK";
+                LastPackAnimalProbeAvailable = true;
+                return true;
+            }
+
+            var mission = MapTradePackAnimalMissionHelper.TryBuildPackAnimalMission(party);
+            if (mission != null)
+            {
+                detail = $"pack-animal mission available -> {mission.TargetSettlementName} ({mission.ItemName})";
+                LastPackAnimalProbeAvailable = true;
+                return true;
+            }
+
+            detail = MapTradePackAnimalMissionHelper.IsUnderCapacityBuffer(party)
+                ? "under capacity buffer but no affordable pack animals in range"
+                : "capacity buffer OK — pack-animal buy not required";
             return false;
+        }
+
+        public static bool RunProbePackAnimalBuyNow(string source = ProbePackAnimalBuyNowCommand)
+        {
+            GameSessionState.Refresh();
+            var signatures = MapTradeTradeActionReflection.ProbeApplySignatures();
+            var party = MobileParty.MainParty;
+            var settlement = party?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+            MapTradeExecutionResult execution = null;
+            string attemptDetail = null;
+            var success = false;
+            MapTradeMission mission = null;
+            var underBuffer = MapTradePackAnimalMissionHelper.IsUnderCapacityBuffer(party);
+
+            mission = MapTradePackAnimalMissionHelper.TryBuildPackAnimalMission(party);
+            if (settlement != null
+                && MapTradePackAnimalMissionHelper.TryGetCheapestPackOfferAtSettlement(
+                    settlement,
+                    party,
+                    out var itemId,
+                    out var itemName,
+                    out var buyPrice,
+                    out var stock))
+            {
+                mission = new MapTradeMission
+                {
+                    MissionType = MapTradeMissionType.BuyPackAnimalForCapacityThenTrade,
+                    ItemId = itemId,
+                    ItemName = itemName,
+                    TargetSettlement = settlement,
+                    TargetSettlementName = settlement.Name?.ToString() ?? settlement.StringId,
+                    BuyPrice = buyPrice,
+                    Stock = stock
+                };
+
+                SettlementNavigationHelper.TryEnsureSettlementInterior(out _);
+                success = TryExecuteBuy(mission, out attemptDetail);
+                execution = LastExecutionResult;
+            }
+            else if (mission != null)
+            {
+                attemptDetail =
+                    $"pack mission for travel -> {mission.TargetSettlementName} ({mission.ItemName}); arrive then retry buy";
+            }
+            else
+            {
+                attemptDetail = underBuffer
+                    ? "no pack-animal mission — no affordable pack stock in range"
+                    : "capacity buffer OK — pack buy not needed";
+            }
+
+            WritePackAnimalProbeJson(source, signatures, settlement, mission, underBuffer, success, attemptDetail, execution);
+            InGameNotice.Info($"TBG PACK BUY PROBE: {(success ? "pack delta proven" : attemptDetail ?? "blocked")}");
+            return success;
+        }
+
+        private static void WritePackAnimalProbeJson(
+            string source,
+            System.Collections.Generic.List<string> signatures,
+            Settlement settlement,
+            MapTradeMission mission,
+            bool underBuffer,
+            bool success,
+            string attemptDetail,
+            MapTradeExecutionResult execution)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            sb.AppendLine($"  \"generatedUtc\": \"{DateTime.UtcNow:o}\",");
+            sb.AppendLine($"  \"source\": \"{Escape(source)}\",");
+            sb.AppendLine($"  \"readOnly\": false,");
+            sb.AppendLine($"  \"underCapacityBuffer\": {(underBuffer ? "true" : "false")},");
+            sb.AppendLine($"  \"settlement\": {NullableString(settlement?.Name?.ToString() ?? settlement?.StringId)},");
+            sb.AppendLine($"  \"missionType\": {NullableString(mission?.MissionType.ToString())},");
+            sb.AppendLine($"  \"itemId\": {NullableString(mission?.ItemId)},");
+            sb.AppendLine($"  \"itemName\": {NullableString(mission?.ItemName)},");
+            sb.AppendLine("  \"signatures\": [");
+            for (var i = 0; i < signatures.Count; i++)
+            {
+                sb.Append($"    \"{Escape(signatures[i])}\"");
+                sb.AppendLine(i < signatures.Count - 1 ? "," : string.Empty);
+            }
+
+            sb.AppendLine("  ],");
+            sb.AppendLine($"  \"attemptSuccess\": {(success ? "true" : "false")},");
+            sb.AppendLine($"  \"attemptDetail\": {NullableString(attemptDetail)},");
+            sb.AppendLine("  \"tradeExecution\": ");
+            AppendExecution(sb, execution, "  ");
+            sb.AppendLine(",");
+            sb.AppendLine($"  \"verdict\": \"{(success ? "ProbePackBuySuccess" : "ProbePackBuyBlocked")}\"");
+            sb.AppendLine("}");
+
+            var path = Path.Combine(BasePath.Name, "BlacksmithGuild_MapTradePackAnimalProbe.json");
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
         }
 
         public static bool ProbeSmithingSmeltApi(out string detail)
@@ -263,7 +391,8 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
             sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
             sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
-            sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)}");
+            sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)},");
+            sb.AppendLine($"{indent}  \"itemClassification\": {NullableString(execution.ItemClassification)}");
             sb.Append($"{indent}}}");
         }
 

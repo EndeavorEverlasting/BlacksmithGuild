@@ -243,7 +243,10 @@ namespace BlacksmithGuild.MapTrade
 
             if (MapTradeVanillaTradeDriver.TryExecuteBuy(_activeReport.Mission, out var buyDetail))
             {
-                _activeReport.Steps.Add("ExecuteTrade:Success");
+                var successStep = _activeReport.Mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                    ? "ExecutePackAnimalBuy:Success"
+                    : "ExecuteTrade:Success";
+                _activeReport.Steps.Add(successStep);
                 _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
                 _activeReport.MutationApplied = _activeReport.TradeExecution != null;
                 RunForgeHandoffIfConfigured();
@@ -251,7 +254,10 @@ namespace BlacksmithGuild.MapTrade
                 return;
             }
 
-            _activeReport.Steps.Add($"ExecuteTrade:Blocked:{buyDetail ?? probeDetail}");
+            _activeReport.Steps.Add(
+                _activeReport.Mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                    ? $"ExecutePackAnimalBuy:Blocked:{buyDetail ?? probeDetail}"
+                    : $"ExecuteTrade:Blocked:{buyDetail ?? probeDetail}");
             if (DevToolsConfig.MapTradeAllowDirectInventoryMutation)
             {
                 Finish(MapTradeRouteState.Blocked, "Blocked", buyDetail);

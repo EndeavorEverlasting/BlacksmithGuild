@@ -78,6 +78,7 @@ namespace BlacksmithGuild.MapTrade
         public int InventoryBefore { get; set; }
         public int InventoryAfter { get; set; }
         public string ExecutionMethod { get; set; }
+        public string ItemClassification { get; set; }
     }
 
     public sealed class MapTradeCertReport

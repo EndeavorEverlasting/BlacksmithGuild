@@ -193,7 +193,7 @@ namespace BlacksmithGuild.GuildLoop
             _activeReport.Capabilities.TradeDriverMethod = MapTradeVanillaTradeDriver.LastProbeMethod;
 
             MapTradeVanillaTradeDriver.ProbePackAnimalBuyApi(out var capacityDetail);
-            _activeReport.Capabilities.PackAnimalBuy = false;
+            _activeReport.Capabilities.PackAnimalBuy = MapTradeVanillaTradeDriver.LastPackAnimalProbeAvailable;
             _activeReport.Capabilities.PackAnimalBuyDetail = capacityDetail;
 
             if (DevToolsConfig.GuildLoopProbeWeaponSmeltOnStart)
@@ -208,11 +208,17 @@ namespace BlacksmithGuild.GuildLoop
             if (MapTradeVanillaTradeDriver.TryExecuteBuy(_mission, out var buyDetail))
             {
                 _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
-                AddStep("TryVanillaBuy", "Success", buyDetail);
+                var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                    ? "TryPackAnimalBuy"
+                    : "TryVanillaBuy";
+                AddStep(step, "Success", buyDetail);
             }
             else
             {
-                AddStep("TryVanillaBuy", "Blocked", buyDetail ?? probeDetail ?? "VisibleTradeDriverUnavailable");
+                var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                    ? "TryPackAnimalBuy"
+                    : "TryVanillaBuy";
+                AddStep(step, "Blocked", buyDetail ?? probeDetail ?? "VisibleTradeDriverUnavailable");
                 if (!DevToolsConfig.GuildLoopAllowTravelOnlyIfTradeBlocked)
                 {
                     Complete("Blocked", buyDetail ?? "trade driver unavailable");

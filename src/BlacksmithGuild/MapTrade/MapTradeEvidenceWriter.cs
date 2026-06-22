@@ -184,7 +184,8 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
             sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
             sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
-            sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)}");
+            sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)},");
+            sb.AppendLine($"{indent}  \"itemClassification\": {NullableString(execution.ItemClassification)}");
             sb.Append($"{indent}}}");
         }
 

@@ -727,6 +727,10 @@ namespace BlacksmithGuild.DevTools
                     return MapTradeVanillaTradeDriver.RunProbeExecutionNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand:
+                    return MapTradeVanillaTradeDriver.RunProbePackAnimalBuyNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case ClanContextService.AnalyzeClanContextCommand:
                     return ClanContextService.AnalyzeNow(source: commandName)
                         ? DevCommandResult.Success
