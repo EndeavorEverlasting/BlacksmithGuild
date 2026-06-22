@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `7a7bcb2` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ `32cc7f0` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
 **Gate:** RED — no F7 PASS manifest yet  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
@@ -32,6 +32,7 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
 | Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **DONE** — FAIL `135217` (`instrumentation_insufficient`) |
 | F7 cert wave 3 (post B+C) | Agent A | **DONE** — FAIL `154012` (Refresh storm; harvest sufficient) |
+| F7 cert wave 4 (post B+C process detection) | Agent A | **DONE** — FAIL `163921` (contaminated; user Play handoff) |
 | PR #7 merge | Agent A | HOLD until manifest PASS |
 | PR #8 | All | HOLD |
 
@@ -66,4 +67,4 @@ Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-154012/checkpoint-01-f7-gate/manifest.json` — FAIL (Refresh storm; B markers early; harvest sufficient; user reached Quyaz — runner `game=gone`)
+`docs/evidence/live-cert/20260622-163921/checkpoint-01-f7-gate/manifest.json` — FAIL (contaminated; `targetMismatch`; user Play; C process detection OK; stale Phase1)

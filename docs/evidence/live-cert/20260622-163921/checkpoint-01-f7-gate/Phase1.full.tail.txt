@@ -1,0 +1,300 @@
+﻿[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936703 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936704 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936704 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936703 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936705 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936706 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936706 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936705 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936707 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936708 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936708 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936707 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936709 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936710 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936710 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936709 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936711 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936712 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936712 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936711 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936713 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936714 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936714 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936713 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936715 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936716 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936716 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936715 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936717 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936718 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936718 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936717 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936719 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936720 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936720 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936719 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936721 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936722 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936722 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936721 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936723 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936724 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936724 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936723 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936725 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936726 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936726 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936725 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936727 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936728 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936728 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936727 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936729 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936730 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936730 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936729 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936731 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936732 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936732 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936731 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936733 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936734 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936734 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936733 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936735 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936736 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936736 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936735 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936737 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936738 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936738 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936737 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936739 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936740 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936740 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936739 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936741 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936742 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936742 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936741 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936743 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936744 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936744 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936743 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936745 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936746 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936746 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936745 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936747 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936748 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936748 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936747 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936749 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936750 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936750 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936749 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936751 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936752 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936752 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936751 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936753 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936754 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936754 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936753 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936755 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936756 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936756 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:08] [TBG TEST] [TBG TRACE] seq=936755 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936757 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936758 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936758 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936757 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936759 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936760 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936760 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936759 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936761 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936762 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936762 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936761 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936763 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936764 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936764 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936763 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936765 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936766 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936766 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936765 area=GameSessionState op=Refresh stage=ok elapsedMs=6 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936767 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936768 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936768 area=GameSessionState op=ReadHero stage=ok elapsedMs=2 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936767 area=GameSessionState op=Refresh stage=ok elapsedMs=6 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936769 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936770 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936770 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936769 area=GameSessionState op=Refresh stage=ok elapsedMs=6 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936771 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936772 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936772 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936771 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936773 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936774 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936774 area=GameSessionState op=ReadHero stage=ok elapsedMs=2 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936773 area=GameSessionState op=Refresh stage=ok elapsedMs=6 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936775 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936776 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936776 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936775 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936777 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936778 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936778 area=GameSessionState op=ReadHero stage=ok elapsedMs=2 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936777 area=GameSessionState op=Refresh stage=ok elapsedMs=6 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936779 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936780 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936780 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936779 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936781 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936782 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936782 area=GameSessionState op=ReadHero stage=ok elapsedMs=2 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936781 area=GameSessionState op=Refresh stage=ok elapsedMs=6 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936783 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936784 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936784 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936783 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936785 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936786 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936786 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936785 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936787 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936788 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936788 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936787 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936789 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936790 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936790 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936789 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936791 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936792 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936792 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936791 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936793 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936794 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936794 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936793 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936795 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936796 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936796 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936795 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936797 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936798 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936798 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936797 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936799 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936800 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936800 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936799 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936801 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936802 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936802 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936801 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936803 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936804 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936804 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936803 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936805 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936806 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936806 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936805 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936807 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936808 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936808 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936807 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936809 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936810 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936810 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936809 area=GameSessionState op=Refresh stage=ok elapsedMs=5 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936811 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936812 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936812 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936811 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936813 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936814 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936814 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936813 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936815 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936816 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936816 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936815 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936817 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936818 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936818 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936817 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936819 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936820 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936820 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936819 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936821 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936822 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936822 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936821 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936823 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936824 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936824 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936823 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936825 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936826 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936826 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936825 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936827 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936828 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936828 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936827 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936829 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936830 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936830 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936829 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936831 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936832 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936832 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936831 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936833 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936834 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936834 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936833 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936835 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936836 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936836 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936835 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936837 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936838 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936838 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936837 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936839 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936840 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936840 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936839 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936841 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936842 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936842 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936841 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936843 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936844 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936844 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936843 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936845 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936846 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936846 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936845 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936847 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936848 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936848 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936847 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936849 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936850 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936850 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936849 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936851 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936852 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936852 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 16:38:09] [TBG TEST] [TBG TRACE] seq=936851 area=GameSessionState op=Refresh stage=ok elapsedMs=3 path=continue

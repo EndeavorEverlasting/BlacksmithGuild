@@ -1,0 +1,13 @@
+﻿[2026-06-22 16:39:28] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 16:39:28] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 16:39:29] launcher-auto: session pid=448 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=180ms respectUserForeground=True
+[2026-06-22 16:39:29] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=138336
+[2026-06-22 16:39:30] launcher-auto: UIA: AUDIT top-level windows (11): "agent_a_wave_4_f7_cert_8856d454.plan.md - BlacksmithGuild - Cursor"(Cursor); "Signal (16)"(Signal); "(27) Chat | Harrison, Khadejah | Microsoft Teams - Google Chrome"(chrome); "Prepare tutorial for Cybernet target - Google Chrome"(chrome); "Downloads - File Explorer"(explorer); "BlacksmithGuild - File Explorer"(explorer); "Windows Security"(ApplicationFrameHost); "NordVPN "(NordVPN); "Chat | NW PROJECT TEAM | Microsoft Teams"(ms-teams); "NoAutomationPeer"(DuckDuckGo); "What's new in Microsoft Edge and 4 more pages - Personal - Microsoft​ Edge"(msedge)
+[2026-06-22 16:39:31] launcher-auto: LAUNCH_STATE=game_spawned
+[2026-06-22 16:39:31] launcher-auto: raised Bannerlord window on game spawn
+[2026-06-22 16:39:34] launcher-auto: LAUNCH_STATE=play_clicked selectedBy=user
+[2026-06-22 16:39:35] launcher-auto: handoff: user launch path adopted — game running
+[2026-06-22 16:39:35] launcher-auto: LAUNCH_STATE=handoff
+[2026-06-22 16:39:35] launcher-auto: post-handoff watch started (user launch path adopted — game running)
+[2026-06-22 16:42:38] launcher-auto: post-handoff watch completed (180s, no stall kill)
+[2026-06-22 16:42:39] f7-gate: LAUNCH_STATE=game_spawned
