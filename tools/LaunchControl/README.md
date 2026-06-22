@@ -1,4 +1,6 @@
-# TBG Launch Control
+﻿# TBG Launch Control
+
+**F7 recovery note:** Launch Control wraps user commands, but agents debugging F7/Continue should start with [F7 coordination](../../docs/handoff/f7-agent-coordination.md) and the [launch/load playbook](../../docs/handoff/agent-launch-and-load-playbook.md). Do not use Launch Control as the canonical bisect path.
 
 TBG Launch Control is a user-facing launcher menu for The Blacksmith Guild. It wraps the existing launcher/autoload commands instead of replacing them.
 

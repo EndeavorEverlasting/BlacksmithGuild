@@ -1,3 +1,7 @@
+﻿# Live Cert Marathon Agent Handoff
+
+**STOP:** F7 gate is RED. Read [f7-agent-coordination.md](f7-agent-coordination.md) and [agent-launch-and-load-playbook.md](agent-launch-and-load-playbook.md). Do not run cert marathon until F7 PASS has manifest evidence.
+
 # Live Cert Marathon — Agent Handoff
 
 **Last updated:** 2026-06-22  

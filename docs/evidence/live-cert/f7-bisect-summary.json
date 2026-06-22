@@ -1,0 +1,36 @@
+{
+  "updatedUtc": "2026-06-22T10:20:00Z",
+  "gateVerdict": "RED",
+  "overallExitCode": 2,
+  "interpretation": "Launcher automation under RespectUserForeground is working; completed masks reach map-ready and then Bannerlord.exe dies before the 60s stability window. Hook mask does not isolate the crash; hand off to Agent B for post-MapReady survival.",
+  "sessions": [
+    {
+      "mask": "0x03",
+      "session": "20260622-095619",
+      "launcher": "continue_clicked via SendMessage with Cursor foreground",
+      "gateResult": "INCOMPLETE",
+      "exitCode": -1,
+      "notes": "Likely cut off when 0x07 started; no clean manifest required unless Agent A wants a mask-specific rerun."
+    },
+    {
+      "mask": "0x07",
+      "session": "20260622-095957",
+      "launcher": "continue_clicked plus Safe Mode No",
+      "gateResult": "FAIL",
+      "exitCode": 2,
+      "notes": "tbg_ready / MapReady observed, then game=gone-after-map-ready before the 60s stability window.",
+      "evidencePath": "docs/evidence/live-cert/20260622-095957/checkpoint-01-f7-gate/"
+    },
+    {
+      "mask": "0x0F",
+      "session": "20260622-101016",
+      "launcher": "continue_clicked with Chrome foreground",
+      "gateResult": "FAIL",
+      "exitCode": 2,
+      "notes": "Launcher nav timed out at 300s, polling still saw tbg_ready, then fail_game_gone_after_map_ready.",
+      "evidencePath": "docs/evidence/live-cert/20260622-101016/checkpoint-01-f7-gate/"
+    }
+  ],
+  "nextOwner": "Agent B",
+  "nextAction": "Investigate post-MapReady survival; do not continue hook-mask bisect unless a clean 0x03 manifest is specifically needed."
+}

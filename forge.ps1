@@ -23,12 +23,18 @@ param(
     [switch]$Wait,
     [switch]$Certify,
     [switch]$CertifyProgression,
+    [switch]$VerifyLogPatterns,
     [ValidateSet('AutoLoop', 'Manual')]
     [string]$IterationMode,
     [string]$Command,
     [int]$TimeoutSec = 60,
     [int]$WatchDebounceSec = 2
 )
+
+if ($VerifyLogPatterns) {
+    & (Join-Path $PSScriptRoot 'scripts\verify-log-grep-patterns.ps1')
+    return
+}
 
 function Invoke-SaveBackupIfNeeded {
     if ($SkipSaveBackup) {
