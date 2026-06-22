@@ -221,6 +221,17 @@ function Get-BannerlordBinRoots {
     ) | Where-Object { Test-Path -LiteralPath $_ }
 }
 
+function Test-BannerlordWeakSupportProcess {
+    param(
+        [string]$ProcessName,
+        [string]$Path
+    )
+
+    if ($ProcessName -eq 'Watchdog') { return $true }
+    if ($Path -and $Path -match '\\Watchdog\\Watchdog\.exe$') { return $true }
+    return $false
+}
+
 function Test-BannerlordGameExecutableLeaf {
     param([string]$Path)
 
@@ -355,12 +366,14 @@ function Get-BannerlordProcessCandidates {
             foreach ($child in @($children)) {
                 $cp = Get-Process -Id $child.ProcessId -ErrorAction SilentlyContinue
                 if ($cp) {
-                    $method = if (Test-BannerlordExecutablePath -Path $child.ExecutablePath -BannerlordRoot $BannerlordRoot) {
-                        'launcher_child_executable'
+                    if (Test-BannerlordWeakSupportProcess -ProcessName $cp.ProcessName -Path $child.ExecutablePath) {
+                        Add-Candidate -Proc $cp -Method 'launcher_child_weak'
+                    } elseif (Test-BannerlordExecutablePath -Path $child.ExecutablePath -BannerlordRoot $BannerlordRoot `
+                            -and (Test-BannerlordGameExecutableLeaf -Path $child.ExecutablePath)) {
+                        Add-Candidate -Proc $cp -Method 'launcher_child_executable'
                     } else {
-                        'launcher_child'
+                        Add-Candidate -Proc $cp -Method 'launcher_child'
                     }
-                    Add-Candidate -Proc $cp -Method $method
                 }
             }
         } catch { }
@@ -401,7 +414,7 @@ function Get-BannerlordProcessDetection {
     $launcherPid = $null
 
     foreach ($c in $candidates) {
-        if ($c.method -in @('process_name_bannerlord', 'process_name_taleworlds', 'launcher_child_executable')) {
+        if ($c.method -in @('process_name_bannerlord', 'process_name_taleworlds')) {
             $best = $c
             $confidence = 'definite'
             $method = [string]$c.method
@@ -422,7 +435,7 @@ function Get-BannerlordProcessDetection {
 
     if (-not $best) {
         foreach ($c in $candidates) {
-            if ($c.method -eq 'executable_path') {
+            if ($c.method -eq 'executable_path' -and (Test-BannerlordGameExecutableLeaf -Path $c.path)) {
                 $best = $c
                 $confidence = 'definite'
                 $method = [string]$c.method
@@ -433,10 +446,19 @@ function Get-BannerlordProcessDetection {
 
     if (-not $best) {
         foreach ($c in $candidates) {
-            if ($c.method -match '^launcher_child') {
+            if ($c.method -eq 'launcher_child_executable' -and (Test-BannerlordGameExecutableLeaf -Path $c.path)) {
                 $best = $c
                 $confidence = 'definite'
                 $method = [string]$c.method
+                break
+            }
+        }
+    }
+
+    if (-not $best) {
+        foreach ($c in $candidates) {
+            if ($c.method -eq 'launcher_child_weak') {
+                $warnings.Add('Watchdog or weak launcher child observed; not treated as game runtime') | Out-Null
                 break
             }
         }

@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `32cc7f0` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent C contamination fix) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `163921` wave 4 FAIL (`targetMismatch`; user Play handoff; stale Phase1) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-163921/` — honest FAIL (contaminated; C process detection OK) |
-| Launcher cert | **PASS** @ `135217`; `163921` user Play adopted — **not** Continue automation |
-| Next cert command | **BLOCKED** — Agent C: prevent user Play handoff during Continue cert; clean launcher state |
+| Gate verdict | **RED** — session `163921` wave 4 FAIL (contaminated user Play; not judgeable readiness) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-163921/` — honest FAIL (contaminated; stale Phase1/Status) |
+| Launcher cert | **PASS** @ `135217`; `163921` user Play — **blocked by C fix** |
+| Next cert command | Agent A clean F7 Continue cert after pulling C contamination fix |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -43,7 +43,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 4 cert `163921` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
-| **C** | Launcher / F7 runner | `DONE` | Process detection fix (`154012`) landed | — | — | `35b8dd5` |
+| **C** | Launcher / F7 runner | `DONE` | Contamination fix (`163921`) landed | — | — | pending |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -79,6 +79,19 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A (contaminated launch handoff fix @ session `163921`)
+
+- **Root cause:** `launcher-auto-nav.ps1` adopted user Play during `-CertTarget continue` F7 cert (`play_clicked selectedBy=user`); runner polled readiness for 8 min and reported MapTransition timeout instead of immediate contamination FAIL.
+- **Landed:** `scripts/f7-launch-contract.ps1` — Continue cert eligibility (`automation Continue` only); `Get-F7LaunchContaminationResult` with `failureReason=contaminated_launch_path`, `readinessJudged=false`.
+- **Landed:** `run-f7-gate-continue.ps1` — fail-closed after launch (exit 2, harvest, no readiness poll); manifest audit fields (`targetMismatchReason`, `gameSpawnAccepted`, `launcherDecisionEvents`, artifact freshness states).
+- **Landed:** `launcher-auto-nav.ps1` — `-CertTarget` param; no user Play/Continue adoption in strict Continue cert; logs `LAUNCH_STATE=contaminated_launch_path`.
+- **Landed:** stale artifact handling — Phase1/Status/CrashContext mtime vs cert start; readiness signals ignored when stale.
+- **Landed:** harvest copies `Phase1.full.tail.txt` → `Phase1.tail.txt` when session filter empty; artifact `freshness` in meta.
+- **Landed:** Watchdog downgraded to `launcher_child_weak` — not counted as game runtime alone; launcher-hosted ranked ahead.
+- **Regression:** `scripts/test-f7-contaminated-launch-163921.ps1` offline PASS; runner contract PASS (all regressions).
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** Clean F7 Continue cert after pull; do not click Play during automation window; expect immediate FAIL if user Play occurs, else judge B readiness on fresh artifacts.
 
 ### 2026-06-22 — Agent A Wave 4 Cert → B, C (session `163921`)
 
@@ -346,6 +359,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] PR #8 runner stub rejected; docs salvage via A/B bridge doc
 - [x] Runner evidence harvest + launch path adoption (wave 1)
 - [x] Process detection fix (`154012`) — shared `Get-BannerlordProcessDetection`, timeout note honesty, offline regression
+- [x] Contaminated launch handoff fix (`163921`) — reject user/automation Play on Continue cert; stale artifact handling; Watchdog downgrade
 
 ---
 

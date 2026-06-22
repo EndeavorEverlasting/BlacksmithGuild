@@ -9,7 +9,9 @@ param(
 
     [int]$TimeoutSec = 300,
     [int]$PollMs = 180,
-    [bool]$RespectUserForeground = $true
+    [bool]$RespectUserForeground = $true,
+    [ValidateSet('continue', 'play', 'any')]
+    [string]$CertTarget = 'any'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -1957,6 +1959,8 @@ $script:automationClickedPlayContinue = $false
 $script:launchPathAdopted = $false
 $script:adoptedLaunchPath = $null
 $script:adoptedSelectedBy = $null
+$script:contaminatedLaunchPath = $false
+$script:contaminatedLaunchReason = $null
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2082,6 +2086,22 @@ function Get-LaunchNavEnvironmentLine {
     return $base
 }
 
+function Test-F7ContinueCertStrict {
+    return ($CertTarget -eq 'continue')
+}
+
+function Write-ContaminatedLaunchPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Reason,
+        [string]$SelectedBy = 'unknown'
+    )
+
+    $script:contaminatedLaunchPath = $true
+    $script:contaminatedLaunchReason = [string]$Reason
+    Write-LaunchLog "LAUNCH_STATE=contaminated_launch_path reason=$Reason certTarget=$CertTarget selectedBy=$SelectedBy"
+}
+
 function Invoke-AdoptLaunchPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2093,6 +2113,18 @@ function Invoke-AdoptLaunchPath {
     )
 
     if ($script:launchPathAdopted) { return }
+
+    if (Test-F7ContinueCertStrict) {
+        if ($Path -eq 'play') {
+            Write-ContaminatedLaunchPath -Reason 'user_or_observed_play' -SelectedBy $SelectedBy
+            return
+        }
+        if ($SelectedBy -eq 'user') {
+            Write-ContaminatedLaunchPath -Reason 'user_handoff' -SelectedBy $SelectedBy
+            return
+        }
+    }
+
     $script:launchPathAdopted = $true
     $script:adoptedLaunchPath = $Path
     $script:adoptedSelectedBy = $SelectedBy
@@ -2106,6 +2138,14 @@ function Invoke-AdoptLaunchPath {
 }
 
 function Test-UserLaunchPathAdopted {
+    if (Test-F7ContinueCertStrict) {
+        if ($script:contaminatedLaunchPath) { return $false }
+        if ((Test-GameProcessRunning) -and -not $script:automationClickedPlayContinue) {
+            Write-ContaminatedLaunchPath -Reason 'game_running_before_automation_continue' -SelectedBy 'user'
+        }
+        return $false
+    }
+
     if ($script:launchPathAdopted -or $script:automationClickedPlayContinue) {
         return $false
     }
@@ -2464,6 +2504,11 @@ if ($LaunchIntent -eq 'continue') {
 
 try {
 while ((Get-Date) -lt $deadline) {
+    if ($script:contaminatedLaunchPath -and (Test-F7ContinueCertStrict)) {
+        Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+        return
+    }
+
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
         $envDesc = Get-LaunchNavEnvironmentLine
         Write-LaunchLog $envDesc

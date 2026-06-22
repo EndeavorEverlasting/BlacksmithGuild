@@ -3,6 +3,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 . (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
 
 $sessionId = '20260622-150405'

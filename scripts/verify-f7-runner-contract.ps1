@@ -25,10 +25,11 @@ $gatePath = Join-Path $PSScriptRoot 'run-f7-gate-continue.ps1'
 $bisectPath = Join-Path $PSScriptRoot 'run-agent-a-f7-bisect.ps1'
 $launchLogPath = Join-Path $PSScriptRoot 'write-launch-log.ps1'
 $harvestPath = Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1'
+$launchContractPath = Join-Path $PSScriptRoot 'f7-launch-contract.ps1'
 $pathsPath = Join-Path $PSScriptRoot 'bannerlord-paths.ps1'
 $navPath = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $pathsPath, $navPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $pathsPath, $navPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -51,7 +52,8 @@ if (Test-Path -LiteralPath $gatePath) {
         'f7-evidence-harvest.ps1', 'Invoke-F7EvidenceHarvest', 'evidenceCompleteness',
         'launchPath', 'launchSelectedBy', 'certTarget', 'targetMismatch',
         'Resolve-F7LaunchPath', 'continueEscalated', 'harvest_failed',
-        'Get-BannerlordProcessDetection', 'gameProcessDetectionMethod', 'gameAliveConfidence', 'process_detection_uncertain'
+        'Get-BannerlordProcessDetection', 'gameProcessDetectionMethod', 'gameAliveConfidence', 'process_detection_uncertain',
+        'contaminated_launch_path', 'f7-launch-contract.ps1', 'readinessJudged', 'targetMismatchReason', 'failureReason'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -97,6 +99,8 @@ if (Test-Path -LiteralPath $navPath) {
     $navText = Get-Content -LiteralPath $navPath -Raw
     if ($navText -notmatch 'Get-LaunchNavProcessDetection') {
         Add-Failure 'launcher-auto-nav.ps1 missing Get-LaunchNavProcessDetection'
+    } elseif ($navText -notmatch 'contaminated_launch_path|Write-ContaminatedLaunchPath') {
+        Add-Failure 'launcher-auto-nav.ps1 missing Continue-cert contamination guard'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
     }
@@ -172,6 +176,19 @@ if (Test-Path -LiteralPath $processDetectionRegression) {
     }
 } else {
     Add-Failure 'Missing test-f7-process-detection-154012.ps1 offline regression'
+}
+
+$contaminatedLaunchRegression = Join-Path $PSScriptRoot 'test-f7-contaminated-launch-163921.ps1'
+if (Test-Path -LiteralPath $contaminatedLaunchRegression) {
+    Write-Host 'Running test-f7-contaminated-launch-163921.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $contaminatedLaunchRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-contaminated-launch-163921.ps1 failed (Continue cert contamination regression)'
+    } else {
+        Write-Host 'PASS offline contaminated launch regression 163921' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-contaminated-launch-163921.ps1 offline regression'
 }
 
 Write-Host ''

@@ -15,6 +15,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
+. (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
@@ -55,6 +56,14 @@ $script:LaunchAutomation = [ordered]@{
     continueEscalated = $false
     continueClickUtc = $null
     continueLatencySeconds = $null
+    targetMismatchReason = $null
+    failureReason = $null
+    gameSpawnAccepted = $false
+    gameSpawnRejectedReason = $null
+    launcherDecisionEvents = @()
+    readinessJudged = $true
+    contaminatedLaunchPath = $false
+    contaminatedLaunchReason = $null
 }
 
 $script:F7ProcessTimestamps = [ordered]@{
@@ -63,6 +72,7 @@ $script:F7ProcessTimestamps = [ordered]@{
 }
 
 $script:LastProcessDetection = $null
+$certStartedUtc = [datetime]::Parse($startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind)
 
 $runnerCommandLine = "run-f7-gate-continue.ps1 -CertTarget $CertTarget" +
     $(if ($HookMask) { " -HookMask $HookMask" } else { '' }) +
@@ -303,6 +313,13 @@ function Get-LaunchAutomationSignals {
         if ($line -match 'LAUNCH_STATE=continue_escalate') {
             $script:LaunchAutomation.continueEscalated = $true
         }
+        if ($line -match 'LAUNCH_STATE=contaminated_launch_path') {
+            $script:LaunchAutomation.contaminatedLaunchPath = $true
+            if ($line -match 'reason=([^\s]+)') {
+                $script:LaunchAutomation.contaminatedLaunchReason = [string]$Matches[1]
+            }
+            Add-F7LauncherDecisionEvent -Event 'contaminated_launch_path' -Detail $line
+        }
         if ($line -match 'LAUNCH_STATE=continue_clicked|clicked CONTINUE') {
             $script:LaunchAutomation.continueClick.attempted = $true
             $script:LaunchAutomation.continueClick.success = $true
@@ -325,6 +342,7 @@ function Get-LaunchAutomationSignals {
             } else {
                 $script:LaunchAutomation.continueClick.method = 'uia-scoped'
             }
+            Add-F7LauncherDecisionEvent -Event 'continue_clicked' -Detail "selectedBy=$($script:LaunchAutomation.launchSelectedBy)"
         }
         if ($line -match 'LAUNCH_STATE=play_clicked|clicked PLAY') {
             $script:LaunchAutomation.playClick.attempted = $true
@@ -340,6 +358,7 @@ function Get-LaunchAutomationSignals {
             } else {
                 $script:LaunchAutomation.launchSelectedBy = 'automation'
             }
+            Add-F7LauncherDecisionEvent -Event 'play_clicked' -Detail "selectedBy=$($script:LaunchAutomation.launchSelectedBy)"
         }
         if ($line -match 'LAUNCH_STATE=game_spawned|handoff:|LAUNCH_STATE=handoff') {
             if ($line -match 'handoff:|LAUNCH_STATE=handoff') {
@@ -367,7 +386,13 @@ function Get-LaunchAutomationSignals {
 }
 
 function Get-F7GateSignals {
+    param([switch]$SkipReadinessJudgement)
+
     $det = Get-F7ProcessDetection
+    $phase1State = Get-F7ArtifactFreshnessState -Path $phase1Path -CertStartedUtc $certStartedUtc
+    $statusState = Get-F7ArtifactFreshnessState -Path $statusPath -CertStartedUtc $certStartedUtc
+    $crashState = Get-F7ArtifactFreshnessState -Path $crashContextPath -CertStartedUtc $certStartedUtc
+
     $result = [ordered]@{
         campaignReady = $false
         canPollFileInbox = $false
@@ -379,12 +404,24 @@ function Get-F7GateSignals {
         gameAliveConfidence = [string]$det.gameAliveConfidence
         gameProcessDetectionMethod = [string]$det.gameProcessDetectionMethod
         processDetection = $det
+        phase1ArtifactState = [string]$phase1State
+        statusArtifactState = [string]$statusState
+        crashContextArtifactState = [string]$crashState
+        readinessJudged = -not $SkipReadinessJudgement.IsPresent
     }
 
-    $result.phase1TbgReady = Test-Phase1TbgReady
-    $result.phase1LastSignal = Get-Phase1LastSignalLine
+    if ($SkipReadinessJudgement) {
+        return [pscustomobject]$result
+    }
 
-    if (Test-Path -LiteralPath $statusPath) {
+    if ($phase1State -eq 'fresh') {
+        $result.phase1TbgReady = Test-Phase1TbgReady
+        $result.phase1LastSignal = Get-Phase1LastSignalLine
+    } elseif ($phase1State -eq 'stale') {
+        $result.phase1LastSignal = 'stale_artifact'
+    }
+
+    if ($statusState -eq 'fresh') {
         try {
             $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
             $result.campaignReady = ($st.campaignReady -eq $true)
@@ -459,6 +496,70 @@ function Resolve-F7LaunchPath {
             $script:LaunchAutomation.targetMismatch = $true
         }
     }
+}
+
+function Add-F7LauncherDecisionEvent {
+    param(
+        [string]$Event,
+        [string]$Detail = $null
+    )
+
+    $entry = [ordered]@{
+        utc = (Get-Date).ToUniversalTime().ToString('o')
+        event = [string]$Event
+        detail = if ($Detail) { [string]$Detail } else { $null }
+    }
+    $script:LaunchAutomation.launcherDecisionEvents += ,$entry
+}
+
+function Get-F7LaunchContamination {
+    param([datetime]$SinceLocal)
+
+    $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+    Resolve-F7LaunchPath -SinceLocal $SinceLocal
+
+    return Get-F7LaunchContaminationResult `
+        -CertTarget $CertTarget `
+        -LaunchPath ([string]$script:LaunchAutomation.launchPath) `
+        -LaunchSelectedBy ([string]$script:LaunchAutomation.launchSelectedBy) `
+        -AutomationContinueSuccess ([bool]$script:LaunchAutomation.continueClick.success) `
+        -ContaminatedLaunchLogSeen ([bool]$script:LaunchAutomation.contaminatedLaunchPath) `
+        -ContaminatedLaunchLogReason ([string]$script:LaunchAutomation.contaminatedLaunchReason)
+}
+
+function Apply-F7LaunchContaminationState {
+    param($Contamination)
+
+    if (-not $Contamination.contaminated) {
+        if ($Contamination.gameSpawnAccepted) {
+            $script:LaunchAutomation.gameSpawnAccepted = $true
+        }
+        return
+    }
+
+    $script:LaunchAutomation.targetMismatch = [bool]$Contamination.targetMismatch
+    $script:LaunchAutomation.targetMismatchReason = [string]$Contamination.targetMismatchReason
+    $script:LaunchAutomation.failureReason = [string]$Contamination.failureReason
+    $script:LaunchAutomation.gameSpawnAccepted = $false
+    $script:LaunchAutomation.gameSpawnRejectedReason = [string]$Contamination.gameSpawnRejectedReason
+    $script:LaunchAutomation.readinessJudged = $false
+}
+
+function Invoke-F7ContaminationFail {
+    param(
+        [datetime]$SinceLocal,
+        $Contamination
+    )
+
+    Apply-F7LaunchContaminationState -Contamination $Contamination
+    Write-F7LaunchState 'fail_contaminated_launch_path'
+    $signals = Get-F7GateSignals -SkipReadinessJudgement $true
+    $launchSignals = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+    $notes = "F7 FAIL: contaminated_launch_path; readiness not judged; $($Contamination.targetMismatchReason)"
+    $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $signals `
+        -Notes $notes -LaunchSignals $launchSignals -SinceLocal $SinceLocal
+    Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
+    Exit-F7Gate -Code 2 -CheckpointDir $dir
 }
 
 function Test-F7CertTargetMismatch {
@@ -558,17 +659,35 @@ function Save-CheckpointEvidence {
     New-Item -ItemType Directory -Force -Path $checkpointDir | Out-Null
 
     Resolve-F7LaunchPath -SinceLocal $SinceLocal
-    if (Test-F7CertTargetMismatch) {
+    $contamination = Get-F7LaunchContamination -SinceLocal $SinceLocal
+    Apply-F7LaunchContaminationState -Contamination $contamination
+
+    if ($contamination.contaminated -or (Test-F7CertTargetMismatch)) {
         $script:LaunchAutomation.targetMismatch = $true
-        if ($PassFail -eq 'PASS') {
-            $PassFail = 'FAIL'
+        if (-not $script:LaunchAutomation.targetMismatchReason) {
+            $script:LaunchAutomation.targetMismatchReason = "certTarget=$CertTarget launchPath=$($script:LaunchAutomation.launchPath) launchSelectedBy=$($script:LaunchAutomation.launchSelectedBy)"
+        }
+        $script:LaunchAutomation.readinessJudged = $false
+        $PassFail = 'FAIL'
+        if ($ExitCode -eq 0) {
             $ExitCode = 2
             $StableSec = 0
+        }
+        if ($contamination.contaminated) {
+            $script:LaunchAutomation.failureReason = [string]$contamination.failureReason
+            if ($Notes -notmatch 'contaminated_launch_path') {
+                $Notes = "F7 FAIL: contaminated_launch_path; readiness not judged; $($contamination.targetMismatchReason)"
+            }
+        } elseif ($Notes -notmatch 'target_mismatch') {
             $Notes = "target_mismatch: certTarget=$CertTarget launchPath=$($script:LaunchAutomation.launchPath) launchSelectedBy=$($script:LaunchAutomation.launchSelectedBy); $Notes"
         }
     }
 
-    $gamePhaseAtEnd = Get-F7GamePhaseAtEnd -Signals $LastSignals -SinceLocal $SinceLocal
+    $gamePhaseAtEnd = if ($script:LaunchAutomation.readinessJudged) {
+        Get-F7GamePhaseAtEnd -Signals $LastSignals -SinceLocal $SinceLocal
+    } else {
+        'not_judged_contaminated_launch_path'
+    }
     $harvestFields = [ordered]@{}
     try {
         $startedDt = [datetime]::Parse($startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind)
@@ -641,6 +760,15 @@ function Save-CheckpointEvidence {
         launchSelectedBy = $script:LaunchAutomation.launchSelectedBy
         certTarget = $CertTarget
         targetMismatch = [bool]$script:LaunchAutomation.targetMismatch
+        targetMismatchReason = if ($script:LaunchAutomation.targetMismatchReason) { [string]$script:LaunchAutomation.targetMismatchReason } else { $null }
+        failureReason = if ($script:LaunchAutomation.failureReason) { [string]$script:LaunchAutomation.failureReason } else { $null }
+        gameSpawnAccepted = [bool]$script:LaunchAutomation.gameSpawnAccepted
+        gameSpawnRejectedReason = if ($script:LaunchAutomation.gameSpawnRejectedReason) { [string]$script:LaunchAutomation.gameSpawnRejectedReason } else { $null }
+        launcherDecisionEvents = @($script:LaunchAutomation.launcherDecisionEvents)
+        readinessJudged = [bool]$script:LaunchAutomation.readinessJudged
+        phase1ArtifactState = if ($LastSignals.phase1ArtifactState) { [string]$LastSignals.phase1ArtifactState } else { $null }
+        statusArtifactState = if ($LastSignals.statusArtifactState) { [string]$LastSignals.statusArtifactState } else { $null }
+        crashContextArtifactState = if ($LastSignals.crashContextArtifactState) { [string]$LastSignals.crashContextArtifactState } else { $null }
         lastFocusResult = $script:LaunchAutomation.lastFocusResult
         launchAutomationError = $script:LaunchAutomation.launchError
         campaignReady = [bool]$LastSignals.campaignReady
@@ -741,6 +869,7 @@ function Invoke-F7NoClickLaunch {
         TimeoutSec             = $TimeoutSec
         PollMs                 = 180
         RespectUserForeground = $true
+        CertTarget             = $CertTarget
     }
 
     Write-Host 'Starting launcher-auto-nav inline (avoids & path / subprocess UIA issues)...' -ForegroundColor DarkGray
@@ -925,6 +1054,12 @@ try {
     $launchOk = Invoke-F7NoClickLaunch -TimeoutSec $LaunchTimeoutSec -SinceLocal $launchStartedLocal
     $null = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
 
+    $contamination = Get-F7LaunchContamination -SinceLocal $launchStartedLocal
+    if ($contamination.contaminated) {
+        Invoke-F7ContaminationFail -SinceLocal $launchStartedLocal -Contamination $contamination
+    }
+    Apply-F7LaunchContaminationState -Contamination $contamination
+
     $launchEnd = Get-Date
     $postLaunchSec = 0.0
 
@@ -994,6 +1129,10 @@ try {
         }
 
         if (Test-F7GateCondition -Signals $lastSignals) {
+            $pollContamination = Get-F7LaunchContamination -SinceLocal $launchStartedLocal
+            if ($pollContamination.contaminated) {
+                Invoke-F7ContaminationFail -SinceLocal $launchStartedLocal -Contamination $pollContamination
+            }
             if (-not $stableSince) {
                 $stableSince = Get-Date
                 Write-F7LaunchState 'stable'
