@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B MapTransition survival) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `f7b90ad` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `150405` wave 2 FAIL (MapTransition death before MapReady; useful trace + CrashContext) |
@@ -42,7 +42,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 cert `150405` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `DONE` | MapTransition survival @ session `150405` theory | `src/.../Reporting/*`, orchestrator, GSS, ForgeStatus, SubModule | — | pending |
+| **B** | C# map-ready / instrumentation | `DONE` | MapTransition survival @ session `150405` theory | `src/.../Reporting/*`, orchestrator, GSS, ForgeStatus, SubModule | — | `f7b90ad` |
 | **C** | Launcher / F7 runner | `DONE` | Harvest bug fix + offline regression `150405` | `scripts/f7-evidence-harvest.ps1` | — | `8185034` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
