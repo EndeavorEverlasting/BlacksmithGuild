@@ -1,15 +1,31 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `bbd6081` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ `3ca823b` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
 **Gate:** RED — no F7 PASS manifest yet  
-**Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)
+**Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
+**Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)
+
+## Layout (index-only policy)
+
+Handoff files and raw evidence stay in place. This tree classifies sprint state with pointers only.
+
+| Path | Purpose |
+|------|---------|
+| [`plans/open/`](plans/open/) | Active / blocked plans → canonical `docs/handoff/` |
+| [`plans/successful/`](plans/successful/) | Proven complete (F7 lane: empty — no PASS manifest) |
+| [`logs/open/`](logs/open/) | FAIL / partial sessions → `docs/evidence/live-cert/` |
+| [`logs/successful/`](logs/successful/) | PASS manifests (F7 lane: empty) |
+| [`indexes/`](indexes/) | Master indexes |
+
+**Rule:** No manifest, no medal. Ambiguous → open.
 
 ## Active sprint
 
 | Phase | Owner | Status |
 |-------|-------|--------|
 | Commit session `20260622-131237` FAIL evidence | Agent A | DONE (see evidence path) |
-| Launcher foreground doctrine + hwnd-background clicks | Agent C | DONE (this sprint) |
+| Launcher foreground doctrine + hwnd-background clicks | Agent C | DONE (code); **not game-certified** |
+| Control doc organization (index-only) | Archivist | DONE |
 | Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **NEXT** — requires game |
 | PR #7 merge | Agent A | HOLD until manifest PASS |
 | PR #8 | All | HOLD |
@@ -35,10 +51,11 @@ Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is
 
 ## Key docs
 
+- [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)
 - [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)
 - [`launcher-foreground-doctrine.md`](../conventions/launcher-foreground-doctrine.md)
 - [`agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md)
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/manifest.json` — FAIL (contaminated cert)
+`docs/evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/manifest.json` — FAIL (`contaminated_cert`, `MapTransition`)

@@ -5,7 +5,7 @@ Stable reference (DoD, log paths, bisect commands): [`f7-recovery-sprint-handoff
 **Launch / F7 commands:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md) — invocation doctrine (direct PS primary).  
 **Em dashes in log grep:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) — never substitute `-` for `—` in Phase1 patterns.  
 **Launcher foreground:** [`docs/conventions/launcher-foreground-doctrine.md`](../conventions/launcher-foreground-doctrine.md) — hwnd-background clicks; no user window rearrangement.  
-**Sprint control pointer:** [`docs/control/README.md`](../control/README.md)
+**Sprint control pointer:** [`docs/control/README.md`](../control/README.md) · **F7 index:** [`docs/control/indexes/f7-recovery-index.md`](../control/indexes/f7-recovery-index.md)
 
 ---
 
@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `bbd6081` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `3ca823b` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `131237` MapTransition crash + contaminated launcher; prior `101016` post-map-ready crash |
@@ -41,7 +41,7 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Committed `131237` FAIL evidence; F7 rerun pending | `docs/evidence/live-cert/**`, PR #7/#8 | — | `9b40b96` |
+| **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Clean F7 cert @ `3ca823b` HookMask 0x0F | `docs/evidence/live-cert/**`, PR #7/#8 | automation lock held | pending |
 | **B** | C# map-ready / post-map survival | `IDLE` | Post-map-ready hardening @ `5fac5e9`; watch MapTransition pattern (`131237`) | — | — | `5fac5e9` |
 | **C** | Launcher / F7 runner | `DONE` | hwnd-background clicks + brief focus+restore; doctrine doc | `launcher-auto-nav.ps1`, `launcher-foreground-doctrine.md` | A may F7 cert | `9b40b96` |
 
@@ -71,13 +71,20 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | — | — | — |
+| `automation` | **Agent A Cert** | F7 cert in progress | `run-f7-gate-continue.ps1 -HookMask 0x0F` |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent D Archivist → A, B, C (control index-only layout)
+
+- **Landed:** `docs/control/plans|logs/{open,successful}`, `docs/control/indexes/f7-recovery-index.md`, open pointer stubs; README synced @ `3ca823b`.
+- **Policy:** Index-only — all 13 `docs/handoff/*.md` and `docs/evidence/live-cert/**` **unmoved**.
+- **Gate:** RED unchanged. No PASS manifest. PR #7/#8 HOLD unchanged.
+- **Need from A:** Clean F7 cert rerun after pull (`HookMask 0x0F`).
 
 ### 2026-06-22 — general_agent → A, B, C (131237 evidence + launcher doctrine)
 
