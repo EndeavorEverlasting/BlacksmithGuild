@@ -1,0 +1,36 @@
+﻿{
+    "generatedUtc":  "2026-06-22T06:33:27.5380412Z",
+    "branch":  "fix/f7-gate-stability",
+    "commit":  "ae530af",
+    "maxRounds":  2,
+    "rounds":  [
+                   {
+                       "round":  1,
+                       "mask":  "0x0F",
+                       "exitCode":  2,
+                       "elapsedSec":  95,
+                       "sessionId":  "20260622-022956",
+                       "passFail":  "FAIL",
+                       "stableSeconds":  0,
+                       "launchState":  "launcher_spawned",
+                       "phase1QuickStartMapReady":  false,
+                       "goldenFirstMissing":  "fresh module load ([TBG VERSION])",
+                       "notes":  "F7 FAIL: process died before map-ready",
+                       "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-022956\\checkpoint-01-f7-gate\\manifest.json"
+                   },
+                   {
+                       "round":  2,
+                       "mask":  "0x0F",
+                       "exitCode":  2,
+                       "elapsedSec":  95,
+                       "sessionId":  "20260622-023144",
+                       "passFail":  "FAIL",
+                       "stableSeconds":  0,
+                       "launchState":  "game_spawned",
+                       "phase1QuickStartMapReady":  false,
+                       "goldenFirstMissing":  "fresh module load ([TBG VERSION])",
+                       "notes":  "F7 FAIL: process died before map-ready",
+                       "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-023144\\checkpoint-01-f7-gate\\manifest.json"
+                   }
+               ]
+}
