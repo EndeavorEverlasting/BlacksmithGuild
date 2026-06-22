@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `7a7bcb2` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent C process detection) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `154012` wave 3 FAIL (timeout; Refresh storm; no map-ready) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-154012/` — honest FAIL (harvest sufficient; B markers early, tail Refresh flood) |
 | Launcher cert | **PASS** @ `135217`; `154012` `continue_escalate` + nav timeout (friction, not target mismatch) |
-| Next cert command | **HOLD** — B fix Refresh storm + map-ready; C fix game process detection |
+| Next cert command | **HOLD** — B map-ready survival; A rerun after B + C process detection land |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -43,7 +43,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 3 cert `154012` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** Refresh storm + map-ready gate (`154012`) | `src/.../GameSessionState.cs`, guards | — | `f7b90ad` |
-| **C** | Launcher / F7 runner | `IDLE` | **NEXT:** `gameProcessRunning` false while game alive (`154012`) | `scripts/run-f7-gate-continue.ps1` | — | `8185034` |
+| **C** | Launcher / F7 runner | `DONE` | Process detection fix (`154012`) landed | — | — | pending |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -79,6 +79,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A, B (process detection fix @ session `154012`)
+
+- **Root cause:** F7 runner and launcher nav used `Get-Process -Name Bannerlord` only; session `154012` ran **launcher-hosted** (`TaleWorlds.MountAndBlade.Launcher` window `Singleplayer PID: 139112`) while Phase1 stayed active → false `gameProcessRunning=false` and wrong notes `process died`.
+- **Landed:** `Get-BannerlordProcessDetection` in `bannerlord-paths.ps1` — multi-signal candidates (process name, game exe path, launcher-hosted window, launcher child, Phase1/Status freshness); manifest audit fields (`gameAliveConfidence`, `gameProcessDetectionMethod`, `gameProcessCandidates`, etc.).
+- **Landed:** `run-f7-gate-continue.ps1` — shared detection in poll/timeout; MapTransition timeout notes when game alive; no false `process died` when logs fresh or launcher-hosted.
+- **Landed:** `launcher-auto-nav.ps1` — shared detection; heartbeat `game=hosted|yes|phase1|uncertain`; `Test-LaunchClickVerified` accepts launcher-hosted spawn.
+- **Regression:** `scripts/test-f7-process-detection-154012.ps1` offline PASS; `test-f7-harvest-150405.ps1` now uses committed Phase1.tail (immune to live game log drift).
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS (both offline regressions).
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** F7 rerun after B map-ready fix; expect `gameProcessRunning=true`, `gameProcessDetectionMethod=launcher_hosted` or `phase1_active`, timeout notes `MapTransition` not `process died`.
+- **Need from B:** MapTransition → MapReady survival (root gameplay blocker for `154012`).
 
 ### 2026-06-22 — Agent A Wave 3 Cert → B, C (session `154012`)
 
@@ -306,6 +318,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] CONTINUE hwnd hit-test fix (`095505`) — launcher_ok audit, coord skip, 30s verify, continue_escalate
 - [x] PR #8 runner stub rejected; docs salvage via A/B bridge doc
 - [x] Runner evidence harvest + launch path adoption (wave 1)
+- [x] Process detection fix (`154012`) — shared `Get-BannerlordProcessDetection`, timeout note honesty, offline regression
 
 ---
 

@@ -14,7 +14,12 @@ if (-not (Test-Path -LiteralPath $manifestPath)) {
 
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
-$phase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
+$sourcePhase1Tail = Join-Path $sourceCheckpoint 'Phase1.tail.txt'
+if (-not (Test-Path -LiteralPath $sourcePhase1Tail)) {
+    throw "Missing baseline Phase1.tail: $sourcePhase1Tail"
+}
+$phase1Path = Join-Path $env:TEMP "f7-harvest-regression-$sessionId-phase1.log"
+Copy-Item -LiteralPath $sourcePhase1Tail -Destination $phase1Path -Force
 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $bannerlordRoot
 $startedDt = [datetime]::Parse([string]$manifest.startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind)
 $sinceLocal = $startedDt.ToLocalTime()
@@ -68,4 +73,5 @@ try {
     Write-Host "evidenceCompleteness=$($result.evidenceCompleteness.score)"
 } finally {
     Remove-Item -LiteralPath $testDir -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $phase1Path -Force -ErrorAction SilentlyContinue
 }

@@ -1963,6 +1963,7 @@ $deadline = $startTime.AddSeconds($effectiveTimeout)
 $loadStallSec = 180
 $phase1LogPath = Get-Phase1LogPath -BannerlordRoot $BannerlordRoot
 $statusJsonPath = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
+$crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
 $lastHeartbeat = Get-Date
 $heartbeatSec = 30
 $preHandoffSuppressedLogged = $false
@@ -2056,8 +2057,29 @@ function Test-LaunchReadyNow {
     return $false
 }
 
+function Get-LaunchNavProcessDetection {
+    return Get-BannerlordProcessDetection -BannerlordRoot $BannerlordRoot `
+        -Phase1Path $phase1LogPath -StatusPath $statusJsonPath -CrashContextPath $crashContextPath
+}
+
 function Test-GameProcessRunning {
-    return $null -ne (Get-Process -Name $gameExeName -ErrorAction SilentlyContinue)
+    return [bool](Get-LaunchNavProcessDetection).gameProcessRunning
+}
+
+function Get-LaunchNavEnvironmentLine {
+    $base = [UIAHelper]::DescribeEnvironment()
+    $det = Get-LaunchNavProcessDetection
+    if ($det.gameProcessRunning) {
+        $tag = switch ([string]$det.gameAliveConfidence) {
+            'definite' { 'yes' }
+            'launcher_hosted' { 'hosted' }
+            'phase1_active' { 'phase1' }
+            'process_detection_uncertain' { 'uncertain' }
+            default { 'yes' }
+        }
+        return ($base -replace 'game=(yes|no)', "game=$tag")
+    }
+    return $base
 }
 
 function Invoke-AdoptLaunchPath {
@@ -2412,9 +2434,11 @@ function Test-LaunchClickVerified {
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
-        if (Test-GameProcessRunning) { return $true }
+        $det = Get-LaunchNavProcessDetection
+        if ($det.gameProcessRunning) { return $true }
 
         if ($Intent -eq 'continue') {
+            if ($det.gameAliveConfidence -eq 'launcher_hosted') { return $true }
             if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
             if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
         }
@@ -2441,7 +2465,7 @@ if ($LaunchIntent -eq 'continue') {
 try {
 while ((Get-Date) -lt $deadline) {
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
-        $envDesc = [UIAHelper]::DescribeEnvironment()
+        $envDesc = Get-LaunchNavEnvironmentLine
         Write-LaunchLog $envDesc
         if ($envDesc -match 'launcher=no' -and (Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue)) {
             Write-LaunchLog 'LAUNCH_STATE=waiting_launcher_hwnd'

@@ -24,6 +24,7 @@ $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
 $statusPath = Get-StatusJsonPath -BannerlordRoot $bannerlordRoot
 $phase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $bannerlordRoot
+$crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $bannerlordRoot
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId\checkpoint-01-f7-gate"
 $startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -60,6 +61,8 @@ $script:F7ProcessTimestamps = [ordered]@{
     gameStartUtc = $null
     gameEndUtc = $null
 }
+
+$script:LastProcessDetection = $null
 
 $runnerCommandLine = "run-f7-gate-continue.ps1 -CertTarget $CertTarget" +
     $(if ($HookMask) { " -HookMask $HookMask" } else { '' }) +
@@ -104,8 +107,92 @@ function Invoke-BannerlordFocusHelper {
     }
 }
 
+function Get-F7ProcessDetection {
+    $det = Get-BannerlordProcessDetection -BannerlordRoot $bannerlordRoot `
+        -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath
+    $script:LastProcessDetection = $det
+    return $det
+}
+
 function Test-GameProcessRunning {
-    return $null -ne (Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
+    return [bool](Get-F7ProcessDetection).gameProcessRunning
+}
+
+function Test-F7GameAliveUncertain {
+    param($Detection)
+    if (-not $Detection) { return $false }
+    return [string]$Detection.gameAliveConfidence -in @(
+        'launcher_hosted', 'phase1_active', 'process_detection_uncertain'
+    )
+}
+
+function Get-F7GameGoneFailNotes {
+    param(
+        $Detection,
+        [bool]$EverMapReady,
+        [bool]$PriorSessionCrashLikely
+    )
+
+    if (Test-F7GameAliveUncertain -Detection $Detection) {
+        $method = [string]$Detection.gameProcessDetectionMethod
+        if ($EverMapReady) {
+            return "F7 FAIL: process_detection_uncertain after map-ready (method=$method; Bannerlord.exe not matched)"
+        }
+        return "F7 FAIL: process_detection_uncertain; logs active but Bannerlord.exe not matched (method=$method)"
+    }
+
+    if ($EverMapReady) {
+        return 'F7 FAIL: map-ready occurred then process died'
+    }
+    if ($PriorSessionCrashLikely) {
+        return 'F7 FAIL: process died before map-ready; Safe Mode No on launch — prior session crash likely (mod/load chain)'
+    }
+    return 'F7 FAIL: process died before map-ready'
+}
+
+function Get-F7TimeoutFailNotes {
+    param(
+        $LastSignals,
+        $Detection,
+        [bool]$EverMapReady,
+        $LaunchSignals
+    )
+
+    if (Test-F7GameAliveUncertain -Detection $Detection -or $LastSignals.gameRunning) {
+        if (-not $EverMapReady) {
+            $method = if ($Detection) { [string]$Detection.gameProcessDetectionMethod } else { 'unknown' }
+            $conf = if ($Detection) { [string]$Detection.gameAliveConfidence } else { 'unknown' }
+            if ($LaunchSignals.priorSessionCrashLikely) {
+                return "F7 FAIL: timeout in MapTransition (game alive; detection=$conf method=$method); Safe Mode No on launch; prior session crash likely"
+            }
+            return "F7 FAIL: timeout in MapTransition (game alive; detection=$conf method=$method; no map-ready signal)"
+        }
+        if (-not (Test-F7GateCondition -Signals $LastSignals)) {
+            return 'F7 FAIL: timeout — map-ready seen but gate conditions not stable 60s (status file stale/missing fields)'
+        }
+        return 'F7 FAIL: timeout before 60s stability window completed'
+    }
+
+    if (-not $LastSignals.gameRunning) {
+        if ($EverMapReady) {
+            return 'F7 FAIL: map-ready occurred then process died (timeout boundary)'
+        }
+        if ($LaunchSignals.priorSessionCrashLikely) {
+            return 'F7 FAIL: process died before map-ready (timeout); Safe Mode No on launch — prior session crash likely'
+        }
+        return 'F7 FAIL: process died before map-ready (timeout boundary)'
+    }
+
+    if (-not $EverMapReady) {
+        if ($LaunchSignals.priorSessionCrashLikely) {
+            return 'F7 FAIL: timeout still in MapTransition; Safe Mode No on launch — prior session crash likely (mod/load chain)'
+        }
+        return 'F7 FAIL: timeout still in MapTransition (no map-ready signal)'
+    }
+    if (-not (Test-F7GateCondition -Signals $LastSignals)) {
+        return 'F7 FAIL: timeout — map-ready seen but gate conditions not stable 60s (status file stale/missing fields)'
+    }
+    return 'F7 FAIL: timeout before 60s stability window completed'
 }
 
 function Test-LauncherProcessRunning {
@@ -280,6 +367,7 @@ function Get-LaunchAutomationSignals {
 }
 
 function Get-F7GateSignals {
+    $det = Get-F7ProcessDetection
     $result = [ordered]@{
         campaignReady = $false
         canPollFileInbox = $false
@@ -287,7 +375,10 @@ function Get-F7GateSignals {
         phase1TbgReady = $false
         phase1QuickStartMapReady = $false
         phase1LastSignal = $null
-        gameRunning = (Test-GameProcessRunning)
+        gameRunning = [bool]$det.gameProcessRunning
+        gameAliveConfidence = [string]$det.gameAliveConfidence
+        gameProcessDetectionMethod = [string]$det.gameProcessDetectionMethod
+        processDetection = $det
     }
 
     $result.phase1TbgReady = Test-Phase1TbgReady
@@ -388,7 +479,7 @@ function Get-F7GamePhaseAtEnd {
 }
 
 function Update-F7ProcessTimestamps {
-    $running = Test-GameProcessRunning
+    $running = [bool](Get-F7ProcessDetection).gameProcessRunning
     $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
     if ($running -and -not $script:F7ProcessTimestamps.gameStartUtc) {
         $script:F7ProcessTimestamps.gameStartUtc = $nowUtc
@@ -559,6 +650,15 @@ function Save-CheckpointEvidence {
         phase1QuickStartMapReady = [bool]$LastSignals.phase1QuickStartMapReady
         phase1LastSignal = $LastSignals.phase1LastSignal
         gameProcessRunning = [bool]$LastSignals.gameRunning
+        gameAliveConfidence = if ($LastSignals.gameAliveConfidence) { [string]$LastSignals.gameAliveConfidence } else { $null }
+        gameProcessDetectionMethod = if ($LastSignals.gameProcessDetectionMethod) { [string]$LastSignals.gameProcessDetectionMethod } else { $null }
+        gameProcessPid = if ($script:LastProcessDetection) { $script:LastProcessDetection.gameProcessPid } else { $null }
+        gameProcessName = if ($script:LastProcessDetection) { $script:LastProcessDetection.gameProcessName } else { $null }
+        gameProcessPath = if ($script:LastProcessDetection) { $script:LastProcessDetection.gameProcessPath } else { $null }
+        launcherProcessPid = if ($script:LastProcessDetection) { $script:LastProcessDetection.launcherProcessPid } else { $null }
+        processDetectionWarnings = if ($script:LastProcessDetection) { @($script:LastProcessDetection.processDetectionWarnings) } else { @() }
+        processDetectionLastSeenUtc = if ($script:LastProcessDetection) { $script:LastProcessDetection.processDetectionLastSeenUtc } else { $null }
+        gameProcessCandidates = if ($script:LastProcessDetection) { @($script:LastProcessDetection.gameProcessCandidates) } else { @() }
         goldenPathCheck = (Get-GoldenPathCheck -SinceLocal $SinceLocal)
         launchSignals = if ($LaunchSignals) {
             [ordered]@{
@@ -756,7 +856,12 @@ function Test-LaunchStillStarting {
     )
     if ($GameRunning) { return $false }
     if ($GameWasSeen) { return $false }
+
+    $det = Get-F7ProcessDetection
+    if (Test-F7GameAliveUncertain -Detection $det) { return $true }
+
     if (Test-Phase1SessionActive -SinceUtc $LaunchStartedLocal.ToUniversalTime()) { return $true }
+    if ($det.phase1LogFresh) { return $true }
     if ($ElapsedSec -lt 90 -and (Test-LauncherProcessRunning)) { return $true }
     if ($ElapsedSec -lt 120 -and (Test-LauncherProcessRunning) -and -not $GameWasSeen) { return $true }
     if ($ElapsedSec -lt 45) { return $true }
@@ -770,9 +875,17 @@ function Write-F7PollHeartbeat {
         [bool]$EverMapReady,
         [string]$LaunchState
     )
-    $state = if ($Signals.gameRunning) { 'game=running' }
-        elseif ($EverMapReady) { 'game=gone-after-map-ready' }
-        else { 'game=gone' }
+    $gameTag = if ($Signals.gameRunning) {
+        switch ([string]$Signals.gameAliveConfidence) {
+            'definite' { 'running' }
+            'launcher_hosted' { 'running(hosted)' }
+            'phase1_active' { 'running(phase1)' }
+            'process_detection_uncertain' { 'running(uncertain)' }
+            default { 'running' }
+        }
+    } elseif ($EverMapReady) { 'gone-after-map-ready' }
+    else { 'gone' }
+    $state = "game=$gameTag"
     $phase = if ($Signals.phase1TbgReady) { 'TBG READY' }
         elseif ($Signals.phase1QuickStartMapReady) { 'QuickStart MapReady' }
         elseif (Test-Phase1MapTransition -SinceLocal $launchStartedLocal) { 'MapTransition' }
@@ -865,15 +978,15 @@ try {
 
         if (-not $lastSignals.gameRunning -and -not (Test-LaunchStillStarting -GameRunning $lastSignals.gameRunning `
                 -GameWasSeen $gameEverSeen -ElapsedSec $elapsedSec -LaunchStartedLocal $launchStarted)) {
-            if ($everMapReady) {
+            $det = Get-F7ProcessDetection
+            if (Test-F7GameAliveUncertain -Detection $det) {
+                Write-F7LaunchState 'fail_process_detection_uncertain'
+            } elseif ($everMapReady) {
                 Write-F7LaunchState 'fail_game_gone_after_map_ready'
-                $notes = 'F7 FAIL: map-ready occurred then process died'
-            } elseif ((Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal).priorSessionCrashLikely) {
-                $notes = 'F7 FAIL: process died before map-ready; Safe Mode No on launch — prior session crash likely (mod/load chain)'
-            } else {
-                $notes = 'F7 FAIL: process died before map-ready'
             }
             $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
+            $notes = Get-F7GameGoneFailNotes -Detection $det -EverMapReady $everMapReady `
+                -PriorSessionCrashLikely $launchSignals.priorSessionCrashLikely
             $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $lastSignals `
                 -Notes $notes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
             Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
@@ -917,21 +1030,9 @@ try {
     $lastSignals = Get-F7GateSignals
     $lastSignals.phase1QuickStartMapReady = Test-Phase1QuickStartMapReady -SinceLocal $launchStartedLocal
     $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
-    if (-not $lastSignals.gameRunning) {
-        $notes = if ($everMapReady) { 'F7 FAIL: map-ready occurred then process died (timeout boundary)' }
-            elseif ($launchSignals.priorSessionCrashLikely) { 'F7 FAIL: process died before map-ready (timeout); Safe Mode No on launch — prior session crash likely' }
-            else { 'F7 FAIL: process died before map-ready (timeout boundary)' }
-    } elseif (-not $everMapReady) {
-        $notes = if ($launchSignals.priorSessionCrashLikely) {
-            'F7 FAIL: timeout still in MapTransition; Safe Mode No on launch — prior session crash likely (mod/load chain)'
-        } else {
-            'F7 FAIL: timeout still in MapTransition (no map-ready signal)'
-        }
-    } elseif (-not (Test-F7GateCondition -Signals $lastSignals)) {
-        $notes = 'F7 FAIL: timeout — map-ready seen but gate conditions not stable 60s (status file stale/missing fields)'
-    } else {
-        $notes = 'F7 FAIL: timeout before 60s stability window completed'
-    }
+    $det = Get-F7ProcessDetection
+    $notes = Get-F7TimeoutFailNotes -LastSignals $lastSignals -Detection $det -EverMapReady $everMapReady `
+        -LaunchSignals $launchSignals
     $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $lastSignals `
         -Notes $notes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
     Write-Host "$notes. Evidence: $dir" -ForegroundColor Red

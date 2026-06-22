@@ -210,3 +210,288 @@ function Write-ForgeRunLogPaths {
     Write-Host 'Collect:      .\forge.ps1 -CollectDiagnostics' -ForegroundColor DarkGray
     Write-Host ''
 }
+
+function Get-BannerlordBinRoots {
+    param([string]$BannerlordRoot)
+
+    @(
+        (Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client')
+        (Join-Path $BannerlordRoot 'bin\Gaming.Desktop.x64_Shipping_Client')
+        (Join-Path $BannerlordRoot 'bin\Win64_Shipping_wEditor')
+    ) | Where-Object { Test-Path -LiteralPath $_ }
+}
+
+function Test-BannerlordGameExecutableLeaf {
+    param([string]$Path)
+
+    if (-not $Path) { return $false }
+    $leaf = [System.IO.Path]::GetFileName($Path)
+    return $leaf -in @('Bannerlord.exe', 'TaleWorlds.MountAndBlade.exe')
+}
+
+function Test-BannerlordExecutablePath {
+    param(
+        [string]$Path,
+        [string]$BannerlordRoot
+    )
+
+    if (-not $Path) { return $false }
+    try {
+        $full = [System.IO.Path]::GetFullPath($Path)
+    } catch {
+        return $false
+    }
+    foreach ($binRoot in (Get-BannerlordBinRoots -BannerlordRoot $BannerlordRoot)) {
+        if ($full.StartsWith([System.IO.Path]::GetFullPath($binRoot), [StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+    if ($full -match '\\Mount & Blade II Bannerlord\\bin\\' -or $full -match '\\Mount and Blade II Bannerlord\\bin\\') {
+        return $true
+    }
+    return $false
+}
+
+function Test-LauncherHostedWindowTitle {
+    param([string]$Title)
+
+    if (-not $Title) { return $false }
+    return $Title -match 'Mount and Blade II Bannerlord' `
+        -or $Title -match 'M&B II: Bannerlord' `
+        -or $Title -match 'Bannerlord - Singleplayer' `
+        -or $Title -match 'Bannerlord - Multiplayer' `
+        -or ($Title -match 'Singleplayer PID:' -and $Title -match 'Bannerlord')
+}
+
+function Test-BannerlordLogFresh {
+    param(
+        [string]$Path,
+        [int]$MaxAgeSec = 10
+    )
+
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) { return $false }
+    try {
+        $ageSec = ((Get-Date).ToUniversalTime() - (Get-Item -LiteralPath $Path).LastWriteTimeUtc).TotalSeconds
+        return ($ageSec -ge 0 -and $ageSec -le $MaxAgeSec)
+    } catch {
+        return $false
+    }
+}
+
+function Get-ProcessExecutablePathSafe {
+    param([System.Diagnostics.Process]$Process)
+
+    if (-not $Process) { return $null }
+    try {
+        return [string]$Process.MainModule.FileName
+    } catch {
+        try {
+            $wmi = Get-CimInstance Win32_Process -Filter "ProcessId=$($Process.Id)" -ErrorAction Stop
+            return [string]$wmi.ExecutablePath
+        } catch {
+            return $null
+        }
+    }
+}
+
+function Get-BannerlordProcessCandidates {
+    param(
+        [string]$BannerlordRoot,
+        [int]$LauncherPidHint = 0
+    )
+
+    $candidates = New-Object System.Collections.ArrayList
+    $seenPids = @{}
+
+    function Add-Candidate {
+        param(
+            [System.Diagnostics.Process]$Proc,
+            [string]$Method,
+            [bool]$IsLauncherHosted = $false
+        )
+        if (-not $Proc -or $seenPids.ContainsKey($Proc.Id)) { return }
+        $seenPids[$Proc.Id] = $true
+        $exePath = Get-ProcessExecutablePathSafe -Process $Proc
+        [void]$candidates.Add([PSCustomObject]@{
+            pid = [int]$Proc.Id
+            name = [string]$Proc.ProcessName
+            path = $exePath
+            method = [string]$Method
+            windowTitle = [string]$Proc.MainWindowTitle
+            isLauncherHosted = [bool]$IsLauncherHosted
+        })
+    }
+
+    foreach ($p in @(Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)) {
+        Add-Candidate -Proc $p -Method 'process_name_bannerlord'
+    }
+
+    foreach ($p in @(Get-Process -Name 'TaleWorlds.MountAndBlade' -ErrorAction SilentlyContinue)) {
+        Add-Candidate -Proc $p -Method 'process_name_taleworlds'
+    }
+
+    foreach ($p in @(Get-Process -ErrorAction SilentlyContinue)) {
+        if ($p.ProcessName -in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher', 'TaleWorlds.MountAndBlade')) { continue }
+        $exePath = Get-ProcessExecutablePathSafe -Process $p
+        if ((Test-BannerlordExecutablePath -Path $exePath -BannerlordRoot $BannerlordRoot) `
+                -and (Test-BannerlordGameExecutableLeaf -Path $exePath)) {
+            Add-Candidate -Proc $p -Method 'executable_path'
+        }
+    }
+
+    foreach ($p in @(Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)) {
+        if (Test-LauncherHostedWindowTitle -Title $p.MainWindowTitle) {
+            Add-Candidate -Proc $p -Method 'launcher_hosted_window' -IsLauncherHosted $true
+        }
+    }
+
+    $launcherPids = @(
+        @(Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
+    )
+    if ($LauncherPidHint -gt 0) { $launcherPids += $LauncherPidHint }
+    foreach ($parentPid in @($launcherPids | Select-Object -Unique)) {
+        try {
+            $children = Get-CimInstance Win32_Process -Filter "ParentProcessId=$parentPid" -ErrorAction Stop
+            foreach ($child in @($children)) {
+                $cp = Get-Process -Id $child.ProcessId -ErrorAction SilentlyContinue
+                if ($cp) {
+                    $method = if (Test-BannerlordExecutablePath -Path $child.ExecutablePath -BannerlordRoot $BannerlordRoot) {
+                        'launcher_child_executable'
+                    } else {
+                        'launcher_child'
+                    }
+                    Add-Candidate -Proc $cp -Method $method
+                }
+            }
+        } catch { }
+    }
+
+    return @($candidates.ToArray())
+}
+
+function Get-BannerlordProcessDetection {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BannerlordRoot,
+        [string]$Phase1Path = $null,
+        [string]$StatusPath = $null,
+        [string]$CrashContextPath = $null,
+        [int]$LauncherPidHint = 0,
+        [int]$CacheSec = 2
+    )
+
+    $nowUtc = (Get-Date).ToUniversalTime()
+    if ($script:BannerlordProcessDetectionCache -and $script:BannerlordProcessDetectionCacheUtc) {
+        $cacheAge = ($nowUtc - $script:BannerlordProcessDetectionCacheUtc).TotalSeconds
+        if ($cacheAge -le $CacheSec) {
+            return $script:BannerlordProcessDetectionCache
+        }
+    }
+
+    $warnings = New-Object System.Collections.Generic.List[string]
+    $candidates = Get-BannerlordProcessCandidates -BannerlordRoot $BannerlordRoot -LauncherPidHint $LauncherPidHint
+
+    $phase1Fresh = Test-BannerlordLogFresh -Path $Phase1Path -MaxAgeSec 10
+    $statusFresh = Test-BannerlordLogFresh -Path $StatusPath -MaxAgeSec 15
+    $crashFresh = Test-BannerlordLogFresh -Path $CrashContextPath -MaxAgeSec 15
+
+    $best = $null
+    $confidence = 'none'
+    $method = 'none'
+    $launcherPid = $null
+
+    foreach ($c in $candidates) {
+        if ($c.method -in @('process_name_bannerlord', 'process_name_taleworlds', 'launcher_child_executable')) {
+            $best = $c
+            $confidence = 'definite'
+            $method = [string]$c.method
+            break
+        }
+    }
+
+    if (-not $best) {
+        foreach ($c in $candidates) {
+            if ($c.isLauncherHosted) {
+                $best = $c
+                $confidence = 'launcher_hosted'
+                $method = 'launcher_hosted_window'
+                break
+            }
+        }
+    }
+
+    if (-not $best) {
+        foreach ($c in $candidates) {
+            if ($c.method -eq 'executable_path') {
+                $best = $c
+                $confidence = 'definite'
+                $method = [string]$c.method
+                break
+            }
+        }
+    }
+
+    if (-not $best) {
+        foreach ($c in $candidates) {
+            if ($c.method -match '^launcher_child') {
+                $best = $c
+                $confidence = 'definite'
+                $method = [string]$c.method
+                break
+            }
+        }
+    }
+
+    $launcherProc = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($launcherProc) {
+        $launcherPid = [int]$launcherProc.Id
+    }
+
+    if ($confidence -eq 'none' -and $phase1Fresh) {
+        $confidence = 'phase1_active'
+        $method = 'phase1_log_fresh'
+        $warnings.Add('Phase1 log fresh but no Bannerlord process matched — likely launcher-hosted or renamed') | Out-Null
+    } elseif ($confidence -eq 'none' -and ($statusFresh -or $crashFresh)) {
+        $confidence = 'process_detection_uncertain'
+        $method = if ($statusFresh) { 'status_json_fresh' } else { 'crash_context_fresh' }
+        $warnings.Add('Status/CrashContext fresh but no process match') | Out-Null
+    }
+
+    $gameProcessRunning = ($confidence -ne 'none')
+    $lastSeenUtc = if ($gameProcessRunning) { $nowUtc.ToString('o') } else { $null }
+
+    $result = [ordered]@{
+        gameProcessRunning = [bool]$gameProcessRunning
+        gameAliveConfidence = [string]$confidence
+        gameProcessDetectionMethod = [string]$method
+        gameProcessCandidates = @($candidates)
+        gameProcessPid = if ($best) { [int]$best.pid } else { $null }
+        gameProcessName = if ($best) { [string]$best.name } else { $null }
+        gameProcessPath = if ($best) { [string]$best.path } else { $null }
+        launcherProcessPid = $launcherPid
+        processDetectionWarnings = @($warnings)
+        processDetectionLastSeenUtc = $lastSeenUtc
+        phase1LogFresh = [bool]$phase1Fresh
+        statusJsonFresh = [bool]$statusFresh
+        crashContextFresh = [bool]$crashFresh
+    }
+
+    $script:BannerlordProcessDetectionCache = $result
+    $script:BannerlordProcessDetectionCacheUtc = $nowUtc
+    return $result
+}
+
+function Test-BannerlordGameProcessRunning {
+    param(
+        [string]$BannerlordRoot,
+        [string]$Phase1Path = $null,
+        [string]$StatusPath = $null,
+        [string]$CrashContextPath = $null,
+        [int]$LauncherPidHint = 0
+    )
+
+    $det = Get-BannerlordProcessDetection -BannerlordRoot $BannerlordRoot `
+        -Phase1Path $Phase1Path -StatusPath $StatusPath -CrashContextPath $CrashContextPath `
+        -LauncherPidHint $LauncherPidHint
+    return [bool]$det.gameProcessRunning
+}
