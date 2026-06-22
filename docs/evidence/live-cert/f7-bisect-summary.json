@@ -1,0 +1,37 @@
+{
+  "generatedUtc": "2026-06-22T10:25:00Z",
+  "branch": "work",
+  "tooling": {
+    "cmdPath": "Run-F7GateContinue.cmd / run-agent-a-f7-bisect.ps1",
+    "cmdPathResult": "FAIL: PowerShell parse errors in run-f7-gate-continue.ps1 when invoked through the .cmd path due to corrupted em-dash log strings.",
+    "directPath": "powershell -File scripts\\run-f7-gate-continue.ps1 -HookMask <mask>",
+    "directPathResult": "Launcher automation works under RespectUserForeground; failures occur after map-ready."
+  },
+  "runs": [
+    {
+      "hookMask": "0x01",
+      "sessionId": null,
+      "launcher": "continue_clicked via SendMessage with Cursor foreground; Safe Mode No; MapReady; [TBG MAPREADY] StatusFlush ok",
+      "gateResult": "FAIL: game died during 60s stability poll; clean manifest not saved due to launch-log write race"
+    },
+    {
+      "hookMask": "0x03",
+      "sessionId": "20260622-095619",
+      "launcher": "continue_clicked via SendMessage with Cursor foreground",
+      "gateResult": "INCOMPLETE: exited -1 roughly 3 minutes in, likely interrupted when 0x07 started"
+    },
+    {
+      "hookMask": "0x07",
+      "sessionId": "20260622-095957",
+      "launcher": "continue_clicked plus Safe Mode No",
+      "gateResult": "FAIL exit 2: tbg_ready / MapReady, then game=gone-after-map-ready around 601s"
+    },
+    {
+      "hookMask": "0x0F",
+      "sessionId": "20260622-101016",
+      "launcher": "continue_clicked with Chrome foreground",
+      "gateResult": "FAIL exit 2: nav timed out at 300s; poll still saw tbg_ready, then fail_game_gone_after_map_ready"
+    }
+  ],
+  "takeaway": "Hook masks 0x01, 0x07, and 0x0F all reached MapReady before Bannerlord.exe exited during/after the stability gate. Mask 0x03 is incomplete. The hook mask does not appear to isolate the crash; next investigation should focus on post-MapReady survival rather than launcher automation or additional mask bisecting."
+}

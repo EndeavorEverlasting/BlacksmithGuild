@@ -1,0 +1,16 @@
+{
+  "generatedUtc": "2026-06-22T10:10:16Z",
+  "sessionId": "20260622-101016",
+  "checkpoint": 1,
+  "name": "f7-gate",
+  "phase": "continue-load",
+  "commands": [
+    "powershell -File scripts\\run-f7-gate-continue.ps1 -HookMask 0x0F"
+  ],
+  "hookMask": "0x0F",
+  "passFail": "FAIL",
+  "exitCode": 2,
+  "launcher": "continue_clicked with Chrome foreground",
+  "gateResult": "nav timed out at 300s; poll still saw tbg_ready, then fail_game_gone_after_map_ready",
+  "notes": "Agent C bisect evidence: launcher automation under RespectUserForeground worked. Completed run shares post-MapReady failure pattern; hook mask did not isolate the crash."
+}
