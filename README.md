@@ -4,6 +4,8 @@ A Mount & Blade II: Bannerlord mod focused on economy pressure, institutional me
 
 Math before hammer.
 
+**Launch & docs:** [docs/launch-and-doc-index.md](docs/launch-and-doc-index.md) — how to run `ForgeContinue.cmd` / Launch Control and where every guide lives (read this before asking an agent).
+
 ## Sprint sequencing
 
 Build/install loop first. Certification evidence second. Dev-tool safety third. Skill points fourth. Recommendations fifth (stub baseline + real candidates shipped).

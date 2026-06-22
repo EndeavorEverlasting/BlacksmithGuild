@@ -194,6 +194,7 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 
 ## Related docs
 
+- **[docs/launch-and-doc-index.md](../launch-and-doc-index.md)** — how to launch + full doc index (human entrypoint)
 - `docs/plans/006b-map-trade-cohesion.plan.md`
 - `docs/player-command-guide.md`
 - `docs/functionality-status.md` (update after USER live cert)

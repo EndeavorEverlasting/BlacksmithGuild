@@ -2,6 +2,8 @@
 
 **What do I press? What command do I run? What JSON should I look at?**
 
+**Launch paths and full doc index:** [launch-and-doc-index.md](launch-and-doc-index.md)
+
 Evidence export (no screenshots needed):
 
 ```powershell
