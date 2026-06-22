@@ -69,4 +69,4 @@ Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-185813/checkpoint-01-f7-gate/manifest.json` — FAIL (clean Continue path; pre-intent fix OK; game died MapTransition; poll-after-death ~421s)
+`docs/evidence/live-cert/20260622-192811/checkpoint-01-f7-gate/manifest.json` — FAIL (timeout ~445s; game_spawned+gone+last=e; poll waste fixed @ 4863139)

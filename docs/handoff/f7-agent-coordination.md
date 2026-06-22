@@ -30,7 +30,7 @@ Every agent **must**:
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `185813` FAIL; poll waste fixed @ runner (obvious post-spawn death) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-185813/` — honest FAIL (SyncForgeStatus begin-only seq=29) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-192811/` — FAIL (timeout; poll waste; pre obvious-fail fix) |
 | Next cert command | **UNBLOCKED** — rerun F7; expect fail within ~1 poll tick when game_spawned + gone + last=e |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
