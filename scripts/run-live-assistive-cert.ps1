@@ -21,6 +21,28 @@ $checkpointRoot = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId"
 $phase1Path = Join-Path $bannerlordRoot 'BlacksmithGuild_Phase1.log'
 $statusPath = Join-Path $bannerlordRoot 'BlacksmithGuild_Status.json'
 
+function Stop-BannerlordProcesses {
+    foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
+        Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "Stopping $name (PID $($_.Id))..." -ForegroundColor DarkYellow
+            Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+    Start-Sleep -Seconds 3
+}
+
+function Start-ForgeLaunch {
+    param(
+        [ValidateSet('play', 'continue')]
+        [string]$Intent = 'play'
+    )
+
+    $forgePs1 = Join-Path $repoRoot 'forge.ps1'
+    $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $forgePs1, '-Launch', '-LaunchIntent', $Intent)
+    Write-Host "Launching: forge.ps1 -Launch -LaunchIntent $Intent (new window)" -ForegroundColor Cyan
+    Start-Process -FilePath 'powershell.exe' -ArgumentList $args -WorkingDirectory $repoRoot | Out-Null
+}
+
 function Wait-MapReady {
     param([int]$TimeoutSec = 300)
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
@@ -110,9 +132,8 @@ function Run-DisposableSession {
     $cp = $FromCheckpoint
     if (-not $SkipLaunch -and $cp -le 1) {
         if (-not $WhatIf) {
-            & (Join-Path $repoRoot 'ForgeStop.cmd') 2>$null | Out-Null
-            Start-Sleep -Seconds 3
-            Start-Process -FilePath (Join-Path $repoRoot 'Forge.cmd') -WorkingDirectory $repoRoot | Out-Null
+            Stop-BannerlordProcesses
+            Start-ForgeLaunch -Intent 'play'
         }
         if (-not (Wait-MapReady -TimeoutSec $MapReadyTimeoutSec)) {
             Save-Checkpoint -Number 1 -Name 'map-ready' -Phase 'bootstrap' -Commands @('Forge.cmd') -PassFail 'FAIL' -Notes 'map ready timeout'
@@ -214,9 +235,8 @@ function Run-DisposableSession {
 function Run-ContinueSession {
     if (-not $SkipLaunch) {
         if (-not $WhatIf) {
-            & (Join-Path $repoRoot 'ForgeStop.cmd') 2>$null | Out-Null
-            Start-Sleep -Seconds 3
-            Start-Process -FilePath (Join-Path $repoRoot 'ForgeContinue.cmd') -WorkingDirectory $repoRoot | Out-Null
+            Stop-BannerlordProcesses
+            Start-ForgeLaunch -Intent 'continue'
         }
         if (-not (Wait-MapReady -TimeoutSec $MapReadyTimeoutSec)) {
             Save-Checkpoint -Number 1 -Name 'map-ready' -Phase 'continue-load' -Commands @('ForgeContinue.cmd') -PassFail 'FAIL'
@@ -256,7 +276,7 @@ switch ($Session) {
     'all' {
         Run-DisposableSession
         if (-not $WhatIf) {
-            & (Join-Path $repoRoot 'ForgeStop.cmd') 2>$null | Out-Null
+            Stop-BannerlordProcesses
             Start-Sleep -Seconds 5
         }
         Run-ContinueSession
