@@ -1,0 +1,12 @@
+{
+  "checkpoint": "checkpoint-01-f7-gate",
+  "sessionId": "20260622-013214",
+  "passFail": "FAIL",
+  "exitCode": 2,
+  "notes": "USER path post-80ffa31: reached MapReady @ 01:33:23 then died ~2s later. No TBG MAPREADY. Safe Mode No. Progress vs prior MapTransition-only deaths.",
+  "launchSignals": { "safeModeDismissed": true, "priorSessionCrashLikely": true },
+  "campaignReady": false,
+  "canPollFileInbox": false,
+  "phase1TbgReady": false,
+  "phase1LastSignal": "MapTransition -> MapReady @ 01:33:23; hotkey trace active; no orchestrator lines"
+}
