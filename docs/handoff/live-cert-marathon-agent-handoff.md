@@ -18,7 +18,7 @@
 
 | Check | Verdict | When |
 |-------|---------|------|
-| `dotnet build -c Release` | **PASS** | 2026-06-22 Agent B — 0 warnings, v0.0.11 installed (`main` @ `0c9f171`) |
+| `dotnet build -c Release` | **PASS** | 2026-06-22 — 0 warnings, v0.0.11 (`main` @ `af58332`) |
 
 ## Crash triage (2026-06-22 Agent B)
 
@@ -124,9 +124,9 @@ If Continue stable, optionally retry disposable after bootstrap fix (006E backlo
 
 | Branch | SHA | PR | Gate |
 |--------|-----|-----|------|
-| `main` | `2dfff05` | — | USER F7 verify (agent shell FAIL 20260622-004953) |
-| `feat/006c-4-sell-loop` | `b2b18bb` | [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft | F7 + build |
-| `feat/006c-4b-second-leg-travel` | `e527c0e` | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft | F7 + #5 base |
+| `main` | `af58332` | — | USER F7 verify (agent shell FAIL 20260622-004953) |
+| `feat/006c-4-sell-loop` | `8316b74` | [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft | F7 + Track A cert |
+| `feat/006c-4b-second-leg-travel` | `5b67d6d` | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft | F7 + Track B cert |
 
 - **Agent B (first):** USER F7 verify on `main` → `-SkipLaunch` cert marathon → export
 - **Agent A:** spread sell cert on rebased `feat/006c-4b-second-leg-travel` — **only after** Agent B confirms stable map
