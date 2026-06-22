@@ -1552,10 +1552,32 @@ $handoffStarted = $false
 $lastRefocusUtc = $null
 $mismatchCoordAttemptMain = 0
 $phase1ReadyBaseline = @{}
+$focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 if (Test-Path -LiteralPath $phase1LogPath) {
     Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue |
         Where-Object { $_ -match 'TBG READY' } |
         ForEach-Object { $phase1ReadyBaseline[$_] = $true }
+}
+
+function Invoke-BannerlordFocusHelper {
+    param([string]$Context = 'post-handoff')
+
+    if (-not (Test-Path -LiteralPath $focusHelperPath)) {
+        Write-LaunchLog 'post-handoff: refocus skipped; focus helper missing'
+        return $false
+    }
+
+    Write-LaunchLog "post-handoff: refocus game/launcher attempted ($Context)"
+    try {
+        $focused = & $focusHelperPath
+        if ($focused) {
+            Write-LaunchLog "post-handoff: refocus game/launcher succeeded ($Context)"
+        }
+        return [bool]$focused
+    } catch {
+        Write-LaunchLog "post-handoff: refocus game/launcher failed ($Context): $($_.Exception.Message)"
+        return $false
+    }
 }
 
 function Extend-DeadlineForSlowPath {
@@ -1785,8 +1807,17 @@ function Wait-PostHandoffWatchdog {
     $stallDetected = $false
     $mismatchCoordAttempt = 0
     $mismatchWatchSec = 30
+    $lastPostHandoffRefocusUtc = $null
 
     while (((Get-Date) - $watchStart).TotalSeconds -lt $loadStallSec) {
+        $nowPostHandoffRefocusUtc = [DateTime]::UtcNow
+        if (-not $lastPostHandoffRefocusUtc -or ($nowPostHandoffRefocusUtc - $lastPostHandoffRefocusUtc).TotalSeconds -ge 2) {
+            if ((Test-GameProcessRunning) -or [UIAHelper]::HasLauncherRoot()) {
+                Invoke-BannerlordFocusHelper -Context 'watchdog' | Out-Null
+            }
+            $lastPostHandoffRefocusUtc = $nowPostHandoffRefocusUtc
+        }
+
         if (-not (Test-GameProcessRunning)) {
             Write-LaunchLog 'post-handoff: Bannerlord exited'
             return
@@ -1980,8 +2011,10 @@ while ((Get-Date) -lt $deadline) {
     if ([UIAHelper]::ClickSafeModeNo()) {
         if (-not $clickedSafeMode) {
             Write-LaunchLog 'clicked Safe Mode No'
+            Write-LaunchLog 'Safe Mode: No selected — prior session unexpected shutdown; crash on last run suspected (full mod load retained)'
             $clickedSafeMode = $true
             Extend-DeadlineForSlowPath
+            Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
         }
         Start-Sleep -Milliseconds $PollMs
         continue
@@ -2009,6 +2042,7 @@ while ((Get-Date) -lt $deadline) {
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
                 Extend-DeadlineAfterPlayClick
+                Invoke-BannerlordFocusHelper -Context 'after-play-continue-click' | Out-Null
             } else {
                 Write-LaunchLog "click $displayName ($matchedName) NOT verified — PLAY/CONTINUE still on screen; will retry"
                 [UIAHelper]::ResetLauncherClickRetryState()

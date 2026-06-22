@@ -20,6 +20,36 @@ $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointRoot = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId"
 $phase1Path = Join-Path $bannerlordRoot 'BlacksmithGuild_Phase1.log'
 $statusPath = Join-Path $bannerlordRoot 'BlacksmithGuild_Status.json'
+$focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
+
+function Test-Phase1TbgReady {
+    param([string]$BannerlordRoot)
+    $logPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
+    if (-not (Test-Path -LiteralPath $logPath)) {
+        return $false
+    }
+    $tail = Get-Content -LiteralPath $logPath -Tail 40 -ErrorAction SilentlyContinue
+    if (-not $tail) {
+        return $false
+    }
+    foreach ($line in $tail) {
+        if ($line -match 'TBG READY') {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Invoke-BannerlordFocusHelper {
+    if (-not (Test-Path -LiteralPath $focusHelperPath)) {
+        return $false
+    }
+    try {
+        return [bool](& $focusHelperPath)
+    } catch {
+        return $false
+    }
+}
 
 function Stop-BannerlordProcesses {
     foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
@@ -46,8 +76,15 @@ function Start-ForgeLaunch {
 function Wait-MapReady {
     param([int]$TimeoutSec = 300)
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    $lastRefocusUtc = $null
     Write-Host "Waiting for campaign map (up to ${TimeoutSec}s)..." -ForegroundColor Cyan
     while ((Get-Date) -lt $deadline) {
+        $nowRefocusUtc = [DateTime]::UtcNow
+        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge 2) {
+            Invoke-BannerlordFocusHelper | Out-Null
+            $lastRefocusUtc = $nowRefocusUtc
+        }
+
         if (Test-Path -LiteralPath $statusPath) {
             try {
                 $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json

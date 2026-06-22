@@ -131,7 +131,7 @@ namespace BlacksmithGuild.DevTools
                 Phase = SessionPhase.CampaignReady;
             }
 
-            CanPollHelpHotkeys = true;
+            CanPollHelpHotkeys = IsCampaignMapReady || IsSettlementInteriorReady;
             CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
             CanPollFileInbox = IsCampaignMapReady || IsSettlementInteriorReady;
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;

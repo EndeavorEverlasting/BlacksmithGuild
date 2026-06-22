@@ -78,12 +78,17 @@ namespace BlacksmithGuild.Behaviors
 
             GameSessionState.Refresh();
 
-            CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+            if (!GameSessionState.IsMainHeroReady)
+            {
+                return;
+            }
 
             if (!GameSessionState.IsCampaignMapReady)
             {
                 return;
             }
+
+            CampaignMapReadyOrchestrator.OnCampaignTick(dt);
 
             TreasuryDeltaWatchService.ProcessPendingSnapshot();
             AutoTravelService.OnCampaignTick();

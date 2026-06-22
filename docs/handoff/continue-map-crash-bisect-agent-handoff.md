@@ -1,48 +1,51 @@
 # Continue Map Crash Bisect — Agent Handoff
 
 **Last updated:** 2026-06-22  
-**Branch:** `main`  
-**Status:** **FIX SHIPPED — USER VERIFY REQUIRED**
+**Branch:** `fix/f7-gate-stability` (PR pending → `main`)  
+**Status:** **F7 STABILITY FIX SHIPPED — F7 agent-shell still FAIL; USER verify required**
 
 ## Problem
 
-Continue load reaches map-ready in Phase1 then process exits before stable F7. Agent shell repro unreliable (focus/Safe Mode).
+Continue load dies during `MapTransition` before stable F7 in agent shell. Safe Mode on every relaunch confirms **prior run hard-exit** (mod/load chain, not launcher wiring).
 
-## What shipped
+## What shipped (this sprint)
 
-- `CampaignMapReadyOrchestrator` — immediate F7 flush + deferred heavy hooks + try/catch per hook
-- `MapReadyHookFlags` + `TBG_MAP_READY_HOOK_MASK` env bisect
-- `GameSessionState.SyncForgeStatus()` — `campaignReady` from `IsCampaignMapReady`
+| Area | Change |
+|------|--------|
+| **Scripts** | Post-handoff refocus in `launcher-auto-nav.ps1`; refocus in `run-live-assistive-cert.ps1` `Wait-MapReady`; new `Run-F7GateContinue.cmd` + `run-f7-gate-continue.ps1` |
+| **Safe Mode trail** | Explicit launch log + F7 manifest `launchSignals.priorSessionCrashLikely` |
+| **C# load gates** | `CanPollHelpHotkeys` map/settlement only; `SubModule` hotkey poll gated; `BlacksmithGuildCampaignBehavior` Refresh→MainHero→MapReady→orchestrator |
 
-## Agent shell repro (2026-06-22 00:32, main @ 7461235)
+Prior on `main`: `CampaignMapReadyOrchestrator`, hook-mask bisect, `SyncForgeStatus`.
 
-**F7 gate: FAIL.** Process died ~4s after `MainMenu -> MapTransition`; never reached map-ready (`[TBG MAPREADY]` absent). Last Phase1 line: intro blocked (`not skippable video state`). ForgeContinue launcher timed out 267s after process vanish.
+## F7 gate (agent shell, post-fix)
 
-**Implication:** orchestrator fix targets post-map-ready hooks; this repro dies earlier — bisect may need QuickStart/intro path or USER terminal verify (agent focus unreliable; Cursor stole foreground @ 00:32:17).
+| Session | Verdict | Safe Mode | Phase1 last | Notes |
+|---------|---------|-----------|-------------|-------|
+| `20260622-011344` | FAIL | — | — | Premature exit (script grace bug; fixed) |
+| `20260622-011418` | FAIL | **Yes → No** | `MapTransition` @ 01:15:02 | Safe Mode chain; no TBG READY; ~51s |
 
-## Agent B sprint repro (2026-06-22 00:50, main @ 0c9f171)
+Evidence: `docs/evidence/live-cert/20260622-011418/checkpoint-01-f7-gate/`
 
-**F7 gate: FAIL (agent shell).** Build PASS. CONTINUE handoff verified **00:50:32**; `launcher=no game=no` from **00:50:45** (~13s after handoff). Phase1 stops at `MapTransition` (**00:50:38–43**); no `[TBG MAPREADY]`, no campaign map ready. Status.json stale: `campaignReady: false`, `canPollFileInbox: false`. Cursor foreground during launch. Evidence: `docs/evidence/live-cert/20260622-004953/`.
+**Interpretation:** Safe Mode No + MapTransition death = **prior crash + repeat load crash**. Not sell/smelt/clan. Hook-mask bisect **not applicable** (no map-ready line in same run after fix).
 
-**Next step:** USER terminal verify only — agent shell cannot reliably hold game focus. Hook-mask bisect **not applicable** until map-ready is reached.
-
+## Next step — USER terminal
 
 ```powershell
-git pull origin main
+git checkout fix/f7-gate-stability   # or main after merge
+git pull
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-.\ForgeContinue.cmd
-# F7: campaignReady:true + canPollFileInbox:true ≥60s
+.\Run-F7GateContinue.cmd
+# PASS: exit 0, manifest passFail PASS, stableSeconds >= 60
 .\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
+.\ExportTbgEvidence.cmd
 ```
 
-Bisect: `$env:TBG_MAP_READY_HOOK_MASK = "0xEF"` (skip Treasury), `"0xDF"` (skip AutoCharacterBuild), `"0x0F"` (immediate only).
-
-## Obsolete branch
-
-`fix/continue-map-crash-bisect` — deleted from origin (same fix as `main` @ `5839e64`).
+Minimize Cursor during launch. If map-ready then crash: `$env:TBG_MAP_READY_HOOK_MASK = "0x0F"` etc.
 
 ## Parallel
 
-Agent A `feat/006c-4-sell-loop` @ `8316b74` (rebased on main) — [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft; merge after USER confirms stable F7.
+- [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) `feat/006c-4-sell-loop` — merge after F7 USER PASS  
+- [PR #6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) `feat/006c-4b-second-leg-travel` — stacked on #5  
 
-Agent C `feat/006c-4b-second-leg-travel` @ `5b67d6d` (stacked on `8316b74`) — [PR #6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft; Release build **PASS** 2026-06-22.
+Do **not** merge #5/#6 until F7 stable.
