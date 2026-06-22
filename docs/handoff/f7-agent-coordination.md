@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B instrumentation) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `f8bcd6a` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `135217` clean FAIL (`instrumentation_insufficient`: StatusFlush begin, no sub-ops) |
@@ -43,7 +43,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 F7 cert after B push | — | — | `f975312` |
-| **B** | C# map-ready / instrumentation | `DONE` | RuntimeTrace + CrashContext + Play/Continue guards | `src/.../Reporting/*`, orchestrator | — | pending |
+| **B** | C# map-ready / instrumentation | `DONE` | RuntimeTrace + CrashContext + Play/Continue guards | `src/.../Reporting/*`, orchestrator | — | `f8bcd6a` |
 | **C** | Launcher / F7 runner | `DONE` | Wave 1 harvest + launch path adoption | `scripts/f7-evidence-harvest.ps1`, gate runner | — | `8ae7afd` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
