@@ -26,14 +26,14 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `f8bcd6a` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (wave 2 cert commit) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `135217` clean FAIL (`instrumentation_insufficient`: StatusFlush begin, no sub-ops) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-135217/` — honest FAIL (`clean_cert`, `fail_statusflush_begin`) |
-| Launcher cert | **PASS** — `hwnd SendMessage-background` with Chrome/Cursor foreground; `continue_clicked` unattended (session `135217`) |
-| Evidence requirements | [`f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md) — **landed wave 1** |
-| Next cert command | Agent A wave 2 — **READY** after B push (C harvest @ `8ae7afd`; B RuntimeTrace pending this commit) |
+| Gate verdict | **RED** — session `150405` wave 2 FAIL (MapTransition death before MapReady; useful trace + CrashContext) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-150405/` — honest FAIL (`launchPath=continue`, `targetMismatch=false`, `harvestError`) |
+| Launcher cert | **PASS** @ `135217`; wave 2 `150405` had `continue_escalate` + nav timeout (investigate @ Agent C) |
+| Evidence requirements | [`f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md) — landed |
+| Next cert command | **HOLD** — fix harvest bug (C) + MapTransition survival (B) before rerun |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -42,9 +42,9 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 F7 cert after B push | — | — | `f975312` |
-| **B** | C# map-ready / instrumentation | `DONE` | RuntimeTrace + CrashContext + Play/Continue guards | `src/.../Reporting/*`, orchestrator | — | `f8bcd6a` |
-| **C** | Launcher / F7 runner | `DONE` | Wave 1 harvest + launch path adoption | `scripts/f7-evidence-harvest.ps1`, gate runner | — | `8ae7afd` |
+| **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 cert `150405` committed; gate RED | — | — | pending |
+| **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** MapTransition → MapReady survival (`150405`) | `src/.../Reporting/*`, orchestrator | — | `f8bcd6a` |
+| **C** | Launcher / F7 runner | `IDLE` | **NEXT:** fix harvest `Argument types do not match`; launcher `continue_escalate` | `scripts/f7-evidence-harvest.ps1` | — | `8ae7afd` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -80,6 +80,19 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A Wave 2 Cert → B, C (session `150405`)
+
+- **Preflight:** Release build PASS; grep guard PASS; runner contract PASS.
+- **Wave 1 verified:** B (`RuntimeTrace`, `CrashContextWriter`, `LaunchPathInference`); C (`f7-evidence-harvest.ps1`, enriched manifest fields); D (atlas + matrix).
+- **Ran:** `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` — exit **2** (~11 min).
+- **Launch path:** `launchPath=continue`, `launchSelectedBy=automation`, `certTarget=continue`, `targetMismatch=false`.
+- **Gate FAIL:** Process died during **MapTransition** before MapReady / orchestrator. Golden path: `firstMissingStep=MapTransition -> MapReady`. Never reached StatusFlush.
+- **Trace (useful):** Last `[TBG TRACE]` = `seq=3 area=ForgeStatus op=FlushWrite stage=ok path=continue`. CrashContext agrees (`operation=FlushWrite`, `stage=ok`).
+- **Launcher:** `continue_clicked` then `continue_escalate`; nav timeout 340s; `priorSessionCrashLikely=true` (Safe Mode No).
+- **Harvest bug:** `harvestError: Argument types do not match` — manifest `evidenceCompleteness.score=partial`; missing `lastTraceMarker`, `windowsCrashEventStatus`, etc. in manifest → **@AgentC**.
+- **Evidence:** `docs/evidence/live-cert/20260622-150405/checkpoint-01-f7-gate/` (manifest, Phase1 tail, CrashContext, Status JSON, Launch tail).
+- **PR #7:** **NOT MERGED** (gate RED).
 
 ### 2026-06-22 — general_agent → A, B, C (Agent B runtime instrumentation)
 
@@ -241,7 +254,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] Evidence `101016` committed (honest FAIL)
 - [x] Clean cert `135217` committed (honest FAIL — `instrumentation_insufficient`)
 - [x] `f7-evidence-requirements.md` (wave 1)
-- [ ] F7 wave 2 cert — **BLOCKED** until B+C on origin
+- [x] F7 wave 2 cert `150405` — honest FAIL (MapTransition; harvest partial)
 - [ ] Merge PR #7 only on manifest PASS
 
 **B**

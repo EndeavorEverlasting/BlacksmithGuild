@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `f8bcd6a` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ `bfc3d07` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
 **Gate:** RED — no F7 PASS manifest yet  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
@@ -31,7 +31,7 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Runner evidence harvest (`f7-evidence-harvest.ps1`) | Agent C | **DONE** (this commit) |
 | Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
 | Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **DONE** — FAIL `135217` (`instrumentation_insufficient`) |
-| F7 cert wave 2 (post B+C) | Agent A | **READY** after this push — preflight then cert |
+| F7 cert wave 2 (post B+C) | Agent A | **DONE** — FAIL `150405` (MapTransition death; harvest partial) |
 | PR #7 merge | Agent A | HOLD until manifest PASS |
 | PR #8 | All | HOLD |
 
@@ -49,7 +49,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-con
 ## F7 cert (wave 2 — after B+C on origin)
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue
 ```
 
 Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is forgery.
@@ -66,4 +66,4 @@ Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json` — FAIL (`clean_cert`, `instrumentation_insufficient`, StatusFlush begin)
+`docs/evidence/live-cert/20260622-150405/checkpoint-01-f7-gate/manifest.json` — FAIL (MapTransition death; `launchPath=continue`; harvest partial @ Agent C)

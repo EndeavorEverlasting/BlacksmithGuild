@@ -1,0 +1,80 @@
+﻿[2026-06-22 15:04:12] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 15:04:12] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 15:04:13] launcher-auto: session pid=134048 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=180ms respectUserForeground=True
+[2026-06-22 15:04:13] launcher-auto: env launcher=yes game=no foreground="agent_c_evidence_harvest_f280ac28.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 15:04:13] launcher-auto: UIA: AUDIT top-level windows (11): "agent_c_evidence_harvest_f280ac28.plan.md - BlacksmithGuild - Cursor"(Cursor); "Signal (16)"(Signal); "F7 Gate Stabilization Plan - Google Chrome"(chrome); "(26) Chat | 💻 Neuron Config 🧠 | Microsoft Teams - Google Chrome"(chrome); "Downloads - File Explorer"(explorer); "BlacksmithGuild - File Explorer"(explorer); "Windows Security"(ApplicationFrameHost); "NordVPN "(NordVPN); "Chat | NW PROJECT TEAM | Microsoft Teams"(ms-teams); "NoAutomationPeer"(DuckDuckGo); "What's new in Microsoft Edge and 4 more pages - Personal - Microsoft​ Edge"(msedge)
+[2026-06-22 15:04:14] launcher-auto: pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet
+[2026-06-22 15:04:26] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:04:26] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | before foreground="agent_c_evidence_harvest_f280ac28.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 15:04:26] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-22 15:04:26] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1005,764) hwnd=21764966 title="Chrome Legacy Window" process=Cursor pid=90700 launcher_ok=false
+[2026-06-22 15:04:26] launcher-auto: UIA: CLICK NOTE launcher coords — visual hit-test not TaleWorlds.MountAndBlade.Launcher at (1005,764); proceeding with hwnd-target SendMessage (background-safe per doctrine)
+[2026-06-22 15:04:26] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=1 method=coords at (1005,764) fractions=(0.55,0.90) bounds=(498,260,923,560) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | foreground foreground="agent_c_evidence_harvest_f280ac28.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 15:04:26] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (507,504) screen (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:04:27] launcher-auto: UIA: CLICK hwnd SendMessage at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:04:27] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-background at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:04:57] launcher-auto: click CONTINUE (CONTINUE) NOT verified — PLAY/CONTINUE still on screen; will retry
+[2026-06-22 15:04:58] launcher-auto: env launcher=yes game=no foreground="(26) Chat | 💻 Neuron Config 🧠 | Microsoft Teams - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:05:09] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:09] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | before foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:05:09] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-22 15:05:09] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1033,752) hwnd=35134070 title="Chrome Legacy Window" process=chrome pid=94672 launcher_ok=false
+[2026-06-22 15:05:09] launcher-auto: UIA: CLICK NOTE launcher coords — visual hit-test not TaleWorlds.MountAndBlade.Launcher at (1033,752); proceeding with hwnd-target SendMessage (background-safe per doctrine)
+[2026-06-22 15:05:09] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=2 method=coords at (1033,752) fractions=(0.58,0.88) bounds=(498,260,923,560) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | foreground foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:05:09] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (535,492) screen (1033,752) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:09] launcher-auto: UIA: CLICK hwnd SendMessage at (1033,752) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:09] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-background at (1033,752) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:40] launcher-auto: click CONTINUE (CONTINUE) NOT verified — PLAY/CONTINUE still on screen; will retry
+[2026-06-22 15:05:40] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-22 15:05:40] launcher-auto: env launcher=yes game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:05:40] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-22 15:05:40] launcher-auto: UIA: FOCUS request (Safe Mode) target=window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | before foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:05:40] launcher-auto: UIA: FOCUS skipped (Safe Mode) — RespectUserForeground
+[2026-06-22 15:05:40] launcher-auto: UIA: CLICK "Safe Mode No" button="No" in window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | foreground before foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:05:40] launcher-auto: UIA: CLICK OK "Safe Mode No" button="No" method=InvokePattern in window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | foreground after foreground="&No" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:40] launcher-auto: clicked Safe Mode No
+[2026-06-22 15:05:40] launcher-auto: LAUNCH_STATE=safe_mode_no_clicked
+[2026-06-22 15:05:40] launcher-auto: Safe Mode: No selected — prior session unexpected shutdown; crash on last run suspected (full mod load retained)
+[2026-06-22 15:05:52] launcher-auto: UIA: AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to window="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:52] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | before foreground="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:52] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-22 15:05:52] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (998,972) hwnd=113051814 title="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840 launcher_ok=true
+[2026-06-22 15:05:52] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=3 method=coords at (998,972) fractions=(0.52,0.90) bounds=(0,0,1920,1080) in window="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840 | foreground foreground="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:52] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (998,972) screen (998,972) in window="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:52] launcher-auto: UIA: CLICK hwnd SendMessage at (998,972) in window="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:53] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-first at (998,972) in window="Mount and Blade II Bannerlord - Singleplayer PID: 136840 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=136840
+[2026-06-22 15:05:53] launcher-auto: clicked CONTINUE (CONTINUE) — launch verified (game or launcher handoff)
+[2026-06-22 15:05:53] launcher-auto: LAUNCH_STATE=continue_clicked selectedBy=automation
+[2026-06-22 15:05:53] launcher-auto: extended timeout to 340s (post-PLAY spawn wait)
+[2026-06-22 15:06:08] launcher-auto: LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks
+[2026-06-22 15:06:08] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:06:10] launcher-auto: env launcher=no game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:06:18] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:06:29] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:06:39] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:06:41] launcher-auto: env launcher=no game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:06:50] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:07:00] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:07:11] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:07:11] launcher-auto: env launcher=no game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:07:21] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:07:31] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:07:42] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:07:42] launcher-auto: env launcher=no game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:07:52] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:08:02] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:08:12] launcher-auto: env launcher=no game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:08:13] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:08:23] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:08:33] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:08:43] launcher-auto: env launcher=no game=no foreground="SysAdmin Suite Dashboard - Google Chrome" process=chrome pid=94672
+[2026-06-22 15:08:43] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:08:54] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:09:04] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:09:13] launcher-auto: env launcher=no game=no foreground="agent_c_evidence_harvest_f280ac28.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 15:09:14] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:09:25] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:09:35] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:09:43] launcher-auto: env launcher=no game=no foreground="agent_c_evidence_harvest_f280ac28.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 15:09:45] launcher-auto: UIA: CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)
+[2026-06-22 15:09:53] launcher-auto: timeout: visible launcher buttons: launcher window not found

@@ -1,0 +1,28 @@
+{
+  "updatedAt": "2026-06-22T19:05:54.2899603Z",
+  "sequence": 3,
+  "area": "ForgeStatus",
+  "operation": "FlushWrite",
+  "stage": "ok",
+  "inferredLaunchPath": "continue",
+  "activeState": "GameLoadingState",
+  "setupPhase": "MainMenu",
+  "campaignReady": false,
+  "mainHeroReady": false,
+  "stabilizationActive": false,
+  "autonomousDriversBlocked": true,
+  "lastBegin": {
+    "area": "ForgeStatus",
+    "operation": "FlushWrite",
+    "sequence": 3,
+    "path": "continue"
+  },
+  "lastSuccess": {
+    "area": "ForgeStatus",
+    "operation": "FlushWrite",
+    "sequence": 3,
+    "path": "continue"
+  },
+  "assemblyVersion": "v0.0.11",
+  "dllUtc": "2026-06-22T19:03:56.9383793Z"
+}
