@@ -1,3 +1,5 @@
+﻿**F7 coordination:** Current launch/load recovery starts at [handoff/f7-agent-coordination.md](handoff/f7-agent-coordination.md) and [handoff/agent-launch-and-load-playbook.md](handoff/agent-launch-and-load-playbook.md). Gate remains **RED** until manifest evidence proves stable map-ready.
+
 # Functionality Status
 
 **Last updated:** 2026-06-22 (Agent B sprint — agent-shell F7 FAIL @ MapTransition; USER verify still required)  

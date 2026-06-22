@@ -1,3 +1,5 @@
+﻿**F7 RED-gate start:** Agents must read [handoff/f7-agent-coordination.md](handoff/f7-agent-coordination.md) first, then [handoff/agent-launch-and-load-playbook.md](handoff/agent-launch-and-load-playbook.md). Continue/F7 bisects should use direct PowerShell, not `cmd /c` wrappers.
+
 # Launch Guide and Documentation Index
 
 **Start here** if you are asking: *How do I launch? Where is that documented?*
