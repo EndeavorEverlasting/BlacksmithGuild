@@ -124,7 +124,7 @@ If Continue stable, optionally retry disposable after bootstrap fix (006E backlo
 
 | Branch | SHA | PR | Gate |
 |--------|-----|-----|------|
-| `main` | `af58332` | — | USER F7 verify (agent shell FAIL 20260622-004953) |
+| `main` | `ed997db` | — | USER F7 verify (agent shell FAIL 20260622-004953) |
 | `feat/006c-4-sell-loop` | `8316b74` | [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft | F7 + Track A cert |
 | `feat/006c-4b-second-leg-travel` | `5b67d6d` | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft | F7 + Track B cert |
 
