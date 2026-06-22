@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.GuildLoop;
+using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Market;
 using BlacksmithGuild.TavernHeroes;
 using TaleWorlds.Library;
@@ -29,7 +32,10 @@ namespace BlacksmithGuild.DevTools
             AutoCharacterBuild.AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
             SmithingSafeActionService.RunSmithingSafeActionNowCommand,
             BlacksmithAutomationService.RunBlacksmithAutomationNowCommand,
-            TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
+            TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand,
+            CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand,
+            MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand,
+            AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand
         };
 
         public static void WriteCommandSurface(string source)

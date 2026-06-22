@@ -1,5 +1,8 @@
+using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
+using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Market;
 using BlacksmithGuild.TavernHeroes;
 using BlacksmithGuild.Treasury;
@@ -195,6 +198,13 @@ namespace BlacksmithGuild.DevTools
                 commandName == TavernHeroIntelService.ShowTavernHeroIntelCommand ||
                 commandName == TavernHeroRecruitmentProbeService.ProbeTavernRecruitmentApiCommand ||
                 commandName == SettlementNavigationService.NavigateToSettlementTavernNowCommand ||
+                commandName == CohesionEngine.AnalyzeCohesionOpportunitiesCommand ||
+                commandName == CohesionEngine.ShowCohesionPlanCommand ||
+                commandName == MapTradeRouteSafetyAnalyzer.AnalyzeMapTradeRouteSafetyCommand ||
+                commandName == MapTradeAutonomousService.ShowMapTradeRouteStatusCommand ||
+                commandName == MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand ||
+                commandName == MapTradeAutonomousService.ShowTacticalConvergenceCommand ||
+                commandName == MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand ||
                 IsTavernDoctrineCommand(commandName) ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
             {
@@ -355,6 +365,21 @@ namespace BlacksmithGuild.DevTools
                 return "tavern command failed";
             }
 
+            if (commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand)
+            {
+                return CohesionExecutionDriver.LastFailReason ?? "cohesion move failed";
+            }
+
+            if (commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand)
+            {
+                return MapTradeAutonomousService.LastFailReason ?? "map trade route failed";
+            }
+
+            if (commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand)
+            {
+                return AutonomousGuildLoopService.LastFailReason ?? "autonomous guild loop failed";
+            }
+
             return "command failed";
         }
 
@@ -375,7 +400,10 @@ namespace BlacksmithGuild.DevTools
                 || commandName == AutoTravelService.AutoTravelChoice4Command
                 || commandName == AutoTravelService.AutoTravelChoice5Command
                 || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
-                || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand;
+                || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
+                || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
+                || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
+                || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
         private static bool IsMutationCommand(string commandName)
@@ -394,7 +422,10 @@ namespace BlacksmithGuild.DevTools
                 || commandName == AutoTravelService.AutoTravelChoice4Command
                 || commandName == AutoTravelService.AutoTravelChoice5Command
                 || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
-                || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand;
+                || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
+                || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
+                || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
+                || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
         private static DevCommandResult Execute(string commandName)
@@ -595,6 +626,71 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case TavernHeroDoctrine.SetCombatEscortCommand:
                     return TavernHeroDoctrine.SetDoctrine(TavernHeroDoctrineKind.CombatEscort)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionEngine.AnalyzeCohesionOpportunitiesCommand:
+                    return CohesionEngine.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionEngine.ShowCohesionPlanCommand:
+                    return CohesionStatusReport.ShowStatusNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand:
+                    return CohesionExecutionDriver.StartMoveNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionExecutionDriver.AbortCohesionMoveNowCommand:
+                    return CohesionExecutionDriver.AbortNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionDoctrine.SetCohesionDoctrineTradeForgeCommand:
+                    return CohesionDoctrine.SetDoctrine(CohesionDoctrineKind.TradeForge)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionDoctrine.SetCohesionDoctrineReliefCommand:
+                    return CohesionDoctrine.SetDoctrine(CohesionDoctrineKind.Relief)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionDoctrine.SetCohesionDoctrineEscortCommand:
+                    return CohesionDoctrine.SetDoctrine(CohesionDoctrineKind.Escort)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CohesionDoctrine.SetCohesionDoctrineBanditSuppressionCommand:
+                    return CohesionDoctrine.SetDoctrine(CohesionDoctrineKind.BanditSuppression)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeRouteSafetyAnalyzer.AnalyzeMapTradeRouteSafetyCommand:
+                    return MapTradeRouteSafetyAnalyzer.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand:
+                    return MapTradeAutonomousService.StartRouteNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeAutonomousService.AbortMapTradeRouteNowCommand:
+                    return MapTradeAutonomousService.AbortNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeAutonomousService.ShowMapTradeRouteStatusCommand:
+                    return MapTradeAutonomousService.ShowStatusNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand:
+                    CohesionDoctrine.SetDoctrine(CohesionDoctrineKind.TradeForge);
+                    return CohesionEngine.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeAutonomousService.ShowTacticalConvergenceCommand:
+                    return CohesionStatusReport.ShowStatusNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand:
+                    return MapTradeForgeHandoffService.RunHandoffNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand:
+                    return AutonomousGuildLoopService.StartNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 default:

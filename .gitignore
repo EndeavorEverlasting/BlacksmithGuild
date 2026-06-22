@@ -41,6 +41,13 @@ BlacksmithGuild_SmithingRefineProbe.json
 BlacksmithGuild_GuildLoopReport.json
 BlacksmithGuild_CommandSurface.json
 BlacksmithGuild_SmithingRestPlan.json
+BlacksmithGuild_CohesionOpportunities.json
+BlacksmithGuild_CohesionMove.json
+BlacksmithGuild_MapTradeRouteSafety.json
+BlacksmithGuild_MapTradeCert.json
+BlacksmithGuild_ArmyPressureWindows.json
+BlacksmithGuild_MapTradeForgeHandoff.json
+BlacksmithGuild_AutonomousGuildLoop.json
 *.log
 
 # Committed evidence snapshots (negate runtime JSON ignores above)

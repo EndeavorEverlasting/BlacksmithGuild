@@ -1,7 +1,10 @@
 using System.Collections.Generic;
+using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
+using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Market;
 using BlacksmithGuild.TavernHeroes;
 using BlacksmithGuild.Treasury;
@@ -78,7 +81,23 @@ namespace BlacksmithGuild.DevTools
                 TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand,
                 TavernHeroDoctrine.SetSmithingCrewCommand,
                 TavernHeroDoctrine.SetScoutQuartermasterCommand,
-                TavernHeroDoctrine.SetCombatEscortCommand
+                TavernHeroDoctrine.SetCombatEscortCommand,
+                CohesionEngine.AnalyzeCohesionOpportunitiesCommand,
+                CohesionEngine.ShowCohesionPlanCommand,
+                CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand,
+                CohesionExecutionDriver.AbortCohesionMoveNowCommand,
+                CohesionDoctrine.SetCohesionDoctrineTradeForgeCommand,
+                CohesionDoctrine.SetCohesionDoctrineReliefCommand,
+                CohesionDoctrine.SetCohesionDoctrineEscortCommand,
+                CohesionDoctrine.SetCohesionDoctrineBanditSuppressionCommand,
+                MapTradeRouteSafetyAnalyzer.AnalyzeMapTradeRouteSafetyCommand,
+                MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand,
+                MapTradeAutonomousService.AbortMapTradeRouteNowCommand,
+                MapTradeAutonomousService.ShowMapTradeRouteStatusCommand,
+                MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand,
+                MapTradeAutonomousService.ShowTacticalConvergenceCommand,
+                MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand,
+                AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand
             };
 
         public static bool IsRegistered(string commandName)

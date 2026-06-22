@@ -237,6 +237,70 @@ Collect full cert bundle (stdout, for paste): `CollectCertLogs.cmd`
 
 ---
 
+## Launch Control (Desktop / Start Menu)
+
+After merge of PR #3, install shortcuts once:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/LaunchControl/Install-LaunchControl.ps1
+```
+
+Then use Desktop **Blacksmith Guild** shortcut (New/Continue menu) or `tools/LaunchControl/Launch-Control.cmd`.
+
+Evidence: `BlacksmithGuild_LaunchControlLastRun.json`
+
+---
+
+## Strategic Cohesion Engine
+
+Read-only analyze:
+
+```powershell
+.\forge.ps1 -Command AnalyzeCohesionOpportunities -Wait
+```
+
+Visible player movement (mutation — disposable save):
+
+```powershell
+.\forge.ps1 -Command RunVisibleCohesionMoveNow -Wait
+.\forge.ps1 -Command ShowCohesionPlan -Wait
+```
+
+JSON: `BlacksmithGuild_CohesionOpportunities.json`, `BlacksmithGuild_CohesionMove.json`
+
+---
+
+## Autonomous Map Trade
+
+```powershell
+.\forge.ps1 -Command AnalyzeMapTradeRouteSafety -Wait
+.\forge.ps1 -Command RunAutonomousVisibleTradeRouteNow -Wait
+.\forge.ps1 -Command ShowMapTradeRouteStatus -Wait
+```
+
+Aliases: `AnalyzeTacticalConvergence` → cohesion analyze; `ShowTacticalConvergence` → cohesion plan.
+
+JSON: `BlacksmithGuild_MapTradeRouteSafety.json`, `BlacksmithGuild_MapTradeCert.json`
+
+---
+
+## Autonomous Guild Loop (one bounded cycle)
+
+Primary sprint entrypoint after map is ready:
+
+```powershell
+.\ForgeContinue.cmd
+# F7: campaignReady true
+.\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
+.\ExportTbgEvidence.cmd
+```
+
+JSON: `BlacksmithGuild_AutonomousGuildLoop.json` — check `capabilities` block for honest trade/smelt/capacity gaps.
+
+Note: `RunGuildLoopNow` (Ctrl+Alt+G) remains **advisory-only** (market + forge rank). Do not confuse with `RunAutonomousGuildLoopNow`.
+
+---
+
 ## Related docs
 
 - [functionality-status.md](functionality-status.md) — what is certified

@@ -61,7 +61,23 @@ function Get-DevCommandNames {
         'RecruitTavernHeroVisibleNow',
         'SetTavernHeroDoctrineSmithingCrew',
         'SetTavernHeroDoctrineScoutQuartermaster',
-        'SetTavernHeroDoctrineCombatEscort'
+        'SetTavernHeroDoctrineCombatEscort',
+        'AnalyzeCohesionOpportunities',
+        'ShowCohesionPlan',
+        'RunVisibleCohesionMoveNow',
+        'AbortCohesionMoveNow',
+        'SetCohesionDoctrineTradeForge',
+        'SetCohesionDoctrineRelief',
+        'SetCohesionDoctrineEscort',
+        'SetCohesionDoctrineBanditSuppression',
+        'AnalyzeMapTradeRouteSafety',
+        'RunAutonomousVisibleTradeRouteNow',
+        'AbortMapTradeRouteNow',
+        'ShowMapTradeRouteStatus',
+        'AnalyzeTacticalConvergence',
+        'ShowTacticalConvergence',
+        'RunForgeHandoffAfterTradeNow',
+        'RunAutonomousGuildLoopNow'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

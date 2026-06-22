@@ -1,3 +1,4 @@
+using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 
 namespace BlacksmithGuild.DevTools
@@ -28,6 +29,63 @@ namespace BlacksmithGuild.DevTools
         public static int TavernHeroMaxRecruitmentsPerCommand = 1;
         public static bool TavernHeroAllowDirectInjection = false;
         public static bool TavernHeroRequireDisposableSaveForRecruit = true;
+
+        public static bool MapTradeAutonomousMode = true;
+        public static bool MapTradeVisibleMode = true;
+        public static int MapTradeDecisionPauseMs = 500;
+        public static int MapTradeMaxTradeHops = 3;
+        public static int MapTradeMaxItemTypesPerHop = 2;
+        public static float MapTradeMaxTravelDurationHours = 72f;
+        public static float MapTradeMaxRouteDistance = 160f;
+        public static int MapTradeSafeGoldReserve = 500;
+        public static int MapTradeMaxGoldSpendPercent = 50;
+        public static int MapTradeTargetCapacityBufferPercent = 25;
+        public static bool MapTradePreferSmithingInputs = true;
+        public static bool MapTradeAllowMaterialProcurementAtSmallLoss = true;
+        public static int MapTradeMaxMaterialProcurementLoss = 150;
+        public static int MapTradeMinimumProfitForNonSmithingTrade = 25;
+        public static bool MapTradeUseArmyPressureWindows = true;
+        public static bool MapTradeAllowLikelyArmyWindows = true;
+        public static bool MapTradeUseTacticalConvergence = true;
+        public static bool MapTradeConvergenceStrictSafety = false;
+        public static float MapTradeMinimumStrengthRatioToEngage = 1.05f;
+        public static float MapTradeMinimumStrengthRatioToHold = 0.85f;
+        public static float MapTradeMaxConvergenceWindowHours = 8f;
+        public static float MapTradeMaxRendezvousDistance = 35f;
+        public static float MapTradeAvoidHostileRadius = 14f;
+        public static float MapTradeAbortHostileRadius = 6f;
+        public static float MapTradeArmyPressureScanRadius = 30f;
+        public static float MapTradeMinimumProtectorStrengthRatio = 1.75f;
+        public static bool MapTradeAllowWaitForSafetyWindow = true;
+        public static float MapTradeMaxWaitForSafetyWindowHours = 8f;
+        public static bool MapTradeAllowDuckIntoTown = true;
+        public static bool MapTradeAllowReroute = true;
+        public static bool MapTradeAllowReturnToOrigin = true;
+        public static bool MapTradeAllowDirectInventoryMutation = false;
+        public static bool MapTradeAllowDirectGoldMutation = false;
+        public static bool MapTradeAllowTeleport = false;
+        public static bool MapTradeAutoRunForgeHandoff = true;
+
+        public static float CohesionMinimumEngageRatio = 1.05f;
+        public static float CohesionMinimumSurvivalRatio = 0.85f;
+        public static float CohesionMinimumShadowRatio = 0.50f;
+        public static float CohesionMaxWindowHours = 8f;
+        public static float CohesionMaxRallyDistance = 35f;
+        public static float CohesionMinEscapeMarginHours = 0.25f;
+        public static float CohesionScanRadius = 35f;
+        public static bool CohesionAllowLikelyWindows = true;
+        public static bool CohesionAllowPlayerOnlyExecution = true;
+        public static bool CohesionAllowClanPartyCommands = true;
+        public static bool CohesionAutoCombat = false;
+        public static int CohesionDecisionPauseMs = 500;
+        public static CohesionDoctrineKind CohesionDefaultDoctrine = CohesionDoctrineKind.TradeForge;
+
+        public static bool GuildLoopAutonomousMode = true;
+        public static int GuildLoopMaxCyclesPerCommand = 1;
+        public static bool GuildLoopAutoRunForgeHandoff = true;
+        public static bool GuildLoopPreferSmithingInputs = true;
+        public static bool GuildLoopAllowTravelOnlyIfTradeBlocked = true;
+        public static bool GuildLoopProbeWeaponSmeltOnStart = true;
     }
 }
 

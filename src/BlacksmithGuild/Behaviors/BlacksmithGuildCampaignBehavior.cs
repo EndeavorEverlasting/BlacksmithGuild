@@ -1,5 +1,8 @@
+using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.GuildLoop;
+using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Treasury;
@@ -81,6 +84,9 @@ namespace BlacksmithGuild.Behaviors
 
             TreasuryDeltaWatchService.ProcessPendingSnapshot();
             AutoTravelService.OnCampaignTick();
+            CohesionExecutionDriver.OnCampaignTick();
+            MapTradeAutonomousService.OnCampaignTick();
+            AutonomousGuildLoopService.OnCampaignTick();
 
             if (!_hasAnnouncedCampaignMapReady && GameSessionState.IsCampaignMapReady)
             {
