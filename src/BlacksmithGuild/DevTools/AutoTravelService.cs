@@ -37,7 +37,7 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (MobileParty.MainParty.Position2D.Distance(_activeDestination.Position2D) <= 1.5f)
+            if (MobileParty.MainParty.GetPosition2D.Distance(_activeDestination.GetPosition2D) <= 1.5f)
             {
                 var arrived = _activeDestination.Name?.ToString() ?? _activeDestination.StringId;
                 _activeDestination = null;
@@ -366,7 +366,7 @@ namespace BlacksmithGuild.DevTools
                     continue;
                 }
 
-                var distance = main.Position2D.Distance(party.Position2D);
+                var distance = main.GetPosition2D.Distance(party.GetPosition2D);
                 if (distance > HostilePreFilterDistance)
                 {
                     continue;
@@ -404,7 +404,7 @@ namespace BlacksmithGuild.DevTools
 
         private static float ScoreSettlement(Settlement settlement, MobileParty main)
         {
-            var distancePenalty = main == null ? 0f : main.Position2D.Distance(settlement.Position2D) * 2f;
+            var distancePenalty = main == null ? 0f : main.GetPosition2D.Distance(settlement.GetPosition2D) * 2f;
             var townBonus = settlement.IsTown ? 100f : 35f;
             var forgeBonus = ForgeRecommendationService.Summary.HasRankings ? 25f : 0f;
             return townBonus + forgeBonus - distancePenalty;
