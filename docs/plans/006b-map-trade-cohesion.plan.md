@@ -8,6 +8,7 @@
 - `src/BlacksmithGuild/Cohesion/` — analyze + visible player movement FSM
 - `src/BlacksmithGuild/MapTrade/` — route safety, mission select, vanilla trade probe, tick FSM
 - `src/BlacksmithGuild/GuildLoop/AutonomousGuildLoopService.cs` — `RunAutonomousGuildLoopNow`
+- `AutomationAbortService` + **Ctrl+Alt+B** / `AbortAutonomousGuildLoopNow` — exit ladder (guild loop, cohesion, map trade, auto-travel)
 - Command wiring in DevCommandRegistry/Bus/CommandSurface + campaign tick hooks
 - PR #3 Launch Control merged to `main`
 

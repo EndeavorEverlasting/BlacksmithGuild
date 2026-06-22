@@ -1,6 +1,6 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (006B autonomous loop + assistive playbook + horse market interior UX)  
+**Last updated:** 2026-06-21 (006B safe automation exit + autonomous loop + assistive playbook)  
 **Mod version:** `v0.0.11`  
 **Branch:** `feat/006b-map-trade-cohesion` — 006B **USER cert PENDING**
 
@@ -133,6 +133,7 @@ Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/ma
 | **Cohesion analyze + visible move** | `AnalyzeCohesionOpportunities`, `RunVisibleCohesionMoveNow` | Code shipped — Tier 2 smoke PENDING |
 | **Map trade route safety + probe** | `AnalyzeMapTradeRouteSafety`, `RunAutonomousVisibleTradeRouteNow` | Code shipped — trade **execution** not proven |
 | **Autonomous guild loop (one cycle)** | `RunAutonomousGuildLoopNow` | Code shipped — primary 006B deliverable |
+| **Safe automation abort (exit ladder)** | **Ctrl+Alt+B** / `AbortAutonomousGuildLoopNow` | Code shipped — fans out guild loop, cohesion, map trade, auto-travel; **USER cert PENDING** (abort during travel) |
 | **Agent auto-loop on map ready** | `write-agent-iteration-config.ps1 -Mode AutoLoop` + `Forge.cmd` | **Off by default**; disposable-save gated |
 | **Launch + doc index** | [launch-and-doc-index.md](launch-and-doc-index.md) | Shipped |
 | **Automation playbook** | [automation-playbook.md](automation-playbook.md) | Shipped — command context matrix, Smithing 275 |
