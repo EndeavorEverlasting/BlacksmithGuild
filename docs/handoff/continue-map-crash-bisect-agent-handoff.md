@@ -14,7 +14,12 @@ Continue load reaches map-ready in Phase1 then process exits before stable F7. A
 - `MapReadyHookFlags` + `TBG_MAP_READY_HOOK_MASK` env bisect
 - `GameSessionState.SyncForgeStatus()` — `campaignReady` from `IsCampaignMapReady`
 
-## USER verify
+## Agent shell repro (2026-06-22 00:32, main @ 7461235)
+
+**F7 gate: FAIL.** Process died ~4s after `MainMenu -> MapTransition`; never reached map-ready (`[TBG MAPREADY]` absent). Last Phase1 line: intro blocked (`not skippable video state`). ForgeContinue launcher timed out 267s after process vanish.
+
+**Implication:** orchestrator fix targets post-map-ready hooks; this repro dies earlier — bisect may need QuickStart/intro path or USER terminal verify (agent focus unreliable; Cursor stole foreground @ 00:32:17).
+
 
 ```powershell
 git pull origin main
