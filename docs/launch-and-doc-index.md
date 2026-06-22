@@ -75,7 +75,8 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 | Copy-paste prompt for another AI agent | [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md) |
 | Sprint 006B scope + known gaps | [plans/006b-map-trade-cohesion.plan.md](plans/006b-map-trade-cohesion.plan.md) |
 | Sprint 006C roadmap | [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md) |
-| What is shipped vs not built | [functionality-status.md](functionality-status.md) |
+| Golden path / Phase1 grep fails on "Ready" | [conventions/em-dashes-and-log-grep.md](conventions/em-dashes-and-log-grep.md) |
+| F7 sprint / multi-agent | [handoff/f7-agent-coordination.md](handoff/f7-agent-coordination.md) |
 | Build / install mod | [../README.md](../README.md) § Two environments |
 | Export JSON evidence | `.\ExportTbgEvidence.cmd` → [evidence/latest/README.md](evidence/latest/README.md) |
 | Sprint history | [../README.md](../README.md) sprint table |

@@ -12,6 +12,7 @@ namespace BlacksmithGuild.DevTools.Reporting
 
     /// <summary>
     /// Player-facing mod branding. Dev file logs keep [TBG …] prefixes elsewhere.
+    /// Notice strings use em dash (U+2014) — see docs/conventions/em-dashes-and-log-grep.md.
     /// </summary>
     public static class ModDisplay
     {

@@ -1,7 +1,8 @@
 # F7 Multi-Agent Coordination (living doc)
 
 **Read this file first.** Update your board row + message log before ending any session.  
-Stable reference (DoD, log paths, bisect commands): [`f7-recovery-sprint-handoff.md`](f7-recovery-sprint-handoff.md)
+Stable reference (DoD, log paths, bisect commands): [`f7-recovery-sprint-handoff.md`](f7-recovery-sprint-handoff.md)  
+**Em dashes in log grep:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) — never substitute `-` for `—` in Phase1 patterns.
 
 ---
 
@@ -71,6 +72,12 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent B → A, C (em dash documentation)
+
+- **Added:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) — U+2014 vs ASCII `-`; canonical strings from `ModDisplay.cs`.
+- **PS helpers:** `Get-TbgReadyGoldenPathPattern`, `$TbgModDisplayReadyPrefix` in `bannerlord-paths.ps1` (use instead of retyping `—`).
+- **Rule:** Never grep `Blacksmith Guild - Ready:` (hyphen) — production logs use em dash.
 
 ### 2026-06-22 — Agent B → A, C (Forge.cmd / fresh PLAY baseline)
 

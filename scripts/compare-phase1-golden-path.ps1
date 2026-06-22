@@ -1,4 +1,5 @@
 # Compare Phase1 tail against golden Continue boot checklist.
+# Em dash in tbgReady pattern: docs/conventions/em-dashes-and-log-grep.md
 param(
     [Parameter(Mandatory = $true)]
     [string]$Phase1Path,
@@ -9,6 +10,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 
 $stepOrder = @(
     @{ id = 'mainMenu'; pattern = 'transition: Idle -> MainMenu'; label = 'Idle -> MainMenu' },
@@ -16,7 +18,7 @@ $stepOrder = @(
     @{ id = 'mapReady'; pattern = 'transition: MapTransition -> MapReady'; label = 'MapTransition -> MapReady' },
     @{ id = 'bootstrapDisarmed'; pattern = 'bootstrap disarmed'; label = 'bootstrap disarmed' },
     @{ id = 'mapReadyStatusFlush'; pattern = '\[TBG MAPREADY\] StatusFlush ok'; label = '[TBG MAPREADY] StatusFlush ok' },
-    @{ id = 'tbgReady'; pattern = 'Blacksmith Guild — Ready:|TBG READY|\[TBG MAPREADY\] immediate hooks complete|map_ready.*PASS'; label = 'campaign map ready marker' }
+    @{ id = 'tbgReady'; pattern = (Get-TbgReadyGoldenPathPattern); label = 'campaign map ready marker' }
 )
 
 $steps = [ordered]@{}

@@ -95,11 +95,24 @@ function Find-NewestExistingPath {
     return $Preferred
 }
 
+# Central Bannerlord + BlacksmithGuild log/status path helpers.
+# C# writes Phase1/Forge/Status under BasePath.Name (usually Documents);
+# PS automation also reads Steam BannerlordRoot — check both.
+# Em dash in log grep: docs/conventions/em-dashes-and-log-grep.md
+
+$script:ModDisplayEmDash = [char]0x2014
+$script:TbgModDisplayReadyPrefix = "Blacksmith Guild $([char]0x2014) Ready:"
+
+function Get-TbgReadyGoldenPathPattern {
+    $ready = [regex]::Escape($script:TbgModDisplayReadyPrefix)
+    return "${ready}|TBG READY|\[TBG MAPREADY\] immediate hooks complete|map_ready.*PASS"
+}
+
 function Test-Phase1ReadyLine {
     param([string]$Line)
 
     return $Line -match 'TBG READY' `
-        -or $Line -match 'Blacksmith Guild — Ready:' `
+        -or $Line -match ([regex]::Escape($script:TbgModDisplayReadyPrefix)) `
         -or $Line -match '\[TBG MAPREADY\] immediate hooks complete' `
         -or $Line -match 'map_ready.*PASS'
 }

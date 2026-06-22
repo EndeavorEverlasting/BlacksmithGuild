@@ -1,6 +1,7 @@
 # F7 Game Load Recovery — Sprint Handoff
 
-> **Live coordination:** read [`f7-agent-coordination.md`](f7-agent-coordination.md) first (agent board, locks, message log). This file is stable reference only.
+> **Live coordination:** read [`f7-agent-coordination.md`](f7-agent-coordination.md) first (agent board, locks, message log). This file is stable reference only.  
+> **Em dashes in log lines:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md)
 
 **Branch:** `fix/f7-gate-stability`  
 **PR:** https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7 (merge only after F7 PASS)  
