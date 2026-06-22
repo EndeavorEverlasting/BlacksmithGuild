@@ -1,7 +1,8 @@
 # 006C-4b — Second-Leg Auto-Travel (Buy Town → Sell Town)
 
-**Branch:** `feat/006c-4b-second-leg-travel` (stacked on `feat/006c-4-sell-loop`)  
-**Status:** CODE SHIPPED — USER live cert pending (map-ready gate)
+**Branch:** `feat/006c-4b-second-leg-travel` (stacked on `feat/006c-4-sell-loop` @ `575aaee`)  
+**Status:** CODE SHIPPED — Release build PASS — USER live cert pending (F7 gate)  
+**PR:** [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) (draft) → #5
 
 ---
 
@@ -28,7 +29,7 @@
 
 ---
 
-## USER cert (after map-ready)
+## USER cert (after F7 PASS)
 
 ```powershell
 git checkout feat/006c-4b-second-leg-travel
