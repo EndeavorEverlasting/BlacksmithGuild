@@ -24,7 +24,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `29730b9` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `d03bbea` |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — map-ready seen then crash (session `095326` mask `0x01`); prior `030915` MapTransition-only |
