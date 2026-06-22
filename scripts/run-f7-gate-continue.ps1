@@ -82,6 +82,43 @@ function Test-Phase1TbgReady {
     return $false
 }
 
+function Test-Phase1QuickStartMapReady {
+    param([datetime]$SinceLocal)
+
+    if (-not (Test-Path -LiteralPath $phase1Path)) {
+        return $false
+    }
+    try {
+        $lines = Get-Content -LiteralPath $phase1Path -Tail 120 -ErrorAction Stop
+    } catch {
+        return $false
+    }
+    foreach ($line in $lines) {
+        if ($line -notmatch '^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]') {
+            continue
+        }
+        $lineTime = [datetime]::ParseExact($Matches[1], 'yyyy-MM-dd HH:mm:ss', $null)
+        if ($lineTime -lt $SinceLocal) {
+            continue
+        }
+        if ($line -match 'transition: MapTransition -> MapReady') {
+            return $true
+        }
+    }
+    return $false
+}
+
+function Get-Phase1LastSignalLine {
+    if (-not (Test-Path -LiteralPath $phase1Path)) {
+        return $null
+    }
+    $tail = Get-Content -LiteralPath $phase1Path -Tail 1 -ErrorAction SilentlyContinue
+    if ($tail) {
+        return [string]$tail[-1]
+    }
+    return $null
+}
+
 function Get-LaunchCrashSignals {
     param([datetime]$SinceLocal)
 
@@ -138,10 +175,13 @@ function Get-F7GateSignals {
         canPollFileInbox = $false
         mapReadyStatus = $null
         phase1TbgReady = $false
+        phase1QuickStartMapReady = $false
+        phase1LastSignal = $null
         gameRunning = (Test-GameProcessRunning)
     }
 
     $result.phase1TbgReady = Test-Phase1TbgReady
+    $result.phase1LastSignal = Get-Phase1LastSignalLine
 
     if (Test-Path -LiteralPath $statusPath) {
         try {
@@ -201,6 +241,8 @@ function Save-CheckpointEvidence {
         canPollFileInbox = [bool]$LastSignals.canPollFileInbox
         mapReadyStatus = $LastSignals.mapReadyStatus
         phase1TbgReady = [bool]$LastSignals.phase1TbgReady
+        phase1QuickStartMapReady = [bool]$LastSignals.phase1QuickStartMapReady
+        phase1LastSignal = $LastSignals.phase1LastSignal
         gameProcessRunning = [bool]$LastSignals.gameRunning
         launchSignals = if ($LaunchSignals) {
             [ordered]@{
@@ -250,6 +292,26 @@ $stableSince = $null
 $lastSignals = $null
 $everMapReady = $false
 $gameEverSeen = $false
+$lastHeartbeatSec = -1
+
+function Write-F7PollHeartbeat {
+    param(
+        [double]$ElapsedSec,
+        $Signals,
+        [bool]$EverMapReady
+    )
+    $state = if ($Signals.gameRunning) { 'game=running' }
+        elseif ($EverMapReady) { 'game=gone-after-map-ready' }
+        else { 'game=gone' }
+    $phase = if ($Signals.phase1TbgReady) { 'TBG READY' }
+        elseif ($Signals.phase1QuickStartMapReady) { 'QuickStart MapReady' }
+        else { 'loading' }
+    $last = $Signals.phase1LastSignal
+    if ($last -and $last.Length -gt 100) {
+        $last = $last.Substring($last.Length - 100)
+    }
+    Write-Host ("  [{0:N0}s] {1} phase1={2} last={3}" -f $ElapsedSec, $state, $phase, $last) -ForegroundColor DarkGray
+}
 
 function Test-LauncherProcessRunning {
     return $null -ne (Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)
@@ -292,15 +354,22 @@ while ((Get-Date) -lt $deadline) {
     }
 
     $lastSignals = Get-F7GateSignals
+    $lastSignals.phase1QuickStartMapReady = Test-Phase1QuickStartMapReady -SinceLocal $launchStartedLocal
     if ($lastSignals.gameRunning) {
         $gameEverSeen = $true
     }
 
-    if ($lastSignals.phase1TbgReady -or $lastSignals.mapReadyStatus -eq 'PASS') {
+    if ($lastSignals.phase1TbgReady -or $lastSignals.mapReadyStatus -eq 'PASS' -or $lastSignals.phase1QuickStartMapReady) {
         $everMapReady = $true
     }
 
     $elapsedSec = ((Get-Date) - $launchStarted).TotalSeconds
+    $heartbeatSec = [int][Math]::Floor($elapsedSec / 30)
+    if ($heartbeatSec -ne $lastHeartbeatSec) {
+        Write-F7PollHeartbeat -ElapsedSec $elapsedSec -Signals $lastSignals -EverMapReady $everMapReady
+        $lastHeartbeatSec = $heartbeatSec
+    }
+
     if (-not $lastSignals.gameRunning -and -not (Test-LaunchStillStarting -GameRunning $lastSignals.gameRunning -GameWasSeen $gameEverSeen -ElapsedSec $elapsedSec -LaunchStartedLocal $launchStarted)) {
         if ($everMapReady) {
             $notes = 'F7 FAIL: map-ready occurred then process died'
