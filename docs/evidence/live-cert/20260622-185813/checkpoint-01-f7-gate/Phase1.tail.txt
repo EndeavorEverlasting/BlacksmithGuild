@@ -1,0 +1,79 @@
+﻿[2026-06-22 18:59:59] [TBG TEST] [TBG TRACE] seq=1 area=ForgeStatus op=FlushWrite stage=begin path=unknown
+[2026-06-22 18:59:59] [TBG TEST] [TBG TRACE] seq=1 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=4 path=unknown
+[2026-06-22 18:59:59] [TBG TEST] [TBG TRACE] seq=2 area=ForgeStatus op=FlushWrite stage=begin path=unknown
+[2026-06-22 18:59:59] [TBG TEST] [TBG TRACE] seq=2 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=1 path=unknown
+[2026-06-22 18:59:59] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 18:59:59] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 18:59:59] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T22:58:01.3237299Z
+[2026-06-22 18:59:59] [TBG VERSION] Pending reload state: clear
+[2026-06-22 18:59:59] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 19:00:00] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 19:00:00] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 19:00:00] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 19:00:00] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 19:00:00] module loaded.
+[2026-06-22 19:00:00] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 19:00:00] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 19:00:00] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 19:00:00] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 19:00:05] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 19:00:06] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 19:00:06] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 19:00:08] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 19:00:08] [TBG TEST] [TBG TRACE] seq=3 area=MapTransitionGuard op=CampaignSessionDetected stage=defer reason=InsideSettlement path=continue
+[2026-06-22 19:00:08] [TBG TEST] [TBG TRACE] seq=4 area=ForgeStatus op=FlushWrite stage=begin path=continue
+[2026-06-22 19:00:08] [TBG TEST] [TBG TRACE] seq=4 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG QUICKSTART] transition: MainMenu -> MapReady (activeState=GameLoadingState)
+[2026-06-22 19:00:10] [TBG QUICKSTART] bootstrap disarmed: setup complete
+[2026-06-22 19:00:10] [TBG QUICKSTART] setup complete; handing off to map readiness gate.
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=5 area=SubModule op=AfterFlushWrite stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=5 area=SubModule op=AfterFlushWrite stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=6 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=6 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=7 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=8 area=GameSessionState op=ReadHero stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=8 area=GameSessionState op=ReadHero stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=9 area=GameSessionState op=ReadMenuState stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=9 area=GameSessionState op=ReadMenuState stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=10 area=GameSessionState op=EvaluateMapReady stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=10 area=GameSessionState op=EvaluateMapReady stage=ok elapsedMs=2 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=11 area=GameSessionState op=EvaluateSettlementInterior stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=11 area=GameSessionState op=EvaluateSettlementInterior stage=ok elapsedMs=3 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=12 area=GameSessionState op=EvaluateTavernLocation stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=12 area=GameSessionState op=EvaluateTavernLocation stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=7 area=GameSessionState op=Refresh stage=ok elapsedMs=19 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=13 area=GameSessionState op=ReadinessPromoted stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG READINESS] promoted: settlement interior ready
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=13 area=GameSessionState op=ReadinessPromoted stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=14 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=14 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=15 area=GameSessionState op=Refresh stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=16 area=GameSessionState op=ReadMenuState stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=16 area=GameSessionState op=ReadMenuState stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=17 area=GameSessionState op=EvaluateMapReady stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=17 area=GameSessionState op=EvaluateMapReady stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=18 area=GameSessionState op=EvaluateSettlementInterior stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=18 area=GameSessionState op=EvaluateSettlementInterior stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=19 area=GameSessionState op=EvaluateTavernLocation stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=19 area=GameSessionState op=EvaluateTavernLocation stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=15 area=GameSessionState op=Refresh stage=ok elapsedMs=11 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=20 area=MapReady op=OrchestratorAllowed stage=defer reason=settlement interior ready path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=21 area=MapReady op=OrchestratorTickEntered stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG MAPREADY] orchestrator tick entered
+[2026-06-22 19:00:10] [TBG TEST] [TBG MAPREADY] immediate hooks begin
+[2026-06-22 19:00:10] [TBG TEST] [TBG MAPREADY] StatusFlush begin
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=22 area=StatusFlush op=Refresh stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=23 area=GameSessionState op=RefreshSuppressed stage=suppress reason=1|1|-|GameLoadingState|-|s|-|SettlementInterior path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=22 area=StatusFlush op=Refresh stage=ok elapsedMs=2 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=24 area=StatusFlush op=ReadCampaignMapReady stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=24 area=StatusFlush op=ReadCampaignMapReady stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=25 area=StatusFlush op=ReadMainHeroReady stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=25 area=StatusFlush op=ReadMainHeroReady stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=26 area=StatusFlush op=UpdateReadiness stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=27 area=ForgeStatus op=FlushWrite stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=27 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=26 area=StatusFlush op=UpdateReadiness stage=ok elapsedMs=3 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=28 area=StatusFlush op=CalcFileInboxReady stage=begin path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=28 area=StatusFlush op=CalcFileInboxReady stage=ok elapsedMs=1 path=continue
+[2026-06-22 19:00:10] [TBG TEST] [TBG MAPREADY] StatusFlush partial: mapReady=false heroReady=true canPollFileInbox=true (active state: GameLoadingState)
+[2026-06-22 19:00:10] [TBG TEST] [TBG TRACE] seq=29 area=StatusFlush op=SyncForgeStatus stage=begin path=continue

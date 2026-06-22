@@ -29,10 +29,10 @@ Every agent **must**:
 | Branch / HEAD | `fix/f7-gate-stability` @ `740b604` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `175909` fast FAIL (`pre_intent_game_spawn`; game before automation Continue) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-175909/` — honest FAIL (C fast-fail works; spawn timing gap) |
-| Launcher cert | **PASS** @ `135217`; C pre-intent barrier @ `740b604` |
-| Next cert command | **UNBLOCKED for A** — rerun F7 Continue after pull; expect pre-intent fail-fast or clean Continue path |
+| Gate verdict | **RED** — session `185813` FAIL (clean Continue; game died MapTransition; ~8min cert wall time) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-185813/` — honest FAIL (pre-intent fix verified; poll-after-death waste) |
+| Launcher cert | **PASS** @ `135217`; pre-intent barrier verified on `185813` |
+| Next cert command | **BLOCKED** — C: shorten verify timeout / fail-fast on game=gone; B: MapTransition survival |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -41,7 +41,7 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Clean cert `175909` committed; gate RED | — | — | pending |
+| **A** | Cert / evidence / git / PR | `IDLE` | Cert `185813` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
 | **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | `740b604` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
@@ -79,6 +79,19 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A Clean Cert → B, C (session `185813`)
+
+- **Preflight:** Release build PASS; grep guard PASS; runner contract PASS (all 4 contamination regressions).
+- **Ran:** `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` — exit **2** (~**483s** wall time).
+- **C pre-intent fix verified:** `launchPath=continue`, `launchSelectedBy=automation`, `targetMismatch=false`, `retryCount=0`, fresh artifacts, `readinessJudged=true`.
+- **Launcher timing:** ~104s to Continue verify (two 31s NOT-verified waits + Safe Mode No); user complaint valid.
+- **Game:** spawned 19:00:06, **exited 19:00:27** (~21s); runner polled **421s** with `game=gone` after death — cert wall time dominated by dead poll.
+- **Gate FAIL:** `process died before map-ready`; golden path `MainMenu -> MapTransition`; `lastTraceMarker=StatusFlush SyncForgeStatus begin` seq=29.
+- **Status at harvest:** `sessionReady=true`, `settlementReady=true` (Quyaz), `campaignReady=false`, `canPollFileInbox=true`.
+- **PR #7:** **NOT MERGED** (gate RED).
+- **Need from C:** Fail-fast when `game=gone`; shorten Continue verify timeout; detect Safe Mode before retry loop.
+- **Need from B:** Survive MapTransition past StatusFlush/SyncForgeStatus (150405-class death).
 
 ### 2026-06-22 — Agent C → A (pre-intent spawn fix @ session `175909`)
 
@@ -364,6 +377,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] F7 wave 3 cert `154012` — honest FAIL (Refresh storm; harvest sufficient; user Quyaz vs runner game=gone)
 - [x] F7 wave 4 cert `163921` — honest FAIL (contaminated; user Play handoff; targetMismatch)
 - [x] Clean F7 cert `175909` — honest FAIL (fast fail; game before automation Continue)
+- [x] Clean F7 cert `185813` — honest FAIL (clean Continue; MapTransition death; ~8min wall)
 - [ ] Merge PR #7 only on manifest PASS
 
 **B**

@@ -1,0 +1,29 @@
+{
+  "updatedAt": "2026-06-22T23:00:10.2346952Z",
+  "sequence": 29,
+  "area": "StatusFlush",
+  "operation": "SyncForgeStatus",
+  "stage": "begin",
+  "inferredLaunchPath": "continue",
+  "activeState": "GameLoadingState",
+  "setupPhase": "Complete",
+  "sessionReady": true,
+  "campaignReady": false,
+  "mainHeroReady": true,
+  "stabilizationActive": false,
+  "autonomousDriversBlocked": true,
+  "lastBegin": {
+    "area": "StatusFlush",
+    "operation": "SyncForgeStatus",
+    "sequence": 29,
+    "path": "continue"
+  },
+  "lastSuccess": {
+    "area": "StatusFlush",
+    "operation": "CalcFileInboxReady",
+    "sequence": 28,
+    "path": "continue"
+  },
+  "assemblyVersion": "v0.0.11",
+  "dllUtc": "2026-06-22T22:58:01.3237299Z"
+}
