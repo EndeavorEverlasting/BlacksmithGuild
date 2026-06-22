@@ -10,7 +10,14 @@ namespace BlacksmithGuild.DevTools.Reporting
         ReportFooter,
         SectionHeader,
         ActionStep,
-        Verdict
+        Verdict,
+        HorseBuy,
+        HorseSell,
+        HorseHold,
+        HorseWatch,
+        HorseCapacityWarn,
+        HorseBlocked,
+        HorsePremium
     }
 
     public static class ReportLineClassifier
@@ -62,6 +69,39 @@ namespace BlacksmithGuild.DevTools.Reporting
                 return ReportLineKind.Verdict;
             }
 
+            if (line.StartsWith("TBG HORSE BUY:", StringComparison.Ordinal))
+            {
+                return ReportLineKind.HorseBuy;
+            }
+
+            if (line.StartsWith("TBG HORSE SELL:", StringComparison.Ordinal))
+            {
+                return ReportLineKind.HorseSell;
+            }
+
+            if (line.StartsWith("TBG HORSE HOLD:", StringComparison.Ordinal))
+            {
+                return line.IndexOf("[NOBLE]", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? ReportLineKind.HorsePremium
+                    : ReportLineKind.HorseHold;
+            }
+
+            if (line.StartsWith("TBG HORSE WATCH:", StringComparison.Ordinal))
+            {
+                return ReportLineKind.HorseWatch;
+            }
+
+            if (line.StartsWith("TBG HORSE BLOCKED:", StringComparison.Ordinal))
+            {
+                return ReportLineKind.HorseBlocked;
+            }
+
+            if (line.StartsWith("TBG HORSE:", StringComparison.Ordinal)
+                && line.IndexOf("buy pack animals first", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return ReportLineKind.HorseCapacityWarn;
+            }
+
             return ReportLineKind.Body;
         }
 
@@ -79,6 +119,42 @@ namespace BlacksmithGuild.DevTools.Reporting
                     return ReportColors.ActionStep;
                 case ReportLineKind.Verdict:
                     return ReportColors.Warn;
+                case ReportLineKind.HorseBuy:
+                    return ReportColors.Success;
+                case ReportLineKind.HorseSell:
+                case ReportLineKind.HorseCapacityWarn:
+                    return ReportColors.Warn;
+                case ReportLineKind.HorseHold:
+                    return ReportColors.Hold;
+                case ReportLineKind.HorseWatch:
+                    return ReportColors.Info;
+                case ReportLineKind.HorseBlocked:
+                    return ReportColors.Fail;
+                case ReportLineKind.HorsePremium:
+                    return ReportColors.Premium;
+                default:
+                    return ReportColors.Info;
+            }
+        }
+
+        public static Color ColorFor(ReportLineStyle style)
+        {
+            switch (style)
+            {
+                case ReportLineStyle.Buy:
+                    return ReportColors.Success;
+                case ReportLineStyle.Sell:
+                case ReportLineStyle.CapacityWarn:
+                    return ReportColors.Warn;
+                case ReportLineStyle.Hold:
+                    return ReportColors.Hold;
+                case ReportLineStyle.Watch:
+                case ReportLineStyle.Info:
+                    return ReportColors.Info;
+                case ReportLineStyle.Blocked:
+                    return ReportColors.Fail;
+                case ReportLineStyle.Premium:
+                    return ReportColors.Premium;
                 default:
                     return ReportColors.Info;
             }

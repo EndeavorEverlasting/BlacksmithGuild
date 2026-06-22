@@ -12,5 +12,7 @@ namespace BlacksmithGuild.DevTools.Reporting
         public static readonly Color Footer = new Color(0.55f, 0.95f, 0.55f, 1f);
         public static readonly Color Section = new Color(1f, 0.75f, 0f, 1f);
         public static readonly Color ActionStep = new Color(0.95f, 0.95f, 1f, 1f);
+        public static readonly Color Hold = new Color(0.7f, 0.85f, 1f, 1f);
+        public static readonly Color Premium = new Color(0.85f, 0.55f, 1f, 1f);
     }
 }

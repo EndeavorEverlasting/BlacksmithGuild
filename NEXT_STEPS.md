@@ -36,6 +36,7 @@ Live certs are **not** required for docs, formatting, or read-only reports. See 
 | **Evidence export** | `ExportTbgEvidence.cmd` → `docs/evidence/latest/` |
 | **Track 8 caravan/army** | Blocked until user directs |
 | **Posse stamina automation** | Stage D — see 005e plan |
+| **005E-1 Horse market intel** | Code shipped — Tier 1 read-only (`AnalyzeHorseMarket`) |
 
 ---
 

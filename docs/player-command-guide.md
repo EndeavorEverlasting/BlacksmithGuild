@@ -20,6 +20,7 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 | Status | **F7** | `.\forge.ps1 -Command ShowForgeStatus -Wait` | `BlacksmithGuild_Status.json` | Mod loaded, map phase, cert state, last command |
 | Command list | **F8** (`ListScenarios`) | — (F8 writes surface) | `BlacksmithGuild_CommandSurface.json` | All hotkeys + inbox commands + Stage D exposed |
 | Market intel | **Ctrl+Alt+M** | `.\forge.ps1 -Command MarketSnapshotNow -Wait` | `BlacksmithGuild_MarketIntel.json` | Nearest towns, spreads, buy/sell action plan |
+| Horse market intel | — | `.\forge.ps1 -Command AnalyzeHorseMarket -Wait` | `BlacksmithGuild_HorseMarketIntel.json` | Read-only capacity buffer + pack/war mount buy/hold/sell advice |
 | Forge rank | **Ctrl+Alt+R** | `.\forge.ps1 -Command RankForgeCandidates -Wait` | `BlacksmithGuild_ForgeRecommendations.json` | Real/stub source honesty, top craft, material gaps |
 | Smithing crew | — | `.\forge.ps1 -Command RunSmithingAdvisoryNow -Wait` | `BlacksmithGuild_SmithingAdvisory.json` | Crew roles, reserves, refine/craft prep |
 | Guild loop | **Ctrl+Alt+G** | `.\forge.ps1 -Command RunGuildLoopNow -Wait` | `BlacksmithGuild_GuildLoopReport.json` | Unified market + forge + crew + action plan |

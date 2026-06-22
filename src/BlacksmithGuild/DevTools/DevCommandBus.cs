@@ -1,4 +1,5 @@
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.HorseMarket;
 using BlacksmithGuild.Market;
 using BlacksmithGuild.Treasury;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
@@ -175,6 +176,9 @@ namespace BlacksmithGuild.DevTools
                 commandName == SmithingAuditService.ProbeSmithingAuditCommand ||
                 commandName == SmithingAuditService.ProbeSmithingRefineApiCommand ||
                 commandName == MarketIntelligenceService.MarketSnapshotNowCommand ||
+                commandName == HorseMarketRecommendationService.AnalyzeHorseMarketCommand ||
+                commandName == HorseMarketRecommendationService.ShowHorseMarketIntelCommand ||
+                commandName == HorseMarketRecommendationService.RankHorseMarketActionsCommand ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
             {
                 return;
@@ -424,6 +428,12 @@ namespace BlacksmithGuild.DevTools
                     return AutoCharacterBuildService.SetSelectedProfileById("ShadowTrader");
                 case MarketIntelligenceService.MarketSnapshotNowCommand:
                     return MarketIntelligenceService.RunScanNow(MarketIntelligenceService.MarketSnapshotNowCommand)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HorseMarketRecommendationService.AnalyzeHorseMarketCommand:
+                case HorseMarketRecommendationService.ShowHorseMarketIntelCommand:
+                case HorseMarketRecommendationService.RankHorseMarketActionsCommand:
+                    return HorseMarketRecommendationService.RunAnalyzeNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case SmithingAdvisoryService.RunSmithingAdvisoryNowCommand:

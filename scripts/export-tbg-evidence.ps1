@@ -41,6 +41,7 @@ $evidenceFiles = @(
     'BlacksmithGuild_Status.json',
     'BlacksmithGuild_CommandSurface.json',
     'BlacksmithGuild_MarketIntel.json',
+    'BlacksmithGuild_HorseMarketIntel.json',
     'BlacksmithGuild_ForgeRecommendations.json',
     'BlacksmithGuild_SmithingAdvisory.json',
     'BlacksmithGuild_GuildLoopReport.json',

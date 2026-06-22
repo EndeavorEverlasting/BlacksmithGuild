@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.HorseMarket;
 using BlacksmithGuild.Market;
 using BlacksmithGuild.Treasury;
 
@@ -58,7 +59,10 @@ namespace BlacksmithGuild.DevTools
                 CharacterBuildVariantService.SelectCharacterBuildBestNowCommand,
                 CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand,
                 CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand,
-                MarketIntelligenceService.MarketSnapshotNowCommand
+                MarketIntelligenceService.MarketSnapshotNowCommand,
+                HorseMarketRecommendationService.AnalyzeHorseMarketCommand,
+                HorseMarketRecommendationService.ShowHorseMarketIntelCommand,
+                HorseMarketRecommendationService.RankHorseMarketActionsCommand
             };
 
         public static bool IsRegistered(string commandName)

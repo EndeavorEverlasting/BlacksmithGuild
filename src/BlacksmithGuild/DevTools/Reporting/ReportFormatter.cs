@@ -8,7 +8,7 @@ namespace BlacksmithGuild.DevTools.Reporting
     public sealed class ReportFormatter
     {
         private readonly List<string> _sectionLines = new List<string>();
-        private readonly List<string> _summaryLines = new List<string>();
+        private readonly List<SummaryEntry> _summaryLines = new List<SummaryEntry>();
         private readonly List<string> _verdictLines = new List<string>();
         private bool _ended;
 
@@ -71,10 +71,15 @@ namespace BlacksmithGuild.DevTools.Reporting
 
         public ReportFormatter SummaryLine(string line)
         {
+            return SummaryLine(line, ReportLineStyle.Default);
+        }
+
+        public ReportFormatter SummaryLine(string line, ReportLineStyle style)
+        {
             EnsureOpen();
             if (!string.IsNullOrEmpty(line))
             {
-                _summaryLines.Add(line);
+                _summaryLines.Add(new SummaryEntry(line, style));
             }
 
             return this;
@@ -96,7 +101,14 @@ namespace BlacksmithGuild.DevTools.Reporting
 
             if (emitInGame)
             {
-                EmitInGame(BuildSummaryReport());
+                if (_summaryLines.Exists(entry => entry.Style != ReportLineStyle.Default))
+                {
+                    EmitSummaryInGame();
+                }
+                else
+                {
+                    EmitInGame(BuildSummaryReport());
+                }
             }
         }
 
@@ -114,7 +126,11 @@ namespace BlacksmithGuild.DevTools.Reporting
         {
             var builder = new StringBuilder();
             AppendHeader(builder);
-            AppendLines(builder, _summaryLines);
+            foreach (var entry in _summaryLines)
+            {
+                builder.AppendLine(entry.Text);
+            }
+
             AppendEndMarker(builder);
             return builder.ToString();
         }
@@ -171,12 +187,55 @@ namespace BlacksmithGuild.DevTools.Reporting
             }
         }
 
+        private void EmitSummaryInGame()
+        {
+            AppendHeaderToSummaryFeed();
+            foreach (var entry in _summaryLines)
+            {
+                var color = entry.Style == ReportLineStyle.Default
+                    ? ReportLineClassifier.ColorFor(ReportLineClassifier.Classify(entry.Text))
+                    : ReportLineClassifier.ColorFor(entry.Style);
+                GuildLog.Display(entry.Text, showInGame: true, color: color);
+            }
+
+            GuildLog.Display(
+                IsCert ? ModDisplay.CertReportEnd : ModDisplay.ReportEnd,
+                showInGame: true,
+                color: ReportLineClassifier.ColorFor(ReportLineKind.ReportFooter));
+        }
+
+        private void AppendHeaderToSummaryFeed()
+        {
+            var header = IsCert ? ModDisplay.CertReportHeader(Title) : ModDisplay.ReportHeader(Title);
+            GuildLog.Display(header, showInGame: true, color: ReportLineClassifier.ColorFor(ReportLineKind.ReportHeader));
+            GuildLog.Display($"reportId: {ReportId}", showInGame: true, color: ReportColors.Info);
+            if (!string.IsNullOrEmpty(Source))
+            {
+                GuildLog.Display($"source: {Source}", showInGame: true, color: ReportColors.Info);
+            }
+
+            GuildLog.Display($"time: {Time:yyyy-MM-dd HH:mm:ss}", showInGame: true, color: ReportColors.Info);
+        }
+
         private void EnsureOpen()
         {
             if (_ended)
             {
                 throw new InvalidOperationException("Report already ended.");
             }
+        }
+
+        private sealed class SummaryEntry
+        {
+            public SummaryEntry(string text, ReportLineStyle style)
+            {
+                Text = text;
+                Style = style;
+            }
+
+            public string Text { get; }
+
+            public ReportLineStyle Style { get; }
         }
     }
 }
