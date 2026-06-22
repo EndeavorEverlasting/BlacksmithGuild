@@ -63,7 +63,7 @@
 2. Market scan — nearest towns, spreads, smithing inputs  
 3. Cohesion — danger / convergence check if travel needed  
 4. Visible travel — toward procurement or trade town (if mission selected)  
-5. Trade step — **probe only today** (honest block if execution not proven)  
+5. Trade step — **006C-1 vanilla buy** when at town (honest block if delta not proven)  
 6. Forge handoff — optional `RunBlacksmithAutomationNow` (charcoal refine if materials allow)
 
 Primary JSON: `BlacksmithGuild_AutonomousGuildLoop.json` — read `capabilities` and `steps` for honest gaps.
@@ -76,10 +76,27 @@ On the **open campaign map** (not inside settlement menus):
 
 1. **Ctrl+Alt+M** — trade routes, BUY@NEAREST, TOP SPREADS  
 2. Travel manually or `ShowAutoTravelChoices` → `AutoTravelChoice1`  
-3. Enter town → trade manually (no auto buy/sell yet)  
+3. Enter town → trade manually, or run `RunAutonomousVisibleTradeRouteNow` / guild loop for **006C-1 vanilla buy** (disposable cert)  
 4. **Ctrl+Alt+R** or **Ctrl+Alt+G** — forge rank, crew, material gaps  
 5. Enter smithy → craft manually  
 6. Repeat at next town
+
+---
+
+## Clan intel (009A — advisory only)
+
+After **campaign map ready** (`TBG READY`):
+
+```powershell
+.\forge.ps1 -Command AnalyzeClanContext -Wait
+.\forge.ps1 -Command AnalyzeMarriageCandidates -Wait
+.\forge.ps1 -Command ShowCourtshipPlan -Wait
+.\Run-ClanIntelCert.cmd
+.\ExportTbgEvidence.cmd
+```
+
+Read `BlacksmithGuild_ClanContext.json`, `BlacksmithGuild_MarriageCandidates.json`, `BlacksmithGuild_CourtshipPlan.json`.  
+**Not wired into guild loop** until visible courtship is certified.
 
 ---
 

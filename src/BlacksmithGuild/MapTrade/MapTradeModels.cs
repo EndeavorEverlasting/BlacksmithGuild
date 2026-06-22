@@ -67,6 +67,19 @@ namespace BlacksmithGuild.MapTrade
         public List<MapTradeCohesionDecision> CohesionDecisions { get; set; } = new List<MapTradeCohesionDecision>();
     }
 
+    public sealed class MapTradeExecutionResult
+    {
+        public int GoldBefore { get; set; }
+        public int GoldAfter { get; set; }
+        public int GoldDelta { get; set; }
+        public string ItemId { get; set; }
+        public string ItemName { get; set; }
+        public int QuantityBought { get; set; }
+        public int InventoryBefore { get; set; }
+        public int InventoryAfter { get; set; }
+        public string ExecutionMethod { get; set; }
+    }
+
     public sealed class MapTradeCertReport
     {
         public string GeneratedUtc { get; set; }
@@ -80,6 +93,7 @@ namespace BlacksmithGuild.MapTrade
         public List<string> Steps { get; set; } = new List<string>();
         public string TradeDriverMethod { get; set; }
         public bool TradeDriverAvailable { get; set; }
+        public MapTradeExecutionResult TradeExecution { get; set; }
         public string BlockedReason { get; set; }
         public string Verdict { get; set; }
     }

@@ -94,7 +94,7 @@ namespace BlacksmithGuild.MapTrade
                 Source = source,
                 VisibleModeEnabled = DevToolsConfig.MapTradeVisibleMode,
                 DecisionPauseMs = DevToolsConfig.MapTradeDecisionPauseMs,
-                MutationApplied = true,
+                MutationApplied = false,
                 State = MapTradeRouteState.Preflight
             };
 
@@ -244,6 +244,8 @@ namespace BlacksmithGuild.MapTrade
             if (MapTradeVanillaTradeDriver.TryExecuteBuy(_activeReport.Mission, out var buyDetail))
             {
                 _activeReport.Steps.Add("ExecuteTrade:Success");
+                _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
+                _activeReport.MutationApplied = _activeReport.TradeExecution != null;
                 RunForgeHandoffIfConfigured();
                 Finish(MapTradeRouteState.Complete, "Complete", null);
                 return;

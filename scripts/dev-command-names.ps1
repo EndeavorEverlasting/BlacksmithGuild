@@ -77,8 +77,17 @@ function Get-DevCommandNames {
         'AnalyzeTacticalConvergence',
         'ShowTacticalConvergence',
         'RunForgeHandoffAfterTradeNow',
+        'ProbeVanillaTradeExecutionNow',
         'RunAutonomousGuildLoopNow',
-        'AbortAutonomousGuildLoopNow'
+        'AbortAutonomousGuildLoopNow',
+        'AnalyzeClanContext',
+        'ShowClanContext',
+        'AnalyzeNobleNetwork',
+        'ShowNobleNetwork',
+        'AnalyzeMarriageCandidates',
+        'ShowCourtshipPlan',
+        'AnalyzeClanRoles',
+        'ProbeCourtshipApi'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

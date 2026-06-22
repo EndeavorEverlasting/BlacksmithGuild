@@ -207,6 +207,7 @@ namespace BlacksmithGuild.GuildLoop
 
             if (MapTradeVanillaTradeDriver.TryExecuteBuy(_mission, out var buyDetail))
             {
+                _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
                 AddStep("TryVanillaBuy", "Success", buyDetail);
             }
             else
@@ -350,6 +351,9 @@ namespace BlacksmithGuild.GuildLoop
             sb.AppendLine($"    \"score\": {(report.CohesionSummary?.Score ?? 0f):0.##},");
             sb.AppendLine($"    \"blockedReason\": {NullableString(report.CohesionSummary?.BlockedReason)}");
             sb.AppendLine("  },");
+            sb.AppendLine("  \"tradeExecution\": ");
+            AppendTradeExecution(sb, report.TradeExecution, "  ");
+            sb.AppendLine(",");
             sb.AppendLine("  \"cycleSteps\": [");
             for (var i = 0; i < report.CycleSteps.Count; i++)
             {
@@ -399,6 +403,27 @@ namespace BlacksmithGuild.GuildLoop
         private static string NullableString(string value) =>
             value == null ? "null" : $"\"{Escape(value)}\"";
 
+        private static void AppendTradeExecution(StringBuilder sb, MapTradeExecutionResult execution, string indent)
+        {
+            if (execution == null)
+            {
+                sb.Append($"{indent}null");
+                return;
+            }
+
+            sb.AppendLine($"{indent}{{");
+            sb.AppendLine($"{indent}  \"goldBefore\": {execution.GoldBefore},");
+            sb.AppendLine($"{indent}  \"goldAfter\": {execution.GoldAfter},");
+            sb.AppendLine($"{indent}  \"goldDelta\": {execution.GoldDelta},");
+            sb.AppendLine($"{indent}  \"itemId\": {NullableString(execution.ItemId)},");
+            sb.AppendLine($"{indent}  \"itemName\": {NullableString(execution.ItemName)},");
+            sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
+            sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
+            sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
+            sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)}");
+            sb.Append($"{indent}}}");
+        }
+
         private static string Escape(string value) =>
             (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
@@ -428,6 +453,7 @@ namespace BlacksmithGuild.GuildLoop
         public GuildLoopCapabilities Capabilities { get; set; } = new GuildLoopCapabilities();
         public GuildLoopForgeHandoffBlock ForgeHandoff { get; set; }
         public GuildLoopCohesionSummary CohesionSummary { get; set; }
+        public MapTradeExecutionResult TradeExecution { get; set; }
         public List<GuildLoopCycleStep> CycleSteps { get; set; } = new List<GuildLoopCycleStep>();
     }
 

@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (006B safe automation exit + autonomous loop + assistive playbook)  
+**Last updated:** 2026-06-21 (006C-1 trade driver + 009A clan intel)  
 **Mod version:** `v0.0.11`  
-**Branch:** `feat/006b-map-trade-cohesion` — 006B **USER cert PENDING**
+**Branch:** `main` — 006C-1 / 009A **USER cert PENDING**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -131,14 +131,37 @@ Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/ma
 | Feature | How to use | Status |
 |---------|------------|--------|
 | **Cohesion analyze + visible move** | `AnalyzeCohesionOpportunities`, `RunVisibleCohesionMoveNow` | Code shipped — Tier 2 smoke PENDING |
-| **Map trade route safety + probe** | `AnalyzeMapTradeRouteSafety`, `RunAutonomousVisibleTradeRouteNow` | Code shipped — trade **execution** not proven |
+| **Map trade route safety + probe** | `AnalyzeMapTradeRouteSafety`, `RunAutonomousVisibleTradeRouteNow` | Code shipped — **006C-1 buy driver** shipped; USER delta cert PENDING |
 | **Autonomous guild loop (one cycle)** | `RunAutonomousGuildLoopNow` | Code shipped — primary 006B deliverable |
 | **Safe automation abort (exit ladder)** | **Ctrl+Alt+B** / `AbortAutonomousGuildLoopNow` | Code shipped — fans out guild loop, cohesion, map trade, auto-travel; **USER cert PENDING** (abort during travel) |
 | **Agent auto-loop on map ready** | `write-agent-iteration-config.ps1 -Mode AutoLoop` + `Forge.cmd` | **Off by default**; disposable-save gated |
 | **Launch + doc index** | [launch-and-doc-index.md](launch-and-doc-index.md) | Shipped |
 | **Automation playbook** | [automation-playbook.md](automation-playbook.md) | Shipped — command context matrix, Smithing 275 |
 
-**Advisory vs autonomous:** `RunGuildLoopNow` (Ctrl+Alt+G) = market + forge rank only. `RunAutonomousGuildLoopNow` = travel + cohesion + blocked trade handoff.
+**Advisory vs autonomous:** `RunGuildLoopNow` (Ctrl+Alt+G) = market + forge rank only. `RunAutonomousGuildLoopNow` = travel + cohesion + vanilla buy attempt (006C-1).
+
+---
+
+## Shipped — 006C-1 trade driver (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Vanilla buy execution** | `ProbeVanillaTradeExecutionNow`, `RunAutonomousVisibleTradeRouteNow` | Code shipped — delta JSON; USER cert PENDING |
+| **Trade execution evidence** | `BlacksmithGuild_MapTradeCert.json` → `tradeExecution` | `goldDelta`, `quantityBought`, `executionMethod` |
+
+---
+
+## Shipped — 009A clan intel (USER cert pending)
+
+| Feature | How to use | Status |
+|---------|------------|--------|
+| **Clan context** | `AnalyzeClanContext` / `ShowClanContext` | Tier/renown/posture — read-only |
+| **Noble network** | `AnalyzeNobleNetwork` | Ranked relation targets |
+| **Marriage candidates** | `AnalyzeMarriageCandidates` | Ranked; courtship not certified |
+| **Courtship plan** | `ShowCourtshipPlan` | Aggregated brief + cert gaps |
+| **Clan role board** | `AnalyzeClanRoles` | Staffing gaps + tavern hints |
+| **Courtship API probe** | `ProbeCourtshipApi` | Reflection hints for future visible courtship |
+| **Cert script** | `Run-ClanIntelCert.cmd` | Requires campaign map ready |
 
 ---
 

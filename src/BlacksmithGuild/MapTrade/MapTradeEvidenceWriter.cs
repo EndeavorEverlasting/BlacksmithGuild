@@ -10,6 +10,7 @@ namespace BlacksmithGuild.MapTrade
     {
         public const string RouteSafetyFileName = "BlacksmithGuild_MapTradeRouteSafety.json";
         public const string CertFileName = "BlacksmithGuild_MapTradeCert.json";
+        public const string ProbeFileName = "BlacksmithGuild_MapTradeProbe.json";
         public const string ForgeHandoffFileName = "BlacksmithGuild_MapTradeForgeHandoff.json";
         public const string ArmyPressureFileName = "BlacksmithGuild_ArmyPressureWindows.json";
 
@@ -88,6 +89,9 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"  \"tradeDriverAvailable\": {(report.TradeDriverAvailable ? "true" : "false")},");
             sb.AppendLine($"  \"tradeDriverMethod\": {NullableString(report.TradeDriverMethod)},");
             sb.AppendLine($"  \"mutationApplied\": {(report.MutationApplied ? "true" : "false")},");
+            sb.AppendLine("  \"tradeExecution\": ");
+            AppendTradeExecution(sb, report.TradeExecution, "  ");
+            sb.AppendLine(",");
             sb.AppendLine("  \"mission\": {");
             var mission = report.Mission;
             sb.AppendLine($"    \"missionType\": \"{(mission?.MissionType.ToString() ?? "None")}\",");
@@ -162,6 +166,27 @@ namespace BlacksmithGuild.MapTrade
 
         private static string NullableString(string value) =>
             value == null ? "null" : $"\"{Escape(value)}\"";
+
+        private static void AppendTradeExecution(StringBuilder sb, MapTradeExecutionResult execution, string indent)
+        {
+            if (execution == null)
+            {
+                sb.Append($"{indent}null");
+                return;
+            }
+
+            sb.AppendLine($"{indent}{{");
+            sb.AppendLine($"{indent}  \"goldBefore\": {execution.GoldBefore},");
+            sb.AppendLine($"{indent}  \"goldAfter\": {execution.GoldAfter},");
+            sb.AppendLine($"{indent}  \"goldDelta\": {execution.GoldDelta},");
+            sb.AppendLine($"{indent}  \"itemId\": {NullableString(execution.ItemId)},");
+            sb.AppendLine($"{indent}  \"itemName\": {NullableString(execution.ItemName)},");
+            sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
+            sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
+            sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
+            sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)}");
+            sb.Append($"{indent}}}");
+        }
 
         private static string Escape(string value) =>
             (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");

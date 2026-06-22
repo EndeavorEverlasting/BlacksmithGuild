@@ -1,3 +1,4 @@
+using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
@@ -207,6 +208,15 @@ namespace BlacksmithGuild.DevTools
                 commandName == MapTradeAutonomousService.ShowMapTradeRouteStatusCommand ||
                 commandName == MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand ||
                 commandName == MapTradeAutonomousService.ShowTacticalConvergenceCommand ||
+                commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand ||
+                commandName == ClanContextService.AnalyzeClanContextCommand ||
+                commandName == ClanContextService.ShowClanContextCommand ||
+                commandName == NobleNetworkService.AnalyzeNobleNetworkCommand ||
+                commandName == NobleNetworkService.ShowNobleNetworkCommand ||
+                commandName == MarriageCandidateService.AnalyzeMarriageCandidatesCommand ||
+                commandName == CourtshipPlanService.ShowCourtshipPlanCommand ||
+                commandName == ClanRoleBoardService.AnalyzeClanRolesCommand ||
+                commandName == CourtshipProbeService.ProbeCourtshipApiCommand ||
                 commandName == MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand ||
                 IsTavernDoctrineCommand(commandName) ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
@@ -414,6 +424,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
@@ -436,6 +447,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
@@ -709,6 +721,42 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand:
                     return AutomationAbortService.AbortAllMovementAutomationNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand:
+                    return MapTradeVanillaTradeDriver.RunProbeExecutionNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ClanContextService.AnalyzeClanContextCommand:
+                    return ClanContextService.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ClanContextService.ShowClanContextCommand:
+                    return ClanContextService.ShowLast()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case NobleNetworkService.AnalyzeNobleNetworkCommand:
+                    return NobleNetworkService.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case NobleNetworkService.ShowNobleNetworkCommand:
+                    return NobleNetworkService.ShowLast()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MarriageCandidateService.AnalyzeMarriageCandidatesCommand:
+                    return MarriageCandidateService.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CourtshipPlanService.ShowCourtshipPlanCommand:
+                    return CourtshipPlanService.ShowPlanNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case ClanRoleBoardService.AnalyzeClanRolesCommand:
+                    return ClanRoleBoardService.AnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CourtshipProbeService.ProbeCourtshipApiCommand:
+                    return CourtshipProbeService.RunProbeNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 default:

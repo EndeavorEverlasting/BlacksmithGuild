@@ -62,7 +62,14 @@ $evidenceFiles = @(
     'BlacksmithGuild_MapTradeCert.json',
     'BlacksmithGuild_ArmyPressureWindows.json',
     'BlacksmithGuild_MapTradeForgeHandoff.json',
-    'BlacksmithGuild_AutonomousGuildLoop.json'
+    'BlacksmithGuild_AutonomousGuildLoop.json',
+    'BlacksmithGuild_MapTradeProbe.json',
+    'BlacksmithGuild_ClanContext.json',
+    'BlacksmithGuild_NobleNetwork.json',
+    'BlacksmithGuild_MarriageCandidates.json',
+    'BlacksmithGuild_CourtshipPlan.json',
+    'BlacksmithGuild_ClanRoles.json',
+    'BlacksmithGuild_CourtshipProbe.json'
 )
 
 $phase1Source = Join-Path $bannerlordRoot 'BlacksmithGuild_Phase1.log'

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
@@ -97,8 +98,17 @@ namespace BlacksmithGuild.DevTools
                 MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand,
                 MapTradeAutonomousService.ShowTacticalConvergenceCommand,
                 MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand,
+                MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand,
                 AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand,
-                AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand
+                AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand,
+                ClanContextService.AnalyzeClanContextCommand,
+                ClanContextService.ShowClanContextCommand,
+                NobleNetworkService.AnalyzeNobleNetworkCommand,
+                NobleNetworkService.ShowNobleNetworkCommand,
+                MarriageCandidateService.AnalyzeMarriageCandidatesCommand,
+                CourtshipPlanService.ShowCourtshipPlanCommand,
+                ClanRoleBoardService.AnalyzeClanRolesCommand,
+                CourtshipProbeService.ProbeCourtshipApiCommand
             };
 
         public static bool IsRegistered(string commandName)
