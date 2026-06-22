@@ -13,6 +13,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$minimizeIdePath = Join-Path $PSScriptRoot 'minimize-ide-foreground.ps1'
+if (Test-Path -LiteralPath $minimizeIdePath) {
+    try { & $minimizeIdePath | Out-Null } catch { }
+}
+
 $logPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
 $launcherExeName = 'TaleWorlds.MountAndBlade.Launcher'
 $gameExeName = 'Bannerlord'
@@ -1947,9 +1952,10 @@ while ((Get-Date) -lt $deadline) {
         $envDesc = [UIAHelper]::DescribeEnvironment()
         Write-LaunchLog $envDesc
         if ($envDesc -match 'foreground="[^"]*Cursor[^"]*"' -and -not [UIAHelper]::HasLauncherRoot() -and -not (Test-GameProcessRunning)) {
+            $theftLimitSec = if ($clickedPlayContinue) { 180 } else { 60 }
             if (-not $script:cursorTheftSince) {
                 $script:cursorTheftSince = Get-Date
-            } elseif (((Get-Date) - $script:cursorTheftSince).TotalSeconds -ge 60) {
+            } elseif (((Get-Date) - $script:cursorTheftSince).TotalSeconds -ge $theftLimitSec) {
                 Write-LaunchLog 'LAUNCH_STATE=fail_foreground_theft'
                 throw 'launcher automation impossible: Cursor foreground >60s with no launcher/game hwnd'
             }
@@ -2066,6 +2072,7 @@ while ((Get-Date) -lt $deadline) {
                 }
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
+                $script:cursorTheftSince = $null
                 Extend-DeadlineAfterPlayClick
                 Invoke-BannerlordFocusHelper -Context 'after-play-continue-click' | Out-Null
             } else {

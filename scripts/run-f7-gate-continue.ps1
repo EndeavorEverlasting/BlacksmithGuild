@@ -14,6 +14,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
+$minimizeIdePath = Join-Path $PSScriptRoot 'minimize-ide-foreground.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
 $csproj = Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
 $bannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord'
@@ -69,6 +70,18 @@ function Stop-BannerlordProcesses {
     Start-Sleep -Seconds 3
 }
 
+function Invoke-MinimizeIdeForeground {
+    if (-not (Test-Path -LiteralPath $minimizeIdePath)) { return 0 }
+    try {
+        $n = & $minimizeIdePath
+        if ($n -gt 0) {
+            Write-Host "Minimized $n IDE window(s) for launcher automation." -ForegroundColor DarkGray
+        }
+        return $n
+    } catch {
+        return 0
+    }
+}
 function Invoke-BannerlordFocusHelper {
     if (-not (Test-Path -LiteralPath $focusHelperPath)) {
         $script:LaunchAutomation.lastFocusResult = $false
@@ -398,6 +411,12 @@ function Invoke-F7NoClickLaunch {
         }
 
         if ($script:LaunchAutomation.launchError -match 'fail_foreground_theft|foreground theft') {
+            if ($script:LaunchAutomation.continueClick.success) {
+                if (Test-GameProcessRunning -or Test-Phase1SessionActive -SinceUtc $SinceLocal.ToUniversalTime()) {
+                    Write-F7LaunchState 'continue_ok_loading'
+                    return $true
+                }
+            }
             break
         }
 
@@ -426,6 +445,12 @@ function Invoke-F7NoClickLaunch {
         $script:LaunchAutomation.launchError = "launcher-auto-nav exit code $($navProc.ExitCode)"
     }
 
+    if ($script:LaunchAutomation.continueClick.success -and `
+            (Test-GameProcessRunning -or Test-Phase1SessionActive -SinceUtc $SinceLocal.ToUniversalTime())) {
+        if (Test-GameProcessRunning) { Write-F7LaunchState 'game_spawned' }
+        return $true
+    }
+
     return $false
 }
 
@@ -440,6 +465,11 @@ function Test-LaunchToolingFailure {
 
     if ($script:LaunchAutomation.launchError -match 'foreground theft|Cursor foreground') {
         if (Test-GameProcessRunning) { return $null }
+        if ($script:LaunchAutomation.continueClick.success) {
+            if (Test-Phase1SessionActive -SinceUtc $SinceLocal.ToUniversalTime()) { return $null }
+            if (Test-Phase1MapTransition -SinceLocal $SinceLocal) { return $null }
+            if (Test-Phase1QuickStartMapReady -SinceLocal $SinceLocal) { return $null }
+        }
         return 'Cursor foreground theft — launcher automation could not obtain hwnd'
     }
 
@@ -505,6 +535,7 @@ try {
     if ($resolvedHookMask) { Write-Host "HookMask: $resolvedHookMask" }
     Write-Host ''
 
+    Invoke-MinimizeIdeForeground | Out-Null
     Stop-BannerlordProcesses
 
     Write-Host 'Building Release...' -ForegroundColor Cyan
