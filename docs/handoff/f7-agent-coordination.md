@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending C push |
+| Branch / HEAD | `fix/f7-gate-stability` @ `8185034` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `150405` wave 2 FAIL (MapTransition death before MapReady; useful trace + CrashContext) |
@@ -43,7 +43,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 cert `150405` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** MapTransition → MapReady survival (`150405`) | `src/.../Reporting/*`, orchestrator | — | `f8bcd6a` |
-| **C** | Launcher / F7 runner | `DONE` | Harvest bug fix + offline regression `150405` | `scripts/f7-evidence-harvest.ps1` | — | pending |
+| **C** | Launcher / F7 runner | `DONE` | Harvest bug fix + offline regression `150405` | `scripts/f7-evidence-harvest.ps1` | — | `8185034` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -79,6 +79,15 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A, B (harvest bug fix @ session `150405`)
+
+- **Root cause:** `ConvertTo-Json` failed writing `artifacts.json` when `List[object]` held `[ordered]@{}`/`PSCustomObject` artifact entries (`Argument types do not match`).
+- **Fix @ `8185034`:** JSON-safe harvest types (`New-F7JsonSafeValue`), fail-soft sections (`harvestPartial`, `harvestWarnings`), catastrophic `harvest_failed` fallback; launcher audit fields (`continueEscalated`, etc.).
+- **Regression:** `scripts/test-f7-harvest-150405.ps1` offline PASS — `lastTraceMarker=FlushWrite stage=ok`, `windowsCrashEventStatus=query_failed`.
+- **F7 game cert:** NOT RUN.
+- **Need from B:** MapTransition survival before next cert rerun.
+- **Need from A:** Optional F7 rerun after B fix; future manifests will enrich correctly.
 
 ### 2026-06-22 — Agent A Wave 2 Cert → B, C (session `150405`)
 
