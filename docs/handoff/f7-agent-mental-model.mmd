@@ -1,0 +1,95 @@
+%% The Blacksmith Guild - F7 agent mental model
+%% Purpose: keep agent letters, roles, lanes, and handoffs consistent.
+%% Doctrine: No manifest, no medal. Build PASS is not game PASS.
+
+flowchart TD
+    Start([F7 sprint branch<br/>fix/f7-gate-stability])
+    Hold[[PR #7 HOLD<br/>No merge without manifest PASS<br/>and explicit user authorization]]
+
+    subgraph Agents[Agent letters and role aliases]
+        A["Agent A<br/>Cert and evidence lane<br/>Aliases: Cert, Evidence, Git, PR"]
+        B["Agent B<br/>Runtime survival lane<br/>Aliases: Runtime, Readiness, Gameplay safety"]
+        C["Agent C<br/>Runner and launcher lane<br/>Aliases: Launcher, F7 runner, Process detection, Classifier"]
+        D["Agent D<br/>Atlas and coordination lane<br/>Aliases: Docs, Atlas, Integration, Routing board"]
+    end
+
+    subgraph Parallel[Parallel work that is allowed]
+        Aprep["A prepares next cert matrix<br/>manifest comparison<br/>PASS and FAIL signatures<br/>no blind live cert"]
+        Bwork["B hardens runtime survival<br/>SyncForgeStatus<br/>MapTransition<br/>fail-soft reporting"]
+        Cwork["C hardens runner behavior<br/>launcher state classifier<br/>Safe Mode ordering<br/>obvious game-gone fail-fast"]
+        Dwork["D maintains atlas<br/>parallel board<br/>conflict control<br/>handoff history"]
+    end
+
+    subgraph Evidence[Current evidence pattern]
+        E185813["20260622-185813<br/>clean Continue<br/>targetMismatch=false<br/>game died about 21s post-spawn<br/>last suspect: SyncForgeStatus begin"]
+        E192811["20260622-192811<br/>clean Continue<br/>Safe Mode No handled<br/>game died about 19s post-spawn<br/>predates obvious-fail fix"]
+    end
+
+    subgraph Integration[Controlled integration]
+        PullLatest["Each lane pulls latest branch<br/>before commit"]
+        Static["Static gates<br/>dotnet build<br/>grep guard<br/>runner contract"]
+        CommitPush["Commit lane work<br/>push origin/fix/f7-gate-stability"]
+        Reconcile["Reconcile shared docs<br/>especially f7-agent-coordination.md"]
+    end
+
+    subgraph Cert[Final live cert gate]
+        Aready["A reruns live F7 Continue cert<br/>only after B or C lands a relevant fix<br/>or user authorizes diagnostic cert"]
+        Manifest["Manifest verdict only"]
+        Pass["PASS criteria<br/>passFail=PASS<br/>exitCode=0<br/>stableSeconds>=60<br/>campaignReady=true<br/>canPollFileInbox=true<br/>launchPath=continue<br/>targetMismatch=false"]
+        Fail["FAIL evidence committed<br/>route by manifest fields"]
+    end
+
+    subgraph Routing[Failure routing rules]
+        RouteB["Route B<br/>game dies<br/>runtime marker crash-adjacent<br/>StatusFlush or MapTransition fault"]
+        RouteC["Route C<br/>wrong launch path<br/>targetMismatch<br/>process detection loss<br/>runner timeout or classifier defect"]
+        RouteA["Route A<br/>new cert evidence<br/>manifest comparison<br/>PR gate report"]
+        RouteD["Route D<br/>docs drift<br/>atlas stale<br/>agent terminology conflict"]
+    end
+
+    Start --> Agents
+    Agents --> Parallel
+    A --> Aprep
+    B --> Bwork
+    C --> Cwork
+    D --> Dwork
+
+    Evidence --> Bwork
+    Evidence --> Aprep
+    Evidence --> Dwork
+
+    Aprep --> PullLatest
+    Bwork --> PullLatest
+    Cwork --> PullLatest
+    Dwork --> PullLatest
+    PullLatest --> Static
+    Static --> CommitPush
+    CommitPush --> Reconcile
+    Reconcile --> Aready
+
+    Aready --> Manifest
+    Manifest --> Pass
+    Manifest --> Fail
+    Pass --> Hold
+    Fail --> Routing
+
+    Fail --> RouteB
+    Fail --> RouteC
+    Fail --> RouteA
+    Fail --> RouteD
+
+    RouteB --> Bwork
+    RouteC --> Cwork
+    RouteA --> Aprep
+    RouteD --> Dwork
+
+    Hold -. "User authorizes merge only after PASS" .-> Pass
+
+    classDef agent fill:#eef,stroke:#335,stroke-width:1px
+    classDef work fill:#efe,stroke:#363,stroke-width:1px
+    classDef evidence fill:#ffe,stroke:#663,stroke-width:1px
+    classDef gate fill:#fee,stroke:#633,stroke-width:1px
+
+    class A,B,C,D agent
+    class Aprep,Bwork,Cwork,Dwork work
+    class E185813,E192811 evidence
+    class Hold,Manifest,Pass,Fail gate
