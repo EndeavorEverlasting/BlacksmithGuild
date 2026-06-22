@@ -26,12 +26,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (pre-intent spawn fix) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `740b604` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `175909` fast FAIL (`pre_intent_game_spawn`; game before automation Continue) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-175909/` — honest FAIL (C fast-fail works; spawn timing gap) |
-| Launcher cert | **PASS** @ `135217`; C pre-intent barrier landed (pending SHA push) |
+| Launcher cert | **PASS** @ `135217`; C pre-intent barrier @ `740b604` |
 | Next cert command | **UNBLOCKED for A** — rerun F7 Continue after pull; expect pre-intent fail-fast or clean Continue path |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
@@ -43,7 +43,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Clean cert `175909` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
-| **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | pending |
+| **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | `740b604` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
