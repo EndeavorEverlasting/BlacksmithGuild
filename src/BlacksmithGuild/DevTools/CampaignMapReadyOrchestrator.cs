@@ -13,17 +13,22 @@ namespace BlacksmithGuild.DevTools
     /// </summary>
     public static class CampaignMapReadyOrchestrator
     {
-        private const int DeferredHookMinTicks = 2;
+        private const int DeferredHookMinTicks = 5;
+        private const float PostMapReadyStabilizationSec = 20f;
 
         private static bool _immediateCompleted;
         private static bool _immediateHooksCompleted;
         private static bool _deferredCompleted;
         private static bool _deferredScheduled;
         private static int _deferredTicksWaited;
+        private static float _stabilizationSecRemaining;
         private static bool _hasRunAgentAutoLoop;
 
         /// <summary>True after immediate map-ready hooks finish (deferred may still be pending).</summary>
         public static bool ImmediateHooksCompleted => _immediateHooksCompleted;
+
+        /// <summary>True for a short wall-clock window after map-ready hooks — blocks heavy campaign tick drivers.</summary>
+        public static bool IsPostMapReadyStabilizationWindow => _stabilizationSecRemaining > 0f;
 
         internal static void ResetForNewCampaign()
         {
@@ -32,7 +37,30 @@ namespace BlacksmithGuild.DevTools
             _deferredCompleted = false;
             _deferredScheduled = false;
             _deferredTicksWaited = 0;
+            _stabilizationSecRemaining = 0f;
             _hasRunAgentAutoLoop = false;
+        }
+
+        public static void OnApplicationTick(float dt)
+        {
+            if (_stabilizationSecRemaining <= 0f)
+            {
+                return;
+            }
+
+            if (dt > 0f)
+            {
+                _stabilizationSecRemaining -= dt;
+                if (_stabilizationSecRemaining < 0f)
+                {
+                    _stabilizationSecRemaining = 0f;
+                }
+            }
+
+            if (_stabilizationSecRemaining <= 0f)
+            {
+                DebugLogger.Test("[TBG MAPREADY] post-map-ready stabilization window ended.", showInGame: false);
+            }
         }
 
         public static void OnCampaignTick(float dt)
@@ -42,11 +70,20 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (!_immediateCompleted
-                && (GameSessionState.IsCampaignMapReady
-                    || CampaignSetupStateTracker.Phase == SetupPhase.MapReady
-                    || CampaignSetupStateTracker.Phase == SetupPhase.Complete))
+            GameSessionState.Refresh();
+
+            if (_stabilizationSecRemaining > 0f && GameSessionState.IsCampaignMapReady)
             {
+                GameSessionState.SyncForgeStatus();
+            }
+
+            if (!_immediateCompleted)
+            {
+                if (!GameSessionState.IsCampaignMapReady)
+                {
+                    return;
+                }
+
                 DebugLogger.Test("[TBG MAPREADY] orchestrator tick entered", showInGame: false);
                 RunImmediateHooks();
                 return;
@@ -85,20 +122,20 @@ namespace BlacksmithGuild.DevTools
 
             RunHook(MapReadyHookFlags.StatusFlush, "StatusFlush", () =>
             {
-                var phaseReady = CampaignSetupStateTracker.Phase == SetupPhase.MapReady
-                    || CampaignSetupStateTracker.Phase == SetupPhase.Complete;
-                var heroReady = false;
-                try
+                GameSessionState.Refresh();
+                var mapReady = GameSessionState.IsCampaignMapReady;
+                var heroReady = GameSessionState.IsMainHeroReady;
+                ForgeStatus.UpdateReadiness(mapReady, heroReady);
+                if (mapReady && heroReady)
                 {
-                    heroReady = GameSessionState.IsMainHeroReady;
+                    ForgeStatus.SetTest("map_ready", "PASS", "campaign map ready (immediate status flush)");
                 }
-                catch
+                else
                 {
-                    heroReady = false;
+                    DebugLogger.Test(
+                        $"[TBG MAPREADY] StatusFlush partial: mapReady={mapReady.ToString().ToLowerInvariant()} heroReady={heroReady.ToString().ToLowerInvariant()} ({GameSessionState.GetCampaignMapBlockDetail()})",
+                        showInGame: false);
                 }
-
-                ForgeStatus.UpdateReadiness(phaseReady, heroReady);
-                ForgeStatus.SetTest("map_ready", "PASS", "campaign map ready (immediate status flush)");
             });
 
             RunHook(MapReadyHookFlags.NotifySetupTracker, "NotifySetupTracker", () =>
@@ -117,6 +154,11 @@ namespace BlacksmithGuild.DevTools
 
             DebugLogger.Test("[TBG MAPREADY] immediate hooks complete", showInGame: false);
             _immediateHooksCompleted = true;
+            _stabilizationSecRemaining = PostMapReadyStabilizationSec;
+            DebugLogger.Test(
+                $"[TBG MAPREADY] stabilization window started ({PostMapReadyStabilizationSec:N0}s wall clock).",
+                showInGame: false);
+            GameSessionState.SyncForgeStatus();
 
             if (HasAnyEnabled(DevToolsConfig.MapReadyHookMask & MapReadyHookFlags.Deferred))
             {

@@ -43,6 +43,7 @@ namespace BlacksmithGuild
 
             PendingReloadWatcher.Poll(dt);
             CampaignSetupStateTracker.Poll(dt);
+            CampaignMapReadyOrchestrator.OnApplicationTick(dt);
 
             if (!DevToolsConfig.DevToolsEnabled)
             {
@@ -53,15 +54,9 @@ namespace BlacksmithGuild
             {
                 GameSessionState.Refresh();
 
-                if (GameSessionState.IsMainHeroReady
-                    && !CampaignMapReadyOrchestrator.ImmediateHooksCompleted
-                    && (CampaignSetupStateTracker.Phase == SetupPhase.MapReady
-                        || CampaignSetupStateTracker.Phase == SetupPhase.Complete))
-                {
-                    CampaignMapReadyOrchestrator.OnCampaignTick(dt);
-                }
-                else if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
-                    && CampaignSetupStateTracker.Phase == SetupPhase.MapReady)
+                if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && GameSessionState.IsMainHeroReady
+                    && GameSessionState.IsCampaignMapReady)
                 {
                     CampaignMapReadyOrchestrator.OnCampaignTick(dt);
                 }
@@ -89,7 +84,8 @@ namespace BlacksmithGuild
             if (GameSessionState.IsSettlementInteriorReady
                 || (IsCampaignActive()
                     && GameSessionState.IsCampaignMapReady
-                    && CampaignMapReadyOrchestrator.ImmediateHooksCompleted))
+                    && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow))
             {
                 DevCommandFileInbox.Poll();
             }

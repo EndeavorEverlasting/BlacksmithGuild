@@ -96,7 +96,8 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
-            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            if (CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow
+                || CampaignSetupStateTracker.IsMapLoadTransitionWindow)
             {
                 return;
             }
