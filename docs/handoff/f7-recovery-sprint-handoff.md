@@ -1,6 +1,7 @@
 # F7 Game Load Recovery — Sprint Handoff
 
-> **Live coordination:** read [`f7-agent-coordination.md`](f7-agent-coordination.md) first (agent board, locks, message log). This file is stable reference only.  
+> **Live coordination:** read [`f7-agent-coordination.md`](f7-agent-coordination.md) first (agent board, locks, message log).  
+> **Launch / F7 commands:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md).  
 > **Em dashes in log lines:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md)
 
 **Branch:** `fix/f7-gate-stability`  
@@ -25,7 +26,7 @@
 ## Definition of done (unchanged)
 
 1. `Forge.cmd` / `ForgeContinue.cmd` — no-click Continue + log path summary at end.
-2. `Run-F7GateContinue.cmd -HookMask 0x0F` — exit **0**, manifest `passFail: PASS`, `stableSeconds >= 60`.
+2. Direct F7 gate — `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F` — exit **0**, manifest `passFail: PASS`, `stableSeconds >= 60`. (`Run-F7GateContinue.cmd` is an acceptable thin wrapper to the same script.)
 3. Golden path — `mapReady` + `mapReadyStatusFlush` + `tbgReady` (now matches `Blacksmith Guild — Ready:`).
 4. Desktop usable during `ForgeContinue` and F7 cert (`RespectUserForeground` — no minimize-other-windows).
 5. Clean tree pushed to `origin/fix/f7-gate-stability`.
@@ -62,13 +63,14 @@ Helper: `.\forge.ps1 -CollectDiagnostics` or `scripts/collect-diagnostics.ps1`
 
 ## Hook mask bisect (Phase 3/4)
 
-Run from **external PowerShell** (stop `ForgeContinue` / other nav first; user may keep Chrome focused on another monitor):
+Run grep guard first, then bisect from **external PowerShell** (stop `ForgeContinue` / other nav first; user may keep Chrome focused on another monitor):
 
 ```powershell
 git checkout fix/f7-gate-stability && git pull
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
 foreach ($mask in '0x01','0x03','0x07','0x0F') {
   Write-Host "=== HookMask $mask ===" -ForegroundColor Cyan
-  .\Run-F7GateContinue.cmd -HookMask $mask
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask $mask
 }
 ```
 
@@ -120,7 +122,8 @@ PR: https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7 (merge only af
 **Run cert (external PowerShell; stop ForgeContinue; Chrome on another monitor is OK):**
 ```
 git checkout fix/f7-gate-stability && git pull
-.\Run-F7GateContinue.cmd -HookMask 0x0F
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F
 ```
 
 **Fresh game baseline (PLAY — no dev save):**

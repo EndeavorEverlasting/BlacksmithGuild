@@ -2,6 +2,7 @@
 
 **Read this file first.** Update your board row + message log before ending any session.  
 Stable reference (DoD, log paths, bisect commands): [`f7-recovery-sprint-handoff.md`](f7-recovery-sprint-handoff.md)  
+**Launch / F7 commands:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md) — invocation doctrine (direct PS primary).  
 **Em dashes in log grep:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) — never substitute `-` for `—` in Phase1 patterns.
 
 ---
@@ -23,13 +24,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `325aacd` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `efc1018` |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — map-ready seen then crash (session `095326` mask `0x01`); prior `030915` MapTransition-only |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-095140/` + bisect summary; session `095326` reached TBG READY (no manifest — log write race) |
 | Launcher cert | **PASS** — `continue_clicked`, Safe Mode No, `game_spawned` (session `030915`) |
-| Next cert command | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F` (or `Run-F7GateContinue.cmd` after pull) |
+| Next cert command | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F` (see [playbook](agent-launch-and-load-playbook.md); run `verify-log-grep-patterns.ps1` first) |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -39,7 +40,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Bisect partial @ `095326`; commit fixes; re-run after C PLAY/CONTINUE hwnd fix | `docs/evidence/live-cert/**`, PR #7 | — | pending |
-| **B** | C# map-ready / MapTransition | `IDLE` | Interpret `095326` (map-ready then die); em-dash helpers landed | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `4218842` |
+| **B** | Docs / grep guard / launch-language | `IDLE` | Grep guard + playbook landed @ `efc1018` | — | — | `efc1018` |
 | **C** | Launcher / focus / nav scripts | `DONE` | Fail-closed F7 gate runner landed @ `325aacd` | — | A may run F7 after pull + static checks | `325aacd` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -54,6 +55,8 @@ Every agent **must**:
 | `scripts/run-f7-gate-continue.ps1` (launcher params / poll policy) | **C** | Coordinating with A on cert |
 | `src/.../CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs`, `SubModule.cs` (map-ready tick) | **B** | — |
 | `scripts/bannerlord-paths.ps1`, `scripts/compare-phase1-golden-path.ps1` | **B** (paths/grep) / **A** (evidence wiring) | Coordinate via message log if both need edits |
+| `scripts/verify-log-grep-patterns.ps1` | **B** | Guard only; do not rewrite prose titles in `.cmd` echoes |
+| `docs/handoff/agent-launch-and-load-playbook.md` | **B** | Launch/F7 invocation doctrine |
 | `docs/evidence/live-cert/**`, git push, PR #7 merge | **A** | Gate PASS only for merge |
 | `docs/handoff/f7-agent-coordination.md` | **All** | Each edits only own board row + message log entries |
 
@@ -72,6 +75,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent B → A, C (grep guard + launch-language doctrine)
+
+- **Landed:** `scripts/verify-log-grep-patterns.ps1` — scans `scripts/**` and repo-root `*.ps1|*.cmd|*.bat` for ASCII-hyphen `Blacksmith Guild - Ready` grep patterns; excludes self and docs.
+- **Landed:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md) — canonical F7 invocation doctrine (direct PS primary; `.cmd` thin wrapper secondary).
+- **Aligned:** em-dash doc, recovery handoff, functionality-status, forge contract header, launch index, LaunchControl README.
+- **Validation:** verifier PASS (69 automation files); PS parse check PASS. No F7 run.
+- **Doctrine:** Primary `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0xNN`. Canonical ready line: `Blacksmith Guild — Ready:` (U+2014). `TBG READY` = legacy shorthand only.
+- **Need from A:** Reject exit 0 without manifest `passFail: PASS`; run verifier before F7 cert; use direct PS for bisect.
+- **Need from C:** None for this lane (runner fail-closed already @ `325aacd`).
 
 ### 2026-06-22 — Agent C → A, B (fail-closed F7 gate runner)
 
@@ -147,8 +160,9 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 **B**
 
 - [x] Coordination plan verified; doc synced @ `247d89d`
-- [ ] Interpret bisect: `095326` map-ready then crash (mask `0x01`)
-- [ ] Set board row `IDLE` when not editing C#
+- [x] Grep guard scope + playbook + invocation doctrine (docs lane)
+- [ ] C# map-ready survival (`095326` / post-MapReady crash) — separate future sprint
+- [x] Set board row `IDLE` when docs lane complete
 
 **C**
 

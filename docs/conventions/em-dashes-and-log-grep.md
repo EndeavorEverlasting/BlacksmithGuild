@@ -71,6 +71,13 @@ When adding or editing patterns in:
    ```
 4. **Wrong:** `Blacksmith Guild - Ready:` (ASCII hyphen) — will never match production logs.
 
+5. Run the grep guard after editing automation scripts (scans `scripts/**` and repo-root `*.ps1|*.cmd|*.bat`):
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
+   ```
+
+Invocation doctrine (direct PS vs wrapper): [`docs/handoff/agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md).
+
 ---
 
 ## Dev / automation prefixes (ASCII, not em dash)
@@ -80,7 +87,7 @@ These use ASCII brackets and are safe to type normally:
 - `[TBG MAPREADY] StatusFlush ok`
 - `[TBG VERSION] Loaded assembly`
 - `transition: MainMenu -> MapTransition` (ASCII `->`)
-- `TBG READY` (legacy; prefer `Blacksmith Guild — Ready:` for new checks)
+- `TBG READY` (legacy shorthand only; canonical new checks use `Blacksmith Guild — Ready:`)
 
 ---
 
@@ -98,4 +105,4 @@ When documenting expected log lines in handoff docs or coordination messages:
 
 - [`docs/handoff/f7-agent-coordination.md`](../handoff/f7-agent-coordination.md) — live sprint state
 - [`docs/handoff/f7-recovery-sprint-handoff.md`](../handoff/f7-recovery-sprint-handoff.md) — target Phase1 sequence
-- [`docs/forge-zero-click-contract.md`](../forge-zero-click-contract.md) — PLAY/CONTINUE pipeline
+- [`docs/handoff/agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md) — F7 invocation doctrine

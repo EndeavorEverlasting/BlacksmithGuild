@@ -21,10 +21,10 @@
 | Check | Verdict | Notes |
 |-------|---------|-------|
 | `dotnet build -c Release` | **PASS** | 2026-06-22 F7 sprint |
-| F7 runner (`Run-F7GateContinue.cmd`) | **SHIPPED** | No-click synchronous launch; `-HookMask`; fail-fast exit 1 on tooling; golden-path manifest |
+| F7 runner (direct PS + `.cmd` wrapper) | **SHIPPED** | Agent-primary: `scripts\run-f7-gate-continue.ps1`; thin wrapper `Run-F7GateContinue.cmd`; fail-closed manifest @ `325aacd` |
 | Refocus + C# load gates | **SHIPPED** | MapTransition hotkey/inbox/orchestrator gating |
 | Continue F7 (agent shell) | **FAIL** | `20260622-011418`; Safe Mode No; MapTransition death |
-| Continue F7 (USER) | **PENDING VERIFY** | `Run-F7GateContinue.cmd` exit 0 required |
+| Continue F7 (USER) | **PENDING VERIFY** | Direct PS or wrapper exit 0 + manifest `passFail: PASS` required |
 | Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked until F7 PASS |
 | Track A / Track B | **NOT RUN** | Blocked until F7 PASS |
 | Prior Continue crash (pre-fix) | **CRASH** | Evidence `live-cert/20260622-002034/` |
@@ -37,10 +37,11 @@
 **Next local path (after crash fix):**
 
 ```powershell
-# Autonomous F7 — no manual launch steps
-.\Run-F7GateContinue.cmd -HookMask 0x0F
-.\Run-F7GateContinue.cmd
-# PASS: exit 0; then:
+# Autonomous F7 — agent-primary direct PowerShell (wrapper is thin alias)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F
+# Optional wrapper (same gate): .\Run-F7GateContinue.cmd -HookMask 0x0F
+# PASS: exit 0 + manifest passFail PASS; then:
 .\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
 .\ExportTbgEvidence.cmd
 ```
