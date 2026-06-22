@@ -25,6 +25,8 @@ When the launcher shows **Safe Mode** and automation clicks **No**, treat that a
 
 Evidence example: `docs/evidence/live-cert/20260622-011418/` — Safe Mode @ 01:14:43, MapTransition death ~01:15:02, no TBG READY.
 
+**USER path repro (2026-06-22 01:24):** `docs/evidence/live-cert/20260622-012354/` — Safe Mode No, CONTINUE verified, Phase1 stops at MapState/MapTransition `forwardDone=false`, no TBG READY. **Confirms real load crash, not agent-only.**
+
 ## F7 gate result (post-fix, agent shell)
 
 | Signal | Value |

@@ -1,3 +1,4 @@
+using BlacksmithGuild.DevTools.QuickStart;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -34,6 +35,11 @@ namespace BlacksmithGuild.DevTools
                     DebugLogger.Test("[TBG INBOX] waiting: MainHero not ready", showInGame: false);
                 }
 
+                return;
+            }
+
+            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            {
                 return;
             }
 

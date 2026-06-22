@@ -1,5 +1,6 @@
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Treasury;
@@ -84,6 +85,11 @@ namespace BlacksmithGuild.Behaviors
             }
 
             if (!GameSessionState.IsCampaignMapReady)
+            {
+                return;
+            }
+
+            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
             {
                 return;
             }

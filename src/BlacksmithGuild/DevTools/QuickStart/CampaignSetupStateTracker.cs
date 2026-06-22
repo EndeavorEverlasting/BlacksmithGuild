@@ -104,6 +104,17 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static bool UsedDisposableQuickStartPath => _bootstrapUsed || _devSaveLoadUsed;
 
+        /// <summary>
+        /// True during Continue/load windows where MapState may exist but forward launch is not settled.
+        /// Dev hotkeys, inbox, and map-ready hooks must not run while this is true.
+        /// </summary>
+        public static bool IsMapLoadTransitionWindow =>
+            _phase == SetupPhase.MapTransition
+            || _phase == SetupPhase.MainMenu
+            || _phase == SetupPhase.IntroVideo
+            || _phase == SetupPhase.SandboxVideo
+            || _phase == SetupPhase.CharacterCreation;
+
         public static void ResetForNewSession()
         {
             _phase = SetupPhase.Idle;
