@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CharacterDevelopment;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
@@ -187,6 +188,16 @@ namespace BlacksmithGuild.DevTools
         {
             if (_preflightCompleted)
             {
+                return;
+            }
+
+            if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+            {
+                RuntimeTrace.LogDeferOnce(
+                    "preflight",
+                    "GameReadinessService",
+                    "RunPreflightWhenReady",
+                    MapTransitionGuard.GetDeferReason());
                 return;
             }
 

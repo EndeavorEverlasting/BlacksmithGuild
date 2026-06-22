@@ -134,6 +134,11 @@ namespace BlacksmithGuild.DevTools.Reporting
                 return true;
             }
 
+            if (MapTransitionGuard.IsUnsafeContinueLoadWindow())
+            {
+                return true;
+            }
+
             if (IsContinueOnlyMapReadyBlocked())
             {
                 return true;

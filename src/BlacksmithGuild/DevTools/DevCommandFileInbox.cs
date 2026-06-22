@@ -1,4 +1,5 @@
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -25,7 +26,17 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            GameSessionState.SyncForgeStatus();
+            if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+            {
+                RuntimeTrace.LogDeferOnce(
+                    "inbox_sync_forge",
+                    "DevCommandFileInbox",
+                    "SyncForgeStatus",
+                    MapTransitionGuard.GetDeferReason());
+                return;
+            }
+
+            RuntimeTrace.Run("DevCommandFileInbox", "SyncForgeStatus", GameSessionState.SyncForgeStatus);
 
             if (!GameSessionState.CanPollFileInbox)
             {

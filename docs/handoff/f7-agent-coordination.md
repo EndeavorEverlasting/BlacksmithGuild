@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `8185034` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B MapTransition survival) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `150405` wave 2 FAIL (MapTransition death before MapReady; useful trace + CrashContext) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-150405/` — honest FAIL (useful trace; manifest had `harvestError` — **fixed in harvest module**) |
 | Launcher cert | **PASS** @ `135217`; `150405` `continue_escalate` is friction only when `launchPath=continue` |
-| Next cert command | **HOLD** — MapTransition survival (B) before rerun; harvest repair landed (C) |
+| Next cert command | **UNBLOCKED for A** — MapTransition survival (B) landed; rerun F7 `HookMask 0x0F` |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -42,7 +42,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Wave 2 cert `150405` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `IDLE` | **NEXT:** MapTransition → MapReady survival (`150405`) | `src/.../Reporting/*`, orchestrator | — | `f8bcd6a` |
+| **B** | C# map-ready / instrumentation | `DONE` | MapTransition survival @ session `150405` theory | `src/.../Reporting/*`, orchestrator, GSS, ForgeStatus, SubModule | — | pending |
 | **C** | Launcher / F7 runner | `DONE` | Harvest bug fix + offline regression `150405` | `scripts/f7-evidence-harvest.ps1` | — | `8185034` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
@@ -79,6 +79,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent B → A, C (MapTransition survival @ session `150405`)
+
+- **Theory:** Session `150405` died after `forge_lit` FlushWrite (seq=3) during `GameLoadingState`/MapTransition — untraced per-tick `GameSessionState.Refresh`, hotkey polling, heavy `Flush` reads.
+- **Landed:** `RuntimeTrace.LogDefer` + `LogDeferOnce`; `CrashContextWriter.RecordDefer` (`stage=defer reason=…`).
+- **Landed:** `MapTransitionGuard` — `IsUnsafeContinueLoadWindow`, `ShouldDeferHeavyCampaignTouch`, traced `MapTransitionGuard`/`MapReadyPrecheck` ops.
+- **Landed:** `GameSessionState.Refresh` split — lightweight vs full with sub-op trace + defer logs for skipped reads.
+- **Landed:** `ForgeStatus.FlushLightweight` — guard window skips `SafeSessionBool`, posture scan, certification campaign touches.
+- **Landed:** Tick gates — `SubModule` (`AfterFlushWrite`, hotkey/inbox defer), `DevHotkeyHandler`, `GameReadinessService.RunPreflightWhenReady`, `DevCommandFileInbox`, orchestrator `MapReadyPrecheck`; `AreAutonomousDriversBlocked` extended.
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS.
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** F7 rerun `HookMask 0x0F`; judge Phase1 tail for markers past `AfterFlushWrite` / `MapTransitionGuard` / `stage=defer` (not only `FlushWrite`).
 
 ### 2026-06-22 — Agent C → A, B (harvest bug fix @ session `150405`)
 
@@ -269,6 +281,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 - [x] Grep guard + playbook @ `29730b9`
 - [x] Post-map-ready C# hardening (StatusFlush alignment, stabilization window)
+- [x] MapTransition survival — defer/lightweight refresh, guard, `stage=defer` trace (`150405`)
 - [ ] Agent A F7 cert to validate survival fix
 
 **C**

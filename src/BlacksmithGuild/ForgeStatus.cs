@@ -372,6 +372,90 @@ namespace BlacksmithGuild
         {
             try
             {
+                if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+                {
+                    RuntimeTrace.LogDeferOnce(
+                        "flush_heavy",
+                        "ForgeStatus",
+                        "Flush",
+                        MapTransitionGuard.GetDeferReason());
+                    FlushLightweight(overall, error);
+                    return;
+                }
+
+                FlushFull(overall, error);
+            }
+            catch (Exception ex)
+            {
+                RuntimeTrace.LogFail("ForgeStatus", "Flush", ex);
+            }
+        }
+
+        private static void FlushLightweight(string overall = null, string error = null)
+        {
+            var topOverall = overall ?? "NOT_STARTED";
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine($"  \"updatedAt\": \"{DateTime.Now:o}\",");
+            builder.AppendLine($"  \"modLoaded\": {_modLoaded.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"campaignReady\": {_campaignReady.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"mainHeroReady\": {_mainHeroReady.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"overall\": \"{Escape(topOverall)}\",");
+            builder.AppendLine("  \"session\": {");
+            builder.AppendLine($"    \"phase\": \"{Escape(_sessionPhase.ToString())}\",");
+            builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()}");
+            builder.AppendLine("  },");
+            builder.AppendLine("  \"quickStart\": {");
+            builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");
+            builder.AppendLine($"    \"subStage\": \"{Escape(CampaignSetupStateTracker.SubStage ?? "")}\",");
+            builder.AppendLine($"    \"activeState\": \"{Escape(CampaignSetupStateTracker.ActiveStateName ?? "")}\"");
+            builder.AppendLine("  },");
+
+            builder.AppendLine("  \"tests\": {");
+            var first = true;
+            foreach (var entry in TestStatuses)
+            {
+                if (!first)
+                {
+                    builder.AppendLine(",");
+                }
+
+                first = false;
+                TestMessages.TryGetValue(entry.Key, out var testMessage);
+                if (!string.IsNullOrEmpty(testMessage))
+                {
+                    builder.Append(
+                        $"    \"{Escape(entry.Key)}\": {{ \"status\": \"{Escape(entry.Value)}\", \"message\": \"{Escape(testMessage)}\" }}"
+                    );
+                }
+                else
+                {
+                    builder.Append($"    \"{Escape(entry.Key)}\": {{ \"status\": \"{Escape(entry.Value)}\" }}");
+                }
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("  }");
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                builder.AppendLine(",");
+                builder.AppendLine("  \"errors\": [");
+                builder.AppendLine($"    {{ \"message\": \"{Escape(error)}\" }}");
+                builder.AppendLine("  ]");
+            }
+
+            builder.AppendLine("}");
+            RuntimeTrace.Run("ForgeStatus", "FlushWrite", () => File.WriteAllText(StatusPath, builder.ToString()));
+        }
+
+        private static void FlushFull(
+            string overall = null,
+            string error = null)
+        {
+            try
+            {
                 var certificationOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
                 var topOverall = overall ?? certificationOverall;
 
@@ -648,7 +732,7 @@ namespace BlacksmithGuild
             }
             catch (Exception ex)
             {
-                RuntimeTrace.LogFail("ForgeStatus", "Flush", ex);
+                RuntimeTrace.LogFail("ForgeStatus", "FlushFull", ex);
             }
         }
 

@@ -50,6 +50,11 @@ namespace BlacksmithGuild.DevTools.Reporting
             WriteSnapshot(sequence, area, operation, "fail", path, _lastExceptionType, _lastExceptionMessage);
         }
 
+        public static void RecordDefer(int sequence, string area, string operation, string reason, string path)
+        {
+            WriteSnapshot(sequence, area, operation, "defer", path, deferReason: reason);
+        }
+
         private static void WriteSnapshot(
             int sequence,
             string area,
@@ -57,7 +62,8 @@ namespace BlacksmithGuild.DevTools.Reporting
             string stage,
             string path,
             string exceptionType = null,
-            string exceptionMessage = null)
+            string exceptionMessage = null,
+            string deferReason = null)
         {
             try
             {
@@ -72,6 +78,11 @@ namespace BlacksmithGuild.DevTools.Reporting
                 builder.AppendLine($"  \"area\": \"{Escape(area)}\",");
                 builder.AppendLine($"  \"operation\": \"{Escape(operation)}\",");
                 builder.AppendLine($"  \"stage\": \"{Escape(stage)}\",");
+                if (!string.IsNullOrEmpty(deferReason))
+                {
+                    builder.AppendLine($"  \"deferReason\": \"{Escape(deferReason)}\",");
+                }
+
                 builder.AppendLine($"  \"inferredLaunchPath\": \"{Escape(path)}\",");
                 builder.AppendLine($"  \"activeState\": \"{Escape(Safe(() => GameSessionState.GetActiveStateName()))}\",");
                 builder.AppendLine($"  \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");

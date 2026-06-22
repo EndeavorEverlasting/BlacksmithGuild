@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using BlacksmithGuild.DevTools;
 
@@ -7,6 +8,8 @@ namespace BlacksmithGuild.DevTools.Reporting
     public static class RuntimeTrace
     {
         private static int _sequence;
+        private static readonly HashSet<string> DeferOnceKeys =
+            new HashSet<string>(StringComparer.Ordinal);
 
         public static void Run(string area, string operation, Action action)
         {
@@ -46,6 +49,24 @@ namespace BlacksmithGuild.DevTools.Reporting
             CrashContextWriter.RecordFail(seq, area, operation, ex, LaunchPathInference.GetPathLabel());
         }
 
+        public static void LogDefer(string area, string operation, string reason)
+        {
+            var seq = InterlockedIncrement();
+            var path = LaunchPathInference.GetPathLabel();
+            LogDefer(seq, area, operation, reason, path);
+            CrashContextWriter.RecordDefer(seq, area, operation, reason, path);
+        }
+
+        public static void LogDeferOnce(string key, string area, string operation, string reason)
+        {
+            if (!DeferOnceKeys.Add(key))
+            {
+                return;
+            }
+
+            LogDefer(area, operation, reason);
+        }
+
         private static void LogFail(int seq, string area, string operation, Exception ex, string path)
         {
             var type = ex?.GetType().Name ?? "unknown";
@@ -67,6 +88,13 @@ namespace BlacksmithGuild.DevTools.Reporting
 
             DebugLogger.Test(
                 $"[TBG TRACE] seq={seq} area={area} op={operation} stage={stage} path={path}",
+                showInGame: false);
+        }
+
+        private static void LogDefer(int seq, string area, string operation, string reason, string path)
+        {
+            DebugLogger.Test(
+                $"[TBG TRACE] seq={seq} area={area} op={operation} stage=defer reason={Sanitize(reason)} path={path}",
                 showInGame: false);
         }
 

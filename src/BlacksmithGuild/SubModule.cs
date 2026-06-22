@@ -2,6 +2,7 @@ using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
@@ -14,6 +15,7 @@ namespace BlacksmithGuild
             "[The Blacksmith Guild] Mod loaded. The forge is lit.";
 
         private float _inboxPollAccumulator;
+        private static bool _afterFlushWriteTraced;
 
         protected override void OnSubModuleLoad()
         {
@@ -52,6 +54,14 @@ namespace BlacksmithGuild
 
             if (IsCampaignActive())
             {
+                if (!_afterFlushWriteTraced)
+                {
+                    _afterFlushWriteTraced = true;
+                    RuntimeTrace.Run("SubModule", "AfterFlushWrite", () => { });
+                }
+
+                MapTransitionGuard.TraceGuardCheck("CampaignTick");
+
                 GameSessionState.Refresh();
 
                 if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
@@ -66,11 +76,12 @@ namespace BlacksmithGuild
                     CampaignMapReadyOrchestrator.OnCampaignTick(dt);
                 }
 
-                if (GameSessionState.IsSettlementInteriorReady
-                    || (GameSessionState.IsCampaignMapReady
-                        && CampaignMapReadyOrchestrator.ImmediateHooksCompleted))
+                if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                    && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && (GameSessionState.IsSettlementInteriorReady
+                        || GameSessionState.IsCampaignMapReady))
                 {
-                    DevHotkeyHandler.Poll();
+                    RuntimeTrace.Run("SubModule", "NextOperation", () => DevHotkeyHandler.Poll());
                 }
             }
 
@@ -83,16 +94,20 @@ namespace BlacksmithGuild
             _inboxPollAccumulator = 0f;
             if (IsCampaignActive())
             {
-                GameSessionState.Refresh();
+                if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+                {
+                    GameSessionState.Refresh();
+                }
             }
 
-            if (GameSessionState.IsSettlementInteriorReady
-                || (IsCampaignActive()
-                    && GameSessionState.IsCampaignMapReady
-                    && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
-                    && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow))
+            if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                && (GameSessionState.IsSettlementInteriorReady
+                    || (IsCampaignActive()
+                        && GameSessionState.IsCampaignMapReady
+                        && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                        && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)))
             {
-                DevCommandFileInbox.Poll();
+                RuntimeTrace.Run("SubModule", "NextOperation", DevCommandFileInbox.Poll);
             }
         }
 

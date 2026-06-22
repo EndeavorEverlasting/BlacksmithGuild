@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.GameState;
@@ -59,6 +60,20 @@ namespace BlacksmithGuild.DevTools
 
         public static void Refresh()
         {
+            RuntimeTrace.Run("GameSessionState", "Refresh", () =>
+            {
+                if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+                {
+                    RefreshLightweight();
+                    return;
+                }
+
+                RefreshFull();
+            });
+        }
+
+        private static void RefreshLightweight()
+        {
             IsMapMenuOpen = false;
             MapMenuId = null;
             ActiveMenuId = null;
@@ -83,14 +98,70 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
+            RuntimeTrace.Run("GameSessionState", "ReadHero", () =>
+            {
+                try
+                {
+                    IsMainHeroReady = Hero.MainHero != null;
+                }
+                catch
+                {
+                    IsMainHeroReady = false;
+                }
+            });
+
+            Phase = SessionPhase.CampaignLoading;
+            IsTimePaused = false;
+            IsCampaignMapReady = false;
+            CanPollHelpHotkeys = false;
+            CanPollRiskyHotkeys = false;
+            CanPollFileInbox = false;
+            CanPollHotkeys = false;
+
+            var reason = MapTransitionGuard.GetDeferReason();
+            RuntimeTrace.LogDeferOnce("refresh_read_menu", "GameSessionState", "ReadMenuState", reason);
+            RuntimeTrace.LogDeferOnce("refresh_eval_settlement", "GameSessionState", "EvaluateSettlementInterior", reason);
+            RuntimeTrace.LogDeferOnce("refresh_eval_map_ready", "GameSessionState", "EvaluateMapReady", reason);
+            RuntimeTrace.LogDeferOnce("refresh_eval_tavern", "GameSessionState", "EvaluateTavernLocation", reason);
+        }
+
+        private static void RefreshFull()
+        {
+            IsMapMenuOpen = false;
+            MapMenuId = null;
+            ActiveMenuId = null;
+            CurrentLocationId = null;
+            CurrentSettlementName = null;
+            CurrentSettlementStringId = null;
+            IsSettlementInteriorReady = false;
+            IsTavernLocationReady = false;
+
             try
             {
-                IsMainHeroReady = Hero.MainHero != null;
+                IsCampaignLoaded = Campaign.Current != null;
             }
             catch
             {
-                IsMainHeroReady = false;
+                IsCampaignLoaded = false;
             }
+
+            if (!IsCampaignLoaded)
+            {
+                ResetToModuleOnly();
+                return;
+            }
+
+            RuntimeTrace.Run("GameSessionState", "ReadHero", () =>
+            {
+                try
+                {
+                    IsMainHeroReady = Hero.MainHero != null;
+                }
+                catch
+                {
+                    IsMainHeroReady = false;
+                }
+            });
 
             if (!IsMainHeroReady)
             {
@@ -113,10 +184,16 @@ namespace BlacksmithGuild.DevTools
                 IsTimePaused = false;
             }
 
-            ReadMenuState();
-            IsCampaignMapReady = EvaluateCampaignMapReady(out _);
-            EvaluateSettlementInteriorReady();
-            IsTavernLocationReady = EvaluateTavernLocationReady();
+            RuntimeTrace.Run("GameSessionState", "ReadMenuState", ReadMenuState);
+            IsCampaignMapReady = RuntimeTrace.Run(
+                "GameSessionState",
+                "EvaluateMapReady",
+                () => EvaluateCampaignMapReady(out _));
+            RuntimeTrace.Run("GameSessionState", "EvaluateSettlementInterior", EvaluateSettlementInteriorReady);
+            IsTavernLocationReady = RuntimeTrace.Run(
+                "GameSessionState",
+                "EvaluateTavernLocation",
+                EvaluateTavernLocationReady);
 
             if (IsSettlementInteriorReady)
             {

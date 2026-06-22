@@ -80,6 +80,11 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
+            if (MapTransitionGuard.TraceGuardCheck("MapReadyPrecheck"))
+            {
+                return;
+            }
+
             GameSessionState.Refresh();
 
             if (_stabilizationSecRemaining > 0f && GameSessionState.IsCampaignMapReady)
@@ -145,6 +150,12 @@ namespace BlacksmithGuild.DevTools
             }
 
             if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            {
+                reason = "map_load_transition";
+                return true;
+            }
+
+            if (MapTransitionGuard.IsUnsafeContinueLoadWindow())
             {
                 reason = "map_load_transition";
                 return true;
