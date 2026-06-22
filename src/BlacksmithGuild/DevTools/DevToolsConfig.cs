@@ -1,3 +1,4 @@
+using System;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 
@@ -6,6 +7,38 @@ namespace BlacksmithGuild.DevTools
     public static class DevToolsConfig
     {
         public static bool DevToolsEnabled = true;
+
+        /// <summary>When true, forge smoke / treasury / character-build hooks run on the tick after map-ready.</summary>
+        public static bool MapReadyDeferHeavyHooks = true;
+
+        /// <summary>Bisect mask; override with env TBG_MAP_READY_HOOK_MASK (hex, e.g. 0x1FF).</summary>
+        public static MapReadyHookFlags MapReadyHookMask = MapReadyHookFlags.All;
+
+        public static void TryLoadMapReadyBisectFromEnvironment()
+        {
+            var raw = Environment.GetEnvironmentVariable("TBG_MAP_READY_HOOK_MASK");
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return;
+            }
+
+            raw = raw.Trim();
+            if (raw.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                raw = raw.Substring(2);
+            }
+
+            if (int.TryParse(raw, System.Globalization.NumberStyles.HexNumber, null, out var hexValue))
+            {
+                MapReadyHookMask = (MapReadyHookFlags)hexValue;
+                return;
+            }
+
+            if (Enum.TryParse(raw, true, out MapReadyHookFlags named))
+            {
+                MapReadyHookMask = named;
+            }
+        }
         public const bool AutoRunGoldTestOnDailyTick = false;
         public static bool AutoSkipCharacterCreation = true;
         public static bool AutoLaunchFromMainMenu = true;
@@ -81,11 +114,15 @@ namespace BlacksmithGuild.DevTools
         public static CohesionDoctrineKind CohesionDefaultDoctrine = CohesionDoctrineKind.TradeForge;
 
         public static bool GuildLoopAutonomousMode = true;
+        // Default 1 cycle per RunAutonomousGuildLoopNow; set 2–3 for multi-cycle cert.
         public static int GuildLoopMaxCyclesPerCommand = 1;
         public static bool GuildLoopAutoRunForgeHandoff = true;
         public static bool GuildLoopPreferSmithingInputs = true;
         public static bool GuildLoopAllowTravelOnlyIfTradeBlocked = true;
         public static bool GuildLoopProbeWeaponSmeltOnStart = true;
+        // 006C-4b: after buy at buy town, auto-ride to SellSettlement for spread missions.
+        public static bool GuildLoopAutoTravelToSellTown = true;
+        public static bool MapTradeAutoTravelToSellTown = true;
 
         public static int SmithingSmeltMaxWeaponTier = 2;
         public static int SmithingSmeltMaxPerInvocation = 1;

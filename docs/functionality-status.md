@@ -1,13 +1,11 @@
 # Functionality Status
 
-**Last updated:** 2026-06-22 (Agent B — build PASS; **both Forge.cmd and ForgeContinue.cmd CRASH** before stable F7 gate)  
+**Last updated:** 2026-06-22 (crash fix on `fix/continue-map-crash-bisect` — USER verify pending)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `aa46ea0` — **not cert-complete**; all 006B/006C/009A USER certs **BLOCKED on crash**
+**Branch:** `fix/continue-map-crash-bisect` — live certs blocked until stable F7 USER PASS
 
-Canonical snapshot of what works today, what is certified, and what is not built yet.
-
-**Automation playbook (NEW):** [automation-playbook.md](automation-playbook.md)  
-**Next handoff:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
+**Next handoff:** [handoff/continue-map-crash-bisect-agent-handoff.md](handoff/continue-map-crash-bisect-agent-handoff.md)  
+**Live cert marathon:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
 **006C roadmap:** [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
@@ -16,21 +14,16 @@ Canonical snapshot of what works today, what is certified, and what is not built
 
 ## Live cert marathon — current verdict (2026-06-22)
 
-**Not cert-complete.** Both launch paths **hard-crash** before a stable F7 gate (`campaignReady: true` + `canPollFileInbox: true` for ≥60s). No honest PASS/FAIL for 006B / 006C-1 / 006C-2 / 006C-3 / 009A.
+**Not cert-complete.** Map-ready crash fix shipped; **USER must verify** stable F7 before cert marathon. See [continue-map-crash-bisect handoff](handoff/continue-map-crash-bisect-agent-handoff.md).
 
 | Check | Verdict | Notes |
 |-------|---------|-------|
-| `dotnet build -c Release` | **PASS** | Verified 2026-06-22 — 0 warnings, v0.0.11 installed |
-| Disposable `Forge.cmd` bootstrap | **CRASH** | Phase1 MapTransition 00:13:40, no TBG READY; process gone ~00:14:06 |
-| Continue `ForgeContinue.cmd` bootstrap | **CRASH** | Phase1 map-ready Quyaz 00:20:34; process gone ~00:20:36; manifest `live-cert/20260622-002034/` |
-| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked — crash before stable F7 |
-| Disposable marathon (-SkipLaunch) | **NOT RUN** | Blocked — crash before map-ready |
-| 006B abort | **BLOCKED** | Crash |
-| 006C-1 vanilla buy | **BLOCKED** | Crash |
-| 006C-2 pack animal | **BLOCKED** | Crash |
-| 006C-3 weapon smelt | **BLOCKED** | Crash |
-| 009A clan intel | **BLOCKED** | Crash |
-| Faction posture | **BLOCKED** | Crash |
+| `dotnet build -c Release` | **PASS** | 2026-06-22 |
+| Map-ready orchestrator fix | **SHIPPED** | Deferred hooks + F7 sync + bisect mask |
+| Continue F7 (USER) | **PENDING VERIFY** | `campaignReady:true` + `canPollFileInbox:true` ≥60s |
+| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked until F7 verify |
+| Prior Continue crash | **CRASH** | Evidence `live-cert/20260622-002034/` |
+| 006B / 006C / 009A | **BLOCKED** | No stable map-ready |
 
 **Cold rule:** no stable map-ready → no verdict. Fix crash first; do not burn time on launcher UIA.
 

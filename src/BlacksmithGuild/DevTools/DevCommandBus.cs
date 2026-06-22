@@ -28,12 +28,7 @@ namespace BlacksmithGuild.DevTools
             string hotkeyLabel = null,
             int sequence = -1)
         {
-            GameSessionState.Refresh();
-            ForgeStatus.UpdateSession(GameSessionState.Phase, GameSessionState.IsTimePaused);
-            ForgeStatus.UpdateReadiness(
-                GameSessionState.IsCampaignLoaded,
-                GameSessionState.IsMainHeroReady
-            );
+            GameSessionState.SyncForgeStatus();
 
             DebugLogger.Test(
                 $"Command received: {commandName} (source: {source})",

@@ -20,6 +20,7 @@ namespace BlacksmithGuild
             base.OnSubModuleLoad();
             ForgeStatus.SetModLoaded(true);
             ForgeStatus.SetStep("module_load", "PASS");
+            DevToolsConfig.TryLoadMapReadyBisectFromEnvironment();
             PendingReloadWatcher.OnModuleLoad();
             CharacterBuildVariantConfigService.TryLoadAtStartup();
             AgentIterationConfigService.TryLoadAtStartup();
@@ -50,7 +51,11 @@ namespace BlacksmithGuild
 
             if (IsCampaignActive())
             {
-                DevHotkeyHandler.Poll();
+                GameSessionState.Refresh();
+                if (GameSessionState.IsMainHeroReady)
+                {
+                    DevHotkeyHandler.Poll();
+                }
             }
 
             _inboxPollAccumulator += dt;
@@ -88,7 +93,6 @@ namespace BlacksmithGuild
 
                     GuildLog.Display(ForgeLitMessage);
                     ForgeStatus.SetTest("forge_lit", "PASS");
-                    ForgeAdvisorSmokeTest.Run();
                 }
                 catch (System.Exception ex)
                 {

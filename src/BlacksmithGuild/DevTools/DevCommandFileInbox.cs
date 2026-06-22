@@ -24,8 +24,7 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            GameSessionState.Refresh();
-            ForgeStatus.UpdateSession(GameSessionState.Phase, GameSessionState.IsTimePaused);
+            GameSessionState.SyncForgeStatus();
 
             if (!GameSessionState.CanPollFileInbox)
             {

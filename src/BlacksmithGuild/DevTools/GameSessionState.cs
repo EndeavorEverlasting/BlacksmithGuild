@@ -503,5 +503,12 @@ namespace BlacksmithGuild.DevTools
                 return true;
             }
         }
+
+        public static void SyncForgeStatus()
+        {
+            Refresh();
+            ForgeStatus.UpdateSession(Phase, IsTimePaused);
+            ForgeStatus.UpdateReadiness(IsCampaignMapReady, IsMainHeroReady);
+        }
     }
 }

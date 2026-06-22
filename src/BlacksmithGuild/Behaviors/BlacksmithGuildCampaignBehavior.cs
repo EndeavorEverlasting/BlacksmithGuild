@@ -1,10 +1,7 @@
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
-using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.MapTrade;
-using BlacksmithGuild.DevTools.QuickStart;
-using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.CampaignSystem;
 
@@ -12,15 +9,12 @@ namespace BlacksmithGuild.Behaviors
 {
     public sealed class BlacksmithGuildCampaignBehavior : CampaignBehaviorBase
     {
-        private static bool _hasAnnouncedCampaignMapReady;
-        private static bool _hasRunAgentAutoLoop;
         private bool _hasRunGoldTest;
         private bool _loggedGoldTestBlock;
 
         internal static void ResetCampaignMapReadyAnnouncement()
         {
-            _hasAnnouncedCampaignMapReady = false;
-            _hasRunAgentAutoLoop = false;
+            CampaignMapReadyOrchestrator.ResetForNewCampaign();
         }
 
         public override void RegisterEvents()
@@ -84,54 +78,18 @@ namespace BlacksmithGuild.Behaviors
 
             GameSessionState.Refresh();
 
+            CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+
+            if (!GameSessionState.IsCampaignMapReady)
+            {
+                return;
+            }
+
             TreasuryDeltaWatchService.ProcessPendingSnapshot();
             AutoTravelService.OnCampaignTick();
             CohesionExecutionDriver.OnCampaignTick();
             MapTradeAutonomousService.OnCampaignTick();
             AutonomousGuildLoopService.OnCampaignTick();
-
-            if (!_hasAnnouncedCampaignMapReady && GameSessionState.IsCampaignMapReady)
-            {
-                _hasAnnouncedCampaignMapReady = true;
-                CampaignSetupStateTracker.NotifyCampaignMapReady();
-                InGameNotice.Ready("campaign map ready. Press F8 for commands.");
-                InGameNotice.Info(ModDisplay.CompactLine("Market", "Press Ctrl+Alt+M for market intel."));
-                DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
-                HotkeyTraceService.OnMapReady();
-                TreasuryDeltaWatchService.OnCampaignMapReady();
-                AutoCharacterBuildService.OnCampaignMapReady();
-                CommandSurfaceService.WriteCommandSurface("MapReady");
-                TryRunAgentAutoLoopOnce();
-            }
-        }
-
-        private static void TryRunAgentAutoLoopOnce()
-        {
-            if (_hasRunAgentAutoLoop || !DevToolsConfig.AgentAutoLoop)
-            {
-                return;
-            }
-
-            _hasRunAgentAutoLoop = true;
-
-            if (!CampaignSetupStateTracker.UsedDisposableQuickStartPath)
-            {
-                DebugLogger.Test(
-                    "[TBG AGENT] AgentAutoLoop skipped: requires disposable Forge.cmd bootstrap path.",
-                    showInGame: false);
-                return;
-            }
-
-            DebugLogger.Test("[TBG AGENT] AgentAutoLoop starting RunAutonomousGuildLoopNow.", showInGame: false);
-            if (AutonomousGuildLoopService.StartNow("AgentAutoLoop"))
-            {
-                InGameNotice.Info($"{ModDisplay.Name} — Agent auto-loop started (one bounded cycle).");
-                return;
-            }
-
-            var reason = AutonomousGuildLoopService.LastFailReason ?? "unknown";
-            DebugLogger.Test($"[TBG AGENT] AgentAutoLoop blocked: {reason}", showInGame: false);
-            InGameNotice.Blocked($"{ModDisplay.Name} — Agent auto-loop blocked: {reason}.");
         }
 
         public override void SyncData(IDataStore dataStore)

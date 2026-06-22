@@ -1,8 +1,9 @@
 # Live Cert Marathon — Agent Handoff
 
 **Last updated:** 2026-06-22  
-**Baseline:** `main` @ `aa46ea0` (origin synced, working tree clean)  
-**Sprint status:** Code shipped; **not cert-complete** — **both launch paths CRASH**
+**Baseline:** `main` (post map-ready orchestrator fix)  
+**Sprint status:** Crash fix **shipped** — **USER VERIFY REQUIRED**  
+**Crash fix:** [continue-map-crash-bisect-agent-handoff.md](continue-map-crash-bisect-agent-handoff.md)
 
 ## What shipped (do not re-implement)
 
@@ -45,7 +46,7 @@
 ### Investigation suspects (next agent)
 
 1. **Mod reload / Safe Mode loop** — every launch hits Safe Mode; check `BlacksmithGuild_PendingReload.json`, Steam verify, close game before `dotnet build`
-2. **Post-map init tick** — crash window aligns with Treasury Delta Watch init + town menu open; bisect `BlacksmithGuildCampaignBehavior.OnCampaignTick` map-ready path
+2. **Post-map init tick** — **fix shipped**: `CampaignMapReadyOrchestrator` + `TBG_MAP_READY_HOOK_MASK`
 3. **Recent diff `e7690d9`..`aa46ea0`** — `FactionPowerPostureScanner` only runs in `ForgeStatus.Flush` when `_campaignReady && _mainHeroReady` (likely not reached before crash); still worth null-guard audit
 4. **Engine / GPU** — no rgl_log or crash reporter captured; user may need Windows Event Viewer or Steam verify
 

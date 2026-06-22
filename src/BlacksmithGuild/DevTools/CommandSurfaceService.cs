@@ -40,6 +40,20 @@ namespace BlacksmithGuild.DevTools
 
         public static void WriteCommandSurface(string source)
         {
+            try
+            {
+                WriteCommandSurfaceCore(source);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test(
+                    $"[TBG COMMANDS] WriteCommandSurface failed source={source}: {ex.Message}",
+                    showInGame: false);
+            }
+        }
+
+        private static void WriteCommandSurfaceCore(string source)
+        {
             var sb = new StringBuilder();
             var hotkeys = BuildHotkeys();
             var inbox = DevCommandRegistry.RegisteredCommandNames.OrderBy(name => name).ToList();
