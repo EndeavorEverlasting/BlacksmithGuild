@@ -24,7 +24,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `efc1018` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `29730b9` |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — map-ready seen then crash (session `095326` mask `0x01`); prior `030915` MapTransition-only |
@@ -40,8 +40,8 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Bisect partial @ `095326`; commit fixes; re-run after C PLAY/CONTINUE hwnd fix | `docs/evidence/live-cert/**`, PR #7 | — | pending |
-| **B** | Docs / grep guard / launch-language | `IDLE` | Grep guard + playbook landed @ `efc1018` | — | — | `efc1018` |
-| **C** | Launcher / focus / nav scripts | `DONE` | Fail-closed F7 gate runner landed @ `325aacd` | — | A may run F7 after pull + static checks | `325aacd` |
+| **B** | Docs / grep guard / launch-language | `IDLE` | Grep guard + playbook landed @ `29730b9` | — | — | `29730b9` |
+| **C** | Launcher / focus / nav scripts | `DONE` | Fail-closed F7 gate runner @ `2ad1d45` | — | A may run F7 after pull + static checks | `2ad1d45` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -78,23 +78,23 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ### 2026-06-22 — Agent B → A, C (grep guard + launch-language doctrine)
 
-- **Landed:** `scripts/verify-log-grep-patterns.ps1` — scans `scripts/**` and repo-root `*.ps1|*.cmd|*.bat` for ASCII-hyphen `Blacksmith Guild - Ready` grep patterns; excludes self and docs.
+- **Landed @ `29730b9`:** `scripts/verify-log-grep-patterns.ps1` — scans `scripts/**` and repo-root `*.ps1|*.cmd|*.bat` for ASCII-hyphen `Blacksmith Guild - Ready` grep patterns; excludes self and docs.
 - **Landed:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md) — canonical F7 invocation doctrine (direct PS primary; `.cmd` thin wrapper secondary).
 - **Aligned:** em-dash doc, recovery handoff, functionality-status, forge contract header, launch index, LaunchControl README.
 - **Validation:** verifier PASS (69 automation files); PS parse check PASS. No F7 run.
 - **Doctrine:** Primary `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0xNN`. Canonical ready line: `Blacksmith Guild — Ready:` (U+2014). `TBG READY` = legacy shorthand only.
 - **Need from A:** Reject exit 0 without manifest `passFail: PASS`; run verifier before F7 cert; use direct PS for bisect.
-- **Need from C:** None for this lane (runner fail-closed already @ `325aacd`).
+- **Need from C:** None for this lane (runner fail-closed @ `2ad1d45`).
 
-### 2026-06-22 — Agent C → A, B (fail-closed F7 gate runner)
+### 2026-06-22 — Agent C → A, B (fail-closed runner @ `2ad1d45`)
 
 - **Landed:** `Exit-F7Gate` — exit 0 only when manifest `passFail=PASS` and `stableSeconds >= StableSeconds`; catch writes FAIL manifest on tooling exceptions; removed loose `Invoke-F7NoClickLaunch` success path.
 - **Bisect:** `run-agent-a-f7-bisect.ps1` uses direct PowerShell (no `-SkipLaunch`); rejects `FAKE_PASS_REJECTED` when child exit 0 lacks manifest PASS.
 - **Launch log:** `write-launch-log.ps1` — scoped `$ErrorActionPreference`, mutex `WaitOne` enforced.
-- **Paths:** `Test-F7GateManifestPass`, `Confirm-F7GateManifestWritten`, `Get-LatestF7GateManifestPath` in `bannerlord-paths.ps1` (@Agent B: manifest helpers only).
+- **Paths:** `Test-F7GateManifestPass`, `Confirm-F7GateManifestWritten`, `Get-LatestF7GateManifestPath` in `bannerlord-paths.ps1`.
 - **Wrapper:** `Run-F7GateContinue.cmd` forwards `%*`; primary doctrine = direct PowerShell.
-- **Need from A:** Pull, run static validation, then F7 cert / bisect; reject any exit 0 without manifest. PR #8 still HOLD.
-- **Need from B:** Align playbook to direct-PS-primary; `verify-log-grep-patterns.ps1` scope (not on this branch).
+- **Need from A:** Pull @ `29730b9`, run static validation + verifier, then F7 cert; reject any exit 0 without manifest. PR #8 still HOLD.
+- **Need from B:** Align playbook to direct-PS-primary; `verify-log-grep-patterns.ps1` scope — **DONE** @ `29730b9`.
 
 ### 2026-06-22 — Agent A → B, C (bisect partial @ `4218842`)
 
