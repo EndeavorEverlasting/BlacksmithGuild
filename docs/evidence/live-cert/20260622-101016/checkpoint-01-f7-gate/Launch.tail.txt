@@ -1,0 +1,29 @@
+﻿[2026-06-22 10:10:23] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 10:10:23] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 10:10:23] launcher-auto: session pid=125688 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=180ms respectUserForeground=True
+[2026-06-22 10:10:24] launcher-auto: env launcher=yes game=no foreground="ChatGPT - Google Chrome" process=chrome pid=94672
+[2026-06-22 10:10:24] launcher-auto: UIA: AUDIT top-level windows (12): "ChatGPT - Google Chrome"(chrome); "em-dash_play_continue_sprint_9afe0892.plan.md - BlacksmithGuild - Cursor"(Cursor); "Downloads - File Explorer"(explorer); "Signal (16)"(Signal); "Excel Part Number Configuration - Google Chrome"(chrome); "BlacksmithGuild - File Explorer"(explorer); "Windows Security"(ApplicationFrameHost); "NordVPN "(NordVPN); "Chat | NW PROJECT TEAM | Microsoft Teams"(ms-teams); "NoAutomationPeer"(DuckDuckGo); "run-f7-gate-continue.ps1 - Notepad"(Notepad); "What's new in Microsoft Edge and 4 more pages - Personal - Microsoft​ Edge"(msedge)
+[2026-06-22 10:10:24] launcher-auto: pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet
+[2026-06-22 10:10:32] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127736
+[2026-06-22 10:10:32] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127736 | before foreground="ChatGPT - Google Chrome" process=chrome pid=94672
+[2026-06-22 10:10:32] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-22 10:10:32] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1005,764) hwnd=109317884 title="em-dash_play_continue_sprint_9afe0892.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 10:10:32] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=1 method=coords at (1005,764) fractions=(0.55,0.90) bounds=(498,260,923,560) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127736 | foreground foreground="ChatGPT - Google Chrome" process=chrome pid=94672
+[2026-06-22 10:10:32] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (507,504) screen (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127736
+[2026-06-22 10:10:32] launcher-auto: UIA: CLICK hwnd SendMessage at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127736
+[2026-06-22 10:10:32] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-first at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127736
+[2026-06-22 10:10:33] launcher-auto: clicked CONTINUE (CONTINUE) — launch verified (game or launcher handoff)
+[2026-06-22 10:10:33] launcher-auto: LAUNCH_STATE=continue_clicked
+[2026-06-22 10:10:55] launcher-auto: env launcher=yes game=no foreground="ChatGPT - Google Chrome" process=chrome pid=94672
+[2026-06-22 10:11:27] launcher-auto: env launcher=yes game=no foreground="ChatGPT - Google Chrome" process=chrome pid=94672
+[2026-06-22 10:11:57] launcher-auto: env launcher=yes game=no foreground="Stabilize F7 launch tooling and open PR - Google Chrome" process=chrome pid=94672
+[2026-06-22 10:12:05] f7-gate: LAUNCH_STATE=fail_game_gone_after_map_ready
+[2026-06-22 10:12:28] launcher-auto: env launcher=yes game=no foreground="em-dash_play_continue_sprint_9afe0892.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 10:12:59] launcher-auto: env launcher=yes game=no foreground="em-dash_play_continue_sprint_9afe0892.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 10:13:30] launcher-auto: env launcher=yes game=no foreground="em-dash_play_continue_sprint_9afe0892.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 10:14:01] launcher-auto: env launcher=yes game=no foreground="Signal (16)" process=Signal pid=97352
+[2026-06-22 10:14:32] launcher-auto: env launcher=yes game=no foreground="Signal (16)" process=Signal pid=97352
+[2026-06-22 10:15:04] launcher-auto: env launcher=yes game=no foreground="Signal (16)" process=Signal pid=97352
+[2026-06-22 10:15:24] launcher-auto: timeout: visible launcher buttons: no launcher buttons visible in 1 window(s)
+[2026-06-22 10:15:25] f7-gate: LAUNCH_STATE=tbg_ready
+[2026-06-22 10:15:25] f7-gate: LAUNCH_STATE=fail_game_gone_after_map_ready
