@@ -24,7 +24,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `29730b9` (+ Agent A gatekeeper push pending) |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent C hwnd sprint) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — map-ready then crash (`101016`, `100959`, `095326`); runner fail-closed @ `2ad1d45` |
@@ -40,8 +40,8 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Gatekeeper DONE: PR #8 HOLD+retarget, static validation PASS, `verify-f7-runner-contract.ps1` | `docs/evidence/live-cert/**`, PR #7/#8 | — | pending |
-| **B** | Docs / grep guard / launch-language | `DONE` | Grep guard + playbook @ `29730b9` | — | — | `29730b9` |
-| **C** | Launcher / F7 runner | `DONE` | Fail-closed runner @ `2ad1d45` | — | — | `2ad1d45` |
+| **B** | C# map-ready / post-map survival | `IN_PROGRESS` | StatusFlush alignment + stabilization window | `CampaignMapReadyOrchestrator.cs`, `SubModule.cs`, `BlacksmithGuildCampaignBehavior.cs` | — | pending |
+| **C** | Launcher / F7 runner | `IN_PROGRESS` | CONTINUE hwnd hit-test fix (`095505`) + PR #8 stub rejection | `launcher-auto-nav.ps1` | — | `2ad1d45` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -76,6 +76,13 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A, B (CONTINUE hwnd fix + PR #8 stub rejection)
+
+- **Landed:** `launcher-auto-nav.ps1` — hit-test logs `launcher_ok=true/false`; coord clicks skip when `WindowFromPoint` is not launcher; `TryClickLauncherHwndAtScreenPoint` rejects non-launcher hwnd; CONTINUE verify requires game/loading/launcher-gone within 30s (removed weak button-invisible shortcut); `continue_escalate` mirrors PLAY after 15s.
+- **PR #8:** Stub `run-f7-gate-continue.ps1` **rejected** — fix branch real runner retained. Docs already on branch via A/B (`pr8-cherry-pick-bridge.md`, playbook, grep guard). No PR #8 evidence cherry-pick.
+- **Need from A:** Pull, run static preflight, F7 cert when ForgeContinue stopped.
+- **Need from B:** C# post-map-ready survival unchanged (launcher lane done for `095505`).
 
 ### 2026-06-22 — Agent A → B, C (gatekeeper sprint)
 
@@ -181,7 +188,8 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] Create this coordination doc (with B plan)
 - [x] Pushed @ `8c18ecd`
 - [x] Fail-closed F7 gate runner + bisect manifest gate + write-launch-log mutex
-- [ ] CONTINUE hwnd hit-test fix (`a28ae61`) — deferred; separate from gate fail-closed sprint
+- [x] CONTINUE hwnd hit-test fix (`095505`) — launcher_ok audit, coord skip, 30s verify, continue_escalate
+- [x] PR #8 runner stub rejected; docs salvage via A/B bridge doc
 
 ---
 

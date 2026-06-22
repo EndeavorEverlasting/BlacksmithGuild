@@ -146,6 +146,8 @@ exit 1 = build/launch/tooling failure
 exit 2 = F7/game failure or timeout
 ```
 
+**2026-06-22 status:** Real 723-line runner on `fix/f7-gate-stability` @ `2ad1d45`+; PR #8 16-line stub rejected. CONTINUE hwnd fix landed (hit-test `launcher_ok`, coord skip, 30s verify).
+
 `run-f7-gate-continue.ps1` must either run the real gate or fail closed. No third option.
 
 `write-launch-log.ps1` must:

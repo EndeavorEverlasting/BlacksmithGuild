@@ -405,6 +405,14 @@ public static class UIAHelper
 
             LogHitWindowAtPoint(x, y, label, intent);
 
+            if (!IsScreenPointOnLauncherHwnd(hwnd, x, y))
+            {
+                LogLine(string.Format(
+                    "CLICK SKIP launcher coords — hit-test not {0} at ({1},{2}); another window (e.g. IDE) may obscure launcher",
+                    LauncherProcessName, x, y));
+                return false;
+            }
+
             LogLine(string.Format(
                 "CLICK \"{0}\" intent={1} attempt={2} method=coords at ({3},{4}) fractions=({5:F2},{6:F2}) bounds=({7:F0},{8:F0},{9:F0},{10:F0}) in {11} | foreground {12}",
                 label, intent, _coordAttemptIndex + 1, x, y, xFraction, yFraction, bounds.X, bounds.Y, bounds.Width, bounds.Height, scopeDesc, DescribeForegroundWindow()));
@@ -444,6 +452,44 @@ public static class UIAHelper
         }
     }
 
+    private static bool IsHwndOwnedByLauncher(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return false;
+        try
+        {
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            return GetLauncherProcessIds().Contains((int)pid);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsScreenPointOnLauncherHwnd(IntPtr launcherHwnd, int screenX, int screenY)
+    {
+        if (launcherHwnd == IntPtr.Zero) return false;
+
+        try
+        {
+            var point = new POINT { X = screenX, Y = screenY };
+            var hit = WindowFromPoint(point);
+            if (hit == IntPtr.Zero) return false;
+
+            if (hit == launcherHwnd) return true;
+
+            var root = GetAncestor(hit, GA_ROOT);
+            if (root == launcherHwnd) return true;
+
+            return IsHwndOwnedByLauncher(hit);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private static void LogHitWindowAtPoint(int screenX, int screenY, string label, string intent)
     {
         try
@@ -452,7 +498,7 @@ public static class UIAHelper
             var hit = WindowFromPoint(point);
             if (hit == IntPtr.Zero)
             {
-                LogLine(string.Format("AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd=none", intent, label, screenX, screenY));
+                LogLine(string.Format("AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd=none launcher_ok=false", intent, label, screenX, screenY));
                 return;
             }
 
@@ -462,9 +508,10 @@ public static class UIAHelper
             GetWindowThreadProcessId(hit, out hitPid);
             var procName = "?";
             try { procName = Process.GetProcessById((int)hitPid).ProcessName; } catch { }
+            var launcherOk = string.Equals(procName, LauncherProcessName, StringComparison.OrdinalIgnoreCase);
             LogLine(string.Format(
-                "AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd={4} title=\"{5}\" process={6} pid={7}",
-                intent, label, screenX, screenY, hit.ToInt64(), sb.ToString(), procName, hitPid));
+                "AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd={4} title=\"{5}\" process={6} pid={7} launcher_ok={8}",
+                intent, label, screenX, screenY, hit.ToInt64(), sb.ToString(), procName, hitPid, launcherOk ? "true" : "false"));
         }
         catch (Exception ex)
         {
@@ -655,6 +702,12 @@ public static class UIAHelper
     private static bool TryClickLauncherHwndAtScreenPoint(IntPtr hwnd, int screenX, int screenY, string scopeDesc, string label)
     {
         if (hwnd == IntPtr.Zero) return false;
+
+        if (!IsHwndOwnedByLauncher(hwnd))
+        {
+            LogLine("CLICK SKIP launcher hwnd — target hwnd is not owned by " + LauncherProcessName + " (" + scopeDesc + ")");
+            return false;
+        }
 
         try
         {
@@ -1886,6 +1939,7 @@ $gameStablePolls = 0
 $requiredStablePolls = 3
 $playClickUtc = $null
 $playEscalated = $false
+$continueEscalated = $false
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2276,7 +2330,7 @@ function Test-LaunchClickVerified {
         [string]$Intent = 'continue'
     )
 
-    if ($Intent -eq 'play') {
+    if ($Intent -eq 'play' -or $Intent -eq 'continue') {
         $WaitSec = [Math]::Max($WaitSec, 30)
     }
 
@@ -2285,6 +2339,11 @@ function Test-LaunchClickVerified {
         if (Test-GameProcessRunning) { return $true }
 
         if ($Intent -eq 'continue') {
+            if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
+            if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+        }
+
+        if ($Intent -eq 'play') {
             if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
             if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
             if (-not [UIAHelper]::HasSafeModeDialog() -and -not [UIAHelper]::IsLauncherPlayContinueVisible()) {
@@ -2332,6 +2391,19 @@ while ((Get-Date) -lt $deadline) {
         if ($sinceClick -ge 15 -and -not $script:playEscalated) {
             Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:playEscalated = $true
+            $clickedPlayContinue = $false
+            $script:playClickUtc = $null
+            $RespectUserForeground = $false
+            [UIAHelper]::RespectUserForeground = $false
+            [UIAHelper]::ResetLauncherClickRetryState()
+        }
+    }
+
+    if ($LaunchIntent -eq 'continue' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
+        $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
+        if ($sinceClick -ge 15 -and -not $script:continueEscalated) {
+            Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks'
+            $script:continueEscalated = $true
             $clickedPlayContinue = $false
             $script:playClickUtc = $null
             $RespectUserForeground = $false
