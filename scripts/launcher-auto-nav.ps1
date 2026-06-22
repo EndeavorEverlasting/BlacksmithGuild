@@ -643,11 +643,56 @@ public static class UIAHelper
         }
     }
 
+    private static DateTime _lastLauncherRestoreUtc = DateTime.MinValue;
+
+    public static int TryRestoreLauncherWindows()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastLauncherRestoreUtc).TotalSeconds < 2) return 0;
+        _lastLauncherRestoreUtc = now;
+
+        var restored = 0;
+        foreach (var pid in GetLauncherProcessIds())
+        {
+            EnumWindows((hwnd, param) =>
+            {
+                try
+                {
+                    uint windowPid;
+                    GetWindowThreadProcessId(hwnd, out windowPid);
+                    if ((int)windowPid != pid) return true;
+
+                    var sb = new StringBuilder(256);
+                    GetWindowText(hwnd, sb, sb.Capacity);
+                    if (sb.Length == 0) return true;
+
+                    ShowWindow(hwnd, SW_RESTORE);
+                    ShowWindow(hwnd, 5);
+                    restored++;
+                }
+                catch { }
+                return true;
+            }, IntPtr.Zero);
+        }
+
+        if (restored > 0)
+        {
+            Thread.Sleep(400);
+        }
+
+        return restored;
+    }
+
     private static List<AutomationElement> FindAllLauncherWindowRoots()
     {
         var results = new List<AutomationElement>();
         var pids = GetLauncherProcessIds();
         if (pids.Count == 0) return results;
+
+        if (results.Count == 0)
+        {
+            TryRestoreLauncherWindows();
+        }
 
         try
         {
@@ -694,10 +739,10 @@ public static class UIAHelper
         {
             try
             {
-                if (!IsWindowVisible(hwnd)) return true;
                 uint windowPid;
                 GetWindowThreadProcessId(hwnd, out windowPid);
                 if ((int)windowPid != pid) return true;
+                if (!IsWindowVisible(hwnd)) return true;
                 var fromHandle = AutomationElement.FromHandle(hwnd);
                 if (fromHandle != null && !ContainsWindow(results, fromHandle))
                 {
@@ -1704,6 +1749,10 @@ public static class UIAHelper
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
 
 Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms"
+$restoredCount = [UIAHelper]::TryRestoreLauncherWindows()
+if ($restoredCount -gt 0) {
+    Write-LaunchLog "restored $restoredCount launcher window(s) via Win32 ShowWindow"
+}
 Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
 [UIAHelper]::LogTopLevelWindows() | Out-Null
 
@@ -2139,6 +2188,7 @@ if ($LaunchIntent -eq 'continue') {
 
 while ((Get-Date) -lt $deadline) {
     Invoke-MinimizeCompetingForeground
+    [UIAHelper]::TryRestoreLauncherWindows() | Out-Null
 
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
         $envDesc = [UIAHelper]::DescribeEnvironment()

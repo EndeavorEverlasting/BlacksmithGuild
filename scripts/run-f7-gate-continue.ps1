@@ -408,87 +408,48 @@ function Invoke-F7NoClickLaunch {
     Write-F7LaunchState 'launcher_spawned'
 
     $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
-    $navArgs = @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass',
-        '-File', $navScript,
-        '-LaunchIntent', 'continue',
-        '-BannerlordRoot', $bannerlordRoot,
-        '-TimeoutSec', [string]$TimeoutSec,
-        '-PollMs', '180'
-    )
-
-    Write-Host 'Starting launcher-auto-nav subprocess (minimized)...' -ForegroundColor DarkGray
-    $navProc = Start-Process -FilePath 'powershell.exe' -ArgumentList $navArgs -PassThru -WindowStyle Minimized
-
-    $deadline = (Get-Date).AddSeconds($TimeoutSec + 45)
-    $lastParentRefocus = [DateTime]::MinValue
-
-    while ((Get-Date) -lt $deadline) {
-        if ($navProc.HasExited) { break }
-
-        $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
-
-        if (Test-GameProcessRunning) {
-            Write-F7LaunchState 'game_spawned'
-            return $true
-        }
-
-        if ($script:LaunchAutomation.handoffSeen) {
-            Write-F7LaunchState 'handoff'
-        }
-
-        # Refocus only after nav subprocess exits or Continue succeeded — parent refocus
-        # during PLAY/CONTINUE/Safe Mode steals hwnd from hidden launcher-auto-nav.
-        $navFinished = $navProc.HasExited
-        $continueOk = $script:LaunchAutomation.continueClick.success
-        if ($navFinished -or $continueOk) {
-            $nowRefocus = [DateTime]::UtcNow
-            if (($nowRefocus - $lastParentRefocus).TotalSeconds -ge 2) {
-                Invoke-BannerlordFocusHelper | Out-Null
-                $lastParentRefocus = $nowRefocus
-            }
-        }
-
-        if ($script:LaunchAutomation.launchError -match 'fail_foreground_theft|foreground theft') {
-            if ($script:LaunchAutomation.continueClick.success) {
-                if (Test-GameProcessRunning -or Test-Phase1SessionActive -SinceUtc $SinceLocal.ToUniversalTime()) {
-                    Write-F7LaunchState 'continue_ok_loading'
-                    return $true
-                }
-            }
-            break
-        }
-
-        Start-Sleep -Milliseconds 750
+    $navParams = @{
+        LaunchIntent   = 'continue'
+        BannerlordRoot = $bannerlordRoot
+        TimeoutSec     = $TimeoutSec
+        PollMs         = 180
     }
 
-    if (-not $navProc.HasExited) {
-        try { $navProc.WaitForExit(15000) } catch { }
-        if (-not $navProc.HasExited) {
-            Stop-Process -Id $navProc.Id -Force -ErrorAction SilentlyContinue
+    Write-Host 'Starting launcher-auto-nav inline (avoids & path / subprocess UIA issues)...' -ForegroundColor DarkGray
+    $navExitCode = 0
+    try {
+        & $navScript @navParams
+        if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { $navExitCode = $LASTEXITCODE }
+    } catch {
+        $navExitCode = 1
+        if (-not $script:LaunchAutomation.launchError) {
+            $script:LaunchAutomation.launchError = $_.Exception.Message
         }
+        Write-Host "launcher-auto-nav error: $($_.Exception.Message)" -ForegroundColor Yellow
     }
 
     $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
 
+    if (Test-GameProcessRunning) {
+        Write-F7LaunchState 'game_spawned'
+        return $true
+    }
+
+    if ($script:LaunchAutomation.handoffSeen) {
+        Write-F7LaunchState 'handoff'
+        return $true
+    }
+
     if (-not $script:LaunchAutomation.continueClick.success -and (Test-LauncherProcessRunning)) {
-        Write-Host 'Launcher still running without Continue — restarting launcher-auto-nav once...' -ForegroundColor Yellow
+        Write-Host 'Launcher still running without Continue — retrying launcher-auto-nav once...' -ForegroundColor Yellow
         Invoke-MinimizeIdeForeground | Out-Null
-        $navProc2 = Start-Process -FilePath 'powershell.exe' -ArgumentList $navArgs -PassThru -WindowStyle Hidden
-        $retryDeadline = (Get-Date).AddSeconds(90)
-        while ((Get-Date) -lt $retryDeadline -and -not $navProc2.HasExited) {
-            $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
-            if (Test-GameProcessRunning) {
-                Write-F7LaunchState 'game_spawned'
-                return $true
-            }
-            if ($script:LaunchAutomation.continueClick.success) { break }
-            Start-Sleep -Milliseconds 750
-        }
-        if (-not $navProc2.HasExited) {
-            try { $navProc2.WaitForExit(10000) } catch { }
-            if (-not $navProc2.HasExited) {
-                Stop-Process -Id $navProc2.Id -Force -ErrorAction SilentlyContinue
+        try {
+            & $navScript @navParams
+            if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { $navExitCode = $LASTEXITCODE }
+        } catch {
+            $navExitCode = 1
+            if (-not $script:LaunchAutomation.launchError) {
+                $script:LaunchAutomation.launchError = $_.Exception.Message
             }
         }
         $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
@@ -499,12 +460,12 @@ function Invoke-F7NoClickLaunch {
         return $true
     }
 
-    if ($navProc.ExitCode -eq 0) {
+    if ($navExitCode -eq 0 -or $script:LaunchAutomation.continueClick.success) {
         return $true
     }
 
     if (-not $script:LaunchAutomation.launchError) {
-        $script:LaunchAutomation.launchError = "launcher-auto-nav exit code $($navProc.ExitCode)"
+        $script:LaunchAutomation.launchError = "launcher-auto-nav exit code $navExitCode"
     }
 
     if ($script:LaunchAutomation.continueClick.success -and `
