@@ -111,3 +111,9 @@ if ($Launch) { $installParams.LaunchIntent = $LaunchIntent }
 if ($LaunchManual) { $installParams.LaunchManual = $true }
 
 & (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installParams
+
+if ($Launch) {
+    . (Join-Path $PSScriptRoot 'scripts\bannerlord-paths.ps1')
+    $bannerlordRootForLogs = Get-BannerlordRootFromRepo -RepoRoot $PSScriptRoot
+    Write-ForgeRunLogPaths -BannerlordRoot $bannerlordRootForLogs
+}

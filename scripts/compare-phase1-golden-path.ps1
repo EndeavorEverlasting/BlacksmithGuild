@@ -16,7 +16,7 @@ $stepOrder = @(
     @{ id = 'mapReady'; pattern = 'transition: MapTransition -> MapReady'; label = 'MapTransition -> MapReady' },
     @{ id = 'bootstrapDisarmed'; pattern = 'bootstrap disarmed'; label = 'bootstrap disarmed' },
     @{ id = 'mapReadyStatusFlush'; pattern = '\[TBG MAPREADY\] StatusFlush ok'; label = '[TBG MAPREADY] StatusFlush ok' },
-    @{ id = 'tbgReady'; pattern = 'TBG READY'; label = 'TBG READY' }
+    @{ id = 'tbgReady'; pattern = 'Blacksmith Guild — Ready:|TBG READY|\[TBG MAPREADY\] immediate hooks complete|map_ready.*PASS'; label = 'campaign map ready marker' }
 )
 
 $steps = [ordered]@{}

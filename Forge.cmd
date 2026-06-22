@@ -22,5 +22,6 @@ if %FORGE_EXIT% NEQ 0 (
 )
 
 echo.
+echo Log tails: see paths printed above (Forge.log + Phase1 Documents and Steam root + Launch.log).
 echo If install was blocked, close Bannerlord and run Forge.cmd again.
 pause

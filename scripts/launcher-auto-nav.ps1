@@ -8,17 +8,50 @@ param(
     [string]$BannerlordRoot,
 
     [int]$TimeoutSec = 300,
-    [int]$PollMs = 180
+    [int]$PollMs = 180,
+    [switch]$MinimizeForegroundHosts
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 
 $minimizeIdePath = Join-Path $PSScriptRoot 'minimize-ide-foreground.ps1'
-if (Test-Path -LiteralPath $minimizeIdePath) {
+$lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
+$lockMaxAgeMin = 10
+$script:navLockHeld = $false
+
+function Test-NavLockActive {
+    if (-not (Test-Path -LiteralPath $lockPath)) { return $false }
+    $age = (Get-Date) - (Get-Item -LiteralPath $lockPath).LastWriteTime
+    if ($age.TotalMinutes -ge $lockMaxAgeMin) {
+        Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+    return $true
+}
+
+function Acquire-NavLock {
+    if (Test-NavLockActive) {
+        throw "launcher nav already running (lock $lockPath age < ${lockMaxAgeMin} min) — stop ForgeContinue/F7/Run-LauncherNavNow first"
+    }
+    $lockBody = "pid=$PID`nstarted=$(Get-Date -Format o)`nintent=$LaunchIntent"
+    Set-Content -LiteralPath $lockPath -Value $lockBody -Encoding UTF8
+    $script:navLockHeld = $true
+}
+
+function Release-NavLock {
+    if (-not $script:navLockHeld) { return }
+    Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+    $script:navLockHeld = $false
+}
+
+if ($MinimizeForegroundHosts -and (Test-Path -LiteralPath $minimizeIdePath)) {
     try { & $minimizeIdePath | Out-Null } catch { }
 }
 
-$logPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
+Acquire-NavLock
+
+$logPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
 $launcherExeName = 'TaleWorlds.MountAndBlade.Launcher'
 $gameExeName = 'Bannerlord'
 
@@ -1026,7 +1059,11 @@ public static class UIAHelper
             ForceForegroundWindow(hwnd);
             Thread.Sleep(80);
             LogLine(string.Format("CLICK \"Safe Mode No\" method=coords at ({0},{1}) in {2}", x, y, scopeDesc));
-            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No");
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
+            {
+                LogLine("CLICK OK \"Safe Mode No\" method=hwnd-only");
+                return true;
+            }
             SetCursorPos(x, y);
             Thread.Sleep(40);
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
@@ -1437,7 +1474,12 @@ public static class UIAHelper
             LogLine(string.Format(
                 "CLICK \"Module Mismatch Yes\" method=coords at ({0},{1}) fractions=({2:F2},{3:F2}) in {4}",
                 x, y, xFraction, yFraction, scopeDesc));
-            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes");
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes"))
+            {
+                LogLine("CLICK OK \"Module Mismatch Yes\" method=hwnd-only");
+                _moduleMismatchCoordAttemptIndex++;
+                return true;
+            }
             SetCursorPos(x, y);
             Thread.Sleep(80);
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
@@ -1547,6 +1589,13 @@ public static class UIAHelper
             }
             var x = (int)(rect.X + rect.Width / 2);
             var y = (int)(rect.Y + rect.Height / 2);
+            var hwnd = new IntPtr(element.Current.NativeWindowHandle);
+            if (hwnd != IntPtr.Zero && TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, actionLabel))
+            {
+                LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=hwnd-only in {2} | foreground after {3}", actionLabel, buttonName, scopeDesc, DescribeForegroundWindow()));
+                TryFocusGameOrLauncher();
+                return true;
+            }
             SetCursorPos(x, y);
             Thread.Sleep(60);
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
@@ -1769,8 +1818,8 @@ $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
 $loadStallSec = 180
-$phase1LogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
-$statusJsonPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
+$phase1LogPath = Get-Phase1LogPath -BannerlordRoot $BannerlordRoot
+$statusJsonPath = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
 $lastHeartbeat = Get-Date
 $heartbeatSec = 30
 $preHandoffSuppressedLogged = $false
@@ -1785,7 +1834,7 @@ $phase1ReadyBaseline = @{}
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 if (Test-Path -LiteralPath $phase1LogPath) {
     Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue |
-        Where-Object { $_ -match 'TBG READY' } |
+        Where-Object { Test-Phase1ReadyLine -Line $_ } |
         ForEach-Object { $phase1ReadyBaseline[$_] = $true }
 }
 
@@ -1892,7 +1941,7 @@ function Test-Phase1ReadyOrStall {
     }
 
     foreach ($line in $tail) {
-        if ($line -match 'TBG READY') {
+        if (Test-Phase1ReadyLine -Line $line) {
             if (-not $script:phase1ReadyBaseline.ContainsKey($line)) {
                 return $true
             }
@@ -2153,11 +2202,17 @@ function Test-HandoffWhenGameStable {
 
 function Test-ForegroundIsAutomationHost {
     $fg = [UIAHelper]::DescribeForegroundWindow()
-    return $fg -match 'process=(Cursor|Code|WindowsTerminal|Notepad|chrome|msedge)' -or
-        $fg -match 'foreground="[^"]*(Cursor|Chrome|Edge|Notepad|Windows Terminal)'
+    return $fg -match 'process=(Cursor|Code|WindowsTerminal|Notepad|chrome|msedge|Signal|ms-teams|WhatsApp)' -or
+        $fg -match 'foreground="[^"]*(Cursor|Chrome|Edge|Notepad|Windows Terminal|Signal|Teams|WhatsApp)'
+}
+
+function Test-ForegroundIsBannerlord {
+    $fg = [UIAHelper]::DescribeForegroundWindow()
+    return $fg -match 'process=(Bannerlord|TaleWorlds\.MountAndBlade\.Launcher)'
 }
 
 function Invoke-MinimizeCompetingForeground {
+    if (-not $MinimizeForegroundHosts) { return }
     if (Test-Path -LiteralPath $minimizeIdePath) {
         try { & $minimizeIdePath | Out-Null } catch { }
     }
@@ -2183,9 +2238,10 @@ function Test-LaunchClickVerified {
 if ($LaunchIntent -eq 'continue') {
     $targetButtonNames = @('CONTINUE', 'Continue', 'Continue Campaign', 'Resume', 'Resume Game')
 } else {
-    $targetButtonNames = @('PLAY', 'Play')
+    $targetButtonNames = @('PLAY', 'Play', 'Play Game')
 }
 
+try {
 while ((Get-Date) -lt $deadline) {
     Invoke-MinimizeCompetingForeground
     [UIAHelper]::TryRestoreLauncherWindows() | Out-Null
@@ -2227,10 +2283,13 @@ while ((Get-Date) -lt $deadline) {
     }
 
     if ($clickedPlayContinue -and -not $handoffStarted) {
-        $nowRefocusUtc = [DateTime]::UtcNow
-        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge 2) {
-            [UIAHelper]::TryFocusGameOrLauncher() | Out-Null
-            $lastRefocusUtc = $nowRefocusUtc
+        if (-not (Test-ForegroundIsBannerlord)) {
+            $refocusIntervalSec = if ([UIAHelper]::HasLauncherLoadingSurface()) { 5 } else { 2 }
+            $nowRefocusUtc = [DateTime]::UtcNow
+            if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge $refocusIntervalSec) {
+                [UIAHelper]::TryFocusGameOrLauncher() | Out-Null
+                $lastRefocusUtc = $nowRefocusUtc
+            }
         }
     }
 
@@ -2289,7 +2348,7 @@ while ((Get-Date) -lt $deadline) {
         [UIAHelper]::ResetLauncherClickRetryState()
     }
 
-    if ([UIAHelper]::HasSafeModeDialog() -or (-not $clickedPlayContinue -and [UIAHelper]::IsLauncherPlayContinueVisible())) {
+    if ($MinimizeForegroundHosts -and ([UIAHelper]::HasSafeModeDialog() -or (-not $clickedPlayContinue -and [UIAHelper]::IsLauncherPlayContinueVisible()))) {
         $nowMinimizeUtc = [DateTime]::UtcNow
         if (-not $lastIdeMinimizeUtc -or ($nowMinimizeUtc - $lastIdeMinimizeUtc).TotalSeconds -ge 2) {
             if (Test-Path -LiteralPath $minimizeIdePath) {
@@ -2366,3 +2425,6 @@ if (Test-LaunchReadyNow -StallDetected ([ref]$boundaryStall)) {
 $visibleButtons = [UIAHelper]::LogVisibleLauncherButtons()
 Write-LaunchLog "timeout: visible launcher buttons: $visibleButtons"
 throw "launcher-auto-nav timed out after ${effectiveTimeout}s (see $logPath)"
+} finally {
+    Release-NavLock
+}

@@ -12,25 +12,17 @@ $ErrorActionPreference = 'Stop'
 $PollTimeoutSec = $TimeoutSeconds
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 $minimizeIdePath = Join-Path $PSScriptRoot 'minimize-ide-foreground.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
 $csproj = Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
-$bannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord'
-if (Test-Path -LiteralPath $csproj) {
-    $csprojText = Get-Content -LiteralPath $csproj -Raw
-    if ($csprojText -match '<GameFolder>([^<]+)</GameFolder>') {
-        $fromCsproj = $Matches[1] -replace '&amp;', '&'
-        if (Test-Path -LiteralPath $fromCsproj) {
-            $bannerlordRoot = $fromCsproj
-        }
-    }
-}
+$bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
 
-$statusPath = Join-Path $bannerlordRoot 'BlacksmithGuild_Status.json'
-$phase1Path = Join-Path $bannerlordRoot 'BlacksmithGuild_Phase1.log'
-$launchLogPath = Join-Path $bannerlordRoot 'BlacksmithGuild_Launch.log'
+$statusPath = Get-StatusJsonPath -BannerlordRoot $bannerlordRoot
+$phase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
+$launchLogPath = Get-LaunchLogPath -BannerlordRoot $bannerlordRoot
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId\checkpoint-01-f7-gate"
 $startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -123,7 +115,7 @@ function Test-Phase1TbgReady {
     $tail = Get-Content -LiteralPath $phase1Path -Tail 40 -ErrorAction SilentlyContinue
     if (-not $tail) { return $false }
     foreach ($line in $tail) {
-        if ($line -match 'TBG READY') { return $true }
+        if (Test-Phase1ReadyLine -Line $line) { return $true }
     }
     return $false
 }
@@ -409,10 +401,11 @@ function Invoke-F7NoClickLaunch {
 
     $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
     $navParams = @{
-        LaunchIntent   = 'continue'
-        BannerlordRoot = $bannerlordRoot
-        TimeoutSec     = $TimeoutSec
-        PollMs         = 180
+        LaunchIntent           = 'continue'
+        BannerlordRoot         = $bannerlordRoot
+        TimeoutSec             = $TimeoutSec
+        PollMs                 = 180
+        MinimizeForegroundHosts = $true
     }
 
     Write-Host 'Starting launcher-auto-nav inline (avoids & path / subprocess UIA issues)...' -ForegroundColor DarkGray

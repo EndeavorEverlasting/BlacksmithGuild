@@ -30,6 +30,21 @@
 
 ## Append below (newest first)
 
+### 2026-06-22 — Agent B (F7 recovery sprint)
+
+**Landed (Phases 0–2 + partial 3):**
+- `scripts/bannerlord-paths.ps1` — dual Documents/Steam Phase1 + Status paths
+- Nav lock `BlacksmithGuild_Launch.lock`; `-MinimizeForegroundHosts` F7-only
+- Golden path `tbgReady` matches `Blacksmith Guild — Ready:` / `[TBG MAPREADY]` / `map_ready PASS`
+- Launcher: Signal/Teams/WhatsApp foreground blocklist; hwnd-only clicks; 5s refocus when loading surface
+- `ForgeStatus.UpdateReadiness` / `SetTest` Flush wrapped in try/catch
+
+**Still FAIL:** MapTransition → process exit before MapReady (session `030915` baseline). F7 cert not green.
+
+**Next:** Hook mask bisect `0x01`–`0x0F`; external `Run-F7GateContinue.cmd -HookMask 0x0F`; commit evidence on attempt.
+
+---
+
 ### 2026-06-22 — Agent A (iteration 3) @ `0d32ae8`
 
 **BREAKTHROUGH (launcher):** Session `20260622-030915` — `continueClick.success=true`, Safe Mode No clicked, `game_spawned`, golden-path `mainMenu` + `mapTransition`.

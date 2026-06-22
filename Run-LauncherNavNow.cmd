@@ -2,7 +2,6 @@
 setlocal
 set "ROOT=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord"
 set "SCRIPTS=%~dp0scripts"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPTS%\minimize-ide-foreground.ps1" >nul 2>&1
 tasklist /FI "IMAGENAME eq TaleWorlds.MountAndBlade.Launcher.exe" 2>nul | find /I "Launcher.exe" >nul
 if errorlevel 1 (
   tasklist /FI "IMAGENAME eq Bannerlord.exe" 2>nul | find /I "Bannerlord.exe" >nul

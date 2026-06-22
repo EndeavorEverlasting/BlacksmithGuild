@@ -1,0 +1,124 @@
+# Central Bannerlord + BlacksmithGuild log/status path helpers.
+# C# writes Phase1/Forge/Status under BasePath.Name (usually Documents);
+# PS automation also reads Steam BannerlordRoot — check both.
+
+function Get-BannerlordDocsRoot {
+    $docsRoot = Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord'
+    if (-not (Test-Path -LiteralPath $docsRoot)) {
+        New-Item -ItemType Directory -Force -Path $docsRoot | Out-Null
+    }
+    return $docsRoot
+}
+
+function Get-BannerlordRootFromRepo {
+    param([string]$RepoRoot = (Split-Path -Parent $PSScriptRoot))
+
+    $csproj = Join-Path $RepoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
+    if (Test-Path -LiteralPath $csproj) {
+        $csprojText = Get-Content -LiteralPath $csproj -Raw
+        if ($csprojText -match '<GameFolder>([^<]+)</GameFolder>') {
+            $fromCsproj = $Matches[1] -replace '&amp;', '&'
+            if (Test-Path -LiteralPath $fromCsproj) { return $fromCsproj }
+        }
+    }
+
+    $default = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord'
+    if (Test-Path -LiteralPath $default) { return $default }
+
+    throw 'Bannerlord install not found. Set GameFolder in BlacksmithGuild.csproj.'
+}
+
+function Get-Phase1LogCandidates {
+    param([string]$BannerlordRoot)
+
+    @(
+        (Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'),
+        (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Phase1.log')
+    ) | Select-Object -Unique
+}
+
+function Get-StatusJsonCandidates {
+    param([string]$BannerlordRoot)
+
+    @(
+        (Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'),
+        (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Status.json')
+    ) | Select-Object -Unique
+}
+
+function Get-Phase1LogPath {
+    param([string]$BannerlordRoot)
+
+    return Find-NewestExistingPath -Candidates (Get-Phase1LogCandidates -BannerlordRoot $BannerlordRoot) `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Phase1.log')
+}
+
+function Get-StatusJsonPath {
+    param([string]$BannerlordRoot)
+
+    return Find-NewestExistingPath -Candidates (Get-StatusJsonCandidates -BannerlordRoot $BannerlordRoot) `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Status.json')
+}
+
+function Get-ForgeLogPath {
+    return Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Forge.log'
+}
+
+function Get-LaunchLogPath {
+    param([string]$BannerlordRoot)
+    return Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
+}
+
+function Get-NavLockPath {
+    param([string]$BannerlordRoot)
+    return Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.lock'
+}
+
+function Find-NewestExistingPath {
+    param(
+        [string[]]$Candidates,
+        [string]$Preferred
+    )
+
+    $newest = $null
+    $newestTime = [datetime]::MinValue
+    foreach ($path in $Candidates) {
+        if (-not (Test-Path -LiteralPath $path)) { continue }
+        $mtime = (Get-Item -LiteralPath $path).LastWriteTime
+        if ($mtime -gt $newestTime) {
+            $newestTime = $mtime
+            $newest = $path
+        }
+    }
+
+    if ($newest) { return $newest }
+    return $Preferred
+}
+
+function Test-Phase1ReadyLine {
+    param([string]$Line)
+
+    return $Line -match 'TBG READY' `
+        -or $Line -match 'Blacksmith Guild — Ready:' `
+        -or $Line -match '\[TBG MAPREADY\] immediate hooks complete' `
+        -or $Line -match 'map_ready.*PASS'
+}
+
+function Write-ForgeRunLogPaths {
+    param([string]$BannerlordRoot)
+
+    $docsRoot = Get-BannerlordDocsRoot
+    $phase1Candidates = Get-Phase1LogCandidates -BannerlordRoot $BannerlordRoot
+
+    Write-Host ''
+    Write-Host '--- Log surfaces (tail after run) ---' -ForegroundColor Cyan
+    Write-Host "Forge log:    $(Get-ForgeLogPath)"
+    foreach ($p in $phase1Candidates) {
+        $tag = if ($p -like "$docsRoot*") { 'Documents' } else { 'Steam root' }
+        Write-Host "Phase1 log ($tag): $p"
+    }
+    Write-Host "Launch log:   $(Get-LaunchLogPath -BannerlordRoot $BannerlordRoot)"
+    Write-Host "Status JSON:  $(Get-StatusJsonPath -BannerlordRoot $BannerlordRoot)"
+    Write-Host 'Collect:      .\forge.ps1 -CollectDiagnostics' -ForegroundColor DarkGray
+    Write-Host ''
+}

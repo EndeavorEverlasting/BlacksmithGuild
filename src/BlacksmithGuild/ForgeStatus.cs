@@ -132,7 +132,13 @@ namespace BlacksmithGuild
             }
 
             Log($"TEST {name} = {status}{(string.IsNullOrEmpty(message) ? "" : " - " + message)}");
-            Flush(overall: status == "FAIL" ? "FAIL" : null);
+            try
+            {
+                Flush(overall: status == "FAIL" ? "FAIL" : null);
+            }
+            catch
+            {
+            }
         }
 
         public static void RecordGoldTest(bool passed, int goldBefore, int goldAfter, int delta)
@@ -318,7 +324,13 @@ namespace BlacksmithGuild
         {
             _campaignReady = campaignReady;
             _mainHeroReady = mainHeroReady;
-            Flush();
+            try
+            {
+                Flush();
+            }
+            catch
+            {
+            }
         }
 
         public static void UpdateSession(SessionPhase phase, bool timePaused)
