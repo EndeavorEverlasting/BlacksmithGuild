@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `11d3bf1` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
+**Branch:** `fix/f7-gate-stability` @ `6d83a34` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
 **Gate:** RED — no F7 PASS manifest yet  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
