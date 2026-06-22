@@ -20,8 +20,16 @@ function Wait-TbgReadyExtended {
         [int]$TimeoutSec
     )
 
+    $focusScript = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
+    $refocusMessageShown = $false
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
     while ((Get-Date) -lt $deadline) {
+        $focused = & $focusScript
+        if ($focused -and -not $refocusMessageShown) {
+            Write-Host 'Game window refocused - watch character creation' -ForegroundColor DarkGray
+            $refocusMessageShown = $true
+        }
+
         if (Test-Phase1TbgReady -BannerlordRoot $BannerlordRoot) {
             return $true
         }
@@ -90,6 +98,10 @@ if ($Mode -eq 'Replay') {
 
 Write-Host '[3/5] Launch new game (UserVisible - personal cert path)' -ForegroundColor Yellow
 & (Join-Path $repoRoot 'forge.ps1') -Launch -LaunchIntent play -SkipSaveBackup
+
+Write-Host 'Switching focus to game...' -ForegroundColor DarkGray
+$focusScript = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
+& $focusScript | Out-Null
 
 Write-Host "[4/5] Wait for TBG READY (timeout ${ReadyTimeoutSec}s)" -ForegroundColor Yellow
 if (-not (Wait-TbgReadyExtended -BannerlordRoot $bannerlordRoot -TimeoutSec $ReadyTimeoutSec)) {

@@ -37,6 +37,8 @@ Headless 008C catalog runs (`visibleMode: false`, 12 steps/tick) can produce leg
 9. ASCII-safe strings + UTF-8 BOM on orchestration scripts (PS 5.1 parse fix for step [2/5])
 10. Visible cert dot-sources dev-command-names.ps1 (Test-Phase1TbgReady fix for step [4/5])
 11. Pre-choice dwell (~2s) per culture/upbringing menu + dwell blocks dt=0 burst
+12. Post-PLAY focus fix: `launcher-auto-nav.ps1` refocuses game/launcher after mouse clicks + throttled poll refocus until handoff
+13. `scripts/focus-bannerlord-window.ps1` — shared Win32 refocus helper wired into visible cert wait loop [4/5]
 
 ---
 
@@ -63,4 +65,4 @@ docs/evidence/latest/BlacksmithGuild_Phase1.tail.txt
 - Best-route Replay cert blocked until `CharacterBuildBest.json` exists
 - Existing `TBGPersonalAserai001` on disk is disposable/uncertified if created headless
 - USER must manually save after cert PASS (script does not auto-save)
-- **USER visible cert PENDING** — re-run `RunCharacterBuildVisibleCert.cmd` after forge-stop fix
+- **USER visible cert PENDING** — re-run `RunCharacterBuildVisibleCert.cmd`; confirm game stays foreground after PLAY (check `BlacksmithGuild_Launch.log` for `FOCUS refocus game/launcher` lines)

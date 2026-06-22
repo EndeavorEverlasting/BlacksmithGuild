@@ -364,6 +364,7 @@ public static class UIAHelper
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
             Thread.Sleep(40);
             LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=mouse at ({1},{2}) in {3} | foreground after {4}", intent, x, y, scopeDesc, DescribeForegroundWindow()));
+            TryFocusGameOrLauncher();
             return true;
         }
         catch (Exception ex)
@@ -723,6 +724,44 @@ public static class UIAHelper
     public static bool HasGameMainWindow()
     {
         return FindGameMainWindowRoot() != null;
+    }
+
+    public static bool TryFocusGameOrLauncher()
+    {
+        var game = FindGameMainWindowRoot();
+        if (game != null)
+        {
+            try
+            {
+                var hwnd = new IntPtr(game.Current.NativeWindowHandle);
+                if (hwnd != IntPtr.Zero)
+                {
+                    ForceForegroundWindow(hwnd);
+                    LogLine("FOCUS refocus game/launcher after click target=game | " + DescribeForegroundWindow());
+                    return true;
+                }
+            }
+            catch { }
+        }
+
+        var launcher = FindLauncherRoot();
+        if (launcher != null)
+        {
+            try
+            {
+                var hwnd = new IntPtr(launcher.Current.NativeWindowHandle);
+                if (hwnd != IntPtr.Zero)
+                {
+                    ForceForegroundWindow(hwnd);
+                    LogLine("FOCUS refocus game/launcher after click target=launcher | " + DescribeForegroundWindow());
+                    return true;
+                }
+            }
+            catch { }
+        }
+
+        LogLine("FOCUS refocus game/launcher after click — no game or launcher hwnd");
+        return false;
     }
 
     public static bool HasLauncherRoot()
@@ -1294,6 +1333,7 @@ public static class UIAHelper
             mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
             mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
             LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=mouse at ({2},{3}) in {4} | foreground after {5}", actionLabel, buttonName, x, y, scopeDesc, DescribeForegroundWindow()));
+            TryFocusGameOrLauncher();
             return true;
         }
         catch (Exception ex)
@@ -1508,6 +1548,8 @@ $lastHeartbeat = Get-Date
 $heartbeatSec = 30
 $preHandoffSuppressedLogged = $false
 $preHandoffMismatchSuppressedLogged = $false
+$handoffStarted = $false
+$lastRefocusUtc = $null
 $mismatchCoordAttemptMain = 0
 $phase1ReadyBaseline = @{}
 if (Test-Path -LiteralPath $phase1LogPath) {
@@ -1578,6 +1620,7 @@ function Test-GameProcessRunning {
 
 function Invoke-Handoff {
     param([string]$Reason)
+    $script:handoffStarted = $true
     Write-LaunchLog "handoff: $Reason"
     Wait-PostHandoffWatchdog -Reason $Reason
 }
@@ -1873,6 +1916,14 @@ while ((Get-Date) -lt $deadline) {
 
     if ($clickedPlayContinue) {
         Extend-DeadlineAfterPlayClick
+    }
+
+    if ($clickedPlayContinue -and -not $handoffStarted) {
+        $nowRefocusUtc = [DateTime]::UtcNow
+        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge 2) {
+            [UIAHelper]::TryFocusGameOrLauncher() | Out-Null
+            $lastRefocusUtc = $nowRefocusUtc
+        }
     }
 
     $preHandoffStall = $false
