@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.Forge;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Party;
@@ -21,6 +22,7 @@ namespace BlacksmithGuild.MapTrade
         public static bool LastProbeAvailable { get; private set; }
         public static string LastProbeDetail { get; private set; }
         public static bool LastPackAnimalProbeAvailable { get; private set; }
+        public static bool LastSmeltProbeAvailable { get; private set; }
         public static MapTradeExecutionResult LastExecutionResult { get; private set; }
 
         public static bool ProbeTradeApi(out string detail)
@@ -338,20 +340,40 @@ namespace BlacksmithGuild.MapTrade
         public static bool ProbeSmithingSmeltApi(out string detail)
         {
             detail = "weapon smelt API not proven";
-            var hero = Hero.MainHero;
-            if (hero == null)
+            LastSmeltProbeAvailable = false;
+
+            if (!SmithingSmeltApi.RunSmeltApiProbe(out detail))
             {
-                detail = "MainHero unavailable for smelt probe";
                 return false;
             }
 
-            var smithingType = hero.GetType().Assembly.GetType("TaleWorlds.CampaignSystem.CampaignBehaviors.SmithingBehavior");
-            if (smithingType != null)
+            var hero = Hero.MainHero;
+            var candidate = SmithingLootWeaponScanner.SelectBestCandidate();
+            if (candidate == null)
             {
-                detail = "SmithingBehavior type found but headless smelt path not proven";
+                detail = "DoSmelting mapped but no smeltable loot weapons in party";
+                return false;
             }
 
-            return false;
+            var item = Game.Current?.ObjectManager?.GetObject<ItemObject>(candidate.ItemId);
+            string smeltDetail = null;
+            if (item == null || !SmithingSmeltApi.CanInvokeSmeltWeapon(hero, item, out smeltDetail))
+            {
+                detail = smeltDetail ?? "weapon smelt preflight blocked";
+                return false;
+            }
+
+            detail = $"DoSmelting mapped; candidate={candidate.ItemName}";
+            LastSmeltProbeAvailable = true;
+            return true;
+        }
+
+        public static bool RunProbeWeaponSmeltNow(string source = SmithingSmeltService.ProbeWeaponSmeltNowCommand)
+        {
+            var success = SmithingSmeltService.RunSmeltApiProbeNow(source);
+            LastSmeltProbeAvailable = SmithingSmeltService.LastProbeAvailable;
+            InGameNotice.Info($"TBG SMELT PROBE: {(success ? "API mapped" : "blocked")}");
+            return success;
         }
 
         private static bool TryProbeSettlementEntry(out string detail)

@@ -32,4 +32,16 @@ PASS: `tradeExecution.goldDelta < 0`, `quantityBought > 0`, step `ExecuteTrade:S
 
 PASS: `missionType: BuyPackAnimalForCapacityThenTrade`, `tradeExecution.itemClassification: PackAnimal`, gold delta negative.
 
-## Next: 006C-3 smelt, 006C-4 multi-cycle
+## 006C-3 weapon smelt USER verify
+
+```powershell
+.\Forge.cmd
+# Ensure party has tier-1 loot weapon (town buy if needed)
+.\Run-WeaponSmeltCert.cmd
+.\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
+.\ExportTbgEvidence.cmd
+```
+
+PASS: `SmithingSmeltExecution.json` → `attemptSuccess: true`, `weaponsAfter < weaponsBefore`, iron/charcoal increased; guild loop step `TryWeaponSmelt: Success`.
+
+## Next: 006C-4 sell/multi-cycle

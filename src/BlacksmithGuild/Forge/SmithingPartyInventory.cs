@@ -10,6 +10,25 @@ namespace BlacksmithGuild.Forge
         public static int CountHardwood() =>
             CountMatching(SmithingReservePolicy.IsHardwoodItem);
 
+        public static int CountSmeltOutputs() =>
+            CountMatching(IsSmeltOutputItem);
+
+        private static bool IsSmeltOutputItem(string itemId, string itemName)
+        {
+            if (string.IsNullOrEmpty(itemId) && string.IsNullOrEmpty(itemName))
+            {
+                return false;
+            }
+
+            var id = itemId ?? string.Empty;
+            return id.IndexOf("iron", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || id.IndexOf("steel", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || id.IndexOf("charcoal", System.StringComparison.OrdinalIgnoreCase) >= 0
+                || (!string.IsNullOrEmpty(itemName)
+                    && (itemName.IndexOf("iron", System.StringComparison.OrdinalIgnoreCase) >= 0
+                        || itemName.IndexOf("steel", System.StringComparison.OrdinalIgnoreCase) >= 0));
+        }
+
         public static int CountItem(string itemId, string itemName)
         {
             var party = MobileParty.MainParty;

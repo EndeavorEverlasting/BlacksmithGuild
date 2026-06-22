@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
@@ -590,6 +591,11 @@ namespace BlacksmithGuild
                     builder.AppendLine("  },");
                 }
 
+                if (_campaignReady && _mainHeroReady)
+                {
+                    AppendFactionPowerPosture(builder);
+                }
+
                 builder.AppendLine("  \"tests\": {");
                 var first = true;
                 foreach (var entry in TestStatuses)
@@ -626,6 +632,28 @@ namespace BlacksmithGuild
 
                 builder.AppendLine("}");
                 File.WriteAllText(StatusPath, builder.ToString());
+            }
+            catch
+            {
+            }
+        }
+
+        private static void AppendFactionPowerPosture(StringBuilder builder)
+        {
+            try
+            {
+                var block = FactionPowerPostureScanner.Scan();
+                builder.AppendLine("  \"clanPosture\": {");
+                builder.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
+                builder.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
+                builder.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
+                builder.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
+                builder.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
+                builder.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
+                builder.AppendLine(
+                    $"    \"strengthRatioVsNearestHostile\": {(block.StrengthRatioVsNearestHostile.HasValue ? block.StrengthRatioVsNearestHostile.Value.ToString("0.##") : "null")}");
+                builder.AppendLine("  },");
             }
             catch
             {

@@ -47,6 +47,23 @@ namespace BlacksmithGuild.ClanIntel
         public List<string> Reasons { get; set; } = new List<string>();
     }
 
+    public sealed class FactionPowerPostureBlock
+    {
+        public string AllegianceMode { get; set; }
+        public string KingdomName { get; set; }
+        public string MapFactionName { get; set; }
+        public bool IsAtWar { get; set; }
+        public int? PlayerPartyStrength { get; set; }
+        public int? PlayerTroopCount { get; set; }
+        public int? NearestHostileStrength { get; set; }
+        public float? NearestHostileDistance { get; set; }
+        public float? StrengthRatioVsNearestHostile { get; set; }
+        public int HostileCountInRadius { get; set; }
+        public int FriendlyProtectorStrengthInRadius { get; set; }
+        public string PowerVerdict { get; set; }
+        public List<string> Warnings { get; set; } = new List<string>();
+    }
+
     public sealed class ClanContextReport : ClanIntelEnvelope
     {
         public PlayerClanSnapshot PlayerClan { get; set; } = new PlayerClanSnapshot();
@@ -54,6 +71,7 @@ namespace BlacksmithGuild.ClanIntel
         public List<RecommendedAction> RecommendedActions { get; set; } = new List<RecommendedAction>();
         public List<string> BlockedActions { get; set; } = new List<string>();
         public KingdomPostureBlock KingdomPosture { get; set; } = new KingdomPostureBlock();
+        public FactionPowerPostureBlock FactionPowerPosture { get; set; } = new FactionPowerPostureBlock();
     }
 
     public sealed class NobleTarget

@@ -1,13 +1,13 @@
 # Functionality Status
 
-**Last updated:** 2026-06-21 (006C-1 trade driver + 009A clan intel)  
+**Last updated:** 2026-06-21 (live cert marathon — 006C-3 smelt + faction power posture)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` — 006C-1 / 009A **USER cert PENDING**
+**Branch:** `main` — live assistive certs **USER PENDING** (orchestrator shipped)
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
 **Automation playbook (NEW):** [automation-playbook.md](automation-playbook.md)  
-**Next handoff:** [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)  
+**Next handoff:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
 **006C roadmap:** [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md)
 
 **Cert doctrine:** [certification-doctrine.md](certification-doctrine.md) — Tier 0–3; Stage C **USER PASS** recorded; no further Stage C cert unless mutation code regresses.
@@ -142,6 +142,30 @@ Test saves only: `BSG_ASR_TEST_*`. Never save personal baseline after catalog/ma
 
 ---
 
+## Shipped — 006C-3 weapon smelt (USER cert pending)
+
+| Item | Detail |
+|------|--------|
+| `SmithingSmeltApi` | Reflection `DoSmelting` on `CraftingCampaignBehavior` |
+| `SmithingLootWeaponScanner` | Tier cap, exclude equipped/quest/player-crafted |
+| Commands | `ProbeWeaponSmeltNow`, `RunWeaponSmeltNow` |
+| Guild loop | `FactionPosture`, `TryWeaponSmelt`, honest `capabilities.weaponSmelt` |
+| Faction power | `FactionPowerPostureScanner` on ClanContext + F7 `clanPosture` |
+| Cert | `Run-WeaponSmeltCert.cmd`, `Run-LiveAssistiveCert.cmd` |
+
+```powershell
+.\Forge.cmd
+.\Run-WeaponSmeltCert.cmd
+.\Run-LiveAssistiveCert.cmd -Session disposable
+.\ExportTbgEvidence.cmd
+```
+
+PASS: `BlacksmithGuild_SmithingSmeltExecution.json` → `attemptSuccess: true`, weapons decreased, iron/charcoal increased.
+
+**Prerequisite:** party must have smeltable loot weapon (tier ≤2); seed via town buy if disposable bootstrap has none.
+
+---
+
 ## Shipped — 006C-2 pack-animal buy (USER cert pending)
 
 | Feature | How to use | Status |
@@ -238,9 +262,8 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 
 | Area | Plan doc | Notes |
 |------|----------|-------|
-| Auto buy/sell (trade execution) | [006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md) | Read-only market intel + map trade **probe**; 006C-1 |
-| Pack-animal buy automation | 006C-2 | Horse market advisory only |
-| Weapon smelt execution | 006C-3 | Smelt **probe** may run; execution not proven |
+| Auto buy/sell (trade execution) | [006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md) | 006C-1 buy shipped; sell stub (006C-4) |
+| Pack-animal buy automation | 006C-2 | **Shipped** — USER cert pending |
 | Food / steward provisioning | 006D | **Not built** — no advisor or buy |
 | Multi-cycle guild loop | 006C-4 | `guildLoopMaxCyclesPerCommand = 1` |
 | Hero churn in guild loop | 006E | Tavern intel separate from loop |

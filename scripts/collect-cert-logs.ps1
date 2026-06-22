@@ -23,6 +23,13 @@ $files = @(
     @{ Label = 'SmithingAdvisory.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingAdvisory.json'; Tail = 0 },
     @{ Label = 'SmithingSafeAction.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingSafeAction.json'; Tail = 0 },
     @{ Label = 'SmithingRefineProbe.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingRefineProbe.json'; Tail = 0 },
+    @{ Label = 'SmithingSmeltProbe.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingSmeltProbe.json'; Tail = 0 },
+    @{ Label = 'SmithingSmeltExecution.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingSmeltExecution.json'; Tail = 0 },
+    @{ Label = 'AutonomousGuildLoop.json'; Path = Join-Path $root 'BlacksmithGuild_AutonomousGuildLoop.json'; Tail = 0 },
+    @{ Label = 'MapTradeCert.json'; Path = Join-Path $root 'BlacksmithGuild_MapTradeCert.json'; Tail = 0 },
+    @{ Label = 'MapTradeProbe.json'; Path = Join-Path $root 'BlacksmithGuild_MapTradeProbe.json'; Tail = 0 },
+    @{ Label = 'MapTradePackAnimalProbe.json'; Path = Join-Path $root 'BlacksmithGuild_MapTradePackAnimalProbe.json'; Tail = 0 },
+    @{ Label = 'ClanContext.json'; Path = Join-Path $root 'BlacksmithGuild_ClanContext.json'; Tail = 0 },
     @{ Label = 'GuildLoopReport.json'; Path = Join-Path $root 'BlacksmithGuild_GuildLoopReport.json'; Tail = 0 },
     @{ Label = 'CommandSurface.json'; Path = Join-Path $root 'BlacksmithGuild_CommandSurface.json'; Tail = 0 },
     @{ Label = 'SmithingRestPlan.json'; Path = Join-Path $root 'BlacksmithGuild_SmithingRestPlan.json'; Tail = 0 }

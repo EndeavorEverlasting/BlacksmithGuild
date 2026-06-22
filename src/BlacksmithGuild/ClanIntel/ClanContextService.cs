@@ -54,6 +54,7 @@ namespace BlacksmithGuild.ClanIntel
         {
             var playerClan = ClanContextScanner.ScanPlayerClan();
             var kingdomPosture = ClanContextScanner.BuildKingdomPosture(playerClan);
+            var factionPowerPosture = FactionPowerPostureScanner.Scan();
             var priorities = BuildSocialPriorities(playerClan);
             var actions = BuildRecommendedActions(playerClan);
 
@@ -68,8 +69,9 @@ namespace BlacksmithGuild.ClanIntel
                 SocialPriorities = priorities,
                 RecommendedActions = actions,
                 KingdomPosture = kingdomPosture,
+                FactionPowerPosture = factionPowerPosture,
                 BlockedActions = new List<string>(),
-                Verdict = BuildVerdict(playerClan, kingdomPosture)
+                Verdict = BuildVerdict(playerClan, kingdomPosture, factionPowerPosture)
             };
         }
 
@@ -132,14 +134,18 @@ namespace BlacksmithGuild.ClanIntel
             return list;
         }
 
-        private static string BuildVerdict(PlayerClanSnapshot clan, KingdomPostureBlock posture)
+        private static string BuildVerdict(
+            PlayerClanSnapshot clan,
+            KingdomPostureBlock posture,
+            FactionPowerPostureBlock factionPower)
         {
+            var power = factionPower?.PowerVerdict ?? "Unknown";
             if (clan.Kingdom != null)
             {
-                return $"{clan.Posture} clan tier {clan.Tier} — maintain relations and staffing";
+                return $"{clan.Posture} clan tier {clan.Tier} — power {power}; maintain relations and staffing";
             }
 
-            return "Independent clan should prioritize spouse search, companion staffing, and Aserai noble relations";
+            return $"Independent clan power {power} — prioritize spouse search, companion staffing, and Aserai noble relations";
         }
 
         private static void WriteStructuredReport(string source, ClanContextReport report)
@@ -150,6 +156,7 @@ namespace BlacksmithGuild.ClanIntel
             formatter.Line("tier", report.PlayerClan.Tier?.ToString() ?? "unknown");
             formatter.Line("renown", report.PlayerClan.Renown?.ToString("0") ?? "unknown");
             formatter.Line("posture", report.KingdomPosture.RecommendedPosture);
+            formatter.Line("powerVerdict", report.FactionPowerPosture?.PowerVerdict ?? "unknown");
             formatter.SummaryLine(report.Verdict);
             formatter.EndReport();
         }

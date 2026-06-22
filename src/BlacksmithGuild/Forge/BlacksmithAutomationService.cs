@@ -85,6 +85,23 @@ namespace BlacksmithGuild.Forge
                     return WriteBlocked(source, "BuyMaterialsFirst", materialReason, "buy forge inputs at nearest town");
                 }
 
+                if (SmithingLootWeaponScanner.SelectBestCandidate() != null
+                    && SmithingSmeltService.TrySmeltOneLootWeaponNow(source))
+                {
+                    var smelt = SmithingSmeltService.LastExecutionResult;
+                    return WriteSmeltSuccess(
+                        source,
+                        smelt?.ActorName ?? actorLabel,
+                        smelt,
+                        "loot weapon smelt executed");
+                }
+
+                if (!string.IsNullOrWhiteSpace(SmithingSmeltService.LastBlockedReason)
+                    && SmithingSmeltService.LastBlockedReason.IndexOf("stamina", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return WriteBlocked(source, "RestNeeded", SmithingSmeltService.LastBlockedReason, "RunSmithingRestPlanNow");
+                }
+
                 if (NeedsRest(workers, out var restReason))
                 {
                     return WriteBlocked(source, "RestNeeded", restReason, "RunSmithingRestPlanNow");
@@ -218,6 +235,39 @@ namespace BlacksmithGuild.Forge
                 : -1f;
         }
 
+        private static bool WriteSmeltSuccess(
+            string source,
+            string actor,
+            SmithingSmeltExecutionResult smelt,
+            string reason)
+        {
+            WriteJsonReport(new AutomationResult
+            {
+                GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                Source = source,
+                Action = "SmeltWeapon",
+                Actor = actor,
+                Executed = true,
+                BlockedReason = null,
+                Recommendation = "SmeltWeapon",
+                Reason = reason,
+                NextRecommendedAction = "RunBlacksmithAutomationNow or RunGuildLoopNow",
+                CharcoalBefore = smelt?.CharcoalBefore ?? 0,
+                CharcoalAfter = smelt?.CharcoalAfter ?? 0,
+                HardwoodBefore = smelt?.WeaponsBefore ?? 0,
+                HardwoodAfter = smelt?.WeaponsAfter ?? 0,
+                StaminaBefore = -1f,
+                StaminaAfter = -1f,
+                WeaponName = smelt?.WeaponName,
+                IronBefore = smelt?.IronBefore ?? 0,
+                IronAfter = smelt?.IronAfter ?? 0
+            });
+
+            InGameNotice.Success(
+                ModDisplay.CompactLine("Blacksmith Automation", $"SmeltWeapon by {actor} complete."));
+            return true;
+        }
+
         private static bool WriteSuccess(
             string source,
             string action,
@@ -309,7 +359,10 @@ namespace BlacksmithGuild.Forge
             sb.AppendLine($"    \"charcoalBefore\": {result.CharcoalBefore},");
             sb.AppendLine($"    \"charcoalAfter\": {result.CharcoalAfter},");
             sb.AppendLine($"    \"hardwoodBefore\": {result.HardwoodBefore},");
-            sb.AppendLine($"    \"hardwoodAfter\": {result.HardwoodAfter}");
+            sb.AppendLine($"    \"hardwoodAfter\": {result.HardwoodAfter},");
+            sb.AppendLine($"    \"ironBefore\": {result.IronBefore},");
+            sb.AppendLine($"    \"ironAfter\": {result.IronAfter},");
+            sb.AppendLine($"    \"weaponName\": {(result.WeaponName == null ? "null" : $"\"{Escape(result.WeaponName)}\"")}");
             sb.AppendLine("  },");
             sb.AppendLine("  \"stamina\": {");
             sb.AppendLine($"    \"before\": {FormatFloat(result.StaminaBefore)},");
@@ -356,6 +409,9 @@ namespace BlacksmithGuild.Forge
             public int HardwoodAfter { get; set; }
             public float StaminaBefore { get; set; }
             public float StaminaAfter { get; set; }
+            public int IronBefore { get; set; }
+            public int IronAfter { get; set; }
+            public string WeaponName { get; set; }
         }
     }
 }

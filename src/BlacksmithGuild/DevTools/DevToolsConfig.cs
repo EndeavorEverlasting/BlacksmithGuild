@@ -86,6 +86,10 @@ namespace BlacksmithGuild.DevTools
         public static bool GuildLoopPreferSmithingInputs = true;
         public static bool GuildLoopAllowTravelOnlyIfTradeBlocked = true;
         public static bool GuildLoopProbeWeaponSmeltOnStart = true;
+
+        public static int SmithingSmeltMaxWeaponTier = 2;
+        public static int SmithingSmeltMaxPerInvocation = 1;
+        public static bool SmithingSmeltRequireLootOnly = true;
     }
 }
 

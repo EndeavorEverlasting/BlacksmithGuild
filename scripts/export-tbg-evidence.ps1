@@ -47,6 +47,8 @@ $evidenceFiles = @(
     'BlacksmithGuild_GuildLoopReport.json',
     'BlacksmithGuild_SmithingSafeAction.json',
     'BlacksmithGuild_SmithingRefineProbe.json',
+    'BlacksmithGuild_SmithingSmeltProbe.json',
+    'BlacksmithGuild_SmithingSmeltExecution.json',
     'BlacksmithGuild_SmithingRestPlan.json',
     'BlacksmithGuild_CharacterBuildProvenance.json',
     'BlacksmithGuild_CharacterDoctrine.json',

@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using BlacksmithGuild.Cohesion;
+using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.MapTrade;
@@ -68,6 +69,14 @@ namespace BlacksmithGuild.GuildLoop
             };
 
             AddStep("Preflight", "Success", "campaign map ready");
+            return ContinueFromFactionPosture(source);
+        }
+
+        private static bool ContinueFromFactionPosture(string source)
+        {
+            var posture = FactionPowerPostureScanner.Scan();
+            var summary = $"{posture.AllegianceMode} power={posture.PowerVerdict} hostiles={posture.HostileCountInRadius}";
+            AddStep("FactionPosture", "Success", summary);
             return ContinueFromMarketScan(source);
         }
 
@@ -198,8 +207,8 @@ namespace BlacksmithGuild.GuildLoop
 
             if (DevToolsConfig.GuildLoopProbeWeaponSmeltOnStart)
             {
-                MapTradeVanillaTradeDriver.ProbeSmithingSmeltApi(out var smeltDetail);
-                _activeReport.Capabilities.WeaponSmelt = false;
+                var smeltAvailable = MapTradeVanillaTradeDriver.ProbeSmithingSmeltApi(out var smeltDetail);
+                _activeReport.Capabilities.WeaponSmelt = smeltAvailable;
                 _activeReport.Capabilities.WeaponSmeltDetail = smeltDetail;
             }
 
@@ -239,6 +248,23 @@ namespace BlacksmithGuild.GuildLoop
                 BeforeCharcoal = SmithingAdvisoryPlanner.BuildReserveHealth().CharcoalHave,
                 BeforeHardwood = SmithingAdvisoryPlanner.BuildReserveHealth().HardwoodHave
             };
+
+            if (DevToolsConfig.GuildLoopAutoRunForgeHandoff
+                && SmithingSmeltService.TrySmeltOneLootWeaponNow(source))
+            {
+                var smelt = SmithingSmeltService.LastExecutionResult;
+                _activeReport.ForgeHandoff.Result = "RunWeaponSmeltNow";
+                AddStep("TryWeaponSmelt", "Success", smelt?.WeaponName ?? "smelt ok");
+            }
+            else if (!string.IsNullOrWhiteSpace(SmithingSmeltService.LastBlockedReason))
+            {
+                AddStep(
+                    "TryWeaponSmelt",
+                    SmithingSmeltService.LastBlockedReason.IndexOf("no smeltable", StringComparison.OrdinalIgnoreCase) >= 0
+                        ? "Blocked"
+                        : "Blocked",
+                    SmithingSmeltService.LastBlockedReason);
+            }
 
             if (DevToolsConfig.GuildLoopAutoRunForgeHandoff
                 && BlacksmithAutomationService.RunAutomationNow(source))

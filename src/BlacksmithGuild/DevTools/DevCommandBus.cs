@@ -425,6 +425,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
                 || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == SmithingSmeltService.RunWeaponSmeltNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
@@ -448,6 +449,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
                 || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == SmithingSmeltService.RunWeaponSmeltNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
@@ -729,6 +731,14 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand:
                     return MapTradeVanillaTradeDriver.RunProbePackAnimalBuyNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case SmithingSmeltService.ProbeWeaponSmeltNowCommand:
+                    return SmithingSmeltService.RunSmeltApiProbeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case SmithingSmeltService.RunWeaponSmeltNowCommand:
+                    return SmithingSmeltService.TrySmeltOneLootWeaponNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case ClanContextService.AnalyzeClanContextCommand:

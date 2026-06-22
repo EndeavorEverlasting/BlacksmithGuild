@@ -45,7 +45,8 @@ namespace BlacksmithGuild.ClanIntel
             sb.AppendLine("    \"reasons\": [");
             AppendStringList(sb, report.KingdomPosture?.Reasons ?? new List<string>(), "    ");
             sb.AppendLine("    ]");
-            sb.AppendLine("  }");
+            sb.AppendLine("  },");
+            AppendFactionPowerPosture(sb, report.FactionPowerPosture);
             sb.AppendLine("}");
             return sb.ToString();
         }
@@ -292,6 +293,28 @@ namespace BlacksmithGuild.ClanIntel
                 sb.Append($"{indent}\"{Escape(values[i])}\"");
                 sb.AppendLine(i < values.Count - 1 ? "," : string.Empty);
             }
+        }
+
+        private static void AppendFactionPowerPosture(StringBuilder sb, FactionPowerPostureBlock block)
+        {
+            block = block ?? new FactionPowerPostureBlock();
+            sb.AppendLine("  \"factionPowerPosture\": {");
+            sb.AppendLine($"    \"allegianceMode\": {NullableString(block.AllegianceMode)},");
+            sb.AppendLine($"    \"kingdomName\": {NullableString(block.KingdomName)},");
+            sb.AppendLine($"    \"mapFactionName\": {NullableString(block.MapFactionName)},");
+            sb.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
+            sb.AppendLine($"    \"playerPartyStrength\": {NullableInt(block.PlayerPartyStrength)},");
+            sb.AppendLine($"    \"playerTroopCount\": {NullableInt(block.PlayerTroopCount)},");
+            sb.AppendLine($"    \"nearestHostileStrength\": {NullableInt(block.NearestHostileStrength)},");
+            sb.AppendLine($"    \"nearestHostileDistance\": {NullableFloat(block.NearestHostileDistance)},");
+            sb.AppendLine($"    \"strengthRatioVsNearestHostile\": {NullableFloat(block.StrengthRatioVsNearestHostile)},");
+            sb.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
+            sb.AppendLine($"    \"friendlyProtectorStrengthInRadius\": {block.FriendlyProtectorStrengthInRadius},");
+            sb.AppendLine($"    \"powerVerdict\": {NullableString(block.PowerVerdict)},");
+            sb.AppendLine("    \"warnings\": [");
+            AppendStringList(sb, block.Warnings, "      ");
+            sb.AppendLine("    ]");
+            sb.AppendLine("  }");
         }
 
         private static void MirrorEvidence(string sourcePath, string fileName)
