@@ -1,6 +1,8 @@
 # F7 Multi-Agent Coordination (living doc)
 
 **Read this file first.** Update your board row + message log before ending any session.  
+**Mental model (terminology anchor):** [`f7-agent-mental-model.mmd`](f7-agent-mental-model.mmd)  
+**Next cert readiness:** [`docs/control/logs/open/f7-next-cert-readiness.md`](../control/logs/open/f7-next-cert-readiness.md)  
 Stable reference (DoD, log paths, bisect commands): [`f7-recovery-sprint-handoff.md`](f7-recovery-sprint-handoff.md)  
 **Launch / F7 commands:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md) — invocation doctrine (direct PS primary).  
 **Em dashes in log grep:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) — never substitute `-` for `—` in Phase1 patterns.  
@@ -26,24 +28,24 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `f6370fa` |
-| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
-| PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `185813` FAIL; poll waste fixed @ runner (obvious post-spawn death) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-192811/` — FAIL (timeout; poll waste; pre obvious-fail fix) |
-| Next cert command | **UNBLOCKED** — rerun F7; expect fail within ~1 poll tick when game_spawned + gone + last=e |
-| Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `eff7074` |
+| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
+| PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
+| Gate verdict | **RED** — clean Continue OK; runtime death @ StatusFlush (`185813` seq=29, `192811` seq=142) |
+| Last F7 evidence | `20260622-192811` @ `5d9fe29` |
+| Next live cert | **BLOCKED** — see [`f7-next-cert-readiness.md`](../control/logs/open/f7-next-cert-readiness.md); wait for B runtime fix or user diagnostic auth |
+| Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
 
 ## Agent board
 
-| Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
-|-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Runner obvious-fail fix; cert `192811` interrupted | — | — | pending |
-| **B** | C# map-ready / instrumentation | `DONE` | SyncForgeStatus fail-soft @ session `185813` | — | — | `f6370fa` |
-| **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | `740b604` |
-| **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
+| Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
+|-------|----------------------|--------|--------------|---------------------|-------------|
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Next-cert readiness matrix @ `eff7074` | Live cert blocked pending B or user auth | pending |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | `f6370fa` partial — 192811 died @ update_readiness | — | `f6370fa` |
+| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | Obvious fail-fast @ `4863139` | — | `4863139` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074` | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -78,6 +80,15 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A → B, C, D (next-cert readiness matrix)
+
+- **Landed:** [`f7-next-cert-readiness.md`](../control/logs/open/f7-next-cert-readiness.md) — PASS/FAIL criteria, manifest field checklist, 185813 vs 192811 comparison.
+- **Finding:** Clean Continue launcher signature proven on both sessions; gate blocker is **runtime death** during StatusFlush, not contamination.
+- **185813 vs 192811:** Death moved from `SyncForgeStatus begin` (seq=29, pre-B) to `update_readiness begin` (seq=142, post-`f6370fa`); B fix partial progress, not survival.
+- **Runner:** `4863139` obvious-fail landed; 192811 predates it (~445s poll waste).
+- **Live cert:** **NOT RUN** — blocked pending B `update_readiness` survival fix or user diagnostic authorization.
+- **PR #7:** **HOLD**.
 
 ### 2026-06-22 — Agent B → A, C (SyncForgeStatus fail-soft @ session `185813`)
 

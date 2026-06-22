@@ -1,7 +1,8 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `c3610bb` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7))  
-**Gate:** RED — no F7 PASS manifest yet  
+**Branch:** `fix/f7-gate-stability` @ `eff7074` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7)) — **HOLD**  
+**Next cert gate:** [`logs/open/f7-next-cert-readiness.md`](logs/open/f7-next-cert-readiness.md)  
+**Mental model:** [`f7-agent-mental-model.mmd`](../handoff/f7-agent-mental-model.mmd)  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
 **Evidence gate:** [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md)  
