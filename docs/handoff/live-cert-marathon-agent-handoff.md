@@ -124,9 +124,9 @@ If Continue stable, optionally retry disposable after bootstrap fix (006E backlo
 
 | Branch | SHA | PR | Gate |
 |--------|-----|-----|------|
-| `main` | `0c9f171` | — | USER F7 verify (agent shell FAIL 20260622-004953) |
-| `feat/006c-4-sell-loop` | `575aaee` | [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft | F7 + build |
-| `feat/006c-4b-second-leg-travel` | `8467b32` | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft | F7 + #5 base |
+| `main` | `2dfff05` | — | USER F7 verify (agent shell FAIL 20260622-004953) |
+| `feat/006c-4-sell-loop` | `b2b18bb` | [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft | F7 + build |
+| `feat/006c-4b-second-leg-travel` | `e527c0e` | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft | F7 + #5 base |
 
 - **Agent B (first):** USER F7 verify on `main` → `-SkipLaunch` cert marathon → export
 - **Agent A:** spread sell cert on rebased `feat/006c-4b-second-leg-travel` — **only after** Agent B confirms stable map

@@ -43,6 +43,6 @@ Bisect: `$env:TBG_MAP_READY_HOOK_MASK = "0xEF"` (skip Treasury), `"0xDF"` (skip 
 
 ## Parallel
 
-Agent A `feat/006c-4-sell-loop` @ `575aaee` (rebased on main) — [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft; merge after USER confirms stable F7.
+Agent A `feat/006c-4-sell-loop` @ `b2b18bb` (rebased on main) — [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft; merge after USER confirms stable F7.
 
-Agent C `feat/006c-4b-second-leg-travel` @ `8467b32` (rebased on `575aaee`) — [PR #6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft; Release build **PASS** 2026-06-22.
+Agent C `feat/006c-4b-second-leg-travel` @ `e527c0e` (stacked on `b2b18bb`) — [PR #6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft; Release build **PASS** 2026-06-22.

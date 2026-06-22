@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-06-22 (Agent B sprint — agent-shell F7 FAIL @ MapTransition; USER verify still required)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `0c9f171` — live certs blocked until stable F7 USER PASS
+**Branch:** `main` @ `2dfff05` — live certs blocked until stable F7 USER PASS
 
 **Next handoff:** [handoff/f7-gate-cert-marathon-agent-handoff.md](handoff/f7-gate-cert-marathon-agent-handoff.md)  
 **Live cert marathon:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
