@@ -409,7 +409,7 @@ function Invoke-F7NoClickLaunch {
 
     $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
     $navArgs = @(
-        '-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass',
+        '-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', $navScript,
         '-LaunchIntent', 'continue',
         '-BannerlordRoot', $bannerlordRoot,
@@ -417,8 +417,8 @@ function Invoke-F7NoClickLaunch {
         '-PollMs', '180'
     )
 
-    Write-Host 'Starting launcher-auto-nav in hidden subprocess (avoids IDE focus theft)...' -ForegroundColor DarkGray
-    $navProc = Start-Process -FilePath 'powershell.exe' -ArgumentList $navArgs -PassThru -WindowStyle Hidden
+    Write-Host 'Starting launcher-auto-nav subprocess (minimized)...' -ForegroundColor DarkGray
+    $navProc = Start-Process -FilePath 'powershell.exe' -ArgumentList $navArgs -PassThru -WindowStyle Minimized
 
     $deadline = (Get-Date).AddSeconds($TimeoutSec + 45)
     $lastParentRefocus = [DateTime]::MinValue
@@ -437,10 +437,16 @@ function Invoke-F7NoClickLaunch {
             Write-F7LaunchState 'handoff'
         }
 
-        $nowRefocus = [DateTime]::UtcNow
-        if (($nowRefocus - $lastParentRefocus).TotalSeconds -ge 2) {
-            Invoke-BannerlordFocusHelper | Out-Null
-            $lastParentRefocus = $nowRefocus
+        # Refocus only after nav subprocess exits or Continue succeeded — parent refocus
+        # during PLAY/CONTINUE/Safe Mode steals hwnd from hidden launcher-auto-nav.
+        $navFinished = $navProc.HasExited
+        $continueOk = $script:LaunchAutomation.continueClick.success
+        if ($navFinished -or $continueOk) {
+            $nowRefocus = [DateTime]::UtcNow
+            if (($nowRefocus - $lastParentRefocus).TotalSeconds -ge 2) {
+                Invoke-BannerlordFocusHelper | Out-Null
+                $lastParentRefocus = $nowRefocus
+            }
         }
 
         if ($script:LaunchAutomation.launchError -match 'fail_foreground_theft|foreground theft') {
