@@ -1,7 +1,8 @@
 # F7 failure atlas
 
-**Branch:** `fix/f7-gate-stability` @ `f975312`  
+**Branch:** `fix/f7-gate-stability` @ `f6c3e68`  
 **Gate:** **RED** — no `passFail: PASS` manifest under `docs/evidence/live-cert/`  
+**Latest cert:** `20260622-154012` — FAIL exit 2; **user reached Quyaz** — **not PASS**  
 **Authority:** [`f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
 **Normative evidence spec:** [`f7-evidence-requirements.md`](f7-evidence-requirements.md)  
 **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
@@ -20,7 +21,7 @@ The app must tolerate user input:
 - **certTarget** = intended cert path. F7 gate runner (`run-f7-gate-continue.ps1`) = **`continue`**.
 - **targetMismatch** = `true` when observed `launchPath` ≠ `certTarget`. A Continue cert **cannot** receive a Continue PASS from a Play path — that is forgery.
 
-Historical sessions below use **inferred** `launchPath` / `launchSelectedBy` from Phase1 and manifest notes until Agent C lands manifest fields.
+Historical sessions before wave 3 used **inferred** Play/Continue fields. Session `154012` has manifest `launchPath`, `launchSelectedBy`, `certTarget`, `targetMismatch`.
 
 ---
 
@@ -28,6 +29,7 @@ Historical sessions below use **inferred** `launchPath` / `launchSelectedBy` fro
 
 | sessionId | clean / contaminated | HookMask | certTarget | launchPath | launchSelectedBy | targetMismatch | launcher result | last known phase | last Phase1 marker | last Trace marker | CrashContext copied | passFail | exitCode | stableSeconds | campaignReady | canPollFileInbox | owner | evidence path |
 |-----------|------------------------|----------|------------|------------|------------------|----------------|-----------------|------------------|-------------------|-------------------|---------------------|----------|----------|---------------|---------------|------------------|-------|---------------|
+| `20260622-154012` | **clean** | `0x0F` | `continue` | `continue` | `automation` | no | partial (`continue_escalate`; `game_spawned`; 368s timeout) | **user: Quyaz town loaded**; runner: Refresh storm | `GameSessionState op=Refresh stage=ok` | same (seq=164435) | no | FAIL | 2 | 0 | false | false | **B** + **C** | [`…/154012/…`](../../evidence/live-cert/20260622-154012/checkpoint-01-f7-gate/) |
 | `20260622-135217` | **clean** | `0x0F` | `continue` | `continue` (inferred) | `automation` | no | **PASS** (unattended Continue, hwnd background) | StatusFlush | `[TBG MAPREADY] StatusFlush begin` | none | no | FAIL | 2 | 0 | false | false | **B** | [`…/135217/checkpoint-01-f7-gate/`](../../evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/) |
 | `20260622-131237` | **contaminated** | `0x0F` | `continue` | `continue` (inferred) | **user** (manual clicks) | no | partial (`continue_escalate`) | MapTransition | `MainMenu -> MapTransition` | none | no | FAIL | 2 | 0 | false | false | **B/C** | [`…/131237/…`](../../evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/) |
 | `20260622-101016` | clean | `0x0F` | `continue` | `continue` (inferred) | `automation` | no | PASS (`continueClick.success`) | post-map-ready | manifest `phase1TbgReady: true`; **no Phase1.tail in checkpoint** | none | no | FAIL | 2 | 0 | false | false | **B** | [`…/101016/…`](../../evidence/live-cert/20260622-101016/checkpoint-01-f7-gate/) |
@@ -39,6 +41,7 @@ Historical sessions below use **inferred** `launchPath` / `launchSelectedBy` fro
 
 | Session | Classification |
 |---------|----------------|
+| `154012` | **honest FAIL** — `evidenceCompleteness=sufficient`; B/C harvest worked; **gameplay reached Quyaz (user-observed)** but manifest `campaignReady=false`, `gameProcessRunning=false`; tail flooded with `GameSessionState Refresh` storm; **not PASS** |
 | `135217` | **`instrumentation_insufficient`** — dies at coarse `StatusFlush begin`; no sub-ops, no CrashContext |
 | `131237` | **`contaminated_cert`** — unattended cert invalid; not Play/Continue mismatch |
 | `101016` | honest FAIL — `fail_game_gone_after_map_ready` |
@@ -52,20 +55,31 @@ Historical sessions below use **inferred** `launchPath` / `launchSelectedBy` fro
 
 | Failure neighborhood | Owner |
 |---------------------|-------|
-| Continue / Safe Mode / launcher timeout / obscured / harvest gaps | **C** |
-| MapTransition before `[TBG MAPREADY]` orchestrator | **B** |
-| StatusFlush begin / post-map-ready native death / trace gaps | **B** |
-| Evidence packaging / manifest review / PR #7 merge | **A** |
+| `GameSessionState` Refresh storm; readiness never promotes (`campaignReady` / `mainHeroReady`) | **B** |
+| Runner `gameProcessRunning=false` while user sees game alive; `continue_escalate` friction | **C** |
+| Continue / Safe Mode / launcher timeout / harvest gaps | **C** |
+| MapTransition before orchestrator (historical — likely past) | **B** |
+| StatusFlush begin / native death (historical `135217`) | **B** |
+| Evidence packaging / manifest review / recert / PR #7 merge | **A** |
+
+### Session `154012` routing
+
+| Observation | Owner |
+|-------------|-------|
+| Early session passed StatusFlush neighborhood (`AfterFlushWrite`, `MapTransitionGuard defer`, `EvaluateMapReady defer` — per wave 3 cert; not in harvested 300-line tail) | **B** (historical fix landed) |
+| Tail ends in Refresh/ReadHero loop; `campaignReady` stays false in Status.json | **B** |
+| `continueEscalated=true`; launcher 368s timeout; runner declared game gone | **C** |
+| User screenshot: Quyaz + `[The Blacksmith Guild] Mod loaded. The forge is lit.` — **major progress, not cert PASS** | **A** documents; **B/C** fix detection/promotion |
 
 ---
 
 ## current_best_diagnosis
 
-1. **Launcher passed** on latest **clean Continue** cert `20260622-135217` (`clean_cert`, hwnd SendMessage-background, no manual user clicks).
-2. **launchPath** matches **certTarget** (`continue`) — no `targetMismatch` on clean cert.
-3. Runtime reaches orchestrator → immediate hooks → **`[TBG MAPREADY] StatusFlush begin`** then native process death.
-4. Evidence identifies the **neighborhood** (StatusFlush), not the **exact failing operation** — classify as **`instrumentation_insufficient`**.
-5. **Next move:** Agent **B** (RuntimeTrace + StatusFlush sub-steps + `BlacksmithGuild_CrashContext.json` + `path=` on traces) and Agent **C** (larger tails, manifest enrichment, Windows event harvest). Agent **A** wave-2 F7 cert **blocked** until B+C on `origin`.
+1. **Old MapTransition crash neighborhood is likely past** — wave 3 session `154012` progressed through early guards (`AfterFlushWrite`, `MapTransitionGuard defer`, `EvaluateMapReady defer`) and **user-observed gameplay in Quyaz** with mod load message.
+2. **Screenshot / user observation ≠ cert PASS** — manifest remains `passFail=FAIL`, `exitCode=2`, `stableSeconds=0`, `campaignReady=false`, `canPollFileInbox=false`. **PR #7 HOLD. No manifest, no medal.**
+3. **B markers and C harvest both worked** on `154012`: `evidenceCompleteness=sufficient`, `traceMarkersPresent=true`, `phase1TailLineCount=300`, manifest `launchPath`/`launchSelectedBy`/`certTarget`/`targetMismatch` populated, `harvestError` absent.
+4. **Current blocker:** (a) **runtime readiness promotion** — Phase1 tail flooded with `GameSessionState op=Refresh` storm; Status.json snapshot shows `campaignReady=false`, `mainHeroReady=false`, `setupPhase=MainMenu` despite user seeing town; (b) **runner process detection false-negative** — manifest `gameProcessRunning=false` contradicts user-observed alive game in Quyaz.
+5. **Next move:** Agent **B** — throttle/diagnose Refresh storm and promote readiness honestly; Agent **C** — fix process-alive detection and `continue_escalate` friction; Agent **A** — recert after B+C land.
 
 ---
 
@@ -73,30 +87,30 @@ Historical sessions below use **inferred** `launchPath` / `launchSelectedBy` fro
 
 | Gap | Repo proof |
 |-----|------------|
-| No stack trace in any committed checkpoint | No crash dump or managed stack in evidence dirs |
-| No Windows crash event captured | No `WindowsCrashEvents.json` in any session |
-| No `BlacksmithGuild_CrashContext.json` | Missing in all listed checkpoints |
-| No method-level StatusFlush markers | `135217` Phase1 ends at `StatusFlush begin`; no `[TBG TRACE]` |
-| `launchPath` / `launchSelectedBy` / `certTarget` / `targetMismatch` not in manifests | Inferred from Phase1/manifest notes only |
-| Phase1 tail too short on `135217` | **24 lines** (target ≥200 per evidence requirements) |
-| `101016` missing Phase1.tail in checkpoint | Dir has manifest + Launch.tail + Status.json only |
-| Golden path compare missing on `135217` run | manifest `goldenPathCheck.reason`: compare script not present at session end |
-| `095326` evidence not committed | No `docs/evidence/live-cert/20260622-095326/` directory |
+| **User screenshot not in repo** | Quyaz load observed by user; not committed as cert artifact unless user/repo adds it |
+| **Runner vs user state mismatch** | `154012` manifest `gameProcessRunning=false` while user reports game alive in Quyaz |
+| **Status.json vs gameplay** | `154012` checkpoint Status.json: `campaignReady=false`, `mainHeroReady=false`; contradicts user town observation |
+| **`BlacksmithGuild_Status.json` gitignored** | Copied into checkpoint @ harvest but may be omitted from git by ignore rules — verify commit policy |
+| No `BlacksmithGuild_CrashContext.json` on `154012` | manifest `crashContextCopied=false`, `reason=not_present` |
+| Windows crash event | `154012` `windowsCrashEventStatus=query_failed` |
+| Harvested Phase1 tail omits early markers | `154012` tail is 300-line **Refresh storm**; early `AfterFlushWrite`/guard defer lines not in committed tail |
+| Historical: no stack trace | Pre-`154012` checkpoints |
+| Historical: `135217` instrumentation | Coarse `StatusFlush begin` only |
+| `095326` evidence not committed | No checkpoint dir |
 
 ---
 
 ## next_required_evidence
 
-See [`f7-evidence-requirements.md`](f7-evidence-requirements.md). After B+C land:
+See [`f7-evidence-requirements.md`](f7-evidence-requirements.md).
 
 | Requirement | Owner |
 |-------------|-------|
-| `[TBG TRACE]` markers with `path=play\|continue\|unknown` | B |
-| `BlacksmithGuild_CrashContext.json` (`lastBegin`, `lastSuccess`, `inferredLaunchPath`) | B writes · C copies |
-| StatusFlush sub-step `begin` / `ok` / `fail` | B |
-| Phase1 tail ≥200–300 lines on FAIL | C |
-| Windows crash event query → manifest `windowsCrashEventStatus` | C |
-| Manifest: `launchPath`, `launchSelectedBy`, `certTarget`, `targetMismatch`, `lastTraceMarker`, `evidenceCompleteness` | C |
+| Fix Refresh storm / promote `campaignReady` + `mainHeroReady` when map/town actually ready | **B** |
+| Runner process-alive detection aligned with user-visible game state | **C** |
+| Reduce `continue_escalate` false friction on clean certs | **C** |
+| Optional: commit user screenshot or link as supplemental (not PASS substitute) | **A** / user |
+| Recert with honest PASS/FAIL manifest only | **A** (after B+C) |
 
 ---
 
@@ -108,6 +122,7 @@ See [`f7-evidence-requirements.md`](f7-evidence-requirements.md). After B+C land
 095957 ── bisect mask 0x07; MapTransition / claimed map-ready
 131237 ── contaminated launcher; MapTransition; no MAPREADY tick
 135217 ── clean Continue launcher PASS → StatusFlush begin → instrumentation_insufficient
+154012 ── wave 3: early guards passed; user Quyaz + forge lit; runner FAIL; Refresh storm; gameProcessRunning=false
 ```
 
 ---

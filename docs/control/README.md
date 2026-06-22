@@ -26,7 +26,7 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Phase | Owner | Status |
 |-------|-------|--------|
 | F7 evidence requirements spec | Agent A | **DONE** @ `f975312` |
-| Failure atlas + evidence matrix | Agent D | **DONE** (this commit) |
+| Failure atlas + evidence matrix | Agent D | **DONE** @ wave 3 (`154012` indexed) |
 | Runtime trace + CrashContext (StatusFlush sub-ops) | Agent B | **DONE** (this commit) |
 | Runner evidence harvest (`f7-evidence-harvest.ps1`) | Agent C | **DONE** (this commit) |
 | Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
