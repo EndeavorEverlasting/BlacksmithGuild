@@ -56,7 +56,16 @@ foreach ($mask in $Masks) {
         ManifestPass = $manifestPass
     }) | Out-Null
 
-    Write-BisectLog "=== Exit $ec mask $mask manifest=$manifestPath pass=$manifestPass ==="
+    $manifestDetail = ''
+    if ($manifestPath -and (Test-Path -LiteralPath $manifestPath)) {
+        try {
+            $m = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+            $score = if ($m.evidenceCompleteness) { $m.evidenceCompleteness.score } else { 'n/a' }
+            $manifestDetail = " launchPath=$($m.launchPath) selectedBy=$($m.launchSelectedBy) targetMismatch=$($m.targetMismatch) evidence=$score lastMarker=$($m.lastPhase1Marker)"
+        } catch { }
+    }
+
+    Write-BisectLog "=== Exit $ec mask $mask manifest=$manifestPath pass=$manifestPass$manifestDetail ==="
 
     if ($ec -eq 0 -and $manifestPass) {
         Write-BisectLog 'PASS verified — stopping bisect early'

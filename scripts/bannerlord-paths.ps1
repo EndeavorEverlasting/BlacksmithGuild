@@ -60,6 +60,22 @@ function Get-StatusJsonPath {
         -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Status.json')
 }
 
+function Get-CrashContextJsonCandidates {
+    param([string]$BannerlordRoot)
+
+    @(
+        (Join-Path $BannerlordRoot 'BlacksmithGuild_CrashContext.json'),
+        (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_CrashContext.json')
+    ) | Select-Object -Unique
+}
+
+function Get-CrashContextJsonPath {
+    param([string]$BannerlordRoot)
+
+    return Find-NewestExistingPath -Candidates (Get-CrashContextJsonCandidates -BannerlordRoot $BannerlordRoot) `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_CrashContext.json')
+}
+
 function Get-ForgeLogPath {
     return Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Forge.log'
 }

@@ -1953,6 +1953,10 @@ $requiredStablePolls = 3
 $playClickUtc = $null
 $playEscalated = $false
 $continueEscalated = $false
+$script:automationClickedPlayContinue = $false
+$script:launchPathAdopted = $false
+$script:adoptedLaunchPath = $null
+$script:adoptedSelectedBy = $null
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2054,6 +2058,65 @@ function Test-LaunchReadyNow {
 
 function Test-GameProcessRunning {
     return $null -ne (Get-Process -Name $gameExeName -ErrorAction SilentlyContinue)
+}
+
+function Invoke-AdoptLaunchPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('play', 'continue')]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('user', 'automation', 'unknown')]
+        [string]$SelectedBy
+    )
+
+    if ($script:launchPathAdopted) { return }
+    $script:launchPathAdopted = $true
+    $script:adoptedLaunchPath = $Path
+    $script:adoptedSelectedBy = $SelectedBy
+    $script:clickedPlayContinue = $true
+    $script:playClickUtc = Get-Date
+    if ($Path -eq 'continue') {
+        Write-LaunchLog "LAUNCH_STATE=continue_clicked selectedBy=$SelectedBy"
+    } else {
+        Write-LaunchLog "LAUNCH_STATE=play_clicked selectedBy=$SelectedBy"
+    }
+}
+
+function Test-UserLaunchPathAdopted {
+    if ($script:launchPathAdopted -or $script:automationClickedPlayContinue) {
+        return $false
+    }
+
+    $gameRunning = Test-GameProcessRunning
+    $loading = [UIAHelper]::HasLauncherLoadingSurface()
+    $launcherGone = -not [UIAHelper]::HasLauncherRoot()
+    $buttonsVisible = [UIAHelper]::IsLauncherPlayContinueVisible()
+
+    if (-not ($gameRunning -or $loading -or ($launcherGone -and -not $buttonsVisible))) {
+        return $false
+    }
+
+    if ($LaunchIntent -eq 'continue' -and $gameRunning -and -not $script:automationClickedPlayContinue) {
+        if (-not [UIAHelper]::IsLauncherPlayContinueVisible() -and -not [UIAHelper]::HasLauncherLoadingSurface()) {
+            Invoke-AdoptLaunchPath -Path 'play' -SelectedBy 'user'
+            return $true
+        }
+        Invoke-AdoptLaunchPath -Path 'continue' -SelectedBy 'user'
+        return $true
+    }
+
+    if ($LaunchIntent -eq 'play' -and ($gameRunning -or $loading)) {
+        Invoke-AdoptLaunchPath -Path 'play' -SelectedBy 'user'
+        return $true
+    }
+
+    if ($LaunchIntent -eq 'continue' -and ($loading -or $launcherGone)) {
+        Invoke-AdoptLaunchPath -Path 'continue' -SelectedBy 'user'
+        return $true
+    }
+
+    return $false
 }
 
 function Invoke-Handoff {
@@ -2401,7 +2464,7 @@ while ((Get-Date) -lt $deadline) {
 
     if ($LaunchIntent -eq 'play' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
-        if ($sinceClick -ge 15 -and -not $script:playEscalated) {
+        if ($sinceClick -ge 15 -and -not $script:playEscalated -and -not $script:launchPathAdopted) {
             Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:playEscalated = $true
             $clickedPlayContinue = $false
@@ -2414,7 +2477,7 @@ while ((Get-Date) -lt $deadline) {
 
     if ($LaunchIntent -eq 'continue' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
-        if ($sinceClick -ge 15 -and -not $script:continueEscalated) {
+        if ($sinceClick -ge 15 -and -not $script:continueEscalated -and -not $script:launchPathAdopted) {
             Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:continueEscalated = $true
             $clickedPlayContinue = $false
@@ -2425,7 +2488,7 @@ while ((Get-Date) -lt $deadline) {
         }
     }
 
-    if ($clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
+    if ($clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc -and -not $script:launchPathAdopted) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
         if ($sinceClick -ge 12 -and ([UIAHelper]::IsLauncherPlayContinueVisible() -or [UIAHelper]::HasSafeModeDialog())) {
             $retryLabel = if ($LaunchIntent -eq 'continue') { 'continue_retry' } else { 'play_retry' }
@@ -2533,16 +2596,28 @@ while ((Get-Date) -lt $deadline) {
         continue
     }
 
+    if (Test-UserLaunchPathAdopted) {
+        if (Test-GameProcessRunning) {
+            Invoke-Handoff 'user launch path adopted — game running'
+            return
+        }
+        if ([UIAHelper]::HasLauncherLoadingSurface() -or -not [UIAHelper]::HasLauncherRoot()) {
+            Invoke-Handoff 'user launch path adopted — loading or launcher gone'
+            return
+        }
+    }
+
     if (-not $clickedPlayContinue) {
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
             if (Test-LaunchClickVerified -WaitSec 4 -Intent $LaunchIntent) {
+                $script:automationClickedPlayContinue = $true
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
                 if ($LaunchIntent -eq 'continue') {
-                    Write-LaunchLog 'LAUNCH_STATE=continue_clicked'
+                    Write-LaunchLog 'LAUNCH_STATE=continue_clicked selectedBy=automation'
                 } else {
-                    Write-LaunchLog 'LAUNCH_STATE=play_clicked'
+                    Write-LaunchLog 'LAUNCH_STATE=play_clicked selectedBy=automation'
                 }
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date

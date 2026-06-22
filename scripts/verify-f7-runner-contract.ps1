@@ -24,8 +24,9 @@ function Test-PowerShellParses {
 $gatePath = Join-Path $PSScriptRoot 'run-f7-gate-continue.ps1'
 $bisectPath = Join-Path $PSScriptRoot 'run-agent-a-f7-bisect.ps1'
 $launchLogPath = Join-Path $PSScriptRoot 'write-launch-log.ps1'
+$harvestPath = Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -43,12 +44,23 @@ if (Test-Path -LiteralPath $gatePath) {
         Write-Host "PASS gate size: $lineCount lines" -ForegroundColor Green
     }
 
-    foreach ($needle in @('Invoke-F7NoClickLaunch', 'Save-CheckpointEvidence', 'function Exit-F7Gate', 'Test-F7GateManifestPass')) {
+    foreach ($needle in @(
+        'Invoke-F7NoClickLaunch', 'Save-CheckpointEvidence', 'function Exit-F7Gate', 'Test-F7GateManifestPass',
+        'f7-evidence-harvest.ps1', 'Invoke-F7EvidenceHarvest', 'evidenceCompleteness',
+        'launchPath', 'launchSelectedBy', 'certTarget', 'targetMismatch',
+        'Resolve-F7LaunchPath'
+    )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
         } else {
             Write-Host "PASS gate contains: $needle" -ForegroundColor Green
         }
+    }
+
+    if ($gateText -notmatch 'MaxLines\s*=\s*300|phase1MaxLines\s*=\s*300|300') {
+        Add-Failure 'run-f7-gate-continue.ps1 / harvest must use Phase1 FAIL tail target 300 lines'
+    } else {
+        Write-Host 'PASS gate: Phase1 FAIL tail 300 target present' -ForegroundColor Green
     }
 
     if ($gateText -match 'SkipLaunch') {
@@ -61,6 +73,17 @@ if (Test-Path -LiteralPath $gatePath) {
         Add-Failure 'run-f7-gate-continue.ps1 missing FAIL-CLOSED exit 0 guard'
     } else {
         Write-Host 'PASS gate: FAIL-CLOSED guard present' -ForegroundColor Green
+    }
+}
+
+if (Test-Path -LiteralPath $harvestPath) {
+    $harvestText = Get-Content -LiteralPath $harvestPath -Raw
+    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker')) {
+        if ($harvestText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "f7-evidence-harvest.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS harvest contains: $needle" -ForegroundColor Green
+        }
     }
 }
 

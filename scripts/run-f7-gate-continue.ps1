@@ -1,6 +1,8 @@
 # F7 Continue gate — no-click launch, passive stability poll, 60s stability checkpoint.
 param(
     [string]$HookMask,
+    [ValidateSet('continue', 'play', 'any')]
+    [string]$CertTarget = 'continue',
     [int]$TimeoutSeconds = 300,
     [int]$StableSeconds = 60,
     [int]$LaunchTimeoutSec = 300,
@@ -12,6 +14,7 @@ $PollTimeoutSec = $TimeoutSeconds
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
@@ -39,10 +42,25 @@ $script:LaunchAutomation = [ordered]@{
     safeModeDetected = $false
     safeModeNoClicked = $false
     continueClick = [ordered]@{ attempted = $false; success = $false; method = 'unknown' }
+    playClick = [ordered]@{ attempted = $false; success = $false; method = 'unknown' }
     lastFocusResult = $null
     launchError = $null
     handoffSeen = $false
+    launchPath = 'unknown'
+    launchSelectedBy = 'unknown'
+    certTarget = $CertTarget
+    targetMismatch = $false
+    launchPathAdopted = $false
 }
+
+$script:F7ProcessTimestamps = [ordered]@{
+    gameStartUtc = $null
+    gameEndUtc = $null
+}
+
+$runnerCommandLine = "run-f7-gate-continue.ps1 -CertTarget $CertTarget" +
+    $(if ($HookMask) { " -HookMask $HookMask" } else { '' }) +
+    " -TimeoutSeconds $TimeoutSeconds -StableSeconds $StableSeconds"
 
 function Write-F7LaunchState {
     param([string]$State)
@@ -195,6 +213,15 @@ function Get-LaunchAutomationSignals {
         if ($line -match 'LAUNCH_STATE=continue_clicked|clicked CONTINUE') {
             $script:LaunchAutomation.continueClick.attempted = $true
             $script:LaunchAutomation.continueClick.success = $true
+            $script:LaunchAutomation.launchPath = 'continue'
+            $script:LaunchAutomation.launchPathAdopted = $true
+            if ($line -match 'selectedBy=user') {
+                $script:LaunchAutomation.launchSelectedBy = 'user'
+            } elseif ($line -match 'selectedBy=automation') {
+                $script:LaunchAutomation.launchSelectedBy = 'automation'
+            } elseif ($script:LaunchAutomation.launchSelectedBy -eq 'unknown') {
+                $script:LaunchAutomation.launchSelectedBy = 'automation'
+            }
             if ($line -match 'method=([^)\s]+)') {
                 $script:LaunchAutomation.continueClick.method = $Matches[1]
             } elseif ($line -match 'coords') {
@@ -203,8 +230,26 @@ function Get-LaunchAutomationSignals {
                 $script:LaunchAutomation.continueClick.method = 'uia-scoped'
             }
         }
+        if ($line -match 'LAUNCH_STATE=play_clicked|clicked PLAY') {
+            $script:LaunchAutomation.playClick.attempted = $true
+            $script:LaunchAutomation.playClick.success = $true
+            $script:LaunchAutomation.launchPath = 'play'
+            $script:LaunchAutomation.launchPathAdopted = $true
+            if ($line -match 'selectedBy=user') {
+                $script:LaunchAutomation.launchSelectedBy = 'user'
+            } elseif ($line -match 'selectedBy=automation') {
+                $script:LaunchAutomation.launchSelectedBy = 'automation'
+            } elseif ($CertTarget -eq 'continue') {
+                $script:LaunchAutomation.launchSelectedBy = 'user'
+            } else {
+                $script:LaunchAutomation.launchSelectedBy = 'automation'
+            }
+        }
         if ($line -match 'handoff:|LAUNCH_STATE=handoff') {
             $script:LaunchAutomation.handoffSeen = $true
+            if ($script:LaunchAutomation.launchSelectedBy -eq 'unknown' -and -not $script:LaunchAutomation.launchPathAdopted) {
+                $script:LaunchAutomation.launchSelectedBy = 'attach_existing'
+            }
         }
         if ($line -match 'LAUNCH_STATE=fail_foreground_theft|foreground theft') {
             $script:LaunchAutomation.launchError = 'launcher automation impossible: Cursor foreground >60s with no launcher/game hwnd'
@@ -284,6 +329,61 @@ function Test-F7GateCondition {
     return ($Signals.campaignReady -and $Signals.canPollFileInbox -and $mapReadyPass)
 }
 
+function Resolve-F7LaunchPath {
+    param([datetime]$SinceLocal)
+
+    $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+
+    if ($script:LaunchAutomation.launchPath -ne 'unknown') {
+        if ($CertTarget -eq 'continue' -and $script:LaunchAutomation.launchPath -eq 'play') {
+            $script:LaunchAutomation.targetMismatch = $true
+        }
+        return
+    }
+
+    if ($script:LaunchAutomation.handoffSeen -and $script:LaunchAutomation.launchSelectedBy -eq 'attach_existing') {
+        $script:LaunchAutomation.launchPath = if ($CertTarget -eq 'play') { 'play' } else { 'continue' }
+        return
+    }
+
+    if ($script:LaunchAutomation.continueClick.success) {
+        $script:LaunchAutomation.launchPath = 'continue'
+    } elseif ($script:LaunchAutomation.playClick.success) {
+        $script:LaunchAutomation.launchPath = 'play'
+        if ($CertTarget -eq 'continue') {
+            $script:LaunchAutomation.targetMismatch = $true
+        }
+    }
+}
+
+function Test-F7CertTargetMismatch {
+    if ($CertTarget -eq 'any') { return $false }
+    if ($script:LaunchAutomation.launchPath -eq 'unknown') { return $false }
+    return ($CertTarget -ne $script:LaunchAutomation.launchPath)
+}
+
+function Get-F7GamePhaseAtEnd {
+    param($Signals, [datetime]$SinceLocal)
+
+    if ($Signals.phase1TbgReady) { return 'TBG READY' }
+    if ($Signals.phase1QuickStartMapReady) { return 'QuickStart MapReady' }
+    if (Test-Phase1MapTransition -SinceLocal $SinceLocal) { return 'MapTransition' }
+    if ($Signals.gameRunning) { return 'loading' }
+    if ($Signals.phase1LastSignal) { return [string]$Signals.phase1LastSignal }
+    return 'unknown'
+}
+
+function Update-F7ProcessTimestamps {
+    $running = Test-GameProcessRunning
+    $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+    if ($running -and -not $script:F7ProcessTimestamps.gameStartUtc) {
+        $script:F7ProcessTimestamps.gameStartUtc = $nowUtc
+    }
+    if (-not $running -and $script:F7ProcessTimestamps.gameStartUtc -and -not $script:F7ProcessTimestamps.gameEndUtc) {
+        $script:F7ProcessTimestamps.gameEndUtc = $nowUtc
+    }
+}
+
 function Write-FilteredTimestampTail {
     param(
         [Parameter(Mandatory = $true)]
@@ -329,14 +429,39 @@ function Save-CheckpointEvidence {
 
     New-Item -ItemType Directory -Force -Path $checkpointDir | Out-Null
 
-    if (Test-Path -LiteralPath $statusPath) {
-        Copy-Item -LiteralPath $statusPath -Destination (Join-Path $checkpointDir 'BlacksmithGuild_Status.json') -Force
+    Resolve-F7LaunchPath -SinceLocal $SinceLocal
+    if (Test-F7CertTargetMismatch) {
+        $script:LaunchAutomation.targetMismatch = $true
+        if ($PassFail -eq 'PASS') {
+            $PassFail = 'FAIL'
+            $ExitCode = 2
+            $StableSec = 0
+            $Notes = "target_mismatch: certTarget=$CertTarget launchPath=$($script:LaunchAutomation.launchPath) launchSelectedBy=$($script:LaunchAutomation.launchSelectedBy); $Notes"
+        }
     }
-    if (Test-Path -LiteralPath $phase1Path) {
-        Write-FilteredTimestampTail -InputPath $phase1Path -OutputPath (Join-Path $checkpointDir 'Phase1.tail.txt') -SinceLocal $SinceLocal -MaxLines 220
-    }
-    if (Test-Path -LiteralPath $launchLogPath) {
-        Write-FilteredTimestampTail -InputPath $launchLogPath -OutputPath (Join-Path $checkpointDir 'Launch.tail.txt') -SinceLocal $SinceLocal -MaxLines 220
+
+    $gamePhaseAtEnd = Get-F7GamePhaseAtEnd -Signals $LastSignals -SinceLocal $SinceLocal
+    $harvestFields = [ordered]@{}
+    try {
+        $startedDt = [datetime]::Parse($startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind)
+        $harvestResult = Invoke-F7EvidenceHarvest `
+            -CheckpointDir $checkpointDir `
+            -BannerlordRoot $bannerlordRoot `
+            -SinceLocal $SinceLocal `
+            -StartedAtUtc $startedDt `
+            -PassFail $PassFail `
+            -Phase1Path $phase1Path `
+            -LaunchLogPath $launchLogPath `
+            -RunnerCommandLine $runnerCommandLine `
+            -HookMask $(if ($resolvedHookMask) { $resolvedHookMask } else { 'default' }) `
+            -ProcessTimestamps $script:F7ProcessTimestamps `
+            -GamePhaseAtEnd $gamePhaseAtEnd
+        foreach ($key in $harvestResult.Keys) {
+            $harvestFields[$key] = $harvestResult[$key]
+        }
+    } catch {
+        $harvestFields.harvestError = $_.Exception.Message
+        $harvestFields.evidenceCompleteness = [ordered]@{ score = 'partial'; harvestError = $true }
     }
 
     $manifest = [ordered]@{
@@ -353,6 +478,11 @@ function Save-CheckpointEvidence {
         safeModeDetected = [bool]$script:LaunchAutomation.safeModeDetected
         safeModeNoClicked = [bool]$script:LaunchAutomation.safeModeNoClicked
         continueClick = $script:LaunchAutomation.continueClick
+        playClick = $script:LaunchAutomation.playClick
+        launchPath = $script:LaunchAutomation.launchPath
+        launchSelectedBy = $script:LaunchAutomation.launchSelectedBy
+        certTarget = $CertTarget
+        targetMismatch = [bool]$script:LaunchAutomation.targetMismatch
         lastFocusResult = $script:LaunchAutomation.lastFocusResult
         launchAutomationError = $script:LaunchAutomation.launchError
         campaignReady = [bool]$LastSignals.campaignReady
@@ -374,7 +504,10 @@ function Save-CheckpointEvidence {
         } else { $null }
         notes = $Notes
     }
-    $manifest | ConvertTo-Json -Depth 8 |
+    foreach ($key in $harvestFields.Keys) {
+        $manifest[$key] = $harvestFields[$key]
+    }
+    $manifest | ConvertTo-Json -Depth 10 |
         Set-Content -LiteralPath (Join-Path $checkpointDir 'manifest.json') -Encoding UTF8
 
     $writtenPath = Join-Path $checkpointDir 'manifest.json'
@@ -452,6 +585,7 @@ function Invoke-F7NoClickLaunch {
     }
 
     $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+    Resolve-F7LaunchPath -SinceLocal $SinceLocal
 
     if (Test-GameProcessRunning) {
         Write-F7LaunchState 'game_spawned'
@@ -463,7 +597,11 @@ function Invoke-F7NoClickLaunch {
         return $true
     }
 
-    if (-not $script:LaunchAutomation.continueClick.success -and (Test-LauncherProcessRunning)) {
+    $skipNavRetry = $script:LaunchAutomation.launchPathAdopted `
+        -or $script:LaunchAutomation.launchSelectedBy -eq 'user' `
+        -or $script:LaunchAutomation.launchPath -eq 'play'
+
+    if (-not $skipNavRetry -and -not $script:LaunchAutomation.continueClick.success -and (Test-LauncherProcessRunning)) {
         Write-Host 'Launcher still running without Continue — retrying launcher-auto-nav once...' -ForegroundColor Yellow
         try {
             & $navScript @navParams
@@ -510,7 +648,12 @@ function Test-LaunchToolingFailure {
     }
 
     if (-not $LaunchNavSucceeded) {
-        if (-not $script:LaunchAutomation.continueClick.success -and -not $script:LaunchAutomation.handoffSeen) {
+        $hasValidLaunch = $script:LaunchAutomation.continueClick.success `
+            -or $script:LaunchAutomation.playClick.success `
+            -or $script:LaunchAutomation.handoffSeen `
+            -or $script:LaunchAutomation.launchPathAdopted `
+            -or $script:LaunchAutomation.launchSelectedBy -eq 'user'
+        if (-not $hasValidLaunch) {
             if (-not (Test-LauncherProcessRunning) -and -not (Test-GameProcessRunning)) {
                 return 'launcher-auto-nav failed: Continue not clicked and no game/launcher process'
             }
@@ -519,7 +662,11 @@ function Test-LaunchToolingFailure {
 
     if ($ElapsedSinceLaunchEnd -ge $PostLaunchHwndWaitSec) {
         if (-not (Test-GameProcessRunning) -and -not (Test-LauncherProcessRunning)) {
-            if (-not $script:LaunchAutomation.handoffSeen -and -not $script:LaunchAutomation.continueClick.success) {
+            $hasValidLaunch = $script:LaunchAutomation.handoffSeen `
+                -or $script:LaunchAutomation.continueClick.success `
+                -or $script:LaunchAutomation.playClick.success `
+                -or $script:LaunchAutomation.launchPathAdopted
+            if (-not $hasValidLaunch) {
                 return "no game or launcher hwnd after ${PostLaunchHwndWaitSec}s post-launch"
             }
         }
@@ -625,6 +772,7 @@ try {
 
     while ((Get-Date) -lt $deadline) {
         $lastSignals = Get-F7GateSignals
+        Update-F7ProcessTimestamps
         $lastSignals.phase1QuickStartMapReady = Test-Phase1QuickStartMapReady -SinceLocal $launchStartedLocal
         if ($lastSignals.gameRunning) { $gameEverSeen = $true }
 
@@ -668,10 +816,24 @@ try {
             } elseif (((Get-Date) - $stableSince).TotalSeconds -ge $StableSeconds) {
                 $stableSec = [int][Math]::Floor(((Get-Date) - $stableSince).TotalSeconds)
                 $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
-                $dir = Save-CheckpointEvidence -PassFail 'PASS' -ExitCode 0 -StableSec $stableSec -LastSignals $lastSignals `
-                    -Notes "F7 gate stable for >=${StableSeconds}s" -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
-                Write-Host "F7 gate PASS ($stableSec s stable). Evidence: $dir" -ForegroundColor Green
-                Exit-F7Gate -Code 0 -CheckpointDir $dir
+                Resolve-F7LaunchPath -SinceLocal $launchStartedLocal
+                $passNotes = "F7 gate stable for >=${StableSeconds}s"
+                $passFail = 'PASS'
+                $exitCode = 0
+                if (Test-F7CertTargetMismatch) {
+                    $passFail = 'FAIL'
+                    $exitCode = 2
+                    $stableSec = 0
+                    $passNotes = "target_mismatch: user_selected_play (certTarget=$CertTarget launchPath=$($script:LaunchAutomation.launchPath))"
+                }
+                $dir = Save-CheckpointEvidence -PassFail $passFail -ExitCode $exitCode -StableSec $stableSec -LastSignals $lastSignals `
+                    -Notes $passNotes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
+                if ($passFail -eq 'PASS') {
+                    Write-Host "F7 gate PASS ($stableSec s stable). Evidence: $dir" -ForegroundColor Green
+                } else {
+                    Write-Host "$passNotes. Evidence: $dir" -ForegroundColor Red
+                }
+                Exit-F7Gate -Code $exitCode -CheckpointDir $dir
             }
         } else {
             $stableSince = $null

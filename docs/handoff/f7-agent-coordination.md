@@ -26,7 +26,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `bc57802` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending Agent C push |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `135217` clean FAIL (`instrumentation_insufficient`: StatusFlush begin, no sub-ops) |
@@ -44,7 +44,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Wave 1 evidence requirements; wave 2 F7 **BLOCKED** until B+C | `docs/control/indexes/f7-evidence-requirements.md`, coordination | F7 cert until B+C land | pending |
 | **B** | C# map-ready / post-map survival | `IDLE` | **NEXT (wave 1):** RuntimeTrace + CrashContext + StatusFlush sub-ops | `src/.../DevTools/*`, orchestrator | A blocked on F7 wave 2 | `5fac5e9` |
-| **C** | Launcher / F7 runner | `DONE` (launcher) / **NEXT** (harvest) | Wave 1: enrich `Save-CheckpointEvidence` + manifest fields | `scripts/run-f7-gate-continue.ps1`, paths | A blocked on F7 wave 2 | `9b40b96` |
+| **C** | Launcher / F7 runner | `IN_PROGRESS` → **DONE** (harvest) | Wave 1: `f7-evidence-harvest.ps1` + manifest + user path adoption | `scripts/f7-evidence-harvest.ps1`, gate runner, launcher-auto-nav | A blocked on F7 wave 2 until B lands | pending |
 | **D** | Docs atlas | `IDLE` | Wave 1: failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | — |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -80,6 +80,17 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent C → A, B (runner evidence harvest + launch path adoption)
+
+- **Landed:** `scripts/f7-evidence-harvest.ps1` — artifact copy+metadata, Phase1 FAIL tail 300, marker extraction, CrashContext parse, Windows event query, `evidenceCompleteness` scorer.
+- **Landed:** `run-f7-gate-continue.ps1` — `-CertTarget`, `launchPath`/`launchSelectedBy`/`targetMismatch`, harvest merge into manifest, fail-closed unchanged.
+- **Landed:** `launcher-auto-nav.ps1` — user Play/Continue adoption (`selectedBy=user|automation`), stop retries when path adopted.
+- **Landed:** `verify-f7-runner-contract.ps1` — post-C contract checks; bisect logs `launchPath` + `evidenceCompleteness`.
+- **Validation:** Release build PASS; grep guard PASS; runner contract PASS; offline marker smoke PASS (`135217` → `StatusFlush begin`, `instrumentationGap=true`).
+- **F7 game cert:** **NOT RUN** (Agent A wave 2 only after B+C on origin).
+- **Need from B:** `RuntimeTrace` + `CrashContextWriter` on origin — harvest copies CrashContext when present.
+- **Need from A:** Pull after B lands; preflight; F7 cert `HookMask 0x0F`.
 
 ### 2026-06-22 — Agent A → B, C, D (F7 evidence instrumentation sprint wave 1)
 
@@ -239,6 +250,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] Fail-closed F7 gate runner + bisect manifest gate + write-launch-log mutex
 - [x] CONTINUE hwnd hit-test fix (`095505`) — launcher_ok audit, coord skip, 30s verify, continue_escalate
 - [x] PR #8 runner stub rejected; docs salvage via A/B bridge doc
+- [x] Runner evidence harvest + launch path adoption (wave 1)
 
 ---
 
