@@ -24,7 +24,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `546c9ed` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `5fac5e9` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — map-ready then crash (`101016`, `100959`, `095326`); runner fail-closed @ `2ad1d45` |
@@ -40,7 +40,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Gatekeeper DONE: PR #8 HOLD+retarget, static validation PASS, `verify-f7-runner-contract.ps1` | `docs/evidence/live-cert/**`, PR #7/#8 | — | pending |
-| **B** | C# map-ready / post-map survival | `IN_PROGRESS` | StatusFlush alignment + stabilization window | `CampaignMapReadyOrchestrator.cs`, `SubModule.cs`, `BlacksmithGuildCampaignBehavior.cs` | — | pending |
+| **B** | C# map-ready / post-map survival | `IDLE` | Post-map-ready hardening @ `5fac5e9` | — | — | `5fac5e9` |
 | **C** | Launcher / F7 runner | `DONE` | CONTINUE hwnd fix @ `546c9ed`; PR #8 stub rejected | — | A may F7 cert after preflight | `546c9ed` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
