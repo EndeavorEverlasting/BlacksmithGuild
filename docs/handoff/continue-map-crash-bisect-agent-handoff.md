@@ -28,4 +28,6 @@ Bisect: `$env:TBG_MAP_READY_HOOK_MASK = "0xEF"` (skip Treasury), `"0xDF"` (skip 
 
 ## Parallel
 
-Agent A `feat/006c-4-sell-loop` @ `518f4bd` — merge after USER confirms stable F7.
+Agent A `feat/006c-4-sell-loop` @ `eddb23e` (rebased on main) — merge after USER confirms stable F7.
+
+Agent C `feat/006c-4b-second-leg-travel` @ `db9c3b7` — **WIP, build FAIL** (missing `ForgeAdvisorSmoke` in enum; rebase onto main before continuing).
