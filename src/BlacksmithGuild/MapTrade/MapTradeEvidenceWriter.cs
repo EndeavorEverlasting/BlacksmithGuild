@@ -182,6 +182,7 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"{indent}  \"itemId\": {NullableString(execution.ItemId)},");
             sb.AppendLine($"{indent}  \"itemName\": {NullableString(execution.ItemName)},");
             sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
+            sb.AppendLine($"{indent}  \"quantitySold\": {execution.QuantitySold},");
             sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
             sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
             sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)},");

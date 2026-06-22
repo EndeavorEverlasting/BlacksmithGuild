@@ -101,6 +101,121 @@ namespace BlacksmithGuild.Market
             return true;
         }
 
+        public static bool TryFindBestSell(string itemId, out string townName, out int sellPrice, out int quantity)
+        {
+            townName = null;
+            sellPrice = 0;
+            quantity = 0;
+
+            if (!HasCachedScan || string.IsNullOrWhiteSpace(itemId))
+            {
+                return false;
+            }
+
+            var row = _cachedReport.InventoryRows.FirstOrDefault(r =>
+                string.Equals(r.ItemId, itemId, StringComparison.OrdinalIgnoreCase));
+            if (row == null || row.Quantity <= 0)
+            {
+                return false;
+            }
+
+            townName = row.BestSellTown;
+            sellPrice = row.BestSellPrice;
+            quantity = row.Quantity;
+            return !string.IsNullOrWhiteSpace(townName);
+        }
+
+        public static bool TryGetTopInventorySellRow(out InventorySellRow row)
+        {
+            row = null;
+            if (!HasCachedScan)
+            {
+                return false;
+            }
+
+            row = _cachedReport.InventoryRows
+                .Where(r => r.Quantity > 0)
+                .OrderByDescending(r => r.SpreadVsWorst)
+                .ThenByDescending(r => r.Quantity)
+                .FirstOrDefault();
+            return row != null;
+        }
+
+        public static bool TryGetBestSpreadRow(out TradeSpreadRow row)
+        {
+            row = null;
+            if (!HasCachedScan)
+            {
+                return false;
+            }
+
+            row = _cachedReport.SpreadRows.FirstOrDefault();
+            return row != null;
+        }
+
+        public static bool TryFindSellCandidateAtSettlement(
+            string settlementName,
+            out string itemId,
+            out string itemName,
+            out int sellPrice,
+            out int quantity)
+        {
+            itemId = null;
+            itemName = null;
+            sellPrice = 0;
+            quantity = 0;
+
+            if (!HasCachedScan || string.IsNullOrWhiteSpace(settlementName))
+            {
+                return false;
+            }
+
+            var party = MobileParty.MainParty;
+            if (party?.ItemRoster == null)
+            {
+                return false;
+            }
+
+            InventorySellRow best = null;
+            foreach (var row in _cachedReport.InventoryRows)
+            {
+                if (row.Quantity <= 0)
+                {
+                    continue;
+                }
+
+                var item = Game.Current?.ObjectManager?.GetObject<ItemObject>(row.ItemId);
+                if (item == null || party.ItemRoster.GetItemNumber(item) <= 0)
+                {
+                    continue;
+                }
+
+                if (string.Equals(row.BestSellTown, settlementName, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (best == null || row.SpreadVsWorst > best.SpreadVsWorst)
+                    {
+                        best = row;
+                    }
+                }
+                else if (best == null)
+                {
+                    best = row;
+                }
+            }
+
+            if (best == null)
+            {
+                return false;
+            }
+
+            itemId = best.ItemId;
+            itemName = best.ItemName;
+            sellPrice = best.BestSellPrice;
+            quantity = party.ItemRoster.GetItemNumber(
+                Game.Current?.ObjectManager?.GetObject<ItemObject>(best.ItemId));
+            return quantity > 0;
+        }
+
         public static bool RunScanNow(string source = MarketSnapshotNowCommand)
         {
             if (Campaign.Current == null || Hero.MainHero == null || MobileParty.MainParty == null)

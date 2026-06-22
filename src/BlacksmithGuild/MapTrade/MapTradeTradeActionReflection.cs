@@ -107,6 +107,76 @@ namespace BlacksmithGuild.MapTrade
             return false;
         }
 
+        public static bool TryExecuteSell(
+            Settlement settlement,
+            ItemObject item,
+            int quantity,
+            out MapTradeExecutionResult result,
+            out string detail)
+        {
+            result = null;
+            detail = null;
+
+            if (settlement == null || item == null || quantity <= 0)
+            {
+                detail = "settlement, item, or quantity invalid";
+                return false;
+            }
+
+            var mainParty = MobileParty.MainParty;
+            var hero = Hero.MainHero;
+            if (mainParty?.Party == null || hero == null)
+            {
+                detail = "MainParty or MainHero unavailable";
+                return false;
+            }
+
+            var held = GetItemCount(mainParty, item);
+            if (held < quantity)
+            {
+                detail = $"insufficient inventory ({held} < {quantity})";
+                return false;
+            }
+
+            var goldBefore = hero.Gold;
+            var inventoryBefore = held;
+
+            if (TryInvokeSellItemsAction(mainParty.Party, settlement, item, quantity, out var methodUsed)
+                || TryInvokeBuyItemsActionSell(mainParty.Party, settlement, item, quantity, out methodUsed))
+            {
+                var goldAfter = hero.Gold;
+                var inventoryAfter = GetItemCount(mainParty, item);
+                var goldDelta = goldAfter - goldBefore;
+                var inventoryDelta = inventoryAfter - inventoryBefore;
+                var quantitySold = inventoryBefore - inventoryAfter;
+
+                result = new MapTradeExecutionResult
+                {
+                    GoldBefore = goldBefore,
+                    GoldAfter = goldAfter,
+                    GoldDelta = goldDelta,
+                    ItemId = item.StringId,
+                    ItemName = item.Name?.ToString() ?? item.StringId,
+                    QuantitySold = quantitySold,
+                    InventoryBefore = inventoryBefore,
+                    InventoryAfter = inventoryAfter,
+                    ExecutionMethod = methodUsed
+                };
+
+                if (goldDelta > 0 && inventoryDelta < 0)
+                {
+                    detail = $"sell verified via {methodUsed}: gold +{goldDelta}, items {inventoryDelta}";
+                    return true;
+                }
+
+                detail = $"{methodUsed} invoked but delta not proven (gold {goldDelta}, items {inventoryDelta})";
+                return false;
+            }
+
+            detail = detail ?? "no applicable SellItemsAction/BuyItemsAction Apply overload succeeded";
+            return false;
+        }
+
         public static ItemObject ResolveItem(string itemId)
         {
             if (string.IsNullOrWhiteSpace(itemId))
@@ -225,6 +295,106 @@ namespace BlacksmithGuild.MapTrade
 
                     method.Invoke(null, args);
                     methodUsed = $"SellItemsAction.Apply({DescribeParameters(parameters)}) settlement-buy";
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryInvokeSellItemsAction(
+            PartyBase sellerParty,
+            Settlement settlement,
+            ItemObject item,
+            int quantity,
+            out string methodUsed)
+        {
+            methodUsed = null;
+            var type = ResolveType("TaleWorlds.CampaignSystem.Actions.SellItemsAction");
+            if (type == null || settlement?.Party == null)
+            {
+                return false;
+            }
+
+            var element = new ItemRosterElement(item, quantity);
+            var buyerParty = settlement.Party;
+
+            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (!string.Equals(method.Name, "Apply", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var parameters = method.GetParameters();
+                if (parameters.Length < 4)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var args = BuildApplyArguments(parameters, sellerParty, buyerParty, settlement, element, quantity);
+                    if (args == null)
+                    {
+                        continue;
+                    }
+
+                    method.Invoke(null, args);
+                    methodUsed = $"SellItemsAction.Apply({DescribeParameters(parameters)}) party-sell";
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryInvokeBuyItemsActionSell(
+            PartyBase sellerParty,
+            Settlement settlement,
+            ItemObject item,
+            int quantity,
+            out string methodUsed)
+        {
+            methodUsed = null;
+            var type = ResolveType("TaleWorlds.CampaignSystem.Actions.BuyItemsAction");
+            if (type == null || settlement?.Party == null)
+            {
+                return false;
+            }
+
+            var element = new ItemRosterElement(item, quantity);
+            var buyerParty = settlement.Party;
+
+            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            {
+                if (!string.Equals(method.Name, "Apply", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var parameters = method.GetParameters();
+                if (parameters.Length < 4)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var args = BuildApplyArguments(parameters, buyerParty, sellerParty, settlement, element, quantity);
+                    if (args == null)
+                    {
+                        continue;
+                    }
+
+                    method.Invoke(null, args);
+                    methodUsed = $"BuyItemsAction.Apply({DescribeParameters(parameters)}) settlement-buy-from-party";
                     return true;
                 }
                 catch

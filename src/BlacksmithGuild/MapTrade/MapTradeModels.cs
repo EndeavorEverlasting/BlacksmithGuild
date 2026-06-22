@@ -40,9 +40,14 @@ namespace BlacksmithGuild.MapTrade
         public string TargetSettlementName { get; set; }
         public float Distance { get; set; }
         public int BuyPrice { get; set; }
+        public int SellPrice { get; set; }
         public int Stock { get; set; }
         public float Score { get; set; }
         public string BlockReason { get; set; }
+        public Settlement SellSettlement { get; set; }
+        public string SellSettlementName { get; set; }
+        public string SellItemId { get; set; }
+        public string SellItemName { get; set; }
     }
 
     public sealed class MapTradeCohesionDecision
@@ -75,6 +80,7 @@ namespace BlacksmithGuild.MapTrade
         public string ItemId { get; set; }
         public string ItemName { get; set; }
         public int QuantityBought { get; set; }
+        public int QuantitySold { get; set; }
         public int InventoryBefore { get; set; }
         public int InventoryAfter { get; set; }
         public string ExecutionMethod { get; set; }
