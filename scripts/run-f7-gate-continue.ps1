@@ -300,6 +300,38 @@ function Test-F7GateCondition {
     return ($Signals.campaignReady -and $Signals.canPollFileInbox -and $mapReadyPass)
 }
 
+function Write-FilteredTimestampTail {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$InputPath,
+        [Parameter(Mandatory = $true)]
+        [string]$OutputPath,
+        [Parameter(Mandatory = $true)]
+        [datetime]$SinceLocal,
+        [int]$MaxLines = 220
+    )
+
+    try {
+        $raw = Get-Content -LiteralPath $InputPath -Tail 4000 -ErrorAction Stop
+    } catch {
+        return
+    }
+
+    $filtered = New-Object System.Collections.Generic.List[string]
+    foreach ($line in $raw) {
+        if ($line -notmatch '^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]') { continue }
+        $lineTime = [datetime]::ParseExact($Matches[1], 'yyyy-MM-dd HH:mm:ss', $null)
+        if ($lineTime -lt $SinceLocal) { continue }
+        $filtered.Add($line)
+    }
+
+    if ($filtered.Count -gt $MaxLines) {
+        $filtered = $filtered.GetRange($filtered.Count - $MaxLines, $MaxLines)
+    }
+
+    $filtered | Set-Content -LiteralPath $OutputPath -Encoding UTF8
+}
+
 function Save-CheckpointEvidence {
     param(
         [string]$PassFail,
@@ -317,12 +349,10 @@ function Save-CheckpointEvidence {
         Copy-Item -LiteralPath $statusPath -Destination (Join-Path $checkpointDir 'BlacksmithGuild_Status.json') -Force
     }
     if (Test-Path -LiteralPath $phase1Path) {
-        Get-Content -LiteralPath $phase1Path -Tail 220 |
-            Set-Content -LiteralPath (Join-Path $checkpointDir 'Phase1.tail.txt') -Encoding UTF8
+        Write-FilteredTimestampTail -InputPath $phase1Path -OutputPath (Join-Path $checkpointDir 'Phase1.tail.txt') -SinceLocal $SinceLocal -MaxLines 220
     }
     if (Test-Path -LiteralPath $launchLogPath) {
-        Get-Content -LiteralPath $launchLogPath -Tail 220 |
-            Set-Content -LiteralPath (Join-Path $checkpointDir 'Launch.tail.txt') -Encoding UTF8
+        Write-FilteredTimestampTail -InputPath $launchLogPath -OutputPath (Join-Path $checkpointDir 'Launch.tail.txt') -SinceLocal $SinceLocal -MaxLines 220
     }
 
     $manifest = [ordered]@{
