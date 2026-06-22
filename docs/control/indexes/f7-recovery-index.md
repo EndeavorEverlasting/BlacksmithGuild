@@ -147,6 +147,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 docs/control/
   README.md
   indexes/f7-recovery-index.md    ← this file
+  indexes/f7-evidence-requirements.md  ← Agent A evidence gate
   plans/open/                     ← pointer stubs → handoff
   plans/successful/               ← empty (no F7 PASS)
   logs/open/                      ← pointer stubs → evidence / handoff

@@ -5,7 +5,7 @@ Stable reference (DoD, log paths, bisect commands): [`f7-recovery-sprint-handoff
 **Launch / F7 commands:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md) — invocation doctrine (direct PS primary).  
 **Em dashes in log grep:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) — never substitute `-` for `—` in Phase1 patterns.  
 **Launcher foreground:** [`docs/conventions/launcher-foreground-doctrine.md`](../conventions/launcher-foreground-doctrine.md) — hwnd-background clicks; no user window rearrangement.  
-**Sprint control pointer:** [`docs/control/README.md`](../control/README.md) · **F7 index:** [`docs/control/indexes/f7-recovery-index.md`](../control/indexes/f7-recovery-index.md)
+**Sprint control pointer:** [`docs/control/README.md`](../control/README.md) · **F7 index:** [`docs/control/indexes/f7-recovery-index.md`](../control/indexes/f7-recovery-index.md) · **Evidence gate:** [`docs/control/indexes/f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md)
 
 ---
 
@@ -26,13 +26,14 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `ce20a67` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `11d3bf1` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `135217` clean FAIL (StatusFlush begin, game gone); prior `101016` post-map-ready crash |
+| Gate verdict | **RED** — session `135217` clean FAIL (`instrumentation_insufficient`: StatusFlush begin, no sub-ops) |
 | Last F7 evidence | `docs/evidence/live-cert/20260622-135217/` — honest FAIL (`clean_cert`, `fail_statusflush_begin`) |
 | Launcher cert | **PASS** — `hwnd SendMessage-background` with Chrome/Cursor foreground; `continue_clicked` unattended (session `135217`) |
-| Next cert command | Agent B runtime — MapTransition/StatusFlush survival; no F7 rerun until B lands fix |
+| Evidence requirements | [`f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md) — **landed wave 1** |
+| Next cert command | **BLOCKED** — Agent A F7 wave 2 until B (RuntimeTrace/CrashContext) + C (runner harvest) on origin |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -41,9 +42,10 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Clean cert `135217` committed; gate RED | `docs/evidence/live-cert/**`, PR #7/#8 | — | pending |
-| **B** | C# map-ready / post-map survival | `IDLE` | **NEXT:** StatusFlush begin crash (`135217`) + post-map `101016` | — | — | `5fac5e9` |
-| **C** | Launcher / F7 runner | `DONE` | Launcher **game-certified** @ `135217` (hwnd-background unattended) | — | — | `9b40b96` |
+| **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Wave 1 evidence requirements; wave 2 F7 **BLOCKED** until B+C | `docs/control/indexes/f7-evidence-requirements.md`, coordination | F7 cert until B+C land | pending |
+| **B** | C# map-ready / post-map survival | `IDLE` | **NEXT (wave 1):** RuntimeTrace + CrashContext + StatusFlush sub-ops | `src/.../DevTools/*`, orchestrator | A blocked on F7 wave 2 | `5fac5e9` |
+| **C** | Launcher / F7 runner | `DONE` (launcher) / **NEXT** (harvest) | Wave 1: enrich `Save-CheckpointEvidence` + manifest fields | `scripts/run-f7-gate-continue.ps1`, paths | A blocked on F7 wave 2 | `9b40b96` |
+| **D** | Docs atlas | `IDLE` | Wave 1: failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | — |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -78,6 +80,17 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A → B, C, D (F7 evidence instrumentation sprint wave 1)
+
+- **Landed:** [`f7-evidence-requirements.md`](../control/indexes/f7-evidence-requirements.md) — mandatory FAIL artifacts, useful-FAIL rule, `instrumentation_insufficient` routing, wave-2 hard gate (no F7 until B+C on origin).
+- **Updated:** `docs/control/README.md`, this coordination doc (board + snapshot).
+- **Gate:** RED unchanged. Session `135217` classified `instrumentation_insufficient` (StatusFlush begin only; 24-line Phase1 tail; no CrashContext/trace).
+- **F7 wave 2:** **NOT RUN** — blocked pending Agent B (`RuntimeTrace`, `CrashContextWriter`) + Agent C (runner harvest + manifest fields).
+- **Need from B:** Sub-step trace through StatusFlush/Flush; CrashContext JSON at game root.
+- **Need from C:** Copy CrashContext; enriched manifest; 300-line FAIL Phase1 tail; Windows event harvest.
+- **Need from D:** `f7-failure-atlas.md`, `f7-evidence-matrix.md` (parallel, non-blocking for cert).
+- **PR #7 / #8:** HOLD unchanged.
 
 ### 2026-06-22 — Agent A Cert → B, C (clean cert session `135217`)
 
@@ -207,7 +220,9 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] PR #8 HOLD + retarget to `fix/f7-gate-stability`
 - [x] `verify-f7-runner-contract.ps1` + static validation PASS
 - [x] Evidence `101016` committed (honest FAIL)
-- [ ] F7 game cert / bisect (gate RED; runner trustworthy)
+- [x] Clean cert `135217` committed (honest FAIL — `instrumentation_insufficient`)
+- [x] `f7-evidence-requirements.md` (wave 1)
+- [ ] F7 wave 2 cert — **BLOCKED** until B+C on origin
 - [ ] Merge PR #7 only on manifest PASS
 
 **B**
