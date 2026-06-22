@@ -24,7 +24,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent C hwnd sprint) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `546c9ed` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — map-ready then crash (`101016`, `100959`, `095326`); runner fail-closed @ `2ad1d45` |
@@ -41,7 +41,7 @@ Every agent **must**:
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Gatekeeper DONE: PR #8 HOLD+retarget, static validation PASS, `verify-f7-runner-contract.ps1` | `docs/evidence/live-cert/**`, PR #7/#8 | — | pending |
 | **B** | C# map-ready / post-map survival | `IN_PROGRESS` | StatusFlush alignment + stabilization window | `CampaignMapReadyOrchestrator.cs`, `SubModule.cs`, `BlacksmithGuildCampaignBehavior.cs` | — | pending |
-| **C** | Launcher / F7 runner | `IN_PROGRESS` | CONTINUE hwnd hit-test fix (`095505`) + PR #8 stub rejection | `launcher-auto-nav.ps1` | — | `2ad1d45` |
+| **C** | Launcher / F7 runner | `DONE` | CONTINUE hwnd fix @ `546c9ed`; PR #8 stub rejected | — | A may F7 cert after preflight | `546c9ed` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -177,10 +177,9 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 **B**
 
-- [x] Coordination plan verified; doc synced @ `247d89d`
-- [x] Grep guard scope + playbook + invocation doctrine (docs lane)
-- [ ] C# map-ready survival (`095326` / post-MapReady crash) — separate future sprint
-- [x] Set board row `IDLE` when docs lane complete
+- [x] Grep guard + playbook @ `29730b9`
+- [x] Post-map-ready C# hardening (StatusFlush alignment, stabilization window)
+- [ ] Agent A F7 cert to validate survival fix
 
 **C**
 
