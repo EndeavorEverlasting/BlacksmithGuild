@@ -43,7 +43,14 @@ namespace BlacksmithGuild.DevTools
                 AutoCharacterBuildService.SetAutoCharacterBuildStewardSurgeonEngineerCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildWarCaptainCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildLightTouchVanillaPlusCommand,
-                AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand
+                AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand,
+                AutoTravelService.ShowAutoTravelChoicesCommand,
+                AutoTravelService.AutoTravelToRecommendedCommand,
+                AutoTravelService.AutoTravelChoice1Command,
+                AutoTravelService.AutoTravelChoice2Command,
+                AutoTravelService.AutoTravelChoice3Command,
+                AutoTravelService.AutoTravelChoice4Command,
+                AutoTravelService.AutoTravelChoice5Command
             };
 
         public static bool IsRegistered(string commandName)

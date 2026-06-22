@@ -37,7 +37,13 @@ namespace BlacksmithGuild.DevTools
                 HotkeyTraceService.OnCommandReceived(hotkeyLabel, commandName);
             }
 
-            if (!DevCommandRegistry.IsRegistered(commandName))
+            var travelName = ExtractAutoTravelName(commandName);
+            if (travelName != null)
+            {
+                commandName = AutoTravelService.AutoTravelPrefix + travelName;
+            }
+
+            if (travelName == null && !DevCommandRegistry.IsRegistered(commandName))
             {
                 DebugLogger.Test($"Unknown command: {commandName}");
                 ForgeStatus.RecordCommand(commandName, source, "FAIL", "unknown command", sequence);
@@ -296,6 +302,22 @@ namespace BlacksmithGuild.DevTools
                 return EconomyTestScenarios.LastFailReason ?? "command failed";
             }
 
+            if (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
+            {
+                return AutoTravelService.LastFailReason ?? "auto-travel failed";
+            }
+
+            if (commandName == AutoTravelService.ShowAutoTravelChoicesCommand ||
+                commandName == AutoTravelService.AutoTravelToRecommendedCommand ||
+                commandName == AutoTravelService.AutoTravelChoice1Command ||
+                commandName == AutoTravelService.AutoTravelChoice2Command ||
+                commandName == AutoTravelService.AutoTravelChoice3Command ||
+                commandName == AutoTravelService.AutoTravelChoice4Command ||
+                commandName == AutoTravelService.AutoTravelChoice5Command)
+            {
+                return AutoTravelService.LastFailReason ?? "auto-travel failed";
+            }
+
             return "command failed";
         }
 
@@ -308,7 +330,14 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
-                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand;
+                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == AutoTravelService.AutoTravelToRecommendedCommand
+                || commandName == AutoTravelService.AutoTravelChoice1Command
+                || commandName == AutoTravelService.AutoTravelChoice2Command
+                || commandName == AutoTravelService.AutoTravelChoice3Command
+                || commandName == AutoTravelService.AutoTravelChoice4Command
+                || commandName == AutoTravelService.AutoTravelChoice5Command
+                || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix));
         }
 
         private static bool IsMutationCommand(string commandName)
@@ -318,7 +347,14 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingXpCommand
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
-                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand;
+                || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == AutoTravelService.AutoTravelToRecommendedCommand
+                || commandName == AutoTravelService.AutoTravelChoice1Command
+                || commandName == AutoTravelService.AutoTravelChoice2Command
+                || commandName == AutoTravelService.AutoTravelChoice3Command
+                || commandName == AutoTravelService.AutoTravelChoice4Command
+                || commandName == AutoTravelService.AutoTravelChoice5Command
+                || (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix));
         }
 
         private static DevCommandResult Execute(string commandName)
@@ -405,9 +441,38 @@ namespace BlacksmithGuild.DevTools
                     return AutoCharacterBuildService.SetSelectedProfileById("LightTouchVanillaPlus");
                 case AutoCharacterBuildService.SetAutoCharacterBuildShadowTraderCommand:
                     return AutoCharacterBuildService.SetSelectedProfileById("ShadowTrader");
+                case AutoTravelService.ShowAutoTravelChoicesCommand:
+                    return AutoTravelService.ShowChoices();
+                case AutoTravelService.AutoTravelToRecommendedCommand:
+                    return AutoTravelService.TravelToRecommended();
+                case AutoTravelService.AutoTravelChoice1Command:
+                    return AutoTravelService.TravelByChoiceNumber(1);
+                case AutoTravelService.AutoTravelChoice2Command:
+                    return AutoTravelService.TravelByChoiceNumber(2);
+                case AutoTravelService.AutoTravelChoice3Command:
+                    return AutoTravelService.TravelByChoiceNumber(3);
+                case AutoTravelService.AutoTravelChoice4Command:
+                    return AutoTravelService.TravelByChoiceNumber(4);
+                case AutoTravelService.AutoTravelChoice5Command:
+                    return AutoTravelService.TravelByChoiceNumber(5);
                 default:
+                    if (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
+                    {
+                        return AutoTravelService.TravelByName(commandName.Substring(AutoTravelService.AutoTravelPrefix.Length));
+                    }
+
                     return DevCommandResult.Unknown;
             }
+        }
+
+        private static string ExtractAutoTravelName(string commandName)
+        {
+            if (string.IsNullOrWhiteSpace(commandName) || !commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
+            {
+                return null;
+            }
+
+            return commandName.Substring(AutoTravelService.AutoTravelPrefix.Length).Trim();
         }
 
         private static void ListRegisteredCommands()
@@ -423,6 +488,7 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("TBG COMMANDS");
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
+            InGameNotice.Info("Travel: ShowAutoTravelChoices, AutoTravelChoice1-5, AutoTravel:<town>");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
         }
 
