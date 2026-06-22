@@ -26,13 +26,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `740b604` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B SyncForgeStatus fail-soft) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
 | Gate verdict | **RED** — session `185813` FAIL (clean Continue; game died MapTransition; ~8min cert wall time) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-185813/` — honest FAIL (pre-intent fix verified; poll-after-death waste) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-185813/` — honest FAIL (SyncForgeStatus begin-only seq=29) |
 | Launcher cert | **PASS** @ `135217`; pre-intent barrier verified on `185813` |
-| Next cert command | **BLOCKED** — C: shorten verify timeout / fail-fast on game=gone; B: MapTransition survival |
+| Next cert command | **Agent A** — F7 Continue after B fail-soft lands; expect seq=29 `stage=end` or `stage=failed`, not silent begin-only |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -42,7 +42,7 @@ Every agent **must**:
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
 | **A** | Cert / evidence / git / PR | `IDLE` | Cert `185813` committed; gate RED | — | — | pending |
-| **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
+| **B** | C# map-ready / instrumentation | `DONE` | SyncForgeStatus fail-soft @ session `185813` | `RuntimeTrace.cs`, `GameSessionState.cs`, `ForgeStatus.cs`, `CampaignMapReadyOrchestrator.cs` | — | pending |
 | **C** | Launcher / F7 runner | `DONE` | Pre-intent spawn fix (`175909`) | — | — | `740b604` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
 
@@ -79,6 +79,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent B → A, C (SyncForgeStatus fail-soft @ session `185813`)
+
+- **Root cause (best hypothesis):** seq=29 `StatusFlush SyncForgeStatus stage=begin` with no ok/fail/end — redundant third `Refresh()` in StatusFlush tick; `UpdateSession` inferred `_campaignReady=true` from `SettlementInterior` phase → `AppendFactionPowerPosture` scan mid-load (`GameLoadingState`, `mapReady=false`).
+- **Landed:** `RuntimeTrace.RunSafe` / `LogSkipped` / `LogFailed` (`stage=failed`, swallow, optional `stage=end`).
+- **Landed:** `GameSessionState.SyncForgeStatus(skipRefresh)` — sub-stage markers (`session_snapshot_*`, `update_session_*`, `update_readiness_*`); StatusFlush passes `skipRefresh:true` (Refresh already at seq=22).
+- **Landed:** `ForgeStatus.UpdateSession(phase, timePaused, flush:false)` — no phase-inferred readiness; fail-soft flush; posture scan gated on `GameSessionState.IsCampaignMapReady && _mainHeroReady`.
+- **Landed:** `RunStatusFlush` — all sub-ops `RunSafe`; `UpdateReadiness` uses live `IsCampaignMapReady`/`IsMainHeroReady`; orchestrator continues after SyncForgeStatus failure.
+- **Static:** Release build PASS; grep guard PASS; runner contract **PARTIAL** — `test-f7-contaminated-launch-163921.ps1` FAIL (live `BlacksmithGuild_Status.json` mtime fresh vs cert start; environmental on build-install machine, not code regression).
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** F7 Continue cert; tail must show seq=29 followed by `session_snapshot_ok` / `update_readiness_ok` / `stage=end` OR `stage=failed` — never silent begin-only; game alive past immediate hooks.
+- **Post-fix markers expected:** `SyncForgeStatusRefresh stage=skipped reason=skipRefresh`; no `clanPosture` when `mapReady=false`; top-level `campaignReady=false` in settlement until map-ready.
 
 ### 2026-06-22 — Agent A Clean Cert → B, C (session `185813`)
 
@@ -386,6 +398,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] Post-map-ready C# hardening (StatusFlush alignment, stabilization window)
 - [x] MapTransition survival — defer/lightweight refresh, guard, `stage=defer` trace (`150405`)
 - [x] Readiness storm fix — session detect, Refresh suppress, `IsCampaignSessionReady` (`154012`)
+- [x] SyncForgeStatus fail-soft — RunSafe, skipRefresh, posture gate, UpdateSession honesty (`185813`)
 - [ ] Agent A F7 cert to validate survival fix
 
 **C**

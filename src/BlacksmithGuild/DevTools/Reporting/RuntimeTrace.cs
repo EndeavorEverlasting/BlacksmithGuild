@@ -48,6 +48,65 @@ namespace BlacksmithGuild.DevTools.Reporting
             return result;
         }
 
+        /// <summary>
+        /// Fail-soft trace wrapper: begin → ok | stage=failed → optional stage=end. Never rethrows.
+        /// </summary>
+        public static bool RunSafe(string area, string operation, Action action, bool emitEnd = false)
+        {
+            var seq = InterlockedIncrement();
+            var path = LaunchPathInference.GetPathLabel();
+            var sw = Stopwatch.StartNew();
+            var failed = false;
+
+            Log(seq, area, operation, "begin", path);
+            CrashContextWriter.RecordBegin(seq, area, operation, path);
+
+            try
+            {
+                action();
+                sw.Stop();
+                Log(seq, area, operation, "ok", path, sw.ElapsedMilliseconds);
+                CrashContextWriter.RecordOk(seq, area, operation, path);
+            }
+            catch (Exception ex)
+            {
+                failed = true;
+                sw.Stop();
+                LogFailed(seq, area, operation, ex, path);
+                CrashContextWriter.RecordFail(seq, area, operation, ex, path);
+            }
+
+            if (emitEnd)
+            {
+                Log(seq, area, operation, failed ? "failed" : "end", path);
+            }
+
+            return !failed;
+        }
+
+        public static bool RunSafe<T>(
+            string area,
+            string operation,
+            Func<T> func,
+            out T result,
+            T fallback = default)
+        {
+            result = fallback;
+            var captured = fallback;
+            var success = RunSafe(area, operation, () => { captured = func(); });
+            result = captured;
+            return success;
+        }
+
+        public static void LogSkipped(string area, string operation, string reason)
+        {
+            var seq = InterlockedIncrement();
+            var path = LaunchPathInference.GetPathLabel();
+            DebugLogger.Test(
+                $"[TBG TRACE] seq={seq} area={area} op={operation} stage=skipped reason={Sanitize(reason)} path={path}",
+                showInGame: false);
+        }
+
         public static void LogFail(string area, string operation, Exception ex)
         {
             var seq = _sequence;
@@ -115,6 +174,15 @@ namespace BlacksmithGuild.DevTools.Reporting
             var message = Sanitize(ex?.Message);
             DebugLogger.Test(
                 $"[TBG TRACE] seq={seq} area={area} op={operation} stage=fail exception={type} message={message} path={path}",
+                showInGame: false);
+        }
+
+        private static void LogFailed(int seq, string area, string operation, Exception ex, string path)
+        {
+            var type = ex?.GetType().Name ?? "unknown";
+            var message = Sanitize(ex?.Message);
+            DebugLogger.Test(
+                $"[TBG TRACE] seq={seq} area={area} op={operation} stage=failed errorType={type} message={message} path={path}",
                 showInGame: false);
         }
 

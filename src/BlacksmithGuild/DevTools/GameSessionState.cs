@@ -730,11 +730,41 @@ namespace BlacksmithGuild.DevTools
             }
         }
 
-        public static void SyncForgeStatus()
+        public static void SyncForgeStatus(bool skipRefresh = false)
         {
-            Refresh();
-            ForgeStatus.UpdateSession(Phase, IsTimePaused);
-            ForgeStatus.UpdateReadiness(IsCampaignSessionReady, IsMainHeroReady);
+            RuntimeTrace.RunSafe("StatusFlush", "SyncForgeStatus", () =>
+            {
+                if (skipRefresh)
+                {
+                    RuntimeTrace.LogSkipped("StatusFlush", "SyncForgeStatusRefresh", "skipRefresh");
+                }
+                else
+                {
+                    RuntimeTrace.RunSafe("StatusFlush", "SyncForgeStatusRefresh", () => Refresh());
+                }
+
+                RuntimeTrace.RunSafe("StatusFlush", "session_snapshot_begin", () =>
+                {
+                    DebugLogger.Test(
+                        $"[TBG STATUS] snapshot phase={Phase} timePaused={IsTimePaused.ToString().ToLowerInvariant()} sessionReady={IsCampaignSessionReady.ToString().ToLowerInvariant()} mapReady={IsCampaignMapReady.ToString().ToLowerInvariant()}",
+                        showInGame: false);
+                });
+                RuntimeTrace.RunSafe("StatusFlush", "session_snapshot_ok", () => { });
+
+                RuntimeTrace.RunSafe("StatusFlush", "update_session_begin", () => { });
+                RuntimeTrace.RunSafe("StatusFlush", "update_session", () =>
+                {
+                    ForgeStatus.UpdateSession(Phase, IsTimePaused, flush: false);
+                });
+                RuntimeTrace.RunSafe("StatusFlush", "update_session_ok", () => { });
+
+                RuntimeTrace.RunSafe("StatusFlush", "update_readiness_begin", () => { });
+                RuntimeTrace.RunSafe("StatusFlush", "update_readiness", () =>
+                {
+                    ForgeStatus.UpdateReadiness(IsCampaignMapReady, IsMainHeroReady);
+                });
+                RuntimeTrace.RunSafe("StatusFlush", "update_readiness_ok", () => { });
+            }, emitEnd: true);
         }
     }
 }

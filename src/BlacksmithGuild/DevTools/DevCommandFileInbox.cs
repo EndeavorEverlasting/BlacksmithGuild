@@ -36,7 +36,7 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            RuntimeTrace.Run("DevCommandFileInbox", "SyncForgeStatus", GameSessionState.SyncForgeStatus);
+            RuntimeTrace.RunSafe("DevCommandFileInbox", "SyncForgeStatus", () => GameSessionState.SyncForgeStatus());
 
             if (!GameSessionState.CanPollFileInbox)
             {

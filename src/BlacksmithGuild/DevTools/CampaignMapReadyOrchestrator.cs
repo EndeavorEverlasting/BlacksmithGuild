@@ -89,7 +89,7 @@ namespace BlacksmithGuild.DevTools
 
             if (_stabilizationSecRemaining > 0f && GameSessionState.IsCampaignSessionReady)
             {
-                RuntimeTrace.Run("MapReady", "SyncForgeStatusHeartbeat", GameSessionState.SyncForgeStatus);
+                GameSessionState.SyncForgeStatus();
             }
 
             if (!_immediateCompleted)
@@ -222,7 +222,7 @@ namespace BlacksmithGuild.DevTools
             DebugLogger.Test(
                 $"[TBG MAPREADY] stabilization window started ({PostMapReadyStabilizationSec:N0}s wall clock).",
                 showInGame: false);
-            RuntimeTrace.Run("MapReady", "SyncForgeStatusAfterImmediate", GameSessionState.SyncForgeStatus);
+            RuntimeTrace.RunSafe("MapReady", "SyncForgeStatusAfterImmediate", () => GameSessionState.SyncForgeStatus());
 
             if (HasAnyEnabled(DevToolsConfig.MapReadyHookMask & MapReadyHookFlags.Deferred))
             {
@@ -241,21 +241,33 @@ namespace BlacksmithGuild.DevTools
 
         private static void RunStatusFlush()
         {
-            RuntimeTrace.Run("StatusFlush", "Refresh", () => GameSessionState.Refresh());
+            RuntimeTrace.RunSafe("StatusFlush", "Refresh", () => GameSessionState.Refresh());
 
-            var mapReady = RuntimeTrace.Run("StatusFlush", "ReadCampaignMapReady", () => GameSessionState.IsCampaignMapReady);
-            var heroReady = RuntimeTrace.Run("StatusFlush", "ReadMainHeroReady", () => GameSessionState.IsMainHeroReady);
+            RuntimeTrace.RunSafe(
+                "StatusFlush",
+                "ReadCampaignMapReady",
+                () => GameSessionState.IsCampaignMapReady,
+                out var mapReady);
+            RuntimeTrace.RunSafe(
+                "StatusFlush",
+                "ReadMainHeroReady",
+                () => GameSessionState.IsMainHeroReady,
+                out var heroReady);
 
-            RuntimeTrace.Run("StatusFlush", "UpdateReadiness", () =>
+            RuntimeTrace.RunSafe("StatusFlush", "UpdateReadiness", () =>
             {
-                ForgeStatus.UpdateReadiness(mapReady, heroReady);
+                ForgeStatus.UpdateReadiness(GameSessionState.IsCampaignMapReady, GameSessionState.IsMainHeroReady);
             });
 
-            var inboxReady = RuntimeTrace.Run("StatusFlush", "CalcFileInboxReady", () => GameSessionState.CanPollFileInbox);
+            RuntimeTrace.RunSafe(
+                "StatusFlush",
+                "CalcFileInboxReady",
+                () => GameSessionState.CanPollFileInbox,
+                out var inboxReady);
 
             if (mapReady && heroReady)
             {
-                RuntimeTrace.Run("StatusFlush", "SetTestMapReady", () =>
+                RuntimeTrace.RunSafe("StatusFlush", "SetTestMapReady", () =>
                 {
                     ForgeStatus.SetTest("map_ready", "PASS", "campaign map ready (immediate status flush)");
                 });
@@ -267,7 +279,7 @@ namespace BlacksmithGuild.DevTools
                     showInGame: false);
             }
 
-            RuntimeTrace.Run("StatusFlush", "SyncForgeStatus", GameSessionState.SyncForgeStatus);
+            GameSessionState.SyncForgeStatus(skipRefresh: true);
         }
 
         private static void RunDeferredHooks()
@@ -286,7 +298,7 @@ namespace BlacksmithGuild.DevTools
             });
             RunHook(MapReadyHookFlags.AgentAutoLoop, "AgentAutoLoop", TryRunAgentAutoLoopOnce);
 
-            GameSessionState.SyncForgeStatus();
+            RuntimeTrace.RunSafe("MapReady", "SyncForgeStatusDeferred", () => GameSessionState.SyncForgeStatus());
             DebugLogger.Test("[TBG MAPREADY] deferred hooks complete", showInGame: false);
         }
 

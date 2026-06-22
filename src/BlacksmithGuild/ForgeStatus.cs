@@ -334,13 +334,31 @@ namespace BlacksmithGuild
             }
         }
 
-        public static void UpdateSession(SessionPhase phase, bool timePaused)
+        public static void UpdateSession(SessionPhase phase, bool timePaused, bool flush = true)
         {
             _sessionPhase = phase;
             _sessionTimePaused = timePaused;
-            _campaignReady = phase != SessionPhase.ModuleOnly;
-            _mainHeroReady = phase != SessionPhase.ModuleOnly && phase != SessionPhase.CampaignLoading;
-            Flush();
+
+            if (!flush)
+            {
+                return;
+            }
+
+            try
+            {
+                Flush();
+            }
+            catch (Exception ex)
+            {
+                RuntimeTrace.LogFail("ForgeStatus", "UpdateSessionFlush", ex);
+                try
+                {
+                    FlushLightweight(error: ex.Message);
+                }
+                catch
+                {
+                }
+            }
         }
 
         public static void RecordCommand(
@@ -693,7 +711,7 @@ namespace BlacksmithGuild
                     builder.AppendLine("  },");
                 }
 
-                if (_campaignReady && _mainHeroReady)
+                if (GameSessionState.IsCampaignMapReady && _mainHeroReady)
                 {
                     AppendFactionPowerPosture(builder);
                 }
