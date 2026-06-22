@@ -1,5 +1,7 @@
 # F7 Game Load Recovery — Sprint Handoff
 
+> **Live coordination:** read [`f7-agent-coordination.md`](f7-agent-coordination.md) first (agent board, locks, message log). This file is stable reference only.
+
 **Branch:** `fix/f7-gate-stability`  
 **PR:** https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7 (merge only after F7 PASS)  
 **Last Agent B commit scope:** Phases 0–3 tooling + `ForgeStatus` hardening (nav lock, path centralization, launcher focus, golden-path patterns)
@@ -10,9 +12,9 @@
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| 0 Usability | **DONE** | `-MinimizeForegroundHosts` (F7 only); `BlacksmithGuild_Launch.lock` |
+| 0 Usability | **DONE** | `RespectUserForeground` default on; nav lock; minimize script removed (Agent C) |
 | 1 Logging paths | **DONE** | `scripts/bannerlord-paths.ps1`; Forge prints tail paths |
-| 2 Launcher | **DONE** | Signal/Teams/WhatsApp blocklist; hwnd-only clicks; refocus throttle |
+| 2 Launcher | **DONE** | SendMessage-first hwnd clicks; passive F7 poll; no IDE minimize |
 | 3 MapTransition | **PARTIAL** | StatusFlush try/catch audit; orchestrator already logs `[TBG MAPREADY] StatusFlush ok` |
 | 4 F7 cert | **PENDING** | Needs external PS run; game still died MapTransition→MapReady in session `030915` |
 | 5 Git push | **DONE** | See commit on `origin/fix/f7-gate-stability` |
@@ -24,7 +26,7 @@
 1. `Forge.cmd` / `ForgeContinue.cmd` — no-click Continue + log path summary at end.
 2. `Run-F7GateContinue.cmd -HookMask 0x0F` — exit **0**, manifest `passFail: PASS`, `stableSeconds >= 60`.
 3. Golden path — `mapReady` + `mapReadyStatusFlush` + `tbgReady` (now matches `Blacksmith Guild — Ready:`).
-4. Desktop usable during `ForgeContinue` (no IDE minimize unless F7 cert).
+4. Desktop usable during `ForgeContinue` and F7 cert (`RespectUserForeground` — no minimize-other-windows).
 5. Clean tree pushed to `origin/fix/f7-gate-stability`.
 
 ---
@@ -48,7 +50,7 @@ Helper: `.\forge.ps1 -CollectDiagnostics` or `scripts/collect-diagnostics.ps1`
 | Gap / risk | Mitigation |
 |------------|------------|
 | Concurrent nav (ForgeContinue + F7) | Nav lock + stop extra terminals |
-| Chrome/Signal focus theft | Blocklist + manual minimize before cert |
+| Chrome/Signal focus theft | `RespectUserForeground` + SendMessage hwnd clicks (no minimize) |
 | Dual Phase1 paths | `bannerlord-paths.ps1` |
 | Golden-path grep drift | Updated in `compare-phase1-golden-path.ps1` |
 | **MapTransition crash** | Hook mask bisect `0x01`–`0x0F`; vanilla Continue control load |
@@ -59,7 +61,7 @@ Helper: `.\forge.ps1 -CollectDiagnostics` or `scripts/collect-diagnostics.ps1`
 
 ## Hook mask bisect (Phase 3/4)
 
-Run from **external PowerShell** (close/minimize Chrome & Signal; stop `ForgeContinue` first):
+Run from **external PowerShell** (stop `ForgeContinue` / other nav first; user may keep Chrome focused on another monitor):
 
 ```powershell
 git checkout fix/f7-gate-stability && git pull
@@ -108,15 +110,19 @@ Repo: `c:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild`
 Branch: `fix/f7-gate-stability`  
 PR: https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7 (merge only after F7 PASS)
 
+**Read first:** `docs/handoff/f7-agent-coordination.md` — claim your agent row (A/B/C), respect file ownership, update message log before finishing.
+
 **Goal:** Autonomous Continue → campaign map ready → F7 gate exit 0 with 60s stability.
 
-**Do not:** run multiple launcher automations; minimize IDE during daily `ForgeContinue` (cert-only `-MinimizeForegroundHosts`); merge PR #7 while gate is red.
+**Do not:** run multiple launcher automations; invoke `launcher-auto-nav.ps1` without `-LaunchIntent` / `-BannerlordRoot`; merge PR #7 while gate is red.
 
-**Run cert (external PowerShell, close/minimize Chrome & Signal, stop ForgeContinue):**
+**Run cert (external PowerShell; stop ForgeContinue; Chrome on another monitor is OK):**
 ```
 git checkout fix/f7-gate-stability && git pull
 .\Run-F7GateContinue.cmd -HookMask 0x0F
 ```
+
+**Smoke launcher only:** `.\Run-LauncherNavNow.cmd` or `.\ForgeContinue.cmd` — not bare `powershell -File launcher-auto-nav.ps1`.
 
 **Logs (check BOTH Phase1 paths):**
 - `%USERPROFILE%\Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log`
@@ -126,12 +132,10 @@ git checkout fix/f7-gate-stability && git pull
 
 **Evidence:** `docs/evidence/live-cert/<yyyyMMdd-HHmmss>/checkpoint-01-f7-gate/manifest.json`
 
-**Known state:** Launcher clicks work (session `030915`). Game dies in MapTransition before MapReady. Golden-path patterns updated for `Blacksmith Guild — Ready:`.
+**Known state:** Launcher clicks work (session `030915`). Game dies in MapTransition before MapReady. Agent C landed RespectUserForeground policy (no minimize).
 
-**Completed (Agent B):** `bannerlord-paths.ps1`, golden-path patterns, nav lock, minimize opt-in, foreground blocklist, hwnd-only clicks, `ForgeStatus` Flush guards.
+**Priority tasks:** (1) hook mask bisect `0x01`–`0x0F`, (2) F7 PASS evidence commit, (3) merge PR #7 only on PASS.
 
-**Priority tasks:** (1) hook mask bisect `0x01`–`0x0F` and record which mask correlates with crash, (2) if all immediate masks crash, try vanilla Continue (no mod) to isolate save/mod chain, (3) F7 PASS evidence commit, (4) merge PR #7 only on PASS.
-
-**Parallel:** Agent C = launcher (mostly done); Agent B = C# orchestrator / MapTransition survival.
+**Parallel:** Agent A = cert/evidence; Agent B = C# MapTransition; Agent C = launcher (monitor only unless regression).
 
 ---

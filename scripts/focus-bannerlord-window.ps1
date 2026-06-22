@@ -1,5 +1,7 @@
-# Refocus Bannerlord game window or launcher after automation steals foreground to terminal.
-param()
+# Refocus Bannerlord game window or launcher. Use -IfMinimizedOnly to restore without stealing foreground.
+param(
+    [switch]$IfMinimizedOnly
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -14,6 +16,8 @@ public static class BannerlordFocus
     private const string GameProcessName = "Bannerlord";
     private const string LauncherProcessName = "TaleWorlds.MountAndBlade.Launcher";
     private const int SW_RESTORE = 9;
+
+    public static bool IfMinimizedOnly;
 
     public static bool TryFocusGameOrLauncher()
     {
@@ -33,6 +37,7 @@ public static class BannerlordFocus
             {
                 var hwnd = process.MainWindowHandle;
                 if (hwnd == IntPtr.Zero) continue;
+                if (IfMinimizedOnly && !IsIconic(hwnd)) continue;
                 ForceForegroundWindow(hwnd);
                 return true;
             }
@@ -101,6 +106,9 @@ public static class BannerlordFocus
 
     [DllImport("user32.dll")]
     private static extern bool BringWindowToTop(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
 }
 '@
 
@@ -108,4 +116,5 @@ if (-not ([System.Management.Automation.PSTypeName]'BannerlordFocus').Type) {
     Add-Type -TypeDefinition $focusSource -ErrorAction Stop
 }
 
+[BannerlordFocus]::IfMinimizedOnly = $IfMinimizedOnly.IsPresent
 return [BannerlordFocus]::TryFocusGameOrLauncher()

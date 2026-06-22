@@ -1,11 +1,10 @@
-# F7 Continue gate — no-click launch, sustained refocus, 60s stability checkpoint.
+# F7 Continue gate — no-click launch, passive stability poll, 60s stability checkpoint.
 param(
     [string]$HookMask,
     [int]$TimeoutSeconds = 300,
     [int]$StableSeconds = 60,
-    [int]$RefocusIntervalSec = 2,
     [int]$LaunchTimeoutSec = 300,
-    [int]$ForegroundTheftFailSec = 60
+    [int]$PostLaunchHwndWaitSec = 60
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,7 +14,6 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
-$minimizeIdePath = Join-Path $PSScriptRoot 'minimize-ide-foreground.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
 $csproj = Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
 $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
@@ -64,18 +62,6 @@ function Stop-BannerlordProcesses {
     Start-Sleep -Seconds 3
 }
 
-function Invoke-MinimizeIdeForeground {
-    if (-not (Test-Path -LiteralPath $minimizeIdePath)) { return 0 }
-    try {
-        $n = & $minimizeIdePath
-        if ($n -gt 0) {
-            Write-Host "Minimized $n IDE window(s) for launcher automation." -ForegroundColor DarkGray
-        }
-        return $n
-    } catch {
-        return 0
-    }
-}
 function Invoke-BannerlordFocusHelper {
     if (-not (Test-Path -LiteralPath $focusHelperPath)) {
         $script:LaunchAutomation.lastFocusResult = $false
@@ -405,7 +391,7 @@ function Invoke-F7NoClickLaunch {
         BannerlordRoot         = $bannerlordRoot
         TimeoutSec             = $TimeoutSec
         PollMs                 = 180
-        MinimizeForegroundHosts = $true
+        RespectUserForeground = $true
     }
 
     Write-Host 'Starting launcher-auto-nav inline (avoids & path / subprocess UIA issues)...' -ForegroundColor DarkGray
@@ -435,7 +421,6 @@ function Invoke-F7NoClickLaunch {
 
     if (-not $script:LaunchAutomation.continueClick.success -and (Test-LauncherProcessRunning)) {
         Write-Host 'Launcher still running without Continue — retrying launcher-auto-nav once...' -ForegroundColor Yellow
-        Invoke-MinimizeIdeForeground | Out-Null
         try {
             & $navScript @navParams
             if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { $navExitCode = $LASTEXITCODE }
@@ -479,14 +464,9 @@ function Test-LaunchToolingFailure {
 
     $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
 
-    if ($script:LaunchAutomation.launchError -match 'foreground theft|Cursor foreground') {
-        if (Test-GameProcessRunning) { return $null }
-        if ($script:LaunchAutomation.continueClick.success) {
-            if (Test-Phase1SessionActive -SinceUtc $SinceLocal.ToUniversalTime()) { return $null }
-            if (Test-Phase1MapTransition -SinceLocal $SinceLocal) { return $null }
-            if (Test-Phase1QuickStartMapReady -SinceLocal $SinceLocal) { return $null }
-        }
-        return 'Cursor foreground theft — launcher automation could not obtain hwnd'
+    if ($script:LaunchAutomation.launchError -match 'fail_foreground_theft') {
+        # Legacy log state from older runs — no longer a hard failure under RespectUserForeground policy.
+        $script:LaunchAutomation.launchError = $null
     }
 
     if (-not $LaunchNavSucceeded) {
@@ -497,10 +477,10 @@ function Test-LaunchToolingFailure {
         }
     }
 
-    if ($ElapsedSinceLaunchEnd -ge $ForegroundTheftFailSec) {
+    if ($ElapsedSinceLaunchEnd -ge $PostLaunchHwndWaitSec) {
         if (-not (Test-GameProcessRunning) -and -not (Test-LauncherProcessRunning)) {
             if (-not $script:LaunchAutomation.handoffSeen -and -not $script:LaunchAutomation.continueClick.success) {
-                return "no game or launcher hwnd after ${ForegroundTheftFailSec}s post-launch"
+                return "no game or launcher hwnd after ${PostLaunchHwndWaitSec}s post-launch"
             }
         }
     }
@@ -552,7 +532,6 @@ try {
     if ($resolvedHookMask) { Write-Host "HookMask: $resolvedHookMask" }
     Write-Host ''
 
-    Invoke-MinimizeIdeForeground | Out-Null
     Stop-BannerlordProcesses
 
     Write-Host 'Building Release...' -ForegroundColor Cyan
@@ -594,23 +573,15 @@ try {
     }
 
     $deadline = (Get-Date).AddSeconds($PollTimeoutSec)
-    $lastRefocusUtc = $null
     $stableSince = $null
     $lastSignals = $null
     $everMapReady = $false
     $gameEverSeen = $false
     $lastHeartbeatSec = -1
-    $cursorTheftPollSince = $null
 
-    Write-Host "Polling up to ${PollTimeoutSec}s (stable ${StableSeconds}s required)..." -ForegroundColor Cyan
+    Write-Host "Polling up to ${PollTimeoutSec}s (stable ${StableSeconds}s required, passive — no refocus)..." -ForegroundColor Cyan
 
     while ((Get-Date) -lt $deadline) {
-        $nowRefocusUtc = [DateTime]::UtcNow
-        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge $RefocusIntervalSec) {
-            Invoke-BannerlordFocusHelper | Out-Null
-            $lastRefocusUtc = $nowRefocusUtc
-        }
-
         $lastSignals = Get-F7GateSignals
         $lastSignals.phase1QuickStartMapReady = Test-Phase1QuickStartMapReady -SinceLocal $launchStartedLocal
         if ($lastSignals.gameRunning) { $gameEverSeen = $true }
@@ -625,32 +596,9 @@ try {
         $postLaunchSec = ((Get-Date) - $launchEnd).TotalSeconds
         $heartbeatSec = [int][Math]::Floor($elapsedSec / 30)
         if ($heartbeatSec -ne $lastHeartbeatSec) {
-            if ($heartbeatSec -gt 0 -and ($heartbeatSec % 2 -eq 0)) {
-                Invoke-MinimizeIdeForeground | Out-Null
-            }
             Write-F7PollHeartbeat -ElapsedSec $elapsedSec -Signals $lastSignals -EverMapReady $everMapReady `
                 -LaunchState $script:LaunchAutomation.launchState
             $lastHeartbeatSec = $heartbeatSec
-        }
-
-        if (-not $lastSignals.gameRunning -and -not $gameEverSeen -and $postLaunchSec -ge $ForegroundTheftFailSec) {
-            $null = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
-            if ($launchLogPath -and (Test-Path $launchLogPath)) {
-                $recent = Get-Content -LiteralPath $launchLogPath -Tail 30 -ErrorAction SilentlyContinue
-                if (($recent -join "`n") -match 'foreground="[^"]*Cursor' -and ($recent -join "`n") -match 'launcher=no game=no') {
-                    if (-not $cursorTheftPollSince) { $cursorTheftPollSince = Get-Date }
-                    elseif (((Get-Date) - $cursorTheftPollSince).TotalSeconds -ge $ForegroundTheftFailSec) {
-                        Write-F7LaunchState 'fail_foreground_theft'
-                        $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
-                        $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 1 -StableSec 0 -LastSignals $lastSignals `
-                            -Notes 'LAUNCH FAIL: Cursor foreground >60s, no game hwnd (fail fast)' -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
-                        Write-Host "Launch automation FAIL (exit 1): foreground theft. Evidence: $dir" -ForegroundColor Red
-                        exit 1
-                    }
-                } else {
-                    $cursorTheftPollSince = $null
-                }
-            }
         }
 
         if (-not $lastSignals.gameRunning -and -not (Test-LaunchStillStarting -GameRunning $lastSignals.gameRunning `

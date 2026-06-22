@@ -6,9 +6,9 @@ TBG Launch Control is a user-facing launcher menu for The Blacksmith Guild. It w
 
 Only one of `ForgeContinue.cmd`, `Run-F7GateContinue.cmd`, or `Run-LauncherNavNow.cmd` should drive launcher UI automation at once. A nav lock file (`BlacksmithGuild_Launch.lock` in the Bannerlord Steam root) blocks overlapping runs for 10 minutes.
 
-- **Daily dev (`ForgeContinue`)** does not minimize Cursor/Chrome — your IDE stays usable.
-- **F7 cert (`Run-F7GateContinue.cmd`)** passes `-MinimizeForegroundHosts` to reduce focus theft during autonomous cert.
-- Before F7 cert: stop any running `ForgeContinue` terminal and close or minimize Chrome/Signal manually.
+- **Daily dev (`ForgeContinue`)** uses `RespectUserForeground=$true` — hwnd clicks without minimizing your other apps.
+- **F7 cert (`Run-F7GateContinue.cmd`)** also uses background-first policy; passive stability poll (no 2s refocus loop).
+- Before F7 cert: stop any running `ForgeContinue` terminal (nav lock applies).
 
 ## Install
 

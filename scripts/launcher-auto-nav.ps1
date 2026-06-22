@@ -9,13 +9,11 @@ param(
 
     [int]$TimeoutSec = 300,
     [int]$PollMs = 180,
-    [switch]$MinimizeForegroundHosts
+    [bool]$RespectUserForeground = $true
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
-
-$minimizeIdePath = Join-Path $PSScriptRoot 'minimize-ide-foreground.ps1'
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
@@ -43,10 +41,6 @@ function Release-NavLock {
     if (-not $script:navLockHeld) { return }
     Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
     $script:navLockHeld = $false
-}
-
-if ($MinimizeForegroundHosts -and (Test-Path -LiteralPath $minimizeIdePath)) {
-    try { & $minimizeIdePath | Out-Null } catch { }
 }
 
 Acquire-NavLock
@@ -80,6 +74,7 @@ public static class UIAHelper
     private const string ModuleMismatchTitle = "Module Mismatch";
 
     public static Action<string> Log;
+    public static bool RespectUserForeground = true;
 
     private static bool _launcherFocused;
     private static bool _launcherAuditDone;
@@ -123,7 +118,7 @@ public static class UIAHelper
             _firstLauncherWindowSeenUtc = DateTime.UtcNow;
         }
 
-        if (!_launcherFocused)
+        if (!_launcherFocused && !RespectUserForeground)
         {
             var focusTarget = GetBestLauncherWindowForCoords(windows) ?? windows[0];
             FocusScope(focusTarget, "launcher");
@@ -408,27 +403,39 @@ public static class UIAHelper
             var scopeDesc = DescribeScope(launcherWindow);
             var label = intent == "continue" ? "launcher CONTINUE" : "launcher PLAY";
 
-            ForceForegroundWindow(hwnd);
-            Thread.Sleep(100);
-
             LogHitWindowAtPoint(x, y, label, intent);
 
             LogLine(string.Format(
                 "CLICK \"{0}\" intent={1} attempt={2} method=coords at ({3},{4}) fractions=({5:F2},{6:F2}) bounds=({7:F0},{8:F0},{9:F0},{10:F0}) in {11} | foreground {12}",
                 label, intent, _coordAttemptIndex + 1, x, y, xFraction, yFraction, bounds.X, bounds.Y, bounds.Width, bounds.Height, scopeDesc, DescribeForegroundWindow()));
 
-            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
-
-            Thread.Sleep(200);
-            if (DescribeForegroundWindow().IndexOf("Cursor", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
             {
-                LogLine("CLICK WARN launcher coords — foreground stole to IDE after hwnd click");
-                return false;
+                Thread.Sleep(200);
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=hwnd SendMessage-first at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+                if (!RespectUserForeground)
+                {
+                    TryFocusGameOrLauncher();
+                }
+                return true;
             }
 
-            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=hwnd at ({1},{2}) in {3} | foreground after {4}", intent, x, y, scopeDesc, DescribeForegroundWindow()));
-            TryFocusGameOrLauncher();
-            return true;
+            if (!RespectUserForeground)
+            {
+                ForceForegroundWindow(hwnd);
+                Thread.Sleep(100);
+                TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
+                SetCursorPos(x, y);
+                Thread.Sleep(40);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=coords+foreground at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+                TryFocusGameOrLauncher();
+                return true;
+            }
+
+            LogLine("CLICK FAIL launcher coords — SendMessage failed and RespectUserForeground=true (no foreground fallback)");
+            return false;
         }
         catch (Exception ex)
         {
@@ -699,8 +706,9 @@ public static class UIAHelper
                     GetWindowText(hwnd, sb, sb.Capacity);
                     if (sb.Length == 0) return true;
 
+                    if (!IsIconic(hwnd)) return true;
+
                     ShowWindow(hwnd, SW_RESTORE);
-                    ShowWindow(hwnd, 5);
                     restored++;
                 }
                 catch { }
@@ -721,11 +729,6 @@ public static class UIAHelper
         var results = new List<AutomationElement>();
         var pids = GetLauncherProcessIds();
         if (pids.Count == 0) return results;
-
-        if (results.Count == 0)
-        {
-            TryRestoreLauncherWindows();
-        }
 
         try
         {
@@ -761,6 +764,46 @@ public static class UIAHelper
                 }
             }
             catch { }
+        }
+
+        if ($results.Count == 0)
+        {
+            TryRestoreLauncherWindows();
+            try
+            {
+                var windowCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window);
+                var windows = AutomationElement.RootElement.FindAll(TreeScope.Children, windowCondition);
+                foreach (AutomationElement window in windows)
+                {
+                    try
+                    {
+                        if (!pids.Contains(window.Current.ProcessId)) continue;
+                        if (!ContainsWindow(results, window))
+                        {
+                            results.Add(window);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            foreach (var pid in pids)
+            {
+                try
+                {
+                    CollectLauncherWindowsFromPid(pid, results);
+                    var process = Process.GetProcessById(pid);
+                    var hwnd = process.MainWindowHandle;
+                    if (hwnd == IntPtr.Zero) continue;
+                    var fromHandle = AutomationElement.FromHandle(hwnd);
+                    if (fromHandle != null && !ContainsWindow(results, fromHandle))
+                    {
+                        results.Add(fromHandle);
+                    }
+                }
+                catch { }
+            }
         }
 
         return results;
@@ -1056,19 +1099,28 @@ public static class UIAHelper
             var y = (int)(bounds.Y + bounds.Height * 0.72);
             var scopeDesc = DescribeScope(safeModeRoot);
 
-            ForceForegroundWindow(hwnd);
-            Thread.Sleep(80);
             LogLine(string.Format("CLICK \"Safe Mode No\" method=coords at ({0},{1}) in {2}", x, y, scopeDesc));
             if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
             {
                 LogLine("CLICK OK \"Safe Mode No\" method=hwnd-only");
                 return true;
             }
-            SetCursorPos(x, y);
-            Thread.Sleep(40);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            return true;
+            if (!RespectUserForeground)
+            {
+                ForceForegroundWindow(hwnd);
+                Thread.Sleep(80);
+                if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
+                {
+                    LogLine("CLICK OK \"Safe Mode No\" method=hwnd+foreground");
+                    return true;
+                }
+                SetCursorPos(x, y);
+                Thread.Sleep(40);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                return true;
+            }
+            return false;
         }
         catch (Exception ex)
         {
@@ -1469,8 +1521,6 @@ public static class UIAHelper
             }
 
             var scopeDesc = DescribeScope(gameWindow);
-            ForceForegroundWindow(hwnd);
-            Thread.Sleep(250);
             LogLine(string.Format(
                 "CLICK \"Module Mismatch Yes\" method=coords at ({0},{1}) fractions=({2:F2},{3:F2}) in {4}",
                 x, y, xFraction, yFraction, scopeDesc));
@@ -1480,12 +1530,19 @@ public static class UIAHelper
                 _moduleMismatchCoordAttemptIndex++;
                 return true;
             }
-            SetCursorPos(x, y);
-            Thread.Sleep(80);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            _moduleMismatchCoordAttemptIndex++;
-            return true;
+            if (!RespectUserForeground)
+            {
+                ForceForegroundWindow(hwnd);
+                Thread.Sleep(250);
+                TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes");
+                SetCursorPos(x, y);
+                Thread.Sleep(80);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                _moduleMismatchCoordAttemptIndex++;
+                return true;
+            }
+            return false;
         }
         catch (Exception ex)
         {
@@ -1513,6 +1570,12 @@ public static class UIAHelper
         if (scope == null) return;
 
         LogLine(string.Format("FOCUS request ({0}) target={1} | before {2}", reason, DescribeScope(scope), DescribeForegroundWindow()));
+
+        if (RespectUserForeground)
+        {
+            LogLine(string.Format("FOCUS skipped ({0}) — RespectUserForeground", reason));
+            return;
+        }
 
         try
         {
@@ -1593,16 +1656,24 @@ public static class UIAHelper
             if (hwnd != IntPtr.Zero && TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, actionLabel))
             {
                 LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=hwnd-only in {2} | foreground after {3}", actionLabel, buttonName, scopeDesc, DescribeForegroundWindow()));
+                if (!RespectUserForeground)
+                {
+                    TryFocusGameOrLauncher();
+                }
+                return true;
+            }
+            if (!RespectUserForeground)
+            {
+                SetCursorPos(x, y);
+                Thread.Sleep(60);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=mouse at ({2},{3}) in {4} | foreground after {5}", actionLabel, buttonName, x, y, scopeDesc, DescribeForegroundWindow()));
                 TryFocusGameOrLauncher();
                 return true;
             }
-            SetCursorPos(x, y);
-            Thread.Sleep(60);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=mouse at ({2},{3}) in {4} | foreground after {5}", actionLabel, buttonName, x, y, scopeDesc, DescribeForegroundWindow()));
-            TryFocusGameOrLauncher();
-            return true;
+            LogLine(string.Format("CLICK FAIL \"{0}\" — SendMessage failed and RespectUserForeground=true", actionLabel));
+            return false;
         }
         catch (Exception ex)
         {
@@ -1742,6 +1813,9 @@ public static class UIAHelper
     private static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 
     [DllImport("user32.dll")]
@@ -1796,12 +1870,9 @@ public static class UIAHelper
 }
 
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
+[UIAHelper]::RespectUserForeground = $RespectUserForeground
 
-Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms"
-$restoredCount = [UIAHelper]::TryRestoreLauncherWindows()
-if ($restoredCount -gt 0) {
-    Write-LaunchLog "restored $restoredCount launcher window(s) via Win32 ShowWindow"
-}
+Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms respectUserForeground=$RespectUserForeground"
 Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
 [UIAHelper]::LogTopLevelWindows() | Out-Null
 
@@ -1826,10 +1897,8 @@ $preHandoffSuppressedLogged = $false
 $preHandoffMismatchSuppressedLogged = $false
 $handoffStarted = $false
 $lastRefocusUtc = $null
-$cursorTheftSince = $null
 $gameSpawnLogged = $false
 $mismatchCoordAttemptMain = 0
-$lastIdeMinimizeUtc = $null
 $phase1ReadyBaseline = @{}
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 if (Test-Path -LiteralPath $phase1LogPath) {
@@ -2092,7 +2161,7 @@ function Wait-PostHandoffWatchdog {
     while (((Get-Date) - $watchStart).TotalSeconds -lt $loadStallSec) {
         $nowPostHandoffRefocusUtc = [DateTime]::UtcNow
         if (-not $lastPostHandoffRefocusUtc -or ($nowPostHandoffRefocusUtc - $lastPostHandoffRefocusUtc).TotalSeconds -ge 2) {
-            if ((Test-GameProcessRunning) -or [UIAHelper]::HasLauncherRoot()) {
+            if (-not $RespectUserForeground -and ((Test-GameProcessRunning) -or [UIAHelper]::HasLauncherRoot())) {
                 Invoke-BannerlordFocusHelper -Context 'watchdog' | Out-Null
             }
             $lastPostHandoffRefocusUtc = $nowPostHandoffRefocusUtc
@@ -2200,30 +2269,11 @@ function Test-HandoffWhenGameStable {
     return $false
 }
 
-function Test-ForegroundIsAutomationHost {
-    $fg = [UIAHelper]::DescribeForegroundWindow()
-    return $fg -match 'process=(Cursor|Code|WindowsTerminal|Notepad|chrome|msedge|Signal|ms-teams|WhatsApp)' -or
-        $fg -match 'foreground="[^"]*(Cursor|Chrome|Edge|Notepad|Windows Terminal|Signal|Teams|WhatsApp)'
-}
-
-function Test-ForegroundIsBannerlord {
-    $fg = [UIAHelper]::DescribeForegroundWindow()
-    return $fg -match 'process=(Bannerlord|TaleWorlds\.MountAndBlade\.Launcher)'
-}
-
-function Invoke-MinimizeCompetingForeground {
-    if (-not $MinimizeForegroundHosts) { return }
-    if (Test-Path -LiteralPath $minimizeIdePath) {
-        try { & $minimizeIdePath | Out-Null } catch { }
-    }
-}
-
 function Test-LaunchClickVerified {
     param([int]$WaitSec = 4)
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
-        if (Test-ForegroundIsAutomationHost) { return $false }
         if (Test-GameProcessRunning) { return $true }
         if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
         if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
@@ -2243,22 +2293,11 @@ if ($LaunchIntent -eq 'continue') {
 
 try {
 while ((Get-Date) -lt $deadline) {
-    Invoke-MinimizeCompetingForeground
-    [UIAHelper]::TryRestoreLauncherWindows() | Out-Null
-
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
         $envDesc = [UIAHelper]::DescribeEnvironment()
         Write-LaunchLog $envDesc
-        if ($envDesc -match 'foreground="[^"]*Cursor[^"]*"' -and -not [UIAHelper]::HasLauncherRoot() -and -not (Test-GameProcessRunning)) {
-            $theftLimitSec = if ($clickedPlayContinue) { 180 } else { 60 }
-            if (-not $script:cursorTheftSince) {
-                $script:cursorTheftSince = Get-Date
-            } elseif (((Get-Date) - $script:cursorTheftSince).TotalSeconds -ge $theftLimitSec) {
-                Write-LaunchLog 'LAUNCH_STATE=fail_foreground_theft'
-                throw 'launcher automation impossible: Cursor foreground >60s with no launcher/game hwnd'
-            }
-        } else {
-            $script:cursorTheftSince = $null
+        if ($envDesc -match 'launcher=no' -and (Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue)) {
+            Write-LaunchLog 'LAUNCH_STATE=waiting_launcher_hwnd'
         }
         $lastHeartbeat = Get-Date
     }
@@ -2282,14 +2321,12 @@ while ((Get-Date) -lt $deadline) {
         Extend-DeadlineAfterPlayClick
     }
 
-    if ($clickedPlayContinue -and -not $handoffStarted) {
-        if (-not (Test-ForegroundIsBannerlord)) {
-            $refocusIntervalSec = if ([UIAHelper]::HasLauncherLoadingSurface()) { 5 } else { 2 }
-            $nowRefocusUtc = [DateTime]::UtcNow
-            if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge $refocusIntervalSec) {
-                [UIAHelper]::TryFocusGameOrLauncher() | Out-Null
-                $lastRefocusUtc = $nowRefocusUtc
-            }
+    if ($clickedPlayContinue -and -not $handoffStarted -and -not $RespectUserForeground) {
+        $refocusIntervalSec = if ([UIAHelper]::HasLauncherLoadingSurface()) { 5 } else { 2 }
+        $nowRefocusUtc = [DateTime]::UtcNow
+        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge $refocusIntervalSec) {
+            [UIAHelper]::TryFocusGameOrLauncher() | Out-Null
+            $lastRefocusUtc = $nowRefocusUtc
         }
     }
 
@@ -2348,16 +2385,6 @@ while ((Get-Date) -lt $deadline) {
         [UIAHelper]::ResetLauncherClickRetryState()
     }
 
-    if ($MinimizeForegroundHosts -and ([UIAHelper]::HasSafeModeDialog() -or (-not $clickedPlayContinue -and [UIAHelper]::IsLauncherPlayContinueVisible()))) {
-        $nowMinimizeUtc = [DateTime]::UtcNow
-        if (-not $lastIdeMinimizeUtc -or ($nowMinimizeUtc - $lastIdeMinimizeUtc).TotalSeconds -ge 2) {
-            if (Test-Path -LiteralPath $minimizeIdePath) {
-                try { & $minimizeIdePath | Out-Null } catch { }
-            }
-            $lastIdeMinimizeUtc = $nowMinimizeUtc
-        }
-    }
-
     if ([UIAHelper]::ClickSafeModeNo()) {
         if (-not $clickedSafeMode) {
             Write-LaunchLog 'clicked Safe Mode No'
@@ -2365,7 +2392,9 @@ while ((Get-Date) -lt $deadline) {
             Write-LaunchLog 'Safe Mode: No selected — prior session unexpected shutdown; crash on last run suspected (full mod load retained)'
             $clickedSafeMode = $true
             Extend-DeadlineForSlowPath
-            Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
+            if (-not $RespectUserForeground) {
+                Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
+            }
         }
     } elseif ([UIAHelper]::HasSafeModeDialog()) {
         Start-Sleep -Milliseconds 120
@@ -2398,9 +2427,10 @@ while ((Get-Date) -lt $deadline) {
                 }
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
-                $script:cursorTheftSince = $null
                 Extend-DeadlineAfterPlayClick
-                Invoke-BannerlordFocusHelper -Context 'after-play-continue-click' | Out-Null
+                if (-not $RespectUserForeground) {
+                    Invoke-BannerlordFocusHelper -Context 'after-play-continue-click' | Out-Null
+                }
             } else {
                 Write-LaunchLog "click $displayName ($matchedName) NOT verified — PLAY/CONTINUE still on screen; will retry"
                 [UIAHelper]::ResetLauncherClickRetryState()
