@@ -40,6 +40,8 @@ $resolvedHookMask = $HookMask
 if ($resolvedHookMask) {
     $env:TBG_MAP_READY_HOOK_MASK = $resolvedHookMask
     $hookMaskWasSet = $true
+} else {
+    Remove-Item -Path 'Env:TBG_MAP_READY_HOOK_MASK' -ErrorAction SilentlyContinue
 }
 
 $script:LaunchAutomation = [ordered]@{
@@ -331,8 +333,8 @@ function Save-CheckpointEvidence {
         startedAtUtc = $startedAtUtc
         endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
         stableSeconds = $StableSec
-        hookMask = if ($resolvedHookMask) { $resolvedHookMask } else { $env:TBG_MAP_READY_HOOK_MASK }
-        mapReadyHookMask = if ($resolvedHookMask) { $resolvedHookMask } else { $env:TBG_MAP_READY_HOOK_MASK }
+        hookMask = if ($resolvedHookMask) { $resolvedHookMask } else { 'default' }
+        mapReadyHookMask = if ($resolvedHookMask) { $resolvedHookMask } else { 'default (All)' }
         launchState = $script:LaunchAutomation.launchState
         safeModeDetected = [bool]$script:LaunchAutomation.safeModeDetected
         safeModeNoClicked = [bool]$script:LaunchAutomation.safeModeNoClicked
@@ -432,6 +434,29 @@ function Invoke-F7NoClickLaunch {
 
     $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
 
+    if (-not $script:LaunchAutomation.continueClick.success -and (Test-LauncherProcessRunning)) {
+        Write-Host 'Launcher still running without Continue — restarting launcher-auto-nav once...' -ForegroundColor Yellow
+        Invoke-MinimizeIdeForeground | Out-Null
+        $navProc2 = Start-Process -FilePath 'powershell.exe' -ArgumentList $navArgs -PassThru -WindowStyle Hidden
+        $retryDeadline = (Get-Date).AddSeconds(90)
+        while ((Get-Date) -lt $retryDeadline -and -not $navProc2.HasExited) {
+            $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+            if (Test-GameProcessRunning) {
+                Write-F7LaunchState 'game_spawned'
+                return $true
+            }
+            if ($script:LaunchAutomation.continueClick.success) { break }
+            Start-Sleep -Milliseconds 750
+        }
+        if (-not $navProc2.HasExited) {
+            try { $navProc2.WaitForExit(10000) } catch { }
+            if (-not $navProc2.HasExited) {
+                Stop-Process -Id $navProc2.Id -Force -ErrorAction SilentlyContinue
+            }
+        }
+        $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+    }
+
     if (Test-GameProcessRunning -or $script:LaunchAutomation.handoffSeen) {
         if (Test-GameProcessRunning) { Write-F7LaunchState 'game_spawned' }
         return $true
@@ -503,6 +528,7 @@ function Test-LaunchStillStarting {
     if ($GameWasSeen) { return $false }
     if (Test-Phase1SessionActive -SinceUtc $LaunchStartedLocal.ToUniversalTime()) { return $true }
     if ($ElapsedSec -lt 90 -and (Test-LauncherProcessRunning)) { return $true }
+    if ($ElapsedSec -lt 120 -and (Test-LauncherProcessRunning) -and -not $GameWasSeen) { return $true }
     if ($ElapsedSec -lt 45) { return $true }
     return $false
 }
@@ -608,6 +634,9 @@ try {
         $postLaunchSec = ((Get-Date) - $launchEnd).TotalSeconds
         $heartbeatSec = [int][Math]::Floor($elapsedSec / 30)
         if ($heartbeatSec -ne $lastHeartbeatSec) {
+            if ($heartbeatSec -gt 0 -and ($heartbeatSec % 2 -eq 0)) {
+                Invoke-MinimizeIdeForeground | Out-Null
+            }
             Write-F7PollHeartbeat -ElapsedSec $elapsedSec -Signals $lastSignals -EverMapReady $everMapReady `
                 -LaunchState $script:LaunchAutomation.launchState
             $lastHeartbeatSec = $heartbeatSec

@@ -1,0 +1,220 @@
+﻿[2026-06-22 02:27:04] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:05] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:06] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:07] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:08] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:09] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:10] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:12] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:13] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:14] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:15] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:16] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:17] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:18] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:19] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:20] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:21] launcher-auto: env launcher=no game=no foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:27:21] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:22] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:23] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:24] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:25] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:27] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:28] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:28] launcher-auto: env launcher=no game=no foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:27:28] launcher-auto: LAUNCH_STATE=fail_foreground_theft
+[2026-06-22 02:27:28] f7-gate: LAUNCH_STATE=fail_launch_automation
+[2026-06-22 02:27:30] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:32] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:35] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:37] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:39] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:41] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:43] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:45] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:48] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:50] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:27:52] launcher-auto: env launcher=no game=no foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:27:52] launcher-auto: LAUNCH_STATE=fail_foreground_theft
+[2026-06-22 02:27:52] f7-gate: LAUNCH_STATE=fail_launch_automation
+[2026-06-22 02:28:09] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 02:28:09] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 02:28:11] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 02:28:11] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 02:28:12] launcher-auto: session pid=94368 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=450ms
+[2026-06-22 02:28:12] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:12] launcher-auto: UIA: AUDIT top-level windows (14): "CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor"(Cursor); "Signal (16)"(Signal); "Find Hub: Locate, Lock, or Erase Your Device - Google Chrome"(chrome); "PowerShell"(WindowsTerminal); "BlacksmithGuild - File Explorer"(explorer); "(26) Chat | 💻 Neuron Config 🧠 | Microsoft Teams - Google Chrome"(chrome); "run-f7-gate-continue.ps1 - Notepad"(Notepad); "NordVPN "(NordVPN); "Excel"(EXCEL); "Chat | NW PROJECT TEAM | Microsoft Teams"(ms-teams); "WhatsApp"(WhatsApp.Root); "NoAutomationPeer"(DuckDuckGo); "Windows Security"(ApplicationFrameHost); "What's new in Microsoft Edge and 4 more pages - Personal - Microsoft​ Edge"(msedge)
+[2026-06-22 02:28:13] launcher-auto: pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet
+[2026-06-22 02:28:13] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:13] launcher-auto: UIA: FOCUS request (launcher) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | before foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:14] launcher-auto: UIA: FOCUS done (launcher) | after foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:19] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:19] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | before foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:19] launcher-auto: UIA: FOCUS done (launcher coords prep) | after foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:20] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1005,764) hwnd=4135214 title="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:20] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=1 method=coords at (1005,764) fractions=(0.55,0.90) bounds=(498,260,923,560) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | foreground foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:20] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (507,504) screen (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:20] launcher-auto: UIA: CLICK hwnd SendMessage at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:20] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=mouse at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | foreground after foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:28:20] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:28:28] launcher-auto: click CONTINUE (CONTINUE) NOT verified — PLAY/CONTINUE still on screen; will retry
+[2026-06-22 02:28:29] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-22 02:28:29] launcher-auto: UIA: FOCUS request (Safe Mode) target=window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | before foreground="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:29] launcher-auto: UIA: FOCUS done (Safe Mode) | after foreground="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:29] launcher-auto: UIA: CLICK "Safe Mode No" button="No" in window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | foreground before foreground="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:29] launcher-auto: UIA: CLICK OK "Safe Mode No" button="No" method=InvokePattern in window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | foreground after foreground="&No" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:29] launcher-auto: clicked Safe Mode No
+[2026-06-22 02:28:29] launcher-auto: LAUNCH_STATE=safe_mode_no_clicked
+[2026-06-22 02:28:29] launcher-auto: Safe Mode: No selected — prior session unexpected shutdown; crash on last run suspected (full mod load retained)
+[2026-06-22 02:28:29] launcher-auto: post-handoff: refocus game/launcher attempted (after-safe-mode-no)
+[2026-06-22 02:28:33] launcher-auto: post-handoff: refocus game/launcher succeeded (after-safe-mode-no)
+[2026-06-22 02:28:38] launcher-auto: UIA: AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to first hwnd
+[2026-06-22 02:28:38] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | before foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:39] launcher-auto: UIA: FOCUS done (launcher coords prep) | after foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:39] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1113,950) hwnd=9048186 title="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:39] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=2 method=coords at (1113,950) fractions=(0.58,0.88) bounds=(0,0,1920,1080) in window="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | foreground foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:39] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (1113,950) screen (1113,950) in window="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:39] launcher-auto: UIA: CLICK hwnd SendMessage at (1113,950) in window="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:39] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=mouse at (1113,950) in window="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940 | foreground after foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:40] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:40] launcher-auto: clicked CONTINUE (CONTINUE) — launch verified (game or launcher handoff)
+[2026-06-22 02:28:40] launcher-auto: LAUNCH_STATE=continue_clicked
+[2026-06-22 02:28:40] launcher-auto: post-handoff: refocus game/launcher attempted (after-play-continue-click)
+[2026-06-22 02:28:40] launcher-auto: post-handoff: refocus game/launcher succeeded (after-play-continue-click)
+[2026-06-22 02:28:41] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:42] launcher-auto: env launcher=yes game=no foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:44] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:46] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:49] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="Mount and Blade II Bannerlord - Singleplayer PID: 127940 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=127940
+[2026-06-22 02:28:51] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:28:54] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:28:56] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:28:59] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:01] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:04] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:06] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:08] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:10] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:12] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:13] launcher-auto: env launcher=no game=no foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:29:14] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:17] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:19] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:21] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:23] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:26] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:28] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:30] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:32] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:35] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:37] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:39] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:41] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:43] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:44] launcher-auto: env launcher=no game=no foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:29:46] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:48] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:50] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:52] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:54] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:56] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:29:59] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:30:01] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:30:01] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 02:30:01] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 02:30:03] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 02:30:03] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 02:30:04] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:07] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:09] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:12] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:14] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:15] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:17] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:20] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:22] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:24] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:27] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:29] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:31] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:34] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:36] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:39] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:41] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:44] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:46] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:47] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:49] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:51] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:54] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:56] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:30:59] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:01] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:04] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:06] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:08] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:11] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:14] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:16] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:17] launcher-auto: env launcher=yes game=no foreground="Signal (16)" process=Signal pid=97352
+[2026-06-22 02:31:19] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:21] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:24] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:26] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:29] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:31] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:34] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:37] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=109408
+[2026-06-22 02:31:40] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:31:42] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:31:44] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:31:47] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:31:48] launcher-auto: env launcher=no game=no foreground="CampaignMapReadyOrchestrator.cs - BlacksmithGuild - Cursor" process=Cursor pid=90700
+[2026-06-22 02:31:49] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 02:31:49] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 02:31:49] launcher-auto: UIA: FOCUS refocus game/launcher after click — no game or launcher hwnd
+[2026-06-22 02:31:51] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 02:31:51] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 02:31:52] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:31:54] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:31:57] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:31:59] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:01] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:04] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:06] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:09] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:11] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:13] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:16] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:18] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:20] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:21] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:23] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:26] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:28] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:31] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:33] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:35] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:38] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:40] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:43] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:45] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:47] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:50] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:51] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:52] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:55] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:32:57] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:00] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:02] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:04] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:07] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:09] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:12] launcher-auto: UIA: FOCUS refocus game/launcher after click target=launcher | foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=54372
+[2026-06-22 02:33:13] launcher-auto: timeout: visible launcher buttons: no launcher buttons visible in 1 window(s)
+[2026-06-22 02:33:13] f7-gate: LAUNCH_STATE=game_spawned
+[2026-06-22 02:36:25] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 02:36:25] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 02:36:27] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 02:36:27] f7-gate: LAUNCH_STATE=launcher_spawned
