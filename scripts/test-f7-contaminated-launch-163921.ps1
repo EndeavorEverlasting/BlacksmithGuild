@@ -83,9 +83,19 @@ if ($playCert.contaminated) {
 $startedUtc = [datetime]::Parse('2026-06-22T20:39:21.6842631Z', $null, [Globalization.DateTimeStyles]::RoundtripKind)
 $manifestPath = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId\checkpoint-01-f7-gate\manifest.json"
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-$statusPath = [string]$manifest.artifactMeta[0].sourcePath
-if ((Get-F7ArtifactFreshnessState -Path $statusPath -CertStartedUtc $startedUtc) -ne 'stale') {
-    throw 'Session 163921 Status artifact should classify as stale relative to cert start'
+$statusMeta = @($manifest.artifactMeta | Where-Object { $_.name -eq 'BlacksmithGuild_Status.json' })[0]
+if (-not $statusMeta) {
+    throw 'Session 163921 manifest missing Status artifact meta'
+}
+$metaWriteUtc = [datetime]::Parse([string]$statusMeta.lastWriteUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind)
+if ($metaWriteUtc -ge $startedUtc.AddSeconds(-2)) {
+    throw 'Session 163921 Status artifact metadata should classify as stale relative to cert start'
+}
+$evidenceStatus = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId\checkpoint-01-f7-gate\BlacksmithGuild_Status.json"
+if (Test-Path -LiteralPath $evidenceStatus) {
+    if ((Get-F7ArtifactFreshnessState -Path $evidenceStatus -CertStartedUtc $startedUtc) -ne 'stale') {
+        throw 'Session 163921 evidence Status copy should classify as stale relative to cert start'
+    }
 }
 
 Write-Host "PASS offline contaminated launch regression $sessionId"

@@ -618,6 +618,30 @@ function Get-F7GamePhaseAtEnd {
     return 'unknown'
 }
 
+function Test-F7MapTransitionLoadingStall {
+    param(
+        [bool]$EverMapReady,
+        [double]$ElapsedSec,
+        [string]$StatusJsonPath,
+        [datetime]$CertStartedUtc
+    )
+
+    if ($EverMapReady) { return $false }
+    if ($ElapsedSec -lt 90) { return $false }
+    if ((Get-F7ArtifactFreshnessState -Path $StatusJsonPath -CertStartedUtc $CertStartedUtc) -ne 'fresh') {
+        return $false
+    }
+    try {
+        $st = Get-Content -LiteralPath $StatusJsonPath -Raw | ConvertFrom-Json
+        if ($st.campaignReady -eq $true) { return $false }
+        $loading = ($st.quickStart.activeState -eq 'GameLoadingState')
+        if ($st.session -and $st.session.activeState -eq 'GameLoadingState') { $loading = $true }
+        return $loading
+    } catch {
+        return $false
+    }
+}
+
 function Test-F7BannerlordExeRunning {
     return [bool](Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
 }
@@ -639,15 +663,8 @@ function Test-F7GameGoneDefinitive {
     $goneSec = ((Get-Date).ToUniversalTime() - $ended).TotalSeconds
     if ($goneSec -lt 5) { return $false }
 
-    if ([string]$Detection.gameAliveConfidence -in @('phase1_active', 'process_detection_uncertain')) {
-        return $true
-    }
-
-    if (-not (Test-LauncherProcessRunning)) {
-        return $true
-    }
-
-    return $false
+    # Bannerlord.exe gone >=5s after spawn — fail even if launcher menu still open or phase1 ghost.
+    return $true
 }
 
 function Update-F7ProcessTimestamps {
@@ -1276,6 +1293,17 @@ try {
                 Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
                 Exit-F7Gate -Code 2 -CheckpointDir $dir
             }
+        }
+
+        if ($gameEverSeen -and -not $everMapReady -and (Test-F7MapTransitionLoadingStall -EverMapReady $everMapReady `
+                -ElapsedSec $elapsedSec -StatusJsonPath $statusPath -CertStartedUtc $certStartedUtc)) {
+            Write-F7LaunchState 'fail_loading_stall'
+            $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
+            $notes = 'F7 FAIL: MapTransition loading stall (GameLoadingState >=90s, no map-ready)'
+            $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 2 -StableSec 0 -LastSignals $lastSignals `
+                -Notes $notes -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
+            Write-Host "$notes. Evidence: $dir" -ForegroundColor Red
+            Exit-F7Gate -Code 2 -CheckpointDir $dir
         }
 
         if (-not $lastSignals.gameRunning -and -not (Test-LaunchStillStarting -GameRunning $lastSignals.gameRunning `
