@@ -207,6 +207,9 @@ function Get-LaunchAutomationSignals {
         if ($line -match 'handoff:|LAUNCH_STATE=handoff') {
             $script:LaunchAutomation.handoffSeen = $true
         }
+        if ($line -match 'LAUNCH_STATE=fail_foreground_theft|foreground theft') {
+            $script:LaunchAutomation.launchError = 'launcher automation impossible: Cursor foreground >60s with no launcher/game hwnd'
+        }
         if ($line -match 'LAUNCH_STATE=([^;\s]+)') {
             $script:LaunchAutomation.launchState = $Matches[1]
         }
@@ -349,7 +352,10 @@ function Save-CheckpointEvidence {
 }
 
 function Invoke-F7NoClickLaunch {
-    param([int]$TimeoutSec)
+    param(
+        [int]$TimeoutSec,
+        [datetime]$SinceLocal
+    )
 
     Write-F7LaunchState 'polling'
     & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent continue -BannerlordRoot $bannerlordRoot
@@ -357,13 +363,70 @@ function Invoke-F7NoClickLaunch {
     Write-F7LaunchState 'launcher_spawned'
 
     $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
-    try {
-        & $navScript -LaunchIntent continue -BannerlordRoot $bannerlordRoot -TimeoutSec $TimeoutSec
-        return $true
-    } catch {
-        $script:LaunchAutomation.launchError = $_.Exception.Message
-        return $false
+    $navArgs = @(
+        '-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass',
+        '-File', $navScript,
+        '-LaunchIntent', 'continue',
+        '-BannerlordRoot', $bannerlordRoot,
+        '-TimeoutSec', [string]$TimeoutSec
+    )
+
+    Write-Host 'Starting launcher-auto-nav in hidden subprocess (avoids IDE focus theft)...' -ForegroundColor DarkGray
+    $navProc = Start-Process -FilePath 'powershell.exe' -ArgumentList $navArgs -PassThru -WindowStyle Hidden
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSec + 45)
+    $lastParentRefocus = [DateTime]::MinValue
+
+    while ((Get-Date) -lt $deadline) {
+        if ($navProc.HasExited) { break }
+
+        $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+
+        if (Test-GameProcessRunning) {
+            Write-F7LaunchState 'game_spawned'
+            return $true
+        }
+
+        if ($script:LaunchAutomation.handoffSeen) {
+            Write-F7LaunchState 'handoff'
+        }
+
+        $nowRefocus = [DateTime]::UtcNow
+        if (($nowRefocus - $lastParentRefocus).TotalSeconds -ge 2) {
+            Invoke-BannerlordFocusHelper | Out-Null
+            $lastParentRefocus = $nowRefocus
+        }
+
+        if ($script:LaunchAutomation.launchError -match 'fail_foreground_theft|foreground theft') {
+            break
+        }
+
+        Start-Sleep -Milliseconds 750
     }
+
+    if (-not $navProc.HasExited) {
+        try { $navProc.WaitForExit(15000) } catch { }
+        if (-not $navProc.HasExited) {
+            Stop-Process -Id $navProc.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
+
+    if (Test-GameProcessRunning -or $script:LaunchAutomation.handoffSeen) {
+        if (Test-GameProcessRunning) { Write-F7LaunchState 'game_spawned' }
+        return $true
+    }
+
+    if ($navProc.ExitCode -eq 0) {
+        return $true
+    }
+
+    if (-not $script:LaunchAutomation.launchError) {
+        $script:LaunchAutomation.launchError = "launcher-auto-nav exit code $($navProc.ExitCode)"
+    }
+
+    return $false
 }
 
 function Test-LaunchToolingFailure {
@@ -376,6 +439,7 @@ function Test-LaunchToolingFailure {
     $null = Get-LaunchAutomationSignals -SinceLocal $SinceLocal
 
     if ($script:LaunchAutomation.launchError -match 'foreground theft|Cursor foreground') {
+        if (Test-GameProcessRunning) { return $null }
         return 'Cursor foreground theft — launcher automation could not obtain hwnd'
     }
 
@@ -457,7 +521,7 @@ try {
     $launchStartedLocal = $launchStarted
 
     Write-Host "Launching Continue (synchronous no-click, timeout ${LaunchTimeoutSec}s)..." -ForegroundColor Cyan
-    $launchOk = Invoke-F7NoClickLaunch -TimeoutSec $LaunchTimeoutSec
+    $launchOk = Invoke-F7NoClickLaunch -TimeoutSec $LaunchTimeoutSec -SinceLocal $launchStartedLocal
     $null = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
 
     $launchEnd = Get-Date

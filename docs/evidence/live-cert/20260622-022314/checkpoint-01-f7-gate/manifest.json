@@ -1,0 +1,51 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-022314",
+    "passFail":  "FAIL",
+    "exitCode":  1,
+    "startedAtUtc":  "2026-06-22T06:23:14.7245366Z",
+    "endedAtUtc":  "2026-06-22T06:27:28.6516471Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x0F",
+    "mapReadyHookMask":  "0x0F",
+    "launchState":  "fail_launch_automation",
+    "safeModeDetected":  true,
+    "safeModeNoClicked":  true,
+    "continueClick":  {
+                          "attempted":  true,
+                          "success":  true,
+                          "method":  "uia-scoped"
+                      },
+    "lastFocusResult":  null,
+    "launchAutomationError":  "launcher automation impossible: Cursor foreground \u003e60s with no launcher/game hwnd",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  ".",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "[TBG MAPREADY] StatusFlush ok",
+                            "mapReadySeen":  true,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  true,
+                                          "mapTransition":  true,
+                                          "mapReady":  true,
+                                          "bootstrapDisarmed":  true,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  true,
+                          "safeModePromptSeen":  true,
+                          "priorSessionCrashLikely":  true,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  "Game shut down unexpectedly on previous session. Would you like to enable safe mode?"
+                      },
+    "notes":  "LAUNCH FAIL: Cursor foreground theft â€” launcher automation could not obtain hwnd"
+}

@@ -1,22 +1,24 @@
-# Autonomous F7 hook-mask bisect — Agent A evidence runner.
+# Autonomous F7 hook-mask bisect — runs masks sequentially, writes summary JSON.
+param(
+    [string[]]$Masks = @('0x0F', '0x01', '0x00', '0x1DF', '0x1BF')
+)
+
 $ErrorActionPreference = 'Continue'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 
-$masks = @('0x0F', '0x01', '0x00', '0x1DF', '0x1BF')
 $summaryPath = Join-Path $repoRoot 'docs\evidence\live-cert\f7-bisect-summary.json'
 $results = @()
 
-foreach ($mask in $masks) {
+foreach ($mask in $Masks) {
     Write-Host ''
     Write-Host "========== HOOK MASK $mask ==========" -ForegroundColor Cyan
-    taskkill /IM Bannerlord.exe /F 2>$null | Out-Null
-    taskkill /IM TaleWorlds.MountAndBlade.Launcher.exe /F 2>$null
+    Get-Process -Name Bannerlord,TaleWorlds.MountAndBlade.Launcher -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 4
 
-    $env:TBG_MAP_READY_HOOK_MASK = $mask
     $started = Get-Date
-    & (Join-Path $repoRoot 'Run-F7GateContinue.cmd')
+    & (Join-Path $repoRoot 'Run-F7GateContinue.cmd') -HookMask $mask -TimeoutSeconds 300 -StableSeconds 60
     $exitCode = $LASTEXITCODE
     $elapsed = ((Get-Date) - $started).TotalSeconds
 
@@ -25,7 +27,6 @@ foreach ($mask in $masks) {
         Sort-Object Name -Descending |
         Select-Object -First 1
 
-    $manifestPath = $null
     $manifest = $null
     if ($latest) {
         $manifestPath = Join-Path $latest.FullName 'checkpoint-01-f7-gate\manifest.json'
@@ -38,29 +39,23 @@ foreach ($mask in $masks) {
         mask = $mask
         exitCode = $exitCode
         elapsedSec = [int]$elapsed
-        sessionId = if ($manifest) { $manifest.sessionId } else { $latest.Name }
+        sessionId = if ($manifest) { $manifest.sessionId } else { $null }
         passFail = if ($manifest) { $manifest.passFail } else { 'UNKNOWN' }
-        stableSeconds = if ($manifest) { $manifest.stableSeconds } else { 0 }
-        campaignReady = if ($manifest) { $manifest.campaignReady } else { $false }
-        canPollFileInbox = if ($manifest) { $manifest.canPollFileInbox } else { $false }
-        phase1TbgReady = if ($manifest) { $manifest.phase1TbgReady } else { $false }
-        phase1QuickStartMapReady = if ($manifest) { $manifest.phase1QuickStartMapReady } else { $false }
-        phase1LastSignal = if ($manifest) { $manifest.phase1LastSignal } else { $null }
-        notes = if ($manifest) { $manifest.notes } else { $null }
-        manifestPath = $manifestPath
+        launchState = if ($manifest) { $manifest.launchState } else { $null }
+        mapReadySeen = if ($manifest.goldenPathCheck) { $manifest.goldenPathCheck.mapReadySeen } else { $false }
+        tbgReadySeen = if ($manifest.goldenPathCheck) { $manifest.goldenPathCheck.tbgReadySeen } else { $false }
+        firstMissingStep = if ($manifest.goldenPathCheck) { $manifest.goldenPathCheck.firstMissingStep } else { $null }
     }
 
-    Remove-Item Env:TBG_MAP_READY_HOOK_MASK -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 5
+    if ($exitCode -eq 0) {
+        Write-Host "PASS at mask $mask — stopping bisect." -ForegroundColor Green
+        break
+    }
 }
 
-$out = [ordered]@{
-    generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
-    branch = (git rev-parse --abbrev-ref HEAD 2>$null)
-    commit = (git rev-parse --short HEAD 2>$null)
-    masks = $results
-}
-$out | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $summaryPath -Encoding UTF8
+[ordered]@{ generatedUtc = (Get-Date).ToUniversalTime().ToString('o'); results = $results } |
+    ConvertTo-Json -Depth 6 |
+    Set-Content -LiteralPath $summaryPath -Encoding UTF8
+
 Write-Host ''
-Write-Host "Bisect complete. Summary: $summaryPath" -ForegroundColor Green
-$results | ForEach-Object { Write-Host ("  {0}: exit={1} {2}" -f $_.mask, $_.exitCode, $_.passFail) }
+Write-Host "Bisect summary: $summaryPath" -ForegroundColor Cyan

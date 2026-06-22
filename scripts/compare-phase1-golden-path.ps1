@@ -40,11 +40,18 @@ if (-not (Test-Path -LiteralPath $Phase1Path)) {
 }
 
 $lines = Get-Content -LiteralPath $Phase1Path -ErrorAction Stop
+$sessionFresh = (-not $SinceLocal)
 foreach ($line in $lines) {
     if ($SinceLocal -and $line -match '^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]') {
         $lineTime = [datetime]::ParseExact($Matches[1], 'yyyy-MM-dd HH:mm:ss', $null)
         if ($lineTime -lt $SinceLocal) { continue }
     }
+
+    if ($line -match '\[TBG VERSION\] Loaded assembly:') {
+        $sessionFresh = $true
+    }
+
+    if (-not $sessionFresh) { continue }
 
     foreach ($s in $stepOrder) {
         if ($line -match $s.pattern) {
@@ -70,9 +77,10 @@ foreach ($s in $stepOrder) {
 
 $result = [ordered]@{
     available = $true
-    firstMissingStep = $firstMissing
-    mapReadySeen = [bool]$steps.mapReady
-    tbgReadySeen = [bool]$steps.tbgReady
+    sessionFresh = $sessionFresh
+    firstMissingStep = if (-not $sessionFresh) { 'fresh module load ([TBG VERSION])' } else { $firstMissing }
+    mapReadySeen = [bool]($sessionFresh -and $steps.mapReady)
+    tbgReadySeen = [bool]($sessionFresh -and $steps.tbgReady)
     hotkeyTraceAtMapReady = $hotkeyTraceAtMapReady
     steps = $steps
 }
