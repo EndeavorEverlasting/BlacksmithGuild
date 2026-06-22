@@ -52,10 +52,9 @@ namespace BlacksmithGuild
             if (IsCampaignActive())
             {
                 GameSessionState.Refresh();
-                if ((GameSessionState.IsCampaignMapReady || GameSessionState.IsSettlementInteriorReady)
-                    && !CampaignSetupStateTracker.IsMapLoadTransitionWindow
-                    && (CampaignMapReadyOrchestrator.ImmediateHooksCompleted
-                        || CampaignSetupStateTracker.ForwardLaunchCompletedThisProcess))
+                if (GameSessionState.IsSettlementInteriorReady
+                    || (GameSessionState.IsCampaignMapReady
+                        && CampaignMapReadyOrchestrator.ImmediateHooksCompleted))
                 {
                     DevHotkeyHandler.Poll();
                 }

@@ -31,6 +31,8 @@ Evidence example: `docs/evidence/live-cert/20260622-011418/` — Safe Mode @ 01:
 
 **Agent sprint (2026-06-22 01:44, mask `0x0F` + immediate-hooks gate):** `docs/evidence/live-cert/20260622-014437/` — agent shell stuck `MapTransition`, timeout @ 5m; Cursor foreground stole refocus (`launcher window not found`). **Not comparable to USER MapReady crash** — USER terminal required.
 
+**Agent B C# hardening (`fix/f7-post-mapready-csharp-hardening`, stacked on `fix/f7-gate-stability`):** Per-hook `[TBG MAPREADY] begin/ok/failed` logs; orchestrator entry logging; deferred hooks delayed ≥2 campaign ticks; orchestrator runs before `IsMapLoadTransitionWindow` downstream gate; strict SubModule hotkey gate (`IsSettlementInteriorReady || (IsCampaignMapReady && ImmediateHooksCompleted)`). Build PASS. F7 not run (agent shell). USER verify with `Run-F7GateContinue.cmd -HookMask 0x0F`.
+
 ## What shipped this sprint (post-`48cd14f`)
 
 1. **`CampaignMapReadyOrchestrator.ImmediateHooksCompleted`** — set after immediate hooks finish

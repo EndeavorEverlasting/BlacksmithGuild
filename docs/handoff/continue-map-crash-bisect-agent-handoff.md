@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-06-22  
 **Branch:** `fix/f7-gate-stability` @ `376fb3c` — [PR #7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) → `main`  
-**Status:** **MapTransition gate + hotkey-orchestrator gate shipped — USER F7 PASS required**
+**Status:** **Post-MapReady C# hardening in progress on `fix/f7-post-mapready-csharp-hardening` — USER F7 PASS required**
 
 ## Problem
 
@@ -16,6 +16,7 @@ Continue load crash chain on F7 Continue gate. USER path (@ `80ffa31`) now reach
 | **Safe Mode trail** | Launch log + F7 manifest `launchSignals.priorSessionCrashLikely` + `mapReadyHookMask` |
 | **C# load gates** | `IsMapLoadTransitionWindow`; `CanPollHelpHotkeys` map/settlement only |
 | **376fb3c** | `ImmediateHooksCompleted` + SubModule hotkey poll gate (fixes MapReady tick race) |
+| **Agent B C# hardening** (`fix/f7-post-mapready-csharp-hardening`) | Entry/begin/ok/failed MAPREADY logs; 2-tick deferred delay; orchestrator runs before transition-window downstream gate; strict hotkey poll gate |
 
 ## F7 gate results
 
