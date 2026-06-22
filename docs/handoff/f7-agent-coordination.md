@@ -22,7 +22,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `247d89d` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `bfeee00` |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | Gate verdict | **RED** — MapTransition crash (session `030915`) |
@@ -36,7 +36,7 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Hook mask bisect `0x01`–`0x0F`; commit evidence on attempt | `docs/evidence/live-cert/**`, PR #7 | — | — |
+| **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Hook mask bisect `0x01`–`0x0F`; commit evidence | `docs/evidence/live-cert/**`, PR #7 | F7/nav lock active | — |
 | **B** | C# map-ready / MapTransition | `IDLE` | Await bisect results; C# fix if mask isolates hook | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `ff823a6` |
 | **C** | Launcher / focus / nav scripts | `IDLE` | Monitor only unless focus regression in Launch.log | `launcher-auto-nav.ps1`, `run-f7-gate-continue.ps1` | — | `8c18ecd` |
 
@@ -63,7 +63,7 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | — | — | — |
+| `automation` | **A** | F7 bisect complete | `Run-F7GateContinue.cmd` |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
