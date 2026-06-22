@@ -1,0 +1,22 @@
+﻿[2026-06-22 17:59:15] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 17:59:17] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 17:59:17] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 17:59:18] launcher-auto: session pid=137316 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=180ms respectUserForeground=True
+[2026-06-22 17:59:19] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:19] launcher-auto: UIA: AUDIT top-level windows (11): "agent_a_wave_4_f7_cert_8856d454.plan.md - BlacksmithGuild - Cursor"(Cursor); "F7 Continue Cert Strategy - Google Chrome"(chrome); "PR Merge Blocked - Google Chrome"(chrome); "Signal (16)"(Signal); "Downloads - File Explorer"(explorer); "BlacksmithGuild - File Explorer"(explorer); "Windows Security"(ApplicationFrameHost); "NordVPN "(NordVPN); "Chat | NW PROJECT TEAM | Microsoft Teams"(ms-teams); "NoAutomationPeer"(DuckDuckGo); "What's new in Microsoft Edge and 4 more pages - Personal - Microsoft​ Edge"(msedge)
+[2026-06-22 17:59:22] launcher-auto: LAUNCH_STATE=game_spawned
+[2026-06-22 17:59:23] launcher-auto: raised Bannerlord window on game spawn
+[2026-06-22 17:59:24] launcher-auto: LAUNCH_STATE=contaminated_launch_path reason=game_running_before_automation_continue certTarget=continue selectedBy=user
+[2026-06-22 17:59:31] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:31] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452 | before foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:31] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-22 17:59:31] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1005,764) hwnd=48959390 title="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452 launcher_ok=true
+[2026-06-22 17:59:31] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=1 method=coords at (1005,764) fractions=(0.55,0.90) bounds=(498,260,923,560) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452 | foreground foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:31] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (507,504) screen (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:31] launcher-auto: UIA: CLICK hwnd SendMessage at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:32] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-first at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=122452
+[2026-06-22 17:59:33] launcher-auto: clicked CONTINUE (CONTINUE) — launch verified (game or launcher handoff)
+[2026-06-22 17:59:33] launcher-auto: LAUNCH_STATE=continue_clicked selectedBy=automation
+[2026-06-22 17:59:33] launcher-auto: LAUNCH_STATE=fail_contaminated_launch_path
+[2026-06-22 17:59:34] f7-gate: LAUNCH_STATE=game_spawned
+[2026-06-22 17:59:34] f7-gate: LAUNCH_STATE=fail_contaminated_launch_path

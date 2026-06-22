@@ -29,10 +29,10 @@ Every agent **must**:
 | Branch / HEAD | `fix/f7-gate-stability` @ `77059f8` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD**; base retargeted to `fix/f7-gate-stability`; stub runner on PR head — do not merge as-is |
-| Gate verdict | **RED** — session `163921` wave 4 FAIL (contaminated user Play; not judgeable readiness) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-163921/` — honest FAIL (contaminated; stale Phase1/Status) |
-| Launcher cert | **PASS** @ `135217`; `163921` user Play — **blocked by C fix** |
-| Next cert command | Agent A clean F7 Continue cert after pulling C contamination fix |
+| Gate verdict | **RED** — session `175909` fast FAIL (`contaminated_launch_path`; game before automation Continue) |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-175909/` — honest FAIL (C fast-fail works; spawn timing gap) |
+| Launcher cert | **PASS** @ `135217`; C contamination detection @ `77059f8` verified on `175909` |
+| Next cert command | **BLOCKED** — Agent C: prevent `game_running_before_automation_continue` on clean launcher |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
 
 ---
@@ -41,7 +41,7 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IDLE` | Wave 4 cert `163921` committed; gate RED | — | — | pending |
+| **A** | Cert / evidence / git / PR | `IDLE` | Clean cert `175909` committed; gate RED | — | — | pending |
 | **B** | C# map-ready / instrumentation | `DONE` | Readiness storm fix @ session `154012` | `src/.../GameSessionState.cs`, guards | — | `08608c0` |
 | **C** | Launcher / F7 runner | `DONE` | Contamination fix (`163921`) landed | — | — | `77059f8` |
 | **D** | Docs atlas | `DONE` | failure atlas + evidence matrix | `docs/control/indexes/f7-*.md` | — | `a4e9b93` |
@@ -79,6 +79,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A Clean Cert → C (session `175909`)
+
+- **Preflight:** Release build PASS; grep guard PASS; runner contract PASS (incl. `163921` contamination regression).
+- **Ran:** `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` — exit **2** (~26s fast fail).
+- **C fix verified:** `failureReason=contaminated_launch_path`, `readinessJudged=false`, no readiness poll; `evidenceCompleteness=sufficient`.
+- **Gate FAIL:** `game_spawned` @ 17:59:22 before automation Continue @ 17:59:33; `targetMismatchReason=game_running_before_automation_continue`.
+- **Not `163921` pattern:** no user Play click; contamination attributed to pre-automation game spawn (`selectedBy=user` on spawn event).
+- **Artifacts:** Phase1/Status/CrashContext stale (pre-cert); golden path blocked at fresh module load.
+- **Process detection:** `gameProcessRunning=true`, `launcher_hosted_window`; Watchdog `launcher_child_weak`.
+- **PR #7:** **NOT MERGED** (gate RED).
+- **Need from C:** Ensure clean launcher open does not spawn/resume game before automation Continue click.
 
 ### 2026-06-22 — Agent C → A (contaminated launch handoff fix @ session `163921`)
 
@@ -339,6 +351,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] F7 wave 2 cert `150405` — honest FAIL (MapTransition; harvest partial)
 - [x] F7 wave 3 cert `154012` — honest FAIL (Refresh storm; harvest sufficient; user Quyaz vs runner game=gone)
 - [x] F7 wave 4 cert `163921` — honest FAIL (contaminated; user Play handoff; targetMismatch)
+- [x] Clean F7 cert `175909` — honest FAIL (fast fail; game before automation Continue)
 - [ ] Merge PR #7 only on manifest PASS
 
 **B**
