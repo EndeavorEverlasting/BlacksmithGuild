@@ -80,6 +80,7 @@ namespace BlacksmithGuild.Behaviors
             GameSessionState.Refresh();
 
             TreasuryDeltaWatchService.ProcessPendingSnapshot();
+            AutoTravelService.OnCampaignTick();
 
             if (!_hasAnnouncedCampaignMapReady && GameSessionState.IsCampaignMapReady)
             {

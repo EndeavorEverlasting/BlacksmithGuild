@@ -46,7 +46,15 @@ function Get-DevCommandNames {
         'GenerateCharacterBuildCandidatesNow',
         'SelectCharacterBuildBestNow',
         'RunCharacterVisibleReplayNow',
-        'DumpCharacterBuildSnapshotNow'
+        'DumpCharacterBuildSnapshotNow',
+        'ShowAutoTravelChoices',
+        'AutoTravelToRecommended',
+        'AutoTravelChoice1',
+        'AutoTravelChoice2',
+        'AutoTravelChoice3',
+        'AutoTravelChoice4',
+        'AutoTravelChoice5'
+        # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }
 

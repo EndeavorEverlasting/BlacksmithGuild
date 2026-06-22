@@ -62,7 +62,14 @@ namespace BlacksmithGuild.DevTools
                 MarketIntelligenceService.MarketSnapshotNowCommand,
                 HorseMarketRecommendationService.AnalyzeHorseMarketCommand,
                 HorseMarketRecommendationService.ShowHorseMarketIntelCommand,
-                HorseMarketRecommendationService.RankHorseMarketActionsCommand
+                HorseMarketRecommendationService.RankHorseMarketActionsCommand,
+                AutoTravelService.ShowAutoTravelChoicesCommand,
+                AutoTravelService.AutoTravelToRecommendedCommand,
+                AutoTravelService.AutoTravelChoice1Command,
+                AutoTravelService.AutoTravelChoice2Command,
+                AutoTravelService.AutoTravelChoice3Command,
+                AutoTravelService.AutoTravelChoice4Command,
+                AutoTravelService.AutoTravelChoice5Command
             };
 
         public static bool IsRegistered(string commandName)

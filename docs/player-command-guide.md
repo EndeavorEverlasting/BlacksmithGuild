@@ -70,6 +70,8 @@ If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M
 | **Visible personal cert (008C-Fix)** | — | `.\RunCharacterBuildVisibleCert.cmd` | `BlacksmithGuild_CharacterVisibleReplay.json` | **Required gate for TBGPersonalAserai001** |
 | Legitimacy assert (read-only) | — | `.\scripts\assert-character-legitimacy.ps1 -PersonalCert` | stdout JSON | Provenance + Phase1 session checks |
 | Blacksmith automation | — | `.\forge.ps1 -Command RunBlacksmithAutomationNow -Wait` | `BlacksmithGuild_BlacksmithAutomation.json` | One bounded safe action (charcoal refine or clean block) |
+| Auto-travel choices | — | `.\forge.ps1 -Command ShowAutoTravelChoices -Wait` | Phase1 `[TBG TRAVEL]` lines | Read-only ranked town/village list (campaign map required) |
+| Auto-travel move | — | `.\forge.ps1 -Command AutoTravelChoice1 -Wait` | Phase1 `[TBG TRAVEL] auto-travel started` | Tier 2 mutation — main party map movement + hostile pause monitor |
 | Export evidence | — | `.\ExportTbgEvidence.cmd` | `docs/evidence/latest/README.md` | Repo-local snapshot for agents |
 
 ---

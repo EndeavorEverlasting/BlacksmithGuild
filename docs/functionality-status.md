@@ -161,7 +161,7 @@ Use on **disposable save** (`Forge.cmd`) or **Continue save** after cert:
 |------|----------|-------|
 | Auto buy/sell | — | Read-only market intel; scope-locked |
 | Stamina posse automation (005E) | [005e-smithing-posse-stamina-output.plan.md](plans/005e-smithing-posse-stamina-output.plan.md) | **UNBLOCKED** — Stage C proved headless mutation; crew rotation next |
-| Party travel / map automation | — | **Future** — hero traverses map, enacts orders; proves party-level automation substrate (after 005E slice) |
+| Party travel / map automation | [007-auto-travel.plan.md](plans/007-auto-travel.plan.md) | **Shipped (Tier 2 smoke pending)** — inbox `ShowAutoTravelChoices`, `AutoTravelChoice1-5`, `AutoTravel:<town>`; hostile pause monitor on campaign tick |
 | Forge ↔ market bridge (forge rank) | — | Per-material buy steps when Real + cached Ctrl+Alt+M — **code shipped**; Track 2B FORGE MATERIALS section **shipped** |
 | Gauntlet trade UI panel | [005e-market-intelligence-shop-hotkey.plan.md](plans/005e-market-intelligence-shop-hotkey.plan.md) | BACKLOG |
 | Travel cost / gold / carry weight in routes | — | Pure price spread ranking only |

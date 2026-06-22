@@ -34,7 +34,7 @@ dotnet build -c Release
 | Stage C charcoal refine | **3** | **USER PASS 2026-06-20** |
 | Track 2B FORGE MATERIALS | 1 | Code shipped — optional |
 | 005E smithing posse automation | 2–3 | **UNBLOCKED** — next engineering |
-| Party travel automation | — | Future — after 005E slice |
+| Party travel automation | **2** | **Shipped (Tier 2 smoke pending)** — see [007-auto-travel.plan.md](plans/007-auto-travel.plan.md) |
 
 ---
 
@@ -102,6 +102,29 @@ If you intentionally run Stage C with hardwood = 0, the mod correctly blocks wit
 | Wrong formula | Hardwood→charcoal formula selection only |
 | Stamina fails | Pre-check + one action (already capped at 1) |
 | Wrong game state | Clearer blocked JSON reason |
+
+---
+
+## Party travel cert (Tier 2) — smoke pending
+
+**Status:** Code integrated on `integrate/pr-1-auto-travel`; **USER smoke not yet recorded**.
+
+**Save:** Disposable or Continue save on campaign map (`campaignReady: true`).
+
+```powershell
+.\forge.ps1 -Command ShowAutoTravelChoices -Wait
+.\forge.ps1 -Command AutoTravelChoice1 -Wait
+```
+
+**PASS when Phase1 contains:**
+
+```text
+[TBG TRAVEL] auto-travel started to <town>
+```
+
+Optional: visual party movement on map; hostile pause when a war party blocks the route.
+
+Full plan: [007-auto-travel.plan.md](plans/007-auto-travel.plan.md)
 
 ---
 

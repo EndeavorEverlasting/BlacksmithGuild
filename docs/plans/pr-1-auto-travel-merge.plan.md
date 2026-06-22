@@ -3,7 +3,21 @@
 **PR:** https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/1  
 **Branch:** `codex/add-auto-travel-feature-with-route-avoidance`  
 **Base at fork time:** `1cddb09` (66 commits behind current `main`)  
-**Status:** OPEN — not mergeable without rebase + P1 API fix + local build/smoke
+**Status:** INTEGRATED on `integrate/pr-1-auto-travel` — rebase + P1 API fix + review fixes applied; **Tier 2 smoke pending**; **not merged to main**
+
+---
+
+## Integration status (2026-06-21 session)
+
+| Step | Status |
+|------|--------|
+| Rebase onto `main` (`1dcff32`) | **DONE** — conflicts resolved in `DevCommandRegistry.cs`, `DevCommandBus.cs` |
+| P1 movement API | **FIXED** — `MobileParty.SetMoveGoToSettlement(..., NavigationType.Default, false)` (v1.4.6 DLL verified; not on `party.Ai`) |
+| Review fixes | **DONE** — try/catch invoke, hold-before-clear, empty FindSettlement guard, hostile throttle + pre-filter, aligned messaging |
+| Wiring | **DONE** — `dev-command-names.ps1`, player guide, functionality-status, certification-doctrine, `plans/007-auto-travel.plan.md` |
+| `dotnet build -c Release` | Run after rebase continue |
+| Tier 2 smoke | **PENDING** — requires campaign map + `[TBG TRAVEL] auto-travel started` in Phase1 |
+| Merge to `main` / PR #1 | **BLOCKED** until smoke PASS |
 
 ---
 
@@ -44,19 +58,13 @@
 
 ### P1 — Movement API wrong (Codex review)
 
-PR reflects on `MobileParty` for `SetMoveGoToSettlement(Settlement)`.
-
-On Bannerlord **v1.4.6** target, movement order is on **`MobileParty.Ai`**:
+PR reflected on `MobileParty` with a single-`Settlement` signature. On Bannerlord **v1.4.6** the method is still on **`MobileParty`** (not `party.Ai`) but requires **`(Settlement, NavigationType, Boolean)`**:
 
 ```csharp
-// Expected pattern (verify against installed TaleWorlds.CampaignSystem.dll):
-party.Ai.SetMoveGoToSettlement(destination, ...);
+party.SetMoveGoToSettlement(destination, MobileParty.NavigationType.Default, false);
 ```
 
-Current code looks for non-existent `AiSetMoveGoToSettlement` on `MobileParty` → **all travel commands likely fail** with:
-`Bannerlord move-to-settlement API was unavailable`
-
-**Action:** Inspect `MobileParty` / `MobilePartyAi` in game DLLs; implement `party.Ai` path first; keep reflection fallbacks with try/catch.
+**Fixed in integration:** direct API call first; reflection fallbacks for `party.Ai` and legacy signatures with try/catch.
 
 ### P1 — Rebase 66 commits
 
@@ -88,15 +96,15 @@ Branch forked at `1cddb09`. Current `main` has:
 
 ## Missing wiring (vs current main conventions)
 
-PR branch does NOT include:
+PR branch does NOT include (integration branch adds):
 
-- [ ] `scripts/dev-command-names.ps1` — add 7 command names + dynamic `AutoTravel:` note
-- [ ] `docs/player-command-guide.md` — travel row + campaign-map prerequisite
+- [x] `scripts/dev-command-names.ps1` — 7 command names + dynamic `AutoTravel:` note
+- [x] `docs/player-command-guide.md` — travel rows + campaign-map prerequisite
 - [ ] `scripts/export-tbg-evidence.ps1` — if travel JSON added later
 - [ ] `DevTools/CommandSurfaceService.cs` — hotkey (optional) or inbox listing
-- [ ] `docs/certification-doctrine.md` — Tier 2 travel mutation cert rubric
-- [ ] `docs/functionality-status.md` — update "Party travel" from Future → Shipped (after PASS)
-- [ ] Move `docs/sprint-007-auto-travel.md` → `docs/plans/007-auto-travel.plan.md` (repo convention)
+- [x] `docs/certification-doctrine.md` — Tier 2 travel mutation cert rubric
+- [x] `docs/functionality-status.md` — Party travel → Shipped (Tier 2 smoke pending)
+- [x] `docs/sprint-007-auto-travel.md` → `docs/plans/007-auto-travel.plan.md`
 
 ---
 
