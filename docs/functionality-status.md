@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-22 (Agent B cert sprint — build PASS; live certs BLOCKED pending manual launch)  
+**Last updated:** 2026-06-22 (Agent B — build PASS; **both Forge.cmd and ForgeContinue.cmd CRASH** before stable F7 gate)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `15d1611` — **not cert-complete**; all 006B/006C/009A USER certs **PENDING**
+**Branch:** `main` @ `aa46ea0` — **not cert-complete**; all 006B/006C/009A USER certs **BLOCKED on crash**
 
 Canonical snapshot of what works today, what is certified, and what is not built yet.
 
@@ -16,33 +16,37 @@ Canonical snapshot of what works today, what is certified, and what is not built
 
 ## Live cert marathon — current verdict (2026-06-22)
 
-**Not cert-complete.** No honest PASS/FAIL for 006B / 006C-1 / 006C-2 / 006C-3 / 009A until fresh evidence after manual-launch `-SkipLaunch` run + `ExportTbgEvidence.cmd`.
+**Not cert-complete.** Both launch paths **hard-crash** before a stable F7 gate (`campaignReady: true` + `canPollFileInbox: true` for ≥60s). No honest PASS/FAIL for 006B / 006C-1 / 006C-2 / 006C-3 / 009A.
 
 | Check | Verdict | Notes |
 |-------|---------|-------|
-| `dotnet build -c Release` | **PASS** | Verified 2026-06-22 — 0 warnings, mod installed |
-| Disposable marathon bootstrap | **BLOCKED** | Checkpoint 1 map-ready timeout — launcher focus/UIA, not feature failure |
-| Continue marathon | **NOT RUN** | Needs manual `ForgeContinue.cmd` + F7 ready + `-SkipLaunch` |
-| 006B abort | **PENDING** | Needs `AutonomousGuildLoop.json` → `verdict: Aborted` |
-| 006C-1 vanilla buy | **PENDING** | Needs `goldDelta < 0`, `quantityBought > 0` |
-| 006C-2 pack animal | **PENDING** | Needs pack-animal probe/exec success |
-| 006C-3 weapon smelt | **PENDING** | Needs weapon count down + material up in smelt JSON |
-| 009A clan intel | **PENDING** | Needs 6 clan JSON files |
-| Faction posture | **PENDING** | Needs `ClanContext.factionPowerPosture.powerVerdict` |
+| `dotnet build -c Release` | **PASS** | Verified 2026-06-22 — 0 warnings, v0.0.11 installed |
+| Disposable `Forge.cmd` bootstrap | **CRASH** | Phase1 MapTransition 00:13:40, no TBG READY; process gone ~00:14:06 |
+| Continue `ForgeContinue.cmd` bootstrap | **CRASH** | Phase1 map-ready Quyaz 00:20:34; process gone ~00:20:36; manifest `live-cert/20260622-002034/` |
+| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked — crash before stable F7 |
+| Disposable marathon (-SkipLaunch) | **NOT RUN** | Blocked — crash before map-ready |
+| 006B abort | **BLOCKED** | Crash |
+| 006C-1 vanilla buy | **BLOCKED** | Crash |
+| 006C-2 pack animal | **BLOCKED** | Crash |
+| 006C-3 weapon smelt | **BLOCKED** | Crash |
+| 009A clan intel | **BLOCKED** | Crash |
+| Faction posture | **BLOCKED** | Crash |
 
-**Cold rule:** no map-ready → no verdict. Do not “fix” launcher automation for this sprint.
+**Cold rule:** no stable map-ready → no verdict. Fix crash first; do not burn time on launcher UIA.
 
-**Next local path:**
+**Crash triage notes:** Continue reaches map-ready in Phase1 then dies ~2s later (town menu open at Quyaz). Safe Mode on every launch. No engine crash dump captured. See [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md).
+
+**Next local path (after crash fix):**
 
 ```powershell
-.\Forge.cmd   # keep launcher focused; F7 campaignReady:true + canPollFileInbox:true
-.\Run-LiveAssistiveCert.cmd -Session disposable -SkipLaunch -FromCheckpoint 2
-.\ForgeContinue.cmd   # same F7 gate
+# User terminal — close Bannerlord, keep game window focused
+.\ForgeContinue.cmd
+# F7: campaignReady:true + canPollFileInbox:true (stable ≥60s)
 .\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
 .\ExportTbgEvidence.cmd
 ```
 
-Stale evidence: `docs/evidence/latest/README.md` predates failed marathon (`2026-06-21T00:27:42Z`). Re-export after cert run.
+Stale evidence: `docs/evidence/latest/README.md` predates marathon (`2026-06-21T00:27:42Z`). Re-export after stable cert run.
 
 ---
 

@@ -1,0 +1,10 @@
+[2026-06-22 00:20:34] [TBG QUICKSTART] bootstrap disarmed: campaign map ready
+[2026-06-22 00:20:34] Blacksmith Guild — Ready: campaign map ready. Press F8 for commands.
+[2026-06-22 00:20:34] Blacksmith Guild — Market: Press Ctrl+Alt+M for market intel.
+[2026-06-22 00:20:34] [TBG TEST] Campaign map ready; dev hotkeys are now meaningful.
+[2026-06-22 00:20:34] [TBG HOTKEY TRACE] CanPollHotkeys=true; activeState=MapState; atMenu=true; missionActive=false
+[2026-06-22 00:20:34] [TBG HOTKEY TRACE] READY at menu=town; F-keys may be swallowed — use Ctrl+Alt+7-1 or close panel
+[2026-06-22 00:20:34] TBG WARN: Map menu open — close panel for F-keys, or use Ctrl+Alt+7-1.
+[2026-06-22 00:20:34] [TBG TEST] [TBG TREASURY] Treasury Delta Watch initialized.
+[2026-06-22 00:20:34] [TBG CHARACTER] postMapProfileApply skipped: VanillaLegit
+[2026-06-22 00:20:34] TBG CHARACTER: AseraiTradeSmith | VanillaLegit + Assistive | postMapInjection off.

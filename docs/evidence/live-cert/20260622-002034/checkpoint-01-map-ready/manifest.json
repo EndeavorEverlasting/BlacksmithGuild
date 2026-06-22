@@ -1,0 +1,11 @@
+{
+  "generatedUtc": "2026-06-22T04:21:30.0000000Z",
+  "sessionId": "20260622-002034",
+  "checkpoint": 1,
+  "name": "map-ready",
+  "phase": "continue-load",
+  "commands": ["ForgeContinue.cmd"],
+  "passFail": "FAIL",
+  "notes": "Phase1 reached campaign map ready at Quyaz (00:20:34) with canPollFileInbox=true; Bannerlord process vanished ~2s later before campaignReady flipped true. Launch.log: launcher=no game=no from 00:20:36. No engine crash dump. RankForgeCandidates NRE on load (non-fatal). Safe Mode dismissed. Cert marathon BLOCKED.",
+  "factionPowerPosture": null
+}
