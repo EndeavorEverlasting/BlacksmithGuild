@@ -1,7 +1,7 @@
 # 006C-4 — Sell Driver + Multi-Cycle Guild Loop
 
-**Branch:** `feat/006c-4-sell-loop` @ `0f5d66b` (rebased on `main` @ `0c9f171`)  
-**Status:** CODE SHIPPED — build PASS — **USER live cert PENDING** (F7 gate not confirmed)  
+**Branch:** `feat/006c-4-sell-loop` @ `027ac31` (rebased on `main` @ `2dfff05`)  
+**Status:** CODE SHIPPED — build PASS — **USER live cert PENDING** (F7 gate FAIL in agent shell; USER verify required)  
 **PR:** #5 (draft) → `main`
 
 ---
