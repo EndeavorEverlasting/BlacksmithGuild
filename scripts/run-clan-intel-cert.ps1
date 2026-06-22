@@ -62,5 +62,29 @@ if ($missing.Count -gt 0) {
     Write-Error "Missing evidence files: $($missing -join ', ')"
 }
 
-Write-Host 'PASS: all clan intel JSON files present.' -ForegroundColor Green
+$failures = @()
+foreach ($file in $expectedFiles) {
+    $path = Join-Path $bannerlordRoot $file
+    try {
+        $json = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+        if ($json.readOnly -ne $true) {
+            $failures += "$file readOnly not true"
+        }
+        if ($json.mutationApplied -eq $true) {
+            $failures += "$file mutationApplied is true"
+        }
+        if ([string]::IsNullOrWhiteSpace($json.verdict)) {
+            $failures += "$file verdict empty"
+        }
+    }
+    catch {
+        $failures += "$file invalid JSON: $($_.Exception.Message)"
+    }
+}
+
+if ($failures.Count -gt 0) {
+    Write-Error "Cert rubric failures:`n$($failures -join "`n")"
+}
+
+Write-Host 'PASS: all clan intel JSON files present and rubric OK.' -ForegroundColor Green
 exit 0
