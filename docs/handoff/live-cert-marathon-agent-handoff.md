@@ -106,9 +106,15 @@ If Continue stable, optionally retry disposable after bootstrap fix (006E backlo
 - 009A T3 courtship execution
 - Ctrl+Alt+B hotkey cert separate from inbox abort
 
-## Parallel sprint
+## Parallel sprint (branch SHAs after Agent C hygiene, 2026-06-22)
 
-- **Agent B (first):** crash repro → stable Continue → `-SkipLaunch` certs → export
-- **Agent A:** `feat/006c-4-sell-loop` — **only after** Agent B confirms stable map + 006C-1/2/3 PASS
+| Branch | SHA | PR | Gate |
+|--------|-----|-----|------|
+| `main` | `9d1dc98` | — | USER F7 verify |
+| `feat/006c-4-sell-loop` | `eddb23e` | [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft | F7 + build |
+| `feat/006c-4b-second-leg-travel` | `e45691a` | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft | F7 + #5 base |
 
-Do not merge Agent A until crash resolved and Continue certs pass.
+- **Agent B (first):** USER F7 verify on `main` → `-SkipLaunch` cert marathon → export
+- **Agent A:** spread sell cert on rebased `feat/006c-4b-second-leg-travel` — **only after** Agent B confirms stable map
+
+Do not merge PR #5/#6 until USER F7 PASS (or explicit waive).

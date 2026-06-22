@@ -31,8 +31,12 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 
 Bisect: `$env:TBG_MAP_READY_HOOK_MASK = "0xEF"` (skip Treasury), `"0xDF"` (skip AutoCharacterBuild), `"0x0F"` (immediate only).
 
+## Obsolete branch
+
+`fix/continue-map-crash-bisect` — same fix as `main` (`5839e64`); safe to delete from origin after doc sync.
+
 ## Parallel
 
-Agent A `feat/006c-4-sell-loop` @ `eddb23e` (rebased on main) — merge after USER confirms stable F7.
+Agent A `feat/006c-4-sell-loop` @ `eddb23e` (rebased on main) — [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft; merge after USER confirms stable F7.
 
-Agent C `feat/006c-4b-second-leg-travel` @ `db9c3b7` — **WIP, build FAIL** (missing `ForgeAdvisorSmoke` in enum; rebase onto main before continuing).
+Agent C `feat/006c-4b-second-leg-travel` @ `e45691a` (rebased on `eddb23e`) — [PR #6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft; Release build **PASS** 2026-06-22.

@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-22 (crash fix on `fix/continue-map-crash-bisect` — USER verify pending)  
+**Last updated:** 2026-06-22 (crash fix merged to `main` @ `9d1dc98` — USER verify pending)  
 **Mod version:** `v0.0.11`  
-**Branch:** `fix/continue-map-crash-bisect` — live certs blocked until stable F7 USER PASS
+**Branch:** `main` @ `9d1dc98` — live certs blocked until stable F7 USER PASS
 
 **Next handoff:** [handoff/continue-map-crash-bisect-agent-handoff.md](handoff/continue-map-crash-bisect-agent-handoff.md)  
 **Live cert marathon:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
