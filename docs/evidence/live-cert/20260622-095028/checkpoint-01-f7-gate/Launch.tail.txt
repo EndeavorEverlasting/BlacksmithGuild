@@ -1,0 +1,8 @@
+﻿[2026-06-22 09:50:33] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 09:50:35] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 09:50:35] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 09:50:35] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 09:50:40] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 09:50:40] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 09:50:43] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 09:50:43] f7-gate: LAUNCH_STATE=launcher_spawned

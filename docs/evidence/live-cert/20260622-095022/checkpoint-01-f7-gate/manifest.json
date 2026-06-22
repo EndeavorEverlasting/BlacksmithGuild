@@ -1,0 +1,51 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-095022",
+    "passFail":  "FAIL",
+    "exitCode":  1,
+    "startedAtUtc":  "2026-06-22T13:50:22.7679153Z",
+    "endedAtUtc":  "2026-06-22T13:50:29.8392396Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x01",
+    "mapReadyHookMask":  "0x01",
+    "launchState":  "fail_launch_automation",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  false,
+    "continueClick":  {
+                          "attempted":  false,
+                          "success":  false,
+                          "method":  "unknown"
+                      },
+    "lastFocusResult":  null,
+    "launchAutomationError":  "launcher nav already running (lock C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Launch.lock age \u003c 10 min) — stop ForgeContinue/F7/Run-LauncherNavNow first",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  ".",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "fresh module load ([TBG VERSION])",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  false,
+                                          "mapTransition":  false,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  false,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  false,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "LAUNCH FAIL: launcher-auto-nav failed: Continue not clicked and no game/launcher process"
+}

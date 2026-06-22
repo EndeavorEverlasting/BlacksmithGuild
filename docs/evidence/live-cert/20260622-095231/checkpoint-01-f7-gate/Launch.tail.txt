@@ -1,0 +1,11 @@
+﻿[2026-06-22 09:52:39] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 09:52:39] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 09:52:39] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 09:53:16] f7-gate: LAUNCH_STATE=polling
+[2026-06-22 09:53:16] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-22 09:53:19] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 09:53:19] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 09:53:19] launcher-auto: session pid=125452 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=180ms respectUserForeground=True
+[2026-06-22 09:53:19] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=96944
+[2026-06-22 09:53:20] launcher-auto: UIA: AUDIT top-level windows (12): "f7_agent_coordination_doc_2736e780.plan.md - BlacksmithGuild - Cursor"(Cursor); "Signal (16)"(Signal); "Excel Part Number Configuration - Google Chrome"(chrome); "Downloads - File Explorer"(explorer); "BlacksmithGuild - File Explorer"(explorer); "Windows Security"(ApplicationFrameHost); "NordVPN "(NordVPN); "Chat | NW PROJECT TEAM | Microsoft Teams"(ms-teams); "NoAutomationPeer"(DuckDuckGo); "run-f7-gate-continue.ps1 - Notepad"(Notepad); "Mod cert review process - Google Chrome"(chrome); "What's new in Microsoft Edge and 4 more pages - Personal - Microsoft​ Edge"(msedge)
+[2026-06-22 09:53:20] launcher-auto: pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet

@@ -46,6 +46,7 @@ $script:LaunchAutomation = [ordered]@{
 
 function Write-F7LaunchState {
     param([string]$State)
+    if ($script:LaunchAutomation.launchState -eq $State) { return }
     $script:LaunchAutomation.launchState = $State
     $line = "f7-gate: LAUNCH_STATE=$State"
     Write-Host $line -ForegroundColor Yellow
@@ -53,6 +54,11 @@ function Write-F7LaunchState {
 }
 
 function Stop-BannerlordProcesses {
+    $lockPath = Get-NavLockPath -BannerlordRoot $bannerlordRoot
+    if (Test-Path -LiteralPath $lockPath) {
+        Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+        Write-Host "Cleared nav lock for F7 cert: $lockPath" -ForegroundColor DarkYellow
+    }
     foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
         Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Host "Stopping $name (PID $($_.Id))..." -ForegroundColor DarkYellow
@@ -579,7 +585,7 @@ try {
     $gameEverSeen = $false
     $lastHeartbeatSec = -1
 
-    Write-Host "Polling up to ${PollTimeoutSec}s (stable ${StableSeconds}s required, passive — no refocus)..." -ForegroundColor Cyan
+    Write-Host "Polling up to ${PollTimeoutSec}s (stable ${StableSeconds}s required, passive - no refocus)..." -ForegroundColor Cyan
 
     while ((Get-Date) -lt $deadline) {
         $lastSignals = Get-F7GateSignals
@@ -628,7 +634,7 @@ try {
                 $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
                 $dir = Save-CheckpointEvidence -PassFail 'PASS' -ExitCode 0 -StableSec $stableSec -LastSignals $lastSignals `
                     -Notes "F7 gate stable for >=${StableSeconds}s" -LaunchSignals $launchSignals -SinceLocal $launchStartedLocal
-                Write-Host "F7 gate PASS (${stableSec}s stable). Evidence: $dir" -ForegroundColor Green
+                Write-Host "F7 gate PASS ($stableSec s stable). Evidence: $dir" -ForegroundColor Green
                 exit 0
             }
         } else {

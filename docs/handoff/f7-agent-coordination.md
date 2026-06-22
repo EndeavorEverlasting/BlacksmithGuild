@@ -23,11 +23,11 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `bfeee00` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `4218842` (+ Agent A uncommitted cert fixes) |
 | Prior baseline | `ff823a6` (Agent B), `8c18ecd` (Agent C RespectUserForeground) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — open until F7 PASS |
-| Gate verdict | **RED** — MapTransition crash (session `030915`) |
-| Last F7 evidence | `docs/evidence/live-cert/20260622-030915/checkpoint-01-f7-gate/` |
+| Gate verdict | **RED** — map-ready seen then crash (session `095326` mask `0x01`); prior `030915` MapTransition-only |
+| Last F7 evidence | `docs/evidence/live-cert/20260622-095140/` + bisect summary; session `095326` reached TBG READY (no manifest — log write race) |
 | Launcher cert | **PASS** — `continue_clicked`, Safe Mode No, `game_spawned` (session `030915`) |
 | Next cert command | `.\Run-F7GateContinue.cmd -HookMask 0x0F` (external PS; stop other Forge terminals first) |
 | Fresh-game baseline | `.\Forge.cmd` or `.\Run-LauncherNavPlay.cmd` (PLAY — no dev save; use when Continue/MapTransition is muddy) |
@@ -38,9 +38,9 @@ Every agent **must**:
 
 | Agent | Role | Status | Current task | Files in flight | Blockers for others | Last commit |
 |-------|------|--------|--------------|-----------------|---------------------|-------------|
-| **A** | Cert / evidence / git / PR | `IN_PROGRESS` | Hook mask bisect `0x01`–`0x0F`; commit evidence | `docs/evidence/live-cert/**`, PR #7 | F7/nav lock active | — |
-| **B** | C# map-ready / MapTransition | `IDLE` | Await bisect results; C# fix if mask isolates hook | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `ff823a6` |
-| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | Forge.cmd PLAY spawn fix | `launcher-auto-nav.ps1`, `install-mod.ps1`, `Run-LauncherNavPlay.cmd` | Do not run Forge while A holds automation lock | — |
+| **A** | Cert / evidence / git / PR | `IDLE` | Bisect partial @ `095326`; commit fixes; re-run after C PLAY/CONTINUE hwnd fix | `docs/evidence/live-cert/**`, PR #7 | — | pending |
+| **B** | C# map-ready / MapTransition | `IDLE` | Interpret `095326` (map-ready then die); em-dash helpers landed | `CampaignMapReadyOrchestrator.cs`, `ForgeStatus.cs` | — | `4218842` |
+| **C** | Launcher / focus / nav scripts | `IN_PROGRESS` | PLAY verify + CONTINUE hwnd target (no Cursor false-positive) | `launcher-auto-nav.ps1`, `Run-LauncherNavPlay.cmd` | Coordinate with A before F7 re-run | `a28ae61` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -65,13 +65,22 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | **A** | F7 bisect complete | `Run-F7GateContinue.cmd` |
+| `automation` | — | — | — |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A → B, C (bisect partial @ `4218842`)
+
+- **Fixes (cert tooling):** `launcher-auto-nav.ps1` C# `$results` → `results.Count`; F7 clears stale nav lock; `write-launch-log.ps1` retry; `Write-F7LaunchState` dedupe; `run-agent-a-f7-bisect.ps1` added.
+- **Progress:** Session `095326` mask `0x01` — `continue_clicked`, reached `map_ready` + `tbg_ready` (~83s), game died before 60s stability; manifest not saved (Launch.log write race, now mitigated).
+- **PLAY/CONTINUE hang-up:** With Cursor foreground, hit-test audit logs **Cursor hwnd** at launcher screen coords while SendMessage targets launcher — weak verify / false `continue_clicked` risk (`095505`). **Need from C:** hwnd click must use launcher bounds only; reject audit when `process!=TaleWorlds.MountAndBlade.Launcher`.
+- **Em dash:** Use [`em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md) + `Get-TbgReadyGoldenPathPattern` — never grep ASCII `Blacksmith Guild - Ready:`.
+- **Need from B:** `095326` died after TBG READY with mask `0x01` (StatusFlush only) — likely post-map-ready crash, not immediate-hook bisect.
+- **Need from user:** Stop `ForgeContinue` (terminal 89) before next F7 run; keep Chrome/Cursor on other monitor but expect C hwnd fix for reliable Continue.
 
 ### 2026-06-22 — Agent B → A, C (em dash documentation)
 
@@ -119,16 +128,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 **A**
 
-- [x] `git pull` on `fix/f7-gate-stability` after Agent C push (@ `247d89d`)
-- [ ] Run hook mask bisect `0x01`, `0x03`, `0x07`, `0x0F`
-- [ ] Commit evidence manifest per attempt
+- [x] `git pull` @ `4218842` (em-dash helpers)
+- [x] Partial bisect: `0x01` reached TBG READY (`095326`); tooling fixes committed
+- [x] Evidence + `f7-bisect-summary.json` updated
+- [ ] Re-run full bisect after Agent C CONTINUE hwnd fix
 - [ ] Merge PR #7 only on F7 PASS
 
 **B**
 
 - [x] Coordination plan verified; doc synced @ `247d89d`
-- [ ] Interpret bisect results from A
-- [ ] C# fix if mask isolates crashing hook
+- [ ] Interpret bisect: `095326` map-ready then crash (mask `0x01`)
 - [ ] Set board row `IDLE` when not editing C#
 
 **C**
@@ -136,7 +145,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] RespectUserForeground policy + delete minimize script
 - [x] Create this coordination doc (with B plan)
 - [x] Pushed @ `8c18ecd`
-- [ ] Only revisit launcher if `Launch.tail.txt` shows new focus regression
+- [ ] CONTINUE: reject hit-test when hwnd process is not launcher; mirror PLAY spawn verify (`a28ae61`)
 
 ---
 

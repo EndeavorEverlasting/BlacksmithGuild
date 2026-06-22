@@ -1,0 +1,3 @@
+﻿[2026-06-22 09:50:29] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-22 09:50:29] f7-gate: LAUNCH_STATE=launcher_spawned
+[2026-06-22 09:50:29] f7-gate: LAUNCH_STATE=fail_launch_automation

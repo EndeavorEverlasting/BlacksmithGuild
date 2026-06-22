@@ -766,7 +766,7 @@ public static class UIAHelper
             catch { }
         }
 
-        if ($results.Count == 0)
+        if (results.Count == 0)
         {
             TryRestoreLauncherWindows();
             try

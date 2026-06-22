@@ -1,82 +1,57 @@
-﻿{
-    "generatedUtc":  "2026-06-22T06:40:04.6004950Z",
-    "branch":  "fix/f7-gate-stability",
-    "commit":  "08c8a55",
-    "masks":  [
-                  {
-                      "mask":  "0x0F",
-                      "exitCode":  2,
-                      "elapsedSec":  916,
-                      "sessionId":  "20260622-021332",
-                      "passFail":  "FAIL",
-                      "stableSeconds":  0,
-                      "campaignReady":  false,
-                      "canPollFileInbox":  false,
-                      "phase1TbgReady":  false,
-                      "phase1QuickStartMapReady":  true,
-                      "phase1LastSignal":  ".",
-                      "notes":  "F7 FAIL: map-ready occurred then process died (timeout boundary)",
-                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-021332\\checkpoint-01-f7-gate\\manifest.json"
-                  },
-                  {
-                      "mask":  "0x01",
-                      "exitCode":  1,
-                      "elapsedSec":  100,
-                      "sessionId":  "20260622-022352",
-                      "passFail":  "FAIL",
-                      "stableSeconds":  0,
-                      "campaignReady":  false,
-                      "canPollFileInbox":  false,
-                      "phase1TbgReady":  false,
-                      "phase1QuickStartMapReady":  false,
-                      "phase1LastSignal":  ".",
-                      "notes":  "LAUNCH FAIL: Cursor foreground theft â€” launcher automation could not obtain hwnd",
-                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-022352\\checkpoint-01-f7-gate\\manifest.json"
-                  },
-                  {
-                      "mask":  "0x00",
-                      "exitCode":  1,
-                      "elapsedSec":  131,
-                      "sessionId":  "20260622-022542",
-                      "passFail":  "FAIL",
-                      "stableSeconds":  0,
-                      "campaignReady":  false,
-                      "canPollFileInbox":  false,
-                      "phase1TbgReady":  false,
-                      "phase1QuickStartMapReady":  false,
-                      "phase1LastSignal":  ".",
-                      "notes":  "LAUNCH FAIL: Cursor foreground theft â€” launcher automation could not obtain hwnd",
-                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-022542\\checkpoint-01-f7-gate\\manifest.json"
-                  },
-                  {
-                      "mask":  "0x1DF",
-                      "exitCode":  2,
-                      "elapsedSec":  611,
-                      "sessionId":  "20260622-023620",
-                      "passFail":  "FAIL",
-                      "stableSeconds":  0,
-                      "campaignReady":  false,
-                      "canPollFileInbox":  false,
-                      "phase1TbgReady":  false,
-                      "phase1QuickStartMapReady":  false,
-                      "phase1LastSignal":  "n",
-                      "notes":  "F7 FAIL: process died before map-ready",
-                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-023620\\checkpoint-01-f7-gate\\manifest.json"
-                  },
-                  {
-                      "mask":  "0x1BF",
-                      "exitCode":  2,
-                      "elapsedSec":  95,
-                      "sessionId":  "20260622-023824",
-                      "passFail":  "FAIL",
-                      "stableSeconds":  0,
-                      "campaignReady":  false,
-                      "canPollFileInbox":  false,
-                      "phase1TbgReady":  false,
-                      "phase1QuickStartMapReady":  false,
-                      "phase1LastSignal":  "n",
-                      "notes":  "F7 FAIL: process died before map-ready",
-                      "manifestPath":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260622-023824\\checkpoint-01-f7-gate\\manifest.json"
-                  }
-              ]
+{
+  "generatedUtc": "2026-06-22T14:05:00.0000000Z",
+  "branch": "fix/f7-gate-stability",
+  "commit": "4218842",
+  "agent": "A",
+  "notes": "Post-RespectUserForeground bisect @ 4218842. Session 095326 reached TBG READY then died (manifest not saved - launch log stream error). See em-dashes-and-log-grep.md for grep patterns.",
+  "masks": [
+    {
+      "mask": "0x01",
+      "exitCode": 1,
+      "sessionId": "20260622-095326",
+      "passFail": "FAIL",
+      "stableSeconds": 0,
+      "continueClickSuccess": true,
+      "firstMissingStep": "60s stability / game_gone_after_map_ready",
+      "phase1TbgReady": true,
+      "notes": "Reached map_ready+tbg_ready ~83s; game gone before stable window; tooling exit 1 from Launch.log write contention (fixed: write-launch-log retry + state dedupe)"
+    },
+    {
+      "mask": "0x01",
+      "exitCode": 2,
+      "sessionId": "20260622-095140",
+      "passFail": "FAIL",
+      "stableSeconds": 0,
+      "continueClickSuccess": false,
+      "firstMissingStep": "fresh module load ([TBG VERSION])",
+      "notes": "launcher-auto-nav C# compile error ($results in embedded type) - fixed in launcher-auto-nav.ps1"
+    },
+    {
+      "mask": "0x01",
+      "exitCode": 1,
+      "sessionId": "20260622-095022",
+      "passFail": "FAIL",
+      "continueClickSuccess": false,
+      "firstMissingStep": "fresh module load ([TBG VERSION])",
+      "notes": "LAUNCH FAIL: stale nav lock from interrupted ForgeContinue"
+    },
+    {
+      "mask": "0x03",
+      "exitCode": 2,
+      "sessionId": "20260622-095505",
+      "passFail": "FAIL",
+      "continueClickSuccess": true,
+      "firstMissingStep": "MapTransition -> MapReady",
+      "notes": "continue_clicked with Cursor foreground; hit-test audit showed Cursor hwnd at screen coords - PLAY/CONTINUE hang-up risk"
+    },
+    {
+      "mask": "0x0F",
+      "exitCode": 2,
+      "sessionId": "20260622-030915",
+      "passFail": "FAIL",
+      "continueClickSuccess": true,
+      "firstMissingStep": "MapTransition -> MapReady",
+      "notes": "Prior baseline: launcher PASS, died MapTransition before orchestrator tick"
+    }
+  ]
 }

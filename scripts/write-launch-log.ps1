@@ -27,4 +27,12 @@ if (-not $BannerlordRoot) { return }
 
 $logPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
 $line = "[{0}] {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
-Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
+for ($attempt = 0; $attempt -lt 3; $attempt++) {
+    try {
+        Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8 -ErrorAction Stop
+        break
+    } catch {
+        if ($attempt -ge 2) { throw }
+        Start-Sleep -Milliseconds 150
+    }
+}
