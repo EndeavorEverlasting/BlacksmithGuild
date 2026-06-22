@@ -1,6 +1,6 @@
 # 006C-4b — Second-Leg Auto-Travel (Buy Town → Sell Town)
 
-**Branch:** `feat/006c-4b-second-leg-travel` @ `ad0877e` (stacked on `feat/006c-4-sell-loop` @ `027ac31`)  
+**Branch:** `feat/006c-4b-second-leg-travel` @ `5b67d6d` (stacked on `feat/006c-4-sell-loop` @ `8316b74`)  
 **Status:** CODE SHIPPED — build PASS — **USER live cert PENDING** (F7 gate FAIL in agent shell; USER verify required)  
 **PR:** [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) (draft) → #5
 
