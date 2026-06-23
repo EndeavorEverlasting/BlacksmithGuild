@@ -761,9 +761,22 @@ namespace BlacksmithGuild.DevTools
                 RuntimeTrace.RunSafe("StatusFlush", "update_readiness_begin", () => { });
                 RuntimeTrace.RunSafe("StatusFlush", "update_readiness", () =>
                 {
-                    ForgeStatus.UpdateReadiness(IsCampaignMapReady, IsMainHeroReady);
+                    var mapReady = IsCampaignMapReady;
+                    var heroReady = IsMainHeroReady;
+                    if (CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
+                    {
+                        RuntimeTrace.LogSkipped(
+                            "StatusFlush",
+                            "update_readiness_heavy",
+                            "post_map_ready_stabilization");
+                    }
+
+                    ForgeStatus.UpdateReadiness(mapReady, heroReady);
                 });
                 RuntimeTrace.RunSafe("StatusFlush", "update_readiness_ok", () => { });
+
+                RuntimeTrace.RunSafe("StatusFlush", "file_write_begin", () => { });
+                RuntimeTrace.RunSafe("StatusFlush", "file_write_ok", () => { });
             }, emitEnd: true);
         }
     }

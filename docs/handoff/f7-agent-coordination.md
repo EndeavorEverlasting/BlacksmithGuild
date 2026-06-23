@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `eff7074` |
+| Branch / HEAD | `fix/f7-gate-stability` @ TBD (Agent B stabilization flush fix) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — clean Continue OK; runtime death @ StatusFlush (`185813` seq=29, `192811` seq=142) |
 | Last F7 evidence | `20260622-192811` @ `5d9fe29` |
-| Next live cert | **BLOCKED** — see [`f7-next-cert-readiness.md`](../control/logs/open/f7-next-cert-readiness.md); wait for B runtime fix or user diagnostic auth |
+| Next live cert | **UNBLOCKED after B push** — Agent A preflight @ `4863139+` then live cert |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -42,10 +42,10 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Next-cert readiness matrix @ `eff7074` | Live cert blocked pending B or user auth | pending |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | `f6370fa` partial — 192811 died @ update_readiness | — | `f6370fa` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Readiness matrix @ `0cc6644`; live cert unblocked after B push | B stabilization fix pushed — preflight then cert | `0cc6644` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IN_PROGRESS` | Stabilization-window lightweight flush; posture scan gate | — | TBD |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | Obvious fail-fast @ `4863139` | — | `4863139` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074` | — | `eff7074` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -80,6 +80,17 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent B → A, C, D (stabilization flush @ session `192811` seq=142)
+
+- **Root cause (evidence-backed):** CrashContext @ seq=142 shows `stabilizationActive=true`, `campaignReady=true`, `operation=update_readiness stage=begin`. Phase1 tail: first SyncForgeStatus succeeded with `mapReady=false`; second SyncForgeStatus after `ReadinessPromoted` died mid-`update_readiness` before `FlushWrite ok`. `FlushFull` reached `AppendFactionPowerPosture` → `FactionPowerPostureScanner.Scan()` (party radius scan) during 20s post-map-ready stabilization window.
+- **Landed:** `ForgeStatus.Flush` / `UpdateReadiness` — force `FlushLightweight` when `IsPostMapReadyStabilizationWindow`; defer marker `post_map_ready_stabilization`.
+- **Landed:** `AppendFactionPowerPosture` — gated on `!IsPostMapReadyStabilizationWindow` (belt-and-suspenders).
+- **Landed:** `SyncForgeStatus` — `update_readiness_heavy stage=skipped` during stabilization; `file_write_begin` / `file_write_ok` markers.
+- **Static:** Release build + grep guard + runner contract (pending this commit).
+- **F7 game cert:** **NOT RUN** (Agent A owns cert after pull).
+- **Need from A:** Pull, preflight, F7 Continue cert; expect seq=142+ with `update_readiness stage=ok`, `FlushWrite stage=ok`, `SyncForgeStatus stage=end`, game alive ≥60s OR honest fail with completion markers (never silent begin-only).
+- **PR #7:** **HOLD**.
 
 ### 2026-06-22 — Agent A → B, C, D (next-cert readiness matrix)
 

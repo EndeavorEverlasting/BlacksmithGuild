@@ -1,7 +1,7 @@
 # F7 Next Cert Readiness Matrix
 
 **Author:** Agent A — Cert / Evidence / Git / PR  
-**Branch:** `fix/f7-gate-stability` @ `eff7074`  
+**Branch:** `fix/f7-gate-stability` @ TBD (Agent B stabilization flush)  
 **Mental model:** [`docs/handoff/f7-agent-mental-model.mmd`](../../../handoff/f7-agent-mental-model.mmd)  
 **Gate:** RED — no PASS manifest  
 **PR #7:** **HOLD**
@@ -179,17 +179,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Pre-intent spawn rejection | `740b604`+ | C | **LANDED** |
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
-| **Runtime survival past update_readiness** | TBD commit after `f6370fa` | B | **OPEN** — 192811 died @ `update_readiness begin` seq=142 |
+| **Runtime survival past update_readiness** | TBD commit after `f6370fa` (stabilization lightweight flush) | B | **LANDED pending cert** — 192811 seq=142 posture scan during stabilization |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
 **Agent A live cert gate (pick one):**
 
-1. Agent B commits runtime survival fix addressing `update_readiness` / MapTransition death **OR**
+1. Agent B commits runtime survival fix addressing `update_readiness` / MapTransition death — **LANDED** (pull latest, preflight, cert) **OR**
 2. Agent C commits additional runner manifest audit fields **OR**
 3. User explicitly authorizes diagnostic cert (expect FAIL; measure wall-time + markers)
 
-**Do not run blind live cert** while only docs/matrix work is pending.
+**Do not run blind live cert** without pulling latest B fix and running preflight.
 
 ---
 

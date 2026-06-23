@@ -326,6 +326,16 @@ namespace BlacksmithGuild
             _mainHeroReady = mainHeroReady;
             try
             {
+                if (CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
+                {
+                    RuntimeTrace.LogSkipped(
+                        "ForgeStatus",
+                        "UpdateReadinessFlush",
+                        "post_map_ready_stabilization");
+                    FlushLightweight();
+                    return;
+                }
+
                 Flush();
             }
             catch (Exception ex)
@@ -390,6 +400,17 @@ namespace BlacksmithGuild
         {
             try
             {
+                if (CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
+                {
+                    RuntimeTrace.LogDeferOnce(
+                        "flush_stabilization",
+                        "ForgeStatus",
+                        "Flush",
+                        "post_map_ready_stabilization");
+                    FlushLightweight(overall, error);
+                    return;
+                }
+
                 if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
                 {
                     RuntimeTrace.LogDeferOnce(
@@ -711,7 +732,9 @@ namespace BlacksmithGuild
                     builder.AppendLine("  },");
                 }
 
-                if (GameSessionState.IsCampaignMapReady && _mainHeroReady)
+                if (GameSessionState.IsCampaignMapReady
+                    && _mainHeroReady
+                    && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
                 {
                     AppendFactionPowerPosture(builder);
                 }
