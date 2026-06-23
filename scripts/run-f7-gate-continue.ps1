@@ -77,6 +77,7 @@ $script:LaunchAutomation = [ordered]@{
 $script:F7ProcessTimestamps = [ordered]@{
     gameStartUtc = $null
     gameEndUtc = $null
+    exeEverSeen = $false
 }
 
 $script:LastProcessDetection = $null
@@ -686,11 +687,31 @@ function Test-F7BannerlordExeRunning {
 function Test-F7GameGoneDefinitive {
     param(
         [bool]$GameWasSeen,
-        $Detection
+        $Detection,
+        $Signals = $null,
+        [datetime]$LaunchStartedLocal = $null
     )
 
     if (-not $GameWasSeen) { return $false }
+    if ($Detection -and $Detection.gameProcessRunning) { return $false }
     if (Test-F7BannerlordExeRunning) { return $false }
+
+    if ($Signals) {
+        $conf = [string]$Signals.gameAliveConfidence
+        if ([string]$Signals.phase1ArtifactState -eq 'fresh' -and $conf -in @('launcher_hosted', 'phase1_active')) {
+            return $false
+        }
+        if ($LaunchStartedLocal -and (Test-Phase1SessionActive -SinceUtc $LaunchStartedLocal.ToUniversalTime())) {
+            if ($conf -in @('launcher_hosted', 'phase1_active', 'process_detection_uncertain')) {
+                return $false
+            }
+            if ($Detection -and [string]$Detection.gameProcessDetectionMethod -eq 'launcher_hosted_window') {
+                return $false
+            }
+        }
+    }
+
+    if (-not $script:F7ProcessTimestamps.exeEverSeen) { return $false }
     if (-not $script:F7ProcessTimestamps.gameEndUtc) { return $false }
 
     $ended = [datetime]::Parse(
@@ -700,17 +721,19 @@ function Test-F7GameGoneDefinitive {
     $goneSec = ((Get-Date).ToUniversalTime() - $ended).TotalSeconds
     if ($goneSec -lt 5) { return $false }
 
-    # Bannerlord.exe gone >=5s after spawn — fail even if launcher menu still open or phase1 ghost.
     return $true
 }
 
 function Update-F7ProcessTimestamps {
     $exeRunning = Test-F7BannerlordExeRunning
     $nowUtc = (Get-Date).ToUniversalTime().ToString('o')
-    if ($exeRunning -and -not $script:F7ProcessTimestamps.gameStartUtc) {
-        $script:F7ProcessTimestamps.gameStartUtc = $nowUtc
-    }
-    if (-not $exeRunning -and $script:F7ProcessTimestamps.gameStartUtc -and -not $script:F7ProcessTimestamps.gameEndUtc) {
+    if ($exeRunning) {
+        $script:F7ProcessTimestamps.exeEverSeen = $true
+        if (-not $script:F7ProcessTimestamps.gameStartUtc) {
+            $script:F7ProcessTimestamps.gameStartUtc = $nowUtc
+        }
+        $script:F7ProcessTimestamps.gameEndUtc = $null
+    } elseif ($script:F7ProcessTimestamps.exeEverSeen -and -not $script:F7ProcessTimestamps.gameEndUtc) {
         $script:F7ProcessTimestamps.gameEndUtc = $nowUtc
     }
 }
@@ -1303,12 +1326,6 @@ try {
     while ((Get-Date) -lt $deadline) {
         $lastSignals = Get-F7GateSignals
         Update-F7ProcessTimestamps
-        if (-not $script:F7ProcessTimestamps.gameStartUtc -and (Test-F7LaunchGameWasSpawned)) {
-            $script:F7ProcessTimestamps.gameStartUtc = $certStartedUtc.ToString('o')
-        }
-        if ((Test-F7LaunchGameWasSpawned) -and -not (Test-F7BannerlordExeRunning) -and -not $script:F7ProcessTimestamps.gameEndUtc) {
-            $script:F7ProcessTimestamps.gameEndUtc = (Get-Date).ToUniversalTime().ToString('o')
-        }
         $lastSignals.phase1QuickStartMapReady = Test-Phase1QuickStartMapReady -SinceLocal $launchStartedLocal
         if ($lastSignals.gameRunning) { $gameEverSeen = $true }
 
@@ -1335,7 +1352,8 @@ try {
 
         if ($gameEverSeen) {
             $goneDet = Get-F7ProcessDetection
-            if (Test-F7GameGoneDefinitive -GameWasSeen $gameEverSeen -Detection $goneDet) {
+            if (Test-F7GameGoneDefinitive -GameWasSeen $gameEverSeen -Detection $goneDet `
+                    -Signals $lastSignals -LaunchStartedLocal $launchStartedLocal) {
                 Write-F7LaunchState 'fail_game_gone_definitive'
                 $launchSignals = Get-LaunchAutomationSignals -SinceLocal $launchStartedLocal
                 $notes = Get-F7GameGoneFailNotes -Detection $goneDet -EverMapReady $everMapReady `

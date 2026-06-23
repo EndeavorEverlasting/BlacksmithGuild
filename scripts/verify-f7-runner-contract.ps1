@@ -55,7 +55,7 @@ if (Test-Path -LiteralPath $gatePath) {
         'Get-BannerlordProcessDetection', 'gameProcessDetectionMethod', 'gameAliveConfidence', 'process_detection_uncertain',
         'contaminated_launch_path', 'f7-launch-contract.ps1', 'readinessJudged', 'targetMismatchReason', 'failureReason',
         'Stop-F7CertProcesses', 'spawnAttribution', 'pre_intent_game_spawn', 'retryCount',
-        'Test-F7StrongPreIntentGameSignal', 'Test-F7GameGoneDefinitive', 'fail_game_gone_definitive'
+        'Test-F7StrongPreIntentGameSignal', 'Test-F7GameGoneDefinitive', 'fail_game_gone_definitive', 'exeEverSeen'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -127,7 +127,7 @@ if (Test-Path -LiteralPath $launchContractPath) {
 
 if (Test-Path -LiteralPath $harvestPath) {
     $harvestText = Get-Content -LiteralPath $harvestPath -Raw
-    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed')) {
+    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed', 'Get-F7SafeArtifactFreshnessState')) {
         if ($harvestText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-evidence-harvest.ps1 missing: $needle"
         } else {
@@ -221,6 +221,19 @@ if (Test-Path -LiteralPath $preIntentRegression) {
     }
 } else {
     Add-Failure 'Missing test-f7-contaminated-launch-175909.ps1 offline regression'
+}
+
+$gameGoneRegression = Join-Path $PSScriptRoot 'test-f7-game-gone-202052.ps1'
+if (Test-Path -LiteralPath $gameGoneRegression) {
+    Write-Host 'Running test-f7-game-gone-202052.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $gameGoneRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-game-gone-202052.ps1 failed (launcher_hosted game_gone regression)'
+    } else {
+        Write-Host 'PASS offline game-gone regression 202052' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-game-gone-202052.ps1 offline regression'
 }
 
 Write-Host ''

@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `319588f` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — B StatusFlush fix validated; runner false `fail_game_gone_definitive` @ `20260622-202052` |
-| Last F7 evidence | `20260622-202052` @ `319588f` |
-| Next live cert | **BLOCKED** — Agent C: process detection + harvest; then Agent A re-cert |
+| Gate verdict | **RED** — runner false `fail_game_gone_definitive` fixed offline; Agent A re-cert needed |
+| Last F7 evidence | `20260622-202052` @ `319588f` (false runner fail; B StatusFlush validated) |
+| Next live cert | **UNBLOCKED for A** — pull latest C fix, preflight, re-run F7 Continue |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -44,7 +44,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Live cert `20260622-202052` FAIL — B fix validated, route C | — | `319588f` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | `0e312e5` validated — StatusFlush survival in `202052` | — | `0e312e5` |
-| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `IDLE` | **Next:** `fail_game_gone_definitive` + harvest @ `202052` | — | `4863139` |
+| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `fail_game_gone_definitive` + harvest fix @ `202052` | — | pending |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -80,6 +80,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-23 — Agent C → A (game_gone + harvest fix @ session `202052`)
+
+- **Root cause:** `fail_game_gone_definitive` fired when `Bannerlord.exe` absent but `gameProcessRunning=true` (`launcher_hosted_window`) with fresh Phase1 actively logging; poll loop injected `gameEndUtc` without `exeEverSeen`.
+- **Landed:** `Test-F7GameGoneDefinitive` — requires `exeEverSeen`, honors `Detection.gameProcessRunning`, suppresses when fresh Phase1 + launcher_hosted/phase1_active.
+- **Landed:** `Update-F7ProcessTimestamps` — `exeEverSeen` flag; `gameEndUtc` only after exe was observed; clears `gameEndUtc` on exe return.
+- **Landed:** `f7-evidence-harvest.ps1` — CrashContext optional (`not_present` warning not fatal); `Get-F7SafeArtifactFreshnessState`; completeness `sufficient` when Phase1/Launch/Status present without CrashContext.
+- **Regression:** `test-f7-game-gone-202052.ps1` offline PASS; runner contract PASS (all regressions).
+- **F7 game cert:** **NOT RUN**.
+- **Need from A:** Re-cert `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue`; expect full poll window (not ~61s abort) when launcher-hosted + Phase1 active.
 
 ### 2026-06-22 — Agent A → B, C (live cert session `20260622-202052`)
 

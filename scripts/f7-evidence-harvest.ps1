@@ -311,8 +311,10 @@ function Get-F7EvidenceCompleteness {
     $score = 'sufficient'
     if ($HarvestFailed) {
         $score = 'harvest_failed'
-    } elseif ($missing.Count -gt 0 -or $instrumentationGap -or $HarvestPartial) {
+    } elseif ($missing.Count -gt 0 -or $instrumentationGap) {
         $score = if ($instrumentationGap) { 'insufficient' } else { 'partial' }
+    } elseif ($HarvestPartial) {
+        $score = 'partial'
     }
 
     return [ordered]@{
@@ -323,7 +325,23 @@ function Get-F7EvidenceCompleteness {
         required = $required
         harvestFailed = [bool]$HarvestFailed
         harvestPartial = [bool]$HarvestPartial
+        crashContextOptional = $true
     }
+}
+
+function Get-F7SafeArtifactFreshnessState {
+    param(
+        [string]$Path,
+        [datetime]$CertStartedUtc
+    )
+
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) {
+        return 'missing'
+    }
+    if (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue) {
+        return [string](Get-F7ArtifactFreshnessState -Path $Path -CertStartedUtc $CertStartedUtc)
+    }
+    return 'unknown'
 }
 
 function Write-F7ArtifactsSidecar {
@@ -386,17 +404,16 @@ function Invoke-F7EvidenceHarvest {
     $statusArtifact = [ordered]@{ name = 'BlacksmithGuild_Status.json'; copied = $false; reason = 'not_attempted' }
     $crashArtifact = [ordered]@{ name = 'BlacksmithGuild_CrashContext.json'; copied = $false; reason = 'not_attempted' }
     $crashPath = $null
+    $statusSource = $null
+    $harvestError = $null
+    $completeness = $null
 
     try {
         $statusSource = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
         $statusArtifact = Copy-F7EvidenceArtifact -SourcePath $statusSource `
             -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_Status.json'
         if ($statusArtifact.copied) {
-            $statusArtifact.freshness = if (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue) {
-                Get-F7ArtifactFreshnessState -Path $statusSource -CertStartedUtc $StartedAtUtc
-            } else {
-                'unknown'
-            }
+            $statusArtifact.freshness = Get-F7SafeArtifactFreshnessState -Path $statusSource -CertStartedUtc $StartedAtUtc
         }
         $artifactMeta.Add($statusArtifact) | Out-Null
     } catch {
@@ -405,18 +422,21 @@ function Invoke-F7EvidenceHarvest {
 
     try {
         $crashPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
-        $crashArtifact = Copy-F7EvidenceArtifact -SourcePath $crashPath `
-            -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_CrashContext.json'
-        if ($crashArtifact.copied) {
-            $crashArtifact.freshness = if (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue) {
-                Get-F7ArtifactFreshnessState -Path $crashPath -CertStartedUtc $StartedAtUtc
-            } else {
-                'unknown'
+        if ($crashPath -and (Test-Path -LiteralPath $crashPath)) {
+            $crashArtifact = Copy-F7EvidenceArtifact -SourcePath $crashPath `
+                -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_CrashContext.json'
+            if ($crashArtifact.copied) {
+                $crashArtifact.freshness = Get-F7SafeArtifactFreshnessState -Path $crashPath -CertStartedUtc $StartedAtUtc
             }
+        } else {
+            $crashArtifact.reason = 'not_present'
+            Add-F7HarvestWarning -Warnings $warnings -Message 'BlacksmithGuild_CrashContext.json not present (optional)'
         }
         $artifactMeta.Add($crashArtifact) | Out-Null
     } catch {
+        $crashArtifact.reason = 'copy_error'
         Add-F7HarvestWarning -Warnings $warnings -Message "crash context copy: $($_.Exception.Message)"
+        $artifactMeta.Add($crashArtifact) | Out-Null
     }
 
     try {
@@ -465,7 +485,9 @@ function Invoke-F7EvidenceHarvest {
         if (-not $crashPath) {
             $crashPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
         }
-        $crashSummary = Read-F7CrashContextSummary -CrashContextPath $crashPath
+        if ($crashPath -and (Test-Path -LiteralPath $crashPath)) {
+            $crashSummary = Read-F7CrashContextSummary -CrashContextPath $crashPath
+        }
     } catch {
         Add-F7HarvestWarning -Warnings $warnings -Message "crash context parse: $($_.Exception.Message)"
     }
@@ -493,11 +515,10 @@ function Invoke-F7EvidenceHarvest {
 
     $missingArtifacts = New-Object System.Collections.Generic.List[string]
     if ($statusArtifact.copied -ne $true) { $missingArtifacts.Add('BlacksmithGuild_Status.json') | Out-Null }
-    if ($crashArtifact.copied -ne $true) { $missingArtifacts.Add('BlacksmithGuild_CrashContext.json') | Out-Null }
     if ($phase1TailLineCount -eq 0) { $missingArtifacts.Add('Phase1.tail.txt') | Out-Null }
     if ($launchTailLineCount -eq 0) { $missingArtifacts.Add('Launch.tail.txt') | Out-Null }
 
-    $harvestPartial = ($warnings.Count -gt 0)
+    $harvestPartial = ($warnings.Count -gt 0) -or ($crashArtifact.copied -ne $true)
 
     $completeness = Get-F7EvidenceCompleteness `
         -StatusJsonCopied ([bool]($statusArtifact.copied -eq $true)) `
@@ -527,18 +548,26 @@ function Invoke-F7EvidenceHarvest {
         $safeArtifactMeta += ,(New-F7JsonSafeValue -Value $artifact)
     }
 
-    $phase1ArtifactState = if (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue) {
-        Get-F7ArtifactFreshnessState -Path $Phase1Path -CertStartedUtc $StartedAtUtc
-    } else { 'unknown' }
-    $statusArtifactState = if (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue) {
-        Get-F7ArtifactFreshnessState -Path (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) -CertStartedUtc $StartedAtUtc
-    } else { 'unknown' }
-    $crashArtifactState = if (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue) {
-        Get-F7ArtifactFreshnessState -Path (Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot) -CertStartedUtc $StartedAtUtc
-    } else { 'unknown' }
+    $phase1ArtifactState = 'unknown'
+    $statusArtifactState = 'unknown'
+    $crashArtifactState = 'missing'
+    try {
+        $phase1ArtifactState = Get-F7SafeArtifactFreshnessState -Path $Phase1Path -CertStartedUtc $StartedAtUtc
+        if (-not $statusSource) {
+            $statusSource = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
+        }
+        $statusArtifactState = Get-F7SafeArtifactFreshnessState -Path $statusSource -CertStartedUtc $StartedAtUtc
+        if ($crashPath -and (Test-Path -LiteralPath $crashPath)) {
+            $crashArtifactState = Get-F7SafeArtifactFreshnessState -Path $crashPath -CertStartedUtc $StartedAtUtc
+        }
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "artifact freshness: $($_.Exception.Message)"
+        $harvestPartial = $true
+    }
 
     return [ordered]@{
         evidenceCompleteness = $completeness
+        harvestError = if ($harvestError) { [string]$harvestError } else { $null }
         lastPhase1Marker = [string]$markers.lastPhase1Marker
         lastTraceMarker = if ($markers.lastTraceMarker) { [string]$markers.lastTraceMarker } else { $null }
         lastMapReadyMarker = if ($markers.lastMapReadyMarker) { [string]$markers.lastMapReadyMarker } else { $null }
