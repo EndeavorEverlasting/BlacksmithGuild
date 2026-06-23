@@ -28,11 +28,11 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ cert pending |
+| Branch / HEAD | `fix/f7-gate-stability` @ `319588f` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — B StatusFlush fix validated; runner false `fail_game_gone_definitive` @ `20260622-202052` |
-| Last F7 evidence | `20260622-202052` @ cert commit pending |
+| Last F7 evidence | `20260622-202052` @ `319588f` |
 | Next live cert | **BLOCKED** — Agent C: process detection + harvest; then Agent A re-cert |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
@@ -42,7 +42,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Live cert `20260622-202052` FAIL — B fix validated, route C | — | cert commit pending |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Live cert `20260622-202052` FAIL — B fix validated, route C | — | `319588f` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | `0e312e5` validated — StatusFlush survival in `202052` | — | `0e312e5` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `IDLE` | **Next:** `fail_game_gone_definitive` + harvest @ `202052` | — | `4863139` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
