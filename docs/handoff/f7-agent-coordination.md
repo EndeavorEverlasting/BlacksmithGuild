@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `0e312e5` |
+| Branch / HEAD | `fix/f7-gate-stability` @ cert pending |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — clean Continue OK; runtime death @ StatusFlush (`185813` seq=29, `192811` seq=142) |
-| Last F7 evidence | `20260622-192811` @ `5d9fe29` |
-| Next live cert | **UNBLOCKED after B push** — Agent A preflight @ `4863139+` then live cert |
+| Gate verdict | **RED** — B StatusFlush fix validated; runner false `fail_game_gone_definitive` @ `20260622-202052` |
+| Last F7 evidence | `20260622-202052` @ cert commit pending |
+| Next live cert | **BLOCKED** — Agent C: process detection + harvest; then Agent A re-cert |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -42,9 +42,9 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Readiness matrix @ `0cc6644`; live cert unblocked after B push | B stabilization fix pushed — preflight then cert | `0cc6644` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Stabilization-window lightweight flush @ `0e312e5` | — | `0e312e5` |
-| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | Obvious fail-fast @ `4863139` | — | `4863139` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Live cert `20260622-202052` FAIL — B fix validated, route C | — | cert commit pending |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | `0e312e5` validated — StatusFlush survival in `202052` | — | `0e312e5` |
+| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `IDLE` | **Next:** `fail_game_gone_definitive` + harvest @ `202052` | — | `4863139` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -80,6 +80,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-22 — Agent A → B, C (live cert session `20260622-202052`)
+
+- **Preflight:** `4863139`+`0e312e5` ancestors PASS; Release build PASS; grep guard PASS; runner contract PASS.
+- **Ran:** `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` — exit **2** (~**72s** wall).
+- **Launcher PASS:** `launchPath=continue`, `launchSelectedBy=automation`, `targetMismatch=false`, Safe Mode No, `continueClick.success=true`.
+- **B fix VALIDATED:** Phase1 seq=2762+ — `update_readiness stage=ok`, `update_readiness_heavy stage=skipped reason=post_map_ready_stabilization`, `FlushWrite stage=ok`, `SyncForgeStatus stage=end`; last trace seq=2810 (no StatusFlush death). **Game PASS for StatusFlush not proven** (runner aborted poll).
+- **Gate FAIL:** `launchState=fail_game_gone_definitive` @ ~61s while Phase1 actively logging; `gameProcessDetectionMethod=launcher_hosted_window`, no `Bannerlord.exe` match; `evidenceCompleteness.score=harvest_failed` (CrashContext missing, enrichment error).
+- **Golden path:** `firstMissingStep=MainMenu -> MapTransition`; `stableSeconds=0`, `canPollFileInbox=false`.
+- **PR #7:** **HOLD**.
+- **Route C:** Do not treat launcher_hosted + fresh Phase1 as `game_gone`; fix harvest enrichment when CrashContext absent.
+- **Route B:** Idle unless new runtime death after C re-cert.
 
 ### 2026-06-22 — Agent B → A, C, D (stabilization flush @ session `192811` seq=142)
 

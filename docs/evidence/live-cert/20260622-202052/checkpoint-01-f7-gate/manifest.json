@@ -1,0 +1,145 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-202052",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-23T00:20:52.4791425Z",
+    "endedAtUtc":  "2026-06-23T00:22:04.6420264Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x0F",
+    "mapReadyHookMask":  "0x0F",
+    "launchState":  "fail_game_gone_definitive",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  true,
+    "continueClick":  {
+                          "attempted":  true,
+                          "success":  true,
+                          "method":  "uia-scoped"
+                      },
+    "playClick":  {
+                      "attempted":  false,
+                      "success":  false,
+                      "method":  "unknown"
+                  },
+    "launchPath":  "continue",
+    "launchSelectedBy":  "automation",
+    "certTarget":  "continue",
+    "targetMismatch":  false,
+    "targetMismatchReason":  null,
+    "failureReason":  null,
+    "gameSpawnAccepted":  true,
+    "gameSpawnRejectedReason":  null,
+    "spawnAttribution":  null,
+    "retryCount":  0,
+    "retryReason":  null,
+    "preRetryFailureReason":  null,
+    "preRetryGameProcessDetectionMethod":  null,
+    "preRetryGameProcessCandidates":  [
+
+                                      ],
+    "launcherDecisionEvents":  [
+                                   {
+                                       "utc":  "2026-06-23T00:21:57.4891497Z",
+                                       "event":  "continue_clicked",
+                                       "detail":  "selectedBy=automation"
+                                   }
+                               ],
+    "readinessJudged":  true,
+    "phase1ArtifactState":  "fresh",
+    "statusArtifactState":  "fresh",
+    "crashContextArtifactState":  "stale",
+    "lastFocusResult":  null,
+    "launchAutomationError":  null,
+    "campaignReady":  true,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  "e",
+    "gameProcessRunning":  true,
+    "gameAliveConfidence":  "launcher_hosted",
+    "gameProcessDetectionMethod":  "launcher_hosted_window",
+    "gameProcessPid":  17412,
+    "gameProcessName":  "TaleWorlds.MountAndBlade.Launcher",
+    "gameProcessPath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe",
+    "launcherProcessPid":  17412,
+    "processDetectionWarnings":  {
+
+                                 },
+    "processDetectionLastSeenUtc":  "2026-06-23T00:22:02.6889379Z",
+    "gameProcessCandidates":  [
+                                  {
+                                      "pid":  17412,
+                                      "name":  "TaleWorlds.MountAndBlade.Launcher",
+                                      "path":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe",
+                                      "method":  "launcher_hosted_window",
+                                      "windowTitle":  "Mount and Blade II Bannerlord - Singleplayer PID: 17412 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount \u0026 Blade II Bannerlord/bin/Modules/",
+                                      "isLauncherHosted":  true
+                                  },
+                                  {
+                                      "pid":  143308,
+                                      "name":  "Watchdog",
+                                      "path":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\bin\\Win64_Shipping_Client\\Watchdog\\Watchdog.exe",
+                                      "method":  "launcher_child_weak",
+                                      "windowTitle":  "",
+                                      "isLauncherHosted":  false
+                                  }
+                              ],
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "MainMenu -\u003e MapTransition",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  true,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  true,
+                                          "mapTransition":  false,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  true,
+                                          "mapReadyStatusFlush":  true,
+                                          "tbgReady":  true
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  true,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  true,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "F7 FAIL: process_detection_uncertain; logs active but Bannerlord.exe not matched (method=launcher_hosted_window)",
+    "continueEscalated":  false,
+    "continueClickMethod":  "uia-scoped",
+    "continueLatencySeconds":  4,
+    "launcherTimeoutStage":  "fail_game_gone_definitive",
+    "launcherWarnings":  [
+
+                         ],
+    "harvestError":  "Cannot find path \u0027C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_CrashContext.json\u0027 because it does not exist.",
+    "harvestPartial":  false,
+    "harvestWarnings":  [
+
+                        ],
+    "windowsCrashEventStatus":  "not_available",
+    "windowsCrashEventCopied":  false,
+    "statusJsonCopied":  false,
+    "crashContextCopied":  false,
+    "missingArtifacts":  [
+                             "harvest_enrichment_failed"
+                         ],
+    "copiedArtifactCount":  0,
+    "artifactMeta":  [
+
+                     ],
+    "lastPhase1Marker":  "[2026-06-22 20:22:04] [TBG TEST] [TBG TRACE] seq=2810 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue",
+    "lastTraceMarker":  "[2026-06-22 20:22:04] [TBG TEST] [TBG TRACE] seq=2810 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue",
+    "lastMapReadyMarker":  null,
+    "phase1TailLineCount":  300,
+    "launchTailLineCount":  55,
+    "evidenceCompleteness":  {
+                                 "score":  "harvest_failed",
+                                 "harvestError":  true,
+                                 "harvestFailed":  true,
+                                 "harvestPartial":  false
+                             }
+}

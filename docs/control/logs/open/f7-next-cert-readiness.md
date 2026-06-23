@@ -3,7 +3,7 @@
 **Author:** Agent A — Cert / Evidence / Git / PR  
 **Branch:** `fix/f7-gate-stability` @ `0e312e5`  
 **Mental model:** [`docs/handoff/f7-agent-mental-model.mmd`](../../../handoff/f7-agent-mental-model.mmd)  
-**Gate:** RED — no PASS manifest  
+**Gate:** RED — no PASS manifest; B StatusFlush fix validated @ `20260622-202052`; runner/harvest blocker  
 **PR #7:** **HOLD**
 
 ---
@@ -179,17 +179,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Pre-intent spawn rejection | `740b604`+ | C | **LANDED** |
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
-| **Runtime survival past update_readiness** | `0e312e5` after `f6370fa` | B | **LANDED** — stabilization lightweight flush; cert pending |
+| **Runtime survival past update_readiness** | `0e312e5` | B | **VALIDATED** @ `20260622-202052` — seq=2762+ ok/end; not game PASS |
+| **Runner false game-gone + harvest_failed** | TBD | C | **OPEN** — `202052` fail_game_gone_definitive @ 61s with fresh Phase1 |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
 **Agent A live cert gate (pick one):**
 
-1. Agent B commits runtime survival fix addressing `update_readiness` / MapTransition death — **LANDED** (pull latest, preflight, cert) **OR**
-2. Agent C commits additional runner manifest audit fields **OR**
-3. User explicitly authorizes diagnostic cert (expect FAIL; measure wall-time + markers)
+1. Agent C fixes `fail_game_gone_definitive` when Phase1 fresh + launcher_hosted alive **AND** harvest enrichment when CrashContext absent **OR**
+2. User explicitly authorizes diagnostic cert (expect partial FAIL until C fixed)
 
-**Do not run blind live cert** without pulling latest B fix and running preflight.
+**Do not run blind live cert** without C fix for `202052` pattern or user authorization.
 
 ---
 
@@ -233,3 +233,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 |---------|--------|------|
 | `185813` | `391b186` | `docs/evidence/live-cert/20260622-185813/checkpoint-01-f7-gate/` |
 | `192811` | `5d9fe29` | `docs/evidence/live-cert/20260622-192811/checkpoint-01-f7-gate/` |
+| `202052` | cert commit | `docs/evidence/live-cert/20260622-202052/checkpoint-01-f7-gate/` — B fix validated; C runner/harvest FAIL |
