@@ -1,7 +1,7 @@
 # F7 Next Cert Readiness Matrix
 
 **Author:** Agent A — Cert / Evidence / Git / PR  
-**Branch:** `fix/f7-gate-stability` @ TBD (Agent B stabilization flush)  
+**Branch:** `fix/f7-gate-stability` @ `0e312e5`  
 **Mental model:** [`docs/handoff/f7-agent-mental-model.mmd`](../../../handoff/f7-agent-mental-model.mmd)  
 **Gate:** RED — no PASS manifest  
 **PR #7:** **HOLD**
@@ -179,7 +179,7 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Pre-intent spawn rejection | `740b604`+ | C | **LANDED** |
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
-| **Runtime survival past update_readiness** | TBD commit after `f6370fa` (stabilization lightweight flush) | B | **LANDED pending cert** — 192811 seq=142 posture scan during stabilization |
+| **Runtime survival past update_readiness** | `0e312e5` after `f6370fa` | B | **LANDED** — stabilization lightweight flush; cert pending |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 

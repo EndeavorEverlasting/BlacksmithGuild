@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ TBD (Agent B stabilization flush fix) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `0e312e5` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — clean Continue OK; runtime death @ StatusFlush (`185813` seq=29, `192811` seq=142) |
@@ -43,7 +43,7 @@ Every agent **must**:
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Readiness matrix @ `0cc6644`; live cert unblocked after B push | B stabilization fix pushed — preflight then cert | `0cc6644` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IN_PROGRESS` | Stabilization-window lightweight flush; posture scan gate | — | TBD |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Stabilization-window lightweight flush @ `0e312e5` | — | `0e312e5` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | Obvious fail-fast @ `4863139` | — | `4863139` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
@@ -420,6 +420,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - [x] MapTransition survival — defer/lightweight refresh, guard, `stage=defer` trace (`150405`)
 - [x] Readiness storm fix — session detect, Refresh suppress, `IsCampaignSessionReady` (`154012`)
 - [x] SyncForgeStatus fail-soft — RunSafe, skipRefresh, posture gate, UpdateSession honesty (`185813`)
+- [x] Stabilization-window lightweight flush — skip posture scan during 20s window (`0e312e5`)
 - [ ] Agent A F7 cert to validate survival fix
 
 **C**
