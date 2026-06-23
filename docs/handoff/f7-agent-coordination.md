@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending |
+| Branch / HEAD | `fix/f7-gate-stability` @ `705d2be` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — runner false `fail_game_gone_definitive` fixed offline; Agent A re-cert needed |
@@ -44,7 +44,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Live cert `20260622-202052` FAIL — B fix validated, route C | — | `319588f` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | `0e312e5` validated — StatusFlush survival in `202052` | — | `0e312e5` |
-| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `fail_game_gone_definitive` + harvest fix @ `202052` | — | pending |
+| **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `fail_game_gone_definitive` + harvest fix @ `202052` | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
