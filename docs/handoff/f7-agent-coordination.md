@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `e891b33` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `cf3b061` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — B post-unblock fix landed; pending A re-cert |
+| Gate verdict | **IN CERT** — Agent A live F7 Continue @ `e891b33+` |
 | Last F7 evidence | `20260623-200917` @ `c9531e7` |
-| Next live cert | **Agent A** — F7 Continue after B post-unblock hardening |
+| Next live cert | **IN PROGRESS** — Agent A cert lock active |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -42,7 +42,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-200917` FAIL — route B post-unblock flush | — | `c9531e7` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IN_PROGRESS` | Live F7 Continue cert after B `@ e891b33` | automation lock | `cf3b061` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fail-soft + surface telemetry @ `200917` | — | `e891b33` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
@@ -73,7 +73,7 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | — | — | — |
+| `automation` | Agent A | live F7 cert | `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
