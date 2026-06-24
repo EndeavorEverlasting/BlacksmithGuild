@@ -77,6 +77,15 @@ namespace BlacksmithGuild.DevTools.Reporting
                 var immediateDone = CampaignMapReadyOrchestrator.ImmediateHooksCompleted;
                 var driversBlocked = LaunchPathInference.AreAutonomousDriversBlocked(immediateDone, stabilizationActive);
                 var heavyFlushDeferred = CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out var heavyFlushDeferReason);
+                ReadinessSurfaceSnapshot surfaceSnapshot;
+                try
+                {
+                    surfaceSnapshot = GameSessionState.CaptureReadinessSurfaceSnapshot();
+                }
+                catch
+                {
+                    surfaceSnapshot = new ReadinessSurfaceSnapshot { ReadinessSurface = ReadinessSurfaceKinds.Unknown };
+                }
 
                 var builder = new StringBuilder();
                 builder.AppendLine("{");
@@ -85,6 +94,7 @@ namespace BlacksmithGuild.DevTools.Reporting
                 builder.AppendLine($"  \"area\": \"{Escape(area)}\",");
                 builder.AppendLine($"  \"operation\": \"{Escape(operation)}\",");
                 builder.AppendLine($"  \"stage\": \"{Escape(stage)}\",");
+                builder.AppendLine($"  \"lastCrashContextOperation\": \"{Escape(operation)}\",");
                 if (!string.IsNullOrEmpty(deferReason))
                 {
                     builder.AppendLine($"  \"deferReason\": \"{Escape(deferReason)}\",");
@@ -108,6 +118,11 @@ namespace BlacksmithGuild.DevTools.Reporting
                     builder.AppendLine($"  \"heavyFlushDeferReason\": \"{Escape(heavyFlushDeferReason ?? "")}\",");
                 }
 
+                builder.AppendLine($"  \"readinessSurface\": \"{Escape(surfaceSnapshot.ReadinessSurface ?? ReadinessSurfaceKinds.Unknown)}\",");
+                builder.AppendLine($"  \"mapStateActive\": {surfaceSnapshot.MapStateActive.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"settlementMenuOpen\": {surfaceSnapshot.SettlementMenuOpen.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"settlementMenuId\": \"{Escape(surfaceSnapshot.SettlementMenuId ?? "")}\",");
+                builder.AppendLine($"  \"campaignMapSurfaceOpen\": {surfaceSnapshot.CampaignMapSurfaceOpen.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"autonomousDriversBlocked\": {driversBlocked.ToString().ToLowerInvariant()},");
                 builder.AppendLine("  \"lastBegin\": {");
                 builder.AppendLine($"    \"area\": \"{Escape(_lastBeginArea ?? "")}\",");

@@ -59,6 +59,12 @@ namespace BlacksmithGuild.DevTools
                 return true;
             }
 
+            if (GameSessionState.IsMapStateActive && !GameSessionState.IsCampaignMapSurfaceOpen)
+            {
+                reason = "settlement_menu_open";
+                return true;
+            }
+
             if (!GameSessionState.IsCampaignMapReady)
             {
                 reason = "map_not_ready";
@@ -243,10 +249,33 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (!ShouldDeferHeavyStatusFlush(out _))
+            if (!ShouldDeferHeavyStatusFlush(out var deferReason))
             {
-                RuntimeTrace.RunSafe("MapReady", "HeavyFlushUnblocked", () => GameSessionState.SyncForgeStatus());
+                EmitHeavyFlushUnblocked(deferReason: null, skipped: false);
             }
+            else
+            {
+                EmitHeavyFlushUnblocked(deferReason: deferReason, skipped: true);
+            }
+        }
+
+        private static void EmitHeavyFlushUnblocked(string deferReason, bool skipped)
+        {
+            RuntimeTrace.RunSafe("StatusFlush", "HeavyFlushUnblocked", () =>
+            {
+                if (skipped)
+                {
+                    RuntimeTrace.LogSkipped("StatusFlush", "HeavyFlushUnblocked", deferReason ?? "deferred");
+                    DebugLogger.Test(
+                        $"[TBG MAPREADY] HeavyFlushUnblocked skipped: {deferReason}",
+                        showInGame: false);
+                    return;
+                }
+
+                DebugLogger.Test(
+                    "[TBG MAPREADY] HeavyFlushUnblocked ok; full sync deferred to safe tick cadence.",
+                    showInGame: false);
+            }, emitEnd: true);
         }
 
         private static void LogOrchestratorDeferred(string reason)
@@ -280,7 +309,7 @@ namespace BlacksmithGuild.DevTools
             {
                 RuntimeTrace.Run("MapReady", "EmitReadyLine", () =>
                 {
-                    InGameNotice.Ready("campaign map ready. Press F8 for commands.");
+                    InGameNotice.Ready(GameSessionState.GetSessionReadyNoticeText());
                 });
                 InGameNotice.Info(ModDisplay.CompactLine("Market", "Press Ctrl+Alt+M for market intel."));
                 DebugLogger.Test("Campaign map ready; dev hotkeys are now meaningful.", showInGame: false);
@@ -337,11 +366,22 @@ namespace BlacksmithGuild.DevTools
                 () => GameSessionState.CanPollFileInbox,
                 out var inboxReady);
 
-            if (mapReady && heroReady)
+            if (mapReady && heroReady && GameSessionState.IsCampaignMapSurfaceOpen)
             {
                 RuntimeTrace.RunSafe("StatusFlush", "SetTestMapReady", () =>
                 {
                     ForgeStatus.SetTest("map_ready", "PASS", "campaign map ready (immediate status flush)");
+                });
+            }
+            else if (mapReady && heroReady && GameSessionState.IsMapMenuOpen)
+            {
+                var settlement = GameSessionState.CurrentSettlementName ?? "settlement";
+                RuntimeTrace.RunSafe("StatusFlush", "SetTestMapReady", () =>
+                {
+                    ForgeStatus.SetTest(
+                        "map_ready",
+                        "PASS",
+                        $"settlement town menu ({settlement}; mapReady=true surface=settlement_menu)");
                 });
             }
             else

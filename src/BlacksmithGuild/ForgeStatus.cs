@@ -444,7 +444,8 @@ namespace BlacksmithGuild
             builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
             builder.AppendLine($"    \"sessionReady\": {SafeSessionBool(() => GameSessionState.IsCampaignSessionReady).ToString().ToLowerInvariant()},");
             builder.AppendLine($"    \"mapReady\": {SafeSessionBool(() => GameSessionState.IsCampaignMapReady).ToString().ToLowerInvariant()},");
-            builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()}");
+            builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()},");
+            AppendSurfaceSessionFields(builder);
             builder.AppendLine("  },");
             builder.AppendLine("  \"quickStart\": {");
             builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
@@ -518,7 +519,8 @@ namespace BlacksmithGuild
                 builder.AppendLine($"    \"settlementName\": \"{SafeSessionValue(() => GameSessionState.CurrentSettlementName)}\",");
                 builder.AppendLine($"    \"locationId\": \"{SafeSessionValue(() => GameSessionState.CurrentLocationId)}\",");
                 builder.AppendLine($"    \"canPollFileInbox\": {SafeSessionBool(() => GameSessionState.CanPollFileInbox).ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"canPollHotkeys\": {SafeSessionBool(() => GameSessionState.CanPollHotkeys).ToString().ToLowerInvariant()}");
+                builder.AppendLine($"    \"canPollHotkeys\": {SafeSessionBool(() => GameSessionState.CanPollHotkeys).ToString().ToLowerInvariant()},");
+                AppendSurfaceSessionFields(builder);
                 builder.AppendLine("  },");
                 builder.AppendLine("  \"quickStart\": {");
                 builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
@@ -781,26 +783,48 @@ namespace BlacksmithGuild
             }
         }
 
-        private static void AppendFactionPowerPosture(StringBuilder builder)
+        private static void AppendSurfaceSessionFields(StringBuilder builder)
         {
+            ReadinessSurfaceSnapshot snap;
             try
             {
-                var block = FactionPowerPostureScanner.Scan();
-                builder.AppendLine("  \"clanPosture\": {");
-                builder.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
-                builder.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
-                builder.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
-                builder.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
-                builder.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
-                builder.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
-                builder.AppendLine(
-                    $"    \"strengthRatioVsNearestHostile\": {(block.StrengthRatioVsNearestHostile.HasValue ? block.StrengthRatioVsNearestHostile.Value.ToString("0.##") : "null")}");
-                builder.AppendLine("  },");
+                snap = GameSessionState.CaptureReadinessSurfaceSnapshot();
             }
             catch
             {
+                snap = new ReadinessSurfaceSnapshot { ReadinessSurface = ReadinessSurfaceKinds.Unknown };
             }
+
+            builder.AppendLine($"    \"mapStateActive\": {snap.MapStateActive.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementMenuOpen\": {snap.SettlementMenuOpen.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementMenuId\": \"{Escape(snap.SettlementMenuId ?? "")}\",");
+            builder.AppendLine($"    \"campaignMapSurfaceOpen\": {snap.CampaignMapSurfaceOpen.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementInteriorReady\": {snap.SettlementInteriorReady.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"readinessSurface\": \"{Escape(snap.ReadinessSurface ?? ReadinessSurfaceKinds.Unknown)}\"");
+        }
+
+        private static void AppendFactionPowerPosture(StringBuilder builder)
+        {
+            if (!RuntimeTrace.RunSafe(
+                    "ForgeStatus",
+                    "FactionPowerPostureScan",
+                    () => FactionPowerPostureScanner.Scan(),
+                    out FactionPowerPostureBlock block))
+            {
+                return;
+            }
+
+            builder.AppendLine("  \"clanPosture\": {");
+            builder.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
+            builder.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
+            builder.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
+            builder.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
+            builder.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
+            builder.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
+            builder.AppendLine(
+                $"    \"strengthRatioVsNearestHostile\": {(block.StrengthRatioVsNearestHostile.HasValue ? block.StrengthRatioVsNearestHostile.Value.ToString("0.##") : "null")}");
+            builder.AppendLine("  },");
         }
 
         private static string SafeSessionValue(Func<string> getter, string fallback = "")

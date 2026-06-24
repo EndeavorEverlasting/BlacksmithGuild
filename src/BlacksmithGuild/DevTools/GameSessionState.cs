@@ -60,6 +60,14 @@ namespace BlacksmithGuild.DevTools
 
         public static bool IsSettlementMenuReady { get; private set; }
 
+        public static bool IsMapStateActive { get; private set; }
+
+        public static bool IsCampaignMapSurfaceOpen { get; private set; }
+
+        public static string ReadinessSurface { get; private set; } = ReadinessSurfaceKinds.Unknown;
+
+        public static string SettlementMenuId { get; private set; }
+
         public static bool IsCampaignSessionReady =>
             IsMainHeroReady
             && (IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady);
@@ -141,6 +149,9 @@ namespace BlacksmithGuild.DevTools
             IsSettlementInteriorReady = false;
             IsTavernLocationReady = false;
             IsSettlementMenuReady = false;
+            IsMapStateActive = false;
+            IsCampaignMapSurfaceOpen = false;
+            ReadinessSurface = ReadinessSurfaceKinds.Loading;
 
             try
             {
@@ -186,6 +197,9 @@ namespace BlacksmithGuild.DevTools
             IsSettlementInteriorReady = false;
             IsTavernLocationReady = false;
             IsSettlementMenuReady = false;
+            IsMapStateActive = false;
+            IsCampaignMapSurfaceOpen = false;
+            ReadinessSurface = ReadinessSurfaceKinds.Loading;
 
             try
             {
@@ -247,6 +261,7 @@ namespace BlacksmithGuild.DevTools
             }
 
             EvaluateSettlementMenuReady();
+            EvaluateReadinessSurface();
 
             if (IsSettlementInteriorReady)
             {
@@ -406,6 +421,17 @@ namespace BlacksmithGuild.DevTools
             {
                 if (IsCampaignMapReady)
                 {
+                    if (IsCampaignMapSurfaceOpen)
+                    {
+                        return "campaign map ready";
+                    }
+
+                    if (IsMapMenuOpen)
+                    {
+                        var settlement = CurrentSettlementName ?? CurrentSettlementStringId ?? "settlement";
+                        return $"settlement town menu ({settlement})";
+                    }
+
                     return "campaign map ready";
                 }
 
@@ -677,19 +703,30 @@ namespace BlacksmithGuild.DevTools
 
         private static void ReadMenuState()
         {
+            IsMapStateActive = false;
             try
             {
                 if (GameStateManager.Current?.ActiveState is MapState mapState)
                 {
+                    IsMapStateActive = true;
                     IsMapMenuOpen = mapState.AtMenu;
                     MapMenuId = mapState.GameMenuId;
                     ActiveMenuId = mapState.GameMenuId;
+                    SettlementMenuId = mapState.GameMenuId;
+                }
+                else
+                {
+                    IsMapMenuOpen = false;
+                    MapMenuId = null;
+                    SettlementMenuId = null;
                 }
             }
             catch
             {
+                IsMapStateActive = false;
                 IsMapMenuOpen = false;
                 MapMenuId = null;
+                SettlementMenuId = null;
             }
 
             try
@@ -702,6 +739,93 @@ namespace BlacksmithGuild.DevTools
             }
             catch
             {
+            }
+        }
+
+        private static void EvaluateReadinessSurface()
+        {
+            SettlementMenuId = MapMenuId;
+            IsCampaignMapSurfaceOpen = IsMapStateActive && !IsMapMenuOpen;
+
+            if (!IsCampaignLoaded || !IsMainHeroReady)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.Loading;
+                return;
+            }
+
+            if (MapTransitionGuard.IsUnsafeContinueLoadWindow()
+                && !MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.Loading;
+                return;
+            }
+
+            var activeStateName = GetActiveStateName();
+            if (string.Equals(activeStateName, "MainMenuState", StringComparison.Ordinal))
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.MainMenu;
+                return;
+            }
+
+            if (IsMapStateActive && IsMapMenuOpen)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.SettlementMenu;
+                return;
+            }
+
+            if (IsSettlementInteriorReady)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.SettlementInterior;
+                return;
+            }
+
+            if (IsCampaignMapSurfaceOpen)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.MapSurface;
+                return;
+            }
+
+            ReadinessSurface = ReadinessSurfaceKinds.Unknown;
+        }
+
+        public static ReadinessSurfaceSnapshot CaptureReadinessSurfaceSnapshot()
+        {
+            return new ReadinessSurfaceSnapshot
+            {
+                MapStateActive = IsMapStateActive,
+                SettlementMenuOpen = IsMapMenuOpen,
+                SettlementMenuId = SettlementMenuId ?? MapMenuId ?? "",
+                SettlementName = CurrentSettlementName ?? CurrentSettlementStringId ?? "",
+                CampaignMapSurfaceOpen = IsCampaignMapSurfaceOpen,
+                SettlementInteriorReady = IsSettlementInteriorReady,
+                ReadinessSurface = ReadinessSurface ?? ReadinessSurfaceKinds.Unknown
+            };
+        }
+
+        public static void LogReadinessSurfaceTrace(ReadinessSurfaceSnapshot snap)
+        {
+            var settlement = string.IsNullOrEmpty(snap.SettlementName) ? "unknown" : snap.SettlementName;
+            DebugLogger.Test(
+                $"[TBG READINESS] surface={snap.ReadinessSurface} settlement={settlement} atMenu={snap.SettlementMenuOpen.ToString().ToLowerInvariant()} mapReady={IsCampaignMapReady.ToString().ToLowerInvariant()} sessionReady={IsCampaignSessionReady.ToString().ToLowerInvariant()}",
+                showInGame: false);
+            DebugLogger.Test(
+                $"[TBG TRACE] area=StatusFlush op=ReadinessSurface stage=ok surface={snap.ReadinessSurface} settlement={settlement} atMenu={snap.SettlementMenuOpen.ToString().ToLowerInvariant()} path={LaunchPathInference.GetPathLabel()}",
+                showInGame: false);
+        }
+
+        public static string GetSessionReadyNoticeText()
+        {
+            var settlement = CurrentSettlementName ?? CurrentSettlementStringId ?? "settlement";
+            switch (ReadinessSurface)
+            {
+                case ReadinessSurfaceKinds.SettlementMenu:
+                    return $"session ready at {settlement} town menu. Press F8 for commands.";
+                case ReadinessSurfaceKinds.MapSurface:
+                    return "campaign map ready. Press F8 for commands.";
+                case ReadinessSurfaceKinds.SettlementInterior:
+                    return "settlement interior ready. Press F8 for commands.";
+                default:
+                    return "session ready. Press F8 for commands.";
             }
         }
 
@@ -743,10 +867,15 @@ namespace BlacksmithGuild.DevTools
                     RuntimeTrace.RunSafe("StatusFlush", "SyncForgeStatusRefresh", () => Refresh());
                 }
 
+                RuntimeTrace.RunSafe("StatusFlush", "ReadinessSurface", () =>
+                {
+                    LogReadinessSurfaceTrace(CaptureReadinessSurfaceSnapshot());
+                });
+
                 RuntimeTrace.RunSafe("StatusFlush", "session_snapshot_begin", () =>
                 {
                     DebugLogger.Test(
-                        $"[TBG STATUS] snapshot phase={Phase} timePaused={IsTimePaused.ToString().ToLowerInvariant()} sessionReady={IsCampaignSessionReady.ToString().ToLowerInvariant()} mapReady={IsCampaignMapReady.ToString().ToLowerInvariant()}",
+                        $"[TBG STATUS] snapshot phase={Phase} timePaused={IsTimePaused.ToString().ToLowerInvariant()} sessionReady={IsCampaignSessionReady.ToString().ToLowerInvariant()} mapReady={IsCampaignMapReady.ToString().ToLowerInvariant()} surface={ReadinessSurface} campaignMapSurfaceOpen={IsCampaignMapSurfaceOpen.ToString().ToLowerInvariant()}",
                         showInGame: false);
                 });
                 RuntimeTrace.RunSafe("StatusFlush", "session_snapshot_ok", () => { });

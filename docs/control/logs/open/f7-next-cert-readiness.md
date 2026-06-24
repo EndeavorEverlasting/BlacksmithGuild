@@ -1,8 +1,8 @@
 # F7 Next Cert Readiness Matrix
 
-**Author:** Agent A — Cert / Evidence / Git / PR  
-**Branch:** `fix/f7-gate-stability` @ `cc6fbac`  
-**Gate:** RED — death after `HeavyFlushUnblocked` @ `200917` seq=8115  
+**Author:** Agent B — Runtime / Readiness / Gameplay safety  
+**Branch:** `fix/f7-gate-stability` @ pending  
+**Gate:** RED — death after `HeavyFlushUnblocked` @ `200917` seq=8115; **B post-unblock fix landed pending A re-cert**  
 **PR #7:** **HOLD**
 
 ---
@@ -179,16 +179,29 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
 | **Runtime survival past update_readiness** | `cc6fbac` | B | **PARTIAL** — grace OK; death @ `200917` seq=8115 after `HeavyFlushUnblocked` |
+| **Post-unblock fail-soft + surface telemetry** | pending | B | **LANDED** — trace-only unblock; `settlement_menu_open` defer; `readinessSurface` fields |
 | **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** (202052, 195817, 200917) |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
 **Agent A live cert gate:**
 
-1. Agent B fixes first `FlushFull` after `HeavyFlushUnblocked` (seq=8115 class death) **OR**
+1. Agent B post-unblock hardening (`settlement_menu_open` defer, trace-only `HeavyFlushUnblocked`) **LANDED — pending A re-cert** **OR**
 2. User explicitly authorizes diagnostic cert
 
-**Do not run blind live cert** without B fix for post-unblock flush death.
+**Status JSON semantics (unchanged top-level `campaignReady`):** reflects `IsCampaignMapReady` (MapState active). New session fields disambiguate surface:
+
+| Field | Quyaz town menu example |
+|-------|-------------------------|
+| `sessionReady` | `true` |
+| `campaignReady` / `mapReady` | may be `true` (MapState) |
+| `readinessSurface` | `settlement_menu` |
+| `settlementMenuOpen` | `true` |
+| `campaignMapSurfaceOpen` | `false` |
+
+F7 Continue cert may PASS at settlement menu if manifest criteria met — evidence must show surface fields clearly.
+
+**Do not run blind live cert** without pulling latest B fix.
 
 ---
 

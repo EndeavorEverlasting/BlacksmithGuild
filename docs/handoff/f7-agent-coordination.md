@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `c9531e7` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B post-unblock fix) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — grace lifecycle validated; death @ `200917` seq=8115 after `HeavyFlushUnblocked` |
+| Gate verdict | **RED** — B post-unblock fix landed; pending A re-cert |
 | Last F7 evidence | `20260623-200917` @ `c9531e7` |
-| Next live cert | **BLOCKED** — Agent B: first FlushFull after unblocked still kills |
+| Next live cert | **Agent A** — F7 Continue after B post-unblock hardening |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -43,7 +43,7 @@ Every agent **must**:
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-200917` FAIL — route B post-unblock flush | — | `c9531e7` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | **Next:** seq=8115 death after `HeavyFlushUnblocked` | — | `cc6fbac` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fail-soft + surface telemetry @ `200917` | — | pending |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
@@ -80,6 +80,17 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-23 — Agent B → A, C (post-unblock fail-soft + surface telemetry @ session `200917`)
+
+- **Root cause:** `HeavyFlushUnblocked` @ seq=8106 auto-called `SyncForgeStatus` → `update_readiness begin` seq=8115 → process death. `heavyFlushDeferred=false` while `MapState.AtMenu=true` (Quyaz town menu) — `mapReady=true` but not open campaign map surface.
+- **Landed:** `HeavyFlushUnblocked` trace-only (Option 1) — no auto `SyncForgeStatus`; markers `StatusFlush op=HeavyFlushUnblocked stage=skipped|ok|end`.
+- **Landed:** `ShouldDeferHeavyStatusFlush` — `settlement_menu_open` when `mapStateActive && !campaignMapSurfaceOpen`.
+- **Landed:** `ReadinessSurfaceSnapshot`, `readinessSurface` in status JSON / CrashContext / trace; surface-aware ready line.
+- **Landed:** `FactionPowerPostureScanner` fail-soft via `RunSafe`.
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS.
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** Re-cert; expect `HeavyFlushUnblocked stage=skipped reason=settlement_menu_open`; no seq=8115 death; `readinessSurface=settlement_menu`, `campaignMapSurfaceOpen=false`.
 
 ### 2026-06-23 — Agent A → B, C (cert session `20260623-200917` post-`cc6fbac`)
 
