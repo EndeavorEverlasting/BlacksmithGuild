@@ -29,7 +29,7 @@ Every agent **must**:
 | Field | Value |
 |-------|-------|
 | Product baseline | **`main`** @ `09f039f` (PR #11 travel execute merge) |
-| Docs HEAD | *(this commit — post-PR #11 atlas sync)* |
+| Docs HEAD | `045eb6b` — post-PR #11 atlas sync |
 | Active stacked branches | `feat/runtime-gameplay-state-machine` @ `69263a9` (**B**) · `fix/pr11-unattended-execute-cert-runner` @ `70e5404` (**C**) — rebase onto `09f039f` before PR |
 | Deleted / superseded | `feat/town-to-town-execute-path` (**merged** PR #11); `docs/post-pr10-atlas-sync` superseded |
 | PR #7 | **MERGED** — F7 gate stability + assist foundation |
@@ -64,7 +64,7 @@ Every agent **must**:
 | **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Future cert/evidence/PR judgment; optional attach-only execute cert (`launchUsed=false`) | — | `09f039f` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` / **STACKED** | Runtime gameplay state machine — `feat/runtime-gameplay-state-machine` @ `69263a9`; **rebase onto `main` @ `09f039f` before PR** | — | `69263a9` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `NEXT` / **STACKED** | Unattended execute cert runner — `fix/pr11-unattended-execute-cert-runner` @ `70e5404`; **rebase onto `main` @ `09f039f` before PR** | — | `70e5404` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #11 atlas sync | — | *(this commit)* |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #11 atlas sync | — | `045eb6b` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
