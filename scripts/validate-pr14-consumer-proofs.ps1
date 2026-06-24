@@ -1,5 +1,8 @@
 # PR #14 consumer proof validation — offline fixtures + optional live session probe.
-param([switch]$Live)
+param(
+    [switch]$Live,
+    [string]$EvidenceDir
+)
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -9,6 +12,7 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
+. (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 
 $proofs = New-Object System.Collections.Generic.List[object]
 function Add-Proof {
@@ -93,6 +97,67 @@ Add-Proof -Name 'travel_gate_blocks_stale_heartbeat' -Pass (-not $staleGate.allo
     -Detail "allowed=$($staleGate.allowed) reason=$($staleGate.reason)"
 
 Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
+
+# --- Full-run evidence folder validation (FreshTestLaunch cycle-result) ---
+if ($EvidenceDir) {
+    if (-not (Test-Path -LiteralPath $EvidenceDir)) { throw "EvidenceDir not found: $EvidenceDir" }
+    $cyclePath = Join-Path $EvidenceDir 'cycle-result.json'
+    if (-not (Test-Path -LiteralPath $cyclePath)) { throw "cycle-result.json missing in $EvidenceDir" }
+    $cycle = Get-Content -LiteralPath $cyclePath -Raw | ConvertFrom-Json
+
+    Add-Proof -Name 'evidence_stateMachineConsumed' -Pass ($cycle.stateMachineConsumed -eq $true) `
+        -Detail "stateMachineConsumed=$($cycle.stateMachineConsumed)"
+    Add-Proof -Name 'evidence_runtimeLifecycleConsumed' -Pass ($cycle.runtimeLifecycleConsumed -eq $true) `
+        -Detail "runtimeLifecycleConsumed=$($cycle.runtimeLifecycleConsumed)"
+    Add-Proof -Name 'evidence_readinessConfidence' -Pass ($cycle.readinessConfidence -eq 'state_machine') `
+        -Detail "readinessConfidence=$($cycle.readinessConfidence)"
+    Add-Proof -Name 'evidence_travelGateReason' -Pass ($cycle.travelGateReason -eq 'state_machine_travel_ready') `
+        -Detail "travelGateReason=$($cycle.travelGateReason) allowed=$($cycle.travelGateAllowed)"
+    Add-Proof -Name 'evidence_passFail' -Pass ($cycle.passFail -eq 'PASS') `
+        -Detail "passFail=$($cycle.passFail) failureClass=$($cycle.failureClass)"
+
+    $statusPath = Join-Path $EvidenceDir 'BlacksmithGuild_Status.json'
+    if (Test-Path -LiteralPath $statusPath) {
+        $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+        if ($st.stateMachine) {
+            $smPath = Join-Path $EvidenceDir 'status-stateMachine.json'
+            ($st.stateMachine | ConvertTo-Json -Depth 8) | Set-Content -LiteralPath $smPath -Encoding UTF8
+            $surface = [string]$st.stateMachine.gameplaySurface
+            $surfaceOk = $surface -in @('settlement_menu', 'campaign_map')
+            Add-Proof -Name 'evidence_gameplaySurface' -Pass $surfaceOk `
+                -Detail "gameplaySurface=$surface safeToExecuteTravel=$($st.stateMachine.safeToExecuteTravel)"
+            Add-Proof -Name 'evidence_canAcceptAssistiveCommand' -Pass ($st.stateMachine.canAcceptAssistiveCommand -eq $true) `
+                -Detail "canAcceptAssistiveCommand=$($st.stateMachine.canAcceptAssistiveCommand)"
+        } else {
+            Add-Proof -Name 'evidence_gameplaySurface' -Pass $false -Detail 'stateMachine block missing from harvested Status.json'
+        }
+    }
+
+    $runtimePath = Join-Path $EvidenceDir 'BlacksmithGuild_RuntimeLifecycle.json'
+    if (Test-Path -LiteralPath $runtimePath) {
+        $runtime = Read-Pr11RuntimeLifecycle -BannerlordRoot $EvidenceDir -Path $runtimePath
+        $hbFresh = Test-Pr11RuntimeHeartbeatFresh -RuntimeLifecycle $runtime
+        Add-Proof -Name 'evidence_runtimeHeartbeatRecorded' -Pass $runtime.parseOk `
+            -Detail "heartbeat=$($runtime.lastHeartbeatUtc) freshAtHarvest=$hbFresh"
+    }
+
+    $execPath = Join-Path $EvidenceDir 'BlacksmithGuild_AssistiveTravelExecution.json'
+    if (Test-Path -LiteralPath $execPath) {
+        try {
+            $exec = Get-Content -LiteralPath $execPath -Raw | ConvertFrom-Json
+            $execPass = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $exec
+            Add-Proof -Name 'evidence_executeProof' -Pass $execPass.pass `
+                -Detail "travelCommandMode=$($exec.travelCommandMode) actualExecutionObserved=$($exec.actualExecutionObserved)"
+        } catch {
+            Add-Proof -Name 'evidence_executeProof' -Pass $false -Detail $_.Exception.Message
+        }
+    }
+
+    foreach ($required in @('process-lifecycle.json', 'wait-timeline.json', 'cert-run-output.txt')) {
+        $p = Join-Path $EvidenceDir $required
+        Add-Proof -Name "evidence_has_$required" -Pass (Test-Path -LiteralPath $p) -Detail $p
+    }
+}
 
 # --- Optional live session probe (real Bannerlord artifacts) ---
 if ($Live) {

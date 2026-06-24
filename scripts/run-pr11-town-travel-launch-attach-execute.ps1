@@ -205,9 +205,8 @@ if (-not $SkipLaunch) {
         $launchRequestedUtc = (Get-Date).ToUniversalTime()
         $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
         $timelinePath = Join-Path $checkpointDir 'ExternalStateTimeline.json'
-        & powershell -NoProfile -ExecutionPolicy Bypass -File $navScript `
-            -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
-            -ExternalStateTimelinePath $timelinePath
+        & $navScript -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
+            -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
         $navExit = $LASTEXITCODE
         $s2 = Get-Pr11ProcessSnapshot -Label 'S2_after_launch_request' -BannerlordRoot $bannerlordRoot
         Save-Pr11ProcessSnapshot -Snapshot $s2 -OutputPath (Join-Path $checkpointDir 'process-snapshot-S2.json') | Out-Null
