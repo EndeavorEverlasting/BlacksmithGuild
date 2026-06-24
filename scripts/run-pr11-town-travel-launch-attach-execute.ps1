@@ -293,6 +293,10 @@ if ($executePass.pass) {
     $exitCode = 0
     $failureClass = $null
     $routeAgent = 'Agent A - Cert / Evidence / Git / PR (evidence ready for review)'
+    if (-not $executeOk) {
+        $failureClass = 'inbox_ack_timeout_execute_evidence_pass'
+        Write-CertLog 'NOTE: execute inbox ack timed out but AssistiveTravelExecution.json satisfies PASS criteria'
+    }
 } else {
     $passFail = 'FAIL'
     $exitCode = 2
