@@ -386,6 +386,7 @@ namespace BlacksmithGuild
             _lastCommandSequence = sequence;
             _lastCommandTime = DateTime.Now;
             Log($"COMMAND {commandName} source={source} result={result} seq={sequence}{(string.IsNullOrEmpty(detail) ? "" : " - " + detail)}");
+            RuntimeLifecycleWriter.RecordCommandFinished(commandName, sequence, result, detail);
             Flush(overall: result == "FAIL" ? "FAIL" : null);
         }
 
@@ -448,6 +449,7 @@ namespace BlacksmithGuild
             builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()},");
             AppendSurfaceSessionFields(builder);
             builder.AppendLine("  },");
+            AppendStateMachineBlock(builder);
             builder.AppendLine("  \"quickStart\": {");
             builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
             builder.AppendLine($"    \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");
@@ -522,6 +524,7 @@ namespace BlacksmithGuild
                 builder.AppendLine($"    \"canPollHotkeys\": {SafeSessionBool(() => GameSessionState.CanPollHotkeys).ToString().ToLowerInvariant()},");
                 AppendSurfaceSessionFields(builder);
                 builder.AppendLine("  },");
+                AppendStateMachineBlock(builder);
                 builder.AppendLine("  \"quickStart\": {");
                 builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");
@@ -812,6 +815,21 @@ namespace BlacksmithGuild
             builder.AppendLine($"    \"inGameAssistReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsInGameAssistReady).ToString().ToLowerInvariant()},");
             builder.AppendLine($"    \"canAcceptAssistiveCommand\": {SafeSessionBool(() => AssistReadinessEvaluator.CanAcceptAssistiveCommand).ToString().ToLowerInvariant()},");
             builder.AppendLine($"    \"assistiveCertReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsInGameAssistReady).ToString().ToLowerInvariant()}");
+        }
+
+        private static void AppendStateMachineBlock(StringBuilder builder)
+        {
+            GameplaySurfaceSnapshot snapshot;
+            try
+            {
+                snapshot = GameSessionState.LatestGameplaySurface ?? GameplaySurfaceClassifier.CaptureLive();
+            }
+            catch
+            {
+                snapshot = new GameplaySurfaceSnapshot();
+            }
+
+            RuntimeLifecycleWriter.AppendStateMachine(builder, snapshot);
         }
 
         private static void AppendFactionPowerPosture(StringBuilder builder)

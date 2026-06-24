@@ -93,6 +93,7 @@ namespace BlacksmithGuild.DevTools
             }
 
             DebugLogger.Test($"Command started: {commandName}", showInGame: false);
+            RuntimeLifecycleWriter.RecordCommandStarted(commandName, sequence);
 
             var result = Execute(commandName, payload);
             ForgeStatus.RecordCommand(commandName, source, result.ToString(), null, sequence);

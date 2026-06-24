@@ -67,6 +67,8 @@ namespace BlacksmithGuild.DevTools
 
         public static string ReadinessSurface { get; private set; } = ReadinessSurfaceKinds.Unknown;
 
+        public static GameplaySurfaceSnapshot LatestGameplaySurface { get; private set; }
+
         public static string SettlementMenuId { get; private set; }
 
         public static bool IsCampaignSessionReady =>
@@ -285,6 +287,20 @@ namespace BlacksmithGuild.DevTools
             CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
             AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;
+            UpdateGameplaySurface();
+        }
+
+        private static void UpdateGameplaySurface()
+        {
+            try
+            {
+                LatestGameplaySurface = GameplaySurfaceClassifier.CaptureLive();
+                RuntimeLifecycleWriter.OnHeartbeat(LatestGameplaySurface);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG STATE] gameplay surface update failed: {ex.Message}", showInGame: false);
+            }
         }
 
         internal static void SetCanPollFileInbox(bool value)

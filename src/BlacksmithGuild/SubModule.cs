@@ -22,6 +22,7 @@ namespace BlacksmithGuild
         {
             base.OnSubModuleLoad();
             ForgeStatus.SetModLoaded(true);
+            RuntimeLifecycleWriter.OnModuleLoaded();
             ForgeStatus.SetStep("module_load", "PASS");
             DevToolsConfig.TryLoadMapReadyBisectFromEnvironment();
             PendingReloadWatcher.OnModuleLoad();
@@ -141,6 +142,11 @@ namespace BlacksmithGuild
                     GuildLog.Info($"[TBG ERROR] Campaign start failed: {ex.Message}", showInGame: false);
                 }
             }
+        }
+        protected override void OnSubModuleUnloaded()
+        {
+            RuntimeLifecycleWriter.RecordGracefulShutdown("module_unloaded");
+            base.OnSubModuleUnloaded();
         }
     }
 }
