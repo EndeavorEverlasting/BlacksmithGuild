@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | **`main`** @ `3384c7d` |
+| Branch / HEAD | **`main`** @ `27fc6ae` |
 | Active feature branch | *(none)* — `fix/f7-gate-stability` **merged** via PR #7; inactive |
 | Deleted branch | `test/assistive-inbox-sequence-regression` (merged PR #10; local + remote deleted) |
 | PR #7 | **MERGED** — F7 gate stability + assist foundation |
@@ -62,7 +62,7 @@ Every agent **must**:
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Merged PR #7 + PR #10; no live cert unless user authorizes | — | `3384c7d` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Travel/trade **execute** path — new feature branch from `main` | — | `e4c261d` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `IDLE` | Inbox sequence regression merged @ PR #10; return on runner defects only | — | `2df444b` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `IN_PROGRESS` | Sync docs to `main` @ `3384c7d` | — | (this commit) |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #10 atlas sync on `main` | — | `27fc6ae` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
