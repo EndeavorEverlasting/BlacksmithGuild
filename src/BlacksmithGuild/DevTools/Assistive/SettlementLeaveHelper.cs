@@ -70,7 +70,9 @@ namespace BlacksmithGuild.DevTools.Assistive
                 }
             }
 
-            reason = GameSessionState.IsMapMenuOpen ? "leave_town_incomplete" : "leave_town_failed";
+            reason = GameSessionState.IsMapMenuOpen
+                ? AssistiveTravelFallbackReasons.LeaveTownIncomplete
+                : AssistiveTravelFallbackReasons.LeaveTownFailed;
             DebugLogger.Test($"[TBG ASSIST] travel stage=leave_town failed reason={reason}", showInGame: false);
             return false;
         }

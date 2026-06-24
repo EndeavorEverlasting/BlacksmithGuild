@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
@@ -20,11 +19,11 @@ namespace BlacksmithGuild.DevTools.Assistive
             var result = new AssistiveTravelExecutionResult
             {
                 ExecuteRequested = executeRequested,
-                FakeGameplayDelta = false,
-                CurrentSettlement = GameSessionState.CurrentSettlementName
-                    ?? GameSessionState.CurrentSettlementStringId
-                    ?? ""
+                FakeGameplayDelta = false
             };
+
+            var current = GameSessionState.ResolveCurrentSettlement();
+            AssistiveTravelSettlementIdentity.ApplyCurrent(result, current);
 
             if (!AssistReadinessEvaluator.CanAcceptAssistiveCommand)
             {
@@ -41,23 +40,24 @@ namespace BlacksmithGuild.DevTools.Assistive
             result.CommandAccepted = true;
             GameSessionState.Refresh();
             AssistReadinessEvaluator.ApplyInboxAndAssistFlags(trace: false);
+            AssistiveTravelSettlementIdentity.ApplyCurrent(result, GameSessionState.ResolveCurrentSettlement());
 
             var targetName = ResolveTargetName(payload);
-            result.TargetSettlement = targetName;
-
             var target = AssistiveLeaveTownTravelService.ResolveTargetSettlement(targetName);
-            var current = GameSessionState.ResolveCurrentSettlement();
+            AssistiveTravelSettlementIdentity.ApplyTarget(result, target, targetName);
+
             if (string.IsNullOrWhiteSpace(targetName) || target == null)
             {
-                result.FallbackReason = "invalid_target";
+                result.FallbackReason = AssistiveTravelFallbackReasons.InvalidTarget;
                 result.TravelCommandMode = "advisory_only";
                 Finish(result, source);
                 return DevCommandResult.Success;
             }
 
+            current = GameSessionState.ResolveCurrentSettlement();
             if (current != null && target == current)
             {
-                result.FallbackReason = "target_is_current_settlement";
+                result.FallbackReason = AssistiveTravelFallbackReasons.TargetIsCurrentSettlement;
                 result.TravelCommandMode = "advisory_only";
                 Finish(result, source);
                 return DevCommandResult.Success;
@@ -68,7 +68,7 @@ namespace BlacksmithGuild.DevTools.Assistive
 
             if (!executeRequested)
             {
-                result.FallbackReason = "execute_not_requested";
+                result.FallbackReason = AssistiveTravelFallbackReasons.ExecuteNotRequested;
                 result.TravelCommandMode = "advisory_only";
                 result.ExecuteAllowed = false;
                 Finish(result, source);
@@ -77,7 +77,7 @@ namespace BlacksmithGuild.DevTools.Assistive
 
             if (GameSessionState.IsMissionActiveForTrace())
             {
-                result.FallbackReason = "mission_active";
+                result.FallbackReason = AssistiveTravelFallbackReasons.MissionActive;
                 result.TravelCommandMode = "advisory_only";
                 Finish(result, source);
                 return DevCommandResult.Success;
@@ -85,7 +85,8 @@ namespace BlacksmithGuild.DevTools.Assistive
 
             if (!AssistReadinessEvaluator.IsAssistSurfaceEligible())
             {
-                result.FallbackReason = $"surface_not_execute_eligible:{GameSessionState.ReadinessSurface}";
+                result.FallbackReason = AssistiveTravelFallbackReasons.SurfaceNotExecuteEligible(
+                    GameSessionState.ReadinessSurface);
                 result.TravelCommandMode = "advisory_only";
                 Finish(result, source);
                 return DevCommandResult.Success;
@@ -104,13 +105,8 @@ namespace BlacksmithGuild.DevTools.Assistive
             if (!result.ExecuteAllowed)
             {
                 result.FallbackReason = canSetTravelTarget
-                    ? "surface_not_execute_eligible"
-                    : "travel_api_unavailable";
-                if (!string.IsNullOrEmpty(travelApiDetail))
-                {
-                    result.FallbackReason = travelApiDetail;
-                }
-
+                    ? AssistiveTravelFallbackReasons.SurfaceNotExecuteEligible(GameSessionState.ReadinessSurface)
+                    : AssistiveTravelFallbackReasons.NormalizeTravelApiDetail(travelApiDetail, callAttempted: false);
                 result.TravelCommandMode = "advisory_only";
                 Finish(result, source);
                 return DevCommandResult.Success;
@@ -128,7 +124,7 @@ namespace BlacksmithGuild.DevTools.Assistive
                 {
                     result.LeaveTownAttempted = leaveAttempted;
                     result.LeaveTownSucceeded = leaveSucceeded;
-                    result.FallbackReason = leaveReason ?? "leave_town_failed";
+                    result.FallbackReason = NormalizeLeaveReason(leaveReason);
                     result.TravelCommandMode = "advisory_only";
                     Finish(result, source);
                     return DevCommandResult.Success;
@@ -140,7 +136,7 @@ namespace BlacksmithGuild.DevTools.Assistive
                 GameSessionState.Refresh();
                 if (GameSessionState.IsMapMenuOpen)
                 {
-                    result.FallbackReason = "leave_town_incomplete";
+                    result.FallbackReason = AssistiveTravelFallbackReasons.LeaveTownIncomplete;
                     result.TravelCommandMode = "advisory_only";
                     Finish(result, source);
                     return DevCommandResult.Success;
@@ -149,7 +145,9 @@ namespace BlacksmithGuild.DevTools.Assistive
 
             if (!AssistReadinessEvaluator.IsOpenMapReady)
             {
-                result.FallbackReason = $"surface_not_execute_eligible:{GameSessionState.ReadinessSurface}";
+                result.FallbackReason = result.LeaveTownAttempted
+                    ? AssistiveTravelFallbackReasons.MapSurfaceNotReached
+                    : AssistiveTravelFallbackReasons.SurfaceNotExecuteEligible(GameSessionState.ReadinessSurface);
                 result.TravelCommandMode = "advisory_only";
                 Finish(result, source);
                 return DevCommandResult.Success;
@@ -164,28 +162,37 @@ namespace BlacksmithGuild.DevTools.Assistive
             string source)
         {
             result.MapTravelAttempted = true;
-            DebugLogger.Test($"[TBG ASSIST] travel stage=map_travel target={target.Name}", showInGame: false);
+            DebugLogger.Test(
+                $"[TBG ASSIST] travel stage=map_travel target={target.Name} id={target.StringId}",
+                showInGame: false);
 
-            if (!AutoTravelService.TryStartTravelToSettlement(target, "assist", out var detail))
+            result.TravelApiCallSucceeded = AutoTravelService.TryStartTravelToSettlement(
+                target,
+                "assist",
+                out var detail);
+
+            if (!result.TravelApiCallSucceeded)
             {
-                result.FallbackReason = string.IsNullOrWhiteSpace(detail) ? "travel_api_unavailable" : detail;
+                result.FallbackReason = AssistiveTravelFallbackReasons.NormalizeTravelApiDetail(detail, callAttempted: true);
                 result.TravelCommandMode = "advisory_only";
                 AssistiveLeaveTownTravelService.NoteFailReason(result.FallbackReason);
                 Finish(result, source);
                 return DevCommandResult.Failed;
             }
 
-            result.MovementIntentSet = true;
-            result.ActualExecutionObserved = AutoTravelService.HasActiveRoute;
+            AssistiveTravelMovementObserver.Observe(target, result);
+
             if (result.MovementIntentSet && result.ActualExecutionObserved)
             {
                 result.TravelCommandMode = "execute";
                 result.FallbackReason = null;
+                result.MovementObservationPassed = true;
             }
             else
             {
                 result.TravelCommandMode = "advisory_only";
-                result.FallbackReason = "movement_intent_not_observed";
+                result.FallbackReason = result.MovementObservationFailureReason
+                    ?? AssistiveTravelFallbackReasons.MovementIntentNotObserved;
             }
 
             Finish(result, source);
@@ -194,11 +201,38 @@ namespace BlacksmithGuild.DevTools.Assistive
                 : DevCommandResult.Failed;
         }
 
+        private static string NormalizeLeaveReason(string leaveReason)
+        {
+            if (string.IsNullOrWhiteSpace(leaveReason))
+            {
+                return AssistiveTravelFallbackReasons.LeaveTownFailed;
+            }
+
+            if (leaveReason == AssistiveTravelFallbackReasons.LeaveTownIncomplete
+                || leaveReason == AssistiveTravelFallbackReasons.LeaveTownFailed
+                || leaveReason == AssistiveTravelFallbackReasons.MapSurfaceNotReached)
+            {
+                return leaveReason;
+            }
+
+            if (leaveReason == "leave_town_incomplete")
+            {
+                return AssistiveTravelFallbackReasons.LeaveTownIncomplete;
+            }
+
+            if (leaveReason == "not_at_settlement_menu")
+            {
+                return AssistiveTravelFallbackReasons.MapSurfaceNotReached;
+            }
+
+            return AssistiveTravelFallbackReasons.LeaveTownFailed;
+        }
+
         private static void Finish(AssistiveTravelExecutionResult result, string source)
         {
             AssistiveTravelEvidenceWriter.Write(result);
             DebugLogger.Test(
-                $"[TBG ASSIST] {source} travel mode={result.TravelCommandMode} executeRequested={result.ExecuteRequested} fallback={result.FallbackReason ?? "none"}",
+                $"[TBG ASSIST] {source} travel mode={result.TravelCommandMode} executeRequested={result.ExecuteRequested} travelApi={result.TravelApiCallSucceeded} movementIntent={result.MovementIntentSet} observed={result.ActualExecutionObserved} fallback={result.FallbackReason ?? "none"}",
                 showInGame: false);
         }
 
@@ -258,7 +292,7 @@ namespace BlacksmithGuild.DevTools.Assistive
             }
             catch (Exception ex)
             {
-                detail = $"travel_api_unavailable: {ex.Message}";
+                detail = AssistiveTravelFallbackReasons.TravelApiUnavailable + ": " + ex.Message;
                 return false;
             }
         }

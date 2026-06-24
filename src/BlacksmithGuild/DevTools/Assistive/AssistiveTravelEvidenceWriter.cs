@@ -17,6 +17,8 @@ namespace BlacksmithGuild.DevTools.Assistive
                 return;
             }
 
+            var certSummary = AssistiveTravelCertSummary.Build(result);
+
             try
             {
                 var builder = new StringBuilder();
@@ -26,15 +28,29 @@ namespace BlacksmithGuild.DevTools.Assistive
                 builder.AppendLine($"  \"executeRequested\": {result.ExecuteRequested.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"executeAllowed\": {result.ExecuteAllowed.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"travelCommandMode\": \"{Escape(result.TravelCommandMode)}\",");
-                builder.AppendLine($"  \"fallbackReason\": {(result.FallbackReason == null ? "null" : $"\"{Escape(result.FallbackReason)}\"")},");
+                builder.AppendLine($"  \"fallbackReason\": {JsonString(result.FallbackReason)},");
                 builder.AppendLine($"  \"currentSettlement\": \"{Escape(result.CurrentSettlement)}\",");
-                builder.AppendLine($"  \"targetSettlement\": {(result.TargetSettlement == null ? "null" : $"\"{Escape(result.TargetSettlement)}\"")},");
+                builder.AppendLine($"  \"currentSettlementId\": \"{Escape(result.CurrentSettlementId)}\",");
+                builder.AppendLine($"  \"currentSettlementName\": \"{Escape(result.CurrentSettlementName)}\",");
+                builder.AppendLine($"  \"targetSettlement\": {JsonString(result.TargetSettlement)},");
+                builder.AppendLine($"  \"targetSettlementId\": \"{Escape(result.TargetSettlementId)}\",");
+                builder.AppendLine($"  \"targetSettlementName\": \"{Escape(result.TargetSettlementName)}\",");
+                builder.AppendLine($"  \"routeTargetSettlement\": {JsonString(result.RouteTargetSettlement)},");
+                builder.AppendLine($"  \"routeTargetSettlementId\": {JsonString(result.RouteTargetSettlementId)},");
                 builder.AppendLine($"  \"leaveTownAttempted\": {result.LeaveTownAttempted.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"leaveTownSucceeded\": {result.LeaveTownSucceeded.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"mapTravelAttempted\": {result.MapTravelAttempted.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"travelApiCallSucceeded\": {result.TravelApiCallSucceeded.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"movementIntentSet\": {result.MovementIntentSet.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"actualExecutionObserved\": {result.ActualExecutionObserved.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"movementObservationStartedAtUtc\": {JsonString(FormatUtc(result.MovementObservationStartedAtUtc))},");
+                builder.AppendLine($"  \"movementObservationEndedAtUtc\": {JsonString(FormatUtc(result.MovementObservationEndedAtUtc))},");
+                builder.AppendLine($"  \"movementObservationMs\": {result.MovementObservationMs},");
+                builder.AppendLine($"  \"movementObservationAttempts\": {result.MovementObservationAttempts},");
+                builder.AppendLine($"  \"movementObservationPassed\": {result.MovementObservationPassed.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"movementObservationFailureReason\": {JsonString(result.MovementObservationFailureReason)},");
                 builder.AppendLine($"  \"fakeGameplayDelta\": false,");
+                AppendCertSummary(builder, certSummary);
                 builder.Append("  \"steps\": [");
                 for (var i = 0; i < result.Steps.Count; i++)
                 {
@@ -78,6 +94,32 @@ namespace BlacksmithGuild.DevTools.Assistive
                 fallbackReason: result.FallbackReason,
                 executeRequested: result.ExecuteRequested);
         }
+
+        private static void AppendCertSummary(StringBuilder builder, AssistiveTravelCertSummary certSummary)
+        {
+            builder.AppendLine("  \"certSummary\": {");
+            if (certSummary == null)
+            {
+                builder.AppendLine("    \"passCandidate\": false");
+                builder.AppendLine("  },");
+                return;
+            }
+
+            builder.AppendLine($"    \"executeRequested\": {certSummary.ExecuteRequested.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"executeAllowed\": {certSummary.ExecuteAllowed.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"travelCommandMode\": \"{Escape(certSummary.TravelCommandMode)}\",");
+            builder.AppendLine($"    \"passCandidate\": {certSummary.PassCandidate.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"blockingReason\": {JsonString(certSummary.BlockingReason)},");
+            builder.AppendLine($"    \"routeOwner\": {JsonString(certSummary.RouteOwner)},");
+            builder.AppendLine($"    \"nextRouteOnFail\": {JsonString(certSummary.NextRouteOnFail)}");
+            builder.AppendLine("  },");
+        }
+
+        private static string FormatUtc(DateTime? value) =>
+            value?.ToString("o");
+
+        private static string JsonString(string value) =>
+            value == null ? "null" : $"\"{Escape(value)}\"";
 
         private static string Escape(string value) =>
             (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");

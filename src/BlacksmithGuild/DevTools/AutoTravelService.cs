@@ -32,6 +32,8 @@ namespace BlacksmithGuild.DevTools
 
         public static bool HasActiveRoute => _activeDestination != null;
 
+        public static Settlement ActiveRouteDestination => _activeDestination;
+
         public static void OnCampaignTick()
         {
             if (_activeDestination == null || !GameSessionState.IsCampaignMapReady || MobileParty.MainParty == null)
