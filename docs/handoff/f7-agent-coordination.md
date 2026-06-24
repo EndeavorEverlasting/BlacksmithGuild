@@ -28,13 +28,15 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `a34dc1a` |
-| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
+| Branch / HEAD | `fix/f7-gate-stability` @ post-D pivot commit |
+| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — old F7 PASS not sprint medal |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — `205925` MapTransition treadmill; **C fix landed** (15s semantic mismatch fail, 45s launcher cap) |
-| Last F7 evidence | `20260623-205925` |
-| Next live cert | **Agent A** after C push — expect faster FAIL or B unblock on `canPollFileInbox` |
-| Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
+| Gate verdict | **PIVOT** — old F7 informative FAIL @ `205925`; product cert = [Town-to-Town Trade Assist](../control/logs/open/town-to-town-trade-assist-cert.md) |
+| Last F7 evidence | `20260623-205925` (closed) |
+| Next live cert | Town-to-Town Trade Assist — **BLOCKED** until B (`canPollFileInbox`, `AssistiveTownToTownProbe`) + C attach runner |
+| Old F7 | **CLOSED** — infrastructure/regression only; no treadmill reruns seeking PASS |
+| Optional infra | Agent A may validate C `@ 9bdc759` (~15s semantic FAIL); not product medal |
+| Parallel lanes | B + C parallel-safe; live cert serial (one machine lock) |
 
 ---
 
@@ -42,10 +44,10 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `205925` FAIL MapTransition timeout; tooling fixes landed | — | `903c8d0` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock validated; next: `canPollFileInbox` @ settlement_menu | — | `e891b33` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Gameplay cert after B+C; optional C-fix infra validation only | Blocked on B probe | `903c8d0` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | `canPollFileInbox` @ settlement_menu; `AssistiveTownToTownProbe` | Blocks assist cert | `e891b33` |
 | **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `9bdc759` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | post-D pivot SHA |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -79,7 +81,29 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ---
 
+## Cross-agent timing policy (all agents)
+
+| Limit | Value | Route on breach |
+|-------|-------|-----------------|
+| Single cert / preflight wall | **10 min** max (no user auth) | Abort; Agent A |
+| Launcher Continue / Safe Mode selection | **45 s** total | Fail-fast; Agent C |
+| Per-attempt launcher verify | **3–5 s** | Agent C |
+| Post-`settlement_menu` MapTransition wait | **must not** burn 361s | Agent C — 15s semantic mismatch @ `9bdc759` |
+
+**Do not** rerun old F7 Continue as a treadmill seeking PASS. See [`town-to-town-trade-assist-cert.md`](../control/logs/open/town-to-town-trade-assist-cert.md).
+
+---
+
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent D → A, B, C (F7 closure + town-to-town pivot)
+
+- **Landed:** Old F7 Continue gate **CLOSED** @ `205925` (informative FAIL); product cert = Town-to-Town Trade Assist.
+- **Landed:** [`town-to-town-trade-assist-cert.md`](../control/logs/open/town-to-town-trade-assist-cert.md), [`session-20260623-205925.md`](../control/logs/open/session-20260623-205925.md).
+- **Updated:** atlas, evidence matrix, readiness doc, attach-mode pivot, recovery index, mental model, coordination snapshot.
+- **Policy:** No F7 treadmill reruns; optional A infra validation (~15s semantic FAIL post-`9bdc759`) only.
+- **Need from B:** `canPollFileInbox` + `AssistiveTownToTownProbe` + `inGameAssistReady`.
+- **Need from A:** Gameplay assist cert after B+C; PR #7 HOLD (old F7 PASS not sprint goal).
 
 ### 2026-06-24 — Agent C → A, B, D (launcher cap + settlement fast-fail @ `9bdc759`)
 

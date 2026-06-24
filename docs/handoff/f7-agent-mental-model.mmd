@@ -4,25 +4,25 @@
 
 flowchart TD
     Start([F7 sprint branch<br/>fix/f7-gate-stability])
-    Hold[[PR #7 HOLD<br/>No merge without manifest PASS<br/>and explicit user authorization]]
+    Hold[[PR #7 HOLD<br/>Old F7 PASS not sprint medal]]
 
     subgraph Agents[Agent letters and role aliases]
         A["Agent A<br/>Cert and evidence lane<br/>Aliases: Cert, Evidence, Git, PR"]
         B["Agent B<br/>Runtime survival lane<br/>Aliases: Runtime, Readiness, Gameplay safety"]
-        C["Agent C<br/>Runner and launcher lane<br/>Aliases: Launcher, F7 runner, Process detection, Classifier"]
-        D["Agent D<br/>Atlas and coordination lane<br/>Aliases: Docs, Atlas, Integration, Routing board"]
+        C["Agent C<br/>Runner and launcher lane<br/>Aliases: Launcher, F7 runner, Classifier"]
+        D["Agent D<br/>Atlas and coordination lane<br/>Aliases: Docs, Atlas, Integration"]
     end
 
     subgraph Parallel[Parallel work that is allowed]
-        Aprep["A prepares next cert matrix<br/>manifest comparison<br/>PASS and FAIL signatures<br/>no blind live cert"]
-        Bwork["B hardens runtime survival<br/>SyncForgeStatus<br/>MapTransition<br/>fail-soft reporting"]
-        Cwork["C hardens runner behavior<br/>launcher state classifier<br/>Safe Mode ordering<br/>obvious game-gone fail-fast"]
-        Dwork["D maintains atlas<br/>parallel board<br/>conflict control<br/>handoff history"]
+        Aprep["A prepares gameplay cert matrix<br/>evidence commit<br/>optional infra validation only"]
+        Bwork["B canPollFileInbox<br/>AssistiveTownToTownProbe<br/>inGameAssistReady"]
+        Cwork["C attach runner polish<br/>classifier<br/>45s launcher 15s semantic fail DONE"]
+        Dwork["D maintains atlas<br/>coordination board<br/>pivot docs"]
     end
 
     subgraph Evidence[Current evidence pattern]
-        E185813["20260622-185813<br/>clean Continue<br/>targetMismatch=false<br/>game died about 21s post-spawn<br/>last suspect: SyncForgeStatus begin"]
-        E192811["20260622-192811<br/>clean Continue<br/>Safe Mode No handled<br/>game died about 19s post-spawn<br/>predates obvious-fail fix"]
+        E205925["20260623-205925<br/>clean Continue<br/>settlement_menu Quyaz<br/>canPollFileInbox=false<br/>old F7 CLOSED"]
+        EAssist["Town-to-Town Trade Assist<br/>forward product cert<br/>BLOCKED on B probe"]
     end
 
     subgraph Integration[Controlled integration]
@@ -32,18 +32,19 @@ flowchart TD
         Reconcile["Reconcile shared docs<br/>especially f7-agent-coordination.md"]
     end
 
-    subgraph Cert[Final live cert gate]
-        Aready["A reruns live F7 Continue cert<br/>only after B or C lands a relevant fix<br/>or user authorizes diagnostic cert"]
+    subgraph Cert[Live cert gates]
+        InfraOpt["Optional F7 infra validation<br/>~15s semantic FAIL<br/>not product medal"]
+        GameplayCert["Town-to-Town Assist cert<br/>after B+C unblock"]
         Manifest["Manifest verdict only"]
-        Pass["PASS criteria<br/>passFail=PASS<br/>exitCode=0<br/>stableSeconds>=60<br/>campaignReady=true<br/>canPollFileInbox=true<br/>launchPath=continue<br/>targetMismatch=false"]
+        Pass["PASS criteria per town-to-town spec<br/>canPollFileInbox=true<br/>probe accepted"]
         Fail["FAIL evidence committed<br/>route by manifest fields"]
     end
 
     subgraph Routing[Failure routing rules]
-        RouteB["Route B<br/>game dies<br/>runtime marker crash-adjacent<br/>StatusFlush or MapTransition fault"]
-        RouteC["Route C<br/>wrong launch path<br/>targetMismatch<br/>process detection loss<br/>runner timeout or classifier defect"]
-        RouteA["Route A<br/>new cert evidence<br/>manifest comparison<br/>PR gate report"]
-        RouteD["Route D<br/>docs drift<br/>atlas stale<br/>agent terminology conflict"]
+        RouteB["Route B<br/>canPollFileInbox<br/>probe missing<br/>runtime readiness"]
+        RouteC["Route C<br/>runner classifier<br/>launcher timing"]
+        RouteA["Route A<br/>gameplay cert evidence<br/>PR gate"]
+        RouteD["Route D<br/>docs drift<br/>atlas stale"]
     end
 
     Start --> Agents
@@ -64,9 +65,13 @@ flowchart TD
     PullLatest --> Static
     Static --> CommitPush
     CommitPush --> Reconcile
-    Reconcile --> Aready
+    Reconcile --> GameplayCert
+    Reconcile --> InfraOpt
 
-    Aready --> Manifest
+    E205925 --> InfraOpt
+    EAssist --> GameplayCert
+    GameplayCert --> Manifest
+    InfraOpt --> Manifest
     Manifest --> Pass
     Manifest --> Fail
     Pass --> Hold
@@ -82,8 +87,6 @@ flowchart TD
     RouteA --> Aprep
     RouteD --> Dwork
 
-    Hold -. "User authorizes merge only after PASS" .-> Pass
-
     classDef agent fill:#eef,stroke:#335,stroke-width:1px
     classDef work fill:#efe,stroke:#363,stroke-width:1px
     classDef evidence fill:#ffe,stroke:#663,stroke-width:1px
@@ -91,5 +94,5 @@ flowchart TD
 
     class A,B,C,D agent
     class Aprep,Bwork,Cwork,Dwork work
-    class E185813,E192811 evidence
+    class E205925,EAssist evidence
     class Hold,Manifest,Pass,Fail gate

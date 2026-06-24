@@ -13,9 +13,11 @@ People know how to start the game. The external layer must know **where the play
 
 ---
 
-## Mode 1: Cert mode (F7 certification)
+## Mode 1: Cert mode (F7 certification — infrastructure / regression)
 
 **Entry:** `run-f7-gate-continue.ps1 -CertTarget continue` (or `play` / `any` per cert matrix)
+
+**Post-pivot posture:** Cert mode is **infrastructure and regression harness** — not the product priority. Old F7 Continue product gate is **closed** @ `205925`. Do not use cert mode as a treadmill seeking legacy MapTransition PASS.
 
 | Rule | Requirement |
 |------|-------------|
@@ -31,9 +33,9 @@ Cert mode **must not** be loosened for convenience. Assistive attach is a separa
 
 ---
 
-## Mode 2: Assistive attach mode (future product path)
+## Mode 2: Assistive attach mode (primary product path)
 
-**Entry:** Future attach runner / dev tooling (not F7 gate)
+**Entry:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1) (skeleton; blocked until B probe lands)
 
 | Rule | Requirement |
 |------|-------------|
@@ -137,10 +139,15 @@ Continue cert may reach **settlement town menu** with `campaignReady=true` but `
 
 Skeleton gameplay cert: `scripts/run-town-to-town-trade-assist-cert.ps1` (expects `AssistiveTownToTownProbe` from Agent B).
 
+**Product PASS spec:** [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)
+
+Post-`9bdc759`, F7 cert poll fails fast at settlement_menu semantic mismatch (~15s) instead of 361s MapTransition treadmill.
+
 ---
 
 ## Related docs
 
+- [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)
 - [`f7-agent-mental-model.mmd`](../../handoff/f7-agent-mental-model.mmd)
 - [`f7-next-cert-readiness.md`](f7-next-cert-readiness.md)
 - [`launcher-foreground-doctrine.md`](../../conventions/launcher-foreground-doctrine.md)

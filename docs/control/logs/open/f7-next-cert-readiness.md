@@ -1,9 +1,37 @@
 # F7 Next Cert Readiness Matrix
 
-**Author:** Agent A — Cert / Evidence / Git / PR  
+**Author:** Agent A — Cert / Evidence / Git / PR (co-maintained with Agent D)  
 **Branch:** `fix/f7-gate-stability`  
-**Gate:** RED — MapTransition timeout @ `205925` (game alive, settlement_menu); poll tooling fixed  
-**PR #7:** **HOLD**
+**Gate:** **PIVOT** — old F7 Continue **CLOSED** @ `205925`; forward cert = [Town-to-Town Trade Assist](town-to-town-trade-assist-cert.md)  
+**PR #7:** **HOLD** — old F7 PASS no longer sprint medal
+
+---
+
+## Old F7 Continue gate — CLOSED (informative FAIL)
+
+**Session:** [`20260623-205925`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json) · stub: [`session-20260623-205925.md`](session-20260623-205925.md)
+
+| Proven | Detail |
+|--------|--------|
+| Launcher | `launchPath=continue`, `targetMismatch=false`, `continueClick.success=true` |
+| Gameplay surface | Quyaz `settlement_menu`; `campaignReady=true`; game alive (`launcher_hosted`) |
+| Death class cleared | seq=8115 / post-spawn death — **GONE** on this session |
+| Old semantics FAIL | `canPollFileInbox=false`; golden path expects `MainMenu -> MapTransition`; runner MapTransition timeout (~395s pre-C fix) |
+
+**Do not rerun** old F7 Continue seeking PASS — semantic mismatch is documented. One **optional** infrastructure validation post-`9bdc759` may confirm ~15s `fail_settlement_menu_semantic_mismatch` (not a product medal).
+
+**Next live cert:** [Town-to-Town Trade Assist](town-to-town-trade-assist-cert.md) — blocked on Agent B (`canPollFileInbox`, `AssistiveTownToTownProbe`).
+
+---
+
+## Hard limits (all certs / preflight)
+
+| Limit | Value | Route on breach |
+|-------|-------|-----------------|
+| Single cert / preflight wall | **10 min** max (no user auth) | Abort; Agent A |
+| Launcher Continue / Safe Mode selection | **45 s** total | Fail-fast; Agent C |
+| Per-attempt launcher verify | **3–5 s** | Agent C |
+| Post-`settlement_menu` MapTransition wait | **must not** burn 361s | Agent C — 15s semantic mismatch |
 
 ---
 
@@ -16,7 +44,7 @@
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `scripts/**`, launcher nav, fail-fast poll | Runner agent, launcher agent |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `docs/**`, coordination, terminology | Atlas agent, archivist |
 
-**Parallel model:** A, B, C, D may work in parallel. **Live F7 cert (Agent A)** waits until B or C lands a relevant fix **or** user explicitly authorizes a diagnostic cert.
+**Parallel model:** A, B, C, D may work in parallel. **Live gameplay cert (Agent A)** runs only after B+C unblock assist probe. **Old F7 Continue** is infrastructure/regression only — closed as product gate.
 
 ---
 
@@ -156,7 +184,7 @@ targetMismatch = true
 launchPath != continue (when certTarget=continue)
 failureReason = contaminated_launch_path
 gameSpawnRejectedReason = pre_intent_game_spawn
-launchState = fail_contaminated_launch_path | fail_obvious_post_spawn_death | fail_game_gone_definitive
+launchState = fail_contaminated_launch_path | fail_obvious_post_spawn_death | fail_game_gone_definitive | fail_settlement_menu_semantic_mismatch
 process died before map-ready (manifest notes or failureReason)
 game_spawned + game gone + phase1LastSignal = e + not everMapReady (4863139+)
 gameAliveDurationSeconds < 60 AND campaignReady = false AND stableSeconds = 0
@@ -182,14 +210,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | **Post-unblock fail-soft + surface telemetry** | `e891b33` | B | **VALIDATED** @ `204227` — past seq=8115; `settlement_menu_open` defer; surface fields present |
 | **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** (202052, 195817, 200917) |
 | **Runner poll tooling exception** | A/C fixes | A/C | **FIXED** @ poll hardening — `205925` full 361s poll |
-| **MapTransition timeout at settlement_menu** | TBD | B / product | **OPEN** @ `205925` — `canPollFileInbox=false`, golden path mismatch |
+| **MapTransition timeout at settlement_menu** | `9bdc759` | C | **LANDED** — 15s `fail_settlement_menu_semantic_mismatch` |
+| **canPollFileInbox @ settlement_menu** | TBD | B | **OPEN** — primary blocker for assist cert |
+| **AssistiveTownToTownProbe** | TBD | B | **OPEN** |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
-| **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
+| **User authorization** | Explicit "run diagnostic cert" | User | Required for optional infra F7 validation only |
 
 **Agent A live cert gate:**
 
-1. ~~Agent B post-unblock hardening~~ **VALIDATED @ `204227`** — runtime death class cleared
-2. **Next blocker:** runner `Access is denied` tooling exception + harvest partial — route **Agent A + C** before medal retry
+1. ~~Agent B post-unblock hardening~~ **VALIDATED @ `204227`**
+2. ~~Runner poll tooling exception~~ **FIXED** — `205925` full poll (pre-15s fix)
+3. **Current blocker:** `canPollFileInbox=false` + assist probe missing — route **Agent B**; product cert = town-to-town assist
 
 **Status JSON semantics (unchanged top-level `campaignReady`):** reflects `IsCampaignMapReady` (MapState active). New session fields disambiguate surface:
 
@@ -201,15 +232,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | `settlementMenuOpen` | `true` |
 | `campaignMapSurfaceOpen` | `false` |
 
-F7 Continue cert may PASS at settlement menu if manifest criteria met — evidence must show surface fields clearly.
+F7 Continue **product** PASS at settlement menu requires manifest criteria **and** assistive forward path — old golden-path-only gate is closed. Evidence must show surface fields clearly.
 
-**Do not run blind live cert** without pulling latest B fix.
+**Do not run blind old-F7 treadmill** seeking legacy MapTransition PASS.
 
 ---
 
 ## PR #7 HOLD statement
 
-PR #7 remains **HOLD** until **all** of:
+PR #7 remains **HOLD**. Old F7 Continue PASS is **no longer the sprint medal**. Merge only if repo policy still requires legacy F7 manifest PASS + explicit user authorization.
+
+Legacy F7 PASS criteria (if ever pursued):
 
 - `manifest.passFail = PASS`
 - `exitCode = 0`
@@ -219,24 +252,25 @@ PR #7 remains **HOLD** until **all** of:
 - `launchPath = continue`
 - `targetMismatch = false`
 - Evidence committed under `docs/evidence/live-cert/<sessionId>/` and pushed
-- **User explicitly authorizes merge**
 
 No merge on clean-launcher FAIL. No merge on runner UX improvement alone. No merge on build PASS.
 
 ---
 
-## Preflight commands (Agent A, before next authorized cert)
+## Preflight commands (Agent A, before authorized cert)
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 git fetch origin && git checkout fix/f7-gate-stability && git pull origin fix/f7-gate-stability
-git merge-base --is-ancestor 4863139 HEAD  # must exit 0
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 Get-Process Bannerlord,TaleWorlds.MountAndBlade.Launcher,Watchdog -ErrorAction SilentlyContinue | Stop-Process -Force
 # claim automation lock in f7-agent-coordination.md
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue
+# Product cert (after B+C):
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1
+# Optional infra validation only (expect ~15s semantic FAIL post-9bdc759):
+# powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue
 ```
 
 ---
@@ -251,4 +285,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 | `195817` | `b19dcb3` | Death seq=8063 immediate post-`StabilizationEnd` |
 | `200917` | cert commit | Death seq=8115 after `HeavyFlushUnblocked` — grace lifecycle validated |
 | `204227` | fd2a190 | B validated; poll abort Access denied (fixed in later commits) |
-| `205925` | pending | Full poll; MapTransition timeout; settlement_menu; ExternalStateTimeline present |
+| `205925` | `2207468` | `docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/` — **closed** informative FAIL; settlement_menu; ExternalStateTimeline |

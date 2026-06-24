@@ -1,7 +1,8 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ `eff7074` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7)) — **HOLD**  
-**Next cert gate:** [`logs/open/f7-next-cert-readiness.md`](logs/open/f7-next-cert-readiness.md)  
+**Branch:** `fix/f7-gate-stability` @ post-D pivot (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7)) — **HOLD**  
+**Next cert gate:** [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md)  
+**Old F7 status:** [`logs/open/f7-next-cert-readiness.md`](logs/open/f7-next-cert-readiness.md) — **CLOSED** @ `205925`  
 **Mental model:** [`f7-agent-mental-model.mmd`](../handoff/f7-agent-mental-model.mmd)  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
@@ -22,22 +23,19 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 
 **Rule:** No manifest, no medal. Ambiguous → open.
 
-## Active sprint
+## Active sprint (pivot)
 
 | Phase | Owner | Status |
 |-------|-------|--------|
-| F7 evidence requirements spec | Agent A | **DONE** @ `f975312` |
-| Failure atlas + evidence matrix | Agent D | **DONE** @ wave 3 (`154012` indexed) |
-| Runtime trace + CrashContext (StatusFlush sub-ops) | Agent B | **DONE** (this commit) |
-| Runner evidence harvest (`f7-evidence-harvest.ps1`) | Agent C | **DONE** (this commit) |
-| Launcher foreground doctrine + hwnd-background clicks | Agent C | **DONE (game-certified @ `135217`)** |
-| Clean F7 cert rerun (`HookMask 0x0F`) | Agent A | **DONE** — FAIL `135217` (`instrumentation_insufficient`) |
-| F7 cert wave 3 (post B+C) | Agent A | **DONE** — FAIL `154012` (Refresh storm; harvest sufficient) |
-| F7 cert wave 4 (post B+C process detection) | Agent A | **DONE** — FAIL `163921` (contaminated; user Play handoff) |
-| Clean F7 cert (post C contamination fix) | Agent A | **DONE** — FAIL `175909` (fast fail; game before automation Continue) |
-| Clean F7 cert (post C pre-intent fix) | Agent A | **DONE** — FAIL `185813` (clean Continue; game died MapTransition; ~8min wall) |
-| PR #7 merge | Agent A | HOLD until manifest PASS |
-| PR #8 | All | HOLD |
+| Old F7 Continue product gate | All | **CLOSED** @ `205925` (informative FAIL) |
+| F7 infra fixes (45s launcher, 15s semantic fail, classifier) | Agent C | **DONE** @ `9bdc759` |
+| Runtime surface + seq=8115 fix | Agent B | **DONE** @ `e891b33` |
+| Docs pivot (atlas, assist spec, coordination) | Agent D | **DONE** (this commit) |
+| `canPollFileInbox` @ settlement_menu | Agent B | **OPEN** |
+| `AssistiveTownToTownProbe` | Agent B | **OPEN** |
+| Town-to-Town Trade Assist cert (live) | Agent A | **BLOCKED** until B+C |
+| PR #7 merge | Agent A | **HOLD** — old F7 PASS not sprint medal |
+| PR #8 | All | **HOLD** |
 
 ## Commands (preflight)
 
@@ -50,24 +48,30 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patt
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 ```
 
-## F7 cert (wave 2 — after B+C on origin)
+## Product cert (forward — after B+C)
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1
+```
+
+## F7 infra regression only (optional — not product medal)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue
 ```
 
-Judge: exit 0 without `manifest.json` `passFail=PASS` and `stableSeconds>=60` is forgery.
+Expect ~15s `fail_settlement_menu_semantic_mismatch` post-`9bdc759` — not 361s treadmill.
 
 ## Key docs
 
 | Doc | Role |
 |-----|------|
-| [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) | Where failures occur; Play/Continue labeling |
+| [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) | Forward PASS/FAIL spec |
+| [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) | Session failure map |
 | [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md) | Per-session artifact completeness |
-| [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md) | Normative PASS/FAIL gate (Agent A) |
-| [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md) | Sprint posture, PR status |
+| [`logs/open/session-20260623-205925.md`](logs/open/session-20260623-205925.md) | Closed F7 baseline |
 | [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md) | Living agent board |
 
 ## Latest evidence
 
-`docs/evidence/live-cert/20260622-192811/checkpoint-01-f7-gate/manifest.json` — FAIL (timeout ~445s; game_spawned+gone+last=e; poll waste fixed @ 4863139)
+`docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json` — FAIL (informative; settlement_menu; old F7 closed)
