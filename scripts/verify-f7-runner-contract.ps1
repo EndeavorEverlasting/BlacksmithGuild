@@ -29,8 +29,9 @@ $launchContractPath = Join-Path $PSScriptRoot 'f7-launch-contract.ps1'
 $classifierPath = Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1'
 $pathsPath = Join-Path $PSScriptRoot 'bannerlord-paths.ps1'
 $navPath = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
+$forgeStatusPath = Join-Path $PSScriptRoot 'forge-status.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -186,6 +187,19 @@ if (Test-Path -LiteralPath $launchLogPath) {
     }
 }
 
+if (Test-Path -LiteralPath $forgeStatusPath) {
+    $forgeStatusText = Get-Content -LiteralPath $forgeStatusPath -Raw
+    foreach ($needle in @('Get-LastConsumedForgeInboxSequence', 'Select-String', 'consumed sequence=')) {
+        if ($forgeStatusText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "forge-status.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS forge-status contains: $needle" -ForegroundColor Green
+        }
+    }
+} else {
+    Add-Failure 'Missing forge-status.ps1'
+}
+
 $grepGuard = Join-Path $PSScriptRoot 'verify-log-grep-patterns.ps1'
 if (Test-Path -LiteralPath $grepGuard) {
     Write-Host 'Running verify-log-grep-patterns.ps1 ...' -ForegroundColor Cyan
@@ -324,7 +338,8 @@ if (Test-Path -LiteralPath $townTradeSkeleton) {
 foreach ($pair in @(
     @{ path = 'test-town-to-town-attach-only.ps1'; label = 'town-to-town attach-only' },
     @{ path = 'test-town-to-town-no-launch-harvest.ps1'; label = 'town-to-town no-launch harvest' },
-    @{ path = 'test-assistive-launch-setup-guarded-click.ps1'; label = 'assistive launch setup guarded click' }
+    @{ path = 'test-assistive-launch-setup-guarded-click.ps1'; label = 'assistive launch setup guarded click' },
+    @{ path = 'test-forge-command-sequence-after-prior-ack.ps1'; label = 'forge command sequence after prior ack' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {
