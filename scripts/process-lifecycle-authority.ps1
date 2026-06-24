@@ -482,16 +482,6 @@ function Invoke-TbgTerminationClassification {
             }
         }
 
-        $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($launcher) {
-            return [ordered]@{
-                classification = 'launcher_returned_after_game_exit'
-                routeAgent = 'Agent C - External State Classifier / Assistive Runner'
-                evidenceSignals = @('launcher_process_alive')
-                missingSignals = @('game_process')
-            }
-        }
-
         if ($lifecycle -and $lifecycle.sessionAuthorityMode -eq 'FreshTestLaunch' -and $intentionalPids.Count -gt 0) {
             return [ordered]@{
                 classification = 'intentional_forge_stop'
@@ -554,12 +544,22 @@ function Invoke-TbgTerminationClassification {
                 missingSignals = @('intentional_termination_recorded')
             }
         }
-        if ($CyclePhase -eq 'cert') {
+        if ($CyclePhase -eq 'cert' -and -not $CertCompleted) {
             return [ordered]@{
                 classification = 'process_disappeared_during_cert'
                 routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
                 evidenceSignals = @()
                 missingSignals = @('intentional_termination_recorded')
+            }
+        }
+
+        $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($launcher) {
+            return [ordered]@{
+                classification = 'launcher_returned_after_game_exit'
+                routeAgent = 'Agent C - External State Classifier / Assistive Runner'
+                evidenceSignals = @('launcher_process_alive')
+                missingSignals = @('game_process')
             }
         }
 
