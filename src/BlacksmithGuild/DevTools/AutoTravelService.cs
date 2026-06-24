@@ -111,6 +111,41 @@ namespace BlacksmithGuild.DevTools
             return StartTravel(choice.Settlement, $"choice {number}");
         }
 
+        public static bool TryStartTravelToSettlement(Settlement destination, string selector, out string detail)
+        {
+            detail = null;
+            if (!GameSessionState.IsCampaignMapReady || MobileParty.MainParty == null)
+            {
+                detail = GameSessionState.GetCampaignMapBlockDetail();
+                return false;
+            }
+
+            if (destination == null)
+            {
+                detail = "destination was not resolved";
+                return false;
+            }
+
+            if (TryDetectBlockingHostiles(MobileParty.MainParty, out var hostileDetail))
+            {
+                detail = hostileDetail;
+                return false;
+            }
+
+            if (!TryInvokeMoveToSettlement(MobileParty.MainParty, destination))
+            {
+                detail = "travel_api_unavailable";
+                return false;
+            }
+
+            _activeDestination = destination;
+            _hostileCheckTickCounter = 0;
+            var name = destination.Name?.ToString() ?? destination.StringId;
+            detail = $"SetMoveGoToSettlement ok via {selector} to {name}";
+            DebugLogger.Test($"[TBG TRAVEL] assist execute started to {name} via {selector}; cautious route monitor active.", showInGame: false);
+            return true;
+        }
+
         public static DevCommandResult TravelByName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))

@@ -338,6 +338,7 @@ if (Test-Path -LiteralPath $townTradeSkeleton) {
 foreach ($pair in @(
     @{ path = 'test-town-to-town-attach-only.ps1'; label = 'town-to-town attach-only' },
     @{ path = 'test-town-to-town-no-launch-harvest.ps1'; label = 'town-to-town no-launch harvest' },
+    @{ path = 'test-assistive-travel-execute-mode.ps1'; label = 'assistive travel execute mode' },
     @{ path = 'test-assistive-launch-setup-guarded-click.ps1'; label = 'assistive launch setup guarded click' },
     @{ path = 'test-forge-command-sequence-after-prior-ack.ps1'; label = 'forge command sequence after prior ack' }
 )) {
