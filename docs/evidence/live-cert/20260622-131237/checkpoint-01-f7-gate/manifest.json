@@ -1,0 +1,40 @@
+{
+    "checkpoint": "checkpoint-01-f7-gate",
+    "sessionId": "20260622-131237",
+    "passFail": "FAIL",
+    "exitCode": 2,
+    "startedAtUtc": "2026-06-22T17:12:37.0000000Z",
+    "endedAtUtc": "2026-06-22T17:25:58.6200000Z",
+    "stableSeconds": 0,
+    "hookMask": "0x0F",
+    "mapReadyHookMask": "0x0F",
+    "launchState": "continue_escalate",
+    "safeModeDetected": true,
+    "safeModeNoClicked": true,
+    "continueClick": {
+        "attempted": true,
+        "success": true,
+        "method": "hwnd SendMessage-first"
+    },
+    "lastFocusResult": null,
+    "launchAutomationError": "launcher-auto-nav timed out after 489s; process died before map-ready (timeout); Safe Mode No on launch — prior session crash likely",
+    "campaignReady": false,
+    "canPollFileInbox": false,
+    "mapReadyStatus": null,
+    "phase1TbgReady": false,
+    "phase1QuickStartMapReady": false,
+    "phase1LastSignal": "MapTransition",
+    "gameProcessRunning": false,
+    "goldenPathCheck": {
+        "available": false,
+        "reason": "post-hoc evidence capture; golden-path script not run at session end"
+    },
+    "launchSignals": {
+        "safeModeDismissed": true,
+        "safeModePromptSeen": true,
+        "priorSessionCrashLikely": true,
+        "crashReporterDismissed": false,
+        "safeModePromptText": "Safe Mode"
+    },
+    "notes": "F7 FAIL: process died before map-ready; contaminated_cert (manual_user_clicks; launcher_obscured_by_cursor ~4min); no [TBG MAPREADY] tick"
+}

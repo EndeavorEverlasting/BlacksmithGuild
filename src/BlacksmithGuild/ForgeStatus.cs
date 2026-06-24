@@ -6,6 +6,7 @@ using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.Market;
@@ -132,7 +133,13 @@ namespace BlacksmithGuild
             }
 
             Log($"TEST {name} = {status}{(string.IsNullOrEmpty(message) ? "" : " - " + message)}");
-            Flush(overall: status == "FAIL" ? "FAIL" : null);
+            try
+            {
+                Flush(overall: status == "FAIL" ? "FAIL" : null);
+            }
+            catch
+            {
+            }
         }
 
         public static void RecordGoldTest(bool passed, int goldBefore, int goldAfter, int delta)
@@ -318,16 +325,51 @@ namespace BlacksmithGuild
         {
             _campaignReady = campaignReady;
             _mainHeroReady = mainHeroReady;
-            Flush();
+            try
+            {
+                if (CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out var reason))
+                {
+                    RuntimeTrace.LogSkipped(
+                        "ForgeStatus",
+                        "UpdateReadinessFlush",
+                        reason);
+                    FlushLightweight();
+                    return;
+                }
+
+                Flush();
+            }
+            catch (Exception ex)
+            {
+                RuntimeTrace.LogFail("ForgeStatus", "UpdateReadinessFlush", ex);
+            }
         }
 
-        public static void UpdateSession(SessionPhase phase, bool timePaused)
+        public static void UpdateSession(SessionPhase phase, bool timePaused, bool flush = true)
         {
             _sessionPhase = phase;
             _sessionTimePaused = timePaused;
-            _campaignReady = phase != SessionPhase.ModuleOnly;
-            _mainHeroReady = phase != SessionPhase.ModuleOnly && phase != SessionPhase.CampaignLoading;
-            Flush();
+
+            if (!flush)
+            {
+                return;
+            }
+
+            try
+            {
+                Flush();
+            }
+            catch (Exception ex)
+            {
+                RuntimeTrace.LogFail("ForgeStatus", "UpdateSessionFlush", ex);
+                try
+                {
+                    FlushLightweight(error: ex.Message);
+                }
+                catch
+                {
+                }
+            }
         }
 
         public static void RecordCommand(
@@ -359,6 +401,104 @@ namespace BlacksmithGuild
         {
             try
             {
+                if (CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out var deferReason))
+                {
+                    RuntimeTrace.LogSkipped(
+                        "ForgeStatus",
+                        "Flush",
+                        deferReason);
+                    FlushLightweight(overall, error);
+                    return;
+                }
+
+                if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+                {
+                    RuntimeTrace.LogDeferOnce(
+                        "flush_heavy",
+                        "ForgeStatus",
+                        "Flush",
+                        MapTransitionGuard.GetDeferReason());
+                    FlushLightweight(overall, error);
+                    return;
+                }
+
+                FlushFull(overall, error);
+            }
+            catch (Exception ex)
+            {
+                RuntimeTrace.LogFail("ForgeStatus", "Flush", ex);
+            }
+        }
+
+        private static void FlushLightweight(string overall = null, string error = null)
+        {
+            var topOverall = overall ?? "NOT_STARTED";
+            var builder = new StringBuilder();
+            builder.AppendLine("{");
+            builder.AppendLine($"  \"updatedAt\": \"{DateTime.Now:o}\",");
+            builder.AppendLine($"  \"modLoaded\": {_modLoaded.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"campaignReady\": {_campaignReady.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"mainHeroReady\": {_mainHeroReady.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"  \"overall\": \"{Escape(topOverall)}\",");
+            builder.AppendLine("  \"session\": {");
+            builder.AppendLine($"    \"phase\": \"{Escape(_sessionPhase.ToString())}\",");
+            builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"sessionReady\": {SafeSessionBool(() => GameSessionState.IsCampaignSessionReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"mapReady\": {SafeSessionBool(() => GameSessionState.IsCampaignMapReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()},");
+            AppendSurfaceSessionFields(builder);
+            builder.AppendLine("  },");
+            builder.AppendLine("  \"quickStart\": {");
+            builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"setupPhase\": \"{Escape(CampaignSetupStateTracker.Phase.ToString())}\",");
+            builder.AppendLine($"    \"subStage\": \"{Escape(CampaignSetupStateTracker.SubStage ?? "")}\",");
+            builder.AppendLine($"    \"activeState\": \"{Escape(CampaignSetupStateTracker.ActiveStateName ?? "")}\"");
+            builder.AppendLine("  },");
+
+            builder.AppendLine("  \"tests\": {");
+            var first = true;
+            foreach (var entry in TestStatuses)
+            {
+                if (!first)
+                {
+                    builder.AppendLine(",");
+                }
+
+                first = false;
+                TestMessages.TryGetValue(entry.Key, out var testMessage);
+                if (!string.IsNullOrEmpty(testMessage))
+                {
+                    builder.Append(
+                        $"    \"{Escape(entry.Key)}\": {{ \"status\": \"{Escape(entry.Value)}\", \"message\": \"{Escape(testMessage)}\" }}"
+                    );
+                }
+                else
+                {
+                    builder.Append($"    \"{Escape(entry.Key)}\": {{ \"status\": \"{Escape(entry.Value)}\" }}");
+                }
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("  }");
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                builder.AppendLine(",");
+                builder.AppendLine("  \"errors\": [");
+                builder.AppendLine($"    {{ \"message\": \"{Escape(error)}\" }}");
+                builder.AppendLine("  ]");
+            }
+
+            builder.AppendLine("}");
+            RuntimeTrace.Run("ForgeStatus", "FlushWrite", () => File.WriteAllText(StatusPath, builder.ToString()));
+        }
+
+        private static void FlushFull(
+            string overall = null,
+            string error = null)
+        {
+            try
+            {
                 var certificationOverall = CertificationTracker.DeriveOverall(_campaignReady, _mainHeroReady);
                 var topOverall = overall ?? certificationOverall;
 
@@ -372,13 +512,15 @@ namespace BlacksmithGuild
                 builder.AppendLine("  \"session\": {");
                 builder.AppendLine($"    \"phase\": \"{Escape(_sessionPhase.ToString())}\",");
                 builder.AppendLine($"    \"timePaused\": {_sessionTimePaused.ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"activeState\": \"{Escape(GameSessionState.GetActiveStateName())}\",");
-                builder.AppendLine($"    \"settlementReady\": {GameSessionState.IsSettlementInteriorReady.ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"tavernReady\": {GameSessionState.IsTavernLocationReady.ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"settlementName\": \"{Escape(GameSessionState.CurrentSettlementName ?? "")}\",");
-                builder.AppendLine($"    \"locationId\": \"{Escape(GameSessionState.CurrentLocationId ?? "")}\",");
-                builder.AppendLine($"    \"canPollFileInbox\": {GameSessionState.CanPollFileInbox.ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"canPollHotkeys\": {GameSessionState.CanPollHotkeys.ToString().ToLowerInvariant()}");
+                builder.AppendLine($"    \"sessionReady\": {SafeSessionBool(() => GameSessionState.IsCampaignSessionReady).ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"mapReady\": {SafeSessionBool(() => GameSessionState.IsCampaignMapReady).ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"activeState\": \"{SafeSessionValue(() => GameSessionState.GetActiveStateName())}\",");
+                builder.AppendLine($"    \"settlementReady\": {SafeSessionBool(() => GameSessionState.IsSettlementInteriorReady || GameSessionState.IsSettlementMenuReady).ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"tavernReady\": {SafeSessionBool(() => GameSessionState.IsTavernLocationReady).ToString().ToLowerInvariant()},");
+                builder.AppendLine($"    \"settlementName\": \"{SafeSessionValue(() => GameSessionState.CurrentSettlementName)}\",");
+                builder.AppendLine($"    \"locationId\": \"{SafeSessionValue(() => GameSessionState.CurrentLocationId)}\",");
+                builder.AppendLine($"    \"canPollHotkeys\": {SafeSessionBool(() => GameSessionState.CanPollHotkeys).ToString().ToLowerInvariant()},");
+                AppendSurfaceSessionFields(builder);
                 builder.AppendLine("  },");
                 builder.AppendLine("  \"quickStart\": {");
                 builder.AppendLine($"    \"enabled\": {DevToolsConfig.AutoSkipCharacterCreation.ToString().ToLowerInvariant()},");
@@ -591,7 +733,9 @@ namespace BlacksmithGuild
                     builder.AppendLine("  },");
                 }
 
-                if (_campaignReady && _mainHeroReady)
+                if (GameSessionState.IsCampaignMapReady
+                    && _mainHeroReady
+                    && !CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out _))
                 {
                     AppendFactionPowerPosture(builder);
                 }
@@ -631,32 +775,90 @@ namespace BlacksmithGuild
                 }
 
                 builder.AppendLine("}");
-                File.WriteAllText(StatusPath, builder.ToString());
+                RuntimeTrace.Run("ForgeStatus", "FlushWrite", () => File.WriteAllText(StatusPath, builder.ToString()));
+            }
+            catch (Exception ex)
+            {
+                RuntimeTrace.LogFail("ForgeStatus", "FlushFull", ex);
+            }
+        }
+
+        private static void AppendSurfaceSessionFields(StringBuilder builder)
+        {
+            ReadinessSurfaceSnapshot snap;
+            try
+            {
+                snap = GameSessionState.CaptureReadinessSurfaceSnapshot();
             }
             catch
             {
+                snap = new ReadinessSurfaceSnapshot { ReadinessSurface = ReadinessSurfaceKinds.Unknown };
             }
+
+            builder.AppendLine($"    \"mapStateActive\": {snap.MapStateActive.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementMenuOpen\": {snap.SettlementMenuOpen.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementMenuId\": \"{Escape(snap.SettlementMenuId ?? "")}\",");
+            builder.AppendLine($"    \"campaignMapSurfaceOpen\": {snap.CampaignMapSurfaceOpen.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"settlementInteriorReady\": {snap.SettlementInteriorReady.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"readinessSurface\": \"{Escape(snap.ReadinessSurface ?? ReadinessSurfaceKinds.Unknown)}\",");
+            AppendAssistReadinessFields(builder);
+        }
+
+        private static void AppendAssistReadinessFields(StringBuilder builder)
+        {
+            builder.AppendLine($"    \"canPollFileInbox\": {SafeSessionBool(() => GameSessionState.CanPollFileInbox).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"openMapReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsOpenMapReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"townMenuReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsTownMenuReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"inGameAssistReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsInGameAssistReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"canAcceptAssistiveCommand\": {SafeSessionBool(() => AssistReadinessEvaluator.CanAcceptAssistiveCommand).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"assistiveCertReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsInGameAssistReady).ToString().ToLowerInvariant()}");
         }
 
         private static void AppendFactionPowerPosture(StringBuilder builder)
         {
+            if (!RuntimeTrace.RunSafe(
+                    "ForgeStatus",
+                    "FactionPowerPostureScan",
+                    () => FactionPowerPostureScanner.Scan(),
+                    out FactionPowerPostureBlock block))
+            {
+                return;
+            }
+
+            builder.AppendLine("  \"clanPosture\": {");
+            builder.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
+            builder.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
+            builder.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
+            builder.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
+            builder.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
+            builder.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
+            builder.AppendLine(
+                $"    \"strengthRatioVsNearestHostile\": {(block.StrengthRatioVsNearestHostile.HasValue ? block.StrengthRatioVsNearestHostile.Value.ToString("0.##") : "null")}");
+            builder.AppendLine("  },");
+        }
+
+        private static string SafeSessionValue(Func<string> getter, string fallback = "")
+        {
             try
             {
-                var block = FactionPowerPostureScanner.Scan();
-                builder.AppendLine("  \"clanPosture\": {");
-                builder.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
-                builder.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
-                builder.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
-                builder.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
-                builder.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
-                builder.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
-                builder.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
-                builder.AppendLine(
-                    $"    \"strengthRatioVsNearestHostile\": {(block.StrengthRatioVsNearestHostile.HasValue ? block.StrengthRatioVsNearestHostile.Value.ToString("0.##") : "null")}");
-                builder.AppendLine("  },");
+                return Escape(getter() ?? fallback);
             }
             catch
             {
+                return Escape(fallback);
+            }
+        }
+
+        private static bool SafeSessionBool(Func<bool> getter, bool fallback = false)
+        {
+            try
+            {
+                return getter();
+            }
+            catch
+            {
+                return fallback;
             }
         }
 

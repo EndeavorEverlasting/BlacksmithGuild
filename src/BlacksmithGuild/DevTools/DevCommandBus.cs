@@ -7,6 +7,7 @@ using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Market;
 using BlacksmithGuild.TavernHeroes;
 using BlacksmithGuild.Treasury;
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.Reporting;
 
@@ -212,6 +213,8 @@ namespace BlacksmithGuild.DevTools
                 commandName == CourtshipPlanService.ShowCourtshipPlanCommand ||
                 commandName == ClanRoleBoardService.AnalyzeClanRolesCommand ||
                 commandName == CourtshipProbeService.ProbeCourtshipApiCommand ||
+                commandName == AssistiveTownToTownProbeService.Command ||
+                commandName == AssistiveLeaveTownTravelService.Command ||
                 commandName == MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand ||
                 IsTavernDoctrineCommand(commandName) ||
                 IsAutoCharacterBuildNonMutationCommand(commandName))
@@ -394,6 +397,16 @@ namespace BlacksmithGuild.DevTools
             if (commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand)
             {
                 return AutonomousGuildLoopService.LastFailReason ?? "autonomous guild loop failed";
+            }
+
+            if (commandName == AssistiveTownToTownProbeService.Command)
+            {
+                return AssistiveTownToTownProbeService.LastFailReason ?? "assistive town-trade probe failed";
+            }
+
+            if (commandName == AssistiveLeaveTownTravelService.Command)
+            {
+                return AssistiveLeaveTownTravelService.LastFailReason ?? "assistive leave-town travel failed";
             }
 
             return "command failed";
@@ -768,6 +781,12 @@ namespace BlacksmithGuild.DevTools
                     return CourtshipProbeService.RunProbeNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case AssistiveTownToTownProbeService.Command:
+                    return AssistiveTownToTownProbeService.RunProbeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case AssistiveLeaveTownTravelService.Command:
+                    return AssistiveLeaveTownTravelService.RunNow(executeTravel: false, source: commandName);
                 default:
                     if (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
                     {

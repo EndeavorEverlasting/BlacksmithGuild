@@ -1,0 +1,25 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-020825",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T06:08:25.9127593Z",
+    "endedAtUtc":  "2026-06-22T06:13:32.2724112Z",
+    "stableSeconds":  0,
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  ".",
+    "gameProcessRunning":  false,
+    "launchSignals":  {
+                          "safeModeDismissed":  true,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  true,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "mapReadyHookMask":  "0x0F",
+    "notes":  "F7 FAIL: process died before map-ready (timeout); Safe Mode No on launch â€” prior session crash likely"
+}

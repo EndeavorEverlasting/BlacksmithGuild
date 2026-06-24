@@ -1,0 +1,55 @@
+﻿{
+    "schemaVersion":  1,
+    "mode":  "assistive",
+    "sessionId":  "20260624-004036",
+    "startedAtUtc":  "2026-06-24T04:40:36.4836417Z",
+    "events":  [
+                   {
+                       "timestampUtc":  "2026-06-24T04:40:38.1510145Z",
+                       "mode":  "assistive",
+                       "classifiedState":  "HostedSingleplayerWindow",
+                       "confidence":  "medium",
+                       "processName":  "TaleWorlds.MountAndBlade.Launcher",
+                       "processId":  39548,
+                       "hwnd":  855046,
+                       "windowTitle":  "Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount \u0026 Blade II Bannerlord/bin/Modules/",
+                       "windowBounds":  null,
+                       "windowBoundsReason":  "foreground_helper_no_rect",
+                       "foregroundWindowMatch":  true,
+                       "evidenceSources":  [
+                                               "process",
+                                               "window"
+                                           ],
+                       "runtimeEvidenceStates":  [
+
+                                                 ],
+                       "legalActions":  [
+                                            "observe",
+                                            "poll_status",
+                                            "surface_advisory"
+                                        ],
+                       "forbiddenActions":  [
+                                                "claim_f7_pass",
+                                                "mutate_inventory",
+                                                "click_launcher_continue",
+                                                "click_launcher_play"
+                                            ],
+                       "expectedTransitions":  [
+                                                   "CampaignMapSurface",
+                                                   "SettlementTownMenu",
+                                                   "SmithyScreen",
+                                                   "MarketTradeScreen"
+                                               ],
+                       "routeAgent":  "Agent B - Runtime / Readiness / Gameplay safety",
+                       "reason":  "Assistive town-trade cert ended passFail=PASS",
+                       "manualLaunchObserved":  true,
+                       "assistiveAttach":  true,
+                       "certTarget":  null,
+                       "launchPath":  "continue",
+                       "targetMismatch":  false,
+                       "launchState":  null,
+                       "settlement_menu_ready_observed":  false,
+                       "oldGoldenPathSatisfied":  null
+                   }
+               ]
+}

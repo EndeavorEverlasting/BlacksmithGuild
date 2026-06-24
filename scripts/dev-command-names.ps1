@@ -90,7 +90,9 @@ function Get-DevCommandNames {
         'AnalyzeMarriageCandidates',
         'ShowCourtshipPlan',
         'AnalyzeClanRoles',
-        'ProbeCourtshipApi'
+        'ProbeCourtshipApi',
+        'AssistiveTownToTownProbe',
+        'AssistiveLeaveTownAndTravel'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

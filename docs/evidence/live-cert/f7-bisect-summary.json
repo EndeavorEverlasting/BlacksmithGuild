@@ -1,0 +1,55 @@
+{
+  "commit": "78abee0",
+  "masks": [
+    {
+      "mask": "0x01",
+      "exitCode": 1,
+      "elapsedSec": 99,
+      "sessionId": "20260622-095231",
+      "passFail": "FAIL",
+      "stableSeconds": 0,
+      "firstMissingStep": "fresh module load ([TBG VERSION])",
+      "phase1TbgReady": false,
+      "continueClickSuccess": false,
+      "notes": "F7 FAIL: process died before map-ready"
+    },
+    {
+      "mask": "0x03",
+      "exitCode": -1,
+      "elapsedSec": 284,
+      "sessionId": "20260622-095231",
+      "passFail": "FAIL",
+      "stableSeconds": 0,
+      "firstMissingStep": "fresh module load ([TBG VERSION])",
+      "phase1TbgReady": false,
+      "continueClickSuccess": false,
+      "notes": "F7 FAIL: process died before map-ready"
+    },
+    {
+      "mask": "0x07",
+      "exitCode": 2,
+      "elapsedSec": 610,
+      "sessionId": "20260622-095949",
+      "passFail": "FAIL",
+      "stableSeconds": 0,
+      "firstMissingStep": "MapTransition -> MapReady",
+      "phase1TbgReady": true,
+      "continueClickSuccess": true,
+      "notes": "F7 FAIL: map-ready occurred then process died (timeout boundary)"
+    },
+    {
+      "mask": "0x0F",
+      "exitCode": 2,
+      "elapsedSec": 127,
+      "sessionId": "20260622-100959",
+      "passFail": "FAIL",
+      "stableSeconds": 0,
+      "firstMissingStep": "fresh module load ([TBG VERSION])",
+      "phase1TbgReady": true,
+      "continueClickSuccess": true,
+      "notes": "F7 FAIL: map-ready occurred then process died"
+    }
+  ],
+  "generatedUtc": "2026-06-22T14:12:06.3346852Z",
+  "branch": "fix/f7-gate-stability"
+}

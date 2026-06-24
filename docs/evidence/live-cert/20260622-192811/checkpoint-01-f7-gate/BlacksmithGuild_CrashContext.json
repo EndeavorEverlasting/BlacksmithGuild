@@ -1,0 +1,29 @@
+{
+  "updatedAt": "2026-06-22T23:29:28.3539190Z",
+  "sequence": 142,
+  "area": "StatusFlush",
+  "operation": "update_readiness",
+  "stage": "begin",
+  "inferredLaunchPath": "continue",
+  "activeState": "MapState",
+  "setupPhase": "Complete",
+  "sessionReady": true,
+  "campaignReady": true,
+  "mainHeroReady": true,
+  "stabilizationActive": true,
+  "autonomousDriversBlocked": true,
+  "lastBegin": {
+    "area": "StatusFlush",
+    "operation": "update_readiness",
+    "sequence": 142,
+    "path": "continue"
+  },
+  "lastSuccess": {
+    "area": "StatusFlush",
+    "operation": "update_readiness_begin",
+    "sequence": 141,
+    "path": "continue"
+  },
+  "assemblyVersion": "v0.0.11",
+  "dllUtc": "2026-06-22T23:28:16.6589494Z"
+}

@@ -1,6 +1,7 @@
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.Market;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.InputSystem;
 
 namespace BlacksmithGuild.DevTools
@@ -36,17 +37,35 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            GameSessionState.Refresh();
-
-            if (GameSessionState.CanPollHelpHotkeys)
+            if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
             {
-                HotkeyTraceService.OnPollingActive();
-            }
-            else
-            {
-                HotkeyTraceService.OnPollBlocked(GameSessionState.GetCampaignMapBlockDetail());
+                RuntimeTrace.LogDeferOnce(
+                    "hotkey_poll",
+                    "DevHotkeyHandler",
+                    "Poll",
+                    MapTransitionGuard.GetDeferReason());
+                return;
             }
 
+            RuntimeTrace.Run("DevHotkeyHandler", "NextOperation", () =>
+            {
+                GameSessionState.Refresh();
+
+                if (GameSessionState.CanPollHelpHotkeys)
+                {
+                    HotkeyTraceService.OnPollingActive();
+                }
+                else
+                {
+                    HotkeyTraceService.OnPollBlocked(GameSessionState.GetCampaignMapBlockDetail());
+                }
+
+                PollHotkeys();
+            });
+        }
+
+        private static void PollHotkeys()
+        {
             if (TryHelpHotkey(InputKey.F7, "F7", DevCommandRegistry.ShowForgeStatusCommand, ref _f7WasDown))
             {
                 return;

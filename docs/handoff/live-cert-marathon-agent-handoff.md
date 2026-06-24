@@ -43,6 +43,17 @@
 
 **Verdict:** Continue gets further than disposable (map-ready in Phase1) but **still hard-crashes before stable F7 gate**. Do **not** run `-SkipLaunch` cert marathon until process stays alive ≥60s past map-ready with `campaignReady: true`.
 
+### Safe Mode on launch (prior crash chain)
+
+Every agent-shell Continue repro in this sprint hit Safe Mode and clicked **No** (full mod load). Launch.log lines:
+
+```text
+Game shut down unexpectedly on previous session. Would you like to enable safe mode?
+clicked Safe Mode No
+```
+
+That is **not** a launcher defect — it confirms the **previous** run crashed. F7 manifests now include `launchSignals.priorSessionCrashLikely` when parsed from Launch.tail.
+
 ### Continue `ForgeContinue.cmd` (00:50) — Agent B agent shell **FAIL**
 
 | Signal | Detail |

@@ -1,0 +1,166 @@
+﻿{
+    "schemaVersion":  1,
+    "mode":  "cert",
+    "sessionId":  "20260623-205925",
+    "startedAtUtc":  "2026-06-24T00:59:25.0136733Z",
+    "events":  [
+                   {
+                       "timestampUtc":  "2026-06-24T00:59:29.7564100Z",
+                       "mode":  "cert",
+                       "classifiedState":  "ProcessClean",
+                       "confidence":  "high",
+                       "hwnd":  1509520,
+                       "windowTitle":  "external_state_classifier_f012ae81.plan.md - BlacksmithGuild - Cursor",
+                       "foregroundWindowMatch":  false,
+                       "evidenceSources":  [
+                                               "process"
+                                           ],
+                       "runtimeEvidenceStates":  [
+
+                                                 ],
+                       "legalActions":  [
+                                            "observe",
+                                            "poll_status",
+                                            "start_launcher_automation"
+                                        ],
+                       "forbiddenActions":  [
+                                                "claim_f7_pass",
+                                                "mutate_inventory"
+                                            ],
+                       "expectedTransitions":  [
+                                                   "LauncherOpening",
+                                                   "LauncherMenu"
+                                               ],
+                       "routeAgent":  "Agent C - External State Classifier / F7 Runner",
+                       "reason":  "Preflight clean before cert launch.",
+                       "manualLaunchObserved":  false,
+                       "assistiveAttach":  false,
+                       "certTarget":  "continue",
+                       "launchPath":  "unknown",
+                       "targetMismatch":  false,
+                       "launchState":  "init"
+                   },
+                   {
+                       "timestampUtc":  "2026-06-24T00:59:31.8135242Z",
+                       "mode":  "cert",
+                       "classifiedState":  "GameGone",
+                       "confidence":  "low",
+                       "hwnd":  1509520,
+                       "windowTitle":  "external_state_classifier_f012ae81.plan.md - BlacksmithGuild - Cursor",
+                       "foregroundWindowMatch":  false,
+                       "evidenceSources":  [
+                                               "process"
+                                           ],
+                       "runtimeEvidenceStates":  [
+
+                                                 ],
+                       "legalActions":  [
+                                            "observe",
+                                            "poll_status"
+                                        ],
+                       "forbiddenActions":  [
+                                                "click_launcher_continue",
+                                                "click_launcher_play",
+                                                "claim_f7_pass"
+                                            ],
+                       "expectedTransitions":  [
+
+                                               ],
+                       "routeAgent":  "Human or Agent C investigation",
+                       "reason":  "Status.json stale; do not guess in-game surface",
+                       "manualLaunchObserved":  false,
+                       "assistiveAttach":  false,
+                       "certTarget":  "continue",
+                       "launchPath":  "unknown",
+                       "targetMismatch":  false,
+                       "launchState":  "polling"
+                   },
+                   {
+                       "timestampUtc":  "2026-06-24T00:59:35.6375635Z",
+                       "mode":  "cert",
+                       "classifiedState":  "LauncherMenu",
+                       "confidence":  "low",
+                       "hwnd":  19272414,
+                       "windowTitle":  "M\u0026B II: Bannerlord",
+                       "foregroundWindowMatch":  false,
+                       "evidenceSources":  [
+                                               "process",
+                                               "window"
+                                           ],
+                       "runtimeEvidenceStates":  [
+
+                                                 ],
+                       "legalActions":  [
+                                            "observe",
+                                            "poll_status",
+                                            "click_launcher_continue",
+                                            "click_launcher_play"
+                                        ],
+                       "forbiddenActions":  [
+                                                "claim_f7_pass",
+                                                "mutate_inventory"
+                                            ],
+                       "expectedTransitions":  [
+                                                   "HostedSingleplayerWindow",
+                                                   "StandaloneGameProcess",
+                                                   "SafeModeDialog"
+                                               ],
+                       "routeAgent":  "Agent C - External State Classifier / F7 Runner",
+                       "reason":  "Status.json stale; do not guess in-game surface",
+                       "manualLaunchObserved":  false,
+                       "assistiveAttach":  false,
+                       "certTarget":  "continue",
+                       "launchPath":  "unknown",
+                       "targetMismatch":  false,
+                       "launchState":  "launcher_spawned"
+                   },
+                   {
+                       "timestampUtc":  "2026-06-24T01:00:56.5015423Z",
+                       "mode":  "cert",
+                       "classifiedState":  "HostedSingleplayerWindow",
+                       "confidence":  "medium",
+                       "processName":  "TaleWorlds.MountAndBlade.Launcher",
+                       "processId":  160204,
+                       "hwnd":  4130880,
+                       "windowTitle":  "Mount and Blade II Bannerlord - Singleplayer PID: 160204 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount \u0026 Blade II Bannerlord/bin/Modules/",
+                       "foregroundWindowMatch":  true,
+                       "evidenceSources":  [
+                                               "process",
+                                               "window",
+                                               "Phase1.tail.txt",
+                                               "BlacksmithGuild_Status.json"
+                                           ],
+                       "runtimeEvidenceStates":  [
+                                                     "CampaignReady",
+                                                     "SessionReady",
+                                                     "Phase1Active",
+                                                     "StatusFresh"
+                                                 ],
+                       "legalActions":  [
+                                            "observe",
+                                            "poll_status",
+                                            "surface_advisory"
+                                        ],
+                       "forbiddenActions":  [
+                                                "click_launcher_continue",
+                                                "click_launcher_play",
+                                                "claim_f7_pass",
+                                                "mutate_inventory"
+                                            ],
+                       "expectedTransitions":  [
+                                                   "CampaignMapSurface",
+                                                   "SettlementTownMenu",
+                                                   "SmithyScreen",
+                                                   "MarketTradeScreen"
+                                               ],
+                       "routeAgent":  "Agent B - Runtime / Readiness / Gameplay safety",
+                       "reason":  "readinessSurface= from fresh Status.json",
+                       "manualLaunchObserved":  false,
+                       "assistiveAttach":  false,
+                       "certTarget":  "continue",
+                       "launchPath":  "continue",
+                       "targetMismatch":  false,
+                       "launchState":  "game_spawned"
+                   }
+               ]
+}

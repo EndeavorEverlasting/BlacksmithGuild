@@ -1,8 +1,8 @@
 # Functionality Status
 
-**Last updated:** 2026-06-22 (Agent B sprint — agent-shell F7 FAIL @ MapTransition; USER verify still required)  
+**Last updated:** 2026-06-22 (F7 stability sprint — `fix/f7-gate-stability`; agent-shell F7 FAIL; USER verify required)  
 **Mod version:** `v0.0.11`  
-**Branch:** `main` @ `ed997db` — live certs blocked until stable F7 USER PASS
+**Branch:** `fix/f7-gate-stability` → PR to `main` — live certs blocked until F7 PASS
 
 **Next handoff:** [handoff/f7-gate-cert-marathon-agent-handoff.md](handoff/f7-gate-cert-marathon-agent-handoff.md)  
 **Live cert marathon:** [handoff/live-cert-marathon-agent-handoff.md](handoff/live-cert-marathon-agent-handoff.md)  
@@ -14,15 +14,19 @@
 
 ## Live cert marathon — current verdict (2026-06-22)
 
-**Not cert-complete.** Map-ready crash fix shipped; **USER must verify** stable F7 before cert marathon. Agent B agent-shell attempt **FAIL** @ MapTransition (evidence `live-cert/20260622-004953/`).
+**Not cert-complete.** F7 stability fix shipped on `fix/f7-gate-stability`; agent-shell **FAIL** @ MapTransition (evidence `live-cert/20260622-011418/`).
+
+**Safe Mode chain:** Continue F7 agent-shell runs show Safe Mode → No → MapTransition death. That pattern means **prior run crashed**, not feature failure. See Launch.tail `Game shut down unexpectedly` + `clicked Safe Mode No`; F7 manifest `launchSignals.priorSessionCrashLikely` (after merge).
 
 | Check | Verdict | Notes |
 |-------|---------|-------|
-| `dotnet build -c Release` | **PASS** | 2026-06-22 Agent B (`main` @ `0c9f171`) |
-| Map-ready orchestrator fix | **SHIPPED** | Deferred hooks + F7 sync + bisect mask |
-| Continue F7 (agent shell) | **FAIL** | MapTransition death; no map-ready; Cursor focus |
-| Continue F7 (USER) | **PENDING VERIFY** | `campaignReady:true` + `canPollFileInbox:true` ≥60s |
-| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked until USER F7 verify |
+| `dotnet build -c Release` | **PASS** | 2026-06-22 F7 sprint |
+| F7 runner (direct PS + `.cmd` wrapper) | **SHIPPED** | Agent-primary: `scripts\run-f7-gate-continue.ps1`; thin wrapper `Run-F7GateContinue.cmd`; fail-closed manifest @ `325aacd` |
+| Refocus + C# load gates | **SHIPPED** | MapTransition hotkey/inbox/orchestrator gating |
+| Continue F7 (agent shell) | **FAIL** | `20260622-011418`; Safe Mode No; MapTransition death |
+| Continue F7 (USER) | **PENDING VERIFY** | Direct PS or wrapper exit 0 + manifest `passFail: PASS` required |
+| Continue marathon (-SkipLaunch) | **NOT RUN** | Blocked until F7 PASS |
+| Track A / Track B | **NOT RUN** | Blocked until F7 PASS |
 | Prior Continue crash (pre-fix) | **CRASH** | Evidence `live-cert/20260622-002034/` |
 | 006B / 006C / 009A | **BLOCKED** | No stable map-ready |
 
@@ -33,9 +37,11 @@
 **Next local path (after crash fix):**
 
 ```powershell
-# User terminal — close Bannerlord, keep game window focused
-.\ForgeContinue.cmd
-# F7: campaignReady:true + canPollFileInbox:true (stable ≥60s)
+# Autonomous F7 — agent-primary direct PowerShell (wrapper is thin alias)
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F
+# Optional wrapper (same gate): .\Run-F7GateContinue.cmd -HookMask 0x0F
+# PASS: exit 0 + manifest passFail PASS; then:
 .\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
 .\ExportTbgEvidence.cmd
 ```

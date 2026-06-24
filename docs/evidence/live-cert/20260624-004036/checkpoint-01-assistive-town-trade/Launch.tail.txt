@@ -1,0 +1,80 @@
+[2026-06-24 00:34:32] launcher-auto: LAUNCH_STATE=game_spawned
+[2026-06-24 00:34:33] launcher-auto: LAUNCH_STATE=play_clicked selectedBy=user
+[2026-06-24 00:34:33] launcher-auto: LAUNCH_TIMING launcherSelectionMs=960 continueVerifyMs=0 safeModeBeforeContinue=false attempts=0 result=ok
+[2026-06-24 00:34:33] launcher-auto: handoff: user launch path adopted — game running
+[2026-06-24 00:34:33] launcher-auto: LAUNCH_STATE=handoff
+[2026-06-24 00:34:33] launcher-auto: post-handoff watch started (user launch path adopted — game running)
+[2026-06-24 00:34:46] launcher-auto: post-handoff: Bannerlord exited
+[2026-06-24 00:35:15] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-24 00:35:17] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-24 00:35:18] launcher-auto: session pid=47016 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=300s poll=180ms respectUserForeground=True
+[2026-06-24 00:35:18] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=27340
+[2026-06-24 00:35:18] launcher-auto: UIA: AUDIT top-level windows (10): "agent_d_docs_pivot_0de7e051.plan.md - BlacksmithGuild - Cursor"(Cursor); "Blacksmith Guild Workflow - Google Chrome"(chrome); "NordVPN "(NordVPN); "Signal (16)"(Signal); "Deprecated - OneDrive - Google Chrome"(chrome); "Relationship-Driven Strategy Game - Google Chrome"(chrome); "Malwarebytes"(Malwarebytes); "Hub"(Wispr Flow); "Calendar | Microsoft Teams"(ms-teams); "C:\Windows\System32\cmd.exe"(cmd)
+[2026-06-24 00:35:19] launcher-auto: pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet
+[2026-06-24 00:35:21] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:23] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:25] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:28] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:30] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:32] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:35] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:37] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:40] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:42] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:44] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:47] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:49] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:50] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=27340
+[2026-06-24 00:35:52] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:54] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:57] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:35:59] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:36:01] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:36:04] launcher-auto: LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=click_launcher_continue mode=assistive state=LauncherOpening
+[2026-06-24 00:36:04] launcher-auto: LAUNCH_TIMING launcherSelectionMs=45670 continueVerifyMs=0 safeModeBeforeContinue=false attempts=0 result=timeout
+[2026-06-24 00:36:04] launcher-auto: LAUNCH_STATE=launcher_timing_timeout
+[2026-06-24 00:36:36] open-launcher: Start-Process C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe
+[2026-06-24 00:36:38] open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)
+[2026-06-24 00:36:42] launcher-auto: session pid=11224 log=C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_Launch.log intent=continue timeout=360s poll=180ms respectUserForeground=True
+[2026-06-24 00:36:42] launcher-auto: env launcher=yes game=no foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:42] launcher-auto: UIA: AUDIT top-level windows (10): "agent_d_docs_pivot_0de7e051.plan.md - BlacksmithGuild - Cursor"(Cursor); "Blacksmith Guild Workflow - Google Chrome"(chrome); "NordVPN "(NordVPN); "Signal (16)"(Signal); "Deprecated - OneDrive - Google Chrome"(chrome); "Relationship-Driven Strategy Game - Google Chrome"(chrome); "Malwarebytes"(Malwarebytes); "Hub"(Wispr Flow); "Calendar | Microsoft Teams"(ms-teams); "C:\Windows\System32\cmd.exe"(cmd)
+[2026-06-24 00:36:44] launcher-auto: pre-handoff ready suppressed — launcher idle, PLAY/CONTINUE not clicked yet
+[2026-06-24 00:36:54] launcher-auto: UIA: AUDIT coord window pick: window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:54] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | before foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:54] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-24 00:36:54] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1005,764) hwnd=656220 title="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548 launcher_ok=true
+[2026-06-24 00:36:54] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=1 method=coords at (1005,764) fractions=(0.55,0.90) bounds=(498,260,923,560) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | foreground foreground="M&B II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:54] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (507,504) screen (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:54] launcher-auto: UIA: CLICK hwnd SendMessage at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:54] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-first at (1005,764) in window="MB II: Bannerlord" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:56] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-24 00:36:56] launcher-auto: click CONTINUE (CONTINUE) NOT verified — PLAY/CONTINUE still on screen; will retry
+[2026-06-24 00:36:56] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-24 00:36:56] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-24 00:36:56] launcher-auto: LAUNCH_STATE=safe_mode_visible
+[2026-06-24 00:36:56] launcher-auto: UIA: DIALOG MATCH title="Safe Mode" matched="Safe Mode"
+[2026-06-24 00:36:56] launcher-auto: UIA: FOCUS request (Safe Mode) target=window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | before foreground="agent_d_docs_pivot_0de7e051.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=34916
+[2026-06-24 00:36:56] launcher-auto: UIA: FOCUS skipped (Safe Mode) — RespectUserForeground
+[2026-06-24 00:36:56] launcher-auto: UIA: CLICK "Safe Mode No" button="No" in window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | foreground before foreground="agent_d_docs_pivot_0de7e051.plan.md - BlacksmithGuild - Cursor" process=Cursor pid=34916
+[2026-06-24 00:36:56] launcher-auto: UIA: CLICK OK "Safe Mode No" button="No" method=InvokePattern in window="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | foreground after foreground="Safe Mode" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:36:56] launcher-auto: clicked Safe Mode No
+[2026-06-24 00:36:56] launcher-auto: LAUNCH_STATE=safe_mode_no_clicked
+[2026-06-24 00:36:56] launcher-auto: Safe Mode: No selected - prior session unexpected shutdown; crash on last run suspected (full mod load retained)
+[2026-06-24 00:37:13] launcher-auto: UIA: AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to window="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:13] launcher-auto: UIA: FOCUS request (launcher coords prep) target=window="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | before foreground="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:13] launcher-auto: UIA: FOCUS skipped (launcher coords prep) — RespectUserForeground
+[2026-06-24 00:37:13] launcher-auto: UIA: AUDIT hit-test intent=continue label=launcher CONTINUE at (1113,950) hwnd=855046 title="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548 launcher_ok=true
+[2026-06-24 00:37:13] launcher-auto: UIA: CLICK "launcher CONTINUE" intent=continue attempt=2 method=coords at (1113,950) fractions=(0.58,0.88) bounds=(0,0,1920,1080) in window="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548 | foreground foreground="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:13] launcher-auto: UIA: CLICK "launcher CONTINUE" method=hwnd SendMessage at client (1113,950) screen (1113,950) in window="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:13] launcher-auto: UIA: CLICK hwnd SendMessage at (1113,950) in window="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:14] launcher-auto: UIA: CLICK OK "launcher PLAY/CONTINUE" intent=continue method=hwnd SendMessage-first at (1113,950) in window="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount  Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:14] launcher-auto: clicked CONTINUE (CONTINUE) — launch verified (game or launcher handoff)
+[2026-06-24 00:37:14] launcher-auto: LAUNCH_STATE=continue_clicked selectedBy=automation
+[2026-06-24 00:37:15] launcher-auto: env launcher=yes game=hosted foreground="Mount and Blade II Bannerlord - Singleplayer PID: 39548 -  Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/" process=TaleWorlds.MountAndBlade.Launcher pid=39548
+[2026-06-24 00:37:15] launcher-auto: LAUNCH_STATE=game_spawned
+[2026-06-24 00:37:15] launcher-auto: raised Bannerlord window on game spawn
+[2026-06-24 00:37:17] launcher-auto: LAUNCH_TIMING launcherSelectionMs=33352 continueVerifyMs=2598 safeModeBeforeContinue=false attempts=2 result=ok
+[2026-06-24 00:37:17] launcher-auto: handoff: Bannerlord.exe stable — PLAY clicked
+[2026-06-24 00:37:17] launcher-auto: LAUNCH_STATE=handoff
+[2026-06-24 00:37:17] launcher-auto: post-handoff watch started (Bannerlord.exe stable — PLAY clicked)
+[2026-06-24 00:40:18] launcher-auto: post-handoff watch completed (180s, no stall kill)

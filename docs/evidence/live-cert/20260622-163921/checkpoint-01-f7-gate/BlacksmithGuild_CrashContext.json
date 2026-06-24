@@ -1,0 +1,28 @@
+{
+  "updatedAt": "2026-06-22T20:38:09.3460273Z",
+  "sequence": 936851,
+  "area": "GameSessionState",
+  "operation": "Refresh",
+  "stage": "ok",
+  "inferredLaunchPath": "continue",
+  "activeState": "MapState",
+  "setupPhase": "MapTransition",
+  "campaignReady": false,
+  "mainHeroReady": true,
+  "stabilizationActive": false,
+  "autonomousDriversBlocked": true,
+  "lastBegin": {
+    "area": "GameSessionState",
+    "operation": "ReadHero",
+    "sequence": 936852,
+    "path": "continue"
+  },
+  "lastSuccess": {
+    "area": "GameSessionState",
+    "operation": "Refresh",
+    "sequence": 936851,
+    "path": "continue"
+  },
+  "assemblyVersion": "v0.0.11",
+  "dllUtc": "2026-06-22T19:40:01.8821591Z"
+}

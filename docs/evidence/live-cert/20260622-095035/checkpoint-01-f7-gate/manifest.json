@@ -1,0 +1,51 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-095035",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T13:50:35.6280569Z",
+    "endedAtUtc":  "2026-06-22T13:51:26.5488195Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x07",
+    "mapReadyHookMask":  "0x07",
+    "launchState":  "launcher_spawned",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  false,
+    "continueClick":  {
+                          "attempted":  false,
+                          "success":  false,
+                          "method":  "unknown"
+                      },
+    "lastFocusResult":  null,
+    "launchAutomationError":  "launcher nav already running (lock C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Launch.lock age \u003c 10 min) — stop ForgeContinue/F7/Run-LauncherNavNow first",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  ".",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "fresh module load ([TBG VERSION])",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  false,
+                                          "mapTransition":  false,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  false,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  false,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "F7 FAIL: process died before map-ready"
+}

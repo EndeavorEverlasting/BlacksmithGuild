@@ -1,3 +1,6 @@
+using BlacksmithGuild.DevTools.Assistive;
+using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -24,7 +27,19 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            GameSessionState.SyncForgeStatus();
+            if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch())
+            {
+                RuntimeTrace.LogDeferOnce(
+                    "inbox_sync_forge",
+                    "DevCommandFileInbox",
+                    "SyncForgeStatus",
+                    MapTransitionGuard.GetDeferReason());
+                return;
+            }
+
+            RuntimeTrace.RunSafe("DevCommandFileInbox", "SyncForgeStatus", () => GameSessionState.SyncForgeStatus());
+
+            AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
 
             if (!GameSessionState.CanPollFileInbox)
             {
@@ -34,6 +49,11 @@ namespace BlacksmithGuild.DevTools
                     DebugLogger.Test("[TBG INBOX] waiting: MainHero not ready", showInGame: false);
                 }
 
+                return;
+            }
+
+            if (CampaignSetupStateTracker.IsMapLoadTransitionWindow)
+            {
                 return;
             }
 

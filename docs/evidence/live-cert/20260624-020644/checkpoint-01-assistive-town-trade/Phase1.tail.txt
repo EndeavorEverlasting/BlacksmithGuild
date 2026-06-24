@@ -1,0 +1,300 @@
+﻿[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589238 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589239 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589239 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589240 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589241 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589241 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589240 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589242 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589242 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589243 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589243 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589244 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589245 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589245 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589244 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589246 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589246 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589247 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589247 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589248 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589249 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589249 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589248 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589250 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589250 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589251 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589251 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589252 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589253 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589253 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589252 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589254 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589254 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589255 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589255 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589256 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589257 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589257 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589256 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589258 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589258 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589259 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589259 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589260 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589261 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589261 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589260 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589262 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589262 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589263 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589263 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589264 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589265 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589265 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589264 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589266 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589266 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589267 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589267 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589268 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589269 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589269 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589268 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589270 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589270 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589271 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589271 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589272 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589273 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589273 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589272 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589274 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589274 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589275 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589275 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589276 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589277 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589277 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589276 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589278 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589278 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589279 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589279 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589280 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589281 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589281 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589280 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589282 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589282 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589283 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589283 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589284 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589285 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589285 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589284 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589286 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589286 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589287 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589287 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589288 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589289 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589289 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589288 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589290 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589290 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589291 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589291 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589292 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589293 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589293 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589292 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589294 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589294 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589295 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589295 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589296 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589297 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589297 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589296 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589298 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589298 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589299 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589299 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589300 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589301 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589301 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589300 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589302 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589302 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589303 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589303 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589304 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589305 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589305 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589304 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589306 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589307 area=DevCommandFileInbox op=SyncForgeStatus stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589308 area=StatusFlush op=SyncForgeStatus stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589309 area=StatusFlush op=SyncForgeStatusRefresh stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589309 area=StatusFlush op=SyncForgeStatusRefresh stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589310 area=StatusFlush op=ReadinessSurface stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG READINESS] surface=settlement_menu settlement=Quyaz atMenu=true mapReady=true sessionReady=true
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] area=StatusFlush op=ReadinessSurface stage=ok surface=settlement_menu settlement=Quyaz atMenu=true path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589310 area=StatusFlush op=ReadinessSurface stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589311 area=StatusFlush op=session_snapshot_begin stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG STATUS] snapshot phase=SettlementInterior timePaused=true sessionReady=true mapReady=true surface=settlement_menu campaignMapSurfaceOpen=false
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589311 area=StatusFlush op=session_snapshot_begin stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589312 area=StatusFlush op=session_snapshot_ok stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589312 area=StatusFlush op=session_snapshot_ok stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589313 area=StatusFlush op=update_session_begin stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589313 area=StatusFlush op=update_session_begin stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589314 area=StatusFlush op=update_session stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589314 area=StatusFlush op=update_session stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589315 area=StatusFlush op=update_session_ok stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589315 area=StatusFlush op=update_session_ok stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589316 area=StatusFlush op=update_readiness_begin stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589316 area=StatusFlush op=update_readiness_begin stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589317 area=StatusFlush op=update_readiness stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589318 area=StatusFlush op=update_readiness_heavy stage=skipped reason=settlement_menu_open path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589319 area=ForgeStatus op=UpdateReadinessFlush stage=skipped reason=settlement_menu_open path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589320 area=ForgeStatus op=FlushWrite stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589320 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589317 area=StatusFlush op=update_readiness stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589321 area=StatusFlush op=update_readiness_ok stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589321 area=StatusFlush op=update_readiness_ok stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589322 area=StatusFlush op=file_write_begin stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589322 area=StatusFlush op=file_write_begin stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589323 area=StatusFlush op=file_write_ok stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589323 area=StatusFlush op=file_write_ok stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589308 area=StatusFlush op=SyncForgeStatus stage=ok elapsedMs=34 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589308 area=StatusFlush op=SyncForgeStatus stage=end path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589307 area=DevCommandFileInbox op=SyncForgeStatus stage=ok elapsedMs=36 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589306 area=SubModule op=NextOperation stage=ok elapsedMs=40 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589324 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589324 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=2 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589325 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589325 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589326 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589327 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589327 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589326 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589328 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589328 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589329 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589329 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589330 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589331 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589331 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589330 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589332 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589332 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=2 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589333 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589333 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589334 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589335 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589335 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589334 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589336 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589336 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589337 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589337 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589338 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589339 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589339 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589338 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589340 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589340 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589341 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589341 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589342 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589343 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589343 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589342 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589344 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589344 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589345 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589345 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589346 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589347 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589347 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589346 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589348 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589348 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589349 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589349 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589350 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589351 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589351 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=2 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589350 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589352 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589352 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=2 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589353 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589353 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589354 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589355 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589355 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=2 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589354 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589356 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589356 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589357 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589357 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589358 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589359 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589359 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589358 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589360 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589360 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589361 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589361 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589362 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589363 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589363 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=2 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589362 area=SubModule op=NextOperation stage=ok elapsedMs=5 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589364 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589364 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589365 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589365 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589366 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589367 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589367 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589366 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589368 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589368 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589369 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589369 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589370 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589371 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589371 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589370 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589372 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589372 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589373 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589373 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589374 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589375 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589375 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589374 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589376 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589376 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589377 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589377 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589378 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589379 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589379 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589378 area=SubModule op=NextOperation stage=ok elapsedMs=4 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589380 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589380 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589381 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589381 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589382 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589383 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589383 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589382 area=SubModule op=NextOperation stage=ok elapsedMs=3 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589384 area=MapTransitionGuard op=CampaignTick stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589384 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589385 area=MapTransitionGuard op=MapReadyPrecheck stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589385 area=MapTransitionGuard op=MapReadyPrecheck stage=ok elapsedMs=1 path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589386 area=SubModule op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589387 area=DevHotkeyHandler op=NextOperation stage=begin path=continue
+[2026-06-24 02:07:15] [TBG TEST] [TBG TRACE] seq=1589387 area=DevHotkeyHandler op=NextOperation stage=ok elapsedMs=1 path=continue

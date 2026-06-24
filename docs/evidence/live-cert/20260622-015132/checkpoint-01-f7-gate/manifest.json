@@ -1,0 +1,18 @@
+{
+  "checkpoint": "checkpoint-01-f7-gate",
+  "sessionId": "20260622-015132",
+  "passFail": "FAIL",
+  "exitCode": null,
+  "notes": "Agent shell interrupted @ ~168s. MapReady @ 01:52:19 on 376fb3c (mask 0x0F). Hotkey trace ABSENT after MapReady (gate worked). No [TBG MAPREADY] lines — orchestrator never logged before process gone. Launch.tail: Cursor foreground, launcher window not found.",
+  "mapReadyHookMask": "0x0F",
+  "commit": "376fb3c",
+  "launchSignals": {
+    "safeModeDismissed": true,
+    "priorSessionCrashLikely": true
+  },
+  "campaignReady": false,
+  "canPollFileInbox": false,
+  "phase1TbgReady": false,
+  "phase1LastSignal": "MapTransition -> MapReady @ 01:52:19; no hotkey trace; no orchestrator lines",
+  "salvagedFrom": "background terminal 966561 + live Phase1/Launch before kill"
+}

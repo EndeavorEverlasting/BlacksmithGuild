@@ -1,0 +1,300 @@
+﻿[2026-06-22 02:09:02] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:09:02] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:09:02] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:09:02] module loaded.
+[2026-06-22 02:09:03] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:09:03] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:09:03] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:09:03] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:09:07] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:09:08] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:09:08] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:09:10] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:09:11] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:09:11] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 02:14:02] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 02:14:02] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 02:14:02] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T06:13:36.9326305Z
+[2026-06-22 02:14:02] [TBG VERSION] Pending reload state: clear
+[2026-06-22 02:14:02] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 02:14:03] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 02:14:03] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:14:03] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:14:03] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:14:03] module loaded.
+[2026-06-22 02:14:03] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:14:03] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:14:03] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:14:03] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:14:07] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:14:08] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:14:08] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:14:10] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:14:11] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:14:15] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=MapState phase=MapTransition subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:14:15] [TBG QUICKSTART] transition: MapTransition -> MapReady (activeState=MapState)
+[2026-06-22 02:14:15] [TBG QUICKSTART] bootstrap disarmed: setup complete
+[2026-06-22 02:14:15] [TBG QUICKSTART] setup complete; handing off to map readiness gate.
+[2026-06-22 02:24:16] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 02:24:16] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 02:24:16] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T06:23:13.8259266Z
+[2026-06-22 02:24:16] [TBG VERSION] Pending reload state: clear
+[2026-06-22 02:24:16] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 02:24:17] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 02:24:17] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:24:17] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:24:17] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:24:17] module loaded.
+[2026-06-22 02:24:17] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:24:17] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:24:17] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:24:17] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:24:22] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:24:22] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:24:22] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:24:24] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:24:26] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:24:26] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 02:26:10] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 02:26:10] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 02:26:10] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T06:23:13.8259266Z
+[2026-06-22 02:26:10] [TBG VERSION] Pending reload state: clear
+[2026-06-22 02:26:11] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 02:26:11] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 02:26:11] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:26:11] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:26:11] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:26:11] module loaded.
+[2026-06-22 02:26:12] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:26:12] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:26:12] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:26:12] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:26:16] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:26:17] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:26:17] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:26:18] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:26:20] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:26:20] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 02:26:24] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=MapState phase=MapTransition subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] orchestrator tick entered
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] immediate hooks begin
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] skipped StatusFlush (mask)
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] skipped NotifySetupTracker (mask)
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] skipped InGameNotices (mask)
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] skipped HotkeyTrace (mask)
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] immediate hooks complete
+[2026-06-22 02:26:24] [TBG TEST] [TBG MAPREADY] deferred hooks skipped (mask)
+[2026-06-22 02:26:24] [TBG QUICKSTART] transition: MapTransition -> MapReady (activeState=MapState)
+[2026-06-22 02:26:24] [TBG QUICKSTART] bootstrap disarmed: setup complete
+[2026-06-22 02:26:24] [TBG QUICKSTART] setup complete; handing off to map readiness gate.
+[2026-06-22 02:28:35] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 02:28:35] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 02:28:35] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T06:28:17.4237832Z
+[2026-06-22 02:28:35] [TBG VERSION] Pending reload state: clear
+[2026-06-22 02:28:35] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 02:28:36] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 02:28:36] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:28:36] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:28:36] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:28:36] module loaded.
+[2026-06-22 02:28:36] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:28:36] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:28:36] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:28:36] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:28:40] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:28:41] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:28:41] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:28:43] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:28:45] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:28:45] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 02:28:49] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=MapState phase=MapTransition subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:28:49] [TBG TEST] [TBG MAPREADY] orchestrator tick entered
+[2026-06-22 02:28:49] [TBG TEST] [TBG MAPREADY] immediate hooks begin
+[2026-06-22 02:28:49] [TBG TEST] [TBG MAPREADY] StatusFlush begin
+[2026-06-22 02:52:41] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 02:52:41] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 02:52:41] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T06:49:55.0037389Z
+[2026-06-22 02:52:41] [TBG VERSION] Pending reload state: clear
+[2026-06-22 02:52:42] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 02:52:42] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 02:52:42] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:52:42] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:52:42] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:52:42] module loaded.
+[2026-06-22 02:52:42] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:52:42] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:52:42] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:52:42] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:52:47] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:52:48] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:52:48] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:52:49] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:52:51] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:52:51] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 02:54:31] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 02:54:31] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 02:54:31] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T06:54:06.6542311Z
+[2026-06-22 02:54:31] [TBG VERSION] Pending reload state: clear
+[2026-06-22 02:54:31] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 02:54:31] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 02:54:31] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 02:54:31] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 02:54:31] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 02:54:31] module loaded.
+[2026-06-22 02:54:32] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 02:54:32] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 02:54:32] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 02:54:32] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 02:54:36] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 02:54:37] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:54:37] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 02:54:39] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 02:54:40] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 02:54:40] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 02:54:44] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=MapState phase=MapTransition subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 02:54:45] [TBG TEST] [TBG MAPREADY] orchestrator tick entered
+[2026-06-22 02:54:45] [TBG TEST] [TBG MAPREADY] immediate hooks begin
+[2026-06-22 02:54:45] [TBG TEST] [TBG MAPREADY] StatusFlush begin
+[2026-06-22 03:09:45] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 03:09:45] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 03:09:45] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T07:09:19.5387322Z
+[2026-06-22 03:09:45] [TBG VERSION] Pending reload state: clear
+[2026-06-22 03:09:45] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 03:09:45] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 03:09:45] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 03:09:45] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 03:09:45] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 03:09:45] module loaded.
+[2026-06-22 03:09:46] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 03:09:46] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 03:09:46] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 03:09:46] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 03:09:50] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 03:09:51] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 03:09:51] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 03:09:53] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 03:09:54] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 03:09:54] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 09:54:10] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 09:54:10] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 09:54:10] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T13:52:36.3715244Z
+[2026-06-22 09:54:10] [TBG VERSION] Pending reload state: clear
+[2026-06-22 09:54:11] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 09:54:11] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 09:54:11] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 09:54:11] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 09:54:11] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 09:54:11] module loaded.
+[2026-06-22 09:54:12] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 09:54:12] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 09:54:12] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 09:54:12] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 09:54:34] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 09:54:35] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 09:54:35] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 09:54:38] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 09:54:41] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 09:54:41] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 09:54:53] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=MapState phase=MapTransition subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] orchestrator tick entered
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] immediate hooks begin
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] StatusFlush begin
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] StatusFlush ok
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] skipped NotifySetupTracker (mask)
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] skipped InGameNotices (mask)
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] skipped HotkeyTrace (mask)
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] immediate hooks complete
+[2026-06-22 09:54:53] [TBG TEST] [TBG MAPREADY] deferred hooks skipped (mask)
+[2026-06-22 09:54:53] [TBG QUICKSTART] transition: MapTransition -> MapReady (activeState=MapState)
+[2026-06-22 09:54:53] [TBG QUICKSTART] bootstrap disarmed: setup complete
+[2026-06-22 09:54:53] [TBG QUICKSTART] setup complete; handing off to map readiness gate.
+[2026-06-22 10:00:41] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 10:00:41] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 10:00:41] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T13:55:13.4691395Z
+[2026-06-22 10:00:41] [TBG VERSION] Pending reload state: clear
+[2026-06-22 10:00:41] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 10:00:42] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 10:00:42] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 10:00:42] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 10:00:42] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 10:00:42] module loaded.
+[2026-06-22 10:00:43] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 10:00:43] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 10:00:43] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 10:00:43] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 10:00:49] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 10:00:50] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 10:00:50] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 10:00:53] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 10:00:55] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 10:00:55] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 13:16:49] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 13:16:49] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 13:16:49] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T17:12:22.5519972Z
+[2026-06-22 13:16:49] [TBG VERSION] Pending reload state: clear
+[2026-06-22 13:16:49] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 13:16:50] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 13:16:50] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 13:16:50] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 13:16:50] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 13:16:50] module loaded.
+[2026-06-22 13:16:50] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 13:16:50] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 13:16:50] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 13:16:50] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 13:16:56] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 13:16:57] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 13:16:57] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 13:16:59] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 13:17:01] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 13:17:01] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 13:54:06] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 13:54:06] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 13:54:06] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T17:52:08.1308428Z
+[2026-06-22 13:54:06] [TBG VERSION] Pending reload state: clear
+[2026-06-22 13:54:06] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 13:54:07] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 13:54:07] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 13:54:07] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 13:54:07] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 13:54:07] module loaded.
+[2026-06-22 13:54:07] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 13:54:07] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 13:54:07] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 13:54:07] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 13:54:28] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 13:54:29] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 13:54:29] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 13:54:31] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 13:54:33] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 13:54:33] [TBG HOTKEY TRACE] Campaign tick polling active.
+[2026-06-22 13:54:40] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=MapState phase=MapTransition subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 13:54:40] [TBG TEST] [TBG MAPREADY] orchestrator tick entered
+[2026-06-22 13:54:40] [TBG TEST] [TBG MAPREADY] immediate hooks begin
+[2026-06-22 13:54:40] [TBG TEST] [TBG MAPREADY] StatusFlush begin
+[2026-06-22 15:05:46] [TBG TEST] [TBG TRACE] seq=1 area=ForgeStatus op=FlushWrite stage=begin path=unknown
+[2026-06-22 15:05:46] [TBG TEST] [TBG TRACE] seq=1 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=4 path=unknown
+[2026-06-22 15:05:46] [TBG TEST] [TBG TRACE] seq=2 area=ForgeStatus op=FlushWrite stage=begin path=unknown
+[2026-06-22 15:05:46] [TBG TEST] [TBG TRACE] seq=2 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=1 path=unknown
+[2026-06-22 15:05:46] [TBG CHARACTER] variant config loaded mode=personal routeSteps=0
+[2026-06-22 15:05:46] [TBG TEST] [TBG AGENT] loaded AgentIterationConfig.
+[2026-06-22 15:05:46] [TBG VERSION] Loaded assembly: version=v0.0.11 dllUtc=2026-06-22T19:03:56.9383793Z
+[2026-06-22 15:05:46] [TBG VERSION] Pending reload state: clear
+[2026-06-22 15:05:46] [TBG QUICKSTART] SandBox intro probe: introField=missing launchIntro=missing launchSandbox=found simulateCreation=missing activeState=null
+[2026-06-22 15:05:47] [TBG QUICKSTART] API probe: state=found manager=found nextStage=found menus=found suitableOptions=found trySwitchToNextMenu=found startNarrativeStage=found getNarrativeMenuWithId=found currentMenu=found currentMenuIndex=missing culture=found narrative=OnNarrativeMenuOptionSelected
+[2026-06-22 15:05:47] [TBG QUICKSTART] patches: IntroSkip=OK LaunchSandboxObserve=OK NextStage=OK StartNewGame=SKIP characterApi=OK activeState=null
+[2026-06-22 15:05:47] [TBG QUICKSTART] Character creation automation enabled (vanilla launch + Poll stage advance).
+[2026-06-22 15:05:47] [TBG QUICKSTART] Module Mismatch auto-Yes patch: OK (2 inquiry overload(s), event=yes)
+[2026-06-22 15:05:47] module loaded.
+[2026-06-22 15:05:47] [TBG QUICKSTART] loaded launch intent=continue from ../../BlacksmithGuild_LaunchIntent.json
+[2026-06-22 15:05:47] [TBG QUICKSTART] launch intent: continue
+[2026-06-22 15:05:47] [TBG QUICKSTART] main menu probe: CampaignResumeGame=visible ContinueCampaign=visible StoryModeNewGame=visible SandBoxNewGame=visible CustomBattle=visible Options=visible Credits=visible Exit=visible
+[2026-06-22 15:05:47] [TBG QUICKSTART] transition: Idle -> MainMenu (activeState=null)
+[2026-06-22 15:05:51] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=InitialState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=InitialState/main menu
+[2026-06-22 15:05:52] [TBG QUICKSTART] intro decision: hook=CleanAndPushState state=GameLoadingState phase=MainMenu subStage=null forwardDone=False launchIntent=continue isForwardLaunch=False bootstrapComplete=False decision=block reason=not skippable video state
+[2026-06-22 15:05:52] [TBG QUICKSTART] transition: MainMenu -> MainMenu (activeState=GameLoadingState)
+[2026-06-22 15:05:54] [The Blacksmith Guild] Mod loaded. The forge is lit.
+[2026-06-22 15:05:54] [TBG TEST] [TBG TRACE] seq=3 area=ForgeStatus op=FlushWrite stage=begin path=continue
+[2026-06-22 15:05:54] [TBG TEST] [TBG TRACE] seq=3 area=ForgeStatus op=FlushWrite stage=ok elapsedMs=2 path=continue
+[2026-06-22 15:05:55] [TBG QUICKSTART] transition: MainMenu -> MapTransition (activeState=GameLoadingState)
+[2026-06-22 15:05:55] [TBG HOTKEY TRACE] Campaign tick polling active.

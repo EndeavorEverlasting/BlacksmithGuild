@@ -1,0 +1,15 @@
+{
+  "checkpoint": "checkpoint-01-f7-gate",
+  "sessionId": "20260622-012354",
+  "passFail": "FAIL",
+  "exitCode": 2,
+  "notes": "USER path Run-F7GateContinue: Safe Mode No; MapTransition/MapState @ 01:24:31; forwardDone=false; no TBG READY; process died ~01:24:32. Real load crash — not agent-only.",
+  "launchSignals": {
+    "safeModeDismissed": true,
+    "priorSessionCrashLikely": true,
+    "safeModePromptText": "Game shut down unexpectedly on previous session"
+  },
+  "campaignReady": false,
+  "canPollFileInbox": false,
+  "phase1TbgReady": false
+}

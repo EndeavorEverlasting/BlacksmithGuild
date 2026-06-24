@@ -1,0 +1,51 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-095140",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T13:51:40.4101984Z",
+    "endedAtUtc":  "2026-06-22T13:52:30.8232945Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x01",
+    "mapReadyHookMask":  "0x01",
+    "launchState":  "launcher_spawned",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  false,
+    "continueClick":  {
+                          "attempted":  false,
+                          "success":  false,
+                          "method":  "unknown"
+                      },
+    "lastFocusResult":  null,
+    "launchAutomationError":  "c:\\Users\\Cheex\\AppData\\Local\\Temp\\ccu3f440.0.cs(709) : Unexpected character \u0027$\u0027\n\nc:\\Users\\Cheex\\AppData\\Local\\Temp\\ccu3f440.0.cs(708) : \r\n\nc:\\Users\\Cheex\\AppData\\Local\\Temp\\ccu3f440.0.cs(709) : \u003e\u003e\u003e         if ($results.Count == 0)\r\n\nc:\\Users\\Cheex\\AppData\\Local\\Temp\\ccu3f440.0.cs(710) :         {\r\n",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  ".",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "fresh module load ([TBG VERSION])",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  false,
+                                          "mapTransition":  false,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  false,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  false,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "F7 FAIL: process died before map-ready"
+}

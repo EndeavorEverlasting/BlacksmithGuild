@@ -2,6 +2,7 @@ using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
@@ -14,6 +15,8 @@ namespace BlacksmithGuild
             "[The Blacksmith Guild] Mod loaded. The forge is lit.";
 
         private float _inboxPollAccumulator;
+        private static bool _afterFlushWriteTraced;
+        private int _refreshGenerationAtCampaignTick;
 
         protected override void OnSubModuleLoad()
         {
@@ -43,6 +46,7 @@ namespace BlacksmithGuild
 
             PendingReloadWatcher.Poll(dt);
             CampaignSetupStateTracker.Poll(dt);
+            CampaignMapReadyOrchestrator.OnApplicationTick(dt);
 
             if (!DevToolsConfig.DevToolsEnabled)
             {
@@ -51,10 +55,34 @@ namespace BlacksmithGuild
 
             if (IsCampaignActive())
             {
-                GameSessionState.Refresh();
-                if (GameSessionState.IsMainHeroReady)
+                if (!_afterFlushWriteTraced)
                 {
-                    DevHotkeyHandler.Poll();
+                    _afterFlushWriteTraced = true;
+                    RuntimeTrace.Run("SubModule", "AfterFlushWrite", () => { });
+                }
+
+                MapTransitionGuard.TraceGuardCheck("CampaignTick");
+
+                GameSessionState.Refresh();
+                _refreshGenerationAtCampaignTick = GameSessionState.RefreshGeneration;
+
+                if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && CampaignMapReadyOrchestrator.ShouldRunOrchestratorTick())
+                {
+                    CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+                }
+                else if (CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && GameSessionState.IsMainHeroReady
+                    && GameSessionState.IsCampaignSessionReady)
+                {
+                    CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+                }
+
+                if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                    && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                    && GameSessionState.IsCampaignSessionReady)
+                {
+                    RuntimeTrace.Run("SubModule", "NextOperation", () => DevHotkeyHandler.Poll());
                 }
             }
 
@@ -65,7 +93,20 @@ namespace BlacksmithGuild
             }
 
             _inboxPollAccumulator = 0f;
-            DevCommandFileInbox.Poll();
+            if (IsCampaignActive()
+                && !MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                && GameSessionState.RefreshGeneration != _refreshGenerationAtCampaignTick)
+            {
+                GameSessionState.Refresh();
+            }
+
+            if (!MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                && GameSessionState.IsCampaignSessionReady
+                && CampaignMapReadyOrchestrator.ImmediateHooksCompleted
+                && !CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
+            {
+                RuntimeTrace.Run("SubModule", "NextOperation", DevCommandFileInbox.Poll);
+            }
         }
 
         private static bool IsCampaignActive()

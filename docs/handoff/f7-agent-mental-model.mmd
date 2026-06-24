@@ -1,0 +1,98 @@
+%% The Blacksmith Guild - F7 agent mental model
+%% Purpose: keep agent letters, roles, lanes, and handoffs consistent.
+%% Doctrine: No manifest, no medal. Build PASS is not game PASS.
+
+flowchart TD
+    Start([F7 sprint branch<br/>fix/f7-gate-stability])
+    Hold[[PR #7 HOLD<br/>Old F7 PASS not sprint medal]]
+
+    subgraph Agents[Agent letters and role aliases]
+        A["Agent A<br/>Cert and evidence lane<br/>Aliases: Cert, Evidence, Git, PR"]
+        B["Agent B<br/>Runtime survival lane<br/>Aliases: Runtime, Readiness, Gameplay safety"]
+        C["Agent C<br/>Runner and launcher lane<br/>Aliases: Launcher, F7 runner, Classifier"]
+        D["Agent D<br/>Atlas and coordination lane<br/>Aliases: Docs, Atlas, Integration"]
+    end
+
+    subgraph Parallel[Parallel work that is allowed]
+        Aprep["A prepares gameplay cert matrix<br/>evidence commit<br/>optional infra validation only"]
+        Bwork["B canPollFileInbox<br/>AssistiveTownToTownProbe<br/>inGameAssistReady"]
+        Cwork["C attach runner polish<br/>classifier<br/>45s launcher 15s semantic fail DONE"]
+        Dwork["D maintains atlas<br/>coordination board<br/>pivot docs"]
+    end
+
+    subgraph Evidence[Current evidence pattern]
+        E205925["20260623-205925<br/>clean Continue<br/>settlement_menu Quyaz<br/>canPollFileInbox=false<br/>old F7 CLOSED"]
+        EAssist["Town-to-Town Trade Assist<br/>forward product cert<br/>BLOCKED on B probe"]
+    end
+
+    subgraph Integration[Controlled integration]
+        PullLatest["Each lane pulls latest branch<br/>before commit"]
+        Static["Static gates<br/>dotnet build<br/>grep guard<br/>runner contract"]
+        CommitPush["Commit lane work<br/>push origin/fix/f7-gate-stability"]
+        Reconcile["Reconcile shared docs<br/>especially f7-agent-coordination.md"]
+    end
+
+    subgraph Cert[Live cert gates]
+        InfraOpt["Optional F7 infra validation<br/>~15s semantic FAIL<br/>not product medal"]
+        GameplayCert["Town-to-Town Assist cert<br/>after B+C unblock"]
+        Manifest["Manifest verdict only"]
+        Pass["PASS criteria per town-to-town spec<br/>canPollFileInbox=true<br/>probe accepted"]
+        Fail["FAIL evidence committed<br/>route by manifest fields"]
+    end
+
+    subgraph Routing[Failure routing rules]
+        RouteB["Route B<br/>canPollFileInbox<br/>probe missing<br/>runtime readiness"]
+        RouteC["Route C<br/>runner classifier<br/>launcher timing"]
+        RouteA["Route A<br/>gameplay cert evidence<br/>PR gate"]
+        RouteD["Route D<br/>docs drift<br/>atlas stale"]
+    end
+
+    Start --> Agents
+    Agents --> Parallel
+    A --> Aprep
+    B --> Bwork
+    C --> Cwork
+    D --> Dwork
+
+    Evidence --> Bwork
+    Evidence --> Aprep
+    Evidence --> Dwork
+
+    Aprep --> PullLatest
+    Bwork --> PullLatest
+    Cwork --> PullLatest
+    Dwork --> PullLatest
+    PullLatest --> Static
+    Static --> CommitPush
+    CommitPush --> Reconcile
+    Reconcile --> GameplayCert
+    Reconcile --> InfraOpt
+
+    E205925 --> InfraOpt
+    EAssist --> GameplayCert
+    GameplayCert --> Manifest
+    InfraOpt --> Manifest
+    Manifest --> Pass
+    Manifest --> Fail
+    Pass --> Hold
+    Fail --> Routing
+
+    Fail --> RouteB
+    Fail --> RouteC
+    Fail --> RouteA
+    Fail --> RouteD
+
+    RouteB --> Bwork
+    RouteC --> Cwork
+    RouteA --> Aprep
+    RouteD --> Dwork
+
+    classDef agent fill:#eef,stroke:#335,stroke-width:1px
+    classDef work fill:#efe,stroke:#363,stroke-width:1px
+    classDef evidence fill:#ffe,stroke:#663,stroke-width:1px
+    classDef gate fill:#fee,stroke:#633,stroke-width:1px
+
+    class A,B,C,D agent
+    class Aprep,Bwork,Cwork,Dwork work
+    class E205925,EAssist evidence
+    class Hold,Manifest,Pass,Fail gate

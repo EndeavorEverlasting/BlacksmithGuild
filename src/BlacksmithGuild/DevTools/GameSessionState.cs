@@ -1,5 +1,7 @@
 using System;
 using System.Reflection;
+using BlacksmithGuild.DevTools.Assistive;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.GameState;
@@ -57,7 +59,87 @@ namespace BlacksmithGuild.DevTools
 
         public static bool CanPollHotkeys { get; private set; }
 
+        public static bool IsSettlementMenuReady { get; private set; }
+
+        public static bool IsMapStateActive { get; private set; }
+
+        public static bool IsCampaignMapSurfaceOpen { get; private set; }
+
+        public static string ReadinessSurface { get; private set; } = ReadinessSurfaceKinds.Unknown;
+
+        public static string SettlementMenuId { get; private set; }
+
+        public static bool IsCampaignSessionReady =>
+            IsMainHeroReady
+            && (IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady);
+
+        public static int RefreshGeneration { get; private set; }
+
+        private const double RefreshTraceIntervalSec = 2.0;
+        private const double ReadHeroTraceIntervalSec = 5.0;
+
+        private static string _lastRefreshFingerprint;
+        private static DateTime _lastRefreshTraceUtc = DateTime.MinValue;
+        private static bool _lastHeroReadyProbe;
+        private static DateTime _lastReadHeroTraceUtc = DateTime.MinValue;
+        private static string _lastPromotionFingerprint;
+
         public static void Refresh()
+        {
+            var fingerprint = BuildRefreshFingerprint();
+            var fingerprintChanged = !string.Equals(fingerprint, _lastRefreshFingerprint, StringComparison.Ordinal);
+            var traceDue = fingerprintChanged
+                || (DateTime.UtcNow - _lastRefreshTraceUtc).TotalSeconds >= RefreshTraceIntervalSec;
+
+            if (!traceDue)
+            {
+                RefreshInternal(traceSubOps: false);
+                RuntimeTrace.LogSuppressInterval(
+                    $"refresh|{fingerprint}",
+                    "GameSessionState",
+                    "RefreshSuppressed",
+                    fingerprint,
+                    RefreshTraceIntervalSec);
+                RefreshGeneration++;
+                return;
+            }
+
+            _lastRefreshFingerprint = fingerprint;
+            _lastRefreshTraceUtc = DateTime.UtcNow;
+
+            RuntimeTrace.Run("GameSessionState", "Refresh", () => RefreshInternal(traceSubOps: true));
+            MaybeTraceReadinessPromotion();
+            RefreshGeneration++;
+        }
+
+        private static string BuildRefreshFingerprint()
+        {
+            var guardActive = MapTransitionGuard.IsUnsafeContinueLoadWindow();
+            return string.Join(
+                "|",
+                IsCampaignLoaded ? "1" : "0",
+                IsMainHeroReady ? "1" : "0",
+                guardActive ? "g" : "-",
+                GetActiveStateName(),
+                IsCampaignMapReady ? "m" : "-",
+                IsSettlementInteriorReady ? "s" : "-",
+                IsSettlementMenuReady ? "u" : "-",
+                Phase.ToString());
+        }
+
+        private static void RefreshInternal(bool traceSubOps)
+        {
+            if (MapTransitionGuard.ShouldDeferHeavyCampaignTouch()
+                && !MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
+            {
+                RefreshLightweight(traceSubOps);
+                return;
+            }
+
+            RefreshFull(traceSubOps);
+        }
+
+        private static void RefreshLightweight(bool traceSubOps)
         {
             IsMapMenuOpen = false;
             MapMenuId = null;
@@ -67,6 +149,10 @@ namespace BlacksmithGuild.DevTools
             CurrentSettlementStringId = null;
             IsSettlementInteriorReady = false;
             IsTavernLocationReady = false;
+            IsSettlementMenuReady = false;
+            IsMapStateActive = false;
+            IsCampaignMapSurfaceOpen = false;
+            ReadinessSurface = ReadinessSurfaceKinds.Loading;
 
             try
             {
@@ -83,14 +169,55 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
+            ReadHeroInternal(traceSubOps);
+
+            Phase = SessionPhase.CampaignLoading;
+            IsTimePaused = false;
+            IsCampaignMapReady = false;
+            IsSettlementMenuReady = false;
+            CanPollHelpHotkeys = false;
+            CanPollRiskyHotkeys = false;
+            CanPollFileInbox = false;
+            CanPollHotkeys = false;
+
+            var reason = MapTransitionGuard.GetDeferReason();
+            RuntimeTrace.LogDeferOnce("refresh_read_menu", "GameSessionState", "ReadMenuState", reason);
+            RuntimeTrace.LogDeferOnce("refresh_eval_settlement", "GameSessionState", "EvaluateSettlementInterior", reason);
+            RuntimeTrace.LogDeferOnce("refresh_eval_map_ready", "GameSessionState", "EvaluateMapReady", reason);
+            RuntimeTrace.LogDeferOnce("refresh_eval_tavern", "GameSessionState", "EvaluateTavernLocation", reason);
+        }
+
+        private static void RefreshFull(bool traceSubOps)
+        {
+            IsMapMenuOpen = false;
+            MapMenuId = null;
+            ActiveMenuId = null;
+            CurrentLocationId = null;
+            CurrentSettlementName = null;
+            CurrentSettlementStringId = null;
+            IsSettlementInteriorReady = false;
+            IsTavernLocationReady = false;
+            IsSettlementMenuReady = false;
+            IsMapStateActive = false;
+            IsCampaignMapSurfaceOpen = false;
+            ReadinessSurface = ReadinessSurfaceKinds.Loading;
+
             try
             {
-                IsMainHeroReady = Hero.MainHero != null;
+                IsCampaignLoaded = Campaign.Current != null;
             }
             catch
             {
-                IsMainHeroReady = false;
+                IsCampaignLoaded = false;
             }
+
+            if (!IsCampaignLoaded)
+            {
+                ResetToModuleOnly();
+                return;
+            }
+
+            ReadHeroInternal(traceSubOps);
 
             if (!IsMainHeroReady)
             {
@@ -113,10 +240,29 @@ namespace BlacksmithGuild.DevTools
                 IsTimePaused = false;
             }
 
-            ReadMenuState();
-            IsCampaignMapReady = EvaluateCampaignMapReady(out _);
-            EvaluateSettlementInteriorReady();
-            IsTavernLocationReady = EvaluateTavernLocationReady();
+            if (traceSubOps)
+            {
+                RuntimeTrace.Run("GameSessionState", "ReadMenuState", ReadMenuState);
+                IsCampaignMapReady = RuntimeTrace.Run(
+                    "GameSessionState",
+                    "EvaluateMapReady",
+                    () => EvaluateCampaignMapReady(out _));
+                RuntimeTrace.Run("GameSessionState", "EvaluateSettlementInterior", EvaluateSettlementInteriorReady);
+                IsTavernLocationReady = RuntimeTrace.Run(
+                    "GameSessionState",
+                    "EvaluateTavernLocation",
+                    EvaluateTavernLocationReady);
+            }
+            else
+            {
+                ReadMenuState();
+                IsCampaignMapReady = EvaluateCampaignMapReady(out _);
+                EvaluateSettlementInteriorReady();
+                IsTavernLocationReady = EvaluateTavernLocationReady();
+            }
+
+            EvaluateSettlementMenuReady();
+            EvaluateReadinessSurface();
 
             if (IsSettlementInteriorReady)
             {
@@ -126,15 +272,99 @@ namespace BlacksmithGuild.DevTools
             {
                 Phase = IsTimePaused ? SessionPhase.MapPaused : SessionPhase.MapActive;
             }
+            else if (IsSettlementMenuReady)
+            {
+                Phase = SessionPhase.SettlementInterior;
+            }
             else
             {
                 Phase = SessionPhase.CampaignReady;
             }
 
-            CanPollHelpHotkeys = true;
+            CanPollHelpHotkeys = IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady;
             CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
-            CanPollFileInbox = IsCampaignMapReady || IsSettlementInteriorReady;
+            AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;
+        }
+
+        internal static void SetCanPollFileInbox(bool value)
+        {
+            CanPollFileInbox = value;
+        }
+
+        private static void ReadHeroInternal(bool traceSubOps)
+        {
+            bool heroReady;
+            try
+            {
+                heroReady = Hero.MainHero != null;
+            }
+            catch
+            {
+                heroReady = false;
+            }
+
+            var heroChanged = heroReady != _lastHeroReadyProbe;
+            var heroTraceDue = heroChanged
+                || (DateTime.UtcNow - _lastReadHeroTraceUtc).TotalSeconds >= ReadHeroTraceIntervalSec;
+
+            if (traceSubOps && heroTraceDue)
+            {
+                RuntimeTrace.Run("GameSessionState", "ReadHero", () => { IsMainHeroReady = heroReady; });
+                _lastReadHeroTraceUtc = DateTime.UtcNow;
+                _lastHeroReadyProbe = heroReady;
+                return;
+            }
+
+            IsMainHeroReady = heroReady;
+            if (heroChanged)
+            {
+                _lastHeroReadyProbe = heroReady;
+            }
+        }
+
+        private static void EvaluateSettlementMenuReady()
+        {
+            IsSettlementMenuReady = false;
+
+            if (!IsMainHeroReady || IsSettlementInteriorReady)
+            {
+                return;
+            }
+
+            if (!MapTransitionGuard.TryDetectSettlementMenuSignal(out _))
+            {
+                return;
+            }
+
+            IsSettlementMenuReady = true;
+            var settlement = ResolveCurrentSettlement();
+            if (settlement != null)
+            {
+                CaptureSettlementSnapshot(settlement);
+            }
+        }
+
+        private static void MaybeTraceReadinessPromotion()
+        {
+            if (!IsCampaignSessionReady)
+            {
+                return;
+            }
+
+            var fingerprint =
+                $"{IsCampaignMapReady}|{IsSettlementInteriorReady}|{IsSettlementMenuReady}|{Phase}";
+            if (string.Equals(fingerprint, _lastPromotionFingerprint, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastPromotionFingerprint = fingerprint;
+            var detail = GetCommandReadyBlockDetail();
+            RuntimeTrace.Run("GameSessionState", "ReadinessPromoted", () =>
+            {
+                DebugLogger.Test($"[TBG READINESS] promoted: {detail}", showInGame: false);
+            });
         }
 
         public static bool EvaluateCampaignMapReady(out string blockDetail)
@@ -193,8 +423,35 @@ namespace BlacksmithGuild.DevTools
 
         public static string GetCommandReadyBlockDetail()
         {
-            if (IsCampaignMapReady || IsSettlementInteriorReady)
+            if (IsCampaignSessionReady)
             {
+                if (IsCampaignMapReady)
+                {
+                    if (IsCampaignMapSurfaceOpen)
+                    {
+                        return "campaign map ready";
+                    }
+
+                    if (IsMapMenuOpen)
+                    {
+                        var settlement = CurrentSettlementName ?? CurrentSettlementStringId ?? "settlement";
+                        return $"settlement town menu ({settlement})";
+                    }
+
+                    return "campaign map ready";
+                }
+
+                if (IsSettlementInteriorReady)
+                {
+                    return "settlement interior ready";
+                }
+
+                if (IsSettlementMenuReady)
+                {
+                    var settlement = CurrentSettlementName ?? CurrentSettlementStringId ?? "settlement";
+                    return $"settlement menu ready ({settlement})";
+                }
+
                 return "command ready";
             }
 
@@ -258,6 +515,7 @@ namespace BlacksmithGuild.DevTools
             IsMainHeroReady = false;
             IsTimePaused = false;
             IsCampaignMapReady = false;
+            IsSettlementMenuReady = false;
             CanPollHelpHotkeys = false;
             CanPollRiskyHotkeys = false;
             CanPollFileInbox = false;
@@ -451,19 +709,30 @@ namespace BlacksmithGuild.DevTools
 
         private static void ReadMenuState()
         {
+            IsMapStateActive = false;
             try
             {
                 if (GameStateManager.Current?.ActiveState is MapState mapState)
                 {
+                    IsMapStateActive = true;
                     IsMapMenuOpen = mapState.AtMenu;
                     MapMenuId = mapState.GameMenuId;
                     ActiveMenuId = mapState.GameMenuId;
+                    SettlementMenuId = mapState.GameMenuId;
+                }
+                else
+                {
+                    IsMapMenuOpen = false;
+                    MapMenuId = null;
+                    SettlementMenuId = null;
                 }
             }
             catch
             {
+                IsMapStateActive = false;
                 IsMapMenuOpen = false;
                 MapMenuId = null;
+                SettlementMenuId = null;
             }
 
             try
@@ -476,6 +745,93 @@ namespace BlacksmithGuild.DevTools
             }
             catch
             {
+            }
+        }
+
+        private static void EvaluateReadinessSurface()
+        {
+            SettlementMenuId = MapMenuId;
+            IsCampaignMapSurfaceOpen = IsMapStateActive && !IsMapMenuOpen;
+
+            if (!IsCampaignLoaded || !IsMainHeroReady)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.Loading;
+                return;
+            }
+
+            if (MapTransitionGuard.IsUnsafeContinueLoadWindow()
+                && !MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.Loading;
+                return;
+            }
+
+            var activeStateName = GetActiveStateName();
+            if (string.Equals(activeStateName, "MainMenuState", StringComparison.Ordinal))
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.MainMenu;
+                return;
+            }
+
+            if (IsMapStateActive && IsMapMenuOpen)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.SettlementMenu;
+                return;
+            }
+
+            if (IsSettlementInteriorReady)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.SettlementInterior;
+                return;
+            }
+
+            if (IsCampaignMapSurfaceOpen)
+            {
+                ReadinessSurface = ReadinessSurfaceKinds.MapSurface;
+                return;
+            }
+
+            ReadinessSurface = ReadinessSurfaceKinds.Unknown;
+        }
+
+        public static ReadinessSurfaceSnapshot CaptureReadinessSurfaceSnapshot()
+        {
+            return new ReadinessSurfaceSnapshot
+            {
+                MapStateActive = IsMapStateActive,
+                SettlementMenuOpen = IsMapMenuOpen,
+                SettlementMenuId = SettlementMenuId ?? MapMenuId ?? "",
+                SettlementName = CurrentSettlementName ?? CurrentSettlementStringId ?? "",
+                CampaignMapSurfaceOpen = IsCampaignMapSurfaceOpen,
+                SettlementInteriorReady = IsSettlementInteriorReady,
+                ReadinessSurface = ReadinessSurface ?? ReadinessSurfaceKinds.Unknown
+            };
+        }
+
+        public static void LogReadinessSurfaceTrace(ReadinessSurfaceSnapshot snap)
+        {
+            var settlement = string.IsNullOrEmpty(snap.SettlementName) ? "unknown" : snap.SettlementName;
+            DebugLogger.Test(
+                $"[TBG READINESS] surface={snap.ReadinessSurface} settlement={settlement} atMenu={snap.SettlementMenuOpen.ToString().ToLowerInvariant()} mapReady={IsCampaignMapReady.ToString().ToLowerInvariant()} sessionReady={IsCampaignSessionReady.ToString().ToLowerInvariant()}",
+                showInGame: false);
+            DebugLogger.Test(
+                $"[TBG TRACE] area=StatusFlush op=ReadinessSurface stage=ok surface={snap.ReadinessSurface} settlement={settlement} atMenu={snap.SettlementMenuOpen.ToString().ToLowerInvariant()} path={LaunchPathInference.GetPathLabel()}",
+                showInGame: false);
+        }
+
+        public static string GetSessionReadyNoticeText()
+        {
+            var settlement = CurrentSettlementName ?? CurrentSettlementStringId ?? "settlement";
+            switch (ReadinessSurface)
+            {
+                case ReadinessSurfaceKinds.SettlementMenu:
+                    return $"session ready at {settlement} town menu. Press F8 for commands.";
+                case ReadinessSurfaceKinds.MapSurface:
+                    return "campaign map ready. Press F8 for commands.";
+                case ReadinessSurfaceKinds.SettlementInterior:
+                    return "settlement interior ready. Press F8 for commands.";
+                default:
+                    return "session ready. Press F8 for commands.";
             }
         }
 
@@ -504,11 +860,60 @@ namespace BlacksmithGuild.DevTools
             }
         }
 
-        public static void SyncForgeStatus()
+        public static void SyncForgeStatus(bool skipRefresh = false)
         {
-            Refresh();
-            ForgeStatus.UpdateSession(Phase, IsTimePaused);
-            ForgeStatus.UpdateReadiness(IsCampaignMapReady, IsMainHeroReady);
+            RuntimeTrace.RunSafe("StatusFlush", "SyncForgeStatus", () =>
+            {
+                if (skipRefresh)
+                {
+                    RuntimeTrace.LogSkipped("StatusFlush", "SyncForgeStatusRefresh", "skipRefresh");
+                }
+                else
+                {
+                    RuntimeTrace.RunSafe("StatusFlush", "SyncForgeStatusRefresh", () => Refresh());
+                }
+
+                RuntimeTrace.RunSafe("StatusFlush", "ReadinessSurface", () =>
+                {
+                    LogReadinessSurfaceTrace(CaptureReadinessSurfaceSnapshot());
+                });
+
+                RuntimeTrace.RunSafe("StatusFlush", "session_snapshot_begin", () =>
+                {
+                    DebugLogger.Test(
+                        $"[TBG STATUS] snapshot phase={Phase} timePaused={IsTimePaused.ToString().ToLowerInvariant()} sessionReady={IsCampaignSessionReady.ToString().ToLowerInvariant()} mapReady={IsCampaignMapReady.ToString().ToLowerInvariant()} surface={ReadinessSurface} campaignMapSurfaceOpen={IsCampaignMapSurfaceOpen.ToString().ToLowerInvariant()}",
+                        showInGame: false);
+                });
+                RuntimeTrace.RunSafe("StatusFlush", "session_snapshot_ok", () => { });
+
+                RuntimeTrace.RunSafe("StatusFlush", "update_session_begin", () => { });
+                RuntimeTrace.RunSafe("StatusFlush", "update_session", () =>
+                {
+                    ForgeStatus.UpdateSession(Phase, IsTimePaused, flush: false);
+                });
+                RuntimeTrace.RunSafe("StatusFlush", "update_session_ok", () => { });
+
+                RuntimeTrace.RunSafe("StatusFlush", "update_readiness_begin", () => { });
+                AssistReadinessEvaluator.ApplyInboxAndAssistFlags(trace: false);
+                RuntimeTrace.RunSafe("StatusFlush", "update_readiness", () =>
+                {
+                    var mapReady = IsCampaignMapReady;
+                    var heroReady = IsMainHeroReady;
+                    if (CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out var reason))
+                    {
+                        RuntimeTrace.LogSkipped(
+                            "StatusFlush",
+                            "update_readiness_heavy",
+                            reason);
+                    }
+
+                    ForgeStatus.UpdateReadiness(mapReady, heroReady);
+                });
+                RuntimeTrace.RunSafe("StatusFlush", "update_readiness_ok", () => { });
+
+                RuntimeTrace.RunSafe("StatusFlush", "file_write_begin", () => { });
+                RuntimeTrace.RunSafe("StatusFlush", "file_write_ok", () => { });
+            }, emitEnd: true);
         }
     }
 }

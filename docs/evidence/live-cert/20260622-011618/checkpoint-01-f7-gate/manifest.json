@@ -1,0 +1,15 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-011618",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T05:16:18.9312232Z",
+    "endedAtUtc":  "2026-06-22T05:21:23.6787993Z",
+    "stableSeconds":  0,
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "gameProcessRunning":  false,
+    "notes":  "F7 FAIL: process died before map-ready (timeout boundary)"
+}

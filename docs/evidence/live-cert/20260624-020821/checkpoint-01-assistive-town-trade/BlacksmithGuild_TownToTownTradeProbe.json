@@ -1,0 +1,32 @@
+{
+  "updatedAt": "2026-06-24T02:08:25.2086287-04:00",
+  "command": "AssistiveTownToTownProbe",
+  "currentSettlement": "Quyaz",
+  "readinessSurface": "settlement_menu",
+  "gold": 1000,
+  "partyInventorySummary": "slots=0 items=0",
+  "packAnimalCount": 0,
+  "tradeGoodsSummary": "routes=0 inventoryRows=0",
+  "nearbyTownCandidates": [
+    "Quyaz",
+    "Ortysia",
+    "Jalmarys",
+    "Sanala",
+    "Zeonica"
+  ],
+  "marketIntelSummary": "nearest=Quyaz distance=31 towns=1",
+  "smithingRelevantGoods": "charcoal=0 hardwood=0 ironOre=0",
+  "recommendedNextTown": "Ortysia",
+  "recommendedAction": "leave town then travel toward Ortysia",
+  "canExecuteTradeSafely": false,
+  "tradeExecution": "advisory_only",
+  "tradeProbeDetail": "TaleWorlds.CampaignSystem.Actions.BuyItemsAction:missing; SellItemsAction.Apply(PartyBase, PartyBase, ItemRosterElement, Int32, Settlement)",
+  "travelReadiness": {
+    "canLeaveSettlement": true,
+    "canSetTravelTarget": true,
+    "currentSettlement": "Quyaz",
+    "targetSettlement": "Ortysia",
+    "travelCommandMode": "advisory_only",
+    "reason": "at settlement menu; leave town before travel execute"
+  }
+}

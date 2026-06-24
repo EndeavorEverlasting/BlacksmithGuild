@@ -1,48 +1,46 @@
 # Continue Map Crash Bisect — Agent Handoff
 
 **Last updated:** 2026-06-22  
-**Branch:** `main`  
-**Status:** **FIX SHIPPED — USER VERIFY REQUIRED**
+**Branch:** `fix/f7-gate-stability` @ `376fb3c` — [PR #7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) → `main`  
+**Status:** **Post-MapReady C# hardening in progress on `fix/f7-post-mapready-csharp-hardening` — USER F7 PASS required**
 
 ## Problem
 
-Continue load reaches map-ready in Phase1 then process exits before stable F7. Agent shell repro unreliable (focus/Safe Mode).
+Continue load crash chain on F7 Continue gate. USER path (@ `80ffa31`) now reaches **MapReady** then dies ~2s later (no `[TBG MAPREADY]`). Agent shell cannot validate — stuck at MapTransition when Cursor steals refocus.
 
 ## What shipped
 
-- `CampaignMapReadyOrchestrator` — immediate F7 flush + deferred heavy hooks + try/catch per hook
-- `MapReadyHookFlags` + `TBG_MAP_READY_HOOK_MASK` env bisect
-- `GameSessionState.SyncForgeStatus()` — `campaignReady` from `IsCampaignMapReady`
+| Area | Change |
+|------|--------|
+| **Scripts** | `Run-F7GateContinue.cmd` + `run-f7-gate-continue.ps1`; refocus in launcher-auto-nav + run-live-assistive-cert |
+| **Safe Mode trail** | Launch log + F7 manifest `launchSignals.priorSessionCrashLikely` + `mapReadyHookMask` |
+| **C# load gates** | `IsMapLoadTransitionWindow`; `CanPollHelpHotkeys` map/settlement only |
+| **376fb3c** | `ImmediateHooksCompleted` + SubModule hotkey poll gate (fixes MapReady tick race) |
+| **Agent B C# hardening** (`fix/f7-post-mapready-csharp-hardening`) | Entry/begin/ok/failed MAPREADY logs; 2-tick deferred delay; orchestrator runs before transition-window downstream gate; strict hotkey poll gate |
 
-## Agent shell repro (2026-06-22 00:32, main @ 7461235)
+## F7 gate results
 
-**F7 gate: FAIL.** Process died ~4s after `MainMenu -> MapTransition`; never reached map-ready (`[TBG MAPREADY]` absent). Last Phase1 line: intro blocked (`not skippable video state`). ForgeContinue launcher timed out 267s after process vanish.
+| Session | Verdict | Who | Phase1 last | Notes |
+|---------|---------|-----|-------------|-------|
+| `20260622-013214` | FAIL | **USER** | MapReady @ 01:33:23 | ~2s crash; no MAPREADY (pre-376fb3c) |
+| `20260622-015132` | FAIL | Agent | MapReady @ 01:52:19 | **376fb3c** mask 0x0F: no hotkey trace (gate OK), no MAPREADY — interrupted |
+| `20260622-011418` | FAIL | Agent | MapTransition @ 01:15:02 | Safe Mode chain |
 
-**Implication:** orchestrator fix targets post-map-ready hooks; this repro dies earlier — bisect may need QuickStart/intro path or USER terminal verify (agent focus unreliable; Cursor stole foreground @ 00:32:17).
+Best USER repro: `docs/evidence/live-cert/20260622-013214/checkpoint-01-f7-gate/`  
+Post-gate agent: `docs/evidence/live-cert/20260622-015132/` — see [f7-golden-path-diff-agent-handoff.md](f7-golden-path-diff-agent-handoff.md)
 
-## Agent B sprint repro (2026-06-22 00:50, main @ 0c9f171)
-
-**F7 gate: FAIL (agent shell).** Build PASS. CONTINUE handoff verified **00:50:32**; `launcher=no game=no` from **00:50:45** (~13s after handoff). Phase1 stops at `MapTransition` (**00:50:38–43**); no `[TBG MAPREADY]`, no campaign map ready. Status.json stale: `campaignReady: false`, `canPollFileInbox: false`. Cursor foreground during launch. Evidence: `docs/evidence/live-cert/20260622-004953/`.
-
-**Next step:** USER terminal verify only — agent shell cannot reliably hold game focus. Hook-mask bisect **not applicable** until map-ready is reached.
-
+## Next step — autonomous F7
 
 ```powershell
-git pull origin main
-dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
-.\ForgeContinue.cmd
-# F7: campaignReady:true + canPollFileInbox:true ≥60s
-.\Run-LiveAssistiveCert.cmd -Session continue -SkipLaunch
+git checkout fix/f7-no-click-launch-runner && git pull
+.\Run-F7GateContinue.cmd -HookMask 0x0F
 ```
 
-Bisect: `$env:TBG_MAP_READY_HOOK_MASK = "0xEF"` (skip Treasury), `"0xDF"` (skip AutoCharacterBuild), `"0x0F"` (immediate only).
-
-## Obsolete branch
-
-`fix/continue-map-crash-bisect` — deleted from origin (same fix as `main` @ `5839e64`).
+If still fails after MapReady: try `0x1DF`, `0x1BF`, `0x00`. See `docs/handoff/f7-gate-cert-marathon-agent-handoff.md`.
 
 ## Parallel
 
-Agent A `feat/006c-4-sell-loop` @ `8316b74` (rebased on main) — [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) draft; merge after USER confirms stable F7.
+- [PR #7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — merge to `main` after USER F7 PASS  
+- [PR #5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) / [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) — merge after F7 on main  
 
-Agent C `feat/006c-4b-second-leg-travel` @ `5b67d6d` (stacked on `8316b74`) — [PR #6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) draft; Release build **PASS** 2026-06-22.
+Do **not** merge #5/#6 until F7 stable on main.

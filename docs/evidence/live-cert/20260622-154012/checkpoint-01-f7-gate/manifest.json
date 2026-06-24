@@ -1,0 +1,137 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260622-154012",
+    "passFail":  "FAIL",
+    "exitCode":  2,
+    "startedAtUtc":  "2026-06-22T19:40:12.3722066Z",
+    "endedAtUtc":  "2026-06-22T19:51:30.6011092Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x0F",
+    "mapReadyHookMask":  "0x0F",
+    "launchState":  "game_spawned",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  true,
+    "continueClick":  {
+                          "attempted":  true,
+                          "success":  true,
+                          "method":  "uia-scoped"
+                      },
+    "playClick":  {
+                      "attempted":  false,
+                      "success":  false,
+                      "method":  "unknown"
+                  },
+    "launchPath":  "continue",
+    "launchSelectedBy":  "automation",
+    "certTarget":  "continue",
+    "targetMismatch":  false,
+    "lastFocusResult":  null,
+    "launchAutomationError":  "launcher-auto-nav timed out after 368s (see C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Launch.log)",
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  "e",
+    "gameProcessRunning":  false,
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "MapTransition -\u003e MapReady",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  true,
+                                          "mapTransition":  true,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  {
+                          "safeModeDismissed":  true,
+                          "safeModePromptSeen":  false,
+                          "priorSessionCrashLikely":  true,
+                          "crashReporterDismissed":  false,
+                          "safeModePromptText":  null
+                      },
+    "notes":  "F7 FAIL: process died before map-ready (timeout); Safe Mode No on launch â€” prior session crash likely",
+    "continueEscalated":  true,
+    "continueClickMethod":  "uia-scoped",
+    "continueLatencySeconds":  28,
+    "launcherTimeoutStage":  "game_spawned",
+    "launcherWarnings":  [
+                             "launcher-auto-nav timed out after 368s (see C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Launch.log)",
+                             "continue_escalate: hwnd-only Continue did not spawn game within 15s; foreground retry used (not cert failure cause)"
+                         ],
+    "evidenceCompleteness":  {
+                                 "score":  "sufficient",
+                                 "instrumentationGap":  false,
+                                 "traceMarkersPresent":  true,
+                                 "missing":  [
+
+                                             ],
+                                 "required":  [
+                                                  {
+                                                      "name":  "manifest.json",
+                                                      "present":  true
+                                                  },
+                                                  {
+                                                      "name":  "Launch.tail.txt",
+                                                      "present":  true
+                                                  },
+                                                  {
+                                                      "name":  "Phase1.tail.txt",
+                                                      "present":  true
+                                                  }
+                                              ],
+                                 "harvestFailed":  false,
+                                 "harvestPartial":  false
+                             },
+    "lastPhase1Marker":  "[2026-06-22 15:51:30] [TBG TEST] [TBG TRACE] seq=164435 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue",
+    "lastTraceMarker":  "[2026-06-22 15:51:30] [TBG TEST] [TBG TRACE] seq=164435 area=GameSessionState op=Refresh stage=ok elapsedMs=4 path=continue",
+    "lastMapReadyMarker":  null,
+    "lastCrashContextOperation":  null,
+    "lastCrashContextStage":  null,
+    "lastCrashContextArea":  null,
+    "statusJsonCopied":  true,
+    "crashContextCopied":  false,
+    "windowsCrashEventCopied":  false,
+    "windowsCrashEventStatus":  "query_failed",
+    "phase1TailLineCount":  300,
+    "launchTailLineCount":  121,
+    "runnerCommandLine":  "run-f7-gate-continue.ps1 -CertTarget continue -HookMask 0x0F -TimeoutSeconds 300 -StableSeconds 60",
+    "processTimestamps":  {
+                              "gameStartUtc":  null,
+                              "gameEndUtc":  null
+                          },
+    "artifactMeta":  [
+                         {
+                             "name":  "BlacksmithGuild_Status.json",
+                             "copied":  true,
+                             "sourcePath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Status.json",
+                             "sizeBytes":  435,
+                             "lastWriteUtc":  "2026-06-22T19:42:02.1442266Z",
+                             "reason":  null
+                         },
+                         {
+                             "name":  "BlacksmithGuild_CrashContext.json",
+                             "copied":  false,
+                             "sourcePath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_CrashContext.json",
+                             "sizeBytes":  null,
+                             "lastWriteUtc":  null,
+                             "reason":  "not_present"
+                         }
+                     ],
+    "copiedArtifactCount":  3,
+    "missingArtifacts":  [
+                             "BlacksmithGuild_CrashContext.json"
+                         ],
+    "gamePhaseAtEnd":  "e",
+    "instrumentationGap":  false,
+    "harvestPartial":  true,
+    "harvestWarnings":  [
+
+                        ]
+}

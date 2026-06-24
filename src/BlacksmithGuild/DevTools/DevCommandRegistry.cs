@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
@@ -111,7 +112,9 @@ namespace BlacksmithGuild.DevTools
                 MarriageCandidateService.AnalyzeMarriageCandidatesCommand,
                 CourtshipPlanService.ShowCourtshipPlanCommand,
                 ClanRoleBoardService.AnalyzeClanRolesCommand,
-                CourtshipProbeService.ProbeCourtshipApiCommand
+                CourtshipProbeService.ProbeCourtshipApiCommand,
+                AssistiveTownToTownProbeService.Command,
+                AssistiveLeaveTownTravelService.Command
             };
 
         public static bool IsRegistered(string commandName)

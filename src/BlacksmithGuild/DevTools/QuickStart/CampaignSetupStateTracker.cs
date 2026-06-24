@@ -2,6 +2,7 @@ using System;
 using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 
@@ -103,6 +104,17 @@ namespace BlacksmithGuild.DevTools.QuickStart
         public static bool DevSaveLoadUsed => _devSaveLoadUsed;
 
         public static bool UsedDisposableQuickStartPath => _bootstrapUsed || _devSaveLoadUsed;
+
+        /// <summary>
+        /// True during Continue/load windows where MapState may exist but forward launch is not settled.
+        /// Dev hotkeys, inbox, and map-ready hooks must not run while this is true.
+        /// </summary>
+        public static bool IsMapLoadTransitionWindow =>
+            _phase == SetupPhase.MapTransition
+            || _phase == SetupPhase.MainMenu
+            || _phase == SetupPhase.IntroVideo
+            || _phase == SetupPhase.SandboxVideo
+            || _phase == SetupPhase.CharacterCreation;
 
         public static void ResetForNewSession()
         {
@@ -519,12 +531,22 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
             if (activeStateName == "MapState")
             {
-                GameSessionState.Refresh();
-                return GameSessionState.IsCampaignMapReady ? SetupPhase.MapReady : SetupPhase.MapTransition;
+                if (MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
+                {
+                    return SetupPhase.MapReady;
+                }
+
+                return SetupPhase.MapTransition;
             }
 
             if (Campaign.Current != null)
             {
+                if (MapTransitionGuard.TryDetectCampaignSessionLoaded(out _))
+                {
+                    MapTransitionGuard.TryDetectSettlementMenuSignal(out _);
+                    return SetupPhase.MapReady;
+                }
+
                 return SetupPhase.MapTransition;
             }
 

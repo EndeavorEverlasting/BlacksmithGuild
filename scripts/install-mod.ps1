@@ -16,6 +16,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'forge-status.ps1')
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'copy-client-dll.ps1')
 
 function Get-RepoRoot {
@@ -28,17 +29,7 @@ function Get-RepoRoot {
 
 function Get-BannerlordRoot {
     param([string]$RepoRoot)
-
-    $csproj = Join-Path $RepoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
-    if ($csproj -match '<GameFolder>([^<]+)</GameFolder>') {
-        $fromCsproj = $Matches[1] -replace '&amp;', '&'
-        if (Test-Path -LiteralPath $fromCsproj) { return $fromCsproj }
-    }
-
-    $default = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord'
-    if (Test-Path -LiteralPath $default) { return $default }
-
-    throw 'Bannerlord install not found. Set GameFolder in BlacksmithGuild.csproj.'
+    return Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
 }
 
 $operation = if ($Launch) { 'launch' } elseif ($CheckLog) { 'check' } else { 'install' }
@@ -124,10 +115,7 @@ try {
         Invoke-ForgeStep -Name 'scan_log' -Action {
             Write-Host ''
             Write-Host '--- Log scan ---'
-            $logCandidates = @(
-                (Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'),
-                (Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log')
-            )
+            $logCandidates = Get-Phase1LogCandidates -BannerlordRoot $BannerlordRoot
             $foundLog = $null
             foreach ($log in $logCandidates) {
                 if (Test-Path -LiteralPath $log) {
@@ -175,10 +163,10 @@ try {
             }
             & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot
             if (-not $LaunchManual) {
-                & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
+                & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -TimeoutSec 300 -PollMs 180
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
-                $launchLogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
+                $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
                 $continueVerified = $false
                 if (Test-Path -LiteralPath $launchLogPath) {
                     $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 80 -ErrorAction SilentlyContinue
@@ -191,6 +179,23 @@ try {
                     Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'continue intent exited without CONTINUE click or handoff in Launch.log'
                     Write-Host ''
                     Write-Host 'WARN - launcher-auto-nav returned but Launch.log shows no CONTINUE click or handoff.' -ForegroundColor Yellow
+                } else {
+                    Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
+                }
+            } elseif ($LaunchIntent -eq 'play' -and -not $LaunchManual) {
+                $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
+                $playVerified = $false
+                if (Test-Path -LiteralPath $launchLogPath) {
+                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 80 -ErrorAction SilentlyContinue
+                    $launchText = ($launchTail -join [Environment]::NewLine)
+                    $playVerified = ($launchText -match 'LAUNCH_STATE=play_clicked') -or
+                        ($launchText -match 'LAUNCH_STATE=game_spawned') -or
+                        ($launchText -match 'handoff:')
+                }
+                if (-not $playVerified) {
+                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'play intent exited without PLAY click or game_spawned in Launch.log'
+                    Write-Host ''
+                    Write-Host 'WARN - launcher-auto-nav returned but Launch.log shows no PLAY click or game spawn.' -ForegroundColor Yellow
                 } else {
                     Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
                 }

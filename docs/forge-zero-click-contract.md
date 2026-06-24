@@ -1,3 +1,5 @@
+**F7 recovery note:** for current RED-gate coordination, read [handoff/f7-agent-coordination.md](handoff/f7-agent-coordination.md) before this historical contract. For PLAY/CONTINUE ownership and F7 invocation doctrine, read [handoff/agent-launch-and-load-playbook.md](handoff/agent-launch-and-load-playbook.md).
+
 # Forge zero-click contract (Play → map)
 
 **Canonical spec** for what `Forge.cmd` must do after the **006I cutscene / intro lifecycle** fixes. Do not regress Path C quit or culture-Back guards when changing this funnel.

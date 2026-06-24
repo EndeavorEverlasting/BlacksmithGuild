@@ -1,0 +1,168 @@
+﻿{
+    "checkpoint":  "checkpoint-01-f7-gate",
+    "sessionId":  "20260623-205335",
+    "passFail":  "FAIL",
+    "exitCode":  1,
+    "startedAtUtc":  "2026-06-24T00:53:35.1114588Z",
+    "endedAtUtc":  "2026-06-24T00:53:39.6761508Z",
+    "stableSeconds":  0,
+    "hookMask":  "0x0F",
+    "mapReadyHookMask":  "0x0F",
+    "launchState":  "init",
+    "safeModeDetected":  false,
+    "safeModeNoClicked":  false,
+    "continueClick":  {
+                          "attempted":  false,
+                          "success":  false,
+                          "method":  "unknown"
+                      },
+    "playClick":  {
+                      "attempted":  false,
+                      "success":  false,
+                      "method":  "unknown"
+                  },
+    "launchPath":  "unknown",
+    "launchSelectedBy":  "unknown",
+    "certTarget":  "continue",
+    "targetMismatch":  true,
+    "targetMismatchReason":  "certTarget=continue requires automation Continue; observed launchPath=unknown launchSelectedBy=unknown",
+    "failureReason":  "contaminated_launch_path",
+    "gameSpawnAccepted":  false,
+    "gameSpawnRejectedReason":  "launch_path_not_eligible_for_continue_cert",
+    "spawnAttribution":  null,
+    "retryCount":  0,
+    "retryReason":  null,
+    "preRetryFailureReason":  null,
+    "preRetryGameProcessDetectionMethod":  null,
+    "preRetryGameProcessCandidates":  [
+
+                                      ],
+    "launcherDecisionEvents":  [
+
+                               ],
+    "readinessJudged":  false,
+    "phase1ArtifactState":  "stale",
+    "statusArtifactState":  "stale",
+    "crashContextArtifactState":  "stale",
+    "lastFocusResult":  null,
+    "launchAutomationError":  null,
+    "campaignReady":  false,
+    "canPollFileInbox":  false,
+    "mapReadyStatus":  null,
+    "phase1TbgReady":  false,
+    "phase1QuickStartMapReady":  false,
+    "phase1LastSignal":  "stale_artifact",
+    "gameProcessRunning":  false,
+    "gameAliveConfidence":  "none",
+    "gameProcessDetectionMethod":  "none",
+    "gameProcessPid":  null,
+    "gameProcessName":  null,
+    "gameProcessPath":  null,
+    "launcherProcessPid":  null,
+    "processDetectionWarnings":  {
+
+                                 },
+    "processDetectionLastSeenUtc":  null,
+    "gameProcessCandidates":  {
+
+                              },
+    "goldenPathCheck":  {
+                            "available":  true,
+                            "firstMissingStep":  "fresh module load ([TBG VERSION])",
+                            "mapReadySeen":  false,
+                            "tbgReadySeen":  false,
+                            "hotkeyTraceAtMapReady":  false,
+                            "steps":  {
+                                          "mainMenu":  false,
+                                          "mapTransition":  false,
+                                          "mapReady":  false,
+                                          "bootstrapDisarmed":  false,
+                                          "mapReadyStatusFlush":  false,
+                                          "tbgReady":  false
+                                      }
+                        },
+    "launchSignals":  null,
+    "notes":  "F7 FAIL: contaminated_launch_path; readiness not judged; certTarget=continue requires automation Continue; observed launchPath=unknown launchSelectedBy=unknown",
+    "continueEscalated":  false,
+    "continueClickMethod":  "unknown",
+    "continueLatencySeconds":  null,
+    "launcherTimeoutStage":  "init",
+    "launcherWarnings":  [
+
+                         ],
+    "evidenceCompleteness":  {
+                                 "score":  "partial",
+                                 "instrumentationGap":  false,
+                                 "traceMarkersPresent":  true,
+                                 "missing":  [
+                                                 "Launch.tail.txt"
+                                             ],
+                                 "required":  [
+                                                  {
+                                                      "name":  "manifest.json",
+                                                      "present":  true
+                                                  },
+                                                  {
+                                                      "name":  "Launch.tail.txt",
+                                                      "present":  false
+                                                  },
+                                                  {
+                                                      "name":  "Phase1.tail.txt",
+                                                      "present":  true
+                                                  }
+                                              ],
+                                 "harvestFailed":  false,
+                                 "harvestPartial":  false,
+                                 "crashContextOptional":  true
+                             },
+    "harvestError":  null,
+    "lastPhase1Marker":  "[2026-06-23 20:53:19] [TBG TEST] [TBG TRACE] seq=150409 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=2 path=continue",
+    "lastTraceMarker":  "[2026-06-23 20:53:19] [TBG TEST] [TBG TRACE] seq=150409 area=MapTransitionGuard op=CampaignTick stage=ok elapsedMs=2 path=continue",
+    "lastMapReadyMarker":  null,
+    "lastCrashContextOperation":  "CampaignTick",
+    "lastCrashContextStage":  "begin",
+    "lastCrashContextArea":  "MapTransitionGuard",
+    "statusJsonCopied":  true,
+    "externalStateTimelineCopied":  true,
+    "crashContextCopied":  true,
+    "windowsCrashEventCopied":  false,
+    "windowsCrashEventStatus":  "query_failed",
+    "phase1TailLineCount":  300,
+    "launchTailLineCount":  0,
+    "runnerCommandLine":  "run-f7-gate-continue.ps1 -CertTarget continue -HookMask 0x0F -TimeoutSeconds 300 -StableSeconds 60",
+    "processTimestamps":  {
+                              "gameStartUtc":  null,
+                              "gameEndUtc":  null,
+                              "exeEverSeen":  false
+                          },
+    "artifactMeta":  [
+                         {
+                             "name":  "BlacksmithGuild_Status.json",
+                             "copied":  true,
+                             "sourcePath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Status.json",
+                             "sizeBytes":  735,
+                             "lastWriteUtc":  "2026-06-24T00:53:19.3084068Z",
+                             "reason":  null,
+                             "freshness":  "stale"
+                         },
+                         {
+                             "name":  "BlacksmithGuild_CrashContext.json",
+                             "copied":  true,
+                             "sourcePath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_CrashContext.json",
+                             "sizeBytes":  1060,
+                             "lastWriteUtc":  "2026-06-24T00:53:19.7428501Z",
+                             "reason":  null,
+                             "freshness":  "stale"
+                         }
+                     ],
+    "copiedArtifactCount":  3,
+    "missingArtifacts":  [
+                             "Launch.tail.txt"
+                         ],
+    "gamePhaseAtEnd":  "not_judged_contaminated_launch_path",
+    "instrumentationGap":  false,
+    "harvestPartial":  true,
+    "harvestWarnings":  [
+
+                        ]
+}

@@ -1,0 +1,15 @@
+{
+  "updatedAt": "2026-06-24T02:01:00.6540129-04:00",
+  "assistiveCertReady": true,
+  "inGameAssistReady": true,
+  "canPollFileInbox": true,
+  "canAcceptAssistiveCommand": true,
+  "readinessSurface": "settlement_menu",
+  "currentSettlement": "Quyaz",
+  "openMapReady": false,
+  "townMenuReady": true,
+  "nextTownRecommendation": "Ortysia",
+  "tradeExecution": "advisory_only",
+  "travelCommandMode": "advisory_only",
+  "reason": "at settlement menu; leave town before travel execute"
+}

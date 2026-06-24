@@ -7,13 +7,53 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$BannerlordRoot,
 
-    [int]$TimeoutSec = 120,
-    [int]$PollMs = 450
+    [int]$TimeoutSec = 300,
+    [int]$PollMs = 180,
+    [bool]$RespectUserForeground = $true,
+    [ValidateSet('continue', 'play', 'any')]
+    [string]$CertTarget = 'any',
+    [bool]$AllowCertRetry = $false,
+    [int]$CertRetryAttempt = 0,
+    [string]$ExternalStateTimelinePath = $null,
+    [switch]$LaunchSetup
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
+. (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
+$lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
+$lockMaxAgeMin = 10
+$script:navLockHeld = $false
 
-$logPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Launch.log'
+function Test-NavLockActive {
+    if (-not (Test-Path -LiteralPath $lockPath)) { return $false }
+    $age = (Get-Date) - (Get-Item -LiteralPath $lockPath).LastWriteTime
+    if ($age.TotalMinutes -ge $lockMaxAgeMin) {
+        Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+    return $true
+}
+
+function Acquire-NavLock {
+    if (Test-NavLockActive) {
+        throw "launcher nav already running (lock $lockPath age < ${lockMaxAgeMin} min) — stop ForgeContinue/F7/Run-LauncherNavNow first"
+    }
+    $lockBody = "pid=$PID`nstarted=$(Get-Date -Format o)`nintent=$LaunchIntent"
+    Set-Content -LiteralPath $lockPath -Value $lockBody -Encoding UTF8
+    $script:navLockHeld = $true
+}
+
+function Release-NavLock {
+    if (-not $script:navLockHeld) { return }
+    Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+    $script:navLockHeld = $false
+}
+
+Acquire-NavLock
+
+$logPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
 $launcherExeName = 'TaleWorlds.MountAndBlade.Launcher'
 $gameExeName = 'Bannerlord'
 
@@ -24,7 +64,63 @@ function Write-LaunchLog {
     Write-Host $line -ForegroundColor DarkGray
 }
 
-if (-not (Get-Module -Name UIAHelper -ErrorAction SilentlyContinue)) {
+function Get-NavExternalStateMode {
+    if ((Get-Command Test-F7ContinueCertStrict -ErrorAction SilentlyContinue) -and (Test-F7ContinueCertStrict)) {
+        return 'cert'
+    }
+    if ($LaunchSetup) {
+        return 'assistive_launch_setup'
+    }
+    return 'assistive'
+}
+
+function Initialize-NavExternalStateTimelineIfNeeded {
+    if (-not $ExternalStateTimelinePath) { return }
+    if ($script:F7ExternalStateTimeline) { return }
+    Initialize-F7ExternalStateTimeline -Mode (Get-NavExternalStateMode) -OutputPath $ExternalStateTimelinePath
+}
+
+function Write-NavExternalStateEvent {
+    param([string]$ReasonOverride = $null)
+
+    if (-not $ExternalStateTimelinePath) { return }
+    Initialize-NavExternalStateTimelineIfNeeded
+    $launchPath = if ($script:adoptedLaunchPath) { [string]$script:adoptedLaunchPath } else { 'unknown' }
+    $selectedBy = if ($script:adoptedSelectedBy) { [string]$script:adoptedSelectedBy } else { 'unknown' }
+    $null = Emit-F7ExternalStateTimelineCheckpoint -BannerlordRoot $BannerlordRoot `
+        -Mode (Get-NavExternalStateMode) -StatusPath (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) `
+        -Phase1Path (Get-Phase1LogPath -BannerlordRoot $BannerlordRoot) `
+        -CertTarget $CertTarget -LaunchPath $launchPath -LaunchSelectedBy $selectedBy `
+        -TargetMismatch ([bool]$script:contaminatedLaunchPath) `
+        -LaunchState $(if ($script:contaminatedLaunchPath) { 'contaminated_launch_path' } else { 'nav_poll' }) `
+        -ReasonOverride $ReasonOverride -Force
+}
+
+function Test-NavGuardedLauncherClick {
+    param([string]$Intent)
+
+    $action = if ($Intent -eq 'continue') { 'click_launcher_continue' } else { 'click_launcher_play' }
+    $mode = Get-NavExternalStateMode
+
+    $classifiedState = 'UnknownWindowState'
+    if ([UIAHelper]::IsLauncherPlayContinueVisible()) {
+        $classifiedState = 'LauncherMenu'
+    } elseif ([UIAHelper]::HasLauncherRoot()) {
+        $classifiedState = 'LauncherOpening'
+    } else {
+        $det = Get-LaunchNavProcessDetection
+        $classifiedState = Resolve-F7ProcessClassifiedState -Detection $det
+    }
+
+    $allowed = Test-F7GuardedActionAllowed -Mode $mode -Action $action -ClassifiedState $classifiedState
+    if (-not $allowed) {
+        Write-LaunchLog "LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=$action mode=$mode state=$classifiedState"
+        Write-NavExternalStateEvent -ReasonOverride "Guarded click denied for action=$action state=$classifiedState"
+    }
+    return [bool]$allowed
+}
+
+if (-not ('UIAHelper' -as [type])) {
     $uiaHelperSource = @'
 using System;
 using System.Collections.Generic;
@@ -42,6 +138,7 @@ public static class UIAHelper
     private const string ModuleMismatchTitle = "Module Mismatch";
 
     public static Action<string> Log;
+    public static bool RespectUserForeground = true;
 
     private static bool _launcherFocused;
     private static bool _launcherAuditDone;
@@ -54,8 +151,8 @@ public static class UIAHelper
     private static readonly double[] LauncherCoordYFractions = new double[] { 0.90, 0.88 };
     private static readonly double[] ModuleMismatchYesXFractions = new double[] { 0.54, 0.56, 0.52 };
     private static readonly double[] ModuleMismatchYesYFractions = new double[] { 0.58, 0.56, 0.60 };
-    private const int LauncherStableSecBeforeFallback = 5;
-    private const int LauncherCoordClickThrottleSec = 2;
+    private const int LauncherStableSecBeforeFallback = 1;
+    private const int LauncherCoordClickThrottleSec = 1;
     private const int LauncherMinCoordWindowWidth = 800;
     private const int LauncherMinCoordWindowHeight = 600;
     private static bool _moduleMismatchAuditDone;
@@ -85,7 +182,7 @@ public static class UIAHelper
             _firstLauncherWindowSeenUtc = DateTime.UtcNow;
         }
 
-        if (!_launcherFocused)
+        if (!_launcherFocused && !RespectUserForeground)
         {
             var focusTarget = GetBestLauncherWindowForCoords(windows) ?? windows[0];
             FocusScope(focusTarget, "launcher");
@@ -200,7 +297,7 @@ public static class UIAHelper
                         var name = element.Current.Name ?? string.Empty;
                         foreach (var target in names)
                         {
-                            if (!NameMatchesTarget(name, target)) continue;
+                            if (!NameMatchesTargetLoose(name, target)) continue;
                             if (requireEnabled && !element.Current.IsEnabled) continue;
                             return element;
                         }
@@ -277,8 +374,31 @@ public static class UIAHelper
             return best;
         }
 
-        LogLine("AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to first hwnd");
-        return windows[0];
+        foreach (var window in windows)
+        {
+            try
+            {
+                var title = window.Current.Name ?? string.Empty;
+                var rect = window.Current.BoundingRectangle;
+                var minW = title.IndexOf("Singleplayer PID", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? 400
+                    : LauncherMinCoordWindowWidth;
+                var minH = title.IndexOf("Singleplayer PID", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? 300
+                    : LauncherMinCoordWindowHeight;
+                if (rect.Width < minW || rect.Height < minH)
+                {
+                    continue;
+                }
+
+                LogLine("AUDIT coord window pick: no PLAY/CONTINUE chrome window — falling back to " + DescribeScope(window));
+                return window;
+            }
+            catch { }
+        }
+
+        LogLine("AUDIT coord window pick: no suitable launcher window for coords");
+        return null;
     }
 
     private static bool TryGetLauncherClientClickPoint(IntPtr hwnd, double xFraction, double yFraction, out int screenX, out int screenY)
@@ -347,29 +467,95 @@ public static class UIAHelper
             var scopeDesc = DescribeScope(launcherWindow);
             var label = intent == "continue" ? "launcher CONTINUE" : "launcher PLAY";
 
-            ForceForegroundWindow(hwnd);
-            Thread.Sleep(250);
-
             LogHitWindowAtPoint(x, y, label, intent);
+            var visuallyObscured = !IsScreenPointOnLauncherHwnd(hwnd, x, y);
+            if (visuallyObscured)
+            {
+                LogLine(string.Format(
+                    "CLICK NOTE launcher coords — visual hit-test not {0} at ({1},{2}); proceeding with hwnd-target SendMessage (background-safe per doctrine)",
+                    LauncherProcessName, x, y));
+            }
 
             LogLine(string.Format(
                 "CLICK \"{0}\" intent={1} attempt={2} method=coords at ({3},{4}) fractions=({5:F2},{6:F2}) bounds=({7:F0},{8:F0},{9:F0},{10:F0}) in {11} | foreground {12}",
                 label, intent, _coordAttemptIndex + 1, x, y, xFraction, yFraction, bounds.X, bounds.Y, bounds.Width, bounds.Height, scopeDesc, DescribeForegroundWindow()));
 
-            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
+            {
+                Thread.Sleep(200);
+                var method = visuallyObscured ? "hwnd SendMessage-background" : "hwnd SendMessage-first";
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method={1} at ({2},{3}) in {4}", intent, method, x, y, scopeDesc));
+                if (!RespectUserForeground)
+                {
+                    TryFocusGameOrLauncher();
+                }
+                return true;
+            }
 
-            SetCursorPos(x, y);
-            Thread.Sleep(80);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            Thread.Sleep(40);
-            LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=mouse at ({1},{2}) in {3} | foreground after {4}", intent, x, y, scopeDesc, DescribeForegroundWindow()));
-            TryFocusGameOrLauncher();
-            return true;
+            var savedUserForeground = GetForegroundWindow();
+            ForceForegroundWindow(hwnd);
+            Thread.Sleep(100);
+            var clicked = TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label);
+            if (!clicked)
+            {
+                SetCursorPos(x, y);
+                Thread.Sleep(40);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                clicked = true;
+            }
+            if (clicked)
+            {
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=brief-focus+restore at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+            }
+            if (savedUserForeground != IntPtr.Zero && savedUserForeground != hwnd)
+            {
+                ForceForegroundWindow(savedUserForeground);
+                LogLine("FOCUS restored user foreground after brief launcher click");
+            }
+            return clicked;
         }
         catch (Exception ex)
         {
             LogLine("CLICK FAIL launcher coords: " + ex.Message);
+            return false;
+        }
+    }
+
+    private static bool IsHwndOwnedByLauncher(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero) return false;
+        try
+        {
+            uint pid;
+            GetWindowThreadProcessId(hwnd, out pid);
+            return GetLauncherProcessIds().Contains((int)pid);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsScreenPointOnLauncherHwnd(IntPtr launcherHwnd, int screenX, int screenY)
+    {
+        if (launcherHwnd == IntPtr.Zero) return false;
+
+        try
+        {
+            var point = new POINT { X = screenX, Y = screenY };
+            var hit = WindowFromPoint(point);
+            if (hit == IntPtr.Zero) return false;
+
+            if (hit == launcherHwnd) return true;
+
+            var root = GetAncestor(hit, GA_ROOT);
+            if (root == launcherHwnd) return true;
+
+            return IsHwndOwnedByLauncher(hit);
+        }
+        catch
+        {
             return false;
         }
     }
@@ -382,7 +568,7 @@ public static class UIAHelper
             var hit = WindowFromPoint(point);
             if (hit == IntPtr.Zero)
             {
-                LogLine(string.Format("AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd=none", intent, label, screenX, screenY));
+                LogLine(string.Format("AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd=none launcher_ok=false", intent, label, screenX, screenY));
                 return;
             }
 
@@ -392,9 +578,10 @@ public static class UIAHelper
             GetWindowThreadProcessId(hit, out hitPid);
             var procName = "?";
             try { procName = Process.GetProcessById((int)hitPid).ProcessName; } catch { }
+            var launcherOk = string.Equals(procName, LauncherProcessName, StringComparison.OrdinalIgnoreCase);
             LogLine(string.Format(
-                "AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd={4} title=\"{5}\" process={6} pid={7}",
-                intent, label, screenX, screenY, hit.ToInt64(), sb.ToString(), procName, hitPid));
+                "AUDIT hit-test intent={0} label={1} at ({2},{3}) hwnd={4} title=\"{5}\" process={6} pid={7} launcher_ok={8}",
+                intent, label, screenX, screenY, hit.ToInt64(), sb.ToString(), procName, hitPid, launcherOk ? "true" : "false"));
         }
         catch (Exception ex)
         {
@@ -453,6 +640,37 @@ public static class UIAHelper
         return string.Equals(elementName.Trim(), targetName.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
+    private static string NormalizeButtonName(string elementName)
+    {
+        if (string.IsNullOrWhiteSpace(elementName)) return string.Empty;
+        return elementName.Trim().TrimStart('&');
+    }
+
+    private static bool NameMatchesTargetLoose(string elementName, string targetName)
+    {
+        if (string.IsNullOrWhiteSpace(elementName) || string.IsNullOrWhiteSpace(targetName)) return false;
+        if (NameMatchesTarget(elementName, targetName)) return true;
+
+        var normalized = NormalizeButtonName(elementName);
+        var target = NormalizeButtonName(targetName);
+        if (string.Equals(normalized, target, StringComparison.OrdinalIgnoreCase)) return true;
+
+        if (target.Equals("CONTINUE", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0
+                && normalized.IndexOf("Play", StringComparison.OrdinalIgnoreCase) < 0;
+        }
+
+        if (target.Equals("PLAY", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized.Equals("Play", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("PLAY", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
+    }
+
     private static AutomationElement FindClickableInScope(AutomationElement scope, string[] targetNames, bool requireEnabled)
     {
         if (scope == null || targetNames == null || targetNames.Length == 0) return null;
@@ -469,7 +687,7 @@ public static class UIAHelper
                     var name = element.Current.Name ?? string.Empty;
                     foreach (var target in targetNames)
                     {
-                        if (!NameMatchesTarget(name, target)) continue;
+                        if (!NameMatchesTargetLoose(name, target)) continue;
                         if (requireEnabled && !element.Current.IsEnabled) continue;
                         return element;
                     }
@@ -555,6 +773,12 @@ public static class UIAHelper
     {
         if (hwnd == IntPtr.Zero) return false;
 
+        if (!IsHwndOwnedByLauncher(hwnd))
+        {
+            LogLine("CLICK SKIP launcher hwnd — target hwnd is not owned by " + LauncherProcessName + " (" + scopeDesc + ")");
+            return false;
+        }
+
         try
         {
             var point = new POINT { X = screenX, Y = screenY };
@@ -580,6 +804,47 @@ public static class UIAHelper
             LogLine("CLICK FAIL launcher hwnd: " + ex.Message);
             return false;
         }
+    }
+
+    private static DateTime _lastLauncherRestoreUtc = DateTime.MinValue;
+
+    public static int TryRestoreLauncherWindows()
+    {
+        var now = DateTime.UtcNow;
+        if ((now - _lastLauncherRestoreUtc).TotalSeconds < 2) return 0;
+        _lastLauncherRestoreUtc = now;
+
+        var restored = 0;
+        foreach (var pid in GetLauncherProcessIds())
+        {
+            EnumWindows((hwnd, param) =>
+            {
+                try
+                {
+                    uint windowPid;
+                    GetWindowThreadProcessId(hwnd, out windowPid);
+                    if ((int)windowPid != pid) return true;
+
+                    var sb = new StringBuilder(256);
+                    GetWindowText(hwnd, sb, sb.Capacity);
+                    if (sb.Length == 0) return true;
+
+                    if (!IsIconic(hwnd)) return true;
+
+                    ShowWindow(hwnd, SW_RESTORE);
+                    restored++;
+                }
+                catch { }
+                return true;
+            }, IntPtr.Zero);
+        }
+
+        if (restored > 0)
+        {
+            Thread.Sleep(400);
+        }
+
+        return restored;
     }
 
     private static List<AutomationElement> FindAllLauncherWindowRoots()
@@ -624,6 +889,46 @@ public static class UIAHelper
             catch { }
         }
 
+        if (results.Count == 0)
+        {
+            TryRestoreLauncherWindows();
+            try
+            {
+                var windowCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Window);
+                var windows = AutomationElement.RootElement.FindAll(TreeScope.Children, windowCondition);
+                foreach (AutomationElement window in windows)
+                {
+                    try
+                    {
+                        if (!pids.Contains(window.Current.ProcessId)) continue;
+                        if (!ContainsWindow(results, window))
+                        {
+                            results.Add(window);
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            foreach (var pid in pids)
+            {
+                try
+                {
+                    CollectLauncherWindowsFromPid(pid, results);
+                    var process = Process.GetProcessById(pid);
+                    var hwnd = process.MainWindowHandle;
+                    if (hwnd == IntPtr.Zero) continue;
+                    var fromHandle = AutomationElement.FromHandle(hwnd);
+                    if (fromHandle != null && !ContainsWindow(results, fromHandle))
+                    {
+                        results.Add(fromHandle);
+                    }
+                }
+                catch { }
+            }
+        }
+
         return results;
     }
 
@@ -633,10 +938,10 @@ public static class UIAHelper
         {
             try
             {
-                if (!IsWindowVisible(hwnd)) return true;
                 uint windowPid;
                 GetWindowThreadProcessId(hwnd, out windowPid);
                 if ((int)windowPid != pid) return true;
+                if (!IsWindowVisible(hwnd)) return true;
                 var fromHandle = AutomationElement.FromHandle(hwnd);
                 if (fromHandle != null && !ContainsWindow(results, fromHandle))
                 {
@@ -812,13 +1117,196 @@ public static class UIAHelper
         return string.Join(", ", names.ToArray());
     }
 
+    public static bool HasSafeModeDialog()
+    {
+        return FindWindowRootByTitle("Safe Mode") != null;
+    }
+
+    public static bool IsLauncherPlayContinueVisible()
+    {
+        var names = new List<string>();
+        var windows = FindAllLauncherWindowRoots();
+        if (windows.Count == 0) return false;
+
+        foreach (var window in windows)
+        {
+            CollectButtonNames(window, names);
+            CollectInteractiveNames(window, names);
+        }
+
+        foreach (var name in names)
+        {
+            var normalized = NormalizeButtonName(name);
+            if (normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return true;
+            }
+
+            if (normalized.Equals("Play", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("PLAY", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void CollectLauncherButtonNames(List<string> names)
+    {
+        var windows = FindAllLauncherWindowRoots();
+        if (windows.Count == 0) return;
+        foreach (var window in windows)
+        {
+            CollectButtonNames(window, names);
+            CollectInteractiveNames(window, names);
+        }
+    }
+
+    public static bool IsLauncherContinueVisible()
+    {
+        var names = new List<string>();
+        CollectLauncherButtonNames(names);
+        foreach (var name in names)
+        {
+            var normalized = NormalizeButtonName(name);
+            if (normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static bool IsLauncherPlayOnlyVisible()
+    {
+        var names = new List<string>();
+        CollectLauncherButtonNames(names);
+        var hasPlay = false;
+        var hasContinue = false;
+        foreach (var name in names)
+        {
+            var normalized = NormalizeButtonName(name);
+            if (normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                hasContinue = true;
+            }
+            if (normalized.Equals("Play", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("PLAY", StringComparison.OrdinalIgnoreCase))
+            {
+                hasPlay = true;
+            }
+        }
+        return hasPlay && !hasContinue;
+    }
+
     public static bool ClickSafeModeNo()
     {
         var safeModeRoot = FindWindowRootByTitle("Safe Mode");
         if (safeModeRoot == null) return false;
 
         FocusScope(safeModeRoot, "Safe Mode");
-        return TryClickButtonInScope(safeModeRoot, "No", false, "Safe Mode No");
+        foreach (var name in new[] { "No", "&No", "NO" })
+        {
+            if (TryClickButtonInScope(safeModeRoot, name, false, "Safe Mode No"))
+            {
+                return true;
+            }
+        }
+
+        var noButton = FindNoButtonInScope(safeModeRoot);
+        if (noButton != null)
+        {
+            var scopeDesc = DescribeScope(safeModeRoot);
+            if (InvokeElement(noButton, "Safe Mode No", NormalizeButtonName(noButton.Current.Name), scopeDesc))
+            {
+                return true;
+            }
+        }
+
+        return TryClickSafeModeNoByCoords(safeModeRoot);
+    }
+
+    private static AutomationElement FindNoButtonInScope(AutomationElement scope)
+    {
+        if (scope == null) return null;
+
+        var controlTypes = new[] { ControlType.Button, ControlType.Custom, ControlType.Hyperlink };
+        foreach (var controlType in controlTypes)
+        {
+            try
+            {
+                var typeCondition = new PropertyCondition(AutomationElement.ControlTypeProperty, controlType);
+                var elements = scope.FindAll(TreeScope.Descendants, typeCondition);
+                foreach (AutomationElement element in elements)
+                {
+                    var normalized = NormalizeButtonName(element.Current.Name ?? string.Empty);
+                    if (normalized.Equals("No", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return element;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
+    private static bool TryClickSafeModeNoByCoords(AutomationElement safeModeRoot)
+    {
+        if (safeModeRoot == null) return false;
+
+        try
+        {
+            var hwnd = new IntPtr(safeModeRoot.Current.NativeWindowHandle);
+            if (hwnd == IntPtr.Zero) return false;
+
+            var bounds = safeModeRoot.Current.BoundingRectangle;
+            if (bounds.Width <= 0 || bounds.Height <= 0) return false;
+
+            var x = (int)(bounds.X + bounds.Width * 0.32);
+            var y = (int)(bounds.Y + bounds.Height * 0.72);
+            var scopeDesc = DescribeScope(safeModeRoot);
+
+            LogLine(string.Format("CLICK \"Safe Mode No\" method=coords at ({0},{1}) in {2}", x, y, scopeDesc));
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
+            {
+                LogLine("CLICK OK \"Safe Mode No\" method=hwnd-only");
+                return true;
+            }
+            var savedUserForeground = GetForegroundWindow();
+            ForceForegroundWindow(hwnd);
+            Thread.Sleep(80);
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Safe Mode No"))
+            {
+                if (savedUserForeground != IntPtr.Zero && savedUserForeground != hwnd)
+                {
+                    ForceForegroundWindow(savedUserForeground);
+                    LogLine("FOCUS restored user foreground after Safe Mode click");
+                }
+                LogLine("CLICK OK \"Safe Mode No\" method=brief-focus+restore");
+                return true;
+            }
+            SetCursorPos(x, y);
+            Thread.Sleep(40);
+            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+            if (savedUserForeground != IntPtr.Zero && savedUserForeground != hwnd)
+            {
+                ForceForegroundWindow(savedUserForeground);
+                LogLine("FOCUS restored user foreground after Safe Mode click");
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogLine("CLICK FAIL Safe Mode coords: " + ex.Message);
+            return false;
+        }
     }
 
     public static bool HasCautionDialog()
@@ -1178,7 +1666,7 @@ public static class UIAHelper
                         var name = element.Current.Name ?? string.Empty;
                         foreach (var target in names)
                         {
-                            if (!NameMatchesTarget(name, target)) continue;
+                            if (!NameMatchesTargetLoose(name, target)) continue;
                             if (requireEnabled && !element.Current.IsEnabled) continue;
                             return element;
                         }
@@ -1213,18 +1701,28 @@ public static class UIAHelper
             }
 
             var scopeDesc = DescribeScope(gameWindow);
-            ForceForegroundWindow(hwnd);
-            Thread.Sleep(250);
             LogLine(string.Format(
                 "CLICK \"Module Mismatch Yes\" method=coords at ({0},{1}) fractions=({2:F2},{3:F2}) in {4}",
                 x, y, xFraction, yFraction, scopeDesc));
-            TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes");
-            SetCursorPos(x, y);
-            Thread.Sleep(80);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            _moduleMismatchCoordAttemptIndex++;
-            return true;
+            if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes"))
+            {
+                LogLine("CLICK OK \"Module Mismatch Yes\" method=hwnd-only");
+                _moduleMismatchCoordAttemptIndex++;
+                return true;
+            }
+            if (!RespectUserForeground)
+            {
+                ForceForegroundWindow(hwnd);
+                Thread.Sleep(250);
+                TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, "Module Mismatch Yes");
+                SetCursorPos(x, y);
+                Thread.Sleep(80);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                _moduleMismatchCoordAttemptIndex++;
+                return true;
+            }
+            return false;
         }
         catch (Exception ex)
         {
@@ -1253,13 +1751,19 @@ public static class UIAHelper
 
         LogLine(string.Format("FOCUS request ({0}) target={1} | before {2}", reason, DescribeScope(scope), DescribeForegroundWindow()));
 
+        if (RespectUserForeground)
+        {
+            LogLine(string.Format("FOCUS skipped ({0}) — RespectUserForeground", reason));
+            return;
+        }
+
         try
         {
             var hwnd = new IntPtr(scope.Current.NativeWindowHandle);
             if (hwnd != IntPtr.Zero)
             {
                 SetForegroundWindow(hwnd);
-                Thread.Sleep(120);
+                Thread.Sleep(60);
             }
         }
         catch (Exception ex)
@@ -1328,13 +1832,28 @@ public static class UIAHelper
             }
             var x = (int)(rect.X + rect.Width / 2);
             var y = (int)(rect.Y + rect.Height / 2);
-            SetCursorPos(x, y);
-            Thread.Sleep(60);
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
-            LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=mouse at ({2},{3}) in {4} | foreground after {5}", actionLabel, buttonName, x, y, scopeDesc, DescribeForegroundWindow()));
-            TryFocusGameOrLauncher();
-            return true;
+            var hwnd = new IntPtr(element.Current.NativeWindowHandle);
+            if (hwnd != IntPtr.Zero && TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, actionLabel))
+            {
+                LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=hwnd-only in {2} | foreground after {3}", actionLabel, buttonName, scopeDesc, DescribeForegroundWindow()));
+                if (!RespectUserForeground)
+                {
+                    TryFocusGameOrLauncher();
+                }
+                return true;
+            }
+            if (!RespectUserForeground)
+            {
+                SetCursorPos(x, y);
+                Thread.Sleep(60);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                LogLine(string.Format("CLICK OK \"{0}\" button=\"{1}\" method=mouse at ({2},{3}) in {4} | foreground after {5}", actionLabel, buttonName, x, y, scopeDesc, DescribeForegroundWindow()));
+                TryFocusGameOrLauncher();
+                return true;
+            }
+            LogLine(string.Format("CLICK FAIL \"{0}\" — SendMessage failed and RespectUserForeground=true", actionLabel));
+            return false;
         }
         catch (Exception ex)
         {
@@ -1474,6 +1993,9 @@ public static class UIAHelper
     private static extern bool IsWindowVisible(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     private static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
 
     [DllImport("user32.dll")]
@@ -1515,17 +2037,22 @@ public static class UIAHelper
     private const uint GA_ROOT = 2;
 }
 '@
-    Add-Type -TypeDefinition $uiaHelperSource -ReferencedAssemblies @(
-        'UIAutomationClient',
-        'UIAutomationTypes',
-        'System.Windows.Forms',
-        'WindowsBase'
-    ) -ErrorAction Stop
+    try {
+        Add-Type -TypeDefinition $uiaHelperSource -ReferencedAssemblies @(
+            'UIAutomationClient',
+            'UIAutomationTypes',
+            'System.Windows.Forms',
+            'WindowsBase'
+        ) -ErrorAction Stop
+    } catch {
+        if (-not ('UIAHelper' -as [type])) { throw }
+    }
 }
 
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
+[UIAHelper]::RespectUserForeground = $RespectUserForeground
 
-Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms"
+Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms respectUserForeground=$RespectUserForeground"
 Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
 [UIAHelper]::LogTopLevelWindows() | Out-Null
 
@@ -1538,24 +2065,103 @@ $loggedModuleMismatchButtons = $false
 $gameStablePolls = 0
 $requiredStablePolls = 3
 $playClickUtc = $null
+$playEscalated = $false
+$continueEscalated = $false
+$script:automationClickedPlayContinue = $false
+$script:launchPathAdopted = $false
+$script:adoptedLaunchPath = $null
+$script:adoptedSelectedBy = $null
+$script:contaminatedLaunchPath = $false
+$script:contaminatedLaunchReason = $null
+$script:automationContinueIntentDeclared = $false
+$script:launcherReadyLogged = $false
+$script:safeModeVisibleLogged = $false
+$script:ContinueClickVerifySec = 8
+$script:ContinueClickVerifySecChrome = 4
+$script:PlayClickVerifySec = 12
+$script:LauncherSelectionMaxMs = 45000
+$script:launcherChromeFirstSeenUtc = $null
+$script:launcherSelectionAttempts = 0
+$script:continueVerifyTotalMs = 0
+$script:safeModeBeforeContinue = $false
+$script:launcherSelectionEnded = $false
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
 $loadStallSec = 180
-$phase1LogPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
-$statusJsonPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
+$phase1LogPath = Get-Phase1LogPath -BannerlordRoot $BannerlordRoot
+$statusJsonPath = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
+$crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
 $lastHeartbeat = Get-Date
 $heartbeatSec = 30
 $preHandoffSuppressedLogged = $false
 $preHandoffMismatchSuppressedLogged = $false
 $handoffStarted = $false
 $lastRefocusUtc = $null
+$gameSpawnLogged = $false
 $mismatchCoordAttemptMain = 0
 $phase1ReadyBaseline = @{}
+$focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 if (Test-Path -LiteralPath $phase1LogPath) {
     Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue |
-        Where-Object { $_ -match 'TBG READY' } |
+        Where-Object { Test-Phase1ReadyLine -Line $_ } |
         ForEach-Object { $phase1ReadyBaseline[$_] = $true }
+}
+
+function Test-LauncherChromeVisible {
+    if ([UIAHelper]::HasSafeModeDialog()) { return $true }
+    if ([UIAHelper]::HasLauncherRoot()) { return $true }
+    if ([UIAHelper]::IsLauncherPlayContinueVisible()) { return $true }
+    return $false
+}
+
+function Update-LauncherSelectionTimer {
+    if (-not (Test-LauncherChromeVisible)) { return }
+    if (-not $script:launcherChromeFirstSeenUtc) {
+        $script:launcherChromeFirstSeenUtc = Get-Date
+    }
+}
+
+function Test-LauncherSelectionBudgetExceeded {
+    if ($handoffStarted -or $clickedPlayContinue) { return $false }
+    if (-not $script:launcherChromeFirstSeenUtc) { return $false }
+    $elapsedMs = ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds
+    return ($elapsedMs -gt $script:LauncherSelectionMaxMs)
+}
+
+function Write-LaunchTimingEvidence {
+    param([string]$Result)
+
+    if ($script:launcherSelectionEnded) { return }
+    $selMs = 0
+    if ($script:launcherChromeFirstSeenUtc) {
+        $selMs = [int][Math]::Max(0, ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds)
+    }
+    $safeFlag = if ($script:safeModeBeforeContinue) { 'true' } else { 'false' }
+    $line = "LAUNCH_TIMING launcherSelectionMs=$selMs continueVerifyMs=$($script:continueVerifyTotalMs) safeModeBeforeContinue=$safeFlag attempts=$($script:launcherSelectionAttempts) result=$Result"
+    Write-LaunchLog $line
+    $script:launcherSelectionEnded = $true
+}
+
+function Invoke-BannerlordFocusHelper {
+    param([string]$Context = 'post-handoff')
+
+    if (-not (Test-Path -LiteralPath $focusHelperPath)) {
+        Write-LaunchLog 'post-handoff: refocus skipped; focus helper missing'
+        return $false
+    }
+
+    Write-LaunchLog "post-handoff: refocus game/launcher attempted ($Context)"
+    try {
+        $focused = & $focusHelperPath
+        if ($focused) {
+            Write-LaunchLog "post-handoff: refocus game/launcher succeeded ($Context)"
+        }
+        return [bool]$focused
+    } catch {
+        Write-LaunchLog "post-handoff: refocus game/launcher failed ($Context): $($_.Exception.Message)"
+        return $false
+    }
 }
 
 function Extend-DeadlineForSlowPath {
@@ -1614,14 +2220,187 @@ function Test-LaunchReadyNow {
     return $false
 }
 
+function Get-LaunchNavProcessDetection {
+    return Get-BannerlordProcessDetection -BannerlordRoot $BannerlordRoot `
+        -Phase1Path $phase1LogPath -StatusPath $statusJsonPath -CrashContextPath $crashContextPath
+}
+
 function Test-GameProcessRunning {
-    return $null -ne (Get-Process -Name $gameExeName -ErrorAction SilentlyContinue)
+    return [bool](Get-LaunchNavProcessDetection).gameProcessRunning
+}
+
+function Get-LaunchNavEnvironmentLine {
+    $base = [UIAHelper]::DescribeEnvironment()
+    $det = Get-LaunchNavProcessDetection
+    if ($det.gameProcessRunning) {
+        if ((Test-F7ContinueCertStrict) -and -not $script:automationContinueIntentDeclared) {
+            $launcherProc = Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($launcherProc -and (Test-LauncherMenuWindowTitle -Title $launcherProc.MainWindowTitle)) {
+                return ($base -replace 'game=(yes|no|hosted|phase1|uncertain)', 'game=menu')
+            }
+            if (Test-F7StrongPreIntentGameSignal -Detection $det) {
+                $tag = switch ([string]$det.gameAliveConfidence) {
+                    'definite' { 'yes' }
+                    'launcher_hosted' { 'hosted' }
+                    'phase1_active' { 'phase1' }
+                    'process_detection_uncertain' { 'uncertain' }
+                    default { 'yes' }
+                }
+                return ($base -replace 'game=(yes|no)', "game=$tag")
+            }
+            return ($base -replace 'game=(yes|no|hosted|phase1|uncertain)', 'game=menu')
+        }
+        $tag = switch ([string]$det.gameAliveConfidence) {
+            'definite' { 'yes' }
+            'launcher_hosted' { 'hosted' }
+            'phase1_active' { 'phase1' }
+            'process_detection_uncertain' { 'uncertain' }
+            default { 'yes' }
+        }
+        return ($base -replace 'game=(yes|no)', "game=$tag")
+    }
+    return $base
+}
+
+function Test-F7ContinueCertStrict {
+    return ($CertTarget -eq 'continue')
+}
+
+function Get-F7SpawnAttribution {
+    if (Test-Path -LiteralPath $logPath) {
+        $tail = Get-Content -LiteralPath $logPath -Tail 200 -ErrorAction SilentlyContinue
+        foreach ($line in @($tail)) {
+            if ($line -match 'LAUNCH_STATE=play_clicked selectedBy=user|play_clicked selectedBy=user') {
+                return 'user'
+            }
+        }
+    }
+
+    if ([UIAHelper]::IsLauncherPlayContinueVisible()) {
+        $launcherProc = Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($launcherProc -and (Test-LauncherSingleplayerHostedTitle -Title $launcherProc.MainWindowTitle)) {
+            return 'launcher_auto_resume'
+        }
+    }
+
+    return 'preautomation_spawn'
+}
+
+function Write-ContaminatedLaunchPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Reason,
+        [string]$SpawnAttribution = 'external_or_unknown'
+    )
+
+    $script:contaminatedLaunchPath = $true
+    $script:contaminatedLaunchReason = [string]$Reason
+    Write-LaunchLog "LAUNCH_STATE=contaminated_launch_path reason=$Reason certTarget=$CertTarget spawnAttribution=$SpawnAttribution"
+}
+
+function Test-PreIntentGameSpawnAndContaminate {
+    if (-not (Test-F7ContinueCertStrict)) { return $false }
+    if ($script:automationContinueIntentDeclared) { return $false }
+    if ($script:contaminatedLaunchPath) { return $true }
+
+    $det = Get-LaunchNavProcessDetection
+    $loading = [UIAHelper]::HasLauncherLoadingSurface()
+    $launcherGone = -not [UIAHelper]::HasLauncherRoot()
+
+    if (-not (Test-F7StrongPreIntentGameSignal -Detection $det -LoadingSurface $loading -LauncherGone $launcherGone)) {
+        return $false
+    }
+
+    $attr = Get-F7SpawnAttribution
+    Write-ContaminatedLaunchPath -Reason 'game_running_before_automation_continue' -SpawnAttribution $attr
+    Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+    return $true
+}
+
+function Invoke-AdoptLaunchPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('play', 'continue')]
+        [string]$Path,
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('user', 'automation', 'unknown')]
+        [string]$SelectedBy
+    )
+
+    if ($script:launchPathAdopted) { return }
+
+    if (Test-F7ContinueCertStrict) {
+        if ($Path -eq 'play') {
+            $attr = if ($SelectedBy -eq 'user') { 'user' } else { 'external_or_unknown' }
+            Write-ContaminatedLaunchPath -Reason 'user_or_observed_play' -SpawnAttribution $attr
+            return
+        }
+        if ($SelectedBy -eq 'user') {
+            Write-ContaminatedLaunchPath -Reason 'user_handoff' -SpawnAttribution 'user'
+            return
+        }
+    }
+
+    $script:launchPathAdopted = $true
+    $script:adoptedLaunchPath = $Path
+    $script:adoptedSelectedBy = $SelectedBy
+    $script:clickedPlayContinue = $true
+    $script:playClickUtc = Get-Date
+    if ($Path -eq 'continue') {
+        $script:automationContinueIntentDeclared = $true
+        Write-LaunchLog "LAUNCH_STATE=continue_clicked selectedBy=$SelectedBy"
+    } else {
+        Write-LaunchLog "LAUNCH_STATE=play_clicked selectedBy=$SelectedBy"
+    }
+}
+
+function Test-UserLaunchPathAdopted {
+    if (Test-F7ContinueCertStrict) {
+        if ($script:contaminatedLaunchPath) { return $false }
+        return $false
+    }
+
+    if ($script:launchPathAdopted -or $script:automationClickedPlayContinue) {
+        return $false
+    }
+
+    $gameRunning = Test-GameProcessRunning
+    $loading = [UIAHelper]::HasLauncherLoadingSurface()
+    $launcherGone = -not [UIAHelper]::HasLauncherRoot()
+    $buttonsVisible = [UIAHelper]::IsLauncherPlayContinueVisible()
+
+    if (-not ($gameRunning -or $loading -or ($launcherGone -and -not $buttonsVisible))) {
+        return $false
+    }
+
+    if ($LaunchIntent -eq 'continue' -and $gameRunning -and -not $script:automationClickedPlayContinue) {
+        if (-not [UIAHelper]::IsLauncherPlayContinueVisible() -and -not [UIAHelper]::HasLauncherLoadingSurface()) {
+            Invoke-AdoptLaunchPath -Path 'play' -SelectedBy 'user'
+            return $true
+        }
+        Invoke-AdoptLaunchPath -Path 'continue' -SelectedBy 'user'
+        return $true
+    }
+
+    if ($LaunchIntent -eq 'play' -and ($gameRunning -or $loading)) {
+        Invoke-AdoptLaunchPath -Path 'play' -SelectedBy 'user'
+        return $true
+    }
+
+    if ($LaunchIntent -eq 'continue' -and ($loading -or $launcherGone)) {
+        Invoke-AdoptLaunchPath -Path 'continue' -SelectedBy 'user'
+        return $true
+    }
+
+    return $false
 }
 
 function Invoke-Handoff {
     param([string]$Reason)
+    Write-LaunchTimingEvidence -Result 'ok'
     $script:handoffStarted = $true
     Write-LaunchLog "handoff: $Reason"
+    Write-LaunchLog 'LAUNCH_STATE=handoff'
     Wait-PostHandoffWatchdog -Reason $Reason
 }
 
@@ -1639,7 +2418,7 @@ function Test-Phase1ReadyOrStall {
     }
 
     foreach ($line in $tail) {
-        if ($line -match 'TBG READY') {
+        if (Test-Phase1ReadyLine -Line $line) {
             if (-not $script:phase1ReadyBaseline.ContainsKey($line)) {
                 return $true
             }
@@ -1785,8 +2564,17 @@ function Wait-PostHandoffWatchdog {
     $stallDetected = $false
     $mismatchCoordAttempt = 0
     $mismatchWatchSec = 30
+    $lastPostHandoffRefocusUtc = $null
 
     while (((Get-Date) - $watchStart).TotalSeconds -lt $loadStallSec) {
+        $nowPostHandoffRefocusUtc = [DateTime]::UtcNow
+        if (-not $lastPostHandoffRefocusUtc -or ($nowPostHandoffRefocusUtc - $lastPostHandoffRefocusUtc).TotalSeconds -ge 2) {
+            if (-not $RespectUserForeground -and ((Test-GameProcessRunning) -or [UIAHelper]::HasLauncherRoot())) {
+                Invoke-BannerlordFocusHelper -Context 'watchdog' | Out-Null
+            }
+            $lastPostHandoffRefocusUtc = $nowPostHandoffRefocusUtc
+        }
+
         if (-not (Test-GameProcessRunning)) {
             Write-LaunchLog 'post-handoff: Bannerlord exited'
             return
@@ -1889,38 +2677,231 @@ function Test-HandoffWhenGameStable {
     return $false
 }
 
-function Test-LaunchClickVerified {
-    param([int]$WaitSec = 18)
-
-    $deadline = (Get-Date).AddSeconds($WaitSec)
-    while ((Get-Date) -lt $deadline) {
-        if (Test-GameProcessRunning) { return $true }
-        if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
-        if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
-        Start-Sleep -Milliseconds 250
+function Invoke-LauncherSafeModeAndCrashDialogs {
+    if ([UIAHelper]::HasCrashReporterDialog()) {
+        if ([UIAHelper]::ClickCrashReporterNo()) {
+            if (-not $clickedCrashReporter) {
+                Write-LaunchLog 'clicked crash reporter No'
+                $clickedCrashReporter = $true
+                Extend-DeadlineForSlowPath
+            }
+            if (Test-GameProcessRunning) {
+                Invoke-Handoff 'Bannerlord.exe running after crash reporter No'
+                return $true
+            }
+        }
+        Start-Sleep -Milliseconds $PollMs
+        return $true
     }
+
+    if ($clickedSafeMode -and -not $clickedPlayContinue) {
+        [UIAHelper]::ResetLauncherClickRetryState()
+    }
+
+    if ([UIAHelper]::HasSafeModeDialog() -and -not $script:safeModeVisibleLogged) {
+        Write-LaunchLog 'LAUNCH_STATE=safe_mode_visible'
+        $script:safeModeVisibleLogged = $true
+    }
+
+    if ([UIAHelper]::ClickSafeModeNo()) {
+        if (-not $clickedSafeMode) {
+            Write-LaunchLog 'clicked Safe Mode No'
+            Write-LaunchLog 'LAUNCH_STATE=safe_mode_no_clicked'
+            Write-LaunchLog 'Safe Mode: No selected - prior session unexpected shutdown; crash on last run suspected (full mod load retained)'
+            $clickedSafeMode = $true
+            Extend-DeadlineForSlowPath
+            if (-not $RespectUserForeground) {
+                Invoke-BannerlordFocusHelper -Context 'after-safe-mode-no' | Out-Null
+            }
+        }
+        return $true
+    }
+
+    if ([UIAHelper]::HasSafeModeDialog()) {
+        Start-Sleep -Milliseconds 120
+        return $true
+    }
+
     return $false
 }
 
-if ($LaunchIntent -eq 'continue') {
-    $targetButtonNames = @('CONTINUE', 'Continue')
-} else {
-    $targetButtonNames = @('PLAY', 'Play')
+function Test-LaunchClickVerified {
+    param(
+        [int]$WaitSec = 4,
+        [string]$Intent = 'continue'
+    )
+
+    $chromeVisible = ([UIAHelper]::HasLauncherRoot() -and -not $handoffStarted)
+    if ($Intent -eq 'continue') {
+        if ($chromeVisible) {
+            $WaitSec = [Math]::Max($WaitSec, $script:ContinueClickVerifySecChrome)
+        } else {
+            $WaitSec = [Math]::Max($WaitSec, $script:ContinueClickVerifySec)
+        }
+    } elseif ($Intent -eq 'play') {
+        $WaitSec = [Math]::Max($WaitSec, $script:PlayClickVerifySec)
+    }
+
+    $verifyStart = Get-Date
+    function Complete-LaunchClickVerify {
+        param([bool]$Ok)
+        $script:continueVerifyTotalMs += [int][Math]::Max(0, ((Get-Date) - $verifyStart).TotalMilliseconds)
+        return $Ok
+    }
+
+    $deadline = (Get-Date).AddSeconds($WaitSec)
+    while ((Get-Date) -lt $deadline) {
+        if ([UIAHelper]::HasSafeModeDialog()) {
+            return (Complete-LaunchClickVerify $false)
+        }
+
+        $det = Get-LaunchNavProcessDetection
+        if ($det.gameProcessRunning) {
+            if ($Intent -eq 'continue' -and (Test-F7ContinueCertStrict)) {
+                if ($det.gameAliveConfidence -eq 'definite') { return (Complete-LaunchClickVerify $true) }
+                if ([UIAHelper]::HasLauncherLoadingSurface()) { return (Complete-LaunchClickVerify $true) }
+                if (-not [UIAHelper]::HasLauncherRoot()) { return (Complete-LaunchClickVerify $true) }
+            } else {
+                return (Complete-LaunchClickVerify $true)
+            }
+        }
+
+        if ($Intent -eq 'continue') {
+            if (-not (Test-F7ContinueCertStrict) -and $det.gameAliveConfidence -eq 'launcher_hosted') { return (Complete-LaunchClickVerify $true) }
+            if ([UIAHelper]::HasLauncherLoadingSurface()) { return (Complete-LaunchClickVerify $true) }
+            if (-not [UIAHelper]::HasLauncherRoot()) { return (Complete-LaunchClickVerify $true) }
+        }
+
+        if ($Intent -eq 'play') {
+            if ([UIAHelper]::HasLauncherLoadingSurface()) { return (Complete-LaunchClickVerify $true) }
+            if (-not [UIAHelper]::HasLauncherRoot()) { return (Complete-LaunchClickVerify $true) }
+            if (-not [UIAHelper]::HasSafeModeDialog() -and -not [UIAHelper]::IsLauncherPlayContinueVisible()) {
+                return (Complete-LaunchClickVerify $true)
+            }
+        }
+
+        Start-Sleep -Milliseconds 150
+    }
+    return (Complete-LaunchClickVerify $false)
 }
 
+if ($LaunchIntent -eq 'continue') {
+    $targetButtonNames = @('CONTINUE', 'Continue', 'Continue Campaign', 'Resume', 'Resume Game')
+} else {
+    $targetButtonNames = @('PLAY', 'Play', 'Play Game')
+}
+
+try {
+Initialize-NavExternalStateTimelineIfNeeded
+Write-NavExternalStateEvent -ReasonOverride 'launcher-auto-nav entry classification'
 while ((Get-Date) -lt $deadline) {
+    if (Test-PreIntentGameSpawnAndContaminate) {
+        return
+    }
+
+    if ($script:contaminatedLaunchPath -and (Test-F7ContinueCertStrict)) {
+        Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+        return
+    }
+
+    if (Invoke-LauncherSafeModeAndCrashDialogs) {
+        continue
+    }
+
+    Update-LauncherSelectionTimer
+    if ((Test-F7ContinueCertStrict) -and $LaunchIntent -eq 'continue' -and (Test-LauncherChromeVisible)) {
+        if ([UIAHelper]::IsLauncherPlayOnlyVisible() -and -not [UIAHelper]::IsLauncherContinueVisible()) {
+            Write-LaunchTimingEvidence -Result 'failed'
+            Write-LaunchLog 'LAUNCH_STATE=fail_launcher_play_only'
+            throw 'launcher play-only visible during continue cert'
+        }
+    }
+    if (Test-LauncherSelectionBudgetExceeded) {
+        Write-LaunchTimingEvidence -Result 'timeout'
+        Write-LaunchLog 'LAUNCH_STATE=launcher_timing_timeout'
+        throw 'launcher selection exceeded 45s budget (launcher_timing_timeout)'
+    }
+
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
-        Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
+        $envDesc = Get-LaunchNavEnvironmentLine
+        Write-LaunchLog $envDesc
+        if ($envDesc -match 'launcher=no' -and (Get-Process -Name $launcherExeName -ErrorAction SilentlyContinue)) {
+            Write-LaunchLog 'LAUNCH_STATE=waiting_launcher_hwnd'
+        }
+        if (-not $script:launcherReadyLogged -and [UIAHelper]::IsLauncherPlayContinueVisible()) {
+            Write-LaunchLog 'LAUNCH_STATE=launcher_ready'
+            $script:launcherReadyLogged = $true
+        }
         $lastHeartbeat = Get-Date
+    }
+
+    if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
+        if ((Test-F7ContinueCertStrict) -and -not $script:automationContinueIntentDeclared) {
+            $det = Get-LaunchNavProcessDetection
+            if (Test-F7StrongPreIntentGameSignal -Detection $det `
+                    -LoadingSurface ([UIAHelper]::HasLauncherLoadingSurface()) `
+                    -LauncherGone (-not [UIAHelper]::HasLauncherRoot())) {
+                if (Test-PreIntentGameSpawnAndContaminate) { return }
+            }
+        } else {
+            Write-LaunchLog 'LAUNCH_STATE=game_spawned'
+            $script:gameSpawnLogged = $true
+            if (Test-Path -LiteralPath $focusHelperPath) {
+                try {
+                    $raised = & $focusHelperPath
+                    if ($raised) {
+                        Write-LaunchLog 'raised Bannerlord window on game spawn'
+                    }
+                } catch { }
+            }
+        }
+    }
+
+    if ($LaunchIntent -eq 'play' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
+        $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
+        if ($sinceClick -ge 15 -and -not $script:playEscalated -and -not $script:launchPathAdopted) {
+            Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks'
+            $script:playEscalated = $true
+            $clickedPlayContinue = $false
+            $script:playClickUtc = $null
+            $RespectUserForeground = $false
+            [UIAHelper]::RespectUserForeground = $false
+            [UIAHelper]::ResetLauncherClickRetryState()
+        }
+    }
+
+    if ($LaunchIntent -eq 'continue' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
+        $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
+        if ($sinceClick -ge 15 -and -not $script:continueEscalated -and -not $script:launchPathAdopted) {
+            Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks'
+            $script:continueEscalated = $true
+            $clickedPlayContinue = $false
+            $script:playClickUtc = $null
+            $RespectUserForeground = $false
+            [UIAHelper]::RespectUserForeground = $false
+            [UIAHelper]::ResetLauncherClickRetryState()
+        }
+    }
+
+    if ($clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc -and -not $script:launchPathAdopted) {
+        $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
+        if ($sinceClick -ge 12 -and [UIAHelper]::IsLauncherPlayContinueVisible() -and -not [UIAHelper]::HasSafeModeDialog()) {
+            $retryLabel = if ($LaunchIntent -eq 'continue') { 'continue_retry' } else { 'play_retry' }
+            Write-LaunchLog "LAUNCH_STATE=$retryLabel - game never spawned; resetting clickedPlayContinue"
+            $clickedPlayContinue = $false
+            $script:playClickUtc = $null
+            [UIAHelper]::ResetLauncherClickRetryState()
+        }
     }
 
     if ($clickedPlayContinue) {
         Extend-DeadlineAfterPlayClick
     }
 
-    if ($clickedPlayContinue -and -not $handoffStarted) {
+    if ($clickedPlayContinue -and -not $handoffStarted -and -not $RespectUserForeground) {
+        $refocusIntervalSec = if ([UIAHelper]::HasLauncherLoadingSurface()) { 5 } else { 2 }
         $nowRefocusUtc = [DateTime]::UtcNow
-        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge 2) {
+        if (-not $lastRefocusUtc -or ($nowRefocusUtc - $lastRefocusUtc).TotalSeconds -ge $refocusIntervalSec) {
             [UIAHelper]::TryFocusGameOrLauncher() | Out-Null
             $lastRefocusUtc = $nowRefocusUtc
         }
@@ -1928,6 +2909,7 @@ while ((Get-Date) -lt $deadline) {
 
     $preHandoffStall = $false
     if (Test-LaunchReadyNow -StallDetected ([ref]$preHandoffStall)) {
+        Write-LaunchTimingEvidence -Result 'ok'
         Write-LaunchLog 'TBG READY detected (pre-handoff) — launch success'
         return
     }
@@ -1961,32 +2943,6 @@ while ((Get-Date) -lt $deadline) {
         }
     }
 
-    if ([UIAHelper]::HasCrashReporterDialog()) {
-        if ([UIAHelper]::ClickCrashReporterNo()) {
-            if (-not $clickedCrashReporter) {
-                Write-LaunchLog 'clicked crash reporter No'
-                $clickedCrashReporter = $true
-                Extend-DeadlineForSlowPath
-            }
-            if (Test-GameProcessRunning) {
-                Invoke-Handoff 'Bannerlord.exe running after crash reporter No'
-                return
-            }
-        }
-        Start-Sleep -Milliseconds $PollMs
-        continue
-    }
-
-    if ([UIAHelper]::ClickSafeModeNo()) {
-        if (-not $clickedSafeMode) {
-            Write-LaunchLog 'clicked Safe Mode No'
-            $clickedSafeMode = $true
-            Extend-DeadlineForSlowPath
-        }
-        Start-Sleep -Milliseconds $PollMs
-        continue
-    }
-
     if ([UIAHelper]::HasCautionDialog()) {
         if ([UIAHelper]::ClickCautionConfirm()) {
             if (-not $clickedCaution) {
@@ -2000,15 +2956,54 @@ while ((Get-Date) -lt $deadline) {
         continue
     }
 
+    if (Test-UserLaunchPathAdopted) {
+        if (Test-GameProcessRunning) {
+            Invoke-Handoff 'user launch path adopted — game running'
+            return
+        }
+        if ([UIAHelper]::HasLauncherLoadingSurface() -or -not [UIAHelper]::HasLauncherRoot()) {
+            Invoke-Handoff 'user launch path adopted — loading or launcher gone'
+            return
+        }
+    }
+
     if (-not $clickedPlayContinue) {
+        if ($script:contaminatedLaunchPath) {
+            Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+            return
+        }
+        if ([UIAHelper]::HasSafeModeDialog()) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
+        }
+        if (-not (Test-NavGuardedLauncherClick -Intent $LaunchIntent)) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
+        }
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
-            if (Test-LaunchClickVerified -WaitSec 8) {
+            $script:launcherSelectionAttempts++
+            if ($clickedSafeMode) { $script:safeModeBeforeContinue = $true }
+            if (Test-LaunchClickVerified -WaitSec 4 -Intent $LaunchIntent) {
+                $script:automationClickedPlayContinue = $true
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
+                if ($LaunchIntent -eq 'continue') {
+                    $script:automationContinueIntentDeclared = $true
+                    Write-LaunchLog 'LAUNCH_STATE=continue_clicked selectedBy=automation'
+                } else {
+                    Write-LaunchLog 'LAUNCH_STATE=play_clicked selectedBy=automation'
+                }
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
                 Extend-DeadlineAfterPlayClick
+                if (-not $RespectUserForeground) {
+                    Invoke-BannerlordFocusHelper -Context 'after-play-continue-click' | Out-Null
+                }
+                if ($script:contaminatedLaunchPath -and (Test-F7ContinueCertStrict)) {
+                    Write-LaunchLog 'LAUNCH_STATE=fail_contaminated_launch_path'
+                    return
+                }
             } else {
                 Write-LaunchLog "click $displayName ($matchedName) NOT verified — PLAY/CONTINUE still on screen; will retry"
                 [UIAHelper]::ResetLauncherClickRetryState()
@@ -2016,11 +3011,17 @@ while ((Get-Date) -lt $deadline) {
         }
     }
 
-    Start-Sleep -Milliseconds $PollMs
+    $loopPollMs = if ([UIAHelper]::HasSafeModeDialog() -or (-not $clickedPlayContinue -and [UIAHelper]::IsLauncherPlayContinueVisible())) {
+        120
+    } else {
+        $PollMs
+    }
+    Start-Sleep -Milliseconds $loopPollMs
 }
 
 $boundaryStall = $false
 if (Test-LaunchReadyNow -StallDetected ([ref]$boundaryStall)) {
+    Write-LaunchTimingEvidence -Result 'ok'
     Write-LaunchLog 'TBG READY detected at timeout boundary — treating as success'
     return
 }
@@ -2028,3 +3029,7 @@ if (Test-LaunchReadyNow -StallDetected ([ref]$boundaryStall)) {
 $visibleButtons = [UIAHelper]::LogVisibleLauncherButtons()
 Write-LaunchLog "timeout: visible launcher buttons: $visibleButtons"
 throw "launcher-auto-nav timed out after ${effectiveTimeout}s (see $logPath)"
+} finally {
+    Save-F7ExternalStateTimeline | Out-Null
+    Release-NavLock
+}
