@@ -2,8 +2,8 @@
 
 **Author:** Agent A — Cert / Evidence / Git / PR (co-maintained with Agent D)  
 **Branch:** `fix/f7-gate-stability`  
-**Gate:** **PIVOT** — old F7 Continue **CLOSED** @ `205925`; forward cert = [Town-to-Town Trade Assist](town-to-town-trade-assist-cert.md)  
-**PR #7:** **HOLD** — old F7 PASS no longer sprint medal
+**Gate:** **GREEN (assist)** — Town-to-Town Trade Assist **PASS** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)  
+**PR #7:** **HOLD** — assist PASS is product medal; await explicit user merge auth
 
 ---
 
@@ -20,7 +20,25 @@
 
 **Do not rerun** old F7 Continue seeking PASS — semantic mismatch is documented. One **optional** infrastructure validation post-`9bdc759` may confirm ~15s `fail_settlement_menu_semantic_mismatch` (not a product medal).
 
-**Next live cert:** [Town-to-Town Trade Assist](town-to-town-trade-assist-cert.md) — blocked on Agent B (`canPollFileInbox`, `AssistiveTownToTownProbe`).
+**Next live cert:** [Town-to-Town Trade Assist](town-to-town-trade-assist-cert.md) — **PASS** @ `20260624-004036` (Quyaz settlement_menu, advisory probe).
+
+---
+
+## Town-to-Town Trade Assist — PASS @ `20260624-004036`
+
+| Criterion | Result |
+|-----------|--------|
+| `passFail` / `exitCode` | PASS / 0 |
+| `readinessSurface` | `settlement_menu` @ Quyaz |
+| `canPollFileInbox` | `true` |
+| `inGameAssistReady` | `true` |
+| `AssistiveTownToTownProbe` | ack Success |
+| `recommendedNextTown` | Ortysia |
+| `tradeExecution` | `advisory_only` |
+| `travelCommandMode` | `advisory_only` |
+| Fake deltas | none (`fakeGameplayDelta=false`) |
+
+Evidence: [`checkpoint-01-assistive-town-trade/manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
 
 ---
 

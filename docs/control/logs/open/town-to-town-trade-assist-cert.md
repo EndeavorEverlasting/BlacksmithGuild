@@ -2,7 +2,7 @@
 
 **Owner:** Agent A — Cert / Evidence / Git / PR (live runs) · **Spec:** Agent D  
 **Branch:** `fix/f7-gate-stability`  
-**Status:** **BLOCKED** — runtime probe + inbox poll not ready  
+**Status:** **PASS** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) (Quyaz settlement_menu, advisory probe)  
 **Runner skeleton:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1)
 
 ---
@@ -26,14 +26,14 @@ See also: [`f7-vs-assistive-attach-mode.md`](f7-vs-assistive-attach-mode.md)
 | Classifier before mutation | `Test-F7GuardedActionAllowed` must pass before clicks or dev commands |
 | No cert contamination rules | Assistive mode does **not** apply F7 `targetMismatch` / contamination FAIL |
 
-**Blockers before first live run:**
+**Blockers before first live run:** *(cleared @ `20260624-004036`)*
 
-| Blocker | Owner |
-|---------|-------|
-| `canPollFileInbox=true` at `readinessSurface=settlement_menu` (Continue path) | **Agent B** |
-| `inGameAssistReady=true` in Status.json (implement if absent) | **Agent B** |
-| `AssistiveTownToTownProbe` in `DevCommandRegistry.cs` + `dev-command-names.ps1` | **Agent B** |
-| Attach runner polish (skeleton exists; currently fails `assistive_command_not_supported`) | **Agent C** |
+| Blocker | Owner | Status |
+|---------|-------|--------|
+| `canPollFileInbox=true` at `readinessSurface=settlement_menu` | **Agent B** | PASS @ cert |
+| `inGameAssistReady=true` in Status.json | **Agent B** | PASS @ cert |
+| `AssistiveTownToTownProbe` in registry + dev-command-names | **Agent B** | PASS @ cert |
+| Attach runner + evidence harvest | **Agent C** / **A** | PASS (A enriched manifest + artifacts) |
 
 ---
 

@@ -28,15 +28,15 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `e4c261d` |
-| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — old F7 PASS not sprint medal |
+| Branch / HEAD | `fix/f7-gate-stability` @ `c408536` (assist PASS pending push) |
+| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — assist PASS landed; await user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **PIVOT** — old F7 informative FAIL @ `205925`; product cert = [Town-to-Town Trade Assist](../control/logs/open/town-to-town-trade-assist-cert.md) |
-| Last F7 evidence | `20260623-205925` (closed) |
-| Next live cert | Town-to-Town Trade Assist — **Agent A** after B push (inbox + probe landed) |
-| Old F7 | **CLOSED** — infrastructure/regression only; no treadmill reruns seeking PASS |
-| Optional infra | Agent A may validate C `@ 9bdc759` (~15s semantic FAIL); not product medal |
-| Parallel lanes | B + C parallel-safe; live cert serial (one machine lock) |
+| Gate verdict | **GREEN (assist)** — Town-to-Town Trade Assist PASS @ `20260624-004036` (Quyaz settlement_menu) |
+| Last F7 evidence | `20260623-205925` (closed, informative) |
+| Last assist evidence | `20260624-004036` — manifest PASS |
+| Next live cert | User merge auth for PR #7; optional travel execute path (Agent B) |
+| Old F7 | **CLOSED** — infrastructure/regression only |
+| Parallel lanes | B + C parallel-safe; live cert serial |
 
 ---
 
@@ -44,7 +44,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Run Town-to-Town Trade Assist cert (attach mode) | — | `903c8d0` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Assist cert PASS @ `20260624-004036` | — | pending |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Assist inbox + town-trade probe landed | — | `e4c261d` |
 | **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `9bdc759` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | `d5c7bbf` |
@@ -95,6 +95,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent A → B, C, D (Town-to-Town Trade Assist PASS @ `20260624-004036`)
+
+- **Preflight:** ancestry `e4c261d` + `9bdc759` PASS; Release build PASS; grep guard PASS; runner contract PASS.
+- **Setup:** Continue launch via `launcher-auto-nav.ps1 -CertTarget continue` (Safe Mode No; `LAUNCH_TIMING` ~33s selection).
+- **Assist cert:** `run-town-to-town-trade-assist-cert.ps1` exit **0**; manifest `passFail=PASS`.
+- **Surface:** Quyaz `settlement_menu`; `canPollFileInbox=true`, `inGameAssistReady=true`, `canAcceptAssistiveCommand=true`, `townMenuReady=true`, `openMapReady=false`.
+- **Probe:** `AssistiveTownToTownProbe` ack Success; `currentSettlement=Quyaz`, `recommendedNextTown=Ortysia`, `tradeExecution=advisory_only`, `travelCommandMode=advisory_only`; no fake deltas.
+- **Phase1:** `FileInboxReadiness op=Evaluate stage=ok surface=settlement_menu canPollFileInbox=true`.
+- **Evidence:** [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json).
+- **PR #7:** **HOLD** — assist PASS is product medal; await explicit user merge auth (old F7 PASS not required).
+- **Route C:** `Run-LauncherNavNow.cmd` without `-CertTarget continue` hits `guarded_click_denied` in assistive mode @ `LauncherOpening` — wire `-CertTarget` or allow launch-setup clicks in assistive nav.
 
 ### 2026-06-24 — Agent B → A, C, D (assist inbox + town-trade probe)
 
