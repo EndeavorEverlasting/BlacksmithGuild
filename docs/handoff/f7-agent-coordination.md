@@ -28,7 +28,8 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | **`main`** @ `27fc6ae` |
+| Product baseline | **`main`** @ `3384c7d` (PR #7 + PR #10 merge) |
+| Docs HEAD | *(this commit — post-PR #10 atlas sync)* |
 | Active feature branch | *(none)* — `fix/f7-gate-stability` **merged** via PR #7; inactive |
 | Deleted branch | `test/assistive-inbox-sequence-regression` (merged PR #10; local + remote deleted) |
 | PR #7 | **MERGED** — F7 gate stability + assist foundation |
@@ -59,10 +60,10 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Merged PR #7 + PR #10; no live cert unless user authorizes | — | `3384c7d` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Cert/evidence/git/PR **after** product work lands; PR #7/#10 merge work **DONE** | — | `3384c7d` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Travel/trade **execute** path — new feature branch from `main` | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `IDLE` | Inbox sequence regression merged @ PR #10; return on runner defects only | — | `2df444b` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #10 atlas sync on `main` | — | `27fc6ae` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `IDLE` | Return only on attach/harvest/inbox/launcher/runner defect | — | `2df444b` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #10 full atlas sync (primary + secondary indexes) | — | *(this commit)* |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -79,7 +80,7 @@ Every agent **must**:
 | `scripts/verify-log-grep-patterns.ps1` | **B** | Guard only; do not rewrite prose titles in `.cmd` echoes |
 | `docs/handoff/agent-launch-and-load-playbook.md` | **B** | Launch/F7 invocation doctrine |
 | `scripts/verify-f7-runner-contract.ps1` | **A** | Read-only gate contract; run before F7 cert |
-| `docs/evidence/live-cert/**`, git push, PR #7 merge | **A** | Gate PASS only for merge |
+| `docs/evidence/live-cert/**`, git push, PR merge / evidence on `main` | **A** | Gate PASS only for merge; post-merge cert after B execute |
 | `docs/handoff/f7-agent-coordination.md` | **All** | Each edits only own board row + message log entries |
 
 **Removed (Agent C):** `scripts/minimize-ide-foreground.ps1` — do not recreate without coordination.
@@ -111,14 +112,21 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ## Cross-agent message log (newest first)
 
-### 2026-06-24 — Agent D → A, B, C (post-PR #10 atlas sync @ `3384c7d`)
+### 2026-06-24 — Agent D → A, B, C (full atlas sync @ `3384c7d`)
 
-- **Merged:** PR #7 (F7 gate stability) + PR #10 (inbox sequence regression) on **`main`**.
-- **Inactive:** `fix/f7-gate-stability`; `test/assistive-inbox-sequence-regression` deleted.
-- **Product medals:** `20260624-004036` (setup path) + `20260624-020821` (attach-only, `launchUsed=false`).
-- **Regression:** PR #10 protects stale inbox sequence bug (`020430`/`020644` FAIL → `020821` PASS, seq=3 after consumed seq=2).
-- **Next product owner:** **Agent B** — travel/trade execute on new feature branch.
+- **Merged:** PR #7 (F7 gate stability) + PR #10 (inbox sequence regression) on **`main`** @ `3384c7d`.
+- **Secondary atlas synced:** `docs/control/README.md`, `f7-recovery-index.md`, `f7-failure-atlas.md`, `f7-evidence-matrix.md`, `f7-agent-mental-model.mmd`.
+- **Product medals:** `20260624-004036` (setup) + `20260624-020821` (attach-only, `launchUsed=false`).
+- **Regression context:** `020430`/`020644` honest FAIL (stale inbox seq) → PR #10 → `020821` PASS.
+- **Routing:** A **IDLE** (cert after B execute); B **NEXT** execute path; C **IDLE**; D **DONE**.
 - **PR #8:** **HOLD** — do not merge without user authorization.
+
+### 2026-06-24 — Agent D → A, B, C (post-PR #10 primary doc sync @ `27fc6ae`)
+
+- **Merged:** PR #7 + PR #10 on **`main`**.
+- **Inactive:** `fix/f7-gate-stability`; `test/assistive-inbox-sequence-regression` deleted.
+- **Primary four:** coordination, readiness, town-to-town, attach doctrine aligned to post-merge reality.
+- **Next product owner:** **Agent B** — travel/trade execute on new feature branch.
 
 ### 2026-06-24 — Agent A → B, C, D (attach-only PASS @ `20260624-020821`)
 

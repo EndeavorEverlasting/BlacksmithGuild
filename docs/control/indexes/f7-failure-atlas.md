@@ -1,9 +1,10 @@
 # F7 failure atlas
 
-**Branch:** `fix/f7-gate-stability` @ `d5c7bbf`  
-**Gate:** **PIVOT** — old F7 product gate closed; no legacy F7 PASS manifest  
-**Latest cert:** `20260623-205925` — informative FAIL; settlement_menu; **old F7 CLOSED**  
-**Forward cert:** [Town-to-Town Trade Assist](../logs/open/town-to-town-trade-assist-cert.md)  
+**Branch:** **`main`** @ `3384c7d`  
+**Gate:** **GREEN (assist)** — product gate satisfied on advisory path; next blocker = execute path  
+**Latest F7 infra:** `20260623-205925` — informative FAIL; settlement_menu; **old F7 CLOSED**  
+**Latest product PASS:** `20260624-020821` (attach-only) · `20260624-004036` (setup)  
+**Forward cert:** [Town-to-Town Trade Assist](../logs/open/town-to-town-trade-assist-cert.md) — advisory **PASS**; execute path **OPEN**  
 **Authority:** [`f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
 **Normative evidence spec:** [`f7-evidence-requirements.md`](f7-evidence-requirements.md)  
 **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
@@ -30,7 +31,11 @@ Historical sessions before wave 3 used **inferred** Play/Continue fields. Sessio
 
 | sessionId | clean / contaminated | HookMask | certTarget | launchPath | launchSelectedBy | targetMismatch | launcher result | last known phase | last Phase1 marker | last Trace marker | CrashContext copied | passFail | exitCode | stableSeconds | campaignReady | canPollFileInbox | owner | evidence path |
 |-----------|------------------------|----------|------------|------------|------------------|----------------|-----------------|------------------|-------------------|-------------------|---------------------|----------|----------|---------------|---------------|------------------|-------|---------------|
-| `20260623-205925` | **clean** | `0x0F` | `continue` | `continue` | `automation` | no | PASS (`continueClick` ~4s) | **settlement_menu** (Quyaz); runner MapTransition timeout | `MapTransitionGuard op=MapReadyPrecheck` | same seq=93488 | no | FAIL | 2 | 0 | **true** | **false** | **B** + **C** | [`…/205925/…`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/) |
+| `20260624-020821` | **clean** | n/a | n/a | `existing_session` | n/a | n/a | **no launch** (`launchUsed=false`) | **settlement_menu** (Quyaz); attach-only | probe ack Success | n/a | no | **PASS** | 0 | n/a | **true** | **true** | **A** | [`…/020821/…`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/) |
+| `20260624-004036` | **clean** | n/a | n/a | setup path | `automation` | n/a | PASS (Continue ~33s) | **settlement_menu** (Quyaz) | probe ack Success | n/a | no | **PASS** | 0 | n/a | **true** | **true** | **A** | [`…/004036/…`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/) |
+| `20260624-020644` | clean | n/a | n/a | attach-only | n/a | n/a | no launch | settlement_menu | `assistive_probe_failed` | n/a | no | FAIL | 2 | n/a | true | true | **C** | honest FAIL — stale inbox seq (regression context) |
+| `20260624-020430` | clean | n/a | n/a | attach-only | n/a | n/a | no launch | settlement_menu | `assistive_probe_failed` | n/a | no | FAIL | 2 | n/a | true | true | **C** | honest FAIL — stale inbox seq; fixed by PR #10 |
+| `20260623-205925` | **clean** | `0x0F` | `continue` | `continue` | `automation` | no | PASS (`continueClick` ~4s) | **settlement_menu** (Quyaz); runner MapTransition timeout | `MapTransitionGuard op=MapReadyPrecheck` | same seq=93488 | no | FAIL | 2 | 0 | **true** | **true** | **B** + **C** | [`…/205925/…`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/) |
 | `20260622-154012` | **clean** | `0x0F` | `continue` | `continue` | `automation` | no | partial (`continue_escalate`; `game_spawned`; 368s timeout) | **user: Quyaz town loaded**; runner: Refresh storm | `GameSessionState op=Refresh stage=ok` | same (seq=164435) | no | FAIL | 2 | 0 | false | false | **B** + **C** | [`…/154012/…`](../../evidence/live-cert/20260622-154012/checkpoint-01-f7-gate/) |
 | `20260622-135217` | **clean** | `0x0F` | `continue` | `continue` (inferred) | `automation` | no | **PASS** (unattended Continue, hwnd background) | StatusFlush | `[TBG MAPREADY] StatusFlush begin` | none | no | FAIL | 2 | 0 | false | false | **B** | [`…/135217/checkpoint-01-f7-gate/`](../../evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/) |
 | `20260622-131237` | **contaminated** | `0x0F` | `continue` | `continue` (inferred) | **user** (manual clicks) | no | partial (`continue_escalate`) | MapTransition | `MainMenu -> MapTransition` | none | no | FAIL | 2 | 0 | false | false | **B/C** | [`…/131237/…`](../../evidence/live-cert/20260622-131237/checkpoint-01-f7-gate/) |
@@ -43,7 +48,11 @@ Historical sessions before wave 3 used **inferred** Play/Continue fields. Sessio
 
 | Session | Classification |
 |---------|----------------|
-| `205925` | **informative FAIL — old F7 CLOSED** — clean Continue; Quyaz settlement_menu; `campaignReady=true`, `canPollFileInbox=false`; MapTransition treadmill (pre-15s fix); ExternalStateTimeline present; **not product PASS** |
+| `020821` | **product PASS (attach-only)** — `mode=assistive_attach`, `launchUsed=false`, `launchPath=existing_session`, advisory probe Success |
+| `004036` | **product PASS (setup)** — launcher setup + assist cert; `tradeExecution=advisory_only` |
+| `020644` | **honest FAIL (regression)** — `assistive_probe_failed`; stale inbox sequence; fixed before `020821` |
+| `020430` | **honest FAIL (regression)** — same class; PR #10 adds offline regression |
+| `205925` | **informative FAIL — old F7 CLOSED** — clean Continue; Quyaz settlement_menu; old gate semantics; **not product PASS** |
 | `154012` | **honest FAIL** — `evidenceCompleteness=sufficient`; gameplay reached Quyaz (user-observed); Refresh storm; **not PASS** |
 | `135217` | **`instrumentation_insufficient`** — dies at coarse `StatusFlush begin` |
 | `131237` | **`contaminated_cert`** |
@@ -80,11 +89,11 @@ Historical sessions before wave 3 used **inferred** Play/Continue fields. Sessio
 
 ## current_best_diagnosis
 
-1. **MapTransition death / seq=8115 era is past** — `205925` reached settlement_menu with game alive; no process death.
-2. **Old F7 Continue product gate is closed** @ `205925` — semantic mismatch: golden path expects MapTransition; runtime is in-town with `canPollFileInbox=false`.
-3. **Screenshot / user observation ≠ cert PASS** — manifest `passFail=FAIL`, `stableSeconds=0`. **PR #7 HOLD.**
-4. **Current blocker:** (a) **B** — enable `canPollFileInbox` + `AssistiveTownToTownProbe` at settlement_menu; (b) **C** — attach runner ready (skeleton exists).
-5. **Forward move:** Town-to-Town Trade Assist Cert ([spec](../logs/open/town-to-town-trade-assist-cert.md)); optional A infra validation of C 15s fail (~15s wall, not 361s).
+1. **Assist product gate is GREEN** — `004036` (setup) + `020821` (attach-only, `launchUsed=false`) PASS manifests on advisory path.
+2. **Old F7 Continue product gate is closed** @ `205925` — infrastructure smoke only; semantic mismatch vs in-town runtime.
+3. **Inbox sequence regression fixed** — `020430`/`020644` honest FAIL → PR #10 merged → `020821` PASS (seq=3 after consumed seq=2).
+4. **Current blocker:** **Agent B** — travel/trade **execute** path (`tradeExecution` / `travelCommandMode` still `advisory_only`).
+5. **Forward move:** New feature branch from `main`; execute-path cert earns its own PASS manifest.
 
 ---
 
@@ -92,9 +101,10 @@ Historical sessions before wave 3 used **inferred** Play/Continue fields. Sessio
 
 | Gap | Repo proof |
 |-----|------------|
-| **`BlacksmithGuild_Status.json` gitignored** | `205925` manifest `statusJsonCopied=true`; file not in git — cite manifest |
-| **User screenshot not in repo** | Quyaz observed; not committed unless user adds |
-| **`AssistiveTownToTownProbe` not implemented** | Assist cert blocked |
+| **`BlacksmithGuild_Status.json` gitignored** | `205925` manifest `statusJsonCopied=true`; assist manifests cite fields inline |
+| **`020430`/`020644` checkpoints not committed** | Honest FAIL noted in coordination log; regression covered by PR #10 offline test |
+| **Execute path not certified** | `tradeExecution=advisory_only` on all PASS manifests |
+| No `CrashContext` on assist PASS | `crashContextCopied=false` on attach-only harvest |
 | No `CrashContext` on `205925` | `crashContextCopied=false` |
 | Windows crash event | `205925` `windowsCrashEventStatus=query_failed` |
 | Historical: `095326` evidence not committed | No checkpoint dir |
@@ -107,10 +117,9 @@ See [`f7-evidence-requirements.md`](f7-evidence-requirements.md) and [`town-to-t
 
 | Requirement | Owner |
 |-------------|-------|
-| `canPollFileInbox=true` @ settlement_menu | **B** |
-| `AssistiveTownToTownProbe` + `inGameAssistReady` | **B** |
-| Attach runner ready for gameplay cert | **C** |
-| Town-to-Town assist cert with honest PASS/FAIL | **A** (after B+C) |
+| Travel/trade **execute** path with honest PASS/FAIL | **B** |
+| Cert evidence commit after execute work | **A** |
+| Runner/attach defects only | **C** (return on defect) |
 
 ---
 
@@ -121,7 +130,11 @@ See [`f7-evidence-requirements.md`](f7-evidence-requirements.md) and [`town-to-t
 101016 ── post-map-ready death
 135217 ── instrumentation_insufficient
 154012 ── user Quyaz; Refresh storm; runner FAIL
-205925 ── settlement_menu; canPollFileInbox=false; old F7 CLOSED; pivot to assist cert
+205925 ── settlement_menu; old F7 CLOSED; pivot to assist cert
+004036 ── Town-to-Town assist PASS (setup path)
+020430 ── honest FAIL (stale inbox seq)
+020644 ── honest FAIL (stale inbox seq)
+020821 ── Town-to-Town assist PASS (attach-only; launchUsed=false)
 ```
 
 ---
@@ -131,4 +144,4 @@ See [`f7-evidence-requirements.md`](f7-evidence-requirements.md) and [`town-to-t
 - [`f7-recovery-index.md`](f7-recovery-index.md) — sprint posture, PR status
 - [`f7-evidence-matrix.md`](f7-evidence-matrix.md) — per-session artifact completeness
 - [`session-20260623-205925.md`](../logs/open/session-20260623-205925.md) — session stub
-
+

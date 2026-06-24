@@ -1,6 +1,7 @@
 # F7 evidence requirements
 
-**Branch:** `fix/f7-gate-stability`  
+**Branch:** **`main`** @ `3384c7d` — PR #7 **MERGED**; old F7 = **infrastructure only**  
+**Product gate:** Town-to-Town Trade Assist — PASS @ `004036` + `020821` (see [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md))
 **Owner:** Agent A (cert / evidence gate)  
 **Authority:** [`f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md) · **Recovery index:** [`f7-recovery-index.md`](f7-recovery-index.md)  
 **Policy:** No manifest, no medal. Exit 0 without manifest `passFail=PASS` is forgery.
@@ -89,7 +90,7 @@ Agent A certifies PASS **only** when **all** hold:
 6. `canPollFileInbox` = **true** (or equivalent gate signals per `Test-F7GateCondition`).
 7. Phase1 shows em-dash ready (`Blacksmith Guild — Ready:`) or `phase1TbgReady` = true.
 
-**PR #7 merge:** only after a committed PASS manifest on `fix/f7-gate-stability`.
+**PR #7:** **MERGED** to `main`. Old F7 Continue PASS is **not** the product medal — optional infra smoke only.
 
 ---
 
@@ -128,7 +129,7 @@ For every FAIL manifest review, Agent A must record:
 | **Agreement** | CrashContext `operation`/`stage` matches Phase1 tail terminus |
 | **Routing** | B = runtime / C# · C = runner harvest · both if completeness gap |
 
-If only coarse `StatusFlush begin` appears → set manifest `notes` suffix `instrumentation_insufficient` and **do not merge PR #7**.
+If only coarse `StatusFlush begin` appears → set manifest `notes` suffix `instrumentation_insufficient` and route B+C (historical PR #7 gate — **MERGED**).
 
 ---
 
@@ -136,19 +137,19 @@ If only coarse `StatusFlush begin` appears → set manifest `notes` suffix `inst
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-git checkout fix/f7-gate-stability
-git pull origin fix/f7-gate-stability
+git checkout main
+git pull origin main
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 ```
 
-### Hard gate — do not run F7 until:
+### Hard gate — B+C dependencies (landed on `main`)
 
-| Dependency | Proof on `origin/fix/f7-gate-stability` |
-|------------|----------------------------------------|
-| Agent B | `RuntimeTrace.cs`, `CrashContextWriter.cs`; `[TBG TRACE]` in StatusFlush path |
-| Agent C | `Save-CheckpointEvidence` copies CrashContext; manifest enriched fields; contract verifier updated |
+| Dependency | Proof on `origin/main` |
+|------------|------------------------|
+| Agent B | `RuntimeTrace.cs`, `CrashContextWriter.cs`; `[TBG TRACE]` in StatusFlush path — **DONE** |
+| Agent C | `Save-CheckpointEvidence` copies CrashContext; manifest enriched fields; contract verifier — **DONE** |
 
 Agent D atlas/matrix docs are **informational** — not blocking cert.
 

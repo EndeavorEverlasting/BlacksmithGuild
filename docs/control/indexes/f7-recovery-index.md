@@ -1,7 +1,7 @@
 # F7 recovery index
 
-**Branch:** `fix/f7-gate-stability` @ `d5c7bbf`  
-**Gate:** **PIVOT** — old F7 product gate closed; forward = Town-to-Town Trade Assist  
+**Branch:** **`main`** @ `3384c7d`  
+**Gate:** **GREEN (assist)** — Town-to-Town Trade Assist product gate satisfied (advisory path)  
 **Authority (living):** [`docs/handoff/f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
 **Failure map:** [`f7-failure-atlas.md`](f7-failure-atlas.md) · **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
 **Forward cert:** [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md)  
@@ -13,8 +13,9 @@
 
 | PR | Branch | Base | State | Posture |
 |----|--------|------|-------|---------|
-| [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) | `fix/f7-gate-stability` | `main` | OPEN | HOLD — old F7 PASS not sprint medal |
-| [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | `codex/stabilize-f7-launch-tooling-and-open-pr` | `fix/f7-gate-stability` | OPEN | HOLD — stub runner rejected |
+| [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) | `fix/f7-gate-stability` | `main` | **MERGED** | F7 infra + assist foundation |
+| [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) | `test/assistive-inbox-sequence-regression` | `main` | **MERGED** | Inbox sequence regression |
+| [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | `codex/stabilize-f7-launch-tooling-and-open-pr` | `fix/f7-gate-stability` | OPEN | **HOLD** — stub runner rejected |
 
 ---
 
@@ -32,10 +33,10 @@
 
 | Control pointer | Canonical handoff | Owner | Blocker |
 |-----------------|-------------------|-------|---------|
-| [town-to-town-trade-assist-cert.md](../logs/open/town-to-town-trade-assist-cert.md) | (this spec) | A/B/C | B probe + inbox poll |
+| [town-to-town-trade-assist-cert.md](../logs/open/town-to-town-trade-assist-cert.md) | (this spec) | B | **execute** path not yet certified |
 | [f7-recovery-sprint.md](../plans/open/f7-recovery-sprint.md) | [f7-recovery-sprint-handoff.md](../../handoff/f7-recovery-sprint-handoff.md) | A/B/C | **Old F7 closed** — infra only |
 | [pr8-runner-salvage.md](../plans/open/pr8-runner-salvage.md) | [pr8-cherry-pick-bridge.md](../../handoff/pr8-cherry-pick-bridge.md) | A/C | PR #8 HOLD |
-| [agent-launch-playbook.md](../plans/open/agent-launch-playbook.md) | [agent-launch-and-load-playbook.md](../../handoff/agent-launch-and-load-playbook.md) | B/C | Assist cert pending |
+| [agent-launch-playbook.md](../plans/open/agent-launch-playbook.md) | [agent-launch-and-load-playbook.md](../../handoff/agent-launch-and-load-playbook.md) | B/C | Assist PASS landed |
 
 ### Open work items
 
@@ -44,20 +45,25 @@
 | Old F7 Continue product gate | **CLOSED** | `205925` informative FAIL |
 | F7 infra (45s launcher, 15s semantic fail) | **DONE** @ `9bdc759` | Agent C |
 | Runtime settlement_menu surface | **DONE** @ `e891b33` | Agent B |
-| `canPollFileInbox` @ settlement_menu | **OPEN** | **B** |
-| `AssistiveTownToTownProbe` | **OPEN** | **B** |
-| Town-to-Town assist live cert | **BLOCKED** | **A** after B+C |
-| Docs pivot | **DONE** | Agent D |
+| `canPollFileInbox` @ settlement_menu | **DONE** @ `e4c261d` | Agent B |
+| `AssistiveTownToTownProbe` | **DONE** @ `e4c261d` | Agent B |
+| Town-to-Town assist live cert | **PASS** | `004036` + `020821` |
+| Inbox sequence regression | **MERGED** @ PR #10 | `test-forge-command-sequence-after-prior-ack.ps1` |
+| Travel/trade execute path | **OPEN** | **Agent B** — next product lane |
+| Docs pivot + post-merge atlas | **DONE** | Agent D |
 
 ---
 
-## Successful plans (F7 lane)
+## Successful plans (assist lane)
 
-**None.** Zero `passFail: PASS` manifests in `docs/evidence/live-cert/`.
+| Item | Session | Notes |
+|------|---------|-------|
+| Town-to-Town Trade Assist (setup) | `20260624-004036` | [`manifest`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) |
+| Town-to-Town Trade Assist (attach-only) | `20260624-020821` | [`manifest`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) — `launchUsed=false` |
 
 ---
 
-## Open logs
+## Open logs (F7 infra — historical)
 
 | Control pointer | Session | passFail | Notes |
 |-----------------|---------|----------|-------|
@@ -73,23 +79,18 @@ See [`f7-failure-atlas.md`](f7-failure-atlas.md) for full session table.
 ## Raw evidence paths (unmoved)
 
 ```
-docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json  ← latest; old F7 closed
+docs/evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json  ← product PASS (attach-only)
+docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json  ← product PASS (setup)
+docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json             ← closed F7 infra
 docs/evidence/live-cert/20260622-154012/checkpoint-01-f7-gate/manifest.json
 docs/evidence/live-cert/20260622-135217/checkpoint-01-f7-gate/manifest.json
 ```
-
-**PASS manifests:** none.
 
 ---
 
 ## Next required action
 
-**Parallel:** Agent B — `canPollFileInbox` + `AssistiveTownToTownProbe`. Agent C — attach runner polish.  
-**Serial:** Agent A — Town-to-Town assist cert after B+C land.
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1
-```
+**Agent B** — travel/trade **execute** path on new feature branch from `main`.
 
 Optional infra validation (not product medal):
 

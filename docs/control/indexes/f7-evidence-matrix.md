@@ -1,6 +1,6 @@
 # F7 evidence matrix
 
-**Branch:** `fix/f7-gate-stability` @ `d5c7bbf`  
+**Branch:** **`main`** @ `3384c7d`  
 **Normative spec:** [`f7-evidence-requirements.md`](f7-evidence-requirements.md)  
 **Failure map:** [`f7-failure-atlas.md`](f7-failure-atlas.md)  
 **Forward cert:** [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md)  
@@ -10,7 +10,38 @@
 
 ---
 
-## Artifact completeness by session
+## Assist product PASS sessions
+
+| Artifact / field | `020821` | `004036` |
+|------------------|----------|----------|
+| `manifest.json` | yes | yes |
+| `mode` | `assistive_attach` | `assistive` |
+| `launchUsed` | **false** | n/a (setup path) |
+| `launchPath` | `existing_session` | setup via launcher |
+| `passFail` | **PASS** | **PASS** |
+| `canPollFileInbox` | **true** | **true** |
+| `inGameAssistReady` | **true** | **true** |
+| `tradeExecution` | `advisory_only` | `advisory_only` |
+| `travelCommandMode` | `advisory_only` | `advisory_only` |
+| `fakeGameplayDelta` | **false** | **false** |
+| `probeAck` | Success | Success |
+| `evidenceCompleteness` | `partial` | `sufficient` |
+| `Phase1.tail.txt` | yes | yes |
+| `Launch.tail.txt` | **no** (attach-only) | yes |
+| `BlacksmithGuild_TownToTownTradeProbe.json` | yes | yes |
+
+### Regression FAIL sessions (not committed — coordination log only)
+
+| Field | `020430` | `020644` |
+|-------|----------|----------|
+| `passFail` | FAIL | FAIL |
+| `failureClass` | `assistive_probe_failed` | `assistive_probe_failed` |
+| Cause | stale inbox seq=1 after consumed seq=2 | same |
+| Fix | PR #10 + `Get-LastConsumedForgeInboxSequence` | same |
+
+---
+
+## F7 infra artifact completeness by session
 
 | Artifact / field | `205925` | `154012` | `135217` | `131237` | `101016` | `095957` | `030915` | `095326` |
 |------------------|----------|----------|----------|----------|----------|----------|----------|----------|
@@ -36,7 +67,7 @@
 
 ---
 
-## Play / Continue evidence
+## Play / Continue evidence (F7 infra)
 
 | Field | `205925` | `154012` | `135217` | `131237` | `101016` | `095957` | `030915` | `095326` |
 |-------|----------|----------|----------|----------|----------|----------|----------|----------|
@@ -50,11 +81,13 @@
 
 ## Completeness score (honest — not PASS)
 
-Counts **yes** out of 18 tracked rows (excludes `095326`).
+Counts **yes** out of 18 tracked F7 infra rows (excludes `095326` and assist PASS sessions).
 
 | Session | Score | Verdict |
 |---------|-------|---------|
-| `205925` | **14/18** | informative FAIL — old F7 closed; partial harvest; Status via manifest only |
+| `020821` | **assist PASS** | attach-only; `launchUsed=false`; `evidenceCompleteness=partial` |
+| `004036` | **assist PASS** | setup path; `evidenceCompleteness=sufficient` |
+| `205925` | **14/18** | informative FAIL — old F7 closed; partial harvest |
 | `154012` | **12/18** | honest FAIL; harvest **sufficient** |
 | `135217` | **6/18** | `instrumentation_insufficient` |
 | `131237` | **7/18** | `contaminated_cert` |
@@ -71,7 +104,7 @@ Counts **yes** out of 18 tracked rows (excludes `095326`).
 |---------|-----|
 | `20260622-135217` | Coarse `StatusFlush begin` only; no TRACE; Phase1 tail 24 lines |
 
-**Not** `154012` or `205925` — trace markers present.
+**Not** `154012`, `205925`, or assist PASS sessions — trace markers or probe ack present.
 
 ---
 
@@ -82,7 +115,7 @@ Counts **yes** out of 18 tracked rows (excludes `095326`).
 | **Manifest** | `passFail=FAIL`, `campaignReady=true`, `canPollFileInbox=false`, `gameProcessRunning=true` |
 | **Status (harvested, not in git)** | `readinessSurface=settlement_menu`, Quyaz — per manifest `artifactMeta` |
 | **Golden path** | `firstMissingStep=MainMenu -> MapTransition` |
-| **Conclusion** | Old F7 gate semantics fail; product pivot to assist cert |
+| **Conclusion** | Old F7 gate semantics fail; product pivot to assist cert (**now PASS** @ `004036`/`020821`) |
 
 ---
 
@@ -91,4 +124,3 @@ Counts **yes** out of 18 tracked rows (excludes `095326`).
 - [`f7-failure-atlas.md`](f7-failure-atlas.md) — session table + diagnosis
 - [`f7-recovery-index.md`](f7-recovery-index.md) — PR status + next cert action
 - [`session-20260623-205925.md`](../logs/open/session-20260623-205925.md)
-
