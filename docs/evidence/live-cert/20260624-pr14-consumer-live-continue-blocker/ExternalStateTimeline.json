@@ -1,0 +1,53 @@
+﻿{
+    "schemaVersion":  1,
+    "mode":  "assistive_launch_setup",
+    "sessionId":  null,
+    "startedAtUtc":  "2026-06-24T17:17:39.0988315Z",
+    "events":  [
+                   {
+                       "timestampUtc":  "2026-06-24T17:17:40.5410351Z",
+                       "mode":  "assistive_launch_setup",
+                       "classifiedState":  "LauncherMenu",
+                       "confidence":  "low",
+                       "processName":  null,
+                       "processId":  null,
+                       "hwnd":  920884,
+                       "windowTitle":  "M\u0026B II: Bannerlord",
+                       "windowBounds":  null,
+                       "windowBoundsReason":  "foreground_helper_no_rect",
+                       "foregroundWindowMatch":  false,
+                       "evidenceSources":  [
+                                               "process",
+                                               "window"
+                                           ],
+                       "runtimeEvidenceStates":  [
+
+                                                 ],
+                       "legalActions":  [
+                                            "observe",
+                                            "poll_status",
+                                            "click_launcher_continue",
+                                            "click_launcher_play"
+                                        ],
+                       "forbiddenActions":  [
+                                                "claim_f7_pass",
+                                                "mutate_inventory"
+                                            ],
+                       "expectedTransitions":  [
+                                                   "HostedSingleplayerWindow",
+                                                   "StandaloneGameProcess",
+                                                   "SafeModeDialog"
+                                               ],
+                       "routeAgent":  "Agent C - External State Classifier / F7 Runner",
+                       "reason":  "launcher-auto-nav entry classification",
+                       "manualLaunchObserved":  false,
+                       "assistiveAttach":  false,
+                       "certTarget":  "any",
+                       "launchPath":  "unknown",
+                       "targetMismatch":  false,
+                       "launchState":  "nav_poll",
+                       "settlement_menu_ready_observed":  false,
+                       "oldGoldenPathSatisfied":  null
+                   }
+               ]
+}

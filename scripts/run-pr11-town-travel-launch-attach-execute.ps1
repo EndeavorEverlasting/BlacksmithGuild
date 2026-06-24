@@ -205,9 +205,17 @@ if (-not $SkipLaunch) {
         $launchRequestedUtc = (Get-Date).ToUniversalTime()
         $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
         $timelinePath = Join-Path $checkpointDir 'ExternalStateTimeline.json'
-        & $navScript -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
-            -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
-        $navExit = $LASTEXITCODE
+        $navExit = 0
+        $navError = $null
+        try {
+            & $navScript -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
+                -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
+            $navExit = $LASTEXITCODE
+        } catch {
+            $navError = $_.Exception.Message
+            $navExit = 1
+            Write-CertLog "launcher-auto-nav exception: $navError"
+        }
         $s2 = Get-Pr11ProcessSnapshot -Label 'S2_after_launch_request' -BannerlordRoot $bannerlordRoot
         Save-Pr11ProcessSnapshot -Snapshot $s2 -OutputPath (Join-Path $checkpointDir 'process-snapshot-S2.json') | Out-Null
         $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $s1 -AfterSnapshot $s2
@@ -215,12 +223,19 @@ if (-not $SkipLaunch) {
 
         if ($navExit -ne 0) {
             $failureClass = 'runner_window_identification_failed'
-            $windowClassifierResult = 'launcher_nav_failed'
+            if ($navError -match 'launcher_timing_timeout|CONTINUE.*NOT verified|continue_not_found') {
+                $failureClass = 'continue_not_found'
+            } elseif ($navError -match 'already running') {
+                $failureClass = 'launcher_failed'
+            }
+            $windowClassifierResult = if ($failureClass -eq 'continue_not_found') { 'continue_not_verified' } else { 'launcher_nav_failed' }
+            Copy-LifecycleEvidence
             Complete-CycleResult @{
                 passFail = 'FAIL'; failureClass = $failureClass; routeAgent = $routeAgent; exitCode = 2
                 windowClassifierResult = $windowClassifierResult; attachResult = 'launch_failed'; certAttempted = $false
+                navError = $navError
             } | Out-Null
-            Write-CertLog "FAIL launcher-auto-nav exit=$navExit"
+            Write-CertLog "FAIL launcher-auto-nav exit=$navExit failureClass=$failureClass"
             exit 2
         }
     } else {

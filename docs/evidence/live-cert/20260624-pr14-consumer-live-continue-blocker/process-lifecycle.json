@@ -1,0 +1,64 @@
+﻿{
+    "schemaVersion":  1,
+    "runId":  "20260624-131721-pr11",
+    "branch":  "fix/pr11-unattended-execute-cert-runner",
+    "productBranch":  "",
+    "operation":  "pr11_launch_attach_execute",
+    "actor":  "script",
+    "sessionAuthorityMode":  "FreshTestLaunch",
+    "startedAtUtc":  "2026-06-24T17:17:22.0362211Z",
+    "preExistingProcesses":  [
+                                 {
+                                     "pid":  34452,
+                                     "processName":  "TaleWorlds.MountAndBlade.Launcher",
+                                     "parentPid":  20620,
+                                     "startTime":  "2026-06-24T17:14:53.3809099Z",
+                                     "mainWindowHandle":  4656396,
+                                     "mainWindowTitle":  "M\u0026B II: Bannerlord",
+                                     "executablePath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe",
+                                     "commandLine":  "\"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe\" "
+                                 },
+                                 {
+                                     "pid":  36448,
+                                     "processName":  "Watchdog",
+                                     "parentPid":  34452,
+                                     "startTime":  "2026-06-24T17:14:53.5268304Z",
+                                     "mainWindowHandle":  0,
+                                     "mainWindowTitle":  "",
+                                     "executablePath":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\bin\\Win64_Shipping_Client\\Watchdog\\Watchdog.exe",
+                                     "commandLine":  "\"Watchdog\\Watchdog.exe\"  -p 34452 -dd \"C:\\ProgramData\\Mount and Blade II Bannerlord\\crashes\" -dl \"C:\\ProgramData\\Mount and Blade II Bannerlord\\logs\" -dir-cdb-sos \"..\\..\\..\\WOTS\\Modules\\Test\" --sync-event-name \"Global\\8DBAEBA5-40DB-4E8A-A997-E440DE7D7717\" -pu  --net6-plus "
+                                 }
+                             ],
+    "intentionalTerminations":  [
+                                    {
+                                        "pid":  34452,
+                                        "processName":  "TaleWorlds.MountAndBlade.Launcher",
+                                        "reason":  "pr11_runner_fresh_launch",
+                                        "requestedAtUtc":  "2026-06-24T17:17:30.2478558Z",
+                                        "method":  "CloseMainWindow",
+                                        "forceKilled":  false,
+                                        "observedExitAtUtc":  "2026-06-24T17:17:30.5168705Z"
+                                    }
+                                ],
+    "launchRequest":  {
+                          "requestedAtUtc":  "2026-06-24T17:17:37.8787115Z",
+                          "launchIntent":  "continue",
+                          "requestedBy":  "script",
+                          "launcherPath":  "",
+                          "steamUri":  null
+                      },
+    "launchSelection":  null,
+    "ownedProcessIds":  [
+
+                        ],
+    "termination":  {
+                        "observed":  true,
+                        "classification":  "intentional_forge_stop",
+                        "observedAtUtc":  "2026-06-24T17:18:44.1670172Z",
+                        "routeAgent":  "Agent C - External State Classifier / Assistive Runner",
+                        "evidenceSignals":  [
+                                                "intentional_termination_recorded",
+                                                "fresh_test_launch"
+                                            ]
+                    }
+}
