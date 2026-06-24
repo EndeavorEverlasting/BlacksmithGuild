@@ -1,0 +1,52 @@
+{
+  "updatedAt": "2026-06-24T03:25:44.8632866-04:00",
+  "commandAccepted": true,
+  "executeRequested": true,
+  "executeAllowed": true,
+  "travelCommandMode": "execute",
+  "fallbackReason": null,
+  "currentSettlement": "Quyaz",
+  "currentSettlementId": "town_A1",
+  "currentSettlementName": "Quyaz",
+  "targetSettlement": "Ortysia",
+  "targetSettlementId": "town_EW4",
+  "targetSettlementName": "Ortysia",
+  "routeTargetSettlement": "Ortysia",
+  "routeTargetSettlementId": "town_EW4",
+  "leaveTownAttempted": true,
+  "leaveTownSucceeded": true,
+  "mapTravelAttempted": true,
+  "travelApiCallSucceeded": true,
+  "movementIntentSet": true,
+  "actualExecutionObserved": true,
+  "movementObservationStartedAtUtc": "2026-06-24T07:25:44.8585620Z",
+  "movementObservationEndedAtUtc": "2026-06-24T07:25:44.8595629Z",
+  "movementObservationMs": 1,
+  "movementObservationAttempts": 1,
+  "movementObservationPassed": true,
+  "movementObservationFailureReason": null,
+  "fakeGameplayDelta": false,
+  "certSummary": {
+    "executeRequested": true,
+    "executeAllowed": true,
+    "travelCommandMode": "execute",
+    "passCandidate": true,
+    "blockingReason": null,
+    "routeOwner": "AgentA",
+    "nextRouteOnFail": null
+  },
+  "steps": [
+    {
+      "name": "LeaveTown",
+      "method": "VanillaMenuOption",
+      "status": "Success",
+      "detail": "town_leave"
+    },
+    {
+      "name": "MovementObservation",
+      "method": "Poll",
+      "status": "Observed",
+      "detail": "attempt=1 hasRoute=true routeTargetId=town_EW4 routeMatches=true"
+    }
+  ]
+}
