@@ -384,12 +384,14 @@ function Get-BannerlordProcessCandidates {
         if (-not $Proc -or $seenPids.ContainsKey($Proc.Id)) { return }
         $seenPids[$Proc.Id] = $true
         $exePath = Get-ProcessExecutablePathSafe -Process $Proc
+        $windowTitle = ''
+        try { $windowTitle = [string]$Proc.MainWindowTitle } catch { }
         [void]$candidates.Add([PSCustomObject]@{
             pid = [int]$Proc.Id
             name = [string]$Proc.ProcessName
             path = $exePath
             method = [string]$Method
-            windowTitle = [string]$Proc.MainWindowTitle
+            windowTitle = $windowTitle
             isLauncherHosted = [bool]$IsLauncherHosted
         })
     }

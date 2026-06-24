@@ -1,8 +1,8 @@
 # F7 Next Cert Readiness Matrix
 
 **Author:** Agent A — Cert / Evidence / Git / PR  
-**Branch:** `fix/f7-gate-stability` @ `e891b33`  
-**Gate:** RED — runner tooling exception @ `204227`; **B post-unblock fix validated** (past seq=8115)  
+**Branch:** `fix/f7-gate-stability`  
+**Gate:** RED — MapTransition timeout @ `205925` (game alive, settlement_menu); poll tooling fixed  
 **PR #7:** **HOLD**
 
 ---
@@ -181,7 +181,8 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | **Runtime survival past update_readiness** | `cc6fbac` | B | **SUPERSEDED** — grace OK; death @ `200917` seq=8115 (fixed @ `e891b33`) |
 | **Post-unblock fail-soft + surface telemetry** | `e891b33` | B | **VALIDATED** @ `204227` — past seq=8115; `settlement_menu_open` defer; surface fields present |
 | **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** (202052, 195817, 200917) |
-| **Runner poll tooling exception** | TBD | A/C | **OPEN** — `204227` `Access is denied` @ ~121s poll; `evidenceCompleteness=partial` |
+| **Runner poll tooling exception** | A/C fixes | A/C | **FIXED** @ poll hardening — `205925` full 361s poll |
+| **MapTransition timeout at settlement_menu** | TBD | B / product | **OPEN** @ `205925` — `canPollFileInbox=false`, golden path mismatch |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
@@ -249,4 +250,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 | `202052` | `319588f` | `docs/evidence/live-cert/20260622-202052/` — B validated; C false fail @ 61s |
 | `195817` | `b19dcb3` | Death seq=8063 immediate post-`StabilizationEnd` |
 | `200917` | cert commit | Death seq=8115 after `HeavyFlushUnblocked` — grace lifecycle validated |
-| `204227` | pending | B fix validated (seq=18766+); runner tooling exception; `readinessSurface=settlement_menu` |
+| `204227` | fd2a190 | B validated; poll abort Access denied (fixed in later commits) |
+| `205925` | pending | Full poll; MapTransition timeout; settlement_menu; ExternalStateTimeline present |

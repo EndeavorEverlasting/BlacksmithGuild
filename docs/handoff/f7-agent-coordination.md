@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `46d353f` |
+| Branch / HEAD | pending push |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **IN CERT** — Agent A re-cert post-C classifier @ `89e7158` |
-| Last F7 evidence | `20260623-204227` @ `fd2a190` |
-| Next live cert | **IN PROGRESS** — Agent A automation lock |
+| Gate verdict | **RED** — poll completes; MapTransition timeout @ `205925` (game alive, settlement_menu) |
+| Last F7 evidence | `20260623-205925` |
+| Next live cert | **BLOCKED** — `canPollFileInbox=false`; golden path `MainMenu->MapTransition` |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -42,9 +42,9 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IN_PROGRESS` | Live F7 re-cert post-C `@ 89e7158` | automation lock | `46d353f` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fix **validated** @ `204227` seq=18766+ | — | `e891b33` |
-| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Cert vs assistive attach classifier foundation | — | `89e7158` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `205925` FAIL MapTransition timeout; tooling fixes landed | — | pending |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock validated; next: `canPollFileInbox` @ settlement_menu | — | `e891b33` |
+| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Classifier @ `89e7158`; A landed poll hardening | — | `89e7158` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -73,13 +73,23 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | Agent A | live F7 re-cert | `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` |
+| `automation` | — | — | — |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-23 — Agent A → B, C (cert `205925` + tooling fixes post-`89e7158`)
+
+- **Tooling fixes:** `-PreflightClean $true`; fail-soft `MainWindowTitle` in process candidates; poll timeline try/catch.
+- **`205335`:** PreflightClean param bug (pre-fix). **`205415`:** Access denied @ ~91s (pre MainWindowTitle fix).
+- **`205925`:** Full poll **361s** exit **2**; manifest + `ExternalStateTimeline.json`; no Access denied.
+- **Launcher PASS:** continue automation, Safe Mode No, game alive entire poll.
+- **B VALIDATED:** `settlement_menu` Quyaz, `update_readiness stage=ok`, no 8115 death class.
+- **Gate FAIL:** MapTransition timeout; `canPollFileInbox=false`; golden path `MainMenu->MapTransition`.
+- **Route B:** Continue-in-town session ready vs cert gate semantics.
 
 ### 2026-06-24 — Agent C → A, B, D (external state classifier foundation)
 

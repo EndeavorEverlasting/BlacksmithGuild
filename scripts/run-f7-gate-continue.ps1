@@ -833,7 +833,11 @@ function Save-CheckpointEvidence {
 
     New-Item -ItemType Directory -Force -Path $checkpointDir | Out-Null
 
-    Save-F7ExternalStateTimeline | Out-Null
+    try {
+        Save-F7ExternalStateTimeline | Out-Null
+    } catch {
+        Write-Host "F7 WARN: ExternalStateTimeline save failed - $($_.Exception.Message)" -ForegroundColor Yellow
+    }
 
     Resolve-F7LaunchPath -SinceLocal $SinceLocal
     $contamination = Get-F7LaunchContamination -SinceLocal $SinceLocal
@@ -1304,7 +1308,7 @@ try {
         Exit-F7Gate -Code 1 -CheckpointDir $dir
     }
 
-    Write-F7ExternalStateFromGate -PreflightClean -ReasonOverride 'Preflight clean before cert launch.'
+    Write-F7ExternalStateFromGate -PreflightClean $true -ReasonOverride 'Preflight clean before cert launch.'
 
     Write-Host 'Building Release...' -ForegroundColor Cyan
     dotnet build (Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj') -c Release
@@ -1384,14 +1388,18 @@ try {
             Write-F7PollHeartbeat -ElapsedSec $elapsedSec -Signals $lastSignals -EverMapReady $everMapReady `
                 -LaunchState $script:LaunchAutomation.launchState
             $lastHeartbeatSec = $heartbeatSec
-            $null = Add-F7ExternalStateTimelineEventThrottled -BannerlordRoot $bannerlordRoot -Mode cert `
-                -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
-                -CertStartedUtc $certStartedUtc -CertTarget $CertTarget `
-                -LaunchPath $script:LaunchAutomation.launchPath `
-                -LaunchSelectedBy $script:LaunchAutomation.launchSelectedBy `
-                -TargetMismatch ([bool]$script:LaunchAutomation.targetMismatch) `
-                -LaunchState $script:LaunchAutomation.launchState `
-                -ReasonOverride 'Readiness poll heartbeat classification.'
+            try {
+                $null = Add-F7ExternalStateTimelineEventThrottled -BannerlordRoot $bannerlordRoot -Mode cert `
+                    -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
+                    -CertStartedUtc $certStartedUtc -CertTarget $CertTarget `
+                    -LaunchPath $script:LaunchAutomation.launchPath `
+                    -LaunchSelectedBy $script:LaunchAutomation.launchSelectedBy `
+                    -TargetMismatch ([bool]$script:LaunchAutomation.targetMismatch) `
+                    -LaunchState $script:LaunchAutomation.launchState `
+                    -ReasonOverride 'Readiness poll heartbeat classification.'
+            } catch {
+                Write-Host "F7 WARN: timeline heartbeat failed - $($_.Exception.Message)" -ForegroundColor Yellow
+            }
         }
 
         if ($gameEverSeen) {
