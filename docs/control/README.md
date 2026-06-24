@@ -1,7 +1,8 @@
 # Sprint control (living pointer)
 
-**Branch:** **`main`** @ `3384c7d` — PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) **MERGED** · PR [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) **MERGED**  
-**Product medal:** [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) — PASS @ `20260624-004036` (setup) + `20260624-020821` (attach-only)  
+**Branch:** **`main`** @ `09f039f` — PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) **MERGED** · PR [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) **MERGED** · PR [#11](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/11) **MERGED**  
+**Product medals:** [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) — advisory @ `004036`/`020821` · travel execute @ `032408`  
+**Execute readiness (merged):** [`logs/open/pr11-town-travel-execute-readiness.md`](logs/open/pr11-town-travel-execute-readiness.md)  
 **Attach doctrine:** [`logs/open/assistive-current-session-attach.md`](logs/open/assistive-current-session-attach.md)  
 **Mental model:** [`f7-agent-mental-model.mmd`](../handoff/f7-agent-mental-model.mmd)  
 **Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
@@ -16,9 +17,9 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Path | Purpose |
 |------|---------|
 | [`plans/open/`](plans/open/) | Active / blocked plans → canonical `docs/handoff/` |
-| [`plans/successful/`](plans/successful/) | Proven complete — assist PASS @ `004036` + `020821` |
+| [`plans/successful/`](plans/successful/) | Proven complete — assist + travel execute PASS |
 | [`logs/open/`](logs/open/) | Session pointers → `docs/evidence/live-cert/` |
-| [`logs/successful/`](logs/successful/) | PASS manifests — assist lane has product PASS |
+| [`logs/successful/`](logs/successful/) | PASS manifests — assist + execute lanes |
 | [`indexes/`](indexes/) | Master indexes + failure atlas + evidence matrix |
 
 **Rule:** No manifest, no medal. Ambiguous → open.
@@ -28,11 +29,20 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Phase | Owner | Status |
 |-------|-------|--------|
 | Town-to-Town Trade Assist (advisory) | Agent A | **PASS** @ `004036` + `020821` |
-| Assist inbox + probe runtime | Agent B | **DONE** @ `e4c261d` |
-| Attach-only runner + inbox regression | Agent C | **DONE** @ PR #10 |
-| Atlas sync (post-merge) | Agent D | **DONE** |
-| Travel/trade **execute** path | Agent B | **NEXT** — new feature branch from `main` |
+| Travel execute path (PR #11) | Agent B + A | **MERGED** @ `09f039f` · PASS @ `032408` |
+| Runtime gameplay state machine | Agent B | **NEXT** / **STACKED** @ `69263a9` — rebase onto `09f039f` |
+| Unattended execute cert runner | Agent C | **NEXT** / **STACKED** @ `70e5404` — rebase onto `09f039f` |
+| Atlas sync (post-PR #11) | Agent D | **DONE** |
 | PR #8 bisect tooling | User + A | **HOLD** — explicit user auth required |
+
+## Branch cleanup (documented)
+
+| Branch | Posture |
+|--------|---------|
+| `feat/town-to-town-execute-path` | **MERGED** (PR #11) — safe to delete after user confirms |
+| `docs/post-pr10-atlas-sync` | Superseded by post-PR #11 sync |
+| `feat/006c-4-sell-loop`, `feat/006c-4b-second-leg-travel` | Stale — rebase only if revived |
+| PR #8 | **HOLD** — do not merge without user authorization |
 
 ## Commands (preflight)
 
@@ -45,11 +55,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patt
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 ```
 
-## Product cert (attach-only — preferred)
+## Product cert (attach-only — preferred for advisory probe)
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1 -AttachOnly
 ```
+
+Travel **execute** cert uses Agent C runner on `fix/pr11-unattended-execute-cert-runner` (separate branch until merged).
 
 ## F7 infra regression only (optional — not product medal)
 
@@ -63,15 +75,16 @@ Expect ~15s `fail_settlement_menu_semantic_mismatch` post-`9bdc759` — not 361s
 
 | Doc | Role |
 |-----|------|
+| [`logs/open/pr11-town-travel-execute-readiness.md`](logs/open/pr11-town-travel-execute-readiness.md) | PR #11 merge packet (historical + gaps) |
 | [`logs/open/assistive-current-session-attach.md`](logs/open/assistive-current-session-attach.md) | No-relaunch attach doctrine |
 | [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) | Product PASS spec |
 | [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) | Session failure map |
 | [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md) | Per-session artifact completeness |
-| [`logs/open/session-20260623-205925.md`](logs/open/session-20260623-205925.md) | Closed F7 baseline |
 | [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md) | Living agent board |
 
 ## Latest evidence
 
-**Product PASS (attach-only):** `docs/evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json`  
-**Product PASS (setup):** `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json`  
+**Travel execute PASS (launch-assisted):** `docs/evidence/live-cert/20260624-032408/checkpoint-01-assistive-travel-execute/manifest.json`  
+**Advisory attach PASS:** `docs/evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json`  
+**Advisory setup PASS:** `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json`  
 **Closed F7 infra:** `docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json`

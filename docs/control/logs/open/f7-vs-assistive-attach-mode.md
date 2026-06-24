@@ -1,7 +1,7 @@
 # F7 Cert Mode vs Assistive Attach Mode
 
 **Owner:** Agent C — External State Classifier / Window Safety / F7 Runner  
-**Branch:** **`main`** @ `3384c7d`
+**Branch:** **`main`** @ `09f039f`
 
 ---
 

@@ -1,8 +1,8 @@
 # Assistive current-session attach doctrine
 
 **Owner:** Agent D — Docs / Atlas / Integration  
-**Branch:** **`main`** @ `3384c7d`  
-**Related:** [`f7-vs-assistive-attach-mode.md`](f7-vs-assistive-attach-mode.md) · [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)
+**Branch:** **`main`** @ `09f039f`  
+**Related:** [`f7-vs-assistive-attach-mode.md`](f7-vs-assistive-attach-mode.md) · [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md) · [`pr11-town-travel-execute-readiness.md`](pr11-town-travel-execute-readiness.md)
 
 ---
 
@@ -69,6 +69,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-tra
 
 **Setup-path PASS (reference):** [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
 
+**Travel execute PASS (launch-assisted — PR #11):** [`20260624-032408`](../../evidence/live-cert/20260624-032408/checkpoint-01-assistive-travel-execute/manifest.json) — `travelCommandMode=execute`, `launchUsed=true`.
+
+**Attach-only execute cert:** **not run** — optional Agent A follow-up when game already open at Quyaz.
+
 ---
 
 ## Inbox sequence regression (PR #10)
@@ -88,9 +92,9 @@ Honest FAILs before fix:
 
 | Defect | Owner |
 |--------|-------|
-| Attach-only runner / harvest / inbox sequence | **Agent C** (idle; PR #10 merged) |
-| Runtime command / probe / execute | **Agent B** |
-| Evidence commit | **Agent A** |
+| Attach-only runner / harvest / inbox sequence | **Agent C** @ `70e5404` (runner branch) |
+| Runtime state machine / trade execute | **Agent B** @ `69263a9` |
+| Evidence commit / optional attach-only execute | **Agent A** |
 | Doc drift | **Agent D** |
 
 ---

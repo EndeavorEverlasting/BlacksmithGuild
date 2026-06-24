@@ -3,8 +3,8 @@
 %% Doctrine: No manifest, no medal. Build PASS is not game PASS.
 
 flowchart TD
-    Start([main post-PR7 PR10<br/>3384c7d product baseline])
-    AssistPass[[Assist PASS landed<br/>004036 setup + 020821 attach-only]]
+    Start([main post-PR11<br/>09f039f product baseline])
+    ExecutePass[[Travel execute PASS<br/>032408 launch-assisted]]
 
     subgraph Agents[Agent letters and role aliases]
         A["Agent A<br/>Cert and evidence lane<br/>Aliases: Cert, Evidence, Git, PR"]
@@ -13,16 +13,17 @@ flowchart TD
         D["Agent D<br/>Atlas and coordination lane<br/>Aliases: Docs, Atlas, Integration"]
     end
 
-    subgraph Parallel[Parallel work that is allowed]
-        Aprep["A idle until B execute lands<br/>then cert evidence + PR"]
-        Bwork["B travel trade execute path<br/>new feature branch from main"]
-        Cwork["C idle<br/>return on runner attach harvest defects"]
-        Dwork["D atlas sync DONE<br/>coordination board current"]
+    subgraph Parallel[Parallel stacked work]
+        Aprep["A idle<br/>optional attach-only execute cert"]
+        Bwork["B state machine<br/>69263a9 rebase 09f039f"]
+        Cwork["C execute runner<br/>70e5404 rebase 09f039f"]
+        Dwork["D atlas sync DONE"]
     end
 
     subgraph Evidence[Current evidence pattern]
-        E020821["20260624-020821<br/>attach-only PASS<br/>launchUsed=false<br/>mode=assistive_attach"]
-        E004036["20260624-004036<br/>setup path PASS<br/>advisory_only"]
+        E032408["20260624-032408<br/>travel execute PASS<br/>travelCommandMode=execute"]
+        E020821["20260624-020821<br/>advisory attach PASS<br/>launchUsed=false"]
+        E004036["20260624-004036<br/>advisory setup PASS"]
         E205925["20260623-205925<br/>old F7 CLOSED<br/>infra smoke only"]
     end
 
@@ -35,21 +36,21 @@ flowchart TD
 
     subgraph Cert[Live cert gates]
         InfraOpt["Optional F7 infra validation<br/>~15s semantic FAIL<br/>not product medal"]
-        ExecuteCert["Execute path cert<br/>after B implements travel trade"]
+        ProductCert["Product cert<br/>advisory or execute"]
         Manifest["Manifest verdict only"]
-        Pass["PASS criteria per execute spec<br/>honest gameplay deltas"]
+        Pass["PASS criteria per spec<br/>honest gameplay evidence"]
         Fail["FAIL evidence committed<br/>route by manifest fields"]
     end
 
     subgraph Routing[Failure routing rules]
-        RouteB["Route B<br/>execute path<br/>runtime readiness"]
-        RouteC["Route C<br/>runner classifier<br/>launcher timing"]
+        RouteB["Route B<br/>state machine<br/>trade execute"]
+        RouteC["Route C<br/>runner classifier<br/>execute cert harness"]
         RouteA["Route A<br/>gameplay cert evidence<br/>PR gate"]
         RouteD["Route D<br/>docs drift<br/>atlas stale"]
     end
 
-    Start --> AssistPass
-    AssistPass --> Agents
+    Start --> ExecutePass
+    ExecutePass --> Agents
     Agents --> Parallel
     A --> Aprep
     B --> Bwork
@@ -57,24 +58,24 @@ flowchart TD
     D --> Dwork
 
     Evidence --> Bwork
+    Evidence --> Cwork
     Evidence --> Aprep
-    Evidence --> Dwork
 
-    E020821 --> AssistPass
-    E004036 --> AssistPass
+    E032408 --> ExecutePass
+    E020821 --> ProductCert
+    E004036 --> ProductCert
     E205925 --> InfraOpt
 
     Aprep --> PullLatest
     Bwork --> PullLatest
     Cwork --> PullLatest
-    Dwork --> PullLatest
     PullLatest --> Static
     Static --> CommitPush
     CommitPush --> Reconcile
-    Reconcile --> ExecuteCert
+    Reconcile --> ProductCert
     Reconcile --> InfraOpt
 
-    ExecuteCert --> Manifest
+    ProductCert --> Manifest
     InfraOpt --> Manifest
     Manifest --> Pass
     Manifest --> Fail
@@ -97,5 +98,5 @@ flowchart TD
 
     class A,B,C,D agent
     class Aprep,Bwork,Cwork,Dwork work
-    class E020821,E004036,E205925 evidence
-    class AssistPass,Manifest,Pass,Fail gate
+    class E032408,E020821,E004036,E205925 evidence
+    class ExecutePass,Manifest,Pass,Fail gate

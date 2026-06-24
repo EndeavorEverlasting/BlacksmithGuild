@@ -28,17 +28,18 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Product baseline | **`main`** @ `3384c7d` (PR #7 + PR #10 merge) |
-| Docs HEAD | `5878712` — post-PR #10 full atlas sync |
-| Active feature branch | *(none)* — `fix/f7-gate-stability` **merged** via PR #7; inactive |
-| Deleted branch | `test/assistive-inbox-sequence-regression` (merged PR #10; local + remote deleted) |
+| Product baseline | **`main`** @ `09f039f` (PR #11 travel execute merge) |
+| Docs HEAD | `045eb6b` — post-PR #11 atlas sync |
+| Active stacked branches | `feat/runtime-gameplay-state-machine` @ `69263a9` (**B**) · `fix/pr11-unattended-execute-cert-runner` @ `70e5404` (**C**) — rebase onto `09f039f` before PR |
+| Deleted / superseded | `feat/town-to-town-execute-path` (**merged** PR #11); `docs/post-pr10-atlas-sync` superseded |
 | PR #7 | **MERGED** — F7 gate stability + assist foundation |
-| PR #10 | **MERGED** — inbox sequence regression (`test-forge-command-sequence-after-prior-ack.ps1`) |
-| Gate verdict | **GREEN (assist attach)** — attach-only PASS @ `20260624-020821` (`launchUsed=false`) |
-| Last assist evidence | `20260624-020821` — attach-only manifest PASS |
-| Next product lane | **Agent B** — travel/trade **execute** path on new feature branch from `main` |
+| PR #10 | **MERGED** — inbox sequence regression |
+| PR #11 | **MERGED** — town-to-town travel execute path |
+| Gate verdict | **GREEN (assist + travel execute)** — launch-assisted execute PASS @ `20260624-032408` |
+| Last product evidence | `032408` travel execute (`travelCommandMode=execute`, `launchUsed=true`) · advisory attach @ `020821` |
+| Next product lanes | **Agent B** — runtime gameplay state machine · **Agent C** — unattended execute cert runner |
 | Old F7 | **CLOSED** — infrastructure/regression only |
-| Live cert | None pending unless user authorizes |
+| Live cert | None pending unless user authorizes (optional attach-only execute follow-up) |
 
 ---
 
@@ -52,7 +53,7 @@ Every agent **must**:
 | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) | DRAFT | Second-leg travel feature |
 | [#2](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/2) | OPEN | Identity schema docs |
 
-**Merged (reference):** [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) F7 gate stability · [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) inbox sequence regression.
+**Merged (reference):** [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) F7 gate stability · [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) inbox sequence regression · [#11](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/11) town travel execute path.
 
 ---
 
@@ -60,10 +61,10 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Cert/evidence/git/PR **after** product work lands; PR #7/#10 merge work **DONE** | — | `3384c7d` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Travel/trade **execute** path — new feature branch from `main` | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `IDLE` | Return only on attach/harvest/inbox/launcher/runner defect | — | `2df444b` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #10 full atlas sync (primary + secondary indexes) | — | `5878712` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Future cert/evidence/PR judgment; optional attach-only execute cert (`launchUsed=false`) | — | `09f039f` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` / **STACKED** | Runtime gameplay state machine — `feat/runtime-gameplay-state-machine` @ `69263a9`; **rebase onto `main` @ `09f039f` before PR** | — | `69263a9` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `NEXT` / **STACKED** | Unattended execute cert runner — `fix/pr11-unattended-execute-cert-runner` @ `70e5404`; **rebase onto `main` @ `09f039f` before PR** | — | `70e5404` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #11 atlas sync | — | `045eb6b` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -80,7 +81,7 @@ Every agent **must**:
 | `scripts/verify-log-grep-patterns.ps1` | **B** | Guard only; do not rewrite prose titles in `.cmd` echoes |
 | `docs/handoff/agent-launch-and-load-playbook.md` | **B** | Launch/F7 invocation doctrine |
 | `scripts/verify-f7-runner-contract.ps1` | **A** | Read-only gate contract; run before F7 cert |
-| `docs/evidence/live-cert/**`, git push, PR merge / evidence on `main` | **A** | Gate PASS only for merge; post-merge cert after B execute |
+| `docs/evidence/live-cert/**`, git push, PR merge / evidence on `main` | **A** | Gate PASS only; optional attach-only execute follow-up |
 | `docs/handoff/f7-agent-coordination.md` | **All** | Each edits only own board row + message log entries |
 
 **Removed (Agent C):** `scripts/minimize-ide-foreground.ps1` — do not recreate without coordination.
@@ -111,6 +112,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent D → A, B, C (post-PR #11 atlas sync @ `09f039f`)
+
+- **Merged:** PR #11 — town-to-town travel execute path on **`main`** @ `09f039f`.
+- **Product execute PASS:** `20260624-032408` — Quyaz → Ortysia; `travelCommandMode=execute`, `certSummaryPassCandidate=true`, `actualExecutionObserved=true`.
+- **Accepted gap:** `launchUsed=true` (launch-assisted cert); execute inbox ack timed out; execution JSON proved PASS. **Attach-only execute cert not run** — optional Agent A follow-up.
+- **Stacked branches (rebase before PR):** B `feat/runtime-gameplay-state-machine` @ `69263a9` · C `fix/pr11-unattended-execute-cert-runner` @ `70e5404`.
+- **Routing:** A **IDLE**; B **NEXT** state machine; C **NEXT** runner provenance; D **DONE**.
+- **PR #8:** **HOLD** — unrelated; do not merge without user authorization.
+- **Branch cleanup:** `feat/town-to-town-execute-path` merged — safe to delete after user confirms; `docs/post-pr10-atlas-sync` superseded; `feat/006c-4*` stale — rebase only if revived.
 
 ### 2026-06-24 — Agent D → A, B, C (full atlas sync @ `3384c7d`)
 

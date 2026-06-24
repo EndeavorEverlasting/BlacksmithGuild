@@ -1,9 +1,9 @@
 # F7 Next Cert Readiness Matrix
 
 **Author:** Agent A — Cert / Evidence / Git / PR (co-maintained with Agent D)  
-**Branch:** **`main`** @ `3384c7d`  
-**Gate:** **GREEN (assist)** — Town-to-Town Trade Assist product gate  
-**PR #7:** **MERGED** · **PR #10:** **MERGED** (inbox sequence regression)
+**Branch:** **`main`** @ `09f039f`  
+**Gate:** **GREEN (assist + travel execute)** — advisory + launch-assisted travel execute  
+**PR #7:** **MERGED** · **PR #10:** **MERGED** · **PR #11:** **MERGED** (travel execute)
 
 ---
 
@@ -12,11 +12,12 @@
 | Topic | Status |
 |-------|--------|
 | Old F7 Continue | **Infrastructure only** — not product gate |
-| Town-to-Town Trade Assist Cert | **Product gate** |
-| Attach-only PASS | [`20260624-020821`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) (`launchUsed=false`) |
-| Setup-path PASS | [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) |
-| Inbox sequence regression | **PR #10** — `test-forge-command-sequence-after-prior-ack.ps1` wired in runner contract |
-| Active branch | **`main`** — `fix/f7-gate-stability` merged; no longer active |
+| Town-to-Town Trade Assist Cert (advisory) | **PASS** @ `004036` + `020821` |
+| Travel execute path (PR #11) | **MERGED** / **PASS** @ `032408` |
+| Attach-only execute cert | **NOT RUN** — optional Agent A follow-up |
+| Inbox sequence regression | **PR #10 MERGED** |
+| Active branch | **`main`** @ `09f039f` |
+| Stacked work | B `69263a9` · C `70e5404` — rebase onto `09f039f` before PR |
 
 ---
 
@@ -42,9 +43,10 @@ Old F7 Continue is **closed as informative infrastructure**, not the product gat
 | Gate | Status |
 |------|--------|
 | Old F7 Continue PASS | **Not** product medal — infrastructure smoke only |
-| Town-to-Town Trade Assist PASS | **Product medal** @ `004036` (setup) + `020821` (attach-only) |
+| Town-to-Town Trade Assist (advisory) | **Product medal** @ `004036` + `020821` |
+| Travel execute (PR #11) | **Product medal** @ `032408` (`travelCommandMode=execute`) |
 
-**Next product lane:** **Agent B** — travel/trade **execute** path on new feature branch from `main`.
+**Next product lanes:** **Agent B** — runtime state machine @ `69263a9` · **Agent C** — execute cert runner @ `70e5404`.
 
 ---
 
@@ -76,7 +78,26 @@ Evidence: [`manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-
 
 Evidence: [`manifest.json`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json)
 
-**Regression coverage (PR #10):** `20260624-020430` and `20260624-020644` honest FAIL (`assistive_probe_failed`) — stale inbox sequence=1 after game consumed seq=2.
+**Regression coverage (PR #10):** `20260624-020430` and `20260624-020644` honest FAIL (`assistive_probe_failed`).
+
+### `20260624-032408` (travel execute — PR #11)
+
+| Criterion | Result |
+|-----------|--------|
+| `passFail` / `exitCode` | PASS / 0 |
+| `mode` | `assistive_launch_attach_execute` |
+| `launchUsed` | **true** (`launchPath=continue`) |
+| `travelCommandMode` | **execute** |
+| `executeRequested` / `executeAllowed` | **true** / **true** |
+| `travelApiCallSucceeded` | **true** |
+| `movementObservationPassed` | **true** |
+| `actualExecutionObserved` | **true** |
+| `certSummaryPassCandidate` | **true** |
+| `fakeGameplayDelta` | **false** |
+| Execute inbox ack | **timeout** — execution JSON proved PASS |
+| Route | Quyaz → Ortysia |
+
+Evidence: [`manifest.json`](../../evidence/live-cert/20260624-032408/checkpoint-01-assistive-travel-execute/manifest.json)
 
 ---
 
@@ -271,16 +292,19 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | **AssistiveTownToTownProbe** | `e4c261d` | B | **LANDED** — PASS @ `20260624-004036` |
 | **Attach-only assist re-cert** | `020821` | A | **PASS** @ `main` |
 | **Inbox sequence regression** | PR #10 `2df444b` | C | **MERGED** |
-| **Travel/trade execute path** | TBD | B | **NEXT** product lane |
-| Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
-| **User authorization** | Explicit merge auth | User | Required for PR #7 merge |
+| **Travel/trade execute path** | PR #11 @ `09f039f` | B/A | **MERGED** — PASS @ `032408` |
+| **Runtime gameplay state machine** | `69263a9` | B | **NEXT** — rebase onto `09f039f` |
+| **Unattended execute cert runner** | `70e5404` | C | **NEXT** — rebase onto `09f039f` |
+| Optional attach-only execute cert | — | A | **NOT RUN** |
 
 **Agent A live cert gate:**
 
 1. ~~Agent B assist inbox + probe~~ **PASS** @ `20260624-004036`
-2. ~~Attach-only re-cert~~ **PASS** @ `20260624-020821`
-3. **Next:** travel/trade **execute** path — **Agent B** on new feature branch from `main`
-4. Old F7: infrastructure smoke only when launcher automation changes
+2. ~~Attach-only advisory re-cert~~ **PASS** @ `20260624-020821`
+3. ~~Travel execute path~~ **MERGED** @ PR #11 · **PASS** @ `20260624-032408`
+4. **Next:** Agent B state machine @ `69263a9` + Agent C runner @ `70e5404` (rebase onto `09f039f`)
+5. **Optional:** Agent A attach-only execute cert (`launchUsed=false`)
+6. Old F7: infrastructure smoke only when launcher automation changes
 
 **Status JSON semantics (unchanged top-level `campaignReady`):** reflects `IsCampaignMapReady` (MapState active). New session fields disambiguate surface:
 
