@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (C classifier commit next) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `89e7158` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — B fix validated @ `204227`; runner tooling exception aborted poll |
@@ -44,7 +44,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-204227` FAIL — tooling exception; B fix validated | — | pending |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fix **validated** @ `204227` seq=18766+ | — | `e891b33` |
-| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Cert vs assistive attach classifier foundation | — | pending |
+| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Cert vs assistive attach classifier foundation | — | `89e7158` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
