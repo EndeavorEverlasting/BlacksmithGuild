@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B post-stabilization grace) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `cc6fbac` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — B post-stabilization death @ `195817` seq=8063; fix landed pending A re-cert |
@@ -43,7 +43,7 @@ Every agent **must**:
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Re-cert `20260623-195817` FAIL — route B post-stabilization | — | `b19dcb3` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-stabilization heavy-flush grace @ `195817` | — | pending |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-stabilization heavy-flush grace @ `195817` | — | `cc6fbac` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
