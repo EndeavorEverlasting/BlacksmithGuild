@@ -28,13 +28,13 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `89429ad` |
-| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — assist PASS landed; await user merge auth |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending push |
+| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — attach-only assist PASS; await user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **GREEN (assist)** — Town-to-Town Trade Assist PASS @ `20260624-004036` (Quyaz settlement_menu) |
+| Gate verdict | **GREEN (assist attach)** — attach-only PASS @ `20260624-020059` (`launchUsed=false`) |
 | Last F7 evidence | `20260623-205925` (closed, informative) |
-| Last assist evidence | `20260624-004036` — manifest PASS |
-| Next live cert | Attach-only assist re-cert (open game); optional travel execute (Agent B) |
+| Last assist evidence | `20260624-020059` — attach-only manifest PASS |
+| Next live cert | User merge auth; optional travel execute (Agent B) |
 | Old F7 | **CLOSED** — infrastructure/regression only |
 | Parallel lanes | B + C parallel-safe; live cert serial |
 
@@ -44,9 +44,9 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IN_PROGRESS` | Attach-only assist re-cert after C runner | — | `eef3645` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Attach-only assist PASS @ `20260624-020059` | — | pending |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | Hot standby — return on runtime/probe/execute defect | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `ACTIVE` | Attach-only runner; no launch; full harvest | — | `0b5798a` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach runner @ `0b5798a`; harvest fixes pending review | — | `0b5798a` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Assist PASS + attach doctrine recorded | — | `89429ad` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -75,7 +75,7 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | Agent A | attach-only assist cert | `run-town-to-town-trade-assist-cert.ps1 -AttachOnly` |
+| `automation` | — | — | — |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
@@ -115,6 +115,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 - **Landed:** `Test-F7AssistiveSessionAttachable` with live-ready Status freshness.
 - **Regression:** 3 offline tests; runner contract PASS.
 - **Live attach:** **NOT RUN** — Agent A: `run-town-to-town-trade-assist-cert.ps1 -AttachOnly` on open game.
+
+### 2026-06-24 — Agent A → B, C, D (attach-only assist PASS @ `20260624-020059`)
+
+- **Command:** `run-town-to-town-trade-assist-cert.ps1 -AttachOnly` — no launch, existing Quyaz session.
+- **PASS:** `mode=assistive_attach`, `launchUsed=false`, `launchPath=existing_session`, `manualLaunchAccepted=true`.
+- **Surface:** `settlement_menu`; inbox + assist + command accept all true.
+- **Probe:** `AssistiveTownToTownProbe` ack Success; Quyaz → Ortysia advisory.
+- **Harvest fixes (Agent A applied, route C review):** `artifactMeta` JSON-safe in harvest return; ensure checkpoint dir before copy.
+- **Evidence:** [`20260624-020059`](../../evidence/live-cert/20260624-020059/checkpoint-01-assistive-town-trade/manifest.json).
+- **PR #7:** **HOLD** — await user merge auth.
 
 ### 2026-06-24 — Agent A → B, C, D (Town-to-Town Trade Assist PASS @ `20260624-004036`)
 

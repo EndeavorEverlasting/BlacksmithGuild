@@ -416,6 +416,10 @@ function Invoke-F7AssistiveEvidenceHarvest {
         [string]$RunnerCommandLine = $null
     )
 
+    if (-not (Test-Path -LiteralPath $CheckpointDir)) {
+        New-Item -ItemType Directory -Force -Path $CheckpointDir | Out-Null
+    }
+
     $warnings = New-Object System.Collections.Generic.List[string]
     $artifactMeta = New-Object System.Collections.Generic.List[object]
     $phase1TailLineCount = 0
@@ -501,7 +505,7 @@ function Invoke-F7AssistiveEvidenceHarvest {
         launchTailLineCount = [int]$launchTailLineCount
         harvestPartial = [bool]$harvestPartial
         harvestWarnings = @($warnings)
-        artifactMeta = @($artifactMeta)
+        artifactMeta = @($artifactMeta | ForEach-Object { New-F7JsonSafeValue -Value $_ })
         runnerCommandLine = $RunnerCommandLine
     }
 }

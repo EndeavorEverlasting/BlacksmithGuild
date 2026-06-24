@@ -1,0 +1,35 @@
+{
+  "updatedAt": "2026-06-24T02:01:21.7845202-04:00",
+  "modLoaded": true,
+  "campaignReady": true,
+  "mainHeroReady": true,
+  "overall": "NOT_STARTED",
+  "session": {
+    "phase": "SettlementInterior",
+    "timePaused": true,
+    "sessionReady": true,
+    "mapReady": true,
+    "settlementReady": true,
+    "mapStateActive": true,
+    "settlementMenuOpen": true,
+    "settlementMenuId": "town",
+    "campaignMapSurfaceOpen": false,
+    "settlementInteriorReady": true,
+    "readinessSurface": "settlement_menu",
+    "canPollFileInbox": true,
+    "openMapReady": false,
+    "townMenuReady": true,
+    "inGameAssistReady": true,
+    "canAcceptAssistiveCommand": true,
+    "assistiveCertReady": true
+  },
+  "quickStart": {
+    "enabled": true,
+    "setupPhase": "Complete",
+    "subStage": "",
+    "activeState": "GameLoadingState"
+  },
+  "tests": {
+    "forge_lit": { "status": "PASS" }
+  }
+}
