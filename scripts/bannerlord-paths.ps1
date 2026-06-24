@@ -609,3 +609,15 @@ function Test-BannerlordGameProcessRunning {
         -LauncherPidHint $LauncherPidHint
     return [bool]$det.gameProcessRunning
 }
+
+function Get-ProcessLifecycleJsonPath {
+    param([string]$BannerlordRoot)
+    . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
+    return Get-TbgProcessLifecycleJsonPath -BannerlordRoot $BannerlordRoot
+}
+
+function Get-CancelRunJsonPath {
+    param([string]$BannerlordRoot)
+    . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
+    return Get-TbgCancelRunJsonPath -BannerlordRoot $BannerlordRoot
+}

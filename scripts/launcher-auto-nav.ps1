@@ -22,6 +22,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 . (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
+. (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
@@ -2317,6 +2318,24 @@ function Test-PreIntentGameSpawnAndContaminate {
     return $true
 }
 
+function Record-TbgNavLaunchSelection {
+    param(
+        [ValidateSet('play', 'continue')][string]$Intent,
+        [ValidateSet('script', 'user_or_external')][string]$Actor,
+        [string]$ButtonText,
+        [ValidateSet('uia', 'pid_global_uia', 'coordinate_fallback', 'user_handoff')][string]$Method,
+        [int]$Confidence = 85,
+        [int]$ProcessId = 0,
+        [int64]$Hwnd = 0,
+        [string]$WindowTitle = $null,
+        [string]$ProcessName = $null
+    )
+    if (-not (Get-Command Write-TbgLaunchSelection -ErrorAction SilentlyContinue)) { return }
+    Write-TbgLaunchSelection -BannerlordRoot $BannerlordRoot -Actor $Actor -Intent $Intent `
+        -ButtonText $ButtonText -Method $Method -Confidence $Confidence -ProcessId $ProcessId -Hwnd $Hwnd `
+        -WindowTitle $WindowTitle -ProcessName $ProcessName
+}
+
 function Invoke-AdoptLaunchPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2352,6 +2371,15 @@ function Invoke-AdoptLaunchPath {
     } else {
         Write-LaunchLog "LAUNCH_STATE=play_clicked selectedBy=$SelectedBy"
     }
+    $actor = if ($SelectedBy -eq 'user') { 'user_or_external' } else { 'script' }
+    $method = if ($SelectedBy -eq 'user') { 'user_handoff' } else { 'uia' }
+    $btn = if ($Path -eq 'continue') { 'Continue' } else { 'Play' }
+    $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+    Record-TbgNavLaunchSelection -Intent $Path -Actor $actor -ButtonText $btn -Method $method `
+        -ProcessId $(if ($launcher) { $launcher.Id } else { 0 }) `
+        -Hwnd $(if ($launcher) { [int64]$launcher.MainWindowHandle } else { 0 }) `
+        -WindowTitle $(if ($launcher) { [string]$launcher.MainWindowTitle } else { $null }) `
+        -ProcessName $(if ($launcher) { [string]$launcher.ProcessName } else { $null })
 }
 
 function Test-UserLaunchPathAdopted {
@@ -2994,6 +3022,12 @@ while ((Get-Date) -lt $deadline) {
                 } else {
                     Write-LaunchLog 'LAUNCH_STATE=play_clicked selectedBy=automation'
                 }
+                $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+                Record-TbgNavLaunchSelection -Intent $LaunchIntent -Actor 'script' -ButtonText $displayName `
+                    -Method 'uia' -Confidence 90 -ProcessId $(if ($launcher) { $launcher.Id } else { 0 }) `
+                    -Hwnd $(if ($launcher) { [int64]$launcher.MainWindowHandle } else { 0 }) `
+                    -WindowTitle $(if ($launcher) { [string]$launcher.MainWindowTitle } else { $null }) `
+                    -ProcessName $(if ($launcher) { [string]$launcher.ProcessName } else { $null })
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
                 Extend-DeadlineAfterPlayClick

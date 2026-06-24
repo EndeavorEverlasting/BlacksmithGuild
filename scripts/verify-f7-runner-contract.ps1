@@ -32,8 +32,9 @@ $navPath = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
 $forgeStatusPath = Join-Path $PSScriptRoot 'forge-status.ps1'
 $pr11ClassifierPath = Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1'
 $pr11ExecuteRunnerPath = Join-Path $PSScriptRoot 'run-pr11-town-travel-launch-attach-execute.ps1'
+$lifecyclePath = Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -96,7 +97,8 @@ if (Test-Path -LiteralPath $pathsPath) {
         'Get-BannerlordProcessDetection', 'Test-LauncherHostedWindowTitle',
         'Test-LauncherMenuWindowTitle', 'Test-LauncherSingleplayerHostedTitle',
         'Test-F7PreflightCleanState',
-        'Get-BannerlordProcessCandidates', 'Test-BannerlordGameProcessRunning'
+        'Get-BannerlordProcessCandidates', 'Test-BannerlordGameProcessRunning',
+        'Get-ProcessLifecycleJsonPath', 'Get-CancelRunJsonPath'
     )) {
         if ($pathsText -notmatch [regex]::Escape($needle)) {
             Add-Failure "bannerlord-paths.ps1 missing: $needle"
@@ -122,6 +124,8 @@ if (Test-Path -LiteralPath $navPath) {
         Add-Failure 'launcher-auto-nav.ps1 missing launcher selection cap / LAUNCH_TIMING evidence'
     } elseif ($navText -notmatch 'LaunchSetup|assistive_launch_setup') {
         Add-Failure 'launcher-auto-nav.ps1 missing LaunchSetup / assistive_launch_setup'
+    } elseif ($navText -notmatch 'Record-TbgNavLaunchSelection|Write-TbgLaunchSelection') {
+        Add-Failure 'launcher-auto-nav.ps1 missing launch selection provenance hooks'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
     }
@@ -279,6 +283,26 @@ if (Test-Path -LiteralPath $gameGoneRegression) {
     Add-Failure 'Missing test-f7-game-gone-202052.ps1 offline regression'
 }
 
+if (Test-Path -LiteralPath $pr11ExecuteRunnerPath) {
+    $pr11RunnerText = Get-Content -LiteralPath $pr11ExecuteRunnerPath -Raw
+    foreach ($needle in @(
+        'process-lifecycle-authority.ps1', 'Initialize-TbgProcessLifecycle',
+        'Invoke-TbgFreshTestLaunchPreflight', 'Start-TbgWaitSegment', 'Copy-TbgLifecycleArtifacts',
+        'Test-TbgCancelRequested', 'Write-TbgLaunchRequest'
+    )) {
+        if ($pr11RunnerText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "run-pr11-town-travel-launch-attach-execute.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS pr11 runner contains: $needle" -ForegroundColor Green
+        }
+    }
+    if ($pr11RunnerText -match 'Stop-Process\s+-Id.*-Force') {
+        Add-Failure 'run-pr11-town-travel-launch-attach-execute.ps1 must not use blind Stop-Process -Force'
+    } else {
+        Write-Host 'PASS pr11 runner: no blind Stop-Process -Force' -ForegroundColor Green
+    }
+}
+
 $assistiveRegression = Join-Path $PSScriptRoot 'test-f7-assistive-attach-mode.ps1'
 if (Test-Path -LiteralPath $assistiveRegression) {
     Write-Host 'Running test-f7-assistive-attach-mode.ps1 ...' -ForegroundColor Cyan
@@ -345,7 +369,8 @@ foreach ($pair in @(
     @{ path = 'test-assistive-launch-setup-guarded-click.ps1'; label = 'assistive launch setup guarded click' },
     @{ path = 'test-forge-command-sequence-after-prior-ack.ps1'; label = 'forge command sequence after prior ack' },
     @{ path = 'test-pr11-process-window-classifier.ps1'; label = 'pr11 process window classifier' },
-    @{ path = 'test-pr11-execute-cert-parser.ps1'; label = 'pr11 execute cert parser' }
+    @{ path = 'test-pr11-execute-cert-parser.ps1'; label = 'pr11 execute cert parser' },
+    @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {

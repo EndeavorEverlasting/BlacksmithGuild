@@ -25,6 +25,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'dev-command-names.ps1')
 . (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
+. (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\${sessionId}-pr11-launch-attach-execute"
@@ -32,6 +33,8 @@ $certLogPath = Join-Path $checkpointDir 'cert-run-output.txt'
 $cycleResultPath = Join-Path $checkpointDir 'cycle-result.json'
 $classifications = New-Object System.Collections.Generic.List[object]
 $transcriptStarted = $false
+$cyclePhase = 'loading'
+$cancelled = $false
 
 function Write-CertLog {
     param([string]$Message)
@@ -49,6 +52,23 @@ function Add-Classification {
     param($Classification)
     $classifications.Add($Classification) | Out-Null
     Save-Pr11JsonArtifact -Object @($classifications.ToArray()) -Path (Join-Path $checkpointDir 'state-classifications.json') | Out-Null
+}
+
+function Copy-LifecycleEvidence {
+    Write-TbgTerminationDetection -BannerlordRoot $bannerlordRoot `
+        -OutputPath (Join-Path $checkpointDir 'termination-detection.json') `
+        -Extra @{ CyclePhase = $cyclePhase; Phase1Path = $phase1Path; StatusPath = $statusPath } | Out-Null
+    Copy-TbgLifecycleArtifacts -BannerlordRoot $bannerlordRoot -CheckpointDir $checkpointDir | Out-Null
+}
+
+function Exit-Pr11Cycle {
+    param(
+        [int]$Code,
+        [hashtable]$Extra = @{}
+    )
+    Copy-LifecycleEvidence
+    Complete-CycleResult $Extra | Out-Null
+    exit $Code
 }
 
 function Complete-CycleResult {
@@ -88,6 +108,15 @@ $phase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
 $statusPath = Get-StatusJsonPath -BannerlordRoot $bannerlordRoot
 $crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $bannerlordRoot
 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $bannerlordRoot
+
+$sessionAuthorityMode = if ($AttachOnly -or $SkipLaunch) { 'AttachOnly' } else { 'FreshTestLaunch' }
+Initialize-TbgProcessLifecycle -RunId "${sessionId}-pr11" -BannerlordRoot $bannerlordRoot `
+    -SessionAuthorityMode $sessionAuthorityMode -Operation 'pr11_launch_attach_execute' `
+    -Branch (git branch --show-current).Trim() | Out-Null
+Register-TbgCancelHandler {
+    $script:cancelled = $true
+    Write-CertLog 'Cancel requested — stopping PR11 cycle'
+}
 
 $passFail = 'BLOCKED'
 $failureClass = $null
@@ -132,9 +161,11 @@ if ($DryRun) {
     Add-Classification $cls
     $windowClassifierResult = $cls.state
     $attachResult = if ($ready.canPollFileInbox -and $ready.inGameAssistReady) { 'attach_ready' } else { 'attach_not_ready' }
+    Copy-LifecycleEvidence
     Complete-CycleResult @{
         passFail = 'DRY_RUN'; failureClass = $null; routeAgent = $routeAgent; exitCode = 0
         windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $false
+        sessionAuthorityMode = $sessionAuthorityMode
     } | Out-Null
     Write-CertLog "DryRun complete classifier=$windowClassifierResult attach=$attachResult"
     exit 0
@@ -146,13 +177,10 @@ if (-not $SkipLaunch) {
         -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath
     if (-not $attachCheck.attachable) {
         Write-CertLog "Attach not ready ($($attachCheck.reason)); launching with guarded nav LaunchIntent=$LaunchIntent"
-        foreach ($name in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
-            Get-Process -Name $name -ErrorAction SilentlyContinue | ForEach-Object {
-                Write-CertLog "Stopping residual $name PID $($_.Id)"
-                Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-            }
+        if ($sessionAuthorityMode -eq 'FreshTestLaunch') {
+            Write-CertLog 'FreshTestLaunch preflight: intentional close before launch'
+            Invoke-TbgFreshTestLaunchPreflight -BannerlordRoot $bannerlordRoot -Reason 'pr11_runner_fresh_launch'
         }
-        Start-Sleep -Seconds 2
 
         $launcherRunning = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue
         if (-not $launcherRunning) {
@@ -161,6 +189,7 @@ if (-not $SkipLaunch) {
         }
 
         & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot
+        Write-TbgLaunchRequest -BannerlordRoot $bannerlordRoot -LaunchIntent $LaunchIntent -RequestedBy 'script'
         $launchRequestedUtc = (Get-Date).ToUniversalTime()
         $navScript = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
         $timelinePath = Join-Path $checkpointDir 'ExternalStateTimeline.json'
@@ -194,9 +223,18 @@ if (-not $SkipLaunch) {
 }
 
 # Poll attach readiness with classifier timeline
+$null = Start-TbgWaitSegment -WaitReason 'campaign_loading_attach' -TimeoutSec $AttachWaitSec -PollIntervalMs 2000
 $attachDeadline = (Get-Date).AddSeconds($AttachWaitSec)
 $attachReady = $false
 while ((Get-Date) -lt $attachDeadline) {
+    if (Test-TbgCancelRequested -BannerlordRoot $bannerlordRoot) {
+        $cancelled = $true
+        End-TbgWaitSegment -Result 'cancel_requested' | Out-Null
+        Exit-Pr11Cycle -Code 3 @{
+            passFail = 'cancelled'; failureClass = 'cancelled'; routeAgent = $routeAgent; exitCode = 3
+            windowClassifierResult = $windowClassifierResult; attachResult = 'cancelled'; certAttempted = $false
+        }
+    }
     $ready = Get-F7AssistiveReadinessFromStatus -StatusPath $statusPath
     $det = Get-BannerlordProcessDetection -BannerlordRoot $bannerlordRoot -Phase1Path $phase1Path -StatusPath $statusPath -CacheSec 0
     $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $s1 -AfterSnapshot (Get-Pr11ProcessSnapshot -Label 'poll' -BannerlordRoot $bannerlordRoot)
@@ -213,32 +251,35 @@ while ((Get-Date) -lt $attachDeadline) {
     if ($ready.canPollFileInbox -and $ready.inGameAssistReady -and $ready.canAcceptAssistiveCommand) {
         $attachReady = $true
         $attachResult = 'attach_ready'
+        Update-TbgWaitProgress -ProgressSignal 'assistive_attach_ready'
         break
     }
+    Update-TbgWaitProgress -ProgressSignal "classifier=$($cls.state) phase1Fresh=$phase1Fresh statusFresh=$statusFresh"
     Start-Sleep -Seconds 2
 }
 
 if (-not $attachReady) {
+    End-TbgWaitSegment -Result 'attach_not_ready' | Out-Null
     $failureClass = 'attach_not_ready'
     $attachResult = 'attach_not_ready'
-    Complete-CycleResult @{
-        passFail = 'FAIL'; failureClass = $failureClass; routeAgent = $routeAgent; exitCode = 2
-        windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $false
-    } | Out-Null
     Copy-Pr11EvidenceArtifact -SourcePath $statusPath -CheckpointDir $checkpointDir -DestName 'BlacksmithGuild_Status.json' | Out-Null
     Copy-Pr11EvidenceArtifact -SourcePath $phase1Path -CheckpointDir $checkpointDir -DestName 'BlacksmithGuild_Phase1.log' | Out-Null
     Write-CertLog "FAIL attach_not_ready after ${AttachWaitSec}s classifier=$windowClassifierResult"
-    exit 2
+    Exit-Pr11Cycle -Code 2 @{
+        passFail = 'FAIL'; failureClass = $failureClass; routeAgent = $routeAgent; exitCode = 2
+        windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $false
+    }
 }
+
+End-TbgWaitSegment -Result 'attach_ready' | Out-Null
+$cyclePhase = 'cert'
 
 if ($AttachOnly) {
     $passFail = 'PASS_ATTACH'
-    Complete-CycleResult @{
+    Exit-Pr11Cycle -Code 0 @{
         passFail = $passFail; failureClass = $null; routeAgent = $routeAgent; exitCode = 0
         windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $false
-    } | Out-Null
-    Write-CertLog 'Attach-only success; execute phase skipped'
-    exit 0
+    }
 }
 
 # PR #11 cert sequence
@@ -306,10 +347,13 @@ if ($executePass.pass) {
     }
 }
 
+$cyclePhase = 'cleanup'
+Copy-LifecycleEvidence
 Complete-CycleResult @{
     passFail = $passFail; failureClass = $failureClass; routeAgent = $routeAgent; exitCode = $exitCode
     windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $certAttempted
     probeOk = $probeOk; executeOk = $executeOk; executeChecks = $executePass.checks
+    sessionAuthorityMode = $sessionAuthorityMode
 } | Out-Null
 
 Write-CertLog "$passFail PR11 execute cert exit=$exitCode failureClass=$failureClass evidence=$checkpointDir"

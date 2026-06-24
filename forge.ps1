@@ -27,7 +27,9 @@ param(
     [string]$IterationMode,
     [string]$Command,
     [int]$TimeoutSec = 60,
-    [int]$WatchDebounceSec = 2
+    [int]$WatchDebounceSec = 2,
+    [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
+    [string]$SessionAuthorityMode
 )
 
 function Invoke-SaveBackupIfNeeded {
@@ -109,6 +111,7 @@ if ($Check) { $installParams.CheckLog = $true }
 if ($SkipInstall) { $installParams.SkipInstall = $true }
 if ($Launch) { $installParams.LaunchIntent = $LaunchIntent }
 if ($LaunchManual) { $installParams.LaunchManual = $true }
+if ($SessionAuthorityMode) { $installParams.SessionAuthorityMode = $SessionAuthorityMode }
 
 & (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installParams
 

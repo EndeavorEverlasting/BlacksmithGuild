@@ -11,7 +11,9 @@ param(
     [string]$LaunchIntent = 'play',
     [switch]$LaunchManual,
     [switch]$CheckLog,
-    [switch]$SkipInstall
+    [switch]$SkipInstall,
+    [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
+    [string]$SessionAuthorityMode
 )
 
 $ErrorActionPreference = 'Stop'
@@ -48,6 +50,17 @@ try {
     Write-Host "Repo:       $RepoRoot"
     Write-Host "Bannerlord: $BannerlordRoot"
     Write-Host ''
+
+    if ($SessionAuthorityMode -eq 'FreshTestLaunch') {
+        . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
+        $runId = (Get-Date).ToString('yyyyMMdd-HHmmss-forge')
+        $branch = $null
+        try { $branch = (git -C $RepoRoot branch --show-current 2>$null).Trim() } catch { }
+        Initialize-TbgProcessLifecycle -RunId $runId -BannerlordRoot $BannerlordRoot `
+            -SessionAuthorityMode FreshTestLaunch -Operation 'forge_cmd_launch' -Branch $branch | Out-Null
+        Write-Host '[lifecycle] FreshTestLaunch preflight: intentional close before build/install' -ForegroundColor Cyan
+        Invoke-TbgFreshTestLaunchPreflight -BannerlordRoot $BannerlordRoot -Reason 'fresh_test_launch_dll_reload'
+    }
 
     if (-not $SkipInstall) {
     Invoke-ForgeStep -Name 'build' -Action {
@@ -160,8 +173,13 @@ try {
             Write-Host ''
             if (-not $LaunchManual) {
                 & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot
+                if ($SessionAuthorityMode -eq 'FreshTestLaunch') {
+                    . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
+                    Write-TbgLaunchRequest -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent -RequestedBy 'script'
+                }
             }
-            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot
+            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot `
+                -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
                 & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -TimeoutSec 300 -PollMs 180
             }
