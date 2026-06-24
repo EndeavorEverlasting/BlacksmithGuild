@@ -62,13 +62,23 @@ $tmpTimeline = Join-Path $env:TEMP "ExternalStateTimeline-test-$PID.json"
 if (Test-Path -LiteralPath $tmpTimeline) { Remove-Item -LiteralPath $tmpTimeline -Force }
 Initialize-F7ExternalStateTimeline -Mode assistive -OutputPath $tmpTimeline -SessionId 'test-session'
 $cls = Invoke-F7ExternalStateClassification -BannerlordRoot (Get-BannerlordRootFromRepo) -Mode assistive `
-    -LaunchPath 'continue' -LaunchSelectedBy 'user' -ReasonOverride 'offline regression attach checkpoint'
+    -LaunchPath 'continue' -LaunchSelectedBy 'user' -ReasonOverride 'offline regression attach checkpoint' `
+    -SettlementMenuReadyObserved $true -OldGoldenPathSatisfied $false
 Add-F7ExternalStateTimelineEvent -Classification $cls -Force | Out-Null
 $written = Save-F7ExternalStateTimeline
 if (-not (Test-Path -LiteralPath $written)) { throw "Timeline not written: $written" }
 $parsed = Get-Content -LiteralPath $written -Raw | ConvertFrom-Json
 if ($parsed.mode -ne 'assistive') { throw 'Timeline mode must be assistive' }
 if (@($parsed.events).Count -lt 1) { throw 'Timeline must contain at least one event' }
+$evt = $parsed.events[0]
+foreach ($field in @('windowBoundsReason', 'settlement_menu_ready_observed', 'oldGoldenPathSatisfied')) {
+    if (-not ($evt.PSObject.Properties.Name -contains $field)) {
+        throw "Timeline event missing explicit field: $field"
+    }
+}
+if ($evt.settlement_menu_ready_observed -ne $true) {
+    throw 'Assistive settlement mock should emit settlement_menu_ready_observed=true'
+}
 Remove-Item -LiteralPath $tmpTimeline -Force -ErrorAction SilentlyContinue
 
 Write-Host 'PASS offline assistive attach mode regression'

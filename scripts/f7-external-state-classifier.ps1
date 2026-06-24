@@ -97,10 +97,20 @@ function Resolve-F7ProcessClassifiedState {
     if ($PreflightClean) { return 'ProcessClean' }
     if (-not $Detection) { return 'UnknownWindowState' }
 
+    if (('UIAHelper' -as [type]) -and [UIAHelper]::HasSafeModeDialog()) {
+        return 'SafeModeDialog'
+    }
+
     if (-not $Detection.gameProcessRunning) {
         $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($launcher) {
             $title = [string]$launcher.MainWindowTitle
+            if (('UIAHelper' -as [type]) -and [UIAHelper]::IsLauncherContinueVisible()) {
+                return 'LauncherMenuContinueAvailable'
+            }
+            if (('UIAHelper' -as [type]) -and [UIAHelper]::IsLauncherPlayOnlyVisible()) {
+                return 'LauncherMenuPlayOnly'
+            }
             if ((Get-Command Test-LauncherMenuWindowTitle -ErrorAction SilentlyContinue) `
                     -and (Test-LauncherMenuWindowTitle -Title $title)) {
                 return 'LauncherMenu'
@@ -140,6 +150,9 @@ function Resolve-F7GameSurfaceClassifiedState {
     }
 
     $surface = [string]$StatusJson.readinessSurface
+    if (-not $surface -and $StatusJson.session) {
+        $surface = [string]$StatusJson.session.readinessSurface
+    }
     $runtime = New-Object System.Collections.Generic.List[string]
     if ($StatusJson.campaignReady -eq $true) { $runtime.Add('CampaignReady') | Out-Null }
     if ($StatusJson.session -and $StatusJson.session.canPollFileInbox -eq $true) {
@@ -156,7 +169,11 @@ function Resolve-F7GameSurfaceClassifiedState {
         'loading' { $state = 'GameLoading' }
         'main_menu' { $state = 'MainMenu' }
         'settlement_menu' {
-            if ($StatusJson.settlementMenuOpen -eq $true) {
+            $menuOpen = ($StatusJson.settlementMenuOpen -eq $true)
+            if (-not $menuOpen -and $StatusJson.session) {
+                $menuOpen = ($StatusJson.session.settlementMenuOpen -eq $true)
+            }
+            if ($menuOpen) {
                 $state = 'SettlementTownMenu'
                 $runtime.Add('ReadinessSurfaceSettlementMenu') | Out-Null
             }
@@ -166,7 +183,11 @@ function Resolve-F7GameSurfaceClassifiedState {
             $runtime.Add('ReadinessSurfaceSettlementInterior') | Out-Null
         }
         'map_surface' {
-            if ($StatusJson.campaignMapSurfaceOpen -eq $true) {
+            $mapOpen = ($StatusJson.campaignMapSurfaceOpen -eq $true)
+            if (-not $mapOpen -and $StatusJson.session) {
+                $mapOpen = ($StatusJson.session.campaignMapSurfaceOpen -eq $true)
+            }
+            if ($mapOpen) {
                 $state = 'CampaignMapSurface'
                 $runtime.Add('ReadinessSurfaceMapSurface') | Out-Null
             }
@@ -180,6 +201,98 @@ function Resolve-F7GameSurfaceClassifiedState {
         runtimeEvidenceStates = @($runtime)
         reason = "readinessSurface=$surface from fresh Status.json"
     }
+}
+
+function Get-F7StatusSurfaceSignals {
+    param(
+        [string]$StatusPath,
+        $CertStartedUtc = $null
+    )
+
+    $result = [ordered]@{
+        readinessSurface = $null
+        settlementMenuOpen = $false
+        campaignMapSurfaceOpen = $false
+        campaignReady = $false
+        canPollFileInbox = $false
+        inGameAssistReady = $false
+        statusArtifactState = 'missing'
+    }
+
+    if (-not $StatusPath -or -not (Test-Path -LiteralPath $StatusPath)) {
+        return [pscustomobject]$result
+    }
+
+    if ($CertStartedUtc -and (Get-Command Get-F7ArtifactFreshnessState -ErrorAction SilentlyContinue)) {
+        $result.statusArtifactState = [string](Get-F7ArtifactFreshnessState -Path $StatusPath -CertStartedUtc $CertStartedUtc)
+    } else {
+        $result.statusArtifactState = 'unknown'
+    }
+
+    if ($result.statusArtifactState -ne 'fresh') {
+        return [pscustomobject]$result
+    }
+
+    $st = Read-F7StatusJsonSafe -StatusPath $StatusPath
+    if (-not $st) { return [pscustomobject]$result }
+
+    $result.readinessSurface = if ($st.readinessSurface) { [string]$st.readinessSurface }
+                              elseif ($st.session -and $st.session.readinessSurface) { [string]$st.session.readinessSurface }
+                              else { $null }
+    $result.settlementMenuOpen = ($st.settlementMenuOpen -eq $true)
+    if (-not $result.settlementMenuOpen -and $st.session) {
+        $result.settlementMenuOpen = ($st.session.settlementMenuOpen -eq $true)
+    }
+    $result.campaignMapSurfaceOpen = ($st.campaignMapSurfaceOpen -eq $true)
+    if (-not $result.campaignMapSurfaceOpen -and $st.session) {
+        $result.campaignMapSurfaceOpen = ($st.session.campaignMapSurfaceOpen -eq $true)
+    }
+    $result.campaignReady = ($st.campaignReady -eq $true)
+    if ($st.session) {
+        $result.canPollFileInbox = ($st.session.canPollFileInbox -eq $true)
+        if ($st.session.PSObject.Properties.Name -contains 'inGameAssistReady') {
+            $result.inGameAssistReady = ($st.session.inGameAssistReady -eq $true)
+        }
+    }
+    return [pscustomobject]$result
+}
+
+function Test-F7SettlementMenuReadyObserved {
+    param(
+        $StatusJson = $null,
+        [string]$StatusArtifactState = 'missing'
+    )
+
+    if ($StatusArtifactState -ne 'fresh' -or -not $StatusJson) { return $false }
+    $surface = [string]$StatusJson.readinessSurface
+    if (-not $surface -and $StatusJson.session) {
+        $surface = [string]$StatusJson.session.readinessSurface
+    }
+    $menuOpen = ($StatusJson.settlementMenuOpen -eq $true)
+    if (-not $menuOpen -and $StatusJson.session) {
+        $menuOpen = ($StatusJson.session.settlementMenuOpen -eq $true)
+    }
+    return ($surface -eq 'settlement_menu' -and $menuOpen)
+}
+
+function Test-F7OldGoldenPathSatisfied {
+    param(
+        $GoldenPathCheck = $null,
+        $Signals = $null
+    )
+
+    if ($Signals) {
+        if ($Signals.mapReadyStatus -eq 'PASS') { return $true }
+        if ($Signals.phase1QuickStartMapReady -eq $true) { return $true }
+    }
+    if ($GoldenPathCheck -and $GoldenPathCheck.available) {
+        if ($GoldenPathCheck.mapReadySeen -eq $true) { return $true }
+    }
+    return $false
+}
+
+function Get-F7SettlementMenuSemanticMismatchSec {
+    return 15
 }
 
 function Get-F7StateActionPolicy {
@@ -206,7 +319,7 @@ function Get-F7StateActionPolicy {
                 routeAgent = $routeC
             }
         }
-        { $_ -in @('LauncherMenu', 'LauncherOpening', 'LauncherMenuContinueAvailable', 'LauncherMenuPlayOnly') } {
+        { $_ -in @('LauncherMenu', 'LauncherOpening', 'LauncherMenuContinueAvailable', 'LauncherMenuPlayOnly', 'SafeModeDialog') } {
             $legal = if ($Mode -eq 'cert') { @($observe + 'click_launcher_continue', 'click_launcher_play') }
                      else { @($observe + 'surface_advisory') }
             return [pscustomobject]@{
@@ -317,7 +430,9 @@ function Invoke-F7ExternalStateClassification {
         [string]$LaunchSelectedBy = 'unknown',
         [bool]$TargetMismatch = $false,
         [string]$LaunchState = $null,
-        [string]$ReasonOverride = $null
+        [string]$ReasonOverride = $null,
+        $SettlementMenuReadyObserved = $null,
+        $OldGoldenPathSatisfied = $null
     )
 
     $snap = Get-F7ExternalStateSnapshot -BannerlordRoot $BannerlordRoot `
@@ -377,6 +492,14 @@ function Invoke-F7ExternalStateClassification {
               elseif ($PreflightClean) { 'Preflight clean; no residual Bannerlord processes.' }
               else { [string]$surface.reason }
 
+    $windowBoundsReason = if ($snap.foreground.bounds) { $null } else { 'foreground_helper_no_rect' }
+
+    $settlementObserved = $SettlementMenuReadyObserved
+    if ($null -eq $settlementObserved) {
+        $settlementObserved = Test-F7SettlementMenuReadyObserved -StatusJson $snap.statusJson `
+            -StatusArtifactState $snap.statusArtifactState
+    }
+
     return [pscustomobject]@{
         timestampUtc = (Get-Date).ToUniversalTime().ToString('o')
         mode = [string]$Mode
@@ -387,6 +510,7 @@ function Invoke-F7ExternalStateClassification {
         hwnd = if ($snap.foreground.hwnd) { [int]$snap.foreground.hwnd } else { $null }
         windowTitle = if ($windowTitle) { [string]$windowTitle } elseif ($snap.foreground.title) { [string]$snap.foreground.title } else { $null }
         windowBounds = $snap.foreground.bounds
+        windowBoundsReason = $windowBoundsReason
         foregroundWindowMatch = [bool]$fgMatch
         evidenceSources = @($snap.evidenceSources)
         runtimeEvidenceStates = @($runtimeEvidence | Select-Object -Unique)
@@ -401,6 +525,8 @@ function Invoke-F7ExternalStateClassification {
         launchPath = [string]$LaunchPath
         targetMismatch = [bool]$TargetMismatch
         launchState = if ($LaunchState) { [string]$LaunchState } else { $null }
+        settlement_menu_ready_observed = [bool]$settlementObserved
+        oldGoldenPathSatisfied = if ($null -ne $OldGoldenPathSatisfied) { [bool]$OldGoldenPathSatisfied } else { $null }
     }
 }
 
@@ -461,7 +587,6 @@ function Convert-F7ClassificationToTimelineEntry {
     $entry = [ordered]@{}
     foreach ($prop in $Classification.PSObject.Properties) {
         $val = $prop.Value
-        if ($null -eq $val) { continue }
         if ($val -is [System.Collections.IDictionary]) {
             $nested = [ordered]@{}
             foreach ($k in $val.Keys) { $nested[[string]$k] = $val[$k] }
@@ -472,6 +597,21 @@ function Convert-F7ClassificationToTimelineEntry {
             $entry[$prop.Name] = $val
         }
     }
+
+    foreach ($required in @(
+        'timestampUtc', 'mode', 'classifiedState', 'confidence', 'processName', 'processId', 'hwnd',
+        'windowTitle', 'windowBounds', 'windowBoundsReason', 'foregroundWindowMatch', 'evidenceSources',
+        'legalActions', 'forbiddenActions', 'expectedTransitions', 'routeAgent', 'reason',
+        'manualLaunchObserved', 'assistiveAttach', 'settlement_menu_ready_observed', 'oldGoldenPathSatisfied'
+    )) {
+        if (-not $entry.Contains($required)) {
+            $entry[$required] = $null
+        }
+    }
+    if (-not $entry.windowBoundsReason -and $null -eq $entry.windowBounds) {
+        $entry.windowBoundsReason = 'not_recorded'
+    }
+
     return $entry
 }
 
@@ -573,6 +713,8 @@ function Emit-F7ExternalStateTimelineCheckpoint {
         [string]$ContaminationReason = $null,
         [string]$LaunchState = $null,
         [string]$ReasonOverride = $null,
+        $SettlementMenuReadyObserved = $null,
+        $OldGoldenPathSatisfied = $null,
         [switch]$Force
     )
 
@@ -583,7 +725,8 @@ function Emit-F7ExternalStateTimelineCheckpoint {
         -CertStartedUtc $CertStartedUtc -PreflightClean $PreflightClean `
         -Contaminated $Contaminated -ContaminationReason $ContaminationReason `
         -CertTarget $CertTarget -LaunchPath $LaunchPath -LaunchSelectedBy $LaunchSelectedBy `
-        -TargetMismatch $TargetMismatch -LaunchState $LaunchState -ReasonOverride $ReasonOverride
+        -TargetMismatch $TargetMismatch -LaunchState $LaunchState -ReasonOverride $ReasonOverride `
+        -SettlementMenuReadyObserved $SettlementMenuReadyObserved -OldGoldenPathSatisfied $OldGoldenPathSatisfied
 
     return Add-F7ExternalStateTimelineEvent -Classification $cls -Force:$Force.IsPresent
 }

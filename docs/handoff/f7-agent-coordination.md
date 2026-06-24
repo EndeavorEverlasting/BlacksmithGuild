@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `2207468` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `3c6feed` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — poll completes; MapTransition timeout @ `205925` (game alive, settlement_menu) |
+| Gate verdict | **RED** — `205925` MapTransition treadmill; **C fix landed** (15s semantic mismatch fail, 45s launcher cap) |
 | Last F7 evidence | `20260623-205925` |
-| Next live cert | **BLOCKED** — `canPollFileInbox=false`; golden path `MainMenu->MapTransition` |
+| Next live cert | **Agent A** after C push — expect faster FAIL or B unblock on `canPollFileInbox` |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -44,7 +44,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `205925` FAIL MapTransition timeout; tooling fixes landed | — | `903c8d0` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock validated; next: `canPollFileInbox` @ settlement_menu | — | `e891b33` |
-| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Classifier @ `89e7158`; A landed poll hardening | — | `89e7158` |
+| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `3c6feed` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -80,6 +80,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent C → A, B, D (launcher cap + settlement fast-fail @ `3c6feed`)
+
+- **Landed:** 45s launcher selection cap + `LAUNCH_TIMING` evidence; 4s Continue verify when chrome visible; Play-only fail on Continue cert.
+- **Landed:** F7 poll `fail_settlement_menu_semantic_mismatch` after 15s when `settlement_menu` observed but old gate unsatisfied (routes Agent B).
+- **Landed:** Status.json `session.*` field support for settlement surface detection; timeline explicit nulls + new process states.
+- **Landed:** `run-town-to-town-trade-assist-cert.ps1` skeleton — fails `assistive_command_not_supported` until `AssistiveTownToTownProbe` in runtime.
+- **Regression:** `test-f7-launcher-timing-205925.ps1`, `test-f7-settlement-menu-fast-fail.ps1`; runner contract PASS.
+- **F7 live cert:** **NOT RUN** — Agent A should re-cert; expect ~15s semantic mismatch FAIL instead of 361s treadmill.
+- **Need from B:** `canPollFileInbox` at settlement_menu + `AssistiveTownToTownProbe` dev command.
 
 ### 2026-06-23 — Agent A → B, C (cert `205925` + tooling fixes post-`89e7158`)
 

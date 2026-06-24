@@ -125,6 +125,20 @@ Schema: [`external-state-timeline-schema.md`](external-state-timeline-schema.md)
 
 ---
 
+## Settlement menu vs old F7 gate (20260623-205925)
+
+Continue cert may reach **settlement town menu** with `campaignReady=true` but `canPollFileInbox=false` and golden path stuck at `MainMenu -> MapTransition`. The old F7 poll gate (`campaignReady AND canPollFileInbox AND mapReadyPass`) never satisfies.
+
+| Layer | Behavior |
+|-------|----------|
+| F7 cert poll (`run-f7-gate-continue.ps1`) | After `settlement_menu_ready_observed`, wait **15s**; if gate still false → `fail_settlement_menu_semantic_mismatch`, route **Agent B** |
+| Launcher nav (`launcher-auto-nav.ps1`) | **45s** launcher selection cap; `LAUNCH_TIMING` evidence; Play-only during Continue cert → `fail_launcher_play_only` |
+| Assistive attach | Classify `SettlementTownMenu`; do not weaken cert contamination rules |
+
+Skeleton gameplay cert: `scripts/run-town-to-town-trade-assist-cert.ps1` (expects `AssistiveTownToTownProbe` from Agent B).
+
+---
+
 ## Related docs
 
 - [`f7-agent-mental-model.mmd`](../../handoff/f7-agent-mental-model.mmd)

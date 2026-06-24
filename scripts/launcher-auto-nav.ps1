@@ -1149,6 +1149,56 @@ public static class UIAHelper
         return false;
     }
 
+    private static void CollectLauncherButtonNames(List<string> names)
+    {
+        var windows = FindAllLauncherWindowRoots();
+        if (windows.Count == 0) return;
+        foreach (var window in windows)
+        {
+            CollectButtonNames(window, names);
+            CollectInteractiveNames(window, names);
+        }
+    }
+
+    public static bool IsLauncherContinueVisible()
+    {
+        var names = new List<string>();
+        CollectLauncherButtonNames(names);
+        foreach (var name in names)
+        {
+            var normalized = NormalizeButtonName(name);
+            if (normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static bool IsLauncherPlayOnlyVisible()
+    {
+        var names = new List<string>();
+        CollectLauncherButtonNames(names);
+        var hasPlay = false;
+        var hasContinue = false;
+        foreach (var name in names)
+        {
+            var normalized = NormalizeButtonName(name);
+            if (normalized.IndexOf("Continue", StringComparison.OrdinalIgnoreCase) >= 0
+                && normalized.IndexOf("Custom", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                hasContinue = true;
+            }
+            if (normalized.Equals("Play", StringComparison.OrdinalIgnoreCase)
+                || normalized.Equals("PLAY", StringComparison.OrdinalIgnoreCase))
+            {
+                hasPlay = true;
+            }
+        }
+        return hasPlay && !hasContinue;
+    }
+
     public static bool ClickSafeModeNo()
     {
         var safeModeRoot = FindWindowRootByTitle("Safe Mode");
@@ -2023,7 +2073,14 @@ $script:automationContinueIntentDeclared = $false
 $script:launcherReadyLogged = $false
 $script:safeModeVisibleLogged = $false
 $script:ContinueClickVerifySec = 8
+$script:ContinueClickVerifySecChrome = 4
 $script:PlayClickVerifySec = 12
+$script:LauncherSelectionMaxMs = 45000
+$script:launcherChromeFirstSeenUtc = $null
+$script:launcherSelectionAttempts = 0
+$script:continueVerifyTotalMs = 0
+$script:safeModeBeforeContinue = $false
+$script:launcherSelectionEnded = $false
 $startTime = Get-Date
 $effectiveTimeout = $TimeoutSec
 $deadline = $startTime.AddSeconds($effectiveTimeout)
@@ -2045,6 +2102,41 @@ if (Test-Path -LiteralPath $phase1LogPath) {
     Get-Content -LiteralPath $phase1LogPath -Tail 40 -ErrorAction SilentlyContinue |
         Where-Object { Test-Phase1ReadyLine -Line $_ } |
         ForEach-Object { $phase1ReadyBaseline[$_] = $true }
+}
+
+function Test-LauncherChromeVisible {
+    if ([UIAHelper]::HasSafeModeDialog()) { return $true }
+    if ([UIAHelper]::HasLauncherRoot()) { return $true }
+    if ([UIAHelper]::IsLauncherPlayContinueVisible()) { return $true }
+    return $false
+}
+
+function Update-LauncherSelectionTimer {
+    if (-not (Test-LauncherChromeVisible)) { return }
+    if (-not $script:launcherChromeFirstSeenUtc) {
+        $script:launcherChromeFirstSeenUtc = Get-Date
+    }
+}
+
+function Test-LauncherSelectionBudgetExceeded {
+    if ($handoffStarted -or $clickedPlayContinue) { return $false }
+    if (-not $script:launcherChromeFirstSeenUtc) { return $false }
+    $elapsedMs = ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds
+    return ($elapsedMs -gt $script:LauncherSelectionMaxMs)
+}
+
+function Write-LaunchTimingEvidence {
+    param([string]$Result)
+
+    if ($script:launcherSelectionEnded) { return }
+    $selMs = 0
+    if ($script:launcherChromeFirstSeenUtc) {
+        $selMs = [int][Math]::Max(0, ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds)
+    }
+    $safeFlag = if ($script:safeModeBeforeContinue) { 'true' } else { 'false' }
+    $line = "LAUNCH_TIMING launcherSelectionMs=$selMs continueVerifyMs=$($script:continueVerifyTotalMs) safeModeBeforeContinue=$safeFlag attempts=$($script:launcherSelectionAttempts) result=$Result"
+    Write-LaunchLog $line
+    $script:launcherSelectionEnded = $true
 }
 
 function Invoke-BannerlordFocusHelper {
@@ -2301,6 +2393,7 @@ function Test-UserLaunchPathAdopted {
 
 function Invoke-Handoff {
     param([string]$Reason)
+    Write-LaunchTimingEvidence -Result 'ok'
     $script:handoffStarted = $true
     Write-LaunchLog "handoff: $Reason"
     Write-LaunchLog 'LAUNCH_STATE=handoff'
@@ -2634,46 +2727,58 @@ function Test-LaunchClickVerified {
         [string]$Intent = 'continue'
     )
 
+    $chromeVisible = ([UIAHelper]::HasLauncherRoot() -and -not $handoffStarted)
     if ($Intent -eq 'continue') {
-        $WaitSec = [Math]::Max($WaitSec, $script:ContinueClickVerifySec)
+        if ($chromeVisible) {
+            $WaitSec = [Math]::Max($WaitSec, $script:ContinueClickVerifySecChrome)
+        } else {
+            $WaitSec = [Math]::Max($WaitSec, $script:ContinueClickVerifySec)
+        }
     } elseif ($Intent -eq 'play') {
         $WaitSec = [Math]::Max($WaitSec, $script:PlayClickVerifySec)
+    }
+
+    $verifyStart = Get-Date
+    function Complete-LaunchClickVerify {
+        param([bool]$Ok)
+        $script:continueVerifyTotalMs += [int][Math]::Max(0, ((Get-Date) - $verifyStart).TotalMilliseconds)
+        return $Ok
     }
 
     $deadline = (Get-Date).AddSeconds($WaitSec)
     while ((Get-Date) -lt $deadline) {
         if ([UIAHelper]::HasSafeModeDialog()) {
-            return $false
+            return (Complete-LaunchClickVerify $false)
         }
 
         $det = Get-LaunchNavProcessDetection
         if ($det.gameProcessRunning) {
             if ($Intent -eq 'continue' -and (Test-F7ContinueCertStrict)) {
-                if ($det.gameAliveConfidence -eq 'definite') { return $true }
-                if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
-                if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+                if ($det.gameAliveConfidence -eq 'definite') { return (Complete-LaunchClickVerify $true) }
+                if ([UIAHelper]::HasLauncherLoadingSurface()) { return (Complete-LaunchClickVerify $true) }
+                if (-not [UIAHelper]::HasLauncherRoot()) { return (Complete-LaunchClickVerify $true) }
             } else {
-                return $true
+                return (Complete-LaunchClickVerify $true)
             }
         }
 
         if ($Intent -eq 'continue') {
-            if (-not (Test-F7ContinueCertStrict) -and $det.gameAliveConfidence -eq 'launcher_hosted') { return $true }
-            if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
-            if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+            if (-not (Test-F7ContinueCertStrict) -and $det.gameAliveConfidence -eq 'launcher_hosted') { return (Complete-LaunchClickVerify $true) }
+            if ([UIAHelper]::HasLauncherLoadingSurface()) { return (Complete-LaunchClickVerify $true) }
+            if (-not [UIAHelper]::HasLauncherRoot()) { return (Complete-LaunchClickVerify $true) }
         }
 
         if ($Intent -eq 'play') {
-            if ([UIAHelper]::HasLauncherLoadingSurface()) { return $true }
-            if (-not [UIAHelper]::HasLauncherRoot()) { return $true }
+            if ([UIAHelper]::HasLauncherLoadingSurface()) { return (Complete-LaunchClickVerify $true) }
+            if (-not [UIAHelper]::HasLauncherRoot()) { return (Complete-LaunchClickVerify $true) }
             if (-not [UIAHelper]::HasSafeModeDialog() -and -not [UIAHelper]::IsLauncherPlayContinueVisible()) {
-                return $true
+                return (Complete-LaunchClickVerify $true)
             }
         }
 
         Start-Sleep -Milliseconds 150
     }
-    return $false
+    return (Complete-LaunchClickVerify $false)
 }
 
 if ($LaunchIntent -eq 'continue') {
@@ -2697,6 +2802,20 @@ while ((Get-Date) -lt $deadline) {
 
     if (Invoke-LauncherSafeModeAndCrashDialogs) {
         continue
+    }
+
+    Update-LauncherSelectionTimer
+    if ((Test-F7ContinueCertStrict) -and $LaunchIntent -eq 'continue' -and (Test-LauncherChromeVisible)) {
+        if ([UIAHelper]::IsLauncherPlayOnlyVisible() -and -not [UIAHelper]::IsLauncherContinueVisible()) {
+            Write-LaunchTimingEvidence -Result 'failed'
+            Write-LaunchLog 'LAUNCH_STATE=fail_launcher_play_only'
+            throw 'launcher play-only visible during continue cert'
+        }
+    }
+    if (Test-LauncherSelectionBudgetExceeded) {
+        Write-LaunchTimingEvidence -Result 'timeout'
+        Write-LaunchLog 'LAUNCH_STATE=launcher_timing_timeout'
+        throw 'launcher selection exceeded 45s budget (launcher_timing_timeout)'
     }
 
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
@@ -2786,6 +2905,7 @@ while ((Get-Date) -lt $deadline) {
 
     $preHandoffStall = $false
     if (Test-LaunchReadyNow -StallDetected ([ref]$preHandoffStall)) {
+        Write-LaunchTimingEvidence -Result 'ok'
         Write-LaunchLog 'TBG READY detected (pre-handoff) — launch success'
         return
     }
@@ -2859,6 +2979,8 @@ while ((Get-Date) -lt $deadline) {
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
+            $script:launcherSelectionAttempts++
+            if ($clickedSafeMode) { $script:safeModeBeforeContinue = $true }
             if (Test-LaunchClickVerified -WaitSec 4 -Intent $LaunchIntent) {
                 $script:automationClickedPlayContinue = $true
                 Write-LaunchLog "clicked $displayName ($matchedName) — launch verified (game or launcher handoff)"
@@ -2895,6 +3017,7 @@ while ((Get-Date) -lt $deadline) {
 
 $boundaryStall = $false
 if (Test-LaunchReadyNow -StallDetected ([ref]$boundaryStall)) {
+    Write-LaunchTimingEvidence -Result 'ok'
     Write-LaunchLog 'TBG READY detected at timeout boundary — treating as success'
     return
 }

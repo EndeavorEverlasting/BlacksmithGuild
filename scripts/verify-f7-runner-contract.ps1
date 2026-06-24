@@ -58,7 +58,8 @@ if (Test-Path -LiteralPath $gatePath) {
         'Stop-F7CertProcesses', 'spawnAttribution', 'pre_intent_game_spawn', 'retryCount',
         'Test-F7StrongPreIntentGameSignal', 'Test-F7GameGoneDefinitive', 'fail_game_gone_definitive', 'exeEverSeen',
         'f7-external-state-classifier.ps1', 'Initialize-F7ExternalStateTimeline', 'ExternalStateTimeline',
-        'Emit-F7ExternalStateTimelineCheckpoint', 'Save-F7ExternalStateTimeline', 'Test-F7GuardedActionAllowed'
+        'Emit-F7ExternalStateTimelineCheckpoint', 'Save-F7ExternalStateTimeline', 'Test-F7GuardedActionAllowed',
+        'fail_settlement_menu_semantic_mismatch', 'Test-F7SettlementMenuReadyObserved', 'Get-F7StatusSurfaceSignals'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -114,6 +115,8 @@ if (Test-Path -LiteralPath $navPath) {
         Add-Failure 'launcher-auto-nav.ps1 missing Safe Mode early detect / reduced verify timeout'
     } elseif ($navText -notmatch 'Test-NavGuardedLauncherClick|unknown_window_state') {
         Add-Failure 'launcher-auto-nav.ps1 missing guarded click / unknown_window_state hook'
+    } elseif ($navText -notmatch 'LauncherSelectionMaxMs|Write-LaunchTimingEvidence|launcher_timing_timeout') {
+        Add-Failure 'launcher-auto-nav.ps1 missing launcher selection cap / LAUNCH_TIMING evidence'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
     }
@@ -134,7 +137,9 @@ if (Test-Path -LiteralPath $classifierPath) {
     $classifierText = Get-Content -LiteralPath $classifierPath -Raw
     foreach ($needle in @(
         'Invoke-F7ExternalStateClassification', 'Get-F7StateActionPolicy', 'Resolve-F7GameSurfaceClassifiedState',
-        'Resolve-F7ProcessClassifiedState', 'Add-F7ExternalStateTimelineEvent', 'Test-F7GuardedActionAllowed'
+        'Resolve-F7ProcessClassifiedState', 'Add-F7ExternalStateTimelineEvent', 'Test-F7GuardedActionAllowed',
+        'Get-F7StatusSurfaceSignals', 'Test-F7SettlementMenuReadyObserved', 'LauncherMenuPlayOnly', 'SafeModeDialog',
+        'settlement_menu_ready_observed', 'windowBoundsReason'
     )) {
         if ($classifierText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-external-state-classifier.ps1 missing: $needle"
@@ -266,6 +271,45 @@ if (Test-Path -LiteralPath $assistiveRegression) {
     }
 } else {
     Add-Failure 'Missing test-f7-assistive-attach-mode.ps1 offline regression'
+}
+
+$launcherTimingRegression = Join-Path $PSScriptRoot 'test-f7-launcher-timing-205925.ps1'
+if (Test-Path -LiteralPath $launcherTimingRegression) {
+    Write-Host 'Running test-f7-launcher-timing-205925.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $launcherTimingRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-launcher-timing-205925.ps1 failed (launcher cap / LAUNCH_TIMING regression)'
+    } else {
+        Write-Host 'PASS offline launcher timing regression 205925' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-launcher-timing-205925.ps1 offline regression'
+}
+
+$settlementMenuRegression = Join-Path $PSScriptRoot 'test-f7-settlement-menu-fast-fail.ps1'
+if (Test-Path -LiteralPath $settlementMenuRegression) {
+    Write-Host 'Running test-f7-settlement-menu-fast-fail.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $settlementMenuRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-settlement-menu-fast-fail.ps1 failed (settlement menu semantic mismatch regression)'
+    } else {
+        Write-Host 'PASS offline settlement-menu fast-fail regression' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-settlement-menu-fast-fail.ps1 offline regression'
+}
+
+$townTradeSkeleton = Join-Path $PSScriptRoot 'run-town-to-town-trade-assist-cert.ps1'
+if (Test-Path -LiteralPath $townTradeSkeleton) {
+    Write-Host 'Running run-town-to-town-trade-assist-cert.ps1 -WhatIf ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $townTradeSkeleton -WhatIf
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'run-town-to-town-trade-assist-cert.ps1 -WhatIf failed'
+    } else {
+        Write-Host 'PASS assistive town-trade cert skeleton parses' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing run-town-to-town-trade-assist-cert.ps1 assistive skeleton'
 }
 
 Write-Host ''

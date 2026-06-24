@@ -83,6 +83,10 @@ $script:F7ProcessTimestamps = [ordered]@{
 }
 
 $script:LastProcessDetection = $null
+$script:F7ManifestExtra = @{}
+$script:F7SettlementMenuObservedUtc = $null
+$script:F7SettlementMenuReadyObserved = $false
+$script:F7OldGoldenPathSatisfied = $null
 $certStartedUtc = [datetime]::Parse($startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind)
 
 $runnerCommandLine = "run-f7-gate-continue.ps1 -CertTarget $CertTarget" +
@@ -997,6 +1001,19 @@ function Save-CheckpointEvidence {
     if ($harvestFields.externalStateTimelineCopied -eq $true) {
         $manifest.externalStateTimelineCopied = $true
     }
+
+    $surfaceSignals = Get-F7StatusSurfaceSignals -StatusPath $statusPath -CertStartedUtc $certStartedUtc
+    $manifest.readinessSurface = $surfaceSignals.readinessSurface
+    $manifest.settlementMenuOpen = [bool]$surfaceSignals.settlementMenuOpen
+    $manifest.campaignMapSurfaceOpen = [bool]$surfaceSignals.campaignMapSurfaceOpen
+    $manifest.settlement_menu_ready_observed = [bool]$script:F7SettlementMenuReadyObserved
+    if ($null -ne $script:F7OldGoldenPathSatisfied) {
+        $manifest.oldGoldenPathSatisfied = [bool]$script:F7OldGoldenPathSatisfied
+    }
+    foreach ($key in $script:F7ManifestExtra.Keys) {
+        $manifest[$key] = $script:F7ManifestExtra[$key]
+    }
+
     $manifest | ConvertTo-Json -Depth 10 |
         Set-Content -LiteralPath (Join-Path $checkpointDir 'manifest.json') -Encoding UTF8
 
@@ -1379,6 +1396,50 @@ try {
             $everMapReady = $true
             if ($lastSignals.phase1QuickStartMapReady) { Write-F7LaunchState 'map_ready' }
             if ($lastSignals.phase1TbgReady) { Write-F7LaunchState 'tbg_ready' }
+        }
+
+        if ($CertTarget -eq 'continue') {
+            $statusJsonObj = $null
+            if ($lastSignals.statusArtifactState -eq 'fresh' -and (Test-Path -LiteralPath $statusPath)) {
+                try { $statusJsonObj = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json } catch { }
+            }
+            if (Test-F7SettlementMenuReadyObserved -StatusJson $statusJsonObj `
+                    -StatusArtifactState $lastSignals.statusArtifactState) {
+                if (-not $script:F7SettlementMenuReadyObserved) {
+                    $script:F7SettlementMenuReadyObserved = $true
+                    $script:F7SettlementMenuObservedUtc = Get-Date
+                    $gpNow = Get-GoldenPathCheck -SinceLocal $launchStartedLocal
+                    $script:F7OldGoldenPathSatisfied = Test-F7OldGoldenPathSatisfied -GoldenPathCheck $gpNow -Signals $lastSignals
+                    $null = Emit-F7ExternalStateTimelineCheckpoint -BannerlordRoot $bannerlordRoot -Mode cert `
+                        -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
+                        -CertStartedUtc $certStartedUtc -CertTarget $CertTarget `
+                        -LaunchPath $script:LaunchAutomation.launchPath `
+                        -LaunchSelectedBy $script:LaunchAutomation.launchSelectedBy `
+                        -TargetMismatch ([bool]$script:LaunchAutomation.targetMismatch) `
+                        -LaunchState $script:LaunchAutomation.launchState `
+                        -ReasonOverride 'Settlement town menu ready; old F7 gate still requires MapTransition/open-map.' `
+                        -SettlementMenuReadyObserved $true `
+                        -OldGoldenPathSatisfied ([bool]$script:F7OldGoldenPathSatisfied) -Force
+                }
+                if (-not (Test-F7GateCondition -Signals $lastSignals)) {
+                    $obsSec = ((Get-Date) - $script:F7SettlementMenuObservedUtc).TotalSeconds
+                    if ($obsSec -ge (Get-F7SettlementMenuSemanticMismatchSec)) {
+                        $surfaceNow = Get-F7StatusSurfaceSignals -StatusPath $statusPath -CertStartedUtc $certStartedUtc
+                        $script:F7ManifestExtra = @{
+                            failureClass = 'settlement_menu_ready_but_old_gate_requires_map_transition'
+                            routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+                            settlement_menu_ready_observed = $true
+                            oldGoldenPathSatisfied = [bool]$script:F7OldGoldenPathSatisfied
+                            readinessSurface = $surfaceNow.readinessSurface
+                            settlementMenuOpen = [bool]$surfaceNow.settlementMenuOpen
+                            campaignMapSurfaceOpen = [bool]$surfaceNow.campaignMapSurfaceOpen
+                        }
+                        Invoke-F7PollFail -LaunchState 'fail_settlement_menu_semantic_mismatch' `
+                            -Notes 'F7 FAIL: settlement_menu ready but old gate requires MapTransition/open-map; routed to Agent B' `
+                            -LastSignals $lastSignals -LaunchStartedLocal $launchStartedLocal
+                    }
+                }
+            }
         }
 
         $elapsedSec = ((Get-Date) - $launchStarted).TotalSeconds

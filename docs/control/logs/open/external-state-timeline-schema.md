@@ -59,6 +59,7 @@ Each event records one classification snapshot at a point in time.
 | `hwnd` | int | no | Main window handle when known |
 | `windowTitle` | string | no | Main window title |
 | `windowBounds` | object | no | `{ left, top, width, height }` |
+| `windowBoundsReason` | string | no | e.g. `foreground_helper_no_rect` when bounds unavailable |
 | `foregroundWindowMatch` | bool | no | Whether foreground hwnd matches classified target |
 | `evidenceSources` | string[] | yes | e.g. `process`, `window`, `BlacksmithGuild_Status.json`, `Phase1.tail.txt` |
 | `legalActions` | string[] | yes | Actions permitted in this state + mode |
@@ -73,6 +74,10 @@ Each event records one classification snapshot at a point in time.
 | `targetMismatch` | bool | no | Cert contamination flag |
 | `runtimeEvidenceStates` | string[] | no | Derived evidence labels |
 | `launchState` | string | no | F7 `LAUNCH_STATE` when applicable |
+| `settlement_menu_ready_observed` | bool | yes | Explicit `true`/`false`; `true` when fresh Status shows settlement town menu |
+| `oldGoldenPathSatisfied` | bool | no | Whether legacy F7 MapTransition/TBG gate was satisfied; `null` when unknown |
+
+Process-classified states also include: `SafeModeDialog`, `LauncherMenuContinueAvailable`, `LauncherMenuPlayOnly`.
 
 ---
 
