@@ -27,7 +27,8 @@ namespace BlacksmithGuild.DevTools
             string commandName,
             string source,
             string hotkeyLabel = null,
-            int sequence = -1)
+            int sequence = -1,
+            AssistiveCommandInboxPayload payload = null)
         {
             GameSessionState.SyncForgeStatus();
 
@@ -93,7 +94,7 @@ namespace BlacksmithGuild.DevTools
 
             DebugLogger.Test($"Command started: {commandName}", showInGame: false);
 
-            var result = Execute(commandName);
+            var result = Execute(commandName, payload);
             ForgeStatus.RecordCommand(commandName, source, result.ToString(), null, sequence);
             CertificationTracker.OnCommandResult(commandName, result);
             Sprint002CertificationTracker.OnCommandResult(commandName, result);
@@ -461,7 +462,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
 
-        private static DevCommandResult Execute(string commandName)
+        private static DevCommandResult Execute(string commandName, AssistiveCommandInboxPayload payload = null)
         {
             switch (commandName)
             {
@@ -786,7 +787,7 @@ namespace BlacksmithGuild.DevTools
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case AssistiveLeaveTownTravelService.Command:
-                    return AssistiveLeaveTownTravelService.RunNow(executeTravel: false, source: commandName);
+                    return AssistiveLeaveTownTravelService.RunNow(payload, source: commandName);
                 default:
                     if (commandName != null && commandName.StartsWith(AutoTravelService.AutoTravelPrefix))
                     {

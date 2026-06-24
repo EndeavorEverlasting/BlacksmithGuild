@@ -1,0 +1,38 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260624032408
+Username: CHEEX-DESKTOP\Cheex
+RunAs User: CHEEX-DESKTOP\Cheex
+Configuration Name: 
+Machine: CHEEX-DESKTOP (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\run-pr11-town-travel-launch-attach-execute.ps1 -SkipBuild -LaunchIntent continue -AttachWaitSec 600
+Process ID: 41640
+PSVersion: 5.1.26100.8655
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8655
+BuildVersion: 10.0.26100.8655
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+[2026-06-24 03:24:08] PR11 launch/attach/execute runner start branch=fix/pr11-unattended-execute-cert-runner sha=d886e8a5ebf7369a40421a5864baf604eebe0077
+[2026-06-24 03:24:13] Attach not ready (no_game_process); launching with guarded nav LaunchIntent=continue
+[2026-06-24 03:24:13] Stopping residual TaleWorlds.MountAndBlade.Launcher PID 4364
+Opening Bannerlord launcher...
+Launch intent written: continue -> C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\BlacksmithGuild_LaunchIntent.json
+Launch intent written: continue -> C:\Users\Cheex\Documents\Mount and Blade II Bannerlord\BlacksmithGuild_LaunchIntent.json
+
+[2026-06-24 03:25:23] Send-ForgeCommand AssistiveTownToTownProbe -Wait
+Wrote command inbox: sequence=4 command=AssistiveTownToTownProbe
+Waiting up to 45s for ack (campaign map required; alt-tab OK)...
+ACK: AssistiveTownToTownProbe = Success
+[2026-06-24 03:25:40] Send-ForgeCommand AssistiveLeaveTownAndTravel -Execute -TargetSettlement Ortysia -Wait
+Wrote command inbox: sequence=5 command=AssistiveLeaveTownAndTravel
+Waiting up to 120s for ack (campaign map required; alt-tab OK)...
+PS>TerminatingError(): "Timeout waiting for command 'AssistiveLeaveTownAndTravel' (sequence 5). Is campaign on map with mod ON? (F7: campaignReady=true). Commands do not run during character creation."
+[2026-06-24 03:27:44] Execute command failed: Timeout waiting for command 'AssistiveLeaveTownAndTravel' (sequence 5). Is campaign on map with mod ON? (F7: campaignReady=true). Commands do not run during character creation.
+**********************
+Windows PowerShell transcript end
+End time: 20260624032745
+**********************

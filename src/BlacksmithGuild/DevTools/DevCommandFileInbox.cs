@@ -78,6 +78,8 @@ namespace BlacksmithGuild.DevTools
                     return;
                 }
 
+                AssistiveCommandInboxPayload.TryParseFromJson(json, out var payload);
+
                 if (sequence <= _lastSeenSequence && _lastSeenSequence >= 0)
                 {
                     _lastSeenWriteTicks = writeTicks;
@@ -88,7 +90,7 @@ namespace BlacksmithGuild.DevTools
                 _lastSeenSequence = sequence;
 
                 var commandSource = string.IsNullOrWhiteSpace(source) ? "file-inbox" : source;
-                var result = DevCommandBus.TryRun(command, commandSource, sequence: sequence);
+                var result = DevCommandBus.TryRun(command, commandSource, sequence: sequence, payload: payload);
                 WriteAck(sequence, command, result.ToString());
                 TryClearInboxAfterConsume(sequence, command, result);
             }

@@ -1,0 +1,30 @@
+﻿{
+    "sessionId":  "20260624-032408",
+    "checkpointDir":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260624-032408-pr11-launch-attach-execute",
+    "branch":  "fix/pr11-unattended-execute-cert-runner",
+    "startSha":  "d886e8a5ebf7369a40421a5864baf604eebe0077",
+    "endSha":  "d886e8a5ebf7369a40421a5864baf604eebe0077",
+    "targetSettlement":  "Ortysia",
+    "launchIntent":  "continue",
+    "dryRun":  false,
+    "attachOnly":  false,
+    "startedAtUtc":  "2026-06-24T07:24:08.4124220Z",
+    "endedAtUtc":  "2026-06-24T07:27:45.0877813Z",
+    "failureClass":  null,
+    "attachResult":  "attach_ready",
+    "passFail":  "PASS",
+    "probeOk":  true,
+    "windowClassifierResult":  "settlement_menu",
+    "executeOk":  false,
+    "executeChecks":  {
+                          "travelCommandMode":  true,
+                          "executeAllowed":  true,
+                          "fakeGameplayDelta":  true,
+                          "actualExecutionObserved":  true,
+                          "executeRequested":  true,
+                          "movementIntentSet":  true
+                      },
+    "exitCode":  0,
+    "certAttempted":  true,
+    "routeAgent":  "Agent A - Cert / Evidence / Git / PR (evidence ready for review)"
+}

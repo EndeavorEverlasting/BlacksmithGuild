@@ -1,0 +1,18 @@
+{
+  "updatedAt": "2026-06-24T03:25:44.8632866-04:00",
+  "assistiveCertReady": true,
+  "inGameAssistReady": true,
+  "canPollFileInbox": true,
+  "canAcceptAssistiveCommand": true,
+  "readinessSurface": "map_surface",
+  "currentSettlement": "Quyaz",
+  "openMapReady": true,
+  "townMenuReady": false,
+  "nextTownRecommendation": "Ortysia",
+  "tradeExecution": "execute",
+  "travelCommandMode": "execute",
+  "targetSettlement": "Ortysia",
+  "fallbackReason": null,
+  "executeRequested": true,
+  "reason": null
+}

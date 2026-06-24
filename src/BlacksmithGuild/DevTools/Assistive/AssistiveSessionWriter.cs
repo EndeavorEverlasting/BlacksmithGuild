@@ -15,7 +15,10 @@ namespace BlacksmithGuild.DevTools.Assistive
             string tradeExecution = null,
             string travelCommandMode = null,
             string currentSettlement = null,
-            string reason = null)
+            string reason = null,
+            string targetSettlement = null,
+            string fallbackReason = null,
+            bool? executeRequested = null)
         {
             try
             {
@@ -38,6 +41,9 @@ namespace BlacksmithGuild.DevTools.Assistive
                 builder.AppendLine($"  \"nextTownRecommendation\": {(nextTownRecommendation == null ? "null" : $"\"{Escape(nextTownRecommendation)}\"")},");
                 builder.AppendLine($"  \"tradeExecution\": {(tradeExecution == null ? "null" : $"\"{Escape(tradeExecution)}\"")},");
                 builder.AppendLine($"  \"travelCommandMode\": {(travelCommandMode == null ? "null" : $"\"{Escape(travelCommandMode)}\"")},");
+                builder.AppendLine($"  \"targetSettlement\": {(targetSettlement == null ? "null" : $"\"{Escape(targetSettlement)}\"")},");
+                builder.AppendLine($"  \"fallbackReason\": {(fallbackReason == null ? "null" : $"\"{Escape(fallbackReason)}\"")},");
+                builder.AppendLine($"  \"executeRequested\": {(executeRequested.HasValue ? executeRequested.Value.ToString().ToLowerInvariant() : "null")},");
                 builder.AppendLine($"  \"reason\": {(reason == null ? "null" : $"\"{Escape(reason)}\"")}");
                 builder.AppendLine("}");
                 File.WriteAllText(SessionPath, builder.ToString());

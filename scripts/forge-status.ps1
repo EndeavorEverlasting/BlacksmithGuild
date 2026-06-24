@@ -437,6 +437,8 @@ function Send-ForgeCommand {
         [Parameter(Mandatory = $true)][string]$CommandName,
         [Parameter(Mandatory = $true)][string]$BannerlordRoot,
         [switch]$Wait,
+        [switch]$Execute,
+        [string]$TargetSettlement,
         [int]$TimeoutSec = 60
     )
 
@@ -475,6 +477,12 @@ function Send-ForgeCommand {
         sequence = $sequence
         command  = $CommandName
         source   = 'forge.ps1'
+    }
+    if ($Execute) {
+        $payload.execute = $true
+    }
+    if ($TargetSettlement) {
+        $payload.targetSettlement = $TargetSettlement
     }
 
     $payload | ConvertTo-Json | Set-Content -LiteralPath $inboxPath -Encoding UTF8

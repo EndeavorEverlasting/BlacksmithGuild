@@ -76,44 +76,17 @@ namespace BlacksmithGuild.DevTools.Assistive
             return result;
         }
 
-        public static DevCommandResult RunNow(bool executeTravel = false, string source = Command)
+        public static DevCommandResult RunNow(AssistiveCommandInboxPayload payload = null, string source = Command)
         {
-            if (!AssistReadinessEvaluator.CanAcceptAssistiveCommand)
-            {
-                LastFailReason = AssistReadinessEvaluator.IsInGameAssistReady
-                    ? "assist command blocked by loading or mission"
-                    : GameSessionState.GetCommandReadyBlockDetail();
-                return DevCommandResult.Blocked;
-            }
-
-            var readiness = AssessTravelReadiness();
-            AssistiveTownToTownProbeService.WriteTravelEvidence(readiness);
-
-            if (!executeTravel || readiness.TravelCommandMode != "execute")
-            {
-                DebugLogger.Test(
-                    $"[TBG ASSIST] {source} advisory travel mode={readiness.TravelCommandMode} reason={readiness.Reason}",
-                    showInGame: false);
-                AssistiveSessionWriter.WriteSnapshot(
-                    nextTownRecommendation: readiness.TargetSettlement,
-                    tradeExecution: "advisory_only",
-                    travelCommandMode: readiness.TravelCommandMode,
-                    currentSettlement: readiness.CurrentSettlement,
-                    reason: readiness.Reason);
-                return DevCommandResult.Success;
-            }
-
-            var destination = ResolveTargetSettlement(readiness.TargetSettlement);
-            if (destination == null)
-            {
-                LastFailReason = "target settlement not resolved";
-                return DevCommandResult.Failed;
-            }
-
-            return AutoTravelService.TravelByName(destination.Name?.ToString() ?? destination.StringId);
+            return AssistiveTravelExecutor.Run(payload, source);
         }
 
-        private static string ResolveRecommendedTarget()
+        public static void NoteFailReason(string reason)
+        {
+            LastFailReason = reason;
+        }
+
+        public static string ResolveRecommendedTarget()
         {
             var main = MobileParty.MainParty;
             if (main == null)
@@ -135,7 +108,7 @@ namespace BlacksmithGuild.DevTools.Assistive
             return ranked?.Settlement?.Name?.ToString() ?? ranked?.Settlement?.StringId;
         }
 
-        private static Settlement ResolveTargetSettlement(string name)
+        public static Settlement ResolveTargetSettlement(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
