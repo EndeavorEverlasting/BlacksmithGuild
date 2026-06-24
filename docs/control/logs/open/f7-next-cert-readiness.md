@@ -1,9 +1,8 @@
 # F7 Next Cert Readiness Matrix
 
 **Author:** Agent A — Cert / Evidence / Git / PR  
-**Branch:** `fix/f7-gate-stability` @ `0e312e5`  
-**Mental model:** [`docs/handoff/f7-agent-mental-model.mmd`](../../../handoff/f7-agent-mental-model.mmd)  
-**Gate:** RED — no PASS manifest; B StatusFlush fix validated @ `20260622-202052`; runner/harvest blocker  
+**Branch:** `fix/f7-gate-stability` @ `cc6fbac`  
+**Gate:** RED — death after `HeavyFlushUnblocked` @ `200917` seq=8115  
 **PR #7:** **HOLD**
 
 ---
@@ -179,17 +178,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Pre-intent spawn rejection | `740b604`+ | C | **LANDED** |
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
-| **Runtime survival past update_readiness** | `0e312e5` | B | **PARTIAL** — survives during stabilization; dies after window ends @ `195817` seq=8063 |
-| **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** @ `20260623-195817` re-cert |
+| **Runtime survival past update_readiness** | `cc6fbac` | B | **PARTIAL** — grace OK; death @ `200917` seq=8115 after `HeavyFlushUnblocked` |
+| **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** (202052, 195817, 200917) |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
-**Agent A live cert gate (pick one):**
+**Agent A live cert gate:**
 
-1. Agent C fixes `fail_game_gone_definitive` when Phase1 fresh + launcher_hosted alive **AND** harvest enrichment when CrashContext absent **OR**
-2. User explicitly authorizes diagnostic cert (expect partial FAIL until C fixed)
+1. Agent B fixes first `FlushFull` after `HeavyFlushUnblocked` (seq=8115 class death) **OR**
+2. User explicitly authorizes diagnostic cert
 
-**Do not run blind live cert** without C fix for `202052` pattern or user authorization.
+**Do not run blind live cert** without B fix for post-unblock flush death.
 
 ---
 
@@ -234,4 +233,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 | `185813` | `391b186` | `docs/evidence/live-cert/20260622-185813/checkpoint-01-f7-gate/` |
 | `192811` | `5d9fe29` | `docs/evidence/live-cert/20260622-192811/checkpoint-01-f7-gate/` |
 | `202052` | `319588f` | `docs/evidence/live-cert/20260622-202052/` — B validated; C false fail @ 61s |
-| `195817` | cert commit | `docs/evidence/live-cert/20260623-195817/` — C validated; B post-stabilization death seq=8063 |
+| `195817` | `b19dcb3` | Death seq=8063 immediate post-`StabilizationEnd` |
+| `200917` | cert commit | Death seq=8115 after `HeavyFlushUnblocked` — grace lifecycle validated |

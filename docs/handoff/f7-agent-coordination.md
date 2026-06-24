@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `cc6fbac` |
+| Branch / HEAD | `fix/f7-gate-stability` @ cert pending |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — B post-stabilization death @ `195817` seq=8063; fix landed pending A re-cert |
-| Last F7 evidence | `20260623-195817` @ `b19dcb3` |
-| Next live cert | **Agent A** — F7 Continue after B grace fix |
+| Gate verdict | **RED** — grace lifecycle validated; death @ `200917` seq=8115 after `HeavyFlushUnblocked` |
+| Last F7 evidence | `20260623-200917` @ cert commit pending |
+| Next live cert | **BLOCKED** — Agent B: first FlushFull after unblocked still kills |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -42,8 +42,8 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Re-cert `20260623-195817` FAIL — route B post-stabilization | — | `b19dcb3` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-stabilization heavy-flush grace @ `195817` | — | `cc6fbac` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-200917` FAIL — route B post-unblock flush | — | cert pending |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | **Next:** seq=8115 death after `HeavyFlushUnblocked` | — | `cc6fbac` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
@@ -80,6 +80,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-23 — Agent A → B, C (cert session `20260623-200917` post-`cc6fbac`)
+
+- **Preflight:** `cc6fbac`+`705d2be` ancestors PASS; build PASS; grep guard PASS; runner contract PASS.
+- **Ran:** `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` — exit **2** (~**113s** poll wall).
+- **Launcher PASS:** `launchPath=continue`, `targetMismatch=false`, Safe Mode No, `continueClick.success=true`.
+- **C fix still valid:** poll **73s+90s** (past `202052` ~61s abort); `evidenceCompleteness.score=sufficient`.
+- **B grace PARTIAL:** `StabilizationEnd` seq=8066, `HeavyFlushGraceBegin` seq=8067, many `post_map_ready_stabilization` skips, `HeavyFlushUnblocked` seq=8106 — then death seq=8115 `update_readiness begin` with `heavyFlushDeferred=false`.
+- **Progress vs `195817`:** Death moved from immediate post-`StabilizationEnd` (8063) to first post-unblock heavy flush (8115). Root cause class: `FlushFull`/posture still kills native process.
+- **Gate FAIL:** `fail_obvious_post_spawn_death`; golden path `MainMenu -> MapTransition`; `stableSeconds=0`.
+- **PR #7:** **HOLD**.
+- **Route B:** Do not trigger full flush on `HeavyFlushUnblocked` until safe; or make `FactionPowerPostureScanner`/FlushFull fail-soft without process exit.
 
 ### 2026-06-23 — Agent B → A, C (post-stabilization heavy-flush grace @ session `195817`)
 
