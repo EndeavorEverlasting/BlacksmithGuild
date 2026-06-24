@@ -14,6 +14,7 @@ namespace BlacksmithGuild.DevTools
     public static class CampaignMapReadyOrchestrator
     {
         private const int DeferredHookMinTicks = 5;
+        private const int PostStabilizationHeavyFlushMinTicks = 10;
         private const float PostMapReadyStabilizationSec = 20f;
 
         private static bool _immediateCompleted;
@@ -22,14 +23,51 @@ namespace BlacksmithGuild.DevTools
         private static bool _deferredScheduled;
         private static int _deferredTicksWaited;
         private static float _stabilizationSecRemaining;
+        private static int _postStabilizationGraceTicksRemaining;
         private static bool _hasRunAgentAutoLoop;
         private static string _lastOrchestratorDeferKey;
 
         /// <summary>True after immediate map-ready hooks finish (deferred may still be pending).</summary>
         public static bool ImmediateHooksCompleted => _immediateHooksCompleted;
 
+        /// <summary>True after deferred map-ready hooks finish (or were skipped by mask).</summary>
+        public static bool DeferredHooksCompleted => _deferredCompleted;
+
         /// <summary>True for a short wall-clock window after map-ready hooks — blocks heavy campaign tick drivers.</summary>
         public static bool IsPostMapReadyStabilizationWindow => _stabilizationSecRemaining > 0f;
+
+        /// <summary>
+        /// True when status flush must stay lightweight (stabilization, deferred pending, post-stabilization grace, or map not ready).
+        /// </summary>
+        public static bool ShouldDeferHeavyStatusFlush(out string reason)
+        {
+            if (IsPostMapReadyStabilizationWindow)
+            {
+                reason = "post_map_ready_stabilization";
+                return true;
+            }
+
+            if (_deferredScheduled && !_deferredCompleted)
+            {
+                reason = "deferred_hooks_pending";
+                return true;
+            }
+
+            if (_postStabilizationGraceTicksRemaining > 0)
+            {
+                reason = "post_stabilization_tick_budget";
+                return true;
+            }
+
+            if (!GameSessionState.IsCampaignMapReady)
+            {
+                reason = "map_not_ready";
+                return true;
+            }
+
+            reason = null;
+            return false;
+        }
 
         public static bool ShouldRunOrchestratorTick()
         {
@@ -44,6 +82,7 @@ namespace BlacksmithGuild.DevTools
             _deferredScheduled = false;
             _deferredTicksWaited = 0;
             _stabilizationSecRemaining = 0f;
+            _postStabilizationGraceTicksRemaining = 0;
             _hasRunAgentAutoLoop = false;
             _lastOrchestratorDeferKey = null;
         }
@@ -69,6 +108,7 @@ namespace BlacksmithGuild.DevTools
                 RuntimeTrace.Run("MapReady", "StabilizationEnd", () =>
                 {
                     DebugLogger.Test("[TBG MAPREADY] post-map-ready stabilization window ended.", showInGame: false);
+                    StartPostStabilizationHeavyFlushGrace();
                 });
             }
         }
@@ -91,6 +131,8 @@ namespace BlacksmithGuild.DevTools
             {
                 GameSessionState.SyncForgeStatus();
             }
+
+            TryAdvanceHeavyFlushGrace();
 
             if (!_immediateCompleted)
             {
@@ -175,6 +217,36 @@ namespace BlacksmithGuild.DevTools
             }
 
             return false;
+        }
+
+        private static void StartPostStabilizationHeavyFlushGrace()
+        {
+            _postStabilizationGraceTicksRemaining = PostStabilizationHeavyFlushMinTicks;
+            RuntimeTrace.RunSafe("MapReady", "HeavyFlushGraceBegin", () =>
+            {
+                DebugLogger.Test(
+                    $"[TBG MAPREADY] post-stabilization heavy-flush grace started ({PostStabilizationHeavyFlushMinTicks} campaign ticks).",
+                    showInGame: false);
+            });
+        }
+
+        private static void TryAdvanceHeavyFlushGrace()
+        {
+            if (_postStabilizationGraceTicksRemaining <= 0)
+            {
+                return;
+            }
+
+            _postStabilizationGraceTicksRemaining--;
+            if (_postStabilizationGraceTicksRemaining > 0)
+            {
+                return;
+            }
+
+            if (!ShouldDeferHeavyStatusFlush(out _))
+            {
+                RuntimeTrace.RunSafe("MapReady", "HeavyFlushUnblocked", () => GameSessionState.SyncForgeStatus());
+            }
         }
 
         private static void LogOrchestratorDeferred(string reason)

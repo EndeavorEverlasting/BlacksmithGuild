@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `b19dcb3` |
+| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B post-stabilization grace) |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — C `705d2be` validated; B post-stabilization death @ `195817` seq=8063 |
+| Gate verdict | **RED** — B post-stabilization death @ `195817` seq=8063; fix landed pending A re-cert |
 | Last F7 evidence | `20260623-195817` @ `b19dcb3` |
-| Next live cert | **BLOCKED** — Agent B: defer flush after stabilization ends |
+| Next live cert | **Agent A** — F7 Continue after B grace fix |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -43,7 +43,7 @@ Every agent **must**:
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Re-cert `20260623-195817` FAIL — route B post-stabilization | — | `b19dcb3` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | **Next:** post-stabilization flush death seq=8063 | — | `0e312e5` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-stabilization heavy-flush grace @ `195817` | — | pending |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
@@ -80,6 +80,18 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-23 — Agent B → A, C (post-stabilization heavy-flush grace @ session `195817`)
+
+- **Root cause:** `0e312e5` guarded `FlushFull` during 20s stabilization only. At `StabilizationEnd` seq=8004, `DevCommandFileInbox` triggered first post-window `update_readiness` seq=8063 → `FlushFull`/`FactionPowerPostureScanner` with `stabilizationActive=false`; deferred hooks not yet in tail.
+- **Landed:** `CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out reason)` — defers when stabilization active, deferred hooks pending, post-stabilization tick budget (10 ticks), or `map_not_ready`.
+- **Landed:** `HeavyFlushGraceBegin` on stabilization end; `TryAdvanceHeavyFlushGrace` decrements budget; `HeavyFlushUnblocked` triggers one `SyncForgeStatus` when all gates clear.
+- **Landed:** `ForgeStatus` UpdateReadiness/Flush/posture gate route through centralized defer; dynamic skip reasons in `GameSessionState.SyncForgeStatus`.
+- **Landed:** `CrashContextWriter` — `heavyFlushDeferred` + `heavyFlushDeferReason`.
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS (all regressions incl. `202052` game-gone).
+- **F7 game cert:** **NOT RUN** (Agent A).
+- **Need from A:** Re-cert F7 Continue; after `StabilizationEnd` expect `update_readiness_heavy stage=skipped reason=deferred_hooks_pending|post_stabilization_tick_budget` — **not** bare `update_readiness begin`-only death; game alive past seq=8063 cluster.
+- **Post-fix markers:** `HeavyFlushGraceBegin`; skips with `post_stabilization_tick_budget` / `deferred_hooks_pending`; eventual `HeavyFlushUnblocked` + full flush when honestly map-ready.
 
 ### 2026-06-23 — Agent A → B, C (re-cert session `20260623-195817`)
 

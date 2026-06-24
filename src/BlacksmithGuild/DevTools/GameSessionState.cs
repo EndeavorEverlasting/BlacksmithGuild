@@ -763,12 +763,12 @@ namespace BlacksmithGuild.DevTools
                 {
                     var mapReady = IsCampaignMapReady;
                     var heroReady = IsMainHeroReady;
-                    if (CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow)
+                    if (CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out var reason))
                     {
                         RuntimeTrace.LogSkipped(
                             "StatusFlush",
                             "update_readiness_heavy",
-                            "post_map_ready_stabilization");
+                            reason);
                     }
 
                     ForgeStatus.UpdateReadiness(mapReady, heroReady);

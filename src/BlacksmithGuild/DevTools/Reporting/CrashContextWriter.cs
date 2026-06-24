@@ -76,6 +76,7 @@ namespace BlacksmithGuild.DevTools.Reporting
                 var stabilizationActive = CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow;
                 var immediateDone = CampaignMapReadyOrchestrator.ImmediateHooksCompleted;
                 var driversBlocked = LaunchPathInference.AreAutonomousDriversBlocked(immediateDone, stabilizationActive);
+                var heavyFlushDeferred = CampaignMapReadyOrchestrator.ShouldDeferHeavyStatusFlush(out var heavyFlushDeferReason);
 
                 var builder = new StringBuilder();
                 builder.AppendLine("{");
@@ -101,6 +102,12 @@ namespace BlacksmithGuild.DevTools.Reporting
                 builder.AppendLine($"  \"campaignReady\": {GameSessionState.IsCampaignMapReady.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"mainHeroReady\": {GameSessionState.IsMainHeroReady.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"stabilizationActive\": {stabilizationActive.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"heavyFlushDeferred\": {heavyFlushDeferred.ToString().ToLowerInvariant()},");
+                if (heavyFlushDeferred)
+                {
+                    builder.AppendLine($"  \"heavyFlushDeferReason\": \"{Escape(heavyFlushDeferReason ?? "")}\",");
+                }
+
                 builder.AppendLine($"  \"autonomousDriversBlocked\": {driversBlocked.ToString().ToLowerInvariant()},");
                 builder.AppendLine("  \"lastBegin\": {");
                 builder.AppendLine($"    \"area\": \"{Escape(_lastBeginArea ?? "")}\",");
