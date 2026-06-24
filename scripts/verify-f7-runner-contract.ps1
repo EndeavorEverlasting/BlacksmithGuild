@@ -30,8 +30,10 @@ $classifierPath = Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1'
 $pathsPath = Join-Path $PSScriptRoot 'bannerlord-paths.ps1'
 $navPath = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
 $forgeStatusPath = Join-Path $PSScriptRoot 'forge-status.ps1'
+$pr11ClassifierPath = Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1'
+$pr11ExecuteRunnerPath = Join-Path $PSScriptRoot 'run-pr11-town-travel-launch-attach-execute.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -341,7 +343,9 @@ foreach ($pair in @(
     @{ path = 'test-assistive-travel-execute-mode.ps1'; label = 'assistive travel execute mode' },
     @{ path = 'test-runtime-gameplay-state-machine.ps1'; label = 'runtime gameplay state machine' },
     @{ path = 'test-assistive-launch-setup-guarded-click.ps1'; label = 'assistive launch setup guarded click' },
-    @{ path = 'test-forge-command-sequence-after-prior-ack.ps1'; label = 'forge command sequence after prior ack' }
+    @{ path = 'test-forge-command-sequence-after-prior-ack.ps1'; label = 'forge command sequence after prior ack' },
+    @{ path = 'test-pr11-process-window-classifier.ps1'; label = 'pr11 process window classifier' },
+    @{ path = 'test-pr11-execute-cert-parser.ps1'; label = 'pr11 execute cert parser' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {
