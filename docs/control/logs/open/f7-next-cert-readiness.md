@@ -179,8 +179,8 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Pre-intent spawn rejection | `740b604`+ | C | **LANDED** |
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
-| **Runtime survival past update_readiness** | `0e312e5` | B | **VALIDATED** @ `20260622-202052` — seq=2762+ ok/end; not game PASS |
-| **Runner false game-gone + harvest_failed** | TBD | C | **OPEN** — `202052` fail_game_gone_definitive @ 61s with fresh Phase1 |
+| **Runtime survival past update_readiness** | `0e312e5` | B | **PARTIAL** — survives during stabilization; dies after window ends @ `195817` seq=8063 |
+| **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** @ `20260623-195817` re-cert |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
@@ -233,4 +233,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 |---------|--------|------|
 | `185813` | `391b186` | `docs/evidence/live-cert/20260622-185813/checkpoint-01-f7-gate/` |
 | `192811` | `5d9fe29` | `docs/evidence/live-cert/20260622-192811/checkpoint-01-f7-gate/` |
-| `202052` | cert commit | `docs/evidence/live-cert/20260622-202052/checkpoint-01-f7-gate/` — B fix validated; C runner/harvest FAIL |
+| `202052` | `319588f` | `docs/evidence/live-cert/20260622-202052/` — B validated; C false fail @ 61s |
+| `195817` | cert commit | `docs/evidence/live-cert/20260623-195817/` — C validated; B post-stabilization death seq=8063 |
