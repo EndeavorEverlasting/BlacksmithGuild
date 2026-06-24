@@ -1,8 +1,8 @@
 # F7 Next Cert Readiness Matrix
 
-**Author:** Agent B — Runtime / Readiness / Gameplay safety  
+**Author:** Agent A — Cert / Evidence / Git / PR  
 **Branch:** `fix/f7-gate-stability` @ `e891b33`  
-**Gate:** RED — death after `HeavyFlushUnblocked` @ `200917` seq=8115; **B post-unblock fix landed pending A re-cert**  
+**Gate:** RED — runner tooling exception @ `204227`; **B post-unblock fix validated** (past seq=8115)  
 **PR #7:** **HOLD**
 
 ---
@@ -178,16 +178,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | Pre-intent spawn rejection | `740b604`+ | C | **LANDED** |
 | Contamination guard | `77059f8`+ | C | **LANDED** |
 | SyncForgeStatus fail-soft (partial) | `f6370fa` | B | **LANDED** — 192811 progressed past seq=29 but still died |
-| **Runtime survival past update_readiness** | `cc6fbac` | B | **PARTIAL** — grace OK; death @ `200917` seq=8115 after `HeavyFlushUnblocked` |
-| **Post-unblock fail-soft + surface telemetry** | `e891b33` | B | **LANDED** — trace-only unblock; `settlement_menu_open` defer; `readinessSurface` fields |
+| **Runtime survival past update_readiness** | `cc6fbac` | B | **SUPERSEDED** — grace OK; death @ `200917` seq=8115 (fixed @ `e891b33`) |
+| **Post-unblock fail-soft + surface telemetry** | `e891b33` | B | **VALIDATED** @ `204227` — past seq=8115; `settlement_menu_open` defer; surface fields present |
 | **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** (202052, 195817, 200917) |
+| **Runner poll tooling exception** | TBD | A/C | **OPEN** — `204227` `Access is denied` @ ~121s poll; `evidenceCompleteness=partial` |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit "run diagnostic cert" | User | Required if B fix not landed |
 
 **Agent A live cert gate:**
 
-1. Agent B post-unblock hardening (`settlement_menu_open` defer, trace-only `HeavyFlushUnblocked`) **LANDED — pending A re-cert** **OR**
-2. User explicitly authorizes diagnostic cert
+1. ~~Agent B post-unblock hardening~~ **VALIDATED @ `204227`** — runtime death class cleared
+2. **Next blocker:** runner `Access is denied` tooling exception + harvest partial — route **Agent A + C** before medal retry
 
 **Status JSON semantics (unchanged top-level `campaignReady`):** reflects `IsCampaignMapReady` (MapState active). New session fields disambiguate surface:
 
@@ -248,3 +249,4 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue
 | `202052` | `319588f` | `docs/evidence/live-cert/20260622-202052/` — B validated; C false fail @ 61s |
 | `195817` | `b19dcb3` | Death seq=8063 immediate post-`StabilizationEnd` |
 | `200917` | cert commit | Death seq=8115 after `HeavyFlushUnblocked` — grace lifecycle validated |
+| `204227` | pending | B fix validated (seq=18766+); runner tooling exception; `readinessSurface=settlement_menu` |
