@@ -31,9 +31,8 @@ Every agent **must**:
 | Branch / HEAD | `fix/f7-gate-stability` @ pending push |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — attach-only assist PASS; await user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **GREEN (assist attach)** — attach-only PASS @ `20260624-020059` (`launchUsed=false`) |
-| Last F7 evidence | `20260623-205925` (closed, informative) |
-| Last assist evidence | `20260624-020059` — attach-only manifest PASS |
+| Gate verdict | **GREEN (assist attach)** — attach-only PASS @ `20260624-020821` (`launchUsed=false`, ~5s) |
+| Last assist evidence | `20260624-020821` — attach-only manifest PASS |
 | Next live cert | User merge auth; optional travel execute (Agent B) |
 | Old F7 | **CLOSED** — infrastructure/regression only |
 | Parallel lanes | B + C parallel-safe; live cert serial |
@@ -44,7 +43,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Attach-only assist PASS @ `20260624-020059` | — | pending |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Attach-only PASS @ `20260624-020821` | — | pending |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | Hot standby — return on runtime/probe/execute defect | — | `e4c261d` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach runner @ `0b5798a`; harvest fixes pending review | — | `0b5798a` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Assist PASS + attach doctrine recorded | — | `89429ad` |
@@ -95,6 +94,15 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent A → B, C, D (attach-only PASS @ `20260624-020821`)
+
+- **Command:** `run-town-to-town-trade-assist-cert.ps1 -AttachOnly` — no launch; ~5s wall on open Quyaz session.
+- **PASS:** `mode=assistive_attach`, `launchUsed=false`, `launchPath=existing_session`, probe seq=3 ack Success.
+- **FAIL (honest):** `20260624-020430` — `assistive_probe_failed` stale inbox sequence=1 after game consumed seq=2.
+- **Fix:** `Get-LastConsumedForgeInboxSequence` in `forge-status.ps1` (Select-String last Phase1 consumed marker).
+- **Evidence:** [`20260624-020821`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json).
+- **Route C:** offline regression for inbox sequence after prior probe ack.
 
 ### 2026-06-24 — Agent D → A, B, C (assist PASS + current-session attach doctrine)
 

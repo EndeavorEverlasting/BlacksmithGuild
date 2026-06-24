@@ -414,6 +414,24 @@ function Clear-StaleMutationCommandInbox {
     }
 }
 
+function Get-LastConsumedForgeInboxSequence {
+    param([Parameter(Mandatory = $true)][string]$BannerlordRoot)
+
+    $candidates = @(
+        (Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'),
+        (Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log')
+    )
+    foreach ($phase1Path in $candidates) {
+        if (-not (Test-Path -LiteralPath $phase1Path)) { continue }
+        $hit = Select-String -LiteralPath $phase1Path -Pattern '\[TBG INBOX\] consumed sequence=(\d+)' -ErrorAction SilentlyContinue |
+            Select-Object -Last 1
+        if ($hit) {
+            return [int]$hit.Matches[0].Groups[1].Value
+        }
+    }
+    return 0
+}
+
 function Send-ForgeCommand {
     param(
         [Parameter(Mandatory = $true)][string]$CommandName,
@@ -437,12 +455,16 @@ function Send-ForgeCommand {
     $inboxPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandInbox.json'
     $ackPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandAck.json'
     $statusPath = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
-    $sequence = 1
+    $lastConsumed = Get-LastConsumedForgeInboxSequence -BannerlordRoot $BannerlordRoot
+    $sequence = $lastConsumed + 1
     if (Test-Path -LiteralPath $inboxPath) {
         try {
             $existing = Get-Content -LiteralPath $inboxPath -Raw | ConvertFrom-Json
             if ($existing.sequence) {
-                $sequence = [int]$existing.sequence + 1
+                $inboxSeq = [int]$existing.sequence
+                if ($inboxSeq -gt $lastConsumed) {
+                    $sequence = $inboxSeq
+                }
             }
         } catch {
             $sequence = [int](Get-Date -UFormat %s)
