@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | pending push |
+| Branch / HEAD | `fix/f7-gate-stability` @ `2207468` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — poll completes; MapTransition timeout @ `205925` (game alive, settlement_menu) |
@@ -42,7 +42,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `205925` FAIL MapTransition timeout; tooling fixes landed | — | pending |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `205925` FAIL MapTransition timeout; tooling fixes landed | — | `903c8d0` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock validated; next: `canPollFileInbox` @ settlement_menu | — | `e891b33` |
 | **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Classifier @ `89e7158`; A landed poll hardening | — | `89e7158` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
