@@ -10,5 +10,5 @@ if errorlevel 1 (
   )
 )
 powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPTS%\write-launch-intent.ps1" -LaunchIntent continue -BannerlordRoot "%ROOT%"
-powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPTS%\launcher-auto-nav.ps1" -LaunchIntent continue -BannerlordRoot "%ROOT%" -TimeoutSec 300
+powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPTS%\launcher-auto-nav.ps1" -LaunchIntent continue -BannerlordRoot "%ROOT%" -TimeoutSec 300 -LaunchSetup
 exit /b %ERRORLEVEL%

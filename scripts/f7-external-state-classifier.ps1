@@ -216,6 +216,7 @@ function Get-F7StatusSurfaceSignals {
         campaignReady = $false
         canPollFileInbox = $false
         inGameAssistReady = $false
+        canAcceptAssistiveCommand = $false
         statusArtifactState = 'missing'
     }
 
@@ -229,7 +230,7 @@ function Get-F7StatusSurfaceSignals {
         $result.statusArtifactState = 'unknown'
     }
 
-    if ($result.statusArtifactState -ne 'fresh') {
+    if ($CertStartedUtc -and $result.statusArtifactState -ne 'fresh') {
         return [pscustomobject]$result
     }
 
@@ -253,7 +254,145 @@ function Get-F7StatusSurfaceSignals {
         if ($st.session.PSObject.Properties.Name -contains 'inGameAssistReady') {
             $result.inGameAssistReady = ($st.session.inGameAssistReady -eq $true)
         }
+        if ($st.session.PSObject.Properties.Name -contains 'canAcceptAssistiveCommand') {
+            $result.canAcceptAssistiveCommand = ($st.session.canAcceptAssistiveCommand -eq $true)
+        }
     }
+    return [pscustomobject]$result
+}
+
+function Get-F7AssistiveReadinessFromStatus {
+    param([string]$StatusPath)
+
+    $surface = Get-F7StatusSurfaceSignals -StatusPath $StatusPath -CertStartedUtc $null
+    $result = [ordered]@{
+        readinessSurface = $surface.readinessSurface
+        settlementMenuOpen = [bool]$surface.settlementMenuOpen
+        campaignMapSurfaceOpen = [bool]$surface.campaignMapSurfaceOpen
+        campaignReady = [bool]$surface.campaignReady
+        canPollFileInbox = [bool]$surface.canPollFileInbox
+        inGameAssistReady = [bool]$surface.inGameAssistReady
+        canAcceptAssistiveCommand = [bool]$surface.canAcceptAssistiveCommand
+        townMenuReady = $false
+        openMapReady = $false
+        updatedAtUtc = $null
+        statusPath = $StatusPath
+        parseOk = $false
+    }
+
+    if (-not $StatusPath -or -not (Test-Path -LiteralPath $StatusPath)) {
+        return [pscustomobject]$result
+    }
+
+    $st = Read-F7StatusJsonSafe -StatusPath $StatusPath
+    if (-not $st) { return [pscustomobject]$result }
+
+    $result.parseOk = $true
+    if ($st.updatedAt) {
+        try {
+            $result.updatedAtUtc = [datetime]::Parse([string]$st.updatedAt, $null, [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+        } catch { }
+    }
+    if ($st.session) {
+        if ($st.session.PSObject.Properties.Name -contains 'townMenuReady') {
+            $result.townMenuReady = ($st.session.townMenuReady -eq $true)
+        }
+        if ($st.session.PSObject.Properties.Name -contains 'openMapReady') {
+            $result.openMapReady = ($st.session.openMapReady -eq $true)
+        }
+    }
+    return [pscustomobject]$result
+}
+
+function Test-F7AssistiveSurfaceAllowed {
+    param([string]$ReadinessSurface)
+
+    return [string]$ReadinessSurface -in @('settlement_menu', 'map_surface', 'settlement_interior')
+}
+
+function Test-F7AssistiveStatusFreshForAttach {
+    param(
+        [string]$StatusPath,
+        [int]$MaxAgeSec = 300
+    )
+
+    $ready = Get-F7AssistiveReadinessFromStatus -StatusPath $StatusPath
+    if (-not $ready.parseOk) { return $false }
+    if ($ready.canPollFileInbox -and $ready.inGameAssistReady) { return $true }
+    if ($ready.updatedAtUtc) {
+        $ageSec = ((Get-Date).ToUniversalTime() - $ready.updatedAtUtc).TotalSeconds
+        if ($ageSec -ge 0 -and $ageSec -le $MaxAgeSec) { return $true }
+    }
+    return $false
+}
+
+function Test-F7AssistiveSessionAttachable {
+    param(
+        [string]$BannerlordRoot,
+        [string]$Phase1Path = $null,
+        [string]$StatusPath = $null,
+        [string]$CrashContextPath = $null,
+        [int]$StatusFreshSec = 300
+    )
+
+    if (-not $StatusPath) {
+        $StatusPath = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
+    }
+    if (-not $Phase1Path) {
+        $Phase1Path = Get-Phase1LogPath -BannerlordRoot $BannerlordRoot
+    }
+    if (-not $CrashContextPath) {
+        $CrashContextPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
+    }
+
+    $det = Get-BannerlordProcessDetection -BannerlordRoot $BannerlordRoot `
+        -Phase1Path $Phase1Path -StatusPath $StatusPath -CrashContextPath $CrashContextPath
+
+    $result = [ordered]@{
+        attachable = $false
+        reason = $null
+        detection = $det
+        readiness = $null
+        routeAgent = 'Agent C - External State Classifier / F7 Runner'
+    }
+
+    if (-not $det.gameProcessRunning) {
+        $result.reason = 'no_game_process'
+        return [pscustomobject]$result
+    }
+
+    if (-not (Test-F7AssistiveStatusFreshForAttach -StatusPath $StatusPath -MaxAgeSec $StatusFreshSec)) {
+        $result.reason = 'stale_status'
+        $result.routeAgent = 'Human or Agent C investigation'
+        return [pscustomobject]$result
+    }
+
+    $ready = Get-F7AssistiveReadinessFromStatus -StatusPath $StatusPath
+    $result.readiness = $ready
+
+    if (-not (Test-F7AssistiveSurfaceAllowed -ReadinessSurface $ready.readinessSurface)) {
+        $result.reason = 'unsupported_surface'
+        $result.routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+        return [pscustomobject]$result
+    }
+    if (-not $ready.canPollFileInbox) {
+        $result.reason = 'inbox_not_ready'
+        $result.routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+        return [pscustomobject]$result
+    }
+    if (-not $ready.inGameAssistReady) {
+        $result.reason = 'assist_not_ready'
+        $result.routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+        return [pscustomobject]$result
+    }
+    if (-not $ready.canAcceptAssistiveCommand) {
+        $result.reason = 'assist_command_blocked'
+        $result.routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+        return [pscustomobject]$result
+    }
+
+    $result.attachable = $true
+    $result.reason = 'attach_ok'
     return [pscustomobject]$result
 }
 
@@ -298,7 +437,7 @@ function Get-F7SettlementMenuSemanticMismatchSec {
 function Get-F7StateActionPolicy {
     param(
         [string]$ClassifiedState,
-        [ValidateSet('cert', 'assistive')]
+        [ValidateSet('cert', 'assistive', 'assistive_launch_setup')]
         [string]$Mode = 'cert'
     )
 
@@ -320,8 +459,11 @@ function Get-F7StateActionPolicy {
             }
         }
         { $_ -in @('LauncherMenu', 'LauncherOpening', 'LauncherMenuContinueAvailable', 'LauncherMenuPlayOnly', 'SafeModeDialog') } {
-            $legal = if ($Mode -eq 'cert') { @($observe + 'click_launcher_continue', 'click_launcher_play') }
-                     else { @($observe + 'surface_advisory') }
+            $legal = if ($Mode -in @('cert', 'assistive_launch_setup')) {
+                @($observe + 'click_launcher_continue', 'click_launcher_play')
+            } else {
+                @($observe + 'surface_advisory')
+            }
             return [pscustomobject]@{
                 legalActions = $legal
                 forbiddenActions = @('claim_f7_pass', 'mutate_inventory')
@@ -646,7 +788,7 @@ function Save-F7ExternalStateTimeline {
 
 function Test-F7GuardedActionAllowed {
     param(
-        [ValidateSet('cert', 'assistive')]
+        [ValidateSet('cert', 'assistive', 'assistive_launch_setup')]
         [string]$Mode = 'cert',
         [Parameter(Mandatory = $true)]
         [string]$Action,

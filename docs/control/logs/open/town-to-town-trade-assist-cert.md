@@ -85,11 +85,24 @@ Evidence under `docs/evidence/live-cert/<sessionId>/checkpoint-01-assistive-town
 
 ## Runner entry
 
-**Product cert (forward):**
+**Product cert (forward) — attach to already-running game:**
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1 -AttachOnly
 ```
+
+Default behavior (no flags) is attach-only: no launcher, no F7.
+
+| Switch | Behavior |
+|--------|----------|
+| `-AttachOnly` / `-NoLaunch` | Attach to existing session only; fail if not attachable |
+| `-LaunchIfNeeded` | Attach first; call `launcher-auto-nav.ps1 -LaunchSetup` only if attach fails |
+
+**Attach freshness:** live-ready gate — `canPollFileInbox` + `inGameAssistReady`, or `updatedAt` within 300s. Does not use cert-started mtime.
+
+**Target runtime:** under 60s once `inGameAssistReady=true`.
+
+**Legacy full command (same as default attach-only):**
 
 **Infrastructure regression only (not product medal):**
 

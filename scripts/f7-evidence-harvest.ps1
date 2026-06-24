@@ -329,6 +329,183 @@ function Get-F7EvidenceCompleteness {
     }
 }
 
+function Get-F7AssistiveEvidenceCompleteness {
+    param(
+        [bool]$StatusJsonCopied,
+        [bool]$AssistiveSessionCopied,
+        [bool]$ProbeJsonCopied,
+        [bool]$CrashContextCopied,
+        [int]$Phase1TailLineCount,
+        [int]$LaunchTailLineCount,
+        [string]$PassFail,
+        [bool]$LaunchUsed = $false,
+        [bool]$HarvestFailed = $false,
+        [bool]$HarvestPartial = $false
+    )
+
+    $requiredArr = @(
+        [ordered]@{ name = 'manifest.json'; present = $true },
+        [ordered]@{ name = 'BlacksmithGuild_Status.json'; present = $StatusJsonCopied },
+        [ordered]@{ name = 'BlacksmithGuild_TownToTownTradeProbe.json'; present = $ProbeJsonCopied },
+        [ordered]@{ name = 'Phase1.tail.txt'; present = ($Phase1TailLineCount -gt 0) }
+    )
+    if ($LaunchUsed) {
+        $requiredArr += [ordered]@{ name = 'Launch.tail.txt'; present = ($LaunchTailLineCount -gt 0) }
+    }
+
+    $missing = New-Object System.Collections.Generic.List[string]
+    foreach ($r in $requiredArr) {
+        if (-not $r.present) { $missing.Add([string]$r.name) | Out-Null }
+    }
+
+    $score = 'sufficient'
+    if ($HarvestFailed) {
+        $score = 'harvest_failed'
+    } elseif ($missing.Count -gt 0) {
+        $score = 'partial'
+    } elseif ($HarvestPartial) {
+        $score = 'partial'
+    }
+
+    return [ordered]@{
+        score = [string]$score
+        instrumentationGap = $false
+        traceMarkersPresent = $true
+        missing = @($missing)
+        required = $requiredArr
+        harvestFailed = [bool]$HarvestFailed
+        harvestPartial = [bool]$HarvestPartial
+        crashContextOptional = $true
+        launchUsed = [bool]$LaunchUsed
+    }
+}
+
+function Test-F7AssistiveTownTradeCertPass {
+    param(
+        $Readiness,
+        $ProbeJson,
+        [bool]$ProbeAckOk = $false
+    )
+
+    if (-not $Readiness) { return $false }
+    if (-not $Readiness.canPollFileInbox) { return $false }
+    if (-not $Readiness.inGameAssistReady) { return $false }
+    if (-not $Readiness.canAcceptAssistiveCommand) { return $false }
+    if (-not $ProbeAckOk) { return $false }
+    if (-not $ProbeJson) { return $false }
+    if (-not $ProbeJson.currentSettlement) { return $false }
+    if (-not $ProbeJson.recommendedNextTown) { return $false }
+    if ($ProbeJson.fakeGameplayDelta -eq $true) { return $false }
+    return $true
+}
+
+function Invoke-F7AssistiveEvidenceHarvest {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CheckpointDir,
+        [Parameter(Mandatory = $true)]
+        [string]$BannerlordRoot,
+        [datetime]$StartedAtUtc,
+        [datetime]$SinceLocal,
+        [string]$PassFail = 'FAIL',
+        [bool]$LaunchUsed = $false,
+        [string]$Phase1Path = $null,
+        [string]$StatusPath = $null,
+        [string]$CrashContextPath = $null,
+        [string]$LaunchLogPath = $null,
+        [string]$RunnerCommandLine = $null
+    )
+
+    $warnings = New-Object System.Collections.Generic.List[string]
+    $artifactMeta = New-Object System.Collections.Generic.List[object]
+    $phase1TailLineCount = 0
+    $launchTailLineCount = 0
+    $markers = @{ lastPhase1Marker = $null; lastTraceMarker = $null; lastMapReadyMarker = $null }
+
+    if (-not $Phase1Path) { $Phase1Path = Get-Phase1LogPath -BannerlordRoot $BannerlordRoot }
+    if (-not $StatusPath) { $StatusPath = Get-StatusJsonPath -BannerlordRoot $BannerlordRoot }
+    if (-not $CrashContextPath) { $CrashContextPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot }
+    if (-not $LaunchLogPath) { $LaunchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot }
+
+    $statusArtifact = Copy-F7EvidenceArtifact -SourcePath $StatusPath `
+        -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_Status.json'
+    $artifactMeta.Add($statusArtifact) | Out-Null
+
+    $assistPath = Get-AssistiveSessionJsonPath -BannerlordRoot $BannerlordRoot
+    $assistArtifact = Copy-F7EvidenceArtifact -SourcePath $assistPath `
+        -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_AssistiveSession.json'
+    $artifactMeta.Add($assistArtifact) | Out-Null
+
+    $probePath = Get-TownToTownTradeProbeJsonPath -BannerlordRoot $BannerlordRoot
+    $probeArtifact = Copy-F7EvidenceArtifact -SourcePath $probePath `
+        -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_TownToTownTradeProbe.json'
+    $artifactMeta.Add($probeArtifact) | Out-Null
+
+    $crashArtifact = [ordered]@{ name = 'BlacksmithGuild_CrashContext.json'; copied = $false; reason = 'not_present' }
+    if ($CrashContextPath -and (Test-Path -LiteralPath $CrashContextPath)) {
+        $crashArtifact = Copy-F7EvidenceArtifact -SourcePath $CrashContextPath `
+            -CheckpointDir $CheckpointDir -DestName 'BlacksmithGuild_CrashContext.json'
+    }
+    $artifactMeta.Add($crashArtifact) | Out-Null
+
+    try {
+        if (Test-Path -LiteralPath $Phase1Path) {
+            $phase1TailPath = Join-Path $CheckpointDir 'Phase1.tail.txt'
+            $phase1TailLineCount = Write-F7FilteredTimestampTail `
+                -InputPath $Phase1Path -OutputPath $phase1TailPath -SinceLocal $SinceLocal -MaxLines 300
+            if ($phase1TailLineCount -lt 50) {
+                $phase1TailLineCount = Write-F7UnfilteredTail -InputPath $Phase1Path `
+                    -OutputPath $phase1TailPath -MaxLines 300
+            }
+        }
+    } catch {
+        Add-F7HarvestWarning -Warnings $warnings -Message "phase1 tail: $($_.Exception.Message)"
+    }
+
+    if ($LaunchUsed) {
+        try {
+            if (Test-Path -LiteralPath $LaunchLogPath) {
+                $launchTailLineCount = Write-F7FilteredTimestampTail `
+                    -InputPath $LaunchLogPath `
+                    -OutputPath (Join-Path $CheckpointDir 'Launch.tail.txt') `
+                    -SinceLocal $SinceLocal -MaxLines 220
+            }
+        } catch {
+            Add-F7HarvestWarning -Warnings $warnings -Message "launch tail: $($_.Exception.Message)"
+        }
+    }
+
+    $timelinePath = Join-Path $CheckpointDir 'ExternalStateTimeline.json'
+    $externalStateTimelineCopied = (Test-Path -LiteralPath $timelinePath)
+
+    $harvestPartial = ($warnings.Count -gt 0) -or ($crashArtifact.copied -ne $true)
+    $completeness = Get-F7AssistiveEvidenceCompleteness `
+        -StatusJsonCopied ([bool]($statusArtifact.copied -eq $true)) `
+        -AssistiveSessionCopied ([bool]($assistArtifact.copied -eq $true)) `
+        -ProbeJsonCopied ([bool]($probeArtifact.copied -eq $true)) `
+        -CrashContextCopied ([bool]($crashArtifact.copied -eq $true)) `
+        -Phase1TailLineCount $phase1TailLineCount `
+        -LaunchTailLineCount $launchTailLineCount `
+        -PassFail $PassFail `
+        -LaunchUsed $LaunchUsed `
+        -HarvestPartial $harvestPartial
+
+    return [ordered]@{
+        evidenceCompleteness = $completeness
+        statusJsonCopied = [bool]($statusArtifact.copied -eq $true)
+        assistiveSessionCopied = [bool]($assistArtifact.copied -eq $true)
+        probeJsonCopied = [bool]($probeArtifact.copied -eq $true)
+        crashContextCopied = [bool]($crashArtifact.copied -eq $true)
+        externalStateTimelineCopied = [bool]$externalStateTimelineCopied
+        phase1TailLineCount = [int]$phase1TailLineCount
+        launchTailLineCount = [int]$launchTailLineCount
+        harvestPartial = [bool]$harvestPartial
+        harvestWarnings = @($warnings)
+        artifactMeta = @($artifactMeta)
+        runnerCommandLine = $RunnerCommandLine
+    }
+}
+
 function Get-F7SafeArtifactFreshnessState {
     param(
         [string]$Path,

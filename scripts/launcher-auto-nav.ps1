@@ -14,7 +14,8 @@ param(
     [string]$CertTarget = 'any',
     [bool]$AllowCertRetry = $false,
     [int]$CertRetryAttempt = 0,
-    [string]$ExternalStateTimelinePath = $null
+    [string]$ExternalStateTimelinePath = $null,
+    [switch]$LaunchSetup
 )
 
 $ErrorActionPreference = 'Stop'
@@ -66,6 +67,9 @@ function Write-LaunchLog {
 function Get-NavExternalStateMode {
     if ((Get-Command Test-F7ContinueCertStrict -ErrorAction SilentlyContinue) -and (Test-F7ContinueCertStrict)) {
         return 'cert'
+    }
+    if ($LaunchSetup) {
+        return 'assistive_launch_setup'
     }
     return 'assistive'
 }

@@ -76,6 +76,35 @@ function Get-CrashContextJsonPath {
         -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_CrashContext.json')
 }
 
+function Get-AssistiveArtifactCandidates {
+    param(
+        [string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$FileName
+    )
+
+    @(
+        (Join-Path $BannerlordRoot $FileName),
+        (Join-Path (Get-BannerlordDocsRoot) $FileName)
+    ) | Select-Object -Unique
+}
+
+function Get-AssistiveSessionJsonPath {
+    param([string]$BannerlordRoot)
+
+    return Find-NewestExistingPath -Candidates (Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot `
+        -FileName 'BlacksmithGuild_AssistiveSession.json') `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_AssistiveSession.json')
+}
+
+function Get-TownToTownTradeProbeJsonPath {
+    param([string]$BannerlordRoot)
+
+    return Find-NewestExistingPath -Candidates (Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot `
+        -FileName 'BlacksmithGuild_TownToTownTradeProbe.json') `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_TownToTownTradeProbe.json')
+}
+
 function Get-ForgeLogPath {
     return Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_Forge.log'
 }

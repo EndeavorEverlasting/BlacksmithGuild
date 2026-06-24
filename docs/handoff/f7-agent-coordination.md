@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `c13e75b` |
+| Branch / HEAD | `fix/f7-gate-stability` @ *(pending — attach-first assist runner)* |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — assist PASS landed; await user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **GREEN (assist)** — Town-to-Town Trade Assist PASS @ `20260624-004036` (Quyaz settlement_menu) |
@@ -46,7 +46,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Assist cert PASS @ `20260624-004036` | — | `c13e75b` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Assist inbox + town-trade probe landed | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `9bdc759` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach-first town-trade cert + LaunchSetup | — | *(this commit)* |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | `d5c7bbf` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -95,6 +95,15 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent C → A, B (attach-first assist runner)
+
+- **Landed:** `run-town-to-town-trade-assist-cert.ps1` default attach-only; `-AttachOnly`/`-NoLaunch`/`-LaunchIfNeeded`.
+- **Landed:** `Invoke-F7AssistiveEvidenceHarvest`; Launch.tail not required when `launchUsed=false`.
+- **Landed:** `-LaunchSetup` on launcher nav + `Run-LauncherNavNow.cmd` (addresses guarded_click_denied).
+- **Landed:** `Test-F7AssistiveSessionAttachable` with live-ready Status freshness.
+- **Regression:** 3 offline tests; runner contract PASS.
+- **Live attach:** **NOT RUN** — Agent A: `run-town-to-town-trade-assist-cert.ps1 -AttachOnly` on open game.
 
 ### 2026-06-24 — Agent A → B, C, D (Town-to-Town Trade Assist PASS @ `20260624-004036`)
 

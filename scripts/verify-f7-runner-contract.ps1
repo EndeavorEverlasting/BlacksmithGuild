@@ -117,6 +117,8 @@ if (Test-Path -LiteralPath $navPath) {
         Add-Failure 'launcher-auto-nav.ps1 missing guarded click / unknown_window_state hook'
     } elseif ($navText -notmatch 'LauncherSelectionMaxMs|Write-LaunchTimingEvidence|launcher_timing_timeout') {
         Add-Failure 'launcher-auto-nav.ps1 missing launcher selection cap / LAUNCH_TIMING evidence'
+    } elseif ($navText -notmatch 'LaunchSetup|assistive_launch_setup') {
+        Add-Failure 'launcher-auto-nav.ps1 missing LaunchSetup / assistive_launch_setup'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
     }
@@ -139,7 +141,8 @@ if (Test-Path -LiteralPath $classifierPath) {
         'Invoke-F7ExternalStateClassification', 'Get-F7StateActionPolicy', 'Resolve-F7GameSurfaceClassifiedState',
         'Resolve-F7ProcessClassifiedState', 'Add-F7ExternalStateTimelineEvent', 'Test-F7GuardedActionAllowed',
         'Get-F7StatusSurfaceSignals', 'Test-F7SettlementMenuReadyObserved', 'LauncherMenuPlayOnly', 'SafeModeDialog',
-        'settlement_menu_ready_observed', 'windowBoundsReason'
+        'settlement_menu_ready_observed', 'windowBoundsReason',
+        'Test-F7AssistiveSessionAttachable', 'assistive_launch_setup'
     )) {
         if ($classifierText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-external-state-classifier.ps1 missing: $needle"
@@ -151,7 +154,7 @@ if (Test-Path -LiteralPath $classifierPath) {
 
 if (Test-Path -LiteralPath $harvestPath) {
     $harvestText = Get-Content -LiteralPath $harvestPath -Raw
-    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed', 'Get-F7SafeArtifactFreshnessState', 'externalStateTimelineCopied')) {
+    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Invoke-F7AssistiveEvidenceHarvest', 'Get-F7AssistiveEvidenceCompleteness', 'Test-F7AssistiveTownTradeCertPass', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed', 'Get-F7SafeArtifactFreshnessState', 'externalStateTimelineCopied')) {
         if ($harvestText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-evidence-harvest.ps1 missing: $needle"
         } else {
@@ -301,15 +304,40 @@ if (Test-Path -LiteralPath $settlementMenuRegression) {
 
 $townTradeSkeleton = Join-Path $PSScriptRoot 'run-town-to-town-trade-assist-cert.ps1'
 if (Test-Path -LiteralPath $townTradeSkeleton) {
+    $townText = Get-Content -LiteralPath $townTradeSkeleton -Raw
+    foreach ($needle in @('AttachOnly', 'assistive_attach', 'Test-F7AssistiveSessionAttachable', 'Invoke-F7AssistiveEvidenceHarvest')) {
+        if ($townText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "run-town-to-town-trade-assist-cert.ps1 missing: $needle"
+        }
+    }
     Write-Host 'Running run-town-to-town-trade-assist-cert.ps1 -WhatIf ...' -ForegroundColor Cyan
     & powershell -NoProfile -ExecutionPolicy Bypass -File $townTradeSkeleton -WhatIf
     if ($LASTEXITCODE -ne 0) {
         Add-Failure 'run-town-to-town-trade-assist-cert.ps1 -WhatIf failed'
     } else {
-        Write-Host 'PASS assistive town-trade cert skeleton parses' -ForegroundColor Green
+        Write-Host 'PASS assistive town-trade cert parses' -ForegroundColor Green
     }
 } else {
     Add-Failure 'Missing run-town-to-town-trade-assist-cert.ps1 assistive skeleton'
+}
+
+foreach ($pair in @(
+    @{ path = 'test-town-to-town-attach-only.ps1'; label = 'town-to-town attach-only' },
+    @{ path = 'test-town-to-town-no-launch-harvest.ps1'; label = 'town-to-town no-launch harvest' },
+    @{ path = 'test-assistive-launch-setup-guarded-click.ps1'; label = 'assistive launch setup guarded click' }
+)) {
+    $regPath = Join-Path $PSScriptRoot $pair.path
+    if (Test-Path -LiteralPath $regPath) {
+        Write-Host "Running $($pair.path) ..." -ForegroundColor Cyan
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $regPath
+        if ($LASTEXITCODE -ne 0) {
+            Add-Failure "$($pair.path) failed ($($pair.label))"
+        } else {
+            Write-Host "PASS $($pair.label)" -ForegroundColor Green
+        }
+    } else {
+        Add-Failure "Missing $($pair.path)"
+    }
 }
 
 Write-Host ''
