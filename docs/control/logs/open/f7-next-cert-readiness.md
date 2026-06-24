@@ -1,9 +1,22 @@
 # F7 Next Cert Readiness Matrix
 
 **Author:** Agent A — Cert / Evidence / Git / PR (co-maintained with Agent D)  
-**Branch:** `fix/f7-gate-stability`  
-**Gate:** **GREEN (assist)** — Town-to-Town Trade Assist **PASS** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)  
-**PR #7:** **HOLD** — assist PASS is product medal; await explicit user merge auth
+**Branch:** **`main`** @ `3384c7d`  
+**Gate:** **GREEN (assist)** — Town-to-Town Trade Assist product gate  
+**PR #7:** **MERGED** · **PR #10:** **MERGED** (inbox sequence regression)
+
+---
+
+## Current reality
+
+| Topic | Status |
+|-------|--------|
+| Old F7 Continue | **Infrastructure only** — not product gate |
+| Town-to-Town Trade Assist Cert | **Product gate** |
+| Attach-only PASS | [`20260624-020821`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) (`launchUsed=false`) |
+| Setup-path PASS | [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) |
+| Inbox sequence regression | **PR #10** — `test-forge-command-sequence-after-prior-ack.ps1` wired in runner contract |
+| Active branch | **`main`** — `fix/f7-gate-stability` merged; no longer active |
 
 ---
 
@@ -28,28 +41,42 @@ Old F7 Continue is **closed as informative infrastructure**, not the product gat
 
 | Gate | Status |
 |------|--------|
-| Old F7 Continue PASS | **Not** the current sprint medal |
-| Town-to-Town Trade Assist PASS | **Current product medal** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) |
+| Old F7 Continue PASS | **Not** product medal — infrastructure smoke only |
+| Town-to-Town Trade Assist PASS | **Product medal** @ `004036` (setup) + `020821` (attach-only) |
 
-**Next live product cert:** attach-only re-cert from already-open game (see [`assistive-current-session-attach.md`](assistive-current-session-attach.md)).
+**Next product lane:** **Agent B** — travel/trade **execute** path on new feature branch from `main`.
 
 ---
 
-## Town-to-Town Trade Assist — PASS @ `20260624-004036`
+## Town-to-Town Trade Assist — PASS sessions
+
+### `20260624-004036` (setup path)
 
 | Criterion | Result |
 |-----------|--------|
 | `passFail` / `exitCode` | PASS / 0 |
+| Path | Launcher setup + assist cert |
 | `readinessSurface` | `settlement_menu` @ Quyaz |
-| `canPollFileInbox` | `true` |
-| `inGameAssistReady` | `true` |
-| `AssistiveTownToTownProbe` | ack Success |
-| `recommendedNextTown` | Ortysia |
-| `tradeExecution` | `advisory_only` |
-| `travelCommandMode` | `advisory_only` |
+| `tradeExecution` / `travelCommandMode` | `advisory_only` / `advisory_only` |
 | Fake deltas | none (`fakeGameplayDelta=false`) |
 
-Evidence: [`checkpoint-01-assistive-town-trade/manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
+Evidence: [`manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
+
+### `20260624-020821` (attach-only — preferred product path)
+
+| Criterion | Result |
+|-----------|--------|
+| `passFail` / `exitCode` | PASS / 0 |
+| `mode` | `assistive_attach` |
+| `launchUsed` | **false** |
+| `launchPath` | `existing_session` |
+| Wall time | ~5s |
+| Probe sequence | seq=3 after prior consumed seq=2 |
+| `tradeExecution` / `travelCommandMode` | `advisory_only` / `advisory_only` |
+
+Evidence: [`manifest.json`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json)
+
+**Regression coverage (PR #10):** `20260624-020430` and `20260624-020644` honest FAIL (`assistive_probe_failed`) — stale inbox sequence=1 after game consumed seq=2.
 
 ---
 
@@ -73,7 +100,7 @@ Evidence: [`checkpoint-01-assistive-town-trade/manifest.json`](../../evidence/li
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `scripts/**`, launcher nav, fail-fast poll | Runner agent, launcher agent |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `docs/**`, coordination, terminology | Atlas agent, archivist |
 
-**Parallel model:** A, B, C, D may work in parallel. **Live gameplay cert (Agent A)** runs only after B+C unblock assist probe. **Old F7 Continue** is infrastructure/regression only — closed as product gate.
+**Parallel model:** Product work branches from **`main`**. **Old F7 Continue** is infrastructure/regression only. **Agent B** owns next execute-path product lane.
 
 ---
 
@@ -242,15 +269,18 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | **MapTransition timeout at settlement_menu** | `9bdc759` | C | **LANDED** — 15s `fail_settlement_menu_semantic_mismatch` |
 | `canPollFileInbox @ settlement_menu` | `e4c261d` | B | **LANDED** — validated @ `20260624-004036` |
 | **AssistiveTownToTownProbe** | `e4c261d` | B | **LANDED** — PASS @ `20260624-004036` |
-| **Attach-only assist re-cert** | TBD | A/C | **NEXT** — open game, no relaunch |
+| **Attach-only assist re-cert** | `020821` | A | **PASS** @ `main` |
+| **Inbox sequence regression** | PR #10 `2df444b` | C | **MERGED** |
+| **Travel/trade execute path** | TBD | B | **NEXT** product lane |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
 | **User authorization** | Explicit merge auth | User | Required for PR #7 merge |
 
 **Agent A live cert gate:**
 
 1. ~~Agent B assist inbox + probe~~ **PASS** @ `20260624-004036`
-2. **Next:** attach-only re-cert from already-open game (**Agent C** runner + **Agent A** evidence)
-3. Old F7: infrastructure smoke only when launcher automation changes
+2. ~~Attach-only re-cert~~ **PASS** @ `20260624-020821`
+3. **Next:** travel/trade **execute** path — **Agent B** on new feature branch from `main`
+4. Old F7: infrastructure smoke only when launcher automation changes
 
 **Status JSON semantics (unchanged top-level `campaignReady`):** reflects `IsCampaignMapReady` (MapState active). New session fields disambiguate surface:
 
@@ -268,34 +298,29 @@ F7 Continue **product** PASS at settlement menu requires manifest criteria **and
 
 ---
 
-## PR #7 HOLD statement
+## Merge history (reference)
 
-PR #7 remains **HOLD** until **explicit user merge authorization**.
+| PR | Status | Notes |
+|----|--------|-------|
+| [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) | **MERGED** | F7 gate stability + assist foundation → `main` |
+| [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) | **MERGED** | Inbox sequence regression; runner contract wiring |
 
-- **Town-to-Town Trade Assist PASS** exists @ `20260624-004036` — this is the **current product medal**.
-- **Old F7 Continue PASS** is **not** required for the current sprint medal.
-- Do **not** merge without user authorization.
+## Open PR posture
 
-Legacy F7 PASS criteria apply only if repo policy explicitly requires old infrastructure gate PASS:
+| PR | Posture |
+|----|---------|
+| [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | **HOLD** — do not merge without user authorization |
+| [#9](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/9) | Review only (bisect evidence docs) |
 
-- `manifest.passFail = PASS`
-- `exitCode = 0`
-- `stableSeconds >= 60`
-- `campaignReady = true`
-- `canPollFileInbox = true`
-- `launchPath = continue`
-- `targetMismatch = false`
-- Evidence committed under `docs/evidence/live-cert/<sessionId>/` and pushed
-
-No merge on clean-launcher FAIL. No merge on runner UX improvement alone. No merge on build PASS.
+No merge required for current product gate — assist PASS medals exist on `main`.
 
 ---
 
-## Preflight commands (Agent A, before authorized cert)
+## Preflight commands (before authorized cert)
 
 ```powershell
 cd C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
-git fetch origin && git checkout fix/f7-gate-stability && git pull origin fix/f7-gate-stability
+git fetch origin && git checkout main && git pull origin main
 dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
@@ -320,4 +345,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-tra
 | `200917` | cert commit | Death seq=8115 after `HeavyFlushUnblocked` — grace lifecycle validated |
 | `204227` | fd2a190 | B validated; poll abort Access denied (fixed in later commits) |
 | `205925` | `2207468` | `docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/` — closed infrastructure FAIL |
-| `004036` | `c13e75b` | `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/` — **product PASS** (advisory) |
+| `004036` | `c13e75b` | `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/` — product PASS (setup path, advisory) |
+| `020821` | `main` | `docs/evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/` — **attach-only PASS** (`launchUsed=false`) |

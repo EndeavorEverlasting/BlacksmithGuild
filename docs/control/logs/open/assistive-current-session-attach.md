@@ -1,7 +1,7 @@
 # Assistive current-session attach doctrine
 
 **Owner:** Agent D — Docs / Atlas / Integration  
-**Branch:** `fix/f7-gate-stability`  
+**Branch:** **`main`** @ `3384c7d`  
 **Related:** [`f7-vs-assistive-attach-mode.md`](f7-vs-assistive-attach-mode.md) · [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)
 
 ---
@@ -10,36 +10,35 @@
 
 **Do not certify the door when the player is already in the room.**
 
-People know how to start Bannerlord. The mod should help **inside** Bannerlord — blacksmithing, trading, travel, inventory, stamina, market advice, and safe in-game decisions. Assistive certs attach to the **current legitimate session**; they do not relaunch, reload, or navigate the launcher unless attach fails and `-LaunchIfNeeded` is explicitly chosen.
+People know how to start Bannerlord. People need help **inside** Bannerlord — blacksmithing, trading, travel, inventory, stamina, market advice, and safe in-game decisions.
+
+If the game is **already open** and Status proves assist readiness, assistive certs **attach**. They do **not**:
+
+- Relaunch Bannerlord
+- Navigate the launcher
+- Run old F7 Continue
+- Wait for MapTransition / open-map golden-path semantics
+
+Manual Play / Continue is **evidence**, not contamination.
 
 ---
 
 ## When to attach (no launch)
 
-If Bannerlord is already running and `BlacksmithGuild_Status.json` proves **all** of:
+If Bannerlord is already running and `BlacksmithGuild_Status.json` proves:
 
 | Field | Required |
 |-------|----------|
 | `readinessSurface` | `settlement_menu`, `map_surface`, or `settlement_interior` |
 | `canPollFileInbox` | `true` |
 | `inGameAssistReady` | `true` |
-| `canAcceptAssistiveCommand` | `true` |
+| `canAcceptAssistiveCommand` | `true` (when present) |
 
-Then assistive certs **must**:
-
-- Attach to the current session and run probes
-- **Not** relaunch Bannerlord
-- **Not** navigate the launcher
-- **Not** wait for old MapTransition / open-map golden-path semantics
-- **Not** treat manual Play or Continue as contamination
-
-Manual launch is **evidence**, not failure.
+Then assistive certs **attach to the current session** and run probes.
 
 ---
 
 ## Preferred command
-
-After Agent C attach-first runner (`0b5798a`+):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1 -AttachOnly
@@ -55,27 +54,33 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-tra
 
 ---
 
-## Attach freshness gate
-
-Runner uses **live-ready** Status, not cert-start mtime:
-
-- `canPollFileInbox` + `inGameAssistReady`, **or**
-- `updatedAt` within **300s** (`StatusFreshSec`)
-
-Target wall time: **under 60s** once `inGameAssistReady=true`.
-
----
-
-## Authoritative attach PASS reference
+## Authoritative attach-only PASS
 
 | Field | Value |
 |-------|-------|
-| Session | `20260624-004036` |
-| Evidence | [`manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) |
-| `assistiveAttach` | `true` |
-| `manualLaunchObserved` | `true` |
+| Session | **`20260624-020821`** |
+| Evidence | [`manifest.json`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) |
+| `mode` | `assistive_attach` |
+| `launchUsed` | **false** |
+| `launchPath` | `existing_session` |
+| Wall time | ~5s |
 | Surface | `settlement_menu` @ Quyaz |
-| Probe | `AssistiveTownToTownProbe` ack Success |
+| Probe | `AssistiveTownToTownProbe` ack Success (seq=3) |
+
+**Setup-path PASS (reference):** [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
+
+---
+
+## Inbox sequence regression (PR #10)
+
+Honest FAILs before fix:
+
+- `20260624-020430` — `assistive_probe_failed` (stale sequence=1)
+- `20260624-020644` — `assistive_probe_failed` (same class)
+
+**Root cause:** `Send-ForgeCommand` reused stale sequence=1 after game had consumed sequence=2.
+
+**Protection:** PR #10 — `test-forge-command-sequence-after-prior-ack.ps1` wired in `verify-f7-runner-contract.ps1`. Proves next command becomes sequence=3 even when consumed markers are buried above noisy trace-only tail.
 
 ---
 
@@ -83,9 +88,9 @@ Target wall time: **under 60s** once `inGameAssistReady=true`.
 
 | Defect | Owner |
 |--------|-------|
-| Attach-only runner / harvest / classifier | **Agent C** |
-| Runtime command / probe / inbox readiness | **Agent B** |
-| Evidence commit / manifest / PR | **Agent A** |
+| Attach-only runner / harvest / inbox sequence | **Agent C** (idle; PR #10 merged) |
+| Runtime command / probe / execute | **Agent B** |
+| Evidence commit | **Agent A** |
 | Doc drift | **Agent D** |
 
 ---

@@ -28,14 +28,30 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending push |
-| PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — attach-only assist PASS; await user merge auth |
-| PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **GREEN (assist attach)** — attach-only PASS @ `20260624-020821` (`launchUsed=false`, ~5s) |
+| Branch / HEAD | **`main`** @ `3384c7d` |
+| Active feature branch | *(none)* — `fix/f7-gate-stability` **merged** via PR #7; inactive |
+| Deleted branch | `test/assistive-inbox-sequence-regression` (merged PR #10; local + remote deleted) |
+| PR #7 | **MERGED** — F7 gate stability + assist foundation |
+| PR #10 | **MERGED** — inbox sequence regression (`test-forge-command-sequence-after-prior-ack.ps1`) |
+| Gate verdict | **GREEN (assist attach)** — attach-only PASS @ `20260624-020821` (`launchUsed=false`) |
 | Last assist evidence | `20260624-020821` — attach-only manifest PASS |
-| Next live cert | User merge auth; optional travel execute (Agent B) |
+| Next product lane | **Agent B** — travel/trade **execute** path on new feature branch from `main` |
 | Old F7 | **CLOSED** — infrastructure/regression only |
-| Parallel lanes | B + C parallel-safe; live cert serial |
+| Live cert | None pending unless user authorizes |
+
+---
+
+## Open PR triage
+
+| PR | State | Posture |
+|----|-------|---------|
+| [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | OPEN | F7 bisect tooling — **HOLD**; do not merge without user authorization |
+| [#9](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/9) | OPEN | Bisect evidence docs — review only |
+| [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) | DRAFT | Sell-loop feature |
+| [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) | DRAFT | Second-leg travel feature |
+| [#2](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/2) | OPEN | Identity schema docs |
+
+**Merged (reference):** [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) F7 gate stability · [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) inbox sequence regression.
 
 ---
 
@@ -43,10 +59,10 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Attach-only PASS @ `20260624-020821` | — | pending |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | Hot standby — return on runtime/probe/execute defect | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach runner @ `0b5798a`; harvest fixes pending review | — | `0b5798a` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Assist PASS + attach doctrine recorded | — | `89429ad` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Merged PR #7 + PR #10; no live cert unless user authorizes | — | `3384c7d` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Travel/trade **execute** path — new feature branch from `main` | — | `e4c261d` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `IDLE` | Inbox sequence regression merged @ PR #10; return on runner defects only | — | `2df444b` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `IN_PROGRESS` | Sync docs to `main` @ `3384c7d` | — | (this commit) |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -94,6 +110,15 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent D → A, B, C (post-PR #10 atlas sync @ `3384c7d`)
+
+- **Merged:** PR #7 (F7 gate stability) + PR #10 (inbox sequence regression) on **`main`**.
+- **Inactive:** `fix/f7-gate-stability`; `test/assistive-inbox-sequence-regression` deleted.
+- **Product medals:** `20260624-004036` (setup path) + `20260624-020821` (attach-only, `launchUsed=false`).
+- **Regression:** PR #10 protects stale inbox sequence bug (`020430`/`020644` FAIL → `020821` PASS, seq=3 after consumed seq=2).
+- **Next product owner:** **Agent B** — travel/trade execute on new feature branch.
+- **PR #8:** **HOLD** — do not merge without user authorization.
 
 ### 2026-06-24 — Agent A → B, C, D (attach-only PASS @ `20260624-020821`)
 

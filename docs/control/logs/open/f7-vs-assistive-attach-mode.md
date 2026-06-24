@@ -1,7 +1,7 @@
 # F7 Cert Mode vs Assistive Attach Mode
 
 **Owner:** Agent C — External State Classifier / Window Safety / F7 Runner  
-**Branch:** `fix/f7-gate-stability`
+**Branch:** **`main`** @ `3384c7d`
 
 ---
 
@@ -33,8 +33,9 @@ The external layer must know **where the player is** and whether a request is sa
 | Launcher | Runner **owns** launcher | **No** launcher (attach-only default) |
 | User clicks | **Contamination** during cert | **Valid** — manual Play/Continue OK |
 | `certTarget` vs `launchPath` | Must match; `targetMismatch` **fails** | N/A — attach to current session |
-| Product medal | **Not** current sprint medal | **Town-to-Town Trade Assist PASS** @ `20260624-004036` |
+| Product medal | **Not** product medal | **Town-to-Town Trade Assist PASS** @ `004036` + `020821` |
 | When to use | Launcher automation **smoke test** only | Default for product certs and real use |
+| Regression | F7 runner contract | PR #10 inbox sequence (`test-forge-command-sequence-after-prior-ack.ps1`) |
 
 ---
 
@@ -62,7 +63,7 @@ Cert mode **must not** be loosened for convenience. Assistive attach is a separa
 
 **Entry:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1) — default **attach-only** (`-AttachOnly` / `-NoLaunch`)
 
-**Authoritative PASS:** [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
+**Authoritative PASS:** [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) (setup) · [`20260624-020821`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) (attach-only, preferred)
 
 | Rule | Requirement |
 |------|-------------|
@@ -165,7 +166,9 @@ Continue cert may reach **settlement town menu** with `campaignReady=true` but `
 | Launcher nav (`launcher-auto-nav.ps1`) | **45s** launcher selection cap; `LAUNCH_TIMING` evidence; Play-only during Continue cert → `fail_launcher_play_only` |
 | Assistive attach | Classify `SettlementTownMenu`; do not weaken cert contamination rules |
 
-Skeleton gameplay cert: `scripts/run-town-to-town-trade-assist-cert.ps1` — **PASS** @ `20260624-004036` (advisory probe).
+Skeleton gameplay cert: `scripts/run-town-to-town-trade-assist-cert.ps1` — **PASS** @ `004036` + `020821` (advisory; attach-only preferred).
+
+**Inbox regression:** PR #10 protects sequence-after-prior-ack bug class (`020430`/`020644` FAIL → `020821` PASS).
 
 **Product PASS spec:** [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)  
 **Attach doctrine:** [`assistive-current-session-attach.md`](assistive-current-session-attach.md)

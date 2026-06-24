@@ -1,22 +1,36 @@
 # Town-to-Town Trade Assist Cert
 
 **Owner:** Agent A — Cert / Evidence / Git / PR (live runs) · **Spec:** Agent D  
-**Branch:** `fix/f7-gate-stability`  
-**Status:** **PASS** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)  
+**Branch:** **`main`** @ `3384c7d`  
+**Status:** **PASS** — setup @ `004036` · attach-only @ `020821`  
 **Runner:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1)
 
 ---
 
-## Authoritative PASS session
+## Completed product medals
+
+| Session | Path | Notes |
+|---------|------|-------|
+| **`20260624-004036`** | [`manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) | Town-to-Town Trade Assist **PASS** with launcher setup path |
+| **`20260624-020821`** | [`manifest.json`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) | **Attach-only** PASS from existing session (`launchUsed=false`, `mode=assistive_attach`, ~5s) |
+
+### Honest FAILs (regression context — PR #10)
+
+| Session | `failureClass` | Cause |
+|---------|----------------|-------|
+| `20260624-020430` | `assistive_probe_failed` | Stale inbox sequence=1 after game consumed seq=2 |
+| `20260624-020644` | `assistive_probe_failed` | Same class — fixed before `020821` PASS |
+
+**PR #10** (`test-forge-command-sequence-after-prior-ack.ps1`) protects: next command becomes sequence=3 even when consumed markers are buried above noisy trace-only tail.
+
+---
+
+## Authoritative PASS fields (both sessions)
 
 | Field | Value |
 |-------|-------|
 | **Cert name** | Town-to-Town Trade Assist Cert |
-| **Authoritative PASS session** | `20260624-004036` |
-| **Evidence path** | `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json` |
-| **Product result** | PASS |
-| **Surface** | `settlement_menu` |
-| **Current settlement** | Quyaz |
+| **Surface** | `settlement_menu` @ Quyaz |
 | **Recommended next town** | Ortysia |
 | **Trade execution** | `advisory_only` |
 | **Travel command mode** | `advisory_only` |
@@ -25,7 +39,13 @@
 | **`inGameAssistReady`** | `true` |
 | **`canAcceptAssistiveCommand`** | `true` |
 
-### What this PASS proves
+### Current product state
+
+- **Advisory only** for trade and travel — no real buy/sell or leave-town execution yet.
+- **No fake gold**, **no fake inventory**, **no fake travel**.
+- **Execute path** remains future work (**Agent B**).
+
+### What PASS proves
 
 - In-game **assistive command readiness** from a legitimate session (attach + inbox poll OK).
 - **Advisory** gameplay output: real settlement context, recommended next town, no fabricated deltas.
@@ -43,7 +63,7 @@ Future **execute-path** certs must earn their own PASS manifests.
 
 ## Product framing
 
-Old F7 Continue cert is **closed** as a product merge gate (informative FAIL @ [`20260623-205925`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json)). **Town-to-Town Trade Assist PASS** @ `20260624-004036` is the **current product medal**.
+Old F7 Continue cert is **closed** as infrastructure (informative FAIL @ [`20260623-205925`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json)). **Town-to-Town Trade Assist** on **`main`** is the **product gate**.
 
 People know how to start the game. People need help **inside** Bannerlord: blacksmithing, trading, travel, inventory, stamina, market intelligence, and safe advisory or execute paths.
 
@@ -154,24 +174,24 @@ Do **not** use the F7 Continue loop as a 20–30 minute treadmill seeking old-ga
 
 ### Completed
 
-- Advisory town-to-town probe from Quyaz `settlement_menu` (`20260624-004036`)
+- Advisory town-to-town probe from Quyaz `settlement_menu` (`20260624-004036` — setup path)
+- Attach-only PASS from existing session (`20260624-020821`, `launchUsed=false`)
+- Inbox sequence regression coverage (**PR #10**)
 
-### Next
+### Next (product lane — Agent B)
 
-| Slice | Owner |
-|-------|-------|
-| Attach-only re-cert from already-open game (no relaunch) | **Agent A** (after **Agent C** attach runner) |
-| Leave-town / travel **execute** path | **Agent B** |
-| Open-map trade **execute** path | **Agent B** |
-| Smithing assist cert | **Agent B** / product |
+1. **Travel execute** from settlement or map surface
+2. **Open-map trade execute** where safe
+3. **Smithing assist cert**
+4. **Trade + smithing route loop**
 
 ### Routing
 
 | Defect | Owner |
 |--------|-------|
-| Attach-only runner / harvest | **Agent C** |
-| Runtime command / probe | **Agent B** |
-| Evidence / manifest / PR | **Agent A** |
+| Attach-only runner / harvest | **Agent C** (idle; return on defect) |
+| Runtime command / probe / **execute** | **Agent B** |
+| Evidence / manifest | **Agent A** |
 | Docs drift | **Agent D** |
 
 ---
