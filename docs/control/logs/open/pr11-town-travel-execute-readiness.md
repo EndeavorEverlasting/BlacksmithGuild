@@ -1,10 +1,10 @@
 # PR #11 Town Travel Execute — Merge Readiness Packet
 
 **Author:** Agent A — Cert / Evidence / Git / PR  
-**PR:** [#11](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/11)  
-**Branch:** `feat/town-to-town-execute-path`  
-**Packet SHA:** `10fc74f` (evidence commits `b577ac2`, `10fc74f` on top of runtime `67994e9`)  
-**Verdict:** **Merge consideration approved after user review** — product execute evidence is sufficient; attach-only follow-up is recommended but not mandatory.
+**PR:** [#11](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/11) — **MERGED** @ `09f039f` (2026-06-24)  
+**Branch:** `feat/town-to-town-execute-path` — **merged**; safe to delete after user confirms  
+**Packet SHA:** `10fc74f` (evidence on merge branch) · **Product baseline:** **`main`** @ `09f039f`  
+**Verdict:** **MERGED** — travel execute product evidence sufficient; attach-only execute follow-up remains **optional**.
 
 ---
 
@@ -106,17 +106,16 @@ Re-run before merge if runtime commits land after this packet.
 
 ## Merge recommendation
 
-**PR #11 has enough product evidence for merge consideration after user review.**
+**PR #11 MERGED** to **`main`** @ `09f039f`.
 
-The launch-assisted execute PASS demonstrates the inbox-gated travel execute path works end-to-end with cert-grade JSON (`certSummary`, movement observation, settlement IDs). Offline contract tests cover mode decision and fallback routing.
+Post-merge stacked work (rebase onto `09f039f` before PR):
 
-**Recommend merge when:**
-
-- User has reviewed evidence folder and this packet
-- User accepts launch-assisted cert OR attach-only follow-up is completed separately
-- No blocking Agent B runtime defects (`certSummary.nextRouteOnFail=AgentB` on fresh run)
-
-**Do not merge automatically.** Agent A does not mark ready or merge without explicit user authorization.
+| Owner | Branch | Task |
+|-------|--------|------|
+| **Agent B** | `feat/runtime-gameplay-state-machine` @ `69263a9` | Runtime gameplay state machine |
+| **Agent C** | `fix/pr11-unattended-execute-cert-runner` @ `70e5404` | Runner termination provenance |
+| **Agent A** | — | Optional attach-only execute cert |
+| **Agent D** | — | Atlas sync **DONE** (post-merge) |
 
 ---
 
@@ -142,24 +141,24 @@ Use **merge commit** (not squash) if preserving discrete evidence commits matter
 
 ## Follow-up work after merge
 
-| Owner | Task |
-|-------|------|
-| **Agent B** | Runtime state-machine / gameplay execute hardening (separate branch) |
-| **Agent C** | Runner termination provenance on `fix/pr11-unattended-execute-cert-runner` |
-| **Agent A** | Optional attach-only cert → second evidence folder |
-| **Agent D** | Sync `f7-agent-coordination.md`, cert index, handoff atlas to post-merge HEAD |
-| **Product** | Trade execute lane (`feat/006c-4*`) — travel execute unblocks next leg |
+| Owner | Task | Status |
+|-------|------|--------|
+| **Agent B** | Runtime state-machine — `feat/runtime-gameplay-state-machine` @ `69263a9` | **NEXT** — rebase onto `09f039f` |
+| **Agent C** | Runner provenance — `fix/pr11-unattended-execute-cert-runner` @ `70e5404` | **NEXT** — rebase onto `09f039f` |
+| **Agent A** | Optional attach-only execute cert | **NOT RUN** |
+| **Agent D** | Post-merge atlas sync | **DONE** |
+| **Product** | Trade execute lane (`feat/006c-4*`) | Stale — rebase if revived |
 
 ---
 
-## User decision menu
+## User decision menu (historical)
 
-| Option | Action |
-|--------|--------|
-| **A** | Mark PR #11 ready for review |
-| **B** | Run attach-only cert first (user opens game at Quyaz) |
-| **C** | Merge PR #11 after user authorization |
-| **D** | Hold PR #11; wait for Agent C provenance branch |
+| Option | Action | Outcome |
+|--------|--------|---------|
+| **A** | Mark PR #11 ready for review | Superseded |
+| **B** | Run attach-only cert first | Still **optional** |
+| **C** | Merge PR #11 | **DONE** @ `09f039f` |
+| **D** | Hold PR #11 | Superseded |
 
 ---
 

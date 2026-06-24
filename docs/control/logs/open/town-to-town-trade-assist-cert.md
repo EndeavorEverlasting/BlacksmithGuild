@@ -1,9 +1,10 @@
 # Town-to-Town Trade Assist Cert
 
 **Owner:** Agent A — Cert / Evidence / Git / PR (live runs) · **Spec:** Agent D  
-**Branch:** **`main`** @ `3384c7d`  
-**Status:** **PASS** — setup @ `004036` · attach-only @ `020821`  
-**Runner:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1)
+**Branch:** **`main`** @ `09f039f`  
+**Status:** **PASS** — advisory @ `004036`/`020821` · travel execute @ `032408` (PR #11 **MERGED**)  
+**Runner (advisory):** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1)  
+**Execute cert:** Agent C runner on `fix/pr11-unattended-execute-cert-runner` (separate until merged)
 
 ---
 
@@ -11,8 +12,9 @@
 
 | Session | Path | Notes |
 |---------|------|-------|
-| **`20260624-004036`** | [`manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) | Town-to-Town Trade Assist **PASS** with launcher setup path |
-| **`20260624-020821`** | [`manifest.json`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) | **Attach-only** PASS from existing session (`launchUsed=false`, `mode=assistive_attach`, ~5s) |
+| **`20260624-032408`** | [`manifest.json`](../../evidence/live-cert/20260624-032408/checkpoint-01-assistive-travel-execute/manifest.json) | **Travel execute** PASS — Quyaz → Ortysia (`travelCommandMode=execute`, `launchUsed=true`, PR #11) |
+| **`20260624-004036`** | [`manifest.json`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) | Town-to-Town Trade Assist **PASS** with launcher setup path (advisory) |
+| **`20260624-020821`** | [`manifest.json`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json) | **Attach-only** advisory PASS (`launchUsed=false`, `mode=assistive_attach`, ~5s) |
 
 ### Honest FAILs (regression context — PR #10)
 
@@ -41,23 +43,31 @@
 
 ### Current product state
 
-- **Advisory only** for trade and travel — no real buy/sell or leave-town execution yet.
+- **Travel execute** proven on `main` @ PR #11 — `AssistiveLeaveTownAndTravel` with `execute=true` (`032408`).
+- **Advisory probe** remains valid product evidence (`004036`, `020821`).
+- **Trade** still `advisory_only` — no real buy/sell execution yet.
+- **Attach-only execute cert** not run — optional Agent A follow-up (`launchUsed=false`).
 - **No fake gold**, **no fake inventory**, **no fake travel**.
-- **Execute path** remains future work (**Agent B**).
 
-### What PASS proves
+### What PASS proves (by lane)
 
-- In-game **assistive command readiness** from a legitimate session (attach + inbox poll OK).
-- **Advisory** gameplay output: real settlement context, recommended next town, no fabricated deltas.
-- Manual launch / attach path is valid product evidence (`assistiveAttach=true`, `manualLaunchObserved=true`).
+**Advisory (`004036`, `020821`):**
+
+- In-game assistive command readiness from a legitimate session.
+- Advisory gameplay output: settlement context, recommended next town, no fabricated deltas.
+
+**Travel execute (`032408`):**
+
+- Real leave-town + map travel toward target settlement (`actualExecutionObserved=true`).
+- `certSummaryPassCandidate=true`; movement observation passed.
+- Probe lane remains advisory-only (no travel side effects on probe command).
 
 ### What this PASS does **not** prove
 
 - **Real buy/sell execution** — `tradeExecution=advisory_only` only.
-- **Real travel execution** — `travelCommandMode=advisory_only` only.
-- Launcher automation purity — that is **F7 infrastructure**, not this product medal.
-
-Future **execute-path** certs must earn their own PASS manifests.
+- **Attach-only execute path** — `032408` used launch-assisted cert (`launchUsed=true`).
+- **Execute inbox ack within timeout** — ack timed out; execution JSON proved PASS.
+- Launcher automation purity — F7 infrastructure, not product medal for assist lanes.
 
 ---
 
@@ -175,23 +185,26 @@ Do **not** use the F7 Continue loop as a 20–30 minute treadmill seeking old-ga
 ### Completed
 
 - Advisory town-to-town probe from Quyaz `settlement_menu` (`20260624-004036` — setup path)
-- Attach-only PASS from existing session (`20260624-020821`, `launchUsed=false`)
+- Attach-only advisory PASS from existing session (`20260624-020821`, `launchUsed=false`)
 - Inbox sequence regression coverage (**PR #10**)
+- **Travel execute** from settlement menu (`20260624-032408`, PR #11 **MERGED**)
 
-### Next (product lane — Agent B)
+### Next (product lane)
 
-1. **Travel execute** from settlement or map surface
-2. **Open-map trade execute** where safe
-3. **Smithing assist cert**
-4. **Trade + smithing route loop**
+1. **Runtime gameplay state machine** — Agent B @ `69263a9` (rebase onto `09f039f`)
+2. **Unattended execute cert runner** — Agent C @ `70e5404` (rebase onto `09f039f`)
+3. **Optional attach-only execute cert** — Agent A
+4. **Open-map trade execute** where safe
+5. **Smithing assist cert**
+6. **Trade + smithing route loop** (`feat/006c-4*` — rebase if revived)
 
 ### Routing
 
 | Defect | Owner |
 |--------|-------|
-| Attach-only runner / harvest | **Agent C** (idle; return on defect) |
-| Runtime command / probe / **execute** | **Agent B** |
-| Evidence / manifest | **Agent A** |
+| Unattended execute runner / harvest | **Agent C** @ `70e5404` |
+| Runtime state machine / trade execute | **Agent B** @ `69263a9` |
+| Evidence / manifest / optional attach-only execute | **Agent A** |
 | Docs drift | **Agent D** |
 
 ---

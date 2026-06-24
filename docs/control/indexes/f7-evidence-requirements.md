@@ -1,7 +1,7 @@
 # F7 evidence requirements
 
-**Branch:** **`main`** @ `3384c7d` — PR #7 **MERGED**; old F7 = **infrastructure only**  
-**Product gate:** Town-to-Town Trade Assist — PASS @ `004036` + `020821` (see [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md))
+**Branch:** **`main`** @ `09f039f` — PR #7/#10/#11 **MERGED**; old F7 = **infrastructure only**  
+**Product gate:** Town-to-Town assist advisory @ `004036`/`020821` + travel execute @ `032408` (see [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md))
 **Owner:** Agent A (cert / evidence gate)  
 **Authority:** [`f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md) · **Recovery index:** [`f7-recovery-index.md`](f7-recovery-index.md)  
 **Policy:** No manifest, no medal. Exit 0 without manifest `passFail=PASS` is forgery.

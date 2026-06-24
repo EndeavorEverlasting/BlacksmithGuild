@@ -1,6 +1,6 @@
 # F7 evidence matrix
 
-**Branch:** **`main`** @ `3384c7d`  
+**Branch:** **`main`** @ `09f039f`  
 **Normative spec:** [`f7-evidence-requirements.md`](f7-evidence-requirements.md)  
 **Failure map:** [`f7-failure-atlas.md`](f7-failure-atlas.md)  
 **Forward cert:** [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md)  
@@ -11,6 +11,8 @@
 ---
 
 ## Assist product PASS sessions
+
+### Advisory probe certs
 
 | Artifact / field | `020821` | `004036` |
 |------------------|----------|----------|
@@ -29,6 +31,28 @@
 | `Phase1.tail.txt` | yes | yes |
 | `Launch.tail.txt` | **no** (attach-only) | yes |
 | `BlacksmithGuild_TownToTownTradeProbe.json` | yes | yes |
+
+### Travel execute cert (`032408` — PR #11)
+
+| Artifact / field | `032408` |
+|------------------|----------|
+| `manifest.json` | yes |
+| `mode` | `assistive_launch_attach_execute` |
+| `launchUsed` | **true** |
+| `launchPath` | `continue` |
+| `passFail` | **PASS** |
+| `travelCommandMode` | **execute** |
+| `executeRequested` / `executeAllowed` | **true** / **true** |
+| `travelApiCallSucceeded` | **true** |
+| `movementObservationPassed` | **true** |
+| `actualExecutionObserved` | **true** |
+| `certSummaryPassCandidate` | **true** |
+| `fakeGameplayDelta` | **false** |
+| `tradeExecution` | `advisory_only` (probe lane) |
+| `inboxAckExecute` | **timeout** (execution JSON PASS) |
+| `failureClass` | `inbox_ack_timeout_execute_evidence_pass` |
+| `BlacksmithGuild_AssistiveTravelExecution.json` | yes |
+| `evidenceCompleteness` | `partial` |
 
 ### Regression FAIL sessions (not committed — coordination log only)
 
@@ -85,8 +109,9 @@ Counts **yes** out of 18 tracked F7 infra rows (excludes `095326` and assist PAS
 
 | Session | Score | Verdict |
 |---------|-------|---------|
-| `020821` | **assist PASS** | attach-only; `launchUsed=false`; `evidenceCompleteness=partial` |
-| `004036` | **assist PASS** | setup path; `evidenceCompleteness=sufficient` |
+| `032408` | **execute PASS** | travel execute; `launchUsed=true`; inbox ack timeout accepted |
+| `020821` | **advisory PASS** | attach-only; `launchUsed=false` |
+| `004036` | **advisory PASS** | setup path |
 | `205925` | **14/18** | informative FAIL — old F7 closed; partial harvest |
 | `154012` | **12/18** | honest FAIL; harvest **sufficient** |
 | `135217` | **6/18** | `instrumentation_insufficient` |
