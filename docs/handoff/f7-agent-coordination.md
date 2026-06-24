@@ -29,7 +29,7 @@ Every agent **must**:
 | Field | Value |
 |-------|-------|
 | Product baseline | **`main`** @ `3384c7d` (PR #7 + PR #10 merge) |
-| Docs HEAD | *(this commit — post-PR #10 atlas sync)* |
+| Docs HEAD | `5878712` — post-PR #10 full atlas sync |
 | Active feature branch | *(none)* — `fix/f7-gate-stability` **merged** via PR #7; inactive |
 | Deleted branch | `test/assistive-inbox-sequence-regression` (merged PR #10; local + remote deleted) |
 | PR #7 | **MERGED** — F7 gate stability + assist foundation |
@@ -63,7 +63,7 @@ Every agent **must**:
 | **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Cert/evidence/git/PR **after** product work lands; PR #7/#10 merge work **DONE** | — | `3384c7d` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Travel/trade **execute** path — new feature branch from `main` | — | `e4c261d` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `IDLE` | Return only on attach/harvest/inbox/launcher/runner defect | — | `2df444b` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #10 full atlas sync (primary + secondary indexes) | — | *(this commit)* |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Post-PR #10 full atlas sync (primary + secondary indexes) | — | `5878712` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
