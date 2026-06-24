@@ -1,3 +1,4 @@
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using System;
@@ -37,6 +38,8 @@ namespace BlacksmithGuild.DevTools
             }
 
             RuntimeTrace.RunSafe("DevCommandFileInbox", "SyncForgeStatus", () => GameSessionState.SyncForgeStatus());
+
+            AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
 
             if (!GameSessionState.CanPollFileInbox)
             {

@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
@@ -282,8 +283,13 @@ namespace BlacksmithGuild.DevTools
 
             CanPollHelpHotkeys = IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady;
             CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
-            CanPollFileInbox = IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady;
+            AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;
+        }
+
+        internal static void SetCanPollFileInbox(bool value)
+        {
+            CanPollFileInbox = value;
         }
 
         private static void ReadHeroInternal(bool traceSubOps)
@@ -888,6 +894,7 @@ namespace BlacksmithGuild.DevTools
                 RuntimeTrace.RunSafe("StatusFlush", "update_session_ok", () => { });
 
                 RuntimeTrace.RunSafe("StatusFlush", "update_readiness_begin", () => { });
+                AssistReadinessEvaluator.ApplyInboxAndAssistFlags(trace: false);
                 RuntimeTrace.RunSafe("StatusFlush", "update_readiness", () =>
                 {
                     var mapReady = IsCampaignMapReady;

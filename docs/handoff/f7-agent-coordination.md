@@ -33,7 +33,7 @@ Every agent **must**:
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **PIVOT** — old F7 informative FAIL @ `205925`; product cert = [Town-to-Town Trade Assist](../control/logs/open/town-to-town-trade-assist-cert.md) |
 | Last F7 evidence | `20260623-205925` (closed) |
-| Next live cert | Town-to-Town Trade Assist — **BLOCKED** until B (`canPollFileInbox`, `AssistiveTownToTownProbe`) + C attach runner |
+| Next live cert | Town-to-Town Trade Assist — **Agent A** after B push (inbox + probe landed) |
 | Old F7 | **CLOSED** — infrastructure/regression only; no treadmill reruns seeking PASS |
 | Optional infra | Agent A may validate C `@ 9bdc759` (~15s semantic FAIL); not product medal |
 | Parallel lanes | B + C parallel-safe; live cert serial (one machine lock) |
@@ -44,8 +44,8 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Gameplay cert after B+C; optional C-fix infra validation only | Blocked on B probe | `903c8d0` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | `canPollFileInbox` @ settlement_menu; `AssistiveTownToTownProbe` | Blocks assist cert | `e891b33` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Run Town-to-Town Trade Assist cert (attach mode) | — | `903c8d0` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Assist inbox + town-trade probe landed | — | pending |
 | **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `9bdc759` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | `d5c7bbf` |
 
@@ -95,6 +95,16 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent B → A, C, D (assist inbox + town-trade probe)
+
+- **Root cause fixed:** `FlushLightweight` omitted `canPollFileInbox` while `settlement_menu_open` deferred heavy flush (cert `205925`).
+- **Landed:** `AssistReadinessEvaluator` + `FileInboxReadiness` trace markers; assist fields in lightweight + full Status JSON.
+- **Landed:** `AssistiveTownToTownProbe`, `AssistiveLeaveTownAndTravel` — advisory evidence; `tradeExecution=advisory_only` default.
+- **Output files:** `BlacksmithGuild_AssistiveSession.json`, `BlacksmithGuild_TownToTownTradeProbe.json` on probe.
+- **Static:** Release build PASS; grep guard PASS; runner contract PASS.
+- **F7 game cert:** **NOT RUN**.
+- **Need from A:** `run-town-to-town-trade-assist-cert.ps1` from Quyaz settlement menu; no old F7 treadmill.
 
 ### 2026-06-24 — Agent D → A, B, C (F7 closure + town-to-town pivot)
 

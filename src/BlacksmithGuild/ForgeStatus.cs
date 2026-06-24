@@ -6,6 +6,7 @@ using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.Market;
@@ -518,7 +519,6 @@ namespace BlacksmithGuild
                 builder.AppendLine($"    \"tavernReady\": {SafeSessionBool(() => GameSessionState.IsTavernLocationReady).ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"settlementName\": \"{SafeSessionValue(() => GameSessionState.CurrentSettlementName)}\",");
                 builder.AppendLine($"    \"locationId\": \"{SafeSessionValue(() => GameSessionState.CurrentLocationId)}\",");
-                builder.AppendLine($"    \"canPollFileInbox\": {SafeSessionBool(() => GameSessionState.CanPollFileInbox).ToString().ToLowerInvariant()},");
                 builder.AppendLine($"    \"canPollHotkeys\": {SafeSessionBool(() => GameSessionState.CanPollHotkeys).ToString().ToLowerInvariant()},");
                 AppendSurfaceSessionFields(builder);
                 builder.AppendLine("  },");
@@ -800,7 +800,18 @@ namespace BlacksmithGuild
             builder.AppendLine($"    \"settlementMenuId\": \"{Escape(snap.SettlementMenuId ?? "")}\",");
             builder.AppendLine($"    \"campaignMapSurfaceOpen\": {snap.CampaignMapSurfaceOpen.ToString().ToLowerInvariant()},");
             builder.AppendLine($"    \"settlementInteriorReady\": {snap.SettlementInteriorReady.ToString().ToLowerInvariant()},");
-            builder.AppendLine($"    \"readinessSurface\": \"{Escape(snap.ReadinessSurface ?? ReadinessSurfaceKinds.Unknown)}\"");
+            builder.AppendLine($"    \"readinessSurface\": \"{Escape(snap.ReadinessSurface ?? ReadinessSurfaceKinds.Unknown)}\",");
+            AppendAssistReadinessFields(builder);
+        }
+
+        private static void AppendAssistReadinessFields(StringBuilder builder)
+        {
+            builder.AppendLine($"    \"canPollFileInbox\": {SafeSessionBool(() => GameSessionState.CanPollFileInbox).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"openMapReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsOpenMapReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"townMenuReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsTownMenuReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"inGameAssistReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsInGameAssistReady).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"canAcceptAssistiveCommand\": {SafeSessionBool(() => AssistReadinessEvaluator.CanAcceptAssistiveCommand).ToString().ToLowerInvariant()},");
+            builder.AppendLine($"    \"assistiveCertReady\": {SafeSessionBool(() => AssistReadinessEvaluator.IsInGameAssistReady).ToString().ToLowerInvariant()}");
         }
 
         private static void AppendFactionPowerPosture(StringBuilder builder)
