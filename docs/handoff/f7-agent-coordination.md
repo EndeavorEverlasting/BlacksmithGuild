@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ pending (Agent B post-unblock fix) |
+| Branch / HEAD | `fix/f7-gate-stability` @ `e891b33` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — B post-unblock fix landed; pending A re-cert |
@@ -43,7 +43,7 @@ Every agent **must**:
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-200917` FAIL — route B post-unblock flush | — | `c9531e7` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fail-soft + surface telemetry @ `200917` | — | pending |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fail-soft + surface telemetry @ `200917` | — | `e891b33` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
