@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ *(pending — attach-first assist runner)* |
+| Branch / HEAD | `fix/f7-gate-stability` @ `0b5798a` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — assist PASS landed; await user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **GREEN (assist)** — Town-to-Town Trade Assist PASS @ `20260624-004036` (Quyaz settlement_menu) |
@@ -46,7 +46,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Assist cert PASS @ `20260624-004036` | — | `c13e75b` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Assist inbox + town-trade probe landed | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach-first town-trade cert + LaunchSetup | — | *(this commit)* |
+| **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach-first town-trade cert + LaunchSetup | — | `0b5798a` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | `d5c7bbf` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
