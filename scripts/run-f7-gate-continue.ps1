@@ -16,7 +16,9 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
+. (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
 # Gate uses f7-launch-contract helpers: Test-F7StrongPreIntentGameSignal, Get-F7PreIntentContaminationResult, pre_intent_game_spawn
+# Wrong-window guard lives in f7-external-state-classifier.ps1: Test-F7GuardedActionAllowed (used by launcher-auto-nav.ps1)
 
 $focusHelperPath = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 $compareGoldenPath = Join-Path $PSScriptRoot 'compare-phase1-golden-path.ps1'
@@ -87,6 +89,30 @@ $runnerCommandLine = "run-f7-gate-continue.ps1 -CertTarget $CertTarget" +
     $(if ($HookMask) { " -HookMask $HookMask" } else { '' }) +
     " -TimeoutSeconds $TimeoutSeconds -StableSeconds $StableSeconds"
 
+$externalStateTimelinePath = Join-Path $checkpointDir 'ExternalStateTimeline.json'
+Initialize-F7ExternalStateTimeline -Mode cert -OutputPath $externalStateTimelinePath `
+    -SessionId $sessionId -StartedAtUtc $startedAtUtc
+
+function Write-F7ExternalStateFromGate {
+    param(
+        [string]$ReasonOverride = $null,
+        [bool]$PreflightClean = $false,
+        [bool]$Contaminated = $false,
+        [string]$ContaminationReason = $null,
+        [switch]$Force
+    )
+
+    $null = Emit-F7ExternalStateTimelineCheckpoint -BannerlordRoot $bannerlordRoot `
+        -Mode cert -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
+        -CertStartedUtc $certStartedUtc -CertTarget $CertTarget `
+        -LaunchPath $script:LaunchAutomation.launchPath `
+        -LaunchSelectedBy $script:LaunchAutomation.launchSelectedBy `
+        -TargetMismatch ([bool]$script:LaunchAutomation.targetMismatch) `
+        -LaunchState $script:LaunchAutomation.launchState `
+        -ReasonOverride $ReasonOverride -PreflightClean $PreflightClean `
+        -Contaminated $Contaminated -ContaminationReason $ContaminationReason -Force:$Force.IsPresent
+}
+
 function Write-F7LaunchState {
     param([string]$State)
     if ($script:LaunchAutomation.launchState -eq $State) { return }
@@ -94,6 +120,7 @@ function Write-F7LaunchState {
     $line = "f7-gate: LAUNCH_STATE=$State"
     Write-Host $line -ForegroundColor Yellow
     & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $bannerlordRoot -Message $line
+    Write-F7ExternalStateFromGate -Force
 }
 
 function Stop-F7CertProcesses {
@@ -806,6 +833,8 @@ function Save-CheckpointEvidence {
 
     New-Item -ItemType Directory -Force -Path $checkpointDir | Out-Null
 
+    Save-F7ExternalStateTimeline | Out-Null
+
     Resolve-F7LaunchPath -SinceLocal $SinceLocal
     $contamination = Get-F7LaunchContamination -SinceLocal $SinceLocal
     Apply-F7LaunchContaminationState -Contamination $contamination
@@ -961,6 +990,9 @@ function Save-CheckpointEvidence {
     foreach ($key in $harvestFields.Keys) {
         $manifest[$key] = $harvestFields[$key]
     }
+    if ($harvestFields.externalStateTimelineCopied -eq $true) {
+        $manifest.externalStateTimelineCopied = $true
+    }
     $manifest | ConvertTo-Json -Depth 10 |
         Set-Content -LiteralPath (Join-Path $checkpointDir 'manifest.json') -Encoding UTF8
 
@@ -1029,6 +1061,7 @@ function Invoke-F7NavLaunchAttempt {
         RespectUserForeground  = $true
         CertTarget             = $CertTarget
         CertRetryAttempt       = $CertRetryAttempt
+        ExternalStateTimelinePath = $externalStateTimelinePath
     }
     if ($script:LaunchAutomation.retryCount -gt 0) {
         $navParams.AllowCertRetry = $true
@@ -1264,11 +1297,14 @@ try {
         Write-Host "F7 FAIL: preflight_not_clean - $($preflight.reason)" -ForegroundColor Red
         $script:LaunchAutomation.failureReason = 'preflight_not_clean'
         $script:LaunchAutomation.readinessJudged = $false
+        Write-F7ExternalStateFromGate -ReasonOverride "Preflight not clean: $($preflight.reason)"
         $signals = Get-F7GateSignals -SkipReadinessJudgement $true
         $dir = Save-CheckpointEvidence -PassFail 'FAIL' -ExitCode 1 -StableSec 0 -LastSignals $signals `
             -Notes ('F7 FAIL: preflight_not_clean; {0}' -f $preflight.reason) -SinceLocal (Get-Date)
         Exit-F7Gate -Code 1 -CheckpointDir $dir
     }
+
+    Write-F7ExternalStateFromGate -PreflightClean -ReasonOverride 'Preflight clean before cert launch.'
 
     Write-Host 'Building Release...' -ForegroundColor Cyan
     dotnet build (Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj') -c Release
@@ -1348,6 +1384,14 @@ try {
             Write-F7PollHeartbeat -ElapsedSec $elapsedSec -Signals $lastSignals -EverMapReady $everMapReady `
                 -LaunchState $script:LaunchAutomation.launchState
             $lastHeartbeatSec = $heartbeatSec
+            $null = Add-F7ExternalStateTimelineEventThrottled -BannerlordRoot $bannerlordRoot -Mode cert `
+                -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
+                -CertStartedUtc $certStartedUtc -CertTarget $CertTarget `
+                -LaunchPath $script:LaunchAutomation.launchPath `
+                -LaunchSelectedBy $script:LaunchAutomation.launchSelectedBy `
+                -TargetMismatch ([bool]$script:LaunchAutomation.targetMismatch) `
+                -LaunchState $script:LaunchAutomation.launchState `
+                -ReasonOverride 'Readiness poll heartbeat classification.'
         }
 
         if ($gameEverSeen) {

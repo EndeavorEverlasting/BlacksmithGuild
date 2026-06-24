@@ -199,3 +199,35 @@ function Get-F7LaunchContaminationResult {
 
     return $result
 }
+
+function Get-F7AssistiveAttachResult {
+    param(
+        [string]$LaunchPath = 'unknown',
+        [string]$LaunchSelectedBy = 'unknown',
+        [bool]$GameProcessRunning = $false,
+        [bool]$ContaminatedLaunchLogSeen = $false
+    )
+
+    $manual = ($LaunchSelectedBy -in @('user', 'unknown'))
+    $result = [ordered]@{
+        assistiveAttach = $true
+        manualLaunchObserved = [bool]$manual
+        contaminated = $false
+        targetMismatch = $false
+        targetMismatchReason = $null
+        failureReason = $null
+        gameSpawnAccepted = [bool]$GameProcessRunning
+        gameSpawnRejectedReason = $null
+        readinessJudged = $true
+        launchPath = [string]$LaunchPath
+        launchSelectedBy = [string]$LaunchSelectedBy
+    }
+
+    if ($ContaminatedLaunchLogSeen) {
+        $result.contaminated = $true
+        $result.failureReason = 'assistive_attach_blocked_by_prior_contamination_log'
+        $result.readinessJudged = $false
+    }
+
+    return [pscustomobject]$result
+}

@@ -403,6 +403,7 @@ function Invoke-F7EvidenceHarvest {
     }
     $statusArtifact = [ordered]@{ name = 'BlacksmithGuild_Status.json'; copied = $false; reason = 'not_attempted' }
     $crashArtifact = [ordered]@{ name = 'BlacksmithGuild_CrashContext.json'; copied = $false; reason = 'not_attempted' }
+    $externalStateTimelineCopied = $false
     $crashPath = $null
     $statusSource = $null
     $harvestError = $null
@@ -565,6 +566,16 @@ function Invoke-F7EvidenceHarvest {
         $harvestPartial = $true
     }
 
+    $timelinePath = Join-Path $CheckpointDir 'ExternalStateTimeline.json'
+    if (Test-Path -LiteralPath $timelinePath) {
+        $externalStateTimelineCopied = $true
+        $artifactMeta.Add([ordered]@{
+            name = 'ExternalStateTimeline.json'
+            copied = $true
+            reason = 'written_by_runner'
+        }) | Out-Null
+    }
+
     return [ordered]@{
         evidenceCompleteness = $completeness
         harvestError = if ($harvestError) { [string]$harvestError } else { $null }
@@ -575,6 +586,7 @@ function Invoke-F7EvidenceHarvest {
         lastCrashContextStage = if ($crashSummary.stage) { [string]$crashSummary.stage } else { $null }
         lastCrashContextArea = if ($crashSummary.area) { [string]$crashSummary.area } else { $null }
         statusJsonCopied = [bool]($statusArtifact.copied -eq $true)
+        externalStateTimelineCopied = [bool]$externalStateTimelineCopied
         crashContextCopied = [bool]($crashArtifact.copied -eq $true)
         windowsCrashEventCopied = [bool]($winEvent.windowsCrashEventCopied -eq $true)
         windowsCrashEventStatus = [string]$winEvent.windowsCrashEventStatus

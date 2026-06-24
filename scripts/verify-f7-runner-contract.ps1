@@ -26,10 +26,11 @@ $bisectPath = Join-Path $PSScriptRoot 'run-agent-a-f7-bisect.ps1'
 $launchLogPath = Join-Path $PSScriptRoot 'write-launch-log.ps1'
 $harvestPath = Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1'
 $launchContractPath = Join-Path $PSScriptRoot 'f7-launch-contract.ps1'
+$classifierPath = Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1'
 $pathsPath = Join-Path $PSScriptRoot 'bannerlord-paths.ps1'
 $navPath = Join-Path $PSScriptRoot 'launcher-auto-nav.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $pathsPath, $navPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -55,7 +56,9 @@ if (Test-Path -LiteralPath $gatePath) {
         'Get-BannerlordProcessDetection', 'gameProcessDetectionMethod', 'gameAliveConfidence', 'process_detection_uncertain',
         'contaminated_launch_path', 'f7-launch-contract.ps1', 'readinessJudged', 'targetMismatchReason', 'failureReason',
         'Stop-F7CertProcesses', 'spawnAttribution', 'pre_intent_game_spawn', 'retryCount',
-        'Test-F7StrongPreIntentGameSignal', 'Test-F7GameGoneDefinitive', 'fail_game_gone_definitive', 'exeEverSeen'
+        'Test-F7StrongPreIntentGameSignal', 'Test-F7GameGoneDefinitive', 'fail_game_gone_definitive', 'exeEverSeen',
+        'f7-external-state-classifier.ps1', 'Initialize-F7ExternalStateTimeline', 'ExternalStateTimeline',
+        'Emit-F7ExternalStateTimelineCheckpoint', 'Save-F7ExternalStateTimeline', 'Test-F7GuardedActionAllowed'
     )) {
         if ($gateText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-f7-gate-continue.ps1 missing: $needle"
@@ -109,6 +112,8 @@ if (Test-Path -LiteralPath $navPath) {
         Add-Failure 'launcher-auto-nav.ps1 missing pre-intent intent barrier'
     } elseif ($navText -notmatch 'Invoke-LauncherSafeModeAndCrashDialogs|safe_mode_visible|ContinueClickVerifySec') {
         Add-Failure 'launcher-auto-nav.ps1 missing Safe Mode early detect / reduced verify timeout'
+    } elseif ($navText -notmatch 'Test-NavGuardedLauncherClick|unknown_window_state') {
+        Add-Failure 'launcher-auto-nav.ps1 missing guarded click / unknown_window_state hook'
     } else {
         Write-Host 'PASS nav: shared process detection wired' -ForegroundColor Green
     }
@@ -116,7 +121,7 @@ if (Test-Path -LiteralPath $navPath) {
 
 if (Test-Path -LiteralPath $launchContractPath) {
     $contractText = Get-Content -LiteralPath $launchContractPath -Raw
-    foreach ($needle in @('Test-F7StrongPreIntentGameSignal', 'Get-F7PreIntentContaminationResult', 'pre_intent_game_spawn')) {
+    foreach ($needle in @('Test-F7StrongPreIntentGameSignal', 'Get-F7PreIntentContaminationResult', 'pre_intent_game_spawn', 'Get-F7AssistiveAttachResult', 'assistiveAttach')) {
         if ($contractText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-launch-contract.ps1 missing: $needle"
         } else {
@@ -125,9 +130,23 @@ if (Test-Path -LiteralPath $launchContractPath) {
     }
 }
 
+if (Test-Path -LiteralPath $classifierPath) {
+    $classifierText = Get-Content -LiteralPath $classifierPath -Raw
+    foreach ($needle in @(
+        'Invoke-F7ExternalStateClassification', 'Get-F7StateActionPolicy', 'Resolve-F7GameSurfaceClassifiedState',
+        'Resolve-F7ProcessClassifiedState', 'Add-F7ExternalStateTimelineEvent', 'Test-F7GuardedActionAllowed'
+    )) {
+        if ($classifierText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "f7-external-state-classifier.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS classifier contains: $needle" -ForegroundColor Green
+        }
+    }
+}
+
 if (Test-Path -LiteralPath $harvestPath) {
     $harvestText = Get-Content -LiteralPath $harvestPath -Raw
-    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed', 'Get-F7SafeArtifactFreshnessState')) {
+    foreach ($needle in @('Copy-F7EvidenceArtifact', 'Get-F7Phase1Markers', 'Invoke-F7EvidenceHarvest', 'Get-F7WindowsCrashEventSummary', 'windowsCrashEventStatus', 'lastPhase1Marker', 'New-F7JsonSafeValue', 'Write-F7ArtifactsSidecar', 'harvestPartial', 'harvest_failed', 'Get-F7SafeArtifactFreshnessState', 'externalStateTimelineCopied')) {
         if ($harvestText -notmatch [regex]::Escape($needle)) {
             Add-Failure "f7-evidence-harvest.ps1 missing: $needle"
         } else {
@@ -234,6 +253,19 @@ if (Test-Path -LiteralPath $gameGoneRegression) {
     }
 } else {
     Add-Failure 'Missing test-f7-game-gone-202052.ps1 offline regression'
+}
+
+$assistiveRegression = Join-Path $PSScriptRoot 'test-f7-assistive-attach-mode.ps1'
+if (Test-Path -LiteralPath $assistiveRegression) {
+    Write-Host 'Running test-f7-assistive-attach-mode.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $assistiveRegression
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-f7-assistive-attach-mode.ps1 failed (cert vs assistive attach regression)'
+    } else {
+        Write-Host 'PASS offline assistive attach mode regression' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-f7-assistive-attach-mode.ps1 offline regression'
 }
 
 Write-Host ''

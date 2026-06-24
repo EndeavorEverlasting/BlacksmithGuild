@@ -13,12 +13,14 @@ param(
     [ValidateSet('continue', 'play', 'any')]
     [string]$CertTarget = 'any',
     [bool]$AllowCertRetry = $false,
-    [int]$CertRetryAttempt = 0
+    [int]$CertRetryAttempt = 0,
+    [string]$ExternalStateTimelinePath = $null
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
+. (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
@@ -59,6 +61,59 @@ function Write-LaunchLog {
     $line = "[{0}] launcher-auto: {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
     Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
     Write-Host $line -ForegroundColor DarkGray
+}
+
+function Get-NavExternalStateMode {
+    if ((Get-Command Test-F7ContinueCertStrict -ErrorAction SilentlyContinue) -and (Test-F7ContinueCertStrict)) {
+        return 'cert'
+    }
+    return 'assistive'
+}
+
+function Initialize-NavExternalStateTimelineIfNeeded {
+    if (-not $ExternalStateTimelinePath) { return }
+    if ($script:F7ExternalStateTimeline) { return }
+    Initialize-F7ExternalStateTimeline -Mode (Get-NavExternalStateMode) -OutputPath $ExternalStateTimelinePath
+}
+
+function Write-NavExternalStateEvent {
+    param([string]$ReasonOverride = $null)
+
+    if (-not $ExternalStateTimelinePath) { return }
+    Initialize-NavExternalStateTimelineIfNeeded
+    $launchPath = if ($script:adoptedLaunchPath) { [string]$script:adoptedLaunchPath } else { 'unknown' }
+    $selectedBy = if ($script:adoptedSelectedBy) { [string]$script:adoptedSelectedBy } else { 'unknown' }
+    $null = Emit-F7ExternalStateTimelineCheckpoint -BannerlordRoot $BannerlordRoot `
+        -Mode (Get-NavExternalStateMode) -StatusPath (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) `
+        -Phase1Path (Get-Phase1LogPath -BannerlordRoot $BannerlordRoot) `
+        -CertTarget $CertTarget -LaunchPath $launchPath -LaunchSelectedBy $selectedBy `
+        -TargetMismatch ([bool]$script:contaminatedLaunchPath) `
+        -LaunchState $(if ($script:contaminatedLaunchPath) { 'contaminated_launch_path' } else { 'nav_poll' }) `
+        -ReasonOverride $ReasonOverride -Force
+}
+
+function Test-NavGuardedLauncherClick {
+    param([string]$Intent)
+
+    $action = if ($Intent -eq 'continue') { 'click_launcher_continue' } else { 'click_launcher_play' }
+    $mode = Get-NavExternalStateMode
+
+    $classifiedState = 'UnknownWindowState'
+    if ([UIAHelper]::IsLauncherPlayContinueVisible()) {
+        $classifiedState = 'LauncherMenu'
+    } elseif ([UIAHelper]::HasLauncherRoot()) {
+        $classifiedState = 'LauncherOpening'
+    } else {
+        $det = Get-LaunchNavProcessDetection
+        $classifiedState = Resolve-F7ProcessClassifiedState -Detection $det
+    }
+
+    $allowed = Test-F7GuardedActionAllowed -Mode $mode -Action $action -ClassifiedState $classifiedState
+    if (-not $allowed) {
+        Write-LaunchLog "LAUNCH_STATE=unknown_window_state reason=guarded_click_denied action=$action mode=$mode state=$classifiedState"
+        Write-NavExternalStateEvent -ReasonOverride "Guarded click denied for action=$action state=$classifiedState"
+    }
+    return [bool]$allowed
 }
 
 if (-not ('UIAHelper' -as [type])) {
@@ -2628,6 +2683,8 @@ if ($LaunchIntent -eq 'continue') {
 }
 
 try {
+Initialize-NavExternalStateTimelineIfNeeded
+Write-NavExternalStateEvent -ReasonOverride 'launcher-auto-nav entry classification'
 while ((Get-Date) -lt $deadline) {
     if (Test-PreIntentGameSpawnAndContaminate) {
         return
@@ -2795,6 +2852,10 @@ while ((Get-Date) -lt $deadline) {
             Start-Sleep -Milliseconds $PollMs
             continue
         }
+        if (-not (Test-NavGuardedLauncherClick -Intent $LaunchIntent)) {
+            Start-Sleep -Milliseconds $PollMs
+            continue
+        }
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
@@ -2842,5 +2903,6 @@ $visibleButtons = [UIAHelper]::LogVisibleLauncherButtons()
 Write-LaunchLog "timeout: visible launcher buttons: $visibleButtons"
 throw "launcher-auto-nav timed out after ${effectiveTimeout}s (see $logPath)"
 } finally {
+    Save-F7ExternalStateTimeline | Out-Null
     Release-NavLock
 }
