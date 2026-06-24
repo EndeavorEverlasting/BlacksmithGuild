@@ -28,12 +28,12 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `89e7158` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `46d353f` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
-| Gate verdict | **RED** — B fix validated @ `204227`; runner tooling exception aborted poll |
-| Last F7 evidence | `20260623-204227` @ `e891b33` |
-| Next live cert | **BLOCKED** — route A/C: `Access is denied` tooling exception + harvest partial |
+| Gate verdict | **IN CERT** — Agent A re-cert post-C classifier @ `89e7158` |
+| Last F7 evidence | `20260623-204227` @ `fd2a190` |
+| Next live cert | **IN PROGRESS** — Agent A automation lock |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
 ---
@@ -42,7 +42,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-204227` FAIL — tooling exception; B fix validated | — | pending |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IN_PROGRESS` | Live F7 re-cert post-C `@ 89e7158` | automation lock | `46d353f` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock fix **validated** @ `204227` seq=18766+ | — | `e891b33` |
 | **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Cert vs assistive attach classifier foundation | — | `89e7158` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
@@ -73,7 +73,7 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | — | — | — |
+| `automation` | Agent A | live F7 re-cert | `run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue` |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
