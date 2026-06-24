@@ -100,7 +100,10 @@ namespace BlacksmithGuild.DevTools.Assistive
 
             if (GameSessionState.IsMissionActiveForTrace())
             {
-                reason = "mission_active";
+                var gameplay = GameSessionState.LatestGameplaySurface;
+                reason = !string.IsNullOrEmpty(gameplay?.MissionKind)
+                    ? gameplay.MissionKind
+                    : "mission_active";
                 return true;
             }
 
@@ -115,6 +118,17 @@ namespace BlacksmithGuild.DevTools.Assistive
                 || string.Equals(GameSessionState.ReadinessSurface, ReadinessSurfaceKinds.MainMenu, StringComparison.Ordinal))
             {
                 reason = $"surface_blocked:{GameSessionState.ReadinessSurface}";
+                return true;
+            }
+
+            var surface = GameSessionState.LatestGameplaySurface;
+            if (surface != null
+                && !string.IsNullOrEmpty(surface.BlockReason)
+                && !GameplaySurfaceClassifier.IsTravelExecuteSurface(surface.GameplaySurface)
+                && surface.GameplaySurface != GameplaySurfaceKinds.SettlementInterior
+                && surface.GameplaySurface != GameplaySurfaceKinds.SettlementCity)
+            {
+                reason = surface.BlockReason;
                 return true;
             }
 
