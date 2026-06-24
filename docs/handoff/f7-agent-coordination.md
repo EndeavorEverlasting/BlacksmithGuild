@@ -28,11 +28,11 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ cert pending |
+| Branch / HEAD | `fix/f7-gate-stability` @ `c9531e7` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — grace lifecycle validated; death @ `200917` seq=8115 after `HeavyFlushUnblocked` |
-| Last F7 evidence | `20260623-200917` @ cert commit pending |
+| Last F7 evidence | `20260623-200917` @ `c9531e7` |
 | Next live cert | **BLOCKED** — Agent B: first FlushFull after unblocked still kills |
 | Parallel lanes | A/B/C/D parallel-safe; live cert is serial gate |
 
@@ -42,7 +42,7 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-200917` FAIL — route B post-unblock flush | — | cert pending |
+| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `20260623-200917` FAIL — route B post-unblock flush | — | `c9531e7` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | **Next:** seq=8115 death after `HeavyFlushUnblocked` | — | `cc6fbac` |
 | **C** | Agent C — Launcher / F7 runner / Process detection / Classifier | `DONE` | `705d2be` validated — poll past 61s, harvest sufficient | — | `705d2be` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
