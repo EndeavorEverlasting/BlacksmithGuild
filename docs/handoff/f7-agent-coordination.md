@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `0b5798a` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `89429ad` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — assist PASS landed; await user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **GREEN (assist)** — Town-to-Town Trade Assist PASS @ `20260624-004036` (Quyaz settlement_menu) |
@@ -47,7 +47,7 @@ Every agent **must**:
 | **A** | Agent A — Cert / Evidence / Git / PR | `IN_PROGRESS` | Attach-only assist re-cert after C runner | — | `eef3645` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | Hot standby — return on runtime/probe/execute defect | — | `e4c261d` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `ACTIVE` | Attach-only runner; no launch; full harvest | — | `0b5798a` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `IN_PROGRESS` | Assist PASS + attach doctrine reconciliation | — | (this commit) |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Assist PASS + attach doctrine recorded | — | `89429ad` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
