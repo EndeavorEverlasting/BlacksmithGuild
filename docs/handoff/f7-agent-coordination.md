@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ `3c6feed` |
+| Branch / HEAD | `fix/f7-gate-stability` @ `9bdc759` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** until manifest PASS + user merge auth |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **RED** — `205925` MapTransition treadmill; **C fix landed** (15s semantic mismatch fail, 45s launcher cap) |
@@ -44,7 +44,7 @@ Every agent **must**:
 |-------|----------------------|--------|--------------|---------------------|-------------|
 | **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Cert `205925` FAIL MapTransition timeout; tooling fixes landed | — | `903c8d0` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Post-unblock validated; next: `canPollFileInbox` @ settlement_menu | — | `e891b33` |
-| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `3c6feed` |
+| **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `9bdc759` |
 | **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Mental model @ `eff7074`; board sync pending B commit | — | `eff7074` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
@@ -81,7 +81,7 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 
 ## Cross-agent message log (newest first)
 
-### 2026-06-24 — Agent C → A, B, D (launcher cap + settlement fast-fail @ `3c6feed`)
+### 2026-06-24 — Agent C → A, B, D (launcher cap + settlement fast-fail @ `9bdc759`)
 
 - **Landed:** 45s launcher selection cap + `LAUNCH_TIMING` evidence; 4s Continue verify when chrome visible; Play-only fail on Continue cert.
 - **Landed:** F7 poll `fail_settlement_menu_semantic_mismatch` after 15s when `settlement_menu` observed but old gate unsatisfied (routes Agent B).
