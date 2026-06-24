@@ -2,18 +2,54 @@
 
 **Owner:** Agent A — Cert / Evidence / Git / PR (live runs) · **Spec:** Agent D  
 **Branch:** `fix/f7-gate-stability`  
-**Status:** **PASS** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) (Quyaz settlement_menu, advisory probe)  
-**Runner skeleton:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1)
+**Status:** **PASS** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)  
+**Runner:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1)
+
+---
+
+## Authoritative PASS session
+
+| Field | Value |
+|-------|-------|
+| **Cert name** | Town-to-Town Trade Assist Cert |
+| **Authoritative PASS session** | `20260624-004036` |
+| **Evidence path** | `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json` |
+| **Product result** | PASS |
+| **Surface** | `settlement_menu` |
+| **Current settlement** | Quyaz |
+| **Recommended next town** | Ortysia |
+| **Trade execution** | `advisory_only` |
+| **Travel command mode** | `advisory_only` |
+| **`fakeGameplayDelta`** | `false` |
+| **`canPollFileInbox`** | `true` |
+| **`inGameAssistReady`** | `true` |
+| **`canAcceptAssistiveCommand`** | `true` |
+
+### What this PASS proves
+
+- In-game **assistive command readiness** from a legitimate session (attach + inbox poll OK).
+- **Advisory** gameplay output: real settlement context, recommended next town, no fabricated deltas.
+- Manual launch / attach path is valid product evidence (`assistiveAttach=true`, `manualLaunchObserved=true`).
+
+### What this PASS does **not** prove
+
+- **Real buy/sell execution** — `tradeExecution=advisory_only` only.
+- **Real travel execution** — `travelCommandMode=advisory_only` only.
+- Launcher automation purity — that is **F7 infrastructure**, not this product medal.
+
+Future **execute-path** certs must earn their own PASS manifests.
 
 ---
 
 ## Product framing
 
-Old F7 Continue cert is **closed** as a product merge gate (informative FAIL @ [`20260623-205925`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json)). Forward product certification is **assistive gameplay** inside a legitimate Bannerlord session.
+Old F7 Continue cert is **closed** as a product merge gate (informative FAIL @ [`20260623-205925`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json)). **Town-to-Town Trade Assist PASS** @ `20260624-004036` is the **current product medal**.
+
+People know how to start the game. People need help **inside** Bannerlord: blacksmithing, trading, travel, inventory, stamina, market intelligence, and safe advisory or execute paths.
 
 **Doctrine:** VanillaLegit + Assistive — automate hands, not consequences. No fake gold, inventory, or trade deltas.
 
-See also: [`f7-vs-assistive-attach-mode.md`](f7-vs-assistive-attach-mode.md)
+See also: [`f7-vs-assistive-attach-mode.md`](f7-vs-assistive-attach-mode.md) · [`assistive-current-session-attach.md`](assistive-current-session-attach.md)
 
 ---
 
@@ -114,8 +150,35 @@ Do **not** use the F7 Continue loop as a 20–30 minute treadmill seeking old-ga
 
 ---
 
+## Next cert slices
+
+### Completed
+
+- Advisory town-to-town probe from Quyaz `settlement_menu` (`20260624-004036`)
+
+### Next
+
+| Slice | Owner |
+|-------|-------|
+| Attach-only re-cert from already-open game (no relaunch) | **Agent A** (after **Agent C** attach runner) |
+| Leave-town / travel **execute** path | **Agent B** |
+| Open-map trade **execute** path | **Agent B** |
+| Smithing assist cert | **Agent B** / product |
+
+### Routing
+
+| Defect | Owner |
+|--------|-------|
+| Attach-only runner / harvest | **Agent C** |
+| Runtime command / probe | **Agent B** |
+| Evidence / manifest / PR | **Agent A** |
+| Docs drift | **Agent D** |
+
+---
+
 ## Related docs
 
+- [`assistive-current-session-attach.md`](assistive-current-session-attach.md)
 - [`f7-next-cert-readiness.md`](f7-next-cert-readiness.md) — old F7 closed; hard limits
 - [`session-20260623-205925.md`](session-20260623-205925.md) — baseline informative FAIL
 - [`external-state-timeline-schema.md`](external-state-timeline-schema.md)

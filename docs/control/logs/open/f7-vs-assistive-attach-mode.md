@@ -7,9 +7,34 @@
 
 ## Product framing
 
-Launcher automation was a proving ground for state detection. The product value is **assistive gameplay inside Bannerlord** (smithing, trading, travel, inventory, stamina, market intelligence, smithy workflow, safe actions, skill guidance).
+Launcher automation was a proving ground for state detection. **Assistive attach is the default real-world mode.**
 
-People know how to start the game. The external layer must know **where the player is** and whether a request is safe to route — not force every user through F7 launch purity.
+People know how to start Bannerlord. People need help **inside** Bannerlord. The mod should focus on:
+
+- **Blacksmithing**
+- **Trading**
+- **Travel**
+- **Market advice**
+- **Inventory interpretation**
+- **Stamina-aware actions**
+- **Safe advisory or execute paths**
+
+The external layer must know **where the player is** and whether a request is safe to route — not force every user through F7 launch purity.
+
+**Do not reload or relaunch** when the game is already open and attachable. See [`assistive-current-session-attach.md`](assistive-current-session-attach.md).
+
+---
+
+## Mode comparison (required distinction)
+
+| | **Cert mode (F7)** | **Assistive attach mode** |
+|--|-------------------|---------------------------|
+| Purpose | Certify launcher / Continue **automation** | In-game **assistance** |
+| Launcher | Runner **owns** launcher | **No** launcher (attach-only default) |
+| User clicks | **Contamination** during cert | **Valid** — manual Play/Continue OK |
+| `certTarget` vs `launchPath` | Must match; `targetMismatch` **fails** | N/A — attach to current session |
+| Product medal | **Not** current sprint medal | **Town-to-Town Trade Assist PASS** @ `20260624-004036` |
+| When to use | Launcher automation **smoke test** only | Default for product certs and real use |
 
 ---
 
@@ -35,13 +60,16 @@ Cert mode **must not** be loosened for convenience. Assistive attach is a separa
 
 ## Mode 2: Assistive attach mode (primary product path)
 
-**Entry:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1) (skeleton; blocked until B probe lands)
+**Entry:** [`scripts/run-town-to-town-trade-assist-cert.ps1`](../../../scripts/run-town-to-town-trade-assist-cert.ps1) — default **attach-only** (`-AttachOnly` / `-NoLaunch`)
+
+**Authoritative PASS:** [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json)
 
 | Rule | Requirement |
 |------|-------------|
 | Manual launch | User may start Bannerlord, click Play or Continue manually |
-| Attach | Runner attaches to current legitimate Bannerlord state |
-| Manual Play/Continue | **Not contamination** — report `manualLaunchObserved=true`, `assistiveAttach=true` |
+| Attach | App attaches to the **legitimate current game session** |
+| Manual Play/Continue | **Not contamination** — `manualLaunchObserved=true`, `assistiveAttach=true` |
+| Relaunch policy | **Do not** relaunch when attachable; see attach doctrine |
 | Classification | Expose `classifiedState`, evidence, legal/forbidden actions |
 | Clicks | Only when `Test-F7GuardedActionAllowed` passes |
 | Timeline | `ExternalStateTimeline.json` with `mode=assistive` |
@@ -137,9 +165,10 @@ Continue cert may reach **settlement town menu** with `campaignReady=true` but `
 | Launcher nav (`launcher-auto-nav.ps1`) | **45s** launcher selection cap; `LAUNCH_TIMING` evidence; Play-only during Continue cert → `fail_launcher_play_only` |
 | Assistive attach | Classify `SettlementTownMenu`; do not weaken cert contamination rules |
 
-Skeleton gameplay cert: `scripts/run-town-to-town-trade-assist-cert.ps1` (expects `AssistiveTownToTownProbe` from Agent B).
+Skeleton gameplay cert: `scripts/run-town-to-town-trade-assist-cert.ps1` — **PASS** @ `20260624-004036` (advisory probe).
 
-**Product PASS spec:** [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)
+**Product PASS spec:** [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)  
+**Attach doctrine:** [`assistive-current-session-attach.md`](assistive-current-session-attach.md)
 
 Post-`9bdc759`, F7 cert poll fails fast at settlement_menu semantic mismatch (~15s) instead of 361s MapTransition treadmill.
 
@@ -147,6 +176,7 @@ Post-`9bdc759`, F7 cert poll fails fast at settlement_menu semantic mismatch (~1
 
 ## Related docs
 
+- [`assistive-current-session-attach.md`](assistive-current-session-attach.md)
 - [`town-to-town-trade-assist-cert.md`](town-to-town-trade-assist-cert.md)
 - [`f7-agent-mental-model.mmd`](../../handoff/f7-agent-mental-model.mmd)
 - [`f7-next-cert-readiness.md`](f7-next-cert-readiness.md)

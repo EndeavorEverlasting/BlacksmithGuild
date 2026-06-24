@@ -7,20 +7,31 @@
 
 ---
 
-## Old F7 Continue gate — CLOSED (informative FAIL)
+## Old F7 Continue gate — CLOSED (informative infrastructure)
 
 **Session:** [`20260623-205925`](../../evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/manifest.json) · stub: [`session-20260623-205925.md`](session-20260623-205925.md)
+
+Old F7 Continue is **closed as informative infrastructure**, not the product gate.
 
 | Proven | Detail |
 |--------|--------|
 | Launcher | `launchPath=continue`, `targetMismatch=false`, `continueClick.success=true` |
 | Gameplay surface | Quyaz `settlement_menu`; `campaignReady=true`; game alive (`launcher_hosted`) |
 | Death class cleared | seq=8115 / post-spawn death — **GONE** on this session |
-| Old semantics FAIL | `canPollFileInbox=false`; golden path expects `MainMenu -> MapTransition`; runner MapTransition timeout (~395s pre-C fix) |
+| Old semantics exposed | `canPollFileInbox=false` at time of cert; golden path expected `MainMenu -> MapTransition`; stale old-gate semantics |
 
-**Do not rerun** old F7 Continue seeking PASS — semantic mismatch is documented. One **optional** infrastructure validation post-`9bdc759` may confirm ~15s `fail_settlement_menu_semantic_mismatch` (not a product medal).
+**Do not rerun** old F7 as a **product gate** or MapTransition treadmill.
 
-**Next live cert:** [Town-to-Town Trade Assist](town-to-town-trade-assist-cert.md) — **PASS** @ `20260624-004036` (Quyaz settlement_menu, advisory probe).
+**Old F7 may be used only** as a **targeted smoke test** when launcher / Continue **automation itself** changes — not to prove in-game assist readiness.
+
+**Medals:**
+
+| Gate | Status |
+|------|--------|
+| Old F7 Continue PASS | **Not** the current sprint medal |
+| Town-to-Town Trade Assist PASS | **Current product medal** @ [`20260624-004036`](../../evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/manifest.json) |
+
+**Next live product cert:** attach-only re-cert from already-open game (see [`assistive-current-session-attach.md`](assistive-current-session-attach.md)).
 
 ---
 
@@ -229,16 +240,17 @@ exitCode = 0 without passFail = PASS (forgery — reject)
 | **Runner false game-gone + harvest** | `705d2be` | C | **VALIDATED** (202052, 195817, 200917) |
 | **Runner poll tooling exception** | A/C fixes | A/C | **FIXED** @ poll hardening — `205925` full 361s poll |
 | **MapTransition timeout at settlement_menu** | `9bdc759` | C | **LANDED** — 15s `fail_settlement_menu_semantic_mismatch` |
-| **canPollFileInbox @ settlement_menu** | TBD | B | **OPEN** — primary blocker for assist cert |
-| **AssistiveTownToTownProbe** | TBD | B | **OPEN** |
+| `canPollFileInbox @ settlement_menu` | `e4c261d` | B | **LANDED** — validated @ `20260624-004036` |
+| **AssistiveTownToTownProbe** | `e4c261d` | B | **LANDED** — PASS @ `20260624-004036` |
+| **Attach-only assist re-cert** | TBD | A/C | **NEXT** — open game, no relaunch |
 | Optional: manifest fields `obviousFailApplied`, `gameAliveDurationSeconds` | TBD | C | Nice-to-have |
-| **User authorization** | Explicit "run diagnostic cert" | User | Required for optional infra F7 validation only |
+| **User authorization** | Explicit merge auth | User | Required for PR #7 merge |
 
 **Agent A live cert gate:**
 
-1. ~~Agent B post-unblock hardening~~ **VALIDATED @ `204227`**
-2. ~~Runner poll tooling exception~~ **FIXED** — `205925` full poll (pre-15s fix)
-3. **Current blocker:** `canPollFileInbox=false` + assist probe missing — route **Agent B**; product cert = town-to-town assist
+1. ~~Agent B assist inbox + probe~~ **PASS** @ `20260624-004036`
+2. **Next:** attach-only re-cert from already-open game (**Agent C** runner + **Agent A** evidence)
+3. Old F7: infrastructure smoke only when launcher automation changes
 
 **Status JSON semantics (unchanged top-level `campaignReady`):** reflects `IsCampaignMapReady` (MapState active). New session fields disambiguate surface:
 
@@ -258,9 +270,13 @@ F7 Continue **product** PASS at settlement menu requires manifest criteria **and
 
 ## PR #7 HOLD statement
 
-PR #7 remains **HOLD**. Old F7 Continue PASS is **no longer the sprint medal**. Merge only if repo policy still requires legacy F7 manifest PASS + explicit user authorization.
+PR #7 remains **HOLD** until **explicit user merge authorization**.
 
-Legacy F7 PASS criteria (if ever pursued):
+- **Town-to-Town Trade Assist PASS** exists @ `20260624-004036` — this is the **current product medal**.
+- **Old F7 Continue PASS** is **not** required for the current sprint medal.
+- Do **not** merge without user authorization.
+
+Legacy F7 PASS criteria apply only if repo policy explicitly requires old infrastructure gate PASS:
 
 - `manifest.passFail = PASS`
 - `exitCode = 0`
@@ -285,8 +301,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patt
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 Get-Process Bannerlord,TaleWorlds.MountAndBlade.Launcher,Watchdog -ErrorAction SilentlyContinue | Stop-Process -Force
 # claim automation lock in f7-agent-coordination.md
-# Product cert (after B+C):
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1
+# Product cert (attach-only — preferred):
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1 -AttachOnly
 # Optional infra validation only (expect ~15s semantic FAIL post-9bdc759):
 # powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-f7-gate-continue.ps1 -HookMask 0x0F -CertTarget continue
 ```
@@ -303,4 +319,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-tra
 | `195817` | `b19dcb3` | Death seq=8063 immediate post-`StabilizationEnd` |
 | `200917` | cert commit | Death seq=8115 after `HeavyFlushUnblocked` — grace lifecycle validated |
 | `204227` | fd2a190 | B validated; poll abort Access denied (fixed in later commits) |
-| `205925` | `2207468` | `docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/` — **closed** informative FAIL; settlement_menu; ExternalStateTimeline |
+| `205925` | `2207468` | `docs/evidence/live-cert/20260623-205925/checkpoint-01-f7-gate/` — closed infrastructure FAIL |
+| `004036` | `c13e75b` | `docs/evidence/live-cert/20260624-004036/checkpoint-01-assistive-town-trade/` — **product PASS** (advisory) |

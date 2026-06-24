@@ -34,7 +34,7 @@ Every agent **must**:
 | Gate verdict | **GREEN (assist)** — Town-to-Town Trade Assist PASS @ `20260624-004036` (Quyaz settlement_menu) |
 | Last F7 evidence | `20260623-205925` (closed, informative) |
 | Last assist evidence | `20260624-004036` — manifest PASS |
-| Next live cert | User merge auth for PR #7; optional travel execute path (Agent B) |
+| Next live cert | Attach-only assist re-cert (open game); optional travel execute (Agent B) |
 | Old F7 | **CLOSED** — infrastructure/regression only |
 | Parallel lanes | B + C parallel-safe; live cert serial |
 
@@ -44,10 +44,10 @@ Every agent **must**:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last commit |
 |-------|----------------------|--------|--------------|---------------------|-------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `DONE` | Assist cert PASS @ `20260624-004036` | — | `c13e75b` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `DONE` | Assist inbox + town-trade probe landed | — | `e4c261d` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `DONE` | Attach-first town-trade cert + LaunchSetup | — | `0b5798a` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | `d5c7bbf` |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IN_PROGRESS` | Attach-only assist re-cert after C runner | — | `eef3645` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | Hot standby — return on runtime/probe/execute defect | — | `e4c261d` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `ACTIVE` | Attach-only runner; no launch; full harvest | — | `0b5798a` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `IN_PROGRESS` | Assist PASS + attach doctrine reconciliation | — | (this commit) |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 
@@ -75,7 +75,7 @@ Every agent **must**:
 
 | Lock | Holder | Until | Command |
 |------|--------|-------|---------|
-| `automation` | — | — | — |
+| `automation` | Agent A | attach-only assist cert | `run-town-to-town-trade-assist-cert.ps1 -AttachOnly` |
 
 Clear when run finishes or agent sets `IDLE` and removes lock row.
 
@@ -95,6 +95,17 @@ Clear when run finishes or agent sets `IDLE` and removes lock row.
 ---
 
 ## Cross-agent message log (newest first)
+
+### 2026-06-24 — Agent D → A, B, C (assist PASS + current-session attach doctrine)
+
+- **Landed:** Authoritative PASS block + next cert slices in [`town-to-town-trade-assist-cert.md`](../control/logs/open/town-to-town-trade-assist-cert.md).
+- **Landed:** [`assistive-current-session-attach.md`](../control/logs/open/assistive-current-session-attach.md) — no relaunch when attachable; `-AttachOnly` preferred.
+- **Updated:** `f7-next-cert-readiness.md` — old F7 = infrastructure only; Town-to-Town PASS = product medal.
+- **Updated:** `f7-vs-assistive-attach-mode.md` — cert vs assist distinction; in-game product priorities.
+- **Policy:** Do not certify the door when the player is already in the room. PR #7 HOLD until user merge auth.
+- **Need from C:** attach-only runner ready for A re-cert on open game.
+- **Need from A:** attach-only assist cert evidence commit.
+- **Need from B:** return only on runtime/probe/execute defect.
 
 ### 2026-06-24 — Agent C → A, B (attach-first assist runner)
 
