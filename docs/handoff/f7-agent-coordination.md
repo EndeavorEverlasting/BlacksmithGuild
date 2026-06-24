@@ -28,7 +28,7 @@ Every agent **must**:
 
 | Field | Value |
 |-------|-------|
-| Branch / HEAD | `fix/f7-gate-stability` @ post-D pivot commit |
+| Branch / HEAD | `fix/f7-gate-stability` @ `d5c7bbf` |
 | PR | [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) — **HOLD** — old F7 PASS not sprint medal |
 | PR #8 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) — **HOLD** |
 | Gate verdict | **PIVOT** — old F7 informative FAIL @ `205925`; product cert = [Town-to-Town Trade Assist](../control/logs/open/town-to-town-trade-assist-cert.md) |
@@ -47,7 +47,7 @@ Every agent **must**:
 | **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | Gameplay cert after B+C; optional C-fix infra validation only | Blocked on B probe | `903c8d0` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | `canPollFileInbox` @ settlement_menu; `AssistiveTownToTownProbe` | Blocks assist cert | `e891b33` |
 | **C** | Agent C — External State Classifier / Window Safety / F7 Runner | `DONE` | Launcher 45s cap + settlement 15s fail + assist skeleton | — | `9bdc759` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | post-D pivot SHA |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | F7 closure + town-to-town pivot docs | — | `d5c7bbf` |
 
 **Status values:** `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE` (with SHA)
 

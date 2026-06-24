@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** `fix/f7-gate-stability` @ post-D pivot (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7)) — **HOLD**  
+**Branch:** `fix/f7-gate-stability` @ `d5c7bbf` (PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7)) — **HOLD**  
 **Next cert gate:** [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md)  
 **Old F7 status:** [`logs/open/f7-next-cert-readiness.md`](logs/open/f7-next-cert-readiness.md) — **CLOSED** @ `205925`  
 **Mental model:** [`f7-agent-mental-model.mmd`](../handoff/f7-agent-mental-model.mmd)  

@@ -1,6 +1,6 @@
 # F7 recovery index
 
-**Branch:** `fix/f7-gate-stability` @ post-D pivot  
+**Branch:** `fix/f7-gate-stability` @ `d5c7bbf`  
 **Gate:** **PIVOT** — old F7 product gate closed; forward = Town-to-Town Trade Assist  
 **Authority (living):** [`docs/handoff/f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
 **Failure map:** [`f7-failure-atlas.md`](f7-failure-atlas.md) · **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
