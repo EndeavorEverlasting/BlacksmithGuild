@@ -411,12 +411,29 @@ function Invoke-TbgTerminationClassification {
         [object]$Detection = $null,
         [bool]$CertCompleted = $false,
         [string]$Phase1Path = $null,
-        [string]$StatusPath = $null
+        [string]$StatusPath = $null,
+        [object]$RuntimeLifecycle = $null,
+        [int]$HeartbeatFreshSec = 30
     )
 
     $lifecycle = if ($script:TbgProcessLifecycle) { $script:TbgProcessLifecycle } else { Read-TbgProcessLifecycle -BannerlordRoot $BannerlordRoot }
     $signals = New-Object System.Collections.Generic.List[string]
     $missing = New-Object System.Collections.Generic.List[string]
+
+    if (-not $RuntimeLifecycle -and $BannerlordRoot -and (Get-Command Read-Pr11RuntimeLifecycle -ErrorAction SilentlyContinue)) {
+        $RuntimeLifecycle = Read-Pr11RuntimeLifecycle -BannerlordRoot $BannerlordRoot
+    }
+
+    $heartbeatFresh = $false
+    if ($RuntimeLifecycle -and $RuntimeLifecycle.parseOk -and $RuntimeLifecycle.lastHeartbeatUtc) {
+        if (Get-Command Test-Pr11RuntimeHeartbeatFresh -ErrorAction SilentlyContinue) {
+            $heartbeatFresh = Test-Pr11RuntimeHeartbeatFresh -RuntimeLifecycle $RuntimeLifecycle -MaxAgeSec $HeartbeatFreshSec
+        } else {
+            $ageSec = ((Get-Date).ToUniversalTime() - $RuntimeLifecycle.lastHeartbeatUtc).TotalSeconds
+            $heartbeatFresh = ($ageSec -ge 0 -and $ageSec -le $HeartbeatFreshSec)
+        }
+        $signals.Add('runtime_lifecycle_present') | Out-Null
+    }
 
     if ($script:TbgCancelRequested) {
         return [ordered]@{
@@ -493,6 +510,33 @@ function Invoke-TbgTerminationClassification {
             }
         }
 
+        if ($RuntimeLifecycle -and $RuntimeLifecycle.parseOk) {
+            if ($RuntimeLifecycle.gracefulShutdownObserved) {
+                return [ordered]@{
+                    classification = 'clean_shutdown'
+                    routeAgent = 'Agent A - Cert / Evidence / Git / PR'
+                    evidenceSignals = @('gracefulShutdownObserved')
+                    missingSignals = @()
+                }
+            }
+            if ($RuntimeLifecycle.lastCommandStartedAtUtc -and -not $RuntimeLifecycle.lastCommandFinishedAtUtc) {
+                return [ordered]@{
+                    classification = 'command_in_flight_exit'
+                    routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+                    evidenceSignals = @('lastCommandStartedAtUtc', 'lastCommandFinishedAtUtc_missing')
+                    missingSignals = @('command_finish_recorded')
+                }
+            }
+            if (-not $RuntimeLifecycle.gracefulShutdownObserved -and -not $heartbeatFresh) {
+                return [ordered]@{
+                    classification = 'crash_or_unexpected_exit'
+                    routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+                    evidenceSignals = @('runtime_heartbeat_stale', 'no_graceful_shutdown')
+                    missingSignals = @('gracefulShutdownObserved')
+                }
+            }
+        }
+
         if ($CertCompleted) {
             return [ordered]@{
                 classification = 'game_exited_cleanly_after_cert'
@@ -551,7 +595,19 @@ function Invoke-TbgTerminationClassification {
         }
     }
 
-    if (-not (Test-BannerlordLogFresh -Path $StatusPath -MaxAgeSec 60) -and $gameRunning) {
+    $statusFresh = $false
+    if (Get-Command Test-BannerlordLogFresh -ErrorAction SilentlyContinue) {
+        $statusFresh = Test-BannerlordLogFresh -Path $StatusPath -MaxAgeSec 60
+    }
+    if (-not $statusFresh -and $gameRunning) {
+        if ($RuntimeLifecycle -and $RuntimeLifecycle.parseOk -and -not $heartbeatFresh) {
+            return [ordered]@{
+                classification = 'status_stale_process_alive'
+                routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+                evidenceSignals = @('game_process_alive', 'status_stale', 'runtime_heartbeat_stale')
+                missingSignals = @('fresh_status', 'fresh_heartbeat')
+            }
+        }
         return [ordered]@{
             classification = 'status_stale_process_alive'
             routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'

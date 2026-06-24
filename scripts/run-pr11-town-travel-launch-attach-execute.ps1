@@ -26,6 +26,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
+. (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\${sessionId}-pr11-launch-attach-execute"
@@ -55,9 +56,13 @@ function Add-Classification {
 }
 
 function Copy-LifecycleEvidence {
+    $runtimeLc = Read-Pr11RuntimeLifecycle -BannerlordRoot $bannerlordRoot
     Write-TbgTerminationDetection -BannerlordRoot $bannerlordRoot `
         -OutputPath (Join-Path $checkpointDir 'termination-detection.json') `
-        -Extra @{ CyclePhase = $cyclePhase; Phase1Path = $phase1Path; StatusPath = $statusPath } | Out-Null
+        -Extra @{
+            CyclePhase = $cyclePhase; Phase1Path = $phase1Path; StatusPath = $statusPath
+            RuntimeLifecycle = $runtimeLc; BannerlordRoot = $bannerlordRoot
+        } | Out-Null
     Copy-TbgLifecycleArtifacts -BannerlordRoot $bannerlordRoot -CheckpointDir $checkpointDir | Out-Null
 }
 
@@ -108,6 +113,7 @@ $phase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
 $statusPath = Get-StatusJsonPath -BannerlordRoot $bannerlordRoot
 $crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $bannerlordRoot
 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $bannerlordRoot
+$runtimeLifecyclePath = Get-RuntimeLifecycleJsonPath -BannerlordRoot $bannerlordRoot
 
 $sessionAuthorityMode = if ($AttachOnly -or $SkipLaunch) { 'AttachOnly' } else { 'FreshTestLaunch' }
 Initialize-TbgProcessLifecycle -RunId "${sessionId}-pr11" -BannerlordRoot $bannerlordRoot `
@@ -153,21 +159,27 @@ $s1 = Get-Pr11ProcessSnapshot -Label 'S1_after_build_deploy' -BannerlordRoot $ba
 Save-Pr11ProcessSnapshot -Snapshot $s1 -OutputPath (Join-Path $checkpointDir 'process-snapshot-S1.json') | Out-Null
 
 if ($DryRun) {
-    $ready = Get-F7AssistiveReadinessFromStatus -StatusPath $statusPath
+    $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
     $det = Get-BannerlordProcessDetection -BannerlordRoot $bannerlordRoot -Phase1Path $phase1Path -StatusPath $statusPath
     $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $s1 -AfterSnapshot $s1
     $candidates = Get-Pr11WindowCandidates -Delta $delta -BannerlordRoot $bannerlordRoot
     $cls = Invoke-Pr11UiStateClassification -BannerlordRoot $bannerlordRoot -Candidates $candidates -Readiness $ready -Detection $det -LaunchPhase 'dry_run'
     Add-Classification $cls
     $windowClassifierResult = $cls.state
-    $attachResult = if ($ready.canPollFileInbox -and $ready.inGameAssistReady) { 'attach_ready' } else { 'attach_not_ready' }
+    $travelGate = Test-Pr11TravelExecuteAllowed -Readiness $ready
+    $attachResult = if ($ready.canPollFileInbox -and $ready.inGameAssistReady -and $ready.canAcceptAssistiveCommand) { 'attach_ready' } else { 'attach_not_ready' }
     Copy-LifecycleEvidence
     Complete-CycleResult @{
         passFail = 'DRY_RUN'; failureClass = $null; routeAgent = $routeAgent; exitCode = 0
         windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $false
         sessionAuthorityMode = $sessionAuthorityMode
+        stateMachineConsumed = $ready.stateMachine.hasStateMachine
+        runtimeLifecycleConsumed = [bool]$ready.runtimeLifecycle.parseOk
+        travelGateAllowed = [bool]$travelGate.allowed
+        travelGateReason = $travelGate.reason
+        readinessConfidence = $ready.confidence
     } | Out-Null
-    Write-CertLog "DryRun complete classifier=$windowClassifierResult attach=$attachResult"
+    Write-CertLog "DryRun complete classifier=$windowClassifierResult attach=$attachResult travelGate=$($travelGate.reason) confidence=$($ready.confidence)"
     exit 0
 }
 
@@ -235,7 +247,7 @@ while ((Get-Date) -lt $attachDeadline) {
             windowClassifierResult = $windowClassifierResult; attachResult = 'cancelled'; certAttempted = $false
         }
     }
-    $ready = Get-F7AssistiveReadinessFromStatus -StatusPath $statusPath
+    $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
     $det = Get-BannerlordProcessDetection -BannerlordRoot $bannerlordRoot -Phase1Path $phase1Path -StatusPath $statusPath -CacheSec 0
     $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $s1 -AfterSnapshot (Get-Pr11ProcessSnapshot -Label 'poll' -BannerlordRoot $bannerlordRoot)
     $phase1Fresh = Test-BannerlordLogFresh -Path $phase1Path -MaxAgeSec 15
@@ -248,13 +260,13 @@ while ((Get-Date) -lt $attachDeadline) {
     Add-Classification $cls
     $windowClassifierResult = $cls.state
 
-    if ($ready.canPollFileInbox -and $ready.inGameAssistReady -and $ready.canAcceptAssistiveCommand) {
+    if ($ready.canPollFileInbox -and $ready.inGameAssistReady -and $ready.canAcceptAssistiveCommand -and $ready.statusFresh) {
         $attachReady = $true
         $attachResult = 'attach_ready'
-        Update-TbgWaitProgress -ProgressSignal 'assistive_attach_ready'
+        Update-TbgWaitProgress -ProgressSignal "assistive_attach_ready confidence=$($ready.confidence)"
         break
     }
-    Update-TbgWaitProgress -ProgressSignal "classifier=$($cls.state) phase1Fresh=$phase1Fresh statusFresh=$statusFresh"
+    Update-TbgWaitProgress -ProgressSignal "classifier=$($cls.state) phase1Fresh=$phase1Fresh statusFresh=$statusFresh sm=$($ready.stateMachine.hasStateMachine) hb=$($ready.heartbeatFresh)"
     Start-Sleep -Seconds 2
 }
 
@@ -286,8 +298,18 @@ if ($AttachOnly) {
 $certAttempted = $true
 $probeOk = $false
 $executeOk = $false
-$readyAtExecute = Get-F7AssistiveReadinessFromStatus -StatusPath $statusPath
+$readyAtExecute = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
+$travelGateAtExecute = Test-Pr11TravelExecuteAllowed -Readiness $readyAtExecute
 
+if (-not $travelGateAtExecute.allowed) {
+    $failureClass = 'travel_execute_blocked'
+    $routeAgent = $travelGateAtExecute.routeAgent
+    Write-CertLog "Travel execute blocked: $($travelGateAtExecute.reason) confidence=$($travelGateAtExecute.confidence)"
+} else {
+    Write-CertLog "Travel execute gate PASS reason=$($travelGateAtExecute.reason) confidence=$($travelGateAtExecute.confidence)"
+}
+
+if ($travelGateAtExecute.allowed) {
 try {
     Write-CertLog 'Send-ForgeCommand AssistiveTownToTownProbe -Wait'
     Send-ForgeCommand -CommandName AssistiveTownToTownProbe -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ProbeTimeoutSec | Out-Null
@@ -310,6 +332,7 @@ if ($probeOk) {
         Write-CertLog "Execute command failed: $($_.Exception.Message)"
     }
 }
+}
 
 # Harvest evidence
 foreach ($pair in @(
@@ -317,7 +340,8 @@ foreach ($pair in @(
     @{ src = (Get-TownToTownTradeProbeJsonPath -BannerlordRoot $bannerlordRoot); dest = 'BlacksmithGuild_TownToTownTradeProbe.json' },
     @{ src = (Get-AssistiveSessionJsonPath -BannerlordRoot $bannerlordRoot); dest = 'BlacksmithGuild_AssistiveSession.json' },
     @{ src = $statusPath; dest = 'BlacksmithGuild_Status.json' },
-    @{ src = $phase1Path; dest = 'BlacksmithGuild_Phase1.log' }
+    @{ src = $phase1Path; dest = 'BlacksmithGuild_Phase1.log' },
+    @{ src = $runtimeLifecyclePath; dest = 'BlacksmithGuild_RuntimeLifecycle.json' }
 )) {
     Copy-Pr11EvidenceArtifact -SourcePath $pair.src -CheckpointDir $checkpointDir -DestName $pair.dest | Out-Null
 }
@@ -329,6 +353,14 @@ if (Test-Path -LiteralPath $execPath) {
 }
 
 $executePass = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $executionJson -Readiness $readyAtExecute -RequireLeaveTown
+if ($executePass.pass -and (Test-Pr11ExecutePassBlockedByRuntime -Readiness $readyAtExecute)) {
+    $executePass = [ordered]@{
+        pass = $false
+        failureClass = 'runtime_heartbeat_stale'
+        routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
+        checks = $executePass.checks
+    }
+}
 if ($executePass.pass) {
     $passFail = 'PASS'
     $exitCode = 0
@@ -354,6 +386,11 @@ Complete-CycleResult @{
     windowClassifierResult = $windowClassifierResult; attachResult = $attachResult; certAttempted = $certAttempted
     probeOk = $probeOk; executeOk = $executeOk; executeChecks = $executePass.checks
     sessionAuthorityMode = $sessionAuthorityMode
+    stateMachineConsumed = $readyAtExecute.stateMachine.hasStateMachine
+    runtimeLifecycleConsumed = [bool]$readyAtExecute.runtimeLifecycle.parseOk
+    travelGateAllowed = [bool]$travelGateAtExecute.allowed
+    travelGateReason = $travelGateAtExecute.reason
+    readinessConfidence = $readyAtExecute.confidence
 } | Out-Null
 
 Write-CertLog "$passFail PR11 execute cert exit=$exitCode failureClass=$failureClass evidence=$checkpointDir"

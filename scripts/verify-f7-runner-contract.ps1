@@ -33,8 +33,9 @@ $forgeStatusPath = Join-Path $PSScriptRoot 'forge-status.ps1'
 $pr11ClassifierPath = Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1'
 $pr11ExecuteRunnerPath = Join-Path $PSScriptRoot 'run-pr11-town-travel-launch-attach-execute.ps1'
 $lifecyclePath = Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1'
+$pr11ConsumerPath = Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath, $pr11ConsumerPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -98,7 +99,7 @@ if (Test-Path -LiteralPath $pathsPath) {
         'Test-LauncherMenuWindowTitle', 'Test-LauncherSingleplayerHostedTitle',
         'Test-F7PreflightCleanState',
         'Get-BannerlordProcessCandidates', 'Test-BannerlordGameProcessRunning',
-        'Get-ProcessLifecycleJsonPath', 'Get-CancelRunJsonPath'
+        'Get-ProcessLifecycleJsonPath', 'Get-CancelRunJsonPath', 'Get-RuntimeLifecycleJsonPath'
     )) {
         if ($pathsText -notmatch [regex]::Escape($needle)) {
             Add-Failure "bannerlord-paths.ps1 missing: $needle"
@@ -288,7 +289,8 @@ if (Test-Path -LiteralPath $pr11ExecuteRunnerPath) {
     foreach ($needle in @(
         'process-lifecycle-authority.ps1', 'Initialize-TbgProcessLifecycle',
         'Invoke-TbgFreshTestLaunchPreflight', 'Start-TbgWaitSegment', 'Copy-TbgLifecycleArtifacts',
-        'Test-TbgCancelRequested', 'Write-TbgLaunchRequest'
+        'Test-TbgCancelRequested', 'Write-TbgLaunchRequest',
+        'pr11-runtime-state-consumer.ps1', 'Get-Pr11AssistiveReadiness', 'Test-Pr11TravelExecuteAllowed'
     )) {
         if ($pr11RunnerText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-pr11-town-travel-launch-attach-execute.ps1 missing: $needle"
@@ -370,7 +372,8 @@ foreach ($pair in @(
     @{ path = 'test-forge-command-sequence-after-prior-ack.ps1'; label = 'forge command sequence after prior ack' },
     @{ path = 'test-pr11-process-window-classifier.ps1'; label = 'pr11 process window classifier' },
     @{ path = 'test-pr11-execute-cert-parser.ps1'; label = 'pr11 execute cert parser' },
-    @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' }
+    @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' },
+    @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {

@@ -621,3 +621,13 @@ function Get-CancelRunJsonPath {
     . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
     return Get-TbgCancelRunJsonPath -BannerlordRoot $BannerlordRoot
 }
+
+function Get-RuntimeLifecycleJsonPath {
+    param([string]$BannerlordRoot)
+    if (-not (Get-Command Get-AssistiveArtifactCandidates -ErrorAction SilentlyContinue)) {
+        return $null
+    }
+    return Find-NewestExistingPath -Candidates (Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot `
+        -FileName 'BlacksmithGuild_RuntimeLifecycle.json') `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_RuntimeLifecycle.json')
+}
