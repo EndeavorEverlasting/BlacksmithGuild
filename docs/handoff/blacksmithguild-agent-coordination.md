@@ -33,7 +33,7 @@ Every agent must:
 
 | Field | Value |
 |-------|-------|
-| Active PR | [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) — draft, open, mergeable, clean |
+| Active PR | [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) — open draft; do not mark ready or merge |
 | Branch | `fix/pr11-unattended-execute-cert-runner` |
 | Head | `0277aa4` — `fix(runner): preserve post-handoff exit classification` |
 | Product baseline | `main` after PR #11 travel execute merge |
@@ -130,7 +130,7 @@ Clear the lock when the run finishes, fails, or the owning agent sets its row ba
 
 | PR | State | Posture |
 |----|-------|---------|
-| [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) | OPEN / DRAFT / CLEAN | Active unattended execute cert runner branch; do not mark ready or merge without user authorization. |
+| [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) | OPEN / DRAFT | Active unattended execute cert runner branch; blocked on `game_exited_unexpectedly_before_attach`; do not mark ready or merge without user authorization. |
 | [#9](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/9) | OPEN / DIRTY | Bisect evidence docs; hold unless explicitly revived. |
 | [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | OPEN / DIRTY | F7 bisect tooling; HOLD, do not merge without user authorization. |
 | [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) | OPEN / DRAFT / CLEAN | Second-leg travel feature; not part of PR #14. |

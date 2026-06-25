@@ -8,6 +8,18 @@ F7 remains useful as legacy infrastructure, but it is not the product gate. Curr
 launcher -> handoff -> game process -> RuntimeLifecycle heartbeat -> stateMachine -> assist loop -> evidence
 ```
 
+```mermaid
+flowchart TD
+    launcherState --> handoffState
+    handoffState --> gameProcessState
+    gameProcessState --> runtimeState
+    runtimeState --> gameplaySurface
+    gameplaySurface --> assistAuthority
+    assistAuthority --> finalClassification
+    finalClassification --> ownerAgent
+    ownerAgent --> nextAction
+```
+
 ---
 
 ## Route Owners
@@ -35,6 +47,18 @@ launcher -> handoff -> game process -> RuntimeLifecycle heartbeat -> stateMachin
 | `safe_mode_after_crash` | launcher/UIA | Agent C | Select No, capture failure context, and stop if crash loop repeats. |
 | `crash_reporter` | launcher/window classifier | Agent C | Capture failure class; route evidence to Agent A. |
 | `handoff_requested` | launch log | Agent C | Transfer watch to process and runtime heartbeat. |
+
+---
+
+## `handoffState`
+
+| state | source | ownerAgent | nextAction |
+|-------|--------|------------|------------|
+| `no_handoff` | launch log/process timeline | Agent C | Continue launcher classification. |
+| `handoff_requested` | launch log | Agent C | Start post-handoff process watch. |
+| `process_seen` | process classifier | Agent C | Wait for runtime authority. |
+| `post_handoff_fast_fail` | process classifier | Agent C | Route process disappearance to Agent B with timeline evidence. |
+| `handoff_complete` | fresh runtime files plus process alive | Agent C | Attach runner only if automation lock is clear. |
 
 ---
 
@@ -105,6 +129,20 @@ launcher -> handoff -> game process -> RuntimeLifecycle heartbeat -> stateMachin
 | `execute_in_progress` | command lifecycle | Agent B | Wait for ack and completion. |
 | `execute_completed` | command lifecycle/evidence | Agent A | Judge manifest and PR posture. |
 | `blocked` | status/manifest/failure class | Agent B | Route blocker before rerun. |
+| `stop_unsafe` | status/manifest/failure class | Agent B | Stop automation and capture transparent failure evidence. |
+
+---
+
+## `finalClassification`
+
+| class | Primary owner | Meaning |
+|-------|---------------|---------|
+| `environment_blocked` | Agent A | Local runtime, launcher, or user authorization is missing; produce handoff instead of pretending validation ran. |
+| `runner_blocked` | Agent C | Launcher/process/assist runner cannot safely continue. |
+| `runtime_blocked` | Agent B | Runtime state, heartbeat, or gameplay surface authority is absent or unsafe. |
+| `evidence_incomplete` | Agent A | Manifest or required evidence is missing; no PASS claim. |
+| `live_PASS` | Agent A | Manifest and evidence support the gate claim. |
+| `docs_only` | Agent D | Coordination or routing updates only; no product behavior changed. |
 
 ---
 

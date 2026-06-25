@@ -1,7 +1,9 @@
-# Legacy redirect: F7 Agent Coordination
+# Legacy F7 Agent Coordination Redirect
 
-The live multi-agent coordination board moved to [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md).
+This file is kept so historical F7 links keep resolving.
 
-F7 is legacy infrastructure, not the product gate. Current coordination uses launcher/process/runtime/stateMachine/assist/evidence routing, with the state vocabulary defined in [`runtime-state-routing.md`](runtime-state-routing.md).
+Use [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md) for the live agent board, locks, message log, and PR #14 routing.
 
-Keep this filename so older links continue to resolve. Do not restore this file as the live board; update the new coordination doc instead.
+Use [`runtime-state-routing.md`](runtime-state-routing.md) for launcher, process, runtime, gameplay surface, assist, and evidence vocabulary.
+
+F7 remains legacy infrastructure and historical context. It is not the current product gate.

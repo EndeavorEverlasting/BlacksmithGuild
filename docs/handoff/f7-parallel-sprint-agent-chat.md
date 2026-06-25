@@ -1,6 +1,6 @@
 # F7 Parallel Sprint — Agent Chat Log
 
-> **Superseded by [`f7-agent-coordination.md`](f7-agent-coordination.md)** — use the coordination doc for live sprint state, file ownership, and cross-agent messages. This file is kept as historical archive only.
+> **Superseded by [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md)** — use the coordination doc for live sprint state, file ownership, and cross-agent messages. This file is kept as historical archive only.
 
 **Branch:** `fix/f7-gate-stability`  
 **Goal:** Autonomous Continue → map traversal → `[TBG MAPREADY]` + F7 PASS (no user clicks)
