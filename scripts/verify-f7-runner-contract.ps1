@@ -34,8 +34,10 @@ $pr11ClassifierPath = Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps
 $pr11ExecuteRunnerPath = Join-Path $PSScriptRoot 'run-pr11-town-travel-launch-attach-execute.ps1'
 $lifecyclePath = Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1'
 $pr11ConsumerPath = Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1'
+$autonomousAssistPath = Join-Path $PSScriptRoot 'autonomous-assist-session.ps1'
+$autonomousRunnerPath = Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath, $pr11ConsumerPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath, $pr11ConsumerPath, $autonomousAssistPath, $autonomousRunnerPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -303,6 +305,27 @@ if (Test-Path -LiteralPath $pr11ExecuteRunnerPath) {
     } else {
         Write-Host 'PASS pr11 runner: no blind Stop-Process -Force' -ForegroundColor Green
     }
+    if ($pr11RunnerText -notmatch 'Test-TbgPostHandoffFastFail') {
+        Add-Failure 'run-pr11-town-travel-launch-attach-execute.ps1 missing post-handoff fast-fail'
+    } else {
+        Write-Host 'PASS pr11 runner contains: Test-TbgPostHandoffFastFail' -ForegroundColor Green
+    }
+}
+
+if (Test-Path -LiteralPath $autonomousRunnerPath) {
+    $assistRunnerText = Get-Content -LiteralPath $autonomousRunnerPath -Raw
+    foreach ($needle in @(
+        'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
+        'Get-AutonomousAssistIterationDecision', 'Test-TbgPostHandoffFastFail', 'Save-AutonomousAssistSessionEvidence'
+    )) {
+        if ($assistRunnerText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "run-autonomous-assist-session.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS autonomous assist runner contains: $needle" -ForegroundColor Green
+        }
+    }
+} else {
+    Add-Failure 'Missing run-autonomous-assist-session.ps1'
 }
 
 $assistiveRegression = Join-Path $PSScriptRoot 'test-f7-assistive-attach-mode.ps1'
@@ -373,7 +396,8 @@ foreach ($pair in @(
     @{ path = 'test-pr11-process-window-classifier.ps1'; label = 'pr11 process window classifier' },
     @{ path = 'test-pr11-execute-cert-parser.ps1'; label = 'pr11 execute cert parser' },
     @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' },
-    @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' }
+    @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' },
+    @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {

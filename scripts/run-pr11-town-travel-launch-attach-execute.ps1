@@ -27,6 +27,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
+. (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\${sessionId}-pr11-launch-attach-execute"
@@ -184,6 +185,8 @@ if ($DryRun) {
 }
 
 $launchRequestedUtc = $null
+$handoffCompleted = $false
+$gameSeenAfterHandoff = $false
 if (-not $SkipLaunch) {
     $attachCheck = Test-F7AssistiveSessionAttachable -BannerlordRoot $bannerlordRoot `
         -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath
@@ -238,6 +241,7 @@ if (-not $SkipLaunch) {
             Write-CertLog "FAIL launcher-auto-nav exit=$navExit failureClass=$failureClass"
             exit 2
         }
+        $handoffCompleted = $true
     } else {
         Write-CertLog 'Existing attachable session detected; skipping launch'
         $s2 = Get-Pr11ProcessSnapshot -Label 'S2_existing_session' -BannerlordRoot $bannerlordRoot
@@ -246,6 +250,7 @@ if (-not $SkipLaunch) {
 } else {
     $s2 = Get-Pr11ProcessSnapshot -Label 'S2_skip_launch' -BannerlordRoot $bannerlordRoot
     Save-Pr11ProcessSnapshot -Snapshot $s2 -OutputPath (Join-Path $checkpointDir 'process-snapshot-S2.json') | Out-Null
+    $handoffCompleted = $true
 }
 
 # Poll attach readiness with classifier timeline
@@ -263,6 +268,17 @@ while ((Get-Date) -lt $attachDeadline) {
     }
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
     $det = Get-BannerlordProcessDetection -BannerlordRoot $bannerlordRoot -Phase1Path $phase1Path -StatusPath $statusPath -CacheSec 0
+    if ($det.gameProcessRunning) { $gameSeenAfterHandoff = $true }
+    $fastFail = Test-TbgPostHandoffFastFail -Detection $det -HandoffCompleted $handoffCompleted `
+        -AttachReady $false -GameProcessEverSeenAfterHandoff $gameSeenAfterHandoff
+    if ($fastFail) {
+        End-TbgWaitSegment -Result $fastFail.classification | Out-Null
+        Write-CertLog "Post-handoff fast-fail: $($fastFail.classification)"
+        Exit-Pr11Cycle -Code 2 @{
+            passFail = 'FAIL'; failureClass = $fastFail.classification; routeAgent = $fastFail.routeAgent; exitCode = 2
+            windowClassifierResult = $windowClassifierResult; attachResult = 'game_gone_before_attach'; certAttempted = $false
+        }
+    }
     $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $s1 -AfterSnapshot (Get-Pr11ProcessSnapshot -Label 'poll' -BannerlordRoot $bannerlordRoot)
     $phase1Fresh = Test-BannerlordLogFresh -Path $phase1Path -MaxAgeSec 15
     $statusFresh = Test-BannerlordLogFresh -Path $statusPath -MaxAgeSec 15
