@@ -1,6 +1,6 @@
 # Sprint control (living pointer)
 
-**Branch:** **`fix/pr11-unattended-execute-cert-runner`** @ `0277aa4` — PR [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) **OPEN / DRAFT**; do not mark ready or merge
+**Branch:** **`fix/pr11-unattended-execute-cert-runner`** — PR [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) **OPEN / DRAFT**; runner baseline `0277aa4`; do not mark ready or merge
 **Product medals:** [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) — advisory @ `004036`/`020821` · travel execute @ `032408`  
 **Execute readiness (merged):** [`logs/open/pr11-town-travel-execute-readiness.md`](logs/open/pr11-town-travel-execute-readiness.md)  
 **Attach doctrine:** [`logs/open/assistive-current-session-attach.md`](logs/open/assistive-current-session-attach.md)  
@@ -32,7 +32,7 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 | Travel execute path (PR #11) | Agent B + A | **MERGED** @ `09f039f` · PASS @ `032408` |
 | Runtime gameplay state machine | Agent B | **ROUTE FIRST** — classify `game_exited_unexpectedly_before_attach` using runtime/process evidence |
 | Unattended execute cert runner | Agent C | **PR #14 OPEN / DRAFT** @ `0277aa4`; post-fix live validation blocked on runtime/process classification |
-| Runtime-state coordination docs | Agent D | **IN PROGRESS** — live authority is `blacksmithguild-agent-coordination.md` |
+| Runtime-state coordination docs | Agent D | **DONE** — live authority is `blacksmithguild-agent-coordination.md` |
 | PR #8 bisect tooling | User + A | **HOLD** — explicit user auth required |
 
 ## Branch cleanup (documented)

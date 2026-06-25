@@ -91,6 +91,15 @@ flowchart TD
 | `shutdown_expected` | lifecycle shutdown marker | Agent B | Allow Agent C/A to close evidence as expected exit. |
 | `shutdown_unexpected` | stale/missing lifecycle plus process exit | Agent B | Classify blocker before live rerun. |
 
+Script aliases:
+
+| Doc term | Script term | Notes |
+|----------|-------------|-------|
+| `runtime_lifecycle_missing` | `missing_RuntimeLifecycle` | Readiness reason emitted when `RuntimeLifecycle.json` is absent. |
+| `stale_RuntimeLifecycle` | `runtime_heartbeat_stale` | Readiness reason emitted when heartbeat age exceeds the threshold. |
+| `shutdown_expected` | `clean_shutdown` / `gracefulShutdownObserved` | Lifecycle authority observed an expected or graceful shutdown. |
+| `shutdown_unexpected` | `crash_or_unexpected_exit` | Lifecycle authority did not observe an expected shutdown. |
+
 ---
 
 ## `gameplaySurface`
@@ -116,6 +125,8 @@ flowchart TD
 | `crash_reporter` | UI/process hints | Agent C | Route failure capture. |
 | `command_in_progress` | runtime command lifecycle | Agent B | Wait for ack/final state. |
 | `assist_ready` | status plus assist fields | Agent B | Agent C may start assist loop after Agent A/C scope check. |
+
+Known script/mod surface aliases include `loading`, `conversation`, `trading`, `blacksmithing`, and `settlement_menu`. Treat this table as the owner-routing vocabulary; preserve the raw script value in evidence when it differs.
 
 ---
 
@@ -154,7 +165,7 @@ flowchart TD
 | `continue_selected` | launcher | Agent C | Launch log and handoff marker. |
 | `handoff_requested` | launcher/process | Agent C | Launch log and process appearance. |
 | `process_disappeared_during_post_handoff` | process/runtime | Agent C then Agent B | Process timeline plus `RuntimeLifecycle.json`. |
-| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B | Lifecycle heartbeat, shutdown marker, Phase1 log, process timeline. |
+| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B after Agent C detection | Lifecycle heartbeat, shutdown marker, Phase1 log, process timeline. Runner detection may emit Agent C route first; board escalation is B-primary for runtime diagnosis. |
 | `safe_mode_after_crash` | launcher | Agent C | Launcher state and crash context. |
 | `crash_reporter` | launcher/process | Agent C | Crash reporter state and runner summary. |
 | `missing_stateMachine` | runtime | Agent B | `Status.json`, Phase1 log, runtime producer code. |
@@ -163,4 +174,4 @@ flowchart TD
 | `assist_loop_started` | assist | Agent C | Runner timeline and assist summary. |
 | `live_PASS` | evidence | Agent A | Manifest, summary, PR state, final hygiene. |
 
-These names are aligned with the classifiers in `scripts/process-lifecycle-authority.ps1` and `scripts/autonomous-assist-session.ps1`. If those scripts add or rename classes, update this document and [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md) in the same docs sprint.
+These names are the docs routing vocabulary and include aliases for classifier and readiness strings in `scripts/process-lifecycle-authority.ps1`, `scripts/autonomous-assist-session.ps1`, and `scripts/pr11-runtime-state-consumer.ps1`. If those scripts add or rename classes, update this document and [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md) in the same docs sprint.

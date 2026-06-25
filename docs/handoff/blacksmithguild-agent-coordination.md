@@ -35,7 +35,8 @@ Every agent must:
 |-------|-------|
 | Active PR | [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) — open draft; do not mark ready or merge |
 | Branch | `fix/pr11-unattended-execute-cert-runner` |
-| Head | `0277aa4` — `fix(runner): preserve post-handoff exit classification` |
+| Runner baseline | `0277aa4` — `fix(runner): preserve post-handoff exit classification` |
+| Docs posture | Runtime-state coordination docs landed after runner baseline; use branch HEAD for current docs |
 | Product baseline | `main` after PR #11 travel execute merge |
 | Current blocker | `game_exited_unexpectedly_before_attach` |
 | Controlling evidence | `docs/evidence/live-cert/20260625-074633-autonomous-assist-session/` (ignored scratch; cite only, do not commit) |
@@ -62,7 +63,7 @@ Every agent must:
 | **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | PR #14 readiness and evidence judgment after runtime/runner fix | Owns final PASS/FAIL and push/PR hygiene | `0277aa4` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Runtime lifecycle and `stateMachine` authority for game exit diagnosis | Must classify runtime-owned failures before more runner churn | `0277aa4` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `NEXT` | Launcher, process, and unattended runner classification after runtime diagnosis | Owns automation lock and post-fix live runner validation | `0277aa4` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `IN_PROGRESS` | Reframe coordination around runtime state authority | Must keep active docs pointing at this board | `0277aa4` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Reframed coordination around runtime state authority | Active docs now point at this board and routing vocabulary | branch HEAD |
 
 Status values: `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE`.
 
