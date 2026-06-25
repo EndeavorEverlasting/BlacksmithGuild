@@ -156,6 +156,46 @@ function Test-TbgPostHandoffFastFail {
     }
 }
 
+function Invoke-TbgLauncherAutoNavChild {
+    param(
+        [Parameter(Mandatory = $true)][string]$ScriptPath,
+        [Parameter(Mandatory = $true)][string]$LaunchIntent,
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][string]$ExternalStateTimelinePath,
+        [int]$TimeoutSec = 300,
+        [int]$LauncherSelectionMaxMs = 30000,
+        [bool]$RespectUserForeground = $false
+    )
+
+    function ConvertTo-TbgPowerShellLiteral {
+        param([string]$Value)
+        return "'" + (($Value -replace "'", "''")) + "'"
+    }
+
+    $respectLiteral = if ($RespectUserForeground) { '$true' } else { '$false' }
+    $command = @(
+        '&',
+        (ConvertTo-TbgPowerShellLiteral $ScriptPath),
+        '-LaunchIntent', (ConvertTo-TbgPowerShellLiteral $LaunchIntent),
+        '-BannerlordRoot', (ConvertTo-TbgPowerShellLiteral $BannerlordRoot),
+        '-TimeoutSec', [string]$TimeoutSec,
+        '-LaunchSetup',
+        '-LauncherSelectionMaxMs', [string]$LauncherSelectionMaxMs,
+        "-RespectUserForeground:$respectLiteral",
+        '-ExternalStateTimelinePath', (ConvertTo-TbgPowerShellLiteral $ExternalStateTimelinePath)
+    ) -join ' '
+
+    $output = @(& powershell -NoProfile -ExecutionPolicy Bypass -Command $command 2>&1)
+    $exitCode = if ($null -ne $LASTEXITCODE) { [int]$LASTEXITCODE } else { 0 }
+    foreach ($line in $output) { Write-Host $line }
+
+    return [pscustomobject][ordered]@{
+        exitCode = $exitCode
+        output = @($output | ForEach-Object { [string]$_ })
+        text = [string](@($output | ForEach-Object { [string]$_ }) -join "`n")
+    }
+}
+
 function Get-AutonomousAssistIterationDecision {
     param(
         [object]$Readiness,

@@ -41,6 +41,48 @@ function Get-TbgProcessLifecycleWritePaths {
     return @(Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot -FileName 'BlacksmithGuild_ProcessLifecycle.json')
 }
 
+function Clear-TbgStaleCancelRun {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][datetime]$RunStartedAtUtc
+    )
+
+    if (-not (Get-Command Get-AssistiveArtifactCandidates -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+    }
+
+    $cleared = New-Object System.Collections.Generic.List[object]
+    foreach ($path in @(Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot -FileName 'BlacksmithGuild_CancelRun.json')) {
+        if (-not (Test-Path -LiteralPath $path)) { continue }
+        $requestedAt = $null
+        $reason = $null
+        try {
+            $cancel = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+            $reason = if ($cancel.reason) { [string]$cancel.reason } else { $null }
+            if ($cancel.requestedAtUtc) {
+                $requestedAt = [datetime]::Parse([string]$cancel.requestedAtUtc, $null, `
+                    [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+            }
+        } catch { }
+
+        $mtimeUtc = (Get-Item -LiteralPath $path).LastWriteTimeUtc
+        $effectiveAt = if ($requestedAt) { $requestedAt } else { $mtimeUtc }
+        if ($effectiveAt -lt $RunStartedAtUtc.ToUniversalTime()) {
+            Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
+            $cleared.Add([pscustomobject][ordered]@{
+                path = $path
+                reason = $reason
+                requestedAtUtc = if ($requestedAt) { $requestedAt.ToString('o') } else { $null }
+                removedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            }) | Out-Null
+        }
+    }
+
+    $script:TbgCancelRequested = $false
+    $script:TbgCancelReason = $null
+    return @($cleared.ToArray())
+}
+
 function Initialize-TbgProcessLifecycle {
     param(
         [Parameter(Mandatory = $true)][string]$RunId,

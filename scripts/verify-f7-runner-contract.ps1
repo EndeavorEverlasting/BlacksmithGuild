@@ -316,7 +316,9 @@ if (Test-Path -LiteralPath $autonomousRunnerPath) {
     $assistRunnerText = Get-Content -LiteralPath $autonomousRunnerPath -Raw
     foreach ($needle in @(
         'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
-        'Get-AutonomousAssistIterationDecision', 'Test-TbgPostHandoffFastFail', 'Save-AutonomousAssistSessionEvidence'
+        'Get-AutonomousAssistIterationDecision', 'Test-TbgPostHandoffFastFail',
+        'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff',
+        'Save-AutonomousAssistSessionEvidence'
     )) {
         if ($assistRunnerText -notmatch [regex]::Escape($needle)) {
             Add-Failure "run-autonomous-assist-session.ps1 missing: $needle"

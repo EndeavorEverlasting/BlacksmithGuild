@@ -120,6 +120,15 @@ $cancelPath = Get-TbgCancelRunJsonPath -BannerlordRoot $tmpRoot
 $script:TbgCancelRequested = $false
 if (-not (Test-TbgCancelRequested -BannerlordRoot $tmpRoot)) { throw 'CancelRun must be detected' }
 
+$clearedCancel = Clear-TbgStaleCancelRun -BannerlordRoot $tmpRoot -RunStartedAtUtc (Get-Date).ToUniversalTime().AddSeconds(1)
+if (@($clearedCancel).Count -lt 1) { throw 'stale CancelRun must be cleared for a fresh session' }
+if (Test-Path -LiteralPath $cancelPath) { throw 'stale CancelRun file must be removed' }
+@{ reason = 'fresh_cancel'; requestedAtUtc = (Get-Date).ToUniversalTime().AddSeconds(5).ToString('o') } | ConvertTo-Json |
+    Set-Content -LiteralPath $cancelPath -Encoding UTF8
+$clearedFreshCancel = Clear-TbgStaleCancelRun -BannerlordRoot $tmpRoot -RunStartedAtUtc (Get-Date).ToUniversalTime()
+if (@($clearedFreshCancel).Count -ne 0) { throw 'fresh CancelRun must not be cleared' }
+Remove-Item -LiteralPath $cancelPath -Force -ErrorAction SilentlyContinue
+
 # post-handoff fast fail — game gone after handoff, not 600s wait
 $detAlive = [pscustomobject]@{ gameProcessRunning = $true }
 $detGone = [pscustomobject]@{ gameProcessRunning = $false }
@@ -133,6 +142,29 @@ if ($ffSeen.classification -ne 'process_disappeared_during_post_handoff') {
 $ffNever = Test-TbgPostHandoffFastFail -Detection $detGone -HandoffCompleted $true -AttachReady $false -GameProcessEverSeenAfterHandoff $false
 if ($ffNever.classification -ne 'game_exited_unexpectedly_before_attach') {
     throw "expected game_exited_unexpectedly_before_attach got $($ffNever.classification)"
+}
+
+# launcher-auto-nav exit must not terminate the parent runner
+$childNav = Join-Path $tmpRoot 'fake-launcher-auto-nav.ps1'
+@'
+param(
+    [string]$LaunchIntent,
+    [string]$BannerlordRoot,
+    [int]$TimeoutSec,
+    [switch]$LaunchSetup,
+    [int]$LauncherSelectionMaxMs,
+    [string]$ExternalStateTimelinePath,
+    [bool]$RespectUserForeground = $true
+)
+Write-Host 'launcher-auto: LAUNCH_STATE=handoff'
+Write-Host 'launcher-auto: post-handoff: Bannerlord exited'
+exit 3
+'@ | Set-Content -LiteralPath $childNav -Encoding UTF8
+$childResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $childNav -LaunchIntent 'continue' `
+    -BannerlordRoot $tmpRoot -ExternalStateTimelinePath (Join-Path $tmpRoot 'ExternalStateTimeline.json')
+if ($childResult.exitCode -eq 0) { throw 'expected non-zero child nav exit' }
+if ($childResult.text -notmatch 'post-handoff: Bannerlord exited') {
+    throw 'child nav output must be captured for post-handoff classification'
 }
 
 # timeline / summary evidence files written
@@ -163,7 +195,8 @@ if ($summaryParsed.classification -ne 'user_toggle_off') { throw 'summary must r
 $runnerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1') -Raw
 foreach ($needle in @(
     'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
-    'Test-TbgPostHandoffFastFail', 'Get-AutonomousAssistIterationDecision', 'AssistToggle'
+    'Test-TbgPostHandoffFastFail', 'Get-AutonomousAssistIterationDecision', 'AssistToggle',
+    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff'
 )) {
     if ($runnerText -notmatch [regex]::Escape($needle)) {
         throw "run-autonomous-assist-session.ps1 missing: $needle"

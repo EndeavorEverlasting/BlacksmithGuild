@@ -120,6 +120,8 @@ $sessionAuthorityMode = if ($AttachOnly -or $SkipLaunch) { 'AttachOnly' } else {
 Initialize-TbgProcessLifecycle -RunId "${sessionId}-pr11" -BannerlordRoot $bannerlordRoot `
     -SessionAuthorityMode $sessionAuthorityMode -Operation 'pr11_launch_attach_execute' `
     -Branch (git branch --show-current).Trim() | Out-Null
+$clearedCancel = Clear-TbgStaleCancelRun -BannerlordRoot $bannerlordRoot `
+    -RunStartedAtUtc ([datetime]::Parse([string]$startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind))
 Register-TbgCancelHandler {
     $script:cancelled = $true
     Write-CertLog 'Cancel requested — stopping PR11 cycle'
@@ -134,6 +136,9 @@ $windowClassifierResult = 'not_run'
 $exitCode = 2
 
 Write-CertLog "PR11 launch/attach/execute runner start branch=$((git branch --show-current)) sha=$startSha"
+foreach ($cancel in @($clearedCancel)) {
+    Write-CertLog "Cleared stale CancelRun before fresh session path=$($cancel.path) reason=$($cancel.reason)"
+}
 
 # S0 audit snapshot (filtered; full-machine audit is too slow for live runs)
 $s0 = Get-Pr11ProcessSnapshot -Label 'S0_before_repo_commands' -BannerlordRoot $bannerlordRoot
@@ -211,9 +216,11 @@ if (-not $SkipLaunch) {
         $navExit = 0
         $navError = $null
         try {
-            & $navScript -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
-                -LauncherSelectionMaxMs 30000 -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
-            $navExit = $LASTEXITCODE
+            $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
+                -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
+                -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
+            $navExit = $navResult.exitCode
+            $navError = $navResult.text
         } catch {
             $navError = $_.Exception.Message
             $navExit = 1
@@ -226,16 +233,19 @@ if (-not $SkipLaunch) {
 
         if ($navExit -ne 0) {
             $failureClass = 'runner_window_identification_failed'
-            if ($navError -match 'launcher_timing_timeout|CONTINUE.*NOT verified|continue_not_found') {
+            if ($navError -match 'post-handoff: Bannerlord exited') {
+                $failureClass = 'process_disappeared_during_post_handoff'
+            } elseif ($navError -match 'launcher_timing_timeout|CONTINUE.*NOT verified|continue_not_found') {
                 $failureClass = 'continue_not_found'
             } elseif ($navError -match 'already running') {
                 $failureClass = 'launcher_failed'
             }
             $windowClassifierResult = if ($failureClass -eq 'continue_not_found') { 'continue_not_verified' } else { 'launcher_nav_failed' }
             Copy-LifecycleEvidence
+            $attachFailure = if ($failureClass -eq 'process_disappeared_during_post_handoff') { 'game_gone_before_attach' } else { 'launch_failed' }
             Complete-CycleResult @{
                 passFail = 'FAIL'; failureClass = $failureClass; routeAgent = $routeAgent; exitCode = 2
-                windowClassifierResult = $windowClassifierResult; attachResult = 'launch_failed'; certAttempted = $false
+                windowClassifierResult = $windowClassifierResult; attachResult = $attachFailure; certAttempted = $false
                 navError = $navError
             } | Out-Null
             Write-CertLog "FAIL launcher-auto-nav exit=$navExit failureClass=$failureClass"

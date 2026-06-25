@@ -99,12 +99,17 @@ $evidence = New-AutonomousAssistSessionEvidence -SessionId $sessionId -Checkpoin
 Initialize-TbgProcessLifecycle -RunId "${sessionId}-assist" -BannerlordRoot $bannerlordRoot `
     -SessionAuthorityMode FreshTestLaunch -Operation 'autonomous_assist_session' `
     -Branch (git branch --show-current).Trim() | Out-Null
+$clearedCancel = Clear-TbgStaleCancelRun -BannerlordRoot $bannerlordRoot `
+    -RunStartedAtUtc ([datetime]::Parse([string]$evidence.startedAtUtc, $null, [Globalization.DateTimeStyles]::RoundtripKind))
 Register-TbgCancelHandler {
     $script:cancelled = $true
     Write-SessionLog 'CancelRun requested — stopping autonomous assist session'
 }
 
 Write-SessionLog "Autonomous assist session start branch=$((git branch --show-current)) sha=$startSha profile=$AssistProfile"
+foreach ($cancel in @($clearedCancel)) {
+    Write-SessionLog "Cleared stale CancelRun before fresh session path=$($cancel.path) reason=$($cancel.reason)"
+}
 
 if (-not $SkipBuild) {
     Write-SessionLog 'dotnet build Release...'
@@ -169,19 +174,28 @@ if (-not $SkipLaunch) {
         $navExit = 0
         $navError = $null
         try {
-            & $navScript -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
-                -LauncherSelectionMaxMs 30000 -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
-            $navExit = $LASTEXITCODE
+            $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
+                -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
+                -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
+            $navExit = $navResult.exitCode
+            $navError = $navResult.text
         } catch {
             $navError = $_.Exception.Message
             $navExit = 1
             Write-SessionLog "launcher-auto-nav exception: $navError"
         }
         if ($navExit -ne 0) {
-            $failureClass = if ($navError -match 'continue_not_found|launcher_timing_timeout') { 'continue_not_found' } else { 'launcher_failed' }
+            $failureClass = if ($navError -match 'post-handoff: Bannerlord exited') {
+                'process_disappeared_during_post_handoff'
+            } elseif ($navError -match 'continue_not_found|launcher_timing_timeout') {
+                'continue_not_found'
+            } else {
+                'launcher_failed'
+            }
+            $attachFailure = if ($failureClass -eq 'process_disappeared_during_post_handoff') { 'game_gone_before_attach' } else { 'launch_failed' }
             Exit-AssistSession -Code 2 -Evidence $evidence -Summary @{
                 passFail = 'FAIL'; failureClass = $failureClass; exitCode = 2
-                attachResult = 'launch_failed'; navError = $navError
+                attachResult = $attachFailure; navError = $navError
                 endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
             }
         }
