@@ -10,6 +10,16 @@
 **Evidence gate:** [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md)  
 **Failure map:** [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) · **Artifact matrix:** [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md)
 
+
+## Current coordination doctrine
+
+Future agents must use these doctrine files before changing routing, launcher selection, or autonomous assist expectations:
+
+- [`AGENTS.md`](../../AGENTS.md) — root agent ownership and hard rules.
+- [`docs/handoff/agent-coordination-contract.md`](../handoff/agent-coordination-contract.md) — branch map, routing matrix, evidence rules, and synthesis rules.
+- [`docs/control/logs/open/window-delta-doctrine.md`](logs/open/window-delta-doctrine.md) — S1→S2 launcher-selection doctrine.
+- [`docs/control/logs/open/autonomous-assist-session-target.md`](logs/open/autonomous-assist-session-target.md) — one-command visible gameplay target and required evidence.
+
 ## Layout (index-only policy)
 
 Handoff files and raw evidence stay in place. This tree classifies sprint state with pointers only.
