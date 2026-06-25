@@ -2433,6 +2433,16 @@ function Test-UserLaunchPathAdopted {
     }
 
     if ($LaunchIntent -eq 'continue' -and $gameRunning -and -not $script:automationClickedPlayContinue) {
+        # An unattended runner-driven continue launch must not assume a *user* launched the game
+        # on a weak/freshness-only signal. Only adopt when a real game process/window exists or the
+        # launcher actually transitioned (loading/gone). Otherwise return false so the runner clicks
+        # CONTINUE itself (continue_escalate) instead of recording a phantom user launch (attempts=0).
+        $adoptDet = Get-LaunchNavProcessDetection
+        $realSignal = $loading -or $launcherGone -or (Test-F7StrongPreIntentGameSignal -Detection $adoptDet `
+                -LoadingSurface $loading -LauncherGone $launcherGone)
+        if (-not $realSignal) {
+            return $false
+        }
         if (-not [UIAHelper]::IsLauncherPlayContinueVisible() -and -not [UIAHelper]::HasLauncherLoadingSurface()) {
             Invoke-AdoptLaunchPath -Path 'play' -SelectedBy 'user'
             return $true
