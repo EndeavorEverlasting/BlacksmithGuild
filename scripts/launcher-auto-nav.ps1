@@ -482,15 +482,29 @@ public static class UIAHelper
                 "CLICK \"{0}\" intent={1} attempt={2} method=coords at ({3},{4}) fractions=({5:F2},{6:F2}) bounds=({7:F0},{8:F0},{9:F0},{10:F0}) in {11} | foreground {12}",
                 label, intent, _coordAttemptIndex + 1, x, y, xFraction, yFraction, bounds.X, bounds.Y, bounds.Width, bounds.Height, scopeDesc, DescribeForegroundWindow()));
 
+            // Custom-rendered launchers (e.g. "MB II: Bannerlord") ignore synthetic WM_LBUTTON*
+            // messages, so SendMessage reports success but the CONTINUE/PLAY button never fires
+            // and the click never verifies. When foreground control is permitted, drive the click
+            // with real hardware input at the screen point — the method that actually registers.
+            if (!RespectUserForeground)
+            {
+                ForceForegroundWindow(hwnd);
+                Thread.Sleep(120);
+                SetCursorPos(x, y);
+                Thread.Sleep(40);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                Thread.Sleep(200);
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=real-input-mouse_event at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+                TryFocusGameOrLauncher();
+                return true;
+            }
+
             if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
             {
                 Thread.Sleep(200);
                 var method = visuallyObscured ? "hwnd SendMessage-background" : "hwnd SendMessage-first";
                 LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method={1} at ({2},{3}) in {4}", intent, method, x, y, scopeDesc));
-                if (!RespectUserForeground)
-                {
-                    TryFocusGameOrLauncher();
-                }
                 return true;
             }
 

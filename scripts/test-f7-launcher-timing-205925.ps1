@@ -30,7 +30,8 @@ foreach ($needle in @(
     'fail_launcher_play_only',
     'IsLauncherPlayOnlyVisible',
     'IsLauncherContinueVisible',
-    'safeModeBeforeContinue'
+    'safeModeBeforeContinue',
+    'method=real-input-mouse_event'
 )) {
     if ($navText -notmatch [regex]::Escape($needle)) {
         throw "launcher-auto-nav.ps1 missing: $needle"
