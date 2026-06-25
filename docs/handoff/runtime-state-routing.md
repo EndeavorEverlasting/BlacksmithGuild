@@ -157,21 +157,40 @@ Known script/mod surface aliases include `loading`, `conversation`, `trading`, `
 
 ---
 
+## Classification to owner to next action
+
+| classification | primary owner | next action |
+|----------------|---------------|-------------|
+| `continue_not_found` | Agent C | Inspect launcher nav timing and Continue/PLAY click evidence; do not rerun blindly. |
+| `attach_not_ready` | Agent C | Wait for attach readiness or classify readiness blockers with Agent B. |
+| `process_disappeared_during_post_handoff` | Agent C then Agent B | Capture process timeline, then classify lifecycle shutdown vs unexpected exit. |
+| `game_exited_unexpectedly_before_attach` | Agent B after Agent C detection | Map process timeline plus `RuntimeLifecycle.json` and `Status.json` before live rerun. |
+| `crash_or_unexpected_exit` | Agent B | Use lifecycle authority output to decide runtime shutdown vs crash before runner changes. |
+| `missing_stateMachine` | Agent B | Inspect runtime producer and mod logs before changing runner logic. |
+| `runtime_heartbeat_stale` / `stale_RuntimeLifecycle` | Agent B | Compare heartbeat age with process state and readiness reasons. |
+| `attach_ready` | Agent C | Attach only if automation lock is clear and readiness passes. |
+| `live_PASS` | Agent A | Judge manifest, PR posture, and final hygiene. |
+
+---
+
 ## Failure Class Mapping
 
 | failureClass | Layer | Primary owner | Evidence to check |
 |--------------|-------|---------------|-------------------|
 | `play_continue_visible` | launcher | Agent C | `BlacksmithGuild_Launch.log`, launcher classifier output. |
 | `continue_selected` | launcher | Agent C | Launch log and handoff marker. |
+| `continue_not_found` | launcher | Agent C | Launch log, launcher timing, nav-error mapping from PR11/autonomous runners. |
 | `handoff_requested` | launcher/process | Agent C | Launch log and process appearance. |
 | `process_disappeared_during_post_handoff` | process/runtime | Agent C then Agent B | Process timeline plus `RuntimeLifecycle.json`. |
+| `attach_not_ready` | runtime/process | Agent C | Attach readiness reasons, fresh `Status.json`, process state. |
 | `game_exited_unexpectedly_before_attach` | process/runtime | Agent B after Agent C detection | Lifecycle heartbeat, shutdown marker, Phase1 log, process timeline. Runner detection may emit Agent C route first; board escalation is B-primary for runtime diagnosis. |
+| `crash_or_unexpected_exit` | runtime/process | Agent B | `RuntimeLifecycle.json`, termination classification from `process-lifecycle-authority.ps1`. |
 | `safe_mode_after_crash` | launcher | Agent C | Launcher state and crash context. |
 | `crash_reporter` | launcher/process | Agent C | Crash reporter state and runner summary. |
 | `missing_stateMachine` | runtime | Agent B | `Status.json`, Phase1 log, runtime producer code. |
-| `stale_RuntimeLifecycle` | runtime | Agent B | `RuntimeLifecycle.json` heartbeat and process state. |
-| `attach_ready` | runtime/process | Agent C | Fresh runtime files and process alive. |
+| `stale_RuntimeLifecycle` | runtime | Agent B | `RuntimeLifecycle.json` heartbeat and process state. Script alias: `runtime_heartbeat_stale`. |
+| `attach_ready` | runtime/process | Agent C | Fresh runtime files and process alive. Success attach state, not a failure class in all runners. |
 | `assist_loop_started` | assist | Agent C | Runner timeline and assist summary. |
 | `live_PASS` | evidence | Agent A | Manifest, summary, PR state, final hygiene. |
 
-These names are the docs routing vocabulary and include aliases for classifier and readiness strings in `scripts/process-lifecycle-authority.ps1`, `scripts/autonomous-assist-session.ps1`, and `scripts/pr11-runtime-state-consumer.ps1`. If those scripts add or rename classes, update this document and [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md) in the same docs sprint.
+Layer tables above are normalized agent vocabulary. Runner-emitted `failureClass` and `routeAgent` strings remain canonical for evidence triage. Cross-reference `scripts/process-lifecycle-authority.ps1`, `scripts/autonomous-assist-session.ps1`, `scripts/pr11-runtime-state-consumer.ps1`, `scripts/pr11-process-window-classifier.ps1`, `scripts/run-pr11-town-travel-launch-attach-execute.ps1`, and `scripts/run-autonomous-assist-session.ps1`. If those scripts add or rename classes, update this document and [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md) in the same docs sprint.

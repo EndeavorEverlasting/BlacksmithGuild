@@ -90,11 +90,14 @@ Status values: `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE`.
 | `continue_selected` | launcher | Agent C | Agent A | Track handoff and prepare evidence ownership. |
 | `handoff_requested` | launcher/process | Agent C | Agent B | Watch process and runtime heartbeat. |
 | `process_disappeared_during_post_handoff` | process | Agent C | Agent B | Determine whether runtime shutdown evidence exists. |
-| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B | Agent C | Classify exit using process, lifecycle, and state files before rerunning. |
+| `continue_not_found` | launcher | Agent C | Agent D | Inspect launcher timing, Continue/PLAY click path, and nav-error mapping before rerun. |
+| `attach_not_ready` | runtime/process | Agent C | Agent B | Wait for fresh runtime files or classify readiness blockers before attach. |
+| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B | Agent C | Runner may stamp Agent C first; classify exit using process, lifecycle, and state files before rerun. |
+| `crash_or_unexpected_exit` | runtime/process | Agent B | Agent C | Map lifecycle authority output to shutdown/crash evidence before runner changes. |
 | `safe_mode_after_crash` | launcher | Agent C | Agent A | Capture honest failure and avoid cert PASS claims. |
 | `crash_reporter` | launcher/process | Agent C | Agent A | Capture failure class and stop automation. |
 | `missing_stateMachine` | runtime | Agent B | Agent A | Treat runtime authority as absent; inspect mod logs before runner changes. |
-| `stale_RuntimeLifecycle` | runtime | Agent B | Agent C | Check heartbeat age and process state. |
+| `stale_RuntimeLifecycle` | runtime | Agent B | Agent C | Check heartbeat age and process state. Script alias: `runtime_heartbeat_stale`. |
 | `attach_ready` | runtime/process | Agent C | Agent A | Runner may attach if automation lock is clear. |
 | `assist_loop_started` | assist | Agent C | Agent A | Evidence collection begins; runtime remains Agent B-owned. |
 | `live_PASS` | evidence | Agent A | Agent D | Update PR/handoff docs and hygiene after validation. |
