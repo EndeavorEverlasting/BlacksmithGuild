@@ -521,9 +521,11 @@ function Invoke-TbgTerminationClassification {
     }
 
     $sessionStartUtc = $null
-    if ($lifecycle -and $lifecycle.startedAtUtc) {
+    # Only trust in-memory session authority for heartbeat/session correlation. Disk reads can
+    # fall back to docs-root artifacts from unrelated runs and falsely mark heartbeats as stale.
+    if ($script:TbgProcessLifecycle -and $script:TbgProcessLifecycle.startedAtUtc) {
         try {
-            $sessionStartUtc = [datetime]::Parse([string]$lifecycle.startedAtUtc, $null, `
+            $sessionStartUtc = [datetime]::Parse([string]$script:TbgProcessLifecycle.startedAtUtc, $null, `
                 [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
         } catch { $sessionStartUtc = $null }
     }
