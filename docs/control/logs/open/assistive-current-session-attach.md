@@ -102,4 +102,4 @@ Honest FAILs before fix:
 ## Related docs
 
 - [`external-state-timeline-schema.md`](external-state-timeline-schema.md)
-- [`f7-agent-coordination.md`](../../../handoff/f7-agent-coordination.md)
+- [`blacksmithguild-agent-coordination.md`](../../../handoff/blacksmithguild-agent-coordination.md)

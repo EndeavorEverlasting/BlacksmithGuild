@@ -103,6 +103,6 @@ When documenting expected log lines in handoff docs or coordination messages:
 
 ## Related docs
 
-- [`docs/handoff/f7-agent-coordination.md`](../handoff/f7-agent-coordination.md) — live sprint state
+- [`docs/handoff/blacksmithguild-agent-coordination.md`](../handoff/blacksmithguild-agent-coordination.md) — live sprint state
 - [`docs/handoff/f7-recovery-sprint-handoff.md`](../handoff/f7-recovery-sprint-handoff.md) — target Phase1 sequence
 - [`docs/handoff/agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md) — F7 invocation doctrine

@@ -5,7 +5,7 @@
 **Latest F7 infra:** `20260623-205925` — informative FAIL; **old F7 CLOSED**  
 **Latest product PASS:** `20260624-032408` (travel execute) · `020821` (advisory attach) · `004036` (advisory setup)  
 **Forward cert:** [Town-to-Town Trade Assist](../logs/open/town-to-town-trade-assist-cert.md) · [PR #11 packet](../logs/open/pr11-town-travel-execute-readiness.md)  
-**Authority:** [`f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
+**Authority:** [`blacksmithguild-agent-coordination.md`](../../handoff/blacksmithguild-agent-coordination.md)
 **Normative evidence spec:** [`f7-evidence-requirements.md`](f7-evidence-requirements.md)  
 **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
 **Policy:** Index-only — raw evidence and handoff files are **not moved**.

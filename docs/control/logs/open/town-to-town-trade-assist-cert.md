@@ -215,4 +215,4 @@ Do **not** use the F7 Continue loop as a 20–30 minute treadmill seeking old-ga
 - [`f7-next-cert-readiness.md`](f7-next-cert-readiness.md) — old F7 closed; hard limits
 - [`session-20260623-205925.md`](session-20260623-205925.md) — baseline informative FAIL
 - [`external-state-timeline-schema.md`](external-state-timeline-schema.md)
-- [`f7-agent-coordination.md`](../../../handoff/f7-agent-coordination.md)
+- [`blacksmithguild-agent-coordination.md`](../../../handoff/blacksmithguild-agent-coordination.md)

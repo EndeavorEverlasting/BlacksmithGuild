@@ -76,7 +76,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 | Sprint 006B scope + known gaps | [plans/006b-map-trade-cohesion.plan.md](plans/006b-map-trade-cohesion.plan.md) |
 | Sprint 006C roadmap | [plans/006c-assistive-guild-loop.plan.md](plans/006c-assistive-guild-loop.plan.md) |
 | Golden path / Phase1 grep fails on "Ready" | [conventions/em-dashes-and-log-grep.md](conventions/em-dashes-and-log-grep.md) |
-| F7 sprint / multi-agent | [handoff/f7-agent-coordination.md](handoff/f7-agent-coordination.md) |
+| Runtime-state sprint / multi-agent | [handoff/blacksmithguild-agent-coordination.md](handoff/blacksmithguild-agent-coordination.md) |
 | F7 control index (open/successful) | [control/indexes/f7-recovery-index.md](control/indexes/f7-recovery-index.md) |
 | F7 launch commands / Layer A vs B | [handoff/agent-launch-and-load-playbook.md](handoff/agent-launch-and-load-playbook.md) |
 | Build / install mod | [../README.md](../README.md) § Two environments |

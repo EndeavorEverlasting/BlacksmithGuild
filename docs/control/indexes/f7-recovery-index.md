@@ -2,7 +2,7 @@
 
 **Branch:** **`main`** @ `09f039f`  
 **Gate:** **GREEN (assist + travel execute)** — advisory + launch-assisted travel execute PASS  
-**Authority (living):** [`docs/handoff/f7-agent-coordination.md`](../../handoff/f7-agent-coordination.md)  
+**Authority (living):** [`docs/handoff/blacksmithguild-agent-coordination.md`](../../handoff/blacksmithguild-agent-coordination.md)
 **Failure map:** [`f7-failure-atlas.md`](f7-failure-atlas.md) · **Artifact matrix:** [`f7-evidence-matrix.md`](f7-evidence-matrix.md)  
 **Forward cert:** [`town-to-town-trade-assist-cert.md`](../logs/open/town-to-town-trade-assist-cert.md) · [`pr11-town-travel-execute-readiness.md`](../logs/open/pr11-town-travel-execute-readiness.md)  
 **Policy:** Index-only — handoff and evidence paths are **not moved**.
