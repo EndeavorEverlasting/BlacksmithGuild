@@ -22,8 +22,8 @@ if ($manifest.canPollFileInbox -ne $false) {
 
 $navText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -Raw
 foreach ($needle in @(
-    'LauncherSelectionMaxMs = 45000',
-    'ContinueClickVerifySecChrome = 4',
+    'LauncherSelectionMaxMs = 30000',
+    'ContinueClickVerifySecChrome = 2',
     'Write-LaunchTimingEvidence',
     'LAUNCH_TIMING launcherSelectionMs=',
     'launcher_timing_timeout',
@@ -42,4 +42,4 @@ if ($navText -notmatch 'Invoke-Handoff[\s\S]{0,200}Write-LaunchTimingEvidence') 
 }
 
 Write-Host "PASS offline launcher timing regression $sessionId"
-Write-Host 'baseline: campaignReady=true canPollFileInbox=false; nav has 45s cap + LAUNCH_TIMING'
+Write-Host 'baseline: campaignReady=true canPollFileInbox=false; nav has 30s PLAY/CONTINUE cap + LAUNCH_TIMING'

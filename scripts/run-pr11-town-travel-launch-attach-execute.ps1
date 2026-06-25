@@ -209,7 +209,7 @@ if (-not $SkipLaunch) {
         $navError = $null
         try {
             & $navScript -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LaunchSetup `
-                -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
+                -LauncherSelectionMaxMs 30000 -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
             $navExit = $LASTEXITCODE
         } catch {
             $navError = $_.Exception.Message

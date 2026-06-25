@@ -142,6 +142,31 @@ function Test-Pr11RuntimeHeartbeatFresh {
     return Test-Pr11UtcFresh -Utc $RuntimeLifecycle.lastHeartbeatUtc -MaxAgeSec $MaxAgeSec
 }
 
+function Resolve-Pr11StatusJsonPath {
+    param(
+        [string]$BannerlordRoot,
+        [string]$StatusPath = $null
+    )
+    if ($StatusPath -and (Test-Path -LiteralPath $StatusPath)) {
+        try {
+            $st = Get-Content -LiteralPath $StatusPath -Raw | ConvertFrom-Json
+            if ($st.stateMachine) { return $StatusPath }
+        } catch { }
+    }
+    if (-not (Get-Command Get-StatusJsonCandidates -ErrorAction SilentlyContinue)) {
+        return $StatusPath
+    }
+    foreach ($candidate in (Get-StatusJsonCandidates -BannerlordRoot $BannerlordRoot)) {
+        try {
+            if (-not (Test-Path -LiteralPath $candidate)) { continue }
+            $st = Get-Content -LiteralPath $candidate -Raw | ConvertFrom-Json
+            if ($st.stateMachine) { return $candidate }
+        } catch { }
+    }
+    if ($StatusPath) { return $StatusPath }
+    return Get-StatusJsonPath -BannerlordRoot $BannerlordRoot
+}
+
 function Get-Pr11AssistiveReadiness {
     param(
         [string]$StatusPath,
@@ -149,6 +174,10 @@ function Get-Pr11AssistiveReadiness {
         [int]$StatusFreshSec = 30,
         [int]$HeartbeatFreshSec = 30
     )
+
+    if ($BannerlordRoot) {
+        $StatusPath = Resolve-Pr11StatusJsonPath -BannerlordRoot $BannerlordRoot -StatusPath $StatusPath
+    }
 
     $legacy = Get-F7AssistiveReadinessFromStatus -StatusPath $StatusPath
     $stateMachine = Read-Pr11StateMachineFromStatus -StatusPath $StatusPath

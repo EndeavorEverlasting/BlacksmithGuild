@@ -15,7 +15,8 @@ param(
     [bool]$AllowCertRetry = $false,
     [int]$CertRetryAttempt = 0,
     [string]$ExternalStateTimelinePath = $null,
-    [switch]$LaunchSetup
+    [switch]$LaunchSetup,
+    [int]$LauncherSelectionMaxMs = 30000
 )
 
 $ErrorActionPreference = 'Stop'
@@ -2077,11 +2078,18 @@ $script:contaminatedLaunchReason = $null
 $script:automationContinueIntentDeclared = $false
 $script:launcherReadyLogged = $false
 $script:safeModeVisibleLogged = $false
-$script:ContinueClickVerifySec = 8
-$script:ContinueClickVerifySecChrome = 4
-$script:PlayClickVerifySec = 12
-$script:LauncherSelectionMaxMs = 45000
+$script:ContinueClickVerifySec = 4
+$script:ContinueClickVerifySecChrome = 2
+$script:PlayClickVerifySec = 6
+$script:LauncherSelectionMaxMs = $LauncherSelectionMaxMs
+$script:playContinueMenuFirstSeenUtc = $null
 $script:launcherChromeFirstSeenUtc = $null
+if ($LaunchSetup.IsPresent) {
+    $script:ContinueClickVerifySec = 3
+    $script:ContinueClickVerifySecChrome = 2
+    $script:PlayClickVerifySec = 4
+    if ($PollMs -gt 120) { $PollMs = 120 }
+}
 $script:launcherSelectionAttempts = 0
 $script:continueVerifyTotalMs = 0
 $script:safeModeBeforeContinue = $false
@@ -2117,16 +2125,20 @@ function Test-LauncherChromeVisible {
 }
 
 function Update-LauncherSelectionTimer {
-    if (-not (Test-LauncherChromeVisible)) { return }
+    if (-not [UIAHelper]::IsLauncherPlayContinueVisible()) { return }
+    if (-not $script:playContinueMenuFirstSeenUtc) {
+        $script:playContinueMenuFirstSeenUtc = Get-Date
+    }
     if (-not $script:launcherChromeFirstSeenUtc) {
-        $script:launcherChromeFirstSeenUtc = Get-Date
+        $script:launcherChromeFirstSeenUtc = $script:playContinueMenuFirstSeenUtc
     }
 }
 
 function Test-LauncherSelectionBudgetExceeded {
     if ($handoffStarted -or $clickedPlayContinue) { return $false }
-    if (-not $script:launcherChromeFirstSeenUtc) { return $false }
-    $elapsedMs = ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds
+    $anchor = if ($script:playContinueMenuFirstSeenUtc) { $script:playContinueMenuFirstSeenUtc } else { $script:launcherChromeFirstSeenUtc }
+    if (-not $anchor) { return $false }
+    $elapsedMs = ((Get-Date) - $anchor).TotalMilliseconds
     return ($elapsedMs -gt $script:LauncherSelectionMaxMs)
 }
 
@@ -2135,8 +2147,9 @@ function Write-LaunchTimingEvidence {
 
     if ($script:launcherSelectionEnded) { return }
     $selMs = 0
-    if ($script:launcherChromeFirstSeenUtc) {
-        $selMs = [int][Math]::Max(0, ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds)
+    $timingAnchor = if ($script:playContinueMenuFirstSeenUtc) { $script:playContinueMenuFirstSeenUtc } else { $script:launcherChromeFirstSeenUtc }
+    if ($timingAnchor) {
+        $selMs = [int][Math]::Max(0, ((Get-Date) - $timingAnchor).TotalMilliseconds)
     }
     $safeFlag = if ($script:safeModeBeforeContinue) { 'true' } else { 'false' }
     $line = "LAUNCH_TIMING launcherSelectionMs=$selMs continueVerifyMs=$($script:continueVerifyTotalMs) safeModeBeforeContinue=$safeFlag attempts=$($script:launcherSelectionAttempts) result=$Result"
@@ -2847,7 +2860,7 @@ while ((Get-Date) -lt $deadline) {
     if (Test-LauncherSelectionBudgetExceeded) {
         Write-LaunchTimingEvidence -Result 'timeout'
         Write-LaunchLog 'LAUNCH_STATE=launcher_timing_timeout'
-        throw 'launcher selection exceeded 45s budget (launcher_timing_timeout)'
+        throw "launcher selection exceeded $($script:LauncherSelectionMaxMs / 1000)s budget after PLAY/CONTINUE menu (launcher_timing_timeout)"
     }
 
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {

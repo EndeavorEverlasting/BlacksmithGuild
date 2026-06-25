@@ -362,7 +362,9 @@ function End-TbgWaitSegment {
     if (-not $script:TbgCurrentWait) { return $null }
     $script:TbgCurrentWait.endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
     $script:TbgCurrentWait.result = [string]$Result
-    $script:TbgWaitTimeline.Add([pscustomobject]$script:TbgCurrentWait.Clone()) | Out-Null
+    $endedCopy = [ordered]@{}
+    foreach ($k in $script:TbgCurrentWait.Keys) { $endedCopy[$k] = $script:TbgCurrentWait[$k] }
+    $script:TbgWaitTimeline.Add([pscustomobject]$endedCopy) | Out-Null
     $ended = $script:TbgCurrentWait
     $script:TbgCurrentWait = $null
     return $ended
