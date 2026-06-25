@@ -399,7 +399,8 @@ foreach ($pair in @(
     @{ path = 'test-pr11-execute-cert-parser.ps1'; label = 'pr11 execute cert parser' },
     @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' },
     @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' },
-    @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' }
+    @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' },
+    @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {
