@@ -252,6 +252,52 @@ function Request-TbgIntentionalTermination {
     return [pscustomobject]$entry
 }
 
+function Clear-TbgStalePrelaunchRuntimeArtifacts {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [string]$Timestamp = $null
+    )
+
+    if (-not (Get-Command Get-AssistiveArtifactCandidates -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+    }
+
+    $ts = if ($Timestamp) { $Timestamp } else { (Get-Date).ToString('yyyyMMdd-HHmmss') }
+    $rotated = New-Object System.Collections.Generic.List[object]
+
+    # Runtime artifacts written by the mod / deploy tooling. After preflight has terminated all
+    # pre-existing processes, any of these on disk are from a prior run and poison freshness /
+    # heartbeat heuristics (e.g. a deploy-written Status.json or a prior-day RuntimeLifecycle).
+    # Rotate them to *.prelaunch-<ts>.bak so the mod re-creates them on a real load.
+    $artifactNames = @(
+        'BlacksmithGuild_Phase1.log',
+        'BlacksmithGuild_Status.json',
+        'BlacksmithGuild_RuntimeLifecycle.json',
+        'BlacksmithGuild_CrashContext.json'
+    )
+
+    foreach ($name in $artifactNames) {
+        foreach ($path in @(Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot -FileName $name)) {
+            if (-not (Test-Path -LiteralPath $path)) { continue }
+            $backup = "$path.prelaunch-$ts.bak"
+            try {
+                Move-Item -LiteralPath $path -Destination $backup -Force -ErrorAction Stop
+                $rotated.Add([pscustomobject][ordered]@{
+                    artifact = $name
+                    path = $path
+                    backup = $backup
+                    rotatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+                }) | Out-Null
+            } catch {
+                # If rename is blocked (locked file), fall back to truncating freshness by best effort.
+                try { Remove-Item -LiteralPath $path -Force -ErrorAction Stop } catch { }
+            }
+        }
+    }
+
+    return @($rotated.ToArray())
+}
+
 function Invoke-TbgFreshTestLaunchPreflight {
     param(
         [Parameter(Mandatory = $true)][string]$BannerlordRoot,
@@ -277,6 +323,12 @@ function Invoke-TbgFreshTestLaunchPreflight {
         }
     }
     Start-Sleep -Seconds 2
+
+    # Clear stale runtime artifacts so freshness/heartbeat heuristics are not poisoned by a prior run.
+    $rotated = Clear-TbgStalePrelaunchRuntimeArtifacts -BannerlordRoot $BannerlordRoot
+    $script:TbgProcessLifecycle.prelaunchRotatedArtifacts = @($rotated)
+    Save-TbgProcessLifecycle -BannerlordRoot $BannerlordRoot | Out-Null
+
     $script:TbgPreflightCompleted = $true
 }
 
@@ -468,7 +520,16 @@ function Invoke-TbgTerminationClassification {
         $RuntimeLifecycle = Read-Pr11RuntimeLifecycle -BannerlordRoot $BannerlordRoot
     }
 
+    $sessionStartUtc = $null
+    if ($lifecycle -and $lifecycle.startedAtUtc) {
+        try {
+            $sessionStartUtc = [datetime]::Parse([string]$lifecycle.startedAtUtc, $null, `
+                [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+        } catch { $sessionStartUtc = $null }
+    }
+
     $heartbeatFresh = $false
+    $heartbeatPredatesSession = $false
     if ($RuntimeLifecycle -and $RuntimeLifecycle.parseOk -and $RuntimeLifecycle.lastHeartbeatUtc) {
         if (Get-Command Test-Pr11RuntimeHeartbeatFresh -ErrorAction SilentlyContinue) {
             $heartbeatFresh = Test-Pr11RuntimeHeartbeatFresh -RuntimeLifecycle $RuntimeLifecycle -MaxAgeSec $HeartbeatFreshSec
@@ -476,7 +537,16 @@ function Invoke-TbgTerminationClassification {
             $ageSec = ((Get-Date).ToUniversalTime() - $RuntimeLifecycle.lastHeartbeatUtc).TotalSeconds
             $heartbeatFresh = ($ageSec -ge 0 -and $ageSec -le $HeartbeatFreshSec)
         }
+        # A heartbeat written before this session started belongs to a prior run and must not be
+        # read as a crash of the current session — prefer live fast-fail classification instead.
+        if ($sessionStartUtc) {
+            $hbUtc = ([datetime]$RuntimeLifecycle.lastHeartbeatUtc).ToUniversalTime()
+            $heartbeatPredatesSession = ($hbUtc -lt $sessionStartUtc)
+        }
         $signals.Add('runtime_lifecycle_present') | Out-Null
+        if ($heartbeatPredatesSession) {
+            $signals.Add('runtime_heartbeat_predates_session') | Out-Null
+        }
     }
 
     if ($script:TbgCancelRequested) {
@@ -561,7 +631,8 @@ function Invoke-TbgTerminationClassification {
                     missingSignals = @('command_finish_recorded')
                 }
             }
-            if (-not $RuntimeLifecycle.gracefulShutdownObserved -and -not $heartbeatFresh) {
+            if (-not $RuntimeLifecycle.gracefulShutdownObserved -and -not $heartbeatFresh `
+                    -and -not $heartbeatPredatesSession) {
                 return [ordered]@{
                     classification = 'crash_or_unexpected_exit'
                     routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
