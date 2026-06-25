@@ -16,7 +16,8 @@
 Future agents must use these doctrine files before changing routing, launcher selection, or autonomous assist expectations:
 
 - [`AGENTS.md`](../../AGENTS.md) — root agent ownership and hard rules.
-- [`docs/handoff/agent-coordination-contract.md`](../handoff/agent-coordination-contract.md) — branch map, routing matrix, evidence rules, and synthesis rules.
+- [`docs/handoff/blacksmithguild-agent-coordination.md`](../handoff/blacksmithguild-agent-coordination.md) — living coordination board, branch map, routing matrix, evidence rules, and synthesis rules.
+- [`docs/handoff/runtime-state-routing.md`](../handoff/runtime-state-routing.md) — runtime truth producer and runner consumer boundary.
 - [`docs/control/logs/open/window-delta-doctrine.md`](logs/open/window-delta-doctrine.md) — S1→S2 launcher-selection doctrine.
 - [`docs/control/logs/open/autonomous-assist-session-target.md`](logs/open/autonomous-assist-session-target.md) — one-command visible gameplay target and required evidence.
 
