@@ -4,6 +4,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 . (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
@@ -167,6 +168,57 @@ if ($childResult.text -notmatch 'post-handoff: Bannerlord exited') {
     throw 'child nav output must be captured for post-handoff classification'
 }
 
+# CertTarget continue is forwarded into launcher-auto-nav child command
+$certNav = Join-Path $tmpRoot 'cert-target-launcher-auto-nav.ps1'
+@'
+param(
+    [string]$LaunchIntent,
+    [string]$BannerlordRoot,
+    [int]$TimeoutSec,
+    [switch]$LaunchSetup,
+    [int]$LauncherSelectionMaxMs,
+    [string]$ExternalStateTimelinePath,
+    [bool]$RespectUserForeground = $true,
+    [string]$CertTarget = 'any'
+)
+Write-Host "certTarget=$CertTarget"
+exit 0
+'@ | Set-Content -LiteralPath $certNav -Encoding UTF8
+$certResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $certNav -LaunchIntent 'continue' `
+    -BannerlordRoot $tmpRoot -CertTarget 'continue' -ExternalStateTimelinePath (Join-Path $tmpRoot 'ExternalStateTimeline-cert.json')
+if ($certResult.text -notmatch 'certTarget=continue') {
+    throw 'Invoke-TbgLauncherAutoNavChild must forward CertTarget continue to launcher-auto-nav'
+}
+
+# launcher-menu / uncertain detections must not count as real game spawn for adoption paths
+$hostedOnly = [pscustomobject]@{
+    gameProcessRunning = $true
+    gameAliveConfidence = 'launcher_hosted'
+    gameProcessDetectionMethod = 'launcher_hosted_window'
+    gameProcessCandidates = @()
+}
+if (Test-TbgRealGameSpawnDetection -Detection $hostedOnly) {
+    throw 'launcher_hosted must not be treated as real game spawn'
+}
+$uncertainOnly = [pscustomobject]@{
+    gameProcessRunning = $true
+    gameAliveConfidence = 'process_detection_uncertain'
+    gameProcessDetectionMethod = 'status_json_fresh'
+    gameProcessCandidates = @()
+}
+if (Test-TbgRealGameSpawnDetection -Detection $uncertainOnly) {
+    throw 'process_detection_uncertain must not be treated as real game spawn'
+}
+$definite = [pscustomobject]@{
+    gameProcessRunning = $true
+    gameAliveConfidence = 'definite'
+    gameProcessDetectionMethod = 'process_name_bannerlord'
+    gameProcessCandidates = @()
+}
+if (-not (Test-TbgRealGameSpawnDetection -Detection $definite)) {
+    throw 'definite Bannerlord.exe detection must count as real game spawn'
+}
+
 # timeline / summary evidence files written
 $evidenceDir = Join-Path $tmpRoot 'evidence'
 $evidence = New-AutonomousAssistSessionEvidence -SessionId 'test-session' -CheckpointDir $evidenceDir `
@@ -196,7 +248,7 @@ $runnerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run-autonomous-
 foreach ($needle in @(
     'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
     'Test-TbgPostHandoffFastFail', 'Get-AutonomousAssistIterationDecision', 'AssistToggle',
-    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff'
+    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff', '-CertTarget', 'navCertTarget'
 )) {
     if ($runnerText -notmatch [regex]::Escape($needle)) {
         throw "run-autonomous-assist-session.ps1 missing: $needle"

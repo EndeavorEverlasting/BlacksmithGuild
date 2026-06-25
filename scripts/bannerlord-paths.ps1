@@ -482,7 +482,8 @@ function Get-BannerlordProcessDetection {
         [string]$StatusPath = $null,
         [string]$CrashContextPath = $null,
         [int]$LauncherPidHint = 0,
-        [int]$CacheSec = 2
+        [int]$CacheSec = 2,
+        [Nullable[datetime]]$LaunchStartedAtUtc = $null
     )
 
     $nowUtc = (Get-Date).ToUniversalTime()
@@ -499,6 +500,19 @@ function Get-BannerlordProcessDetection {
     $phase1Fresh = Test-BannerlordLogFresh -Path $Phase1Path -MaxAgeSec 10
     $statusFresh = Test-BannerlordLogFresh -Path $StatusPath -MaxAgeSec 15
     $crashFresh = Test-BannerlordLogFresh -Path $CrashContextPath -MaxAgeSec 15
+
+    # Phase1.log is game-written, so freshness is a weak liveness signal. But a prior-run
+    # Phase1.log can have a recent-ish mtime; when a launch-start reference is supplied, only
+    # treat Phase1 as a runtime signal if it was written at/after the current launch began.
+    $phase1FreshForRuntime = $phase1Fresh
+    if ($phase1Fresh -and $LaunchStartedAtUtc -and $Phase1Path -and (Test-Path -LiteralPath $Phase1Path)) {
+        try {
+            $phase1MtimeUtc = (Get-Item -LiteralPath $Phase1Path).LastWriteTimeUtc
+            if ($phase1MtimeUtc -lt ([datetime]$LaunchStartedAtUtc).ToUniversalTime()) {
+                $phase1FreshForRuntime = $false
+            }
+        } catch { }
+    }
 
     $best = $null
     $confidence = 'none'
@@ -561,14 +575,16 @@ function Get-BannerlordProcessDetection {
         $launcherPid = [int]$launcherProc.Id
     }
 
-    if ($confidence -eq 'none' -and $phase1Fresh) {
+    if ($confidence -eq 'none' -and $phase1FreshForRuntime) {
         $confidence = 'phase1_active'
         $method = 'phase1_log_fresh'
         $warnings.Add('Phase1 log fresh but no Bannerlord process matched — likely launcher-hosted or renamed') | Out-Null
     } elseif ($confidence -eq 'none' -and ($statusFresh -or $crashFresh)) {
-        $confidence = 'process_detection_uncertain'
-        $method = if ($statusFresh) { 'status_json_fresh' } else { 'crash_context_fresh' }
-        $warnings.Add('Status/CrashContext fresh but no process match') | Out-Null
+        # Status.json / CrashContext.json are written by deploy/forge tooling and crash capture,
+        # NOT exclusively by a live game process. They must not signal gameProcessRunning, or a
+        # freshly deploy-written Status.json trips a phantom game-spawn before any real launch.
+        # Record the freshness for downstream classifiers but keep confidence='none'.
+        $warnings.Add('Status/CrashContext fresh but no process match — not treated as running game (deploy/crash artifact)') | Out-Null
     }
 
     $gameProcessRunning = ($confidence -ne 'none')

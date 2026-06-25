@@ -43,6 +43,19 @@ function Test-F7ContinueLaunchEligible {
     return $false
 }
 
+function Test-TbgRealGameSpawnDetection {
+    param($Detection)
+
+    if (-not $Detection -or -not $Detection.gameProcessRunning) { return $false }
+
+    $confidence = [string]$Detection.gameAliveConfidence
+    if ($confidence -in @('launcher_hosted', 'process_detection_uncertain', 'none')) {
+        return $false
+    }
+
+    return $confidence -in @('definite', 'phase1_active')
+}
+
 function Test-F7StrongPreIntentGameSignal {
     param(
         $Detection,

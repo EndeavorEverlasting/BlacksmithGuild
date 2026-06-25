@@ -2257,6 +2257,10 @@ function Test-GameProcessRunning {
     return [bool](Get-LaunchNavProcessDetection).gameProcessRunning
 }
 
+function Test-RealGameProcessSpawned {
+    return Test-TbgRealGameSpawnDetection -Detection (Get-LaunchNavProcessDetection)
+}
+
 function Get-LaunchNavEnvironmentLine {
     $base = [UIAHelper]::DescribeEnvironment()
     $det = Get-LaunchNavProcessDetection
@@ -2419,7 +2423,7 @@ function Test-UserLaunchPathAdopted {
         return $false
     }
 
-    $gameRunning = Test-GameProcessRunning
+    $gameRunning = Test-RealGameProcessSpawned
     $loading = [UIAHelper]::HasLauncherLoadingSurface()
     $launcherGone = -not [UIAHelper]::HasLauncherRoot()
     $buttonsVisible = [UIAHelper]::IsLauncherPlayContinueVisible()
@@ -2890,7 +2894,7 @@ while ((Get-Date) -lt $deadline) {
         $lastHeartbeat = Get-Date
     }
 
-    if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
+    if ((Test-RealGameProcessSpawned) -and -not $script:gameSpawnLogged) {
         if ((Test-F7ContinueCertStrict) -and -not $script:automationContinueIntentDeclared) {
             $det = Get-LaunchNavProcessDetection
             if (Test-F7StrongPreIntentGameSignal -Detection $det `
@@ -2899,15 +2903,30 @@ while ((Get-Date) -lt $deadline) {
                 if (Test-PreIntentGameSpawnAndContaminate) { return }
             }
         } else {
-            Write-LaunchLog 'LAUNCH_STATE=game_spawned'
-            $script:gameSpawnLogged = $true
-            if (Test-Path -LiteralPath $focusHelperPath) {
-                try {
-                    $raised = & $focusHelperPath
-                    if ($raised) {
-                        Write-LaunchLog 'raised Bannerlord window on game spawn'
-                    }
-                } catch { }
+            # Non-strict path: do not declare game_spawned on a weak/freshness-only signal
+            # (e.g. phase1_active or a deploy-written Status.json). Require either a strong
+            # real process/window signal, or that automation has actually clicked PLAY/CONTINUE.
+            # Otherwise a phantom spawn leads to user-launch-path adoption with attempts=0.
+            $det = Get-LaunchNavProcessDetection
+            $strongSignal = Test-F7StrongPreIntentGameSignal -Detection $det `
+                -LoadingSurface ([UIAHelper]::HasLauncherLoadingSurface()) `
+                -LauncherGone (-not [UIAHelper]::HasLauncherRoot())
+            if ($strongSignal -or $clickedPlayContinue -or $script:automationClickedPlayContinue) {
+                Write-LaunchLog 'LAUNCH_STATE=game_spawned'
+                $script:gameSpawnLogged = $true
+                if (Test-Path -LiteralPath $focusHelperPath) {
+                    try {
+                        $raised = & $focusHelperPath
+                        if ($raised) {
+                            Write-LaunchLog 'raised Bannerlord window on game spawn'
+                        }
+                    } catch { }
+                }
+            } else {
+                if (-not $script:weakSpawnSignalLogged) {
+                    Write-LaunchLog "LAUNCH_STATE=weak_game_signal_ignored confidence=$([string]$det.gameAliveConfidence) method=$([string]$det.gameProcessDetectionMethod) — awaiting real process/window or automation click"
+                    $script:weakSpawnSignalLogged = $true
+                }
             }
         }
     }
@@ -3012,7 +3031,7 @@ while ((Get-Date) -lt $deadline) {
     }
 
     if (Test-UserLaunchPathAdopted) {
-        if (Test-GameProcessRunning) {
+        if (Test-RealGameProcessSpawned) {
             Invoke-Handoff 'user launch path adopted — game running'
             return
         }

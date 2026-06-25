@@ -174,9 +174,10 @@ if (-not $SkipLaunch) {
         $navExit = 0
         $navError = $null
         try {
+            $navCertTarget = if ($LaunchIntent -eq 'continue') { 'continue' } else { 'any' }
             $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
                 -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
-                -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
+                -RespectUserForeground:$false -CertTarget $navCertTarget -ExternalStateTimelinePath $timelinePath
             $navExit = $navResult.exitCode
             $navError = $navResult.text
         } catch {

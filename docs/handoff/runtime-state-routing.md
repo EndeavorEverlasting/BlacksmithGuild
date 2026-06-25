@@ -164,7 +164,8 @@ Known script/mod surface aliases include `loading`, `conversation`, `trading`, `
 | `continue_not_found` | Agent C | Inspect launcher nav timing and Continue/PLAY click evidence; do not rerun blindly. |
 | `attach_not_ready` | Agent C | Wait for attach readiness or classify readiness blockers with Agent B. |
 | `process_disappeared_during_post_handoff` | Agent C then Agent B | Capture process timeline, then classify lifecycle shutdown vs unexpected exit. |
-| `game_exited_unexpectedly_before_attach` | Agent B after Agent C detection | Map process timeline plus `RuntimeLifecycle.json` and `Status.json` before live rerun. |
+| `launcher_menu_misclassified_as_game` | Agent C with Agent B runtime confirmation | Continue was never clicked; foreground/window is still the launcher menu (`TaleWorlds.MountAndBlade.Launcher`, title like "M&B II: Bannerlord"); no real `Bannerlord.exe` or mod attach evidence. Fix classifier/runner (`CertTarget continue`, menu-as-game guards) before live rerun. |
+| `game_exited_unexpectedly_before_attach` | Agent B after Agent C detection | True unexpected exit only after ruling out `launcher_menu_misclassified_as_game`. Map process timeline plus `RuntimeLifecycle.json` and `Status.json` before live rerun; stale runtime artifacts can poison termination as `crash_or_unexpected_exit` or `runtime_heartbeat_stale`. |
 | `crash_or_unexpected_exit` | Agent B | Use lifecycle authority output to decide runtime shutdown vs crash before runner changes. |
 | `missing_stateMachine` | Agent B | Inspect runtime producer and mod logs before changing runner logic. |
 | `runtime_heartbeat_stale` / `stale_RuntimeLifecycle` | Agent B | Compare heartbeat age with process state and readiness reasons. |
@@ -183,7 +184,8 @@ Known script/mod surface aliases include `loading`, `conversation`, `trading`, `
 | `handoff_requested` | launcher/process | Agent C | Launch log and process appearance. |
 | `process_disappeared_during_post_handoff` | process/runtime | Agent C then Agent B | Process timeline plus `RuntimeLifecycle.json`. |
 | `attach_not_ready` | runtime/process | Agent C | Attach readiness reasons, fresh `Status.json`, process state. |
-| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B after Agent C detection | Lifecycle heartbeat, shutdown marker, Phase1 log, process timeline. Runner detection may emit Agent C route first; board escalation is B-primary for runtime diagnosis. |
+| `launcher_menu_misclassified_as_game` | launcher/process | Agent C with Agent B runtime confirmation | `BlacksmithGuild_Launch.log` (`game_spawned` / `selectedBy=user` with `attempts=0` while launcher menu foreground), process/window classifier (`launcher_hosted` / `process_detection_uncertain`), absence of fresh `Bannerlord.exe` plus mod runtime files. Distinct from true attach-time exit. |
+| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B after Agent C detection | Lifecycle heartbeat, shutdown marker, Phase1 log, process timeline. Rule out `launcher_menu_misclassified_as_game` first. Runner detection may emit Agent C route first; board escalation is B-primary for runtime diagnosis. Stale `RuntimeLifecycle.json` / `Status.json` can overstate crash when mod never loaded. |
 | `crash_or_unexpected_exit` | runtime/process | Agent B | `RuntimeLifecycle.json`, termination classification from `process-lifecycle-authority.ps1`. |
 | `safe_mode_after_crash` | launcher | Agent C | Launcher state and crash context. |
 | `crash_reporter` | launcher/process | Agent C | Crash reporter state and runner summary. |

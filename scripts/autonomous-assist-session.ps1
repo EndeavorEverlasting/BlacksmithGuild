@@ -164,7 +164,9 @@ function Invoke-TbgLauncherAutoNavChild {
         [Parameter(Mandatory = $true)][string]$ExternalStateTimelinePath,
         [int]$TimeoutSec = 300,
         [int]$LauncherSelectionMaxMs = 30000,
-        [bool]$RespectUserForeground = $false
+        [bool]$RespectUserForeground = $false,
+        [ValidateSet('continue', 'play', 'any')]
+        [string]$CertTarget = 'any'
     )
 
     function ConvertTo-TbgPowerShellLiteral {
@@ -182,6 +184,7 @@ function Invoke-TbgLauncherAutoNavChild {
         '-LaunchSetup',
         '-LauncherSelectionMaxMs', [string]$LauncherSelectionMaxMs,
         "-RespectUserForeground:$respectLiteral",
+        '-CertTarget', (ConvertTo-TbgPowerShellLiteral $CertTarget),
         '-ExternalStateTimelinePath', (ConvertTo-TbgPowerShellLiteral $ExternalStateTimelinePath)
     ) -join ' '
 

@@ -49,7 +49,8 @@ Every agent must:
 
 | Route | Owner | Current next action |
 |-------|-------|---------------------|
-| Runtime/game exit diagnosis | Agent B | Decide whether exit was runtime shutdown, crash, stale heartbeat, or expected process disappearance. |
+| Launcher menu misclassified as game | Agent C with Agent B runtime confirmation | Distinguish `launcher_menu_misclassified_as_game` (Continue never clicked, launcher menu foreground, no real `Bannerlord.exe`/mod attach) from true `game_exited_unexpectedly_before_attach`; rotate stale runtime artifacts before re-cert. |
+| Runtime/game exit diagnosis | Agent B | Decide whether exit was runtime shutdown, crash, stale heartbeat, launcher-menu misclassification, or expected process disappearance. |
 | Post-fix live runner validation | Agent C | Rerun approved unattended assist runner only after Agent B/C code path is fixed and automation lock is clear. |
 | PR readiness / evidence judgment | Agent A | Judge manifest/evidence and PR posture after validation completes. |
 | Doc/routing freshness | Agent D | Keep this board, routing vocabulary, and active links synchronized. |
@@ -63,7 +64,7 @@ Every agent must:
 | **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | PR #14 readiness and evidence judgment after runtime/runner fix | Owns final PASS/FAIL and push/PR hygiene | `0277aa4` |
 | **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Runtime lifecycle and `stateMachine` authority for game exit diagnosis | Must classify runtime-owned failures before more runner churn | `0277aa4` |
 | **C** | Agent C — External State Classifier / Assistive Runner | `NEXT` | Launcher, process, and unattended runner classification after runtime diagnosis | Owns automation lock and post-fix live runner validation | `0277aa4` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Reframed coordination around runtime state authority | Active docs now point at this board and routing vocabulary | branch HEAD |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Added `launcher_menu_misclassified_as_game` routing; preserved F7 redirect stub | Active docs distinguish launcher-menu misclassification from true attach-time exit | branch HEAD |
 
 Status values: `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE`.
 
@@ -92,7 +93,8 @@ Status values: `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE`.
 | `process_disappeared_during_post_handoff` | process | Agent C | Agent B | Determine whether runtime shutdown evidence exists. |
 | `continue_not_found` | launcher | Agent C | Agent D | Inspect launcher timing, Continue/PLAY click path, and nav-error mapping before rerun. |
 | `attach_not_ready` | runtime/process | Agent C | Agent B | Wait for fresh runtime files or classify readiness blockers before attach. |
-| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B | Agent C | Runner may stamp Agent C first; classify exit using process, lifecycle, and state files before rerun. |
+| `launcher_menu_misclassified_as_game` | launcher/process | Agent C | Agent B | Continue never clicked; foreground/window is launcher menu; no real `Bannerlord.exe` or mod attach evidence. Fix classifier/runner path and rotate stale artifacts; do not treat as true runtime crash. |
+| `game_exited_unexpectedly_before_attach` | process/runtime | Agent B | Agent C | True unexpected exit only after ruling out `launcher_menu_misclassified_as_game`. Classify exit using process, lifecycle, and state files before rerun; stale runtime artifacts can poison termination classification. |
 | `crash_or_unexpected_exit` | runtime/process | Agent B | Agent C | Map lifecycle authority output to shutdown/crash evidence before runner changes. |
 | `safe_mode_after_crash` | launcher | Agent C | Agent A | Capture honest failure and avoid cert PASS claims. |
 | `crash_reporter` | launcher/process | Agent C | Agent A | Capture failure class and stop automation. |
@@ -158,6 +160,12 @@ Do not rerun legacy F7 Continue as a treadmill seeking PASS.
 ---
 
 ## Condensed Message Log
+
+### 2026-06-25 — Agent D — launcher-menu misclassification routing
+
+- Added `launcher_menu_misclassified_as_game` to [`runtime-state-routing.md`](runtime-state-routing.md) and this board, distinct from true `game_exited_unexpectedly_before_attach`.
+- Route owner: Agent C with Agent B runtime confirmation. Signals: Continue never clicked, launcher menu foreground, no real `Bannerlord.exe`/mod attach; stale runtime artifacts can poison termination classification.
+- F7 remains legacy redirect only ([`f7-agent-coordination.md`](f7-agent-coordination.md)); not the product gate.
 
 ### 2026-06-25 — Agent D — coordination reframe
 
