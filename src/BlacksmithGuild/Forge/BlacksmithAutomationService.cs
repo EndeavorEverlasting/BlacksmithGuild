@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.Library;
 
@@ -35,6 +36,8 @@ namespace BlacksmithGuild.Forge
                         GameSessionState.GetCampaignMapBlockDetail(),
                         "wait for campaign map");
                 }
+
+                AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.SmithingStarted, reason: source);
 
                 var reserve = SmithingAdvisoryPlanner.BuildReserveHealth();
                 var charcoalNeed = Math.Max(0, reserve.CharcoalFloor - reserve.CharcoalHave);
@@ -263,6 +266,17 @@ namespace BlacksmithGuild.Forge
                 IronAfter = smelt?.IronAfter ?? 0
             });
 
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.SmithingCompleted,
+                reason: "SmeltWeapon",
+                payloadJson: "{\"ironDelta\":" + ((smelt?.IronAfter ?? 0) - (smelt?.IronBefore ?? 0))
+                    + ",\"charcoalDelta\":" + ((smelt?.CharcoalAfter ?? 0) - (smelt?.CharcoalBefore ?? 0)) + "}");
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.InventoryChanged,
+                reason: "smelt",
+                payloadJson: "{\"weaponsDelta\":" + ((smelt?.WeaponsAfter ?? 0) - (smelt?.WeaponsBefore ?? 0))
+                    + ",\"ironDelta\":" + ((smelt?.IronAfter ?? 0) - (smelt?.IronBefore ?? 0)) + "}");
+
             InGameNotice.Success(
                 ModDisplay.CompactLine("Blacksmith Automation", $"SmeltWeapon by {actor} complete."));
             return true;
@@ -300,6 +314,17 @@ namespace BlacksmithGuild.Forge
                 StaminaAfter = staminaAfter
             });
 
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.SmithingCompleted,
+                reason: action,
+                payloadJson: "{\"charcoalDelta\":" + (charcoalAfter - charcoalBefore)
+                    + ",\"hardwoodDelta\":" + (hardwoodAfter - hardwoodBefore) + "}");
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.InventoryChanged,
+                reason: action,
+                payloadJson: "{\"charcoalDelta\":" + (charcoalAfter - charcoalBefore)
+                    + ",\"hardwoodDelta\":" + (hardwoodAfter - hardwoodBefore) + "}");
+
             InGameNotice.Success(
                 ModDisplay.CompactLine("Blacksmith Automation", $"{action} by {actor} complete."));
             return true;
@@ -333,6 +358,12 @@ namespace BlacksmithGuild.Forge
                 StaminaBefore = -1f,
                 StaminaAfter = -1f
             });
+
+            AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.SmithingBlocked, reason: reason);
+            if (recommendation == "BuyMaterialsFirst")
+            {
+                AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.InventoryBlocked, reason: reason);
+            }
 
             DebugLogger.Test(
                 $"[TBG AUTO] action={recommendation} blocked reason={reason}",

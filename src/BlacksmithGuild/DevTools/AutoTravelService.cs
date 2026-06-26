@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using BlacksmithGuild.DevTools.Assistive;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.Forge;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
@@ -78,6 +79,7 @@ namespace BlacksmithGuild.DevTools
                     _activeDestination = null;
                     _assistResult = null;
                     _lastFailReason = hostileDetail;
+                    AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.TravelBlocked, reason: hostileDetail);
                     InGameNotice.Blocked($"TBG TRAVEL paused: {hostileDetail}");
                     DebugLogger.Test($"[TBG TRAVEL] paused route monitor: {hostileDetail}", showInGame: false);
                 }
@@ -152,12 +154,14 @@ namespace BlacksmithGuild.DevTools
             if (TryDetectBlockingHostiles(MobileParty.MainParty, out var hostileDetail))
             {
                 detail = hostileDetail;
+                AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.TravelBlocked, reason: hostileDetail);
                 return false;
             }
 
             if (!TryInvokeMoveToSettlement(MobileParty.MainParty, destination))
             {
                 detail = "travel_api_unavailable";
+                AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.TravelBlocked, reason: detail);
                 return false;
             }
 
@@ -170,6 +174,10 @@ namespace BlacksmithGuild.DevTools
 
             var name = destination.Name?.ToString() ?? destination.StringId;
             detail = $"SetMoveGoToSettlement ok via {selector} to {name}";
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.TravelStarted,
+                reason: selector,
+                payloadJson: "{\"destination\":\"" + EscapeJson(name) + "\"}");
             DebugLogger.Test($"[TBG TRAVEL] assist execute started to {name} via {selector}; cautious route monitor active.", showInGame: false);
             return true;
         }
@@ -295,9 +303,17 @@ namespace BlacksmithGuild.DevTools
                 result.MovementObservationFailureReason = null;
             }
 
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.TravelCompleted,
+                reason: "arrived",
+                payloadJson: "{\"partyMovedDistance\":" + _assistMaxDistance.ToString("0.###", CultureInfo.InvariantCulture) + "}");
+
             AssistiveTravelEvidenceWriter.Write(result);
             _assistResult = null;
         }
+
+        private static string EscapeJson(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
 
         private static bool IsClockRunning()
         {
