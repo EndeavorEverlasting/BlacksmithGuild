@@ -394,6 +394,9 @@ $iteration = 0
 $actionsLogged = 0
 $travelExecuted = $false
 $partyMovementCheckpointEmitted = $false
+$nonTradeBranchDone = $false
+$provenTradeCount = 0
+$isEconomicLoop = ($CertProfile -eq 'economic_loop')
 $lastDecision = $null
 $lastRecursiveBranchState = $null
 $lastRecursiveBranchFresh = $false
@@ -427,12 +430,24 @@ while ((Get-Date) -lt $loopDeadline) {
         break
     }
 
+    $tradeTargetReached = $false
+    if ($isEconomicLoop) {
+        $provenTradeCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot
+        $tradeTargetReached = ($provenTradeCount -ge $TradeIterationTarget)
+        if ($tradeTargetReached) {
+            $stopReason = 'trade_iteration_target_reached'
+            Write-SessionLog "Economic loop target reached: $provenTradeCount/$TradeIterationTarget proven trades"
+            break
+        }
+    }
+
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
     $lastRecursiveBranchState = $ready.recursiveBranchState
     $lastRecursiveBranchFresh = [bool]$ready.recursiveBranchFresh
     $decision = Get-AutonomousAssistIterationDecision -Readiness $ready -AssistProfile $AssistProfile `
         -TargetSettlement $TargetSettlement -StopOnUnsafeState:$StopOnUnsafeState `
-        -LastTravelCommandUtc $lastTravelCommandUtc -TravelCommandCooldownSec $TravelCommandCooldownSec
+        -LastTravelCommandUtc $lastTravelCommandUtc -TravelCommandCooldownSec $TravelCommandCooldownSec `
+        -CertProfile $CertProfile -TradeTargetReached:$tradeTargetReached -NonTradeBranchDone:$nonTradeBranchDone
     $lastDecision = $decision
 
     $iterEvent = [ordered]@{
@@ -504,6 +519,10 @@ while ((Get-Date) -lt $loopDeadline) {
                         }
                     } catch { }
                 }
+            } elseif ($decision.commandSent -eq 'ProbeVanillaTradeExecutionNow') {
+                Write-SessionLog "Iteration $iteration sending ProbeVanillaTradeExecutionNow (economic_loop drive proven buy) at $TargetSettlement"
+                Send-ForgeCommand -CommandName ProbeVanillaTradeExecutionNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
+                $cmdResult = 'Success'
             }
         } catch {
             $cmdResult = "Failed: $($_.Exception.Message)"
@@ -535,6 +554,13 @@ while ((Get-Date) -lt $loopDeadline) {
         atUtc = $decision.atUtc; cycleId = $iteration; branch = $branchName; status = $branchStatus
         surface = $decision.surface; reason = $decision.reason
     })
+
+    # The economic-loop cert requires at least one non-trade branch to be executed/blocked before trades
+    # count as a genuine multi-branch loop. Gate trade-driving on this observed (never synthesized) fact.
+    if (-not $nonTradeBranchDone -and ($branchName -notin @('trade', 'observe_only', '')) -and ($branchStatus -in @('executed', 'blocked'))) {
+        $nonTradeBranchDone = $true
+        Write-SessionLog "Non-trade branch satisfied for economic-loop (branch=$branchName status=$branchStatus)"
+    }
 
     $plannedBranch = Get-AutonomousAssistPlannedBranch -Decision $decision
     Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'cycle_completed' `
@@ -575,7 +601,7 @@ $criteriaPreview = Test-AutomationPassCriteria -Events @($evidence.checkpointEve
         runtimeLifecycleConsumed = $loopReadiness.runtimeLifecycleConsumed
     }) -RequiredCheckpoints $requiredCheckpoints `
     -RequireAssistLoopStarted -RequireExecuteMovement:$travelExecuted
-$passFail = if ($stopReason -in @('user_toggle_off', 'timeout', $null) -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
+$passFail = if ($stopReason -in @('user_toggle_off', 'timeout', 'trade_iteration_target_reached', $null) -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
     else { 'FAIL' }
 
 $summary = [ordered]@{

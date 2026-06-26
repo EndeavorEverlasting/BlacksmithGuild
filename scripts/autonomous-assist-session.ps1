@@ -350,7 +350,10 @@ function Get-AutonomousAssistIterationDecision {
         [string]$TargetSettlement = 'Ortysia',
         [bool]$StopOnUnsafeState = $true,
         [nullable[datetime]]$LastTravelCommandUtc = $null,
-        [int]$TravelCommandCooldownSec = 45
+        [int]$TravelCommandCooldownSec = 45,
+        [string]$CertProfile = 'default',
+        [bool]$TradeTargetReached = $false,
+        [bool]$NonTradeBranchDone = $false
     )
 
     $nowUtc = (Get-Date).ToUniversalTime()
@@ -387,6 +390,29 @@ function Get-AutonomousAssistIterationDecision {
     }
 
     $travelGate = Test-Pr11TravelExecuteAllowed -Readiness $Readiness
+
+    # Economic-loop cert profile: drive real proven buys. Once a non-trade branch (the travel leg) has
+    # executed/blocked, request ProbeVanillaTradeExecutionNow on trade-capable surfaces until the
+    # proven-trade target is reached. The mod's trade chokepoint writes BlacksmithGuild_TradeIterations.jsonl
+    # from live gold/inventory deltas; this policy only requests buys and never fabricates a delta.
+    if ($CertProfile -eq 'economic_loop') {
+        if ($TradeTargetReached) {
+            $base.actionConsidered = 'trade'
+            $base.decision = 'observe'
+            $base.reason = 'economic_loop_trade_target_reached'
+            $base.plannedBranch = 'trade'
+            return [pscustomobject]$base
+        }
+        if ($NonTradeBranchDone -and ($surface -in @('trading', 'settlement_menu'))) {
+            $base.actionConsidered = 'trade'
+            $base.decision = 'allowed'
+            $base.commandSent = 'ProbeVanillaTradeExecutionNow'
+            $base.target = $TargetSettlement
+            $base.reason = 'economic_loop_drive_proven_buy'
+            $base.plannedBranch = 'trade'
+            return [pscustomobject]$base
+        }
+    }
 
     $rbs = $Readiness.recursiveBranchState
     if ($Readiness.recursiveBranchFresh -and $rbs -and $rbs.hasRecursiveBranchState -and $rbs.nextActionRequired -and -not $rbs.terminal) {
@@ -662,6 +688,23 @@ function Copy-EconomicLoopArtifact {
         Copy-Item -LiteralPath $src -Destination (Join-Path $CheckpointDir $FileName) -Force
     }
     return $true
+}
+
+function Get-EconomicLoopProvenTradeCount {
+    # Counts proven trade iterations the mod has written to BlacksmithGuild_TradeIterations.jsonl at the
+    # game root. Used by the live runner to decide when the proven-buy target is reached. Never fabricates:
+    # a row only counts when Test-TradeIterationProven confirms a real gold/inventory delta.
+    param([string]$BannerlordRoot)
+    if ([string]::IsNullOrWhiteSpace($BannerlordRoot)) { return 0 }
+    $tradePath = Join-Path $BannerlordRoot 'BlacksmithGuild_TradeIterations.jsonl'
+    if (-not (Test-Path -LiteralPath $tradePath)) { return 0 }
+    if (-not (Get-Command Test-TradeIterationProven -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
+    }
+    $rows = @(Get-Content -LiteralPath $tradePath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+        try { $_ | ConvertFrom-Json } catch { $null }
+    })
+    return @($rows | Where-Object { $_ -and (Test-TradeIterationProven -Iteration $_) }).Count
 }
 
 function Save-EconomicLoopCertEvidence {
