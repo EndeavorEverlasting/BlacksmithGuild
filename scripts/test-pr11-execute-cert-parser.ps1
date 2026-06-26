@@ -11,11 +11,29 @@ $passJson = [pscustomobject]@{
     travelCommandMode = 'execute'
     movementIntentSet = $true
     actualExecutionObserved = $true
+    partyMovedDistance = 1.5
     fakeGameplayDelta = $false
     leaveTownAttempted = $true
 }
 $result = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $passJson -RequireLeaveTown
 if (-not $result.pass) { throw "execute pass fixture must pass got $($result.failureClass)" }
+
+# Degenerate fake: route intent observed but party never actually moved (the old 2ms fake delta).
+$fakeMoveJson = [pscustomobject]@{
+    executeRequested = $true
+    executeAllowed = $true
+    travelCommandMode = 'execute'
+    movementIntentSet = $true
+    actualExecutionObserved = $true
+    partyMovedDistance = 0
+    fakeGameplayDelta = $false
+    leaveTownAttempted = $true
+}
+$fakeMove = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $fakeMoveJson -RequireLeaveTown
+if ($fakeMove.pass) { throw 'route-intent without real party movement must not pass' }
+if ($fakeMove.failureClass -ne 'execute_fallback_actual_execution_not_observed') {
+    throw "no-movement fixture expected execute_fallback_actual_execution_not_observed got $($fakeMove.failureClass)"
+}
 
 $failJson = [pscustomobject]@{
     executeRequested = $true
@@ -33,7 +51,7 @@ if ($fail.failureClass -notmatch 'movement_intent') { throw "expected movement i
 $settlementReady = [pscustomobject]@{ readinessSurface = 'settlement_menu' }
 $noLeave = [pscustomobject]@{
     executeRequested = $true; executeAllowed = $true; travelCommandMode = 'execute'
-    movementIntentSet = $true; actualExecutionObserved = $true; fakeGameplayDelta = $false
+    movementIntentSet = $true; actualExecutionObserved = $true; partyMovedDistance = 1.5; fakeGameplayDelta = $false
     leaveTownAttempted = $false
 }
 $leaveFail = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $noLeave -Readiness $settlementReady

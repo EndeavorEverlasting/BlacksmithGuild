@@ -169,7 +169,8 @@ namespace BlacksmithGuild.DevTools.Assistive
             result.TravelApiCallSucceeded = AutoTravelService.TryStartTravelToSettlement(
                 target,
                 "assist",
-                out var detail);
+                out var detail,
+                result);
 
             if (!result.TravelApiCallSucceeded)
             {
@@ -180,25 +181,16 @@ namespace BlacksmithGuild.DevTools.Assistive
                 return DevCommandResult.Failed;
             }
 
-            AssistiveTravelMovementObserver.Observe(target, result);
-
-            if (result.MovementIntentSet && result.ActualExecutionObserved)
-            {
-                result.TravelCommandMode = "execute";
-                result.FallbackReason = null;
-                result.MovementObservationPassed = true;
-            }
-            else
-            {
-                result.TravelCommandMode = "advisory_only";
-                result.FallbackReason = result.MovementObservationFailureReason
-                    ?? AssistiveTravelFallbackReasons.MovementIntentNotObserved;
-            }
+            // Travel is now genuinely in flight on the campaign map with the clock running.
+            // Real party movement is verified asynchronously by AutoTravelService.OnRealtimeTick,
+            // which flips ActualExecutionObserved/PartyMovedDistance only after the party actually
+            // moves (never on route intent alone) and re-writes the execution evidence.
+            result.TravelCommandMode = "execute";
+            result.MovementIntentSet = true;
+            result.FallbackReason = null;
 
             Finish(result, source);
-            return result.TravelCommandMode == "execute"
-                ? DevCommandResult.Success
-                : DevCommandResult.Failed;
+            return DevCommandResult.Success;
         }
 
         private static string NormalizeLeaveReason(string leaveReason)

@@ -9,6 +9,7 @@ param(
     [int]$AttachWaitSec = 600,
     [int]$ProbeTimeoutSec = 45,
     [int]$ExecuteTimeoutSec = 120,
+    [int]$MovementObserveSec = 90,
     [switch]$DryRun,
     [switch]$WhatIf
 )
@@ -371,6 +372,33 @@ if ($probeOk) {
         $routeAgent = 'Agent C - External State Classifier / Assistive Runner'
         Write-CertLog "Execute command failed: $($_.Exception.Message)"
     }
+
+    # Real-movement observation window: the mod resumes the campaign clock and the party
+    # actually travels. Poll the live execution evidence until genuine party movement is
+    # observed (position delta > 0), not merely route intent. This is what makes PASS honest.
+    Write-CertLog "Observing real party movement up to ${MovementObserveSec}s (alt-tab OK; campaign clock running)..."
+    $movementDeadline = (Get-Date).AddSeconds($MovementObserveSec)
+    $movementObservedLive = $false
+    while ((Get-Date) -lt $movementDeadline) {
+        Start-Sleep -Seconds 3
+        $liveExecPath = Get-AssistiveTravelExecutionJsonPath -BannerlordRoot $bannerlordRoot
+        if ($liveExecPath -and (Test-Path -LiteralPath $liveExecPath)) {
+            $live = $null
+            try { $live = Get-Content -LiteralPath $liveExecPath -Raw | ConvertFrom-Json } catch { $live = $null }
+            if ($live) {
+                $dist = 0.0
+                if ($null -ne $live.partyMovedDistance) { [double]::TryParse([string]$live.partyMovedDistance, [ref]$dist) | Out-Null }
+                if ($live.actualExecutionObserved -eq $true -and $dist -gt 0) {
+                    $movementObservedLive = $true
+                    Write-CertLog "Real movement observed: partyMovedDistance=$dist arrived=$($live.arrived) clockRunning=$($live.travelClockRunning)"
+                    break
+                }
+            }
+        }
+    }
+    if (-not $movementObservedLive) {
+        Write-CertLog "No real party movement observed within ${MovementObserveSec}s (will FAIL honestly if evidence lacks movement)."
+    }
 }
 }
 
@@ -408,7 +436,7 @@ if ($executePass.pass) {
     $routeAgent = 'Agent A - Cert / Evidence / Git / PR (evidence ready for review)'
     if (-not $executeOk) {
         $failureClass = 'inbox_ack_timeout_execute_evidence_pass'
-        Write-CertLog 'NOTE: execute inbox ack timed out but AssistiveTravelExecution.json satisfies PASS criteria'
+        Write-CertLog 'NOTE: execute inbox ack timed out, but evidence shows verified real party movement (partyMovedDistance>0) so PASS stands'
     }
 } else {
     $passFail = 'FAIL'

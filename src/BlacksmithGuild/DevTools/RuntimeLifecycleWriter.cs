@@ -12,6 +12,7 @@ namespace BlacksmithGuild.DevTools
 
         private static DateTime? _moduleLoadedAtUtc;
         private static DateTime _lastHeartbeatUtc = DateTime.MinValue;
+        private static DateTime _lastFrameHeartbeatWriteUtc = DateTime.MinValue;
         private static string _lastKnownGameplaySurface = GameplaySurfaceKinds.Unknown;
         private static string _lastKnownGameLifecycle = GameLifecycleKinds.Unknown;
         private static string _lastCommandName;
@@ -28,6 +29,22 @@ namespace BlacksmithGuild.DevTools
         {
             _moduleLoadedAtUtc = DateTime.UtcNow;
             _lastKnownGameLifecycle = GameLifecycleKinds.ModuleLoaded;
+            WriteLifecycleFile();
+        }
+
+        // Lightweight per-frame liveness ping so a healthy-but-paused game (e.g. sitting at a
+        // settlement menu) keeps a fresh heartbeat and is never misclassified as a crash.
+        // Throttled to ~1s of file writes; surface fields stay at their last known values.
+        public static void OnFrameHeartbeat()
+        {
+            var now = DateTime.UtcNow;
+            _lastHeartbeatUtc = now;
+            if ((now - _lastFrameHeartbeatWriteUtc).TotalMilliseconds < 1000)
+            {
+                return;
+            }
+
+            _lastFrameHeartbeatWriteUtc = now;
             WriteLifecycleFile();
         }
 

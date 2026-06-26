@@ -21,12 +21,18 @@ function Test-Pr11AssistiveTravelExecutePass {
         return [ordered]@{ pass = $false; failureClass = 'evidence_missing'; routeAgent = 'Agent C' }
     }
 
+    $partyMovedDistance = 0.0
+    if ($null -ne $ExecutionJson.partyMovedDistance) {
+        [double]::TryParse([string]$ExecutionJson.partyMovedDistance, [ref]$partyMovedDistance) | Out-Null
+    }
+
     $checks = @{
         executeRequested = ($ExecutionJson.executeRequested -eq $true)
         executeAllowed = ($ExecutionJson.executeAllowed -eq $true)
         travelCommandMode = ([string]$ExecutionJson.travelCommandMode -eq 'execute')
         movementIntentSet = ($ExecutionJson.movementIntentSet -eq $true)
         actualExecutionObserved = ($ExecutionJson.actualExecutionObserved -eq $true)
+        partyMoved = ($partyMovedDistance -gt 0)
         fakeGameplayDelta = ($ExecutionJson.fakeGameplayDelta -eq $false)
     }
 
@@ -80,6 +86,7 @@ function Get-Pr11ExecuteFailureClass {
         'travelCommandMode' { return @{ failureClass = 'execute_fallback_movement_intent_not_observed'; routeAgent = $routeB } }
         'movementIntentSet' { return @{ failureClass = 'execute_fallback_movement_intent_not_observed'; routeAgent = $routeB } }
         'actualExecutionObserved' { return @{ failureClass = 'execute_fallback_movement_intent_not_observed'; routeAgent = $routeB } }
+        'partyMoved' { return @{ failureClass = 'execute_fallback_actual_execution_not_observed'; routeAgent = $routeB } }
         'fakeGameplayDelta' { return @{ failureClass = 'probe_failed'; routeAgent = $routeB } }
         default { return @{ failureClass = 'evidence_missing'; routeAgent = $routeC } }
     }

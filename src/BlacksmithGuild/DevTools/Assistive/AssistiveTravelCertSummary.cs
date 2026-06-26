@@ -23,6 +23,7 @@ namespace BlacksmithGuild.DevTools.Assistive
                 && result.TravelApiCallSucceeded
                 && result.MovementIntentSet
                 && result.ActualExecutionObserved
+                && result.PartyMovedDistance > 0
                 && !result.FakeGameplayDelta;
 
             var summary = new AssistiveTravelCertSummary
