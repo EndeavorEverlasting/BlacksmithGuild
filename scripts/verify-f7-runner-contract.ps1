@@ -400,7 +400,8 @@ foreach ($pair in @(
     @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' },
     @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' },
     @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' },
-    @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' }
+    @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' },
+    @{ path = 'test-faction-posture-scan-guard.ps1'; label = 'faction posture scan guard' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {

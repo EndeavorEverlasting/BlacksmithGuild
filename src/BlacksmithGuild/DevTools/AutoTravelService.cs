@@ -42,6 +42,11 @@ namespace BlacksmithGuild.DevTools
 
         public static bool HasActiveRoute => _activeDestination != null;
 
+        // True while an assistive travel is actively driving the party with the campaign clock
+        // running. Heavy diagnostic scans (e.g. faction-power posture) skip while this is set to
+        // avoid touching transient parties mid-simulation.
+        public static bool IsAssistTravelActive => _assistResult != null && _activeDestination != null;
+
         public static Settlement ActiveRouteDestination => _activeDestination;
 
         public static void OnCampaignTick()

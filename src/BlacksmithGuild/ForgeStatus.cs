@@ -832,28 +832,58 @@ namespace BlacksmithGuild
             RuntimeLifecycleWriter.AppendStateMachine(builder, snapshot);
         }
 
+        private const double FactionPostureScanMinIntervalSec = 5.0;
+        private static string _lastFactionPostureJson;
+        private static DateTime _lastFactionPostureScanUtc = DateTime.MinValue;
+
         private static void AppendFactionPowerPosture(StringBuilder builder)
         {
-            if (!RuntimeTrace.RunSafe(
-                    "ForgeStatus",
-                    "FactionPowerPostureScan",
-                    () => FactionPowerPostureScanner.Scan(),
-                    out FactionPowerPostureBlock block))
+            // The posture block is diagnostic. Scanning every ~0.5s status flush across all nearby
+            // parties while the campaign clock runs is what exposed the native crash during travel.
+            // Skip entirely during active assistive travel, and otherwise rate-limit the scan,
+            // reusing the last serialized block in between so the surface still carries data.
+            var skipForTravel = false;
+            try { skipForTravel = AutoTravelService.IsAssistTravelActive; } catch { skipForTravel = false; }
+
+            var due = (DateTime.UtcNow - _lastFactionPostureScanUtc).TotalSeconds >= FactionPostureScanMinIntervalSec;
+
+            if (!skipForTravel && due)
+            {
+                if (RuntimeTrace.RunSafe(
+                        "ForgeStatus",
+                        "FactionPowerPostureScan",
+                        () => FactionPowerPostureScanner.Scan(),
+                        out FactionPowerPostureBlock block)
+                    && block != null)
+                {
+                    _lastFactionPostureScanUtc = DateTime.UtcNow;
+                    _lastFactionPostureJson = BuildFactionPostureJson(block);
+                }
+            }
+
+            if (string.IsNullOrEmpty(_lastFactionPostureJson))
             {
                 return;
             }
 
-            builder.AppendLine("  \"clanPosture\": {");
-            builder.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
-            builder.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
-            builder.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
-            builder.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
-            builder.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
-            builder.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
-            builder.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
-            builder.AppendLine(
+            builder.Append(_lastFactionPostureJson);
+        }
+
+        private static string BuildFactionPostureJson(FactionPowerPostureBlock block)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("  \"clanPosture\": {");
+            sb.AppendLine($"    \"allegianceMode\": \"{Escape(block.AllegianceMode ?? "")}\",");
+            sb.AppendLine($"    \"kingdomName\": {(block.KingdomName == null ? "null" : $"\"{Escape(block.KingdomName)}\"")},");
+            sb.AppendLine($"    \"mapFactionName\": {(block.MapFactionName == null ? "null" : $"\"{Escape(block.MapFactionName)}\"")},");
+            sb.AppendLine($"    \"isAtWar\": {block.IsAtWar.ToString().ToLowerInvariant()},");
+            sb.AppendLine($"    \"playerPartyStrength\": {(block.PlayerPartyStrength.HasValue ? block.PlayerPartyStrength.Value.ToString() : "null")},");
+            sb.AppendLine($"    \"powerVerdict\": \"{Escape(block.PowerVerdict ?? "")}\",");
+            sb.AppendLine($"    \"hostileCountInRadius\": {block.HostileCountInRadius},");
+            sb.AppendLine(
                 $"    \"strengthRatioVsNearestHostile\": {(block.StrengthRatioVsNearestHostile.HasValue ? block.StrengthRatioVsNearestHostile.Value.ToString("0.##") : "null")}");
-            builder.AppendLine("  },");
+            sb.AppendLine("  },");
+            return sb.ToString();
         }
 
         private static string SafeSessionValue(Func<string> getter, string fallback = "")

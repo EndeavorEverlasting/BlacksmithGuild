@@ -16,14 +16,29 @@ namespace BlacksmithGuild.Cohesion
         public static List<CohesionPartySnapshot> Scan(float radius, MobileParty main)
         {
             var results = new List<CohesionPartySnapshot>();
-            if (main == null)
+            if (!IsPartyReadable(main))
             {
                 return results;
             }
 
-            foreach (var party in MobileParty.All)
+            // Snapshot the collection first: MobileParty.All can mutate mid-enumeration while the
+            // campaign clock is running (parties spawn/despawn), which can corrupt the iterator.
+            List<MobileParty> parties;
+            try
             {
-                if (party == null)
+                parties = new List<MobileParty>(MobileParty.All);
+            }
+            catch
+            {
+                return results;
+            }
+
+            foreach (var party in parties)
+            {
+                // Skip transient parties that are unsafe to dereference during active simulation
+                // (mid-spawn / being torn down). This is the crash window exposed once travel
+                // resumes the campaign clock; touching such a party can trigger a native AV.
+                if (!IsPartyReadable(party))
                 {
                     continue;
                 }
@@ -38,6 +53,23 @@ namespace BlacksmithGuild.Cohesion
             }
 
             return results;
+        }
+
+        private static bool IsPartyReadable(MobileParty party)
+        {
+            if (party == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return party.IsActive && party.Party != null;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static CohesionPartySnapshot BuildSnapshot(MobileParty party, MobileParty main, float distanceToPlayer)
