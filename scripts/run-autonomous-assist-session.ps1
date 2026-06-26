@@ -447,6 +447,8 @@ while ((Get-Date) -lt $loopDeadline) {
         atUtc = $decision.atUtc; iteration = $iteration
         stateMachine = $ready.stateMachine; heartbeatFresh = $ready.heartbeatFresh
         confidence = $ready.confidence
+        recursiveBranchFresh = $ready.recursiveBranchFresh
+        nextPlannedBranch = if ($ready.recursiveBranchState) { $ready.recursiveBranchState.nextPlannedBranch } else { $null }
     })
     $actionsLogged++
 

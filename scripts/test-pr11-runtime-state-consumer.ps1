@@ -81,6 +81,94 @@ Test-TravelGate -Surface 'blacksmithing' -SafeTravel $false -BlockReason 'surfac
 Test-TravelGate -Surface 'trading' -SafeTravel $false -BlockReason 'surface_blocked:trading' -ExpectAllowed $false
 Test-TravelGate -Surface 'conversation' -SafeTravel $false -BlockReason 'mission_active:conversation' -ExpectAllowed $false
 
+function New-RecursiveBranchStatusFixture {
+    param(
+        [hashtable]$RecursiveBranchState,
+        [hashtable]$StateMachine = $null
+    )
+    $now = (Get-Date).ToUniversalTime().ToString('o')
+    $obj = [ordered]@{ updatedAt = $now; session = [ordered]@{} }
+    if ($StateMachine) {
+        if (-not $StateMachine.Contains('updatedAtUtc')) { $StateMachine['updatedAtUtc'] = $now }
+        $obj['stateMachine'] = $StateMachine
+    }
+    if (-not $RecursiveBranchState.Contains('updatedAtUtc')) { $RecursiveBranchState['updatedAtUtc'] = $now }
+    $obj['recursiveBranchState'] = $RecursiveBranchState
+    return ($obj | ConvertTo-Json -Depth 10)
+}
+
+# recursiveBranchState: fresh parse with all eight branch gates
+$rbsFreshPath = Join-Path $tmpRoot 'status-rbs-fresh.json'
+$branchGates = [ordered]@{
+    travel = [ordered]@{ state = 'available'; reason = 'surface_allows_travel' }
+    trade = [ordered]@{ state = 'blocked'; reason = 'trade_surface_not_open' }
+    smith_refine = [ordered]@{ state = 'blocked'; reason = 'smithing_surface_not_open' }
+    rest_wait = [ordered]@{ state = 'available'; reason = 'safe_wait_surface' }
+    tavern_scan = [ordered]@{ state = 'blocked'; reason = 'not_at_settlement_surface' }
+    companion_roster = [ordered]@{ state = 'unknown'; reason = 'companion_roster_not_scanned' }
+    avoid_threat = [ordered]@{ state = 'unknown'; reason = 'threat_state_unknown' }
+    observe_only = [ordered]@{ state = 'available'; reason = 'always_safe_fallback' }
+}
+New-RecursiveBranchStatusFixture -RecursiveBranchState @{
+    schemaVersion = 1
+    currentTown = 'Ortysia'
+    currentSettlementId = 'town_ES3'
+    gameplaySurface = 'campaign_map'
+    terminal = $false
+    nextActionRequired = $true
+    nextPlannedBranch = 'observe_only'
+    nextActionReason = 'branch_truth_requires_fresh_observation'
+    branches = $branchGates
+} -StateMachine @{
+    gameplaySurface = 'campaign_map'
+    gameLifecycle = 'campaign_loaded'
+    safeToExecuteTravel = $true
+    canAcceptAssistiveCommand = $true
+} | Set-Content -LiteralPath $rbsFreshPath -Encoding UTF8
+
+$rbsParsed = Read-Pr11RecursiveBranchStateFromStatus -StatusPath $rbsFreshPath -FreshSec 30
+if (-not $rbsParsed.hasRecursiveBranchState) { throw 'fresh recursiveBranchState must parse' }
+if (-not $rbsParsed.fresh) { throw 'fresh recursiveBranchState must be fresh' }
+if ($rbsParsed.schemaVersion -ne 1) { throw 'recursiveBranchState schemaVersion must parse' }
+if ($rbsParsed.nextPlannedBranch -ne 'observe_only') { throw 'nextPlannedBranch must parse' }
+if ($rbsParsed.nextActionReason -ne 'branch_truth_requires_fresh_observation') { throw 'nextActionReason must parse' }
+foreach ($gateName in @('travel', 'trade', 'smith_refine', 'rest_wait', 'tavern_scan', 'companion_roster', 'avoid_threat', 'observe_only')) {
+    if (-not $rbsParsed.branches.ContainsKey($gateName)) { throw "missing branch gate $gateName" }
+}
+
+$rbsReady = Get-Pr11AssistiveReadiness -StatusPath $rbsFreshPath -BannerlordRoot $tmpRoot
+if (-not $rbsReady.recursiveBranchFresh) { throw 'readiness must surface recursiveBranchFresh=true when fresh' }
+if (-not $rbsReady.recursiveBranchState.hasRecursiveBranchState) { throw 'readiness must surface recursiveBranchState' }
+
+# stale recursiveBranchState: hasRecursiveBranchState true, fresh false
+$rbsStalePath = Join-Path $tmpRoot 'status-rbs-stale.json'
+$staleRbsUtc = (Get-Date).ToUniversalTime().AddMinutes(-10).ToString('o')
+New-RecursiveBranchStatusFixture -RecursiveBranchState @{
+    schemaVersion = 1
+    updatedAtUtc = $staleRbsUtc
+    nextActionRequired = $true
+    nextPlannedBranch = 'travel'
+    nextActionReason = 'stale_branch_truth'
+    branches = $branchGates
+} | Set-Content -LiteralPath $rbsStalePath -Encoding UTF8
+$rbsStale = Read-Pr11RecursiveBranchStateFromStatus -StatusPath $rbsStalePath -FreshSec 30
+if (-not $rbsStale.hasRecursiveBranchState) { throw 'stale recursiveBranchState must still parse' }
+if ($rbsStale.fresh) { throw 'stale recursiveBranchState must not be fresh' }
+$staleReady = Get-Pr11AssistiveReadiness -StatusPath $rbsStalePath -BannerlordRoot $tmpRoot
+if ($staleReady.recursiveBranchFresh) { throw 'readiness must surface recursiveBranchFresh=false when stale' }
+
+# missing recursiveBranchState block defaults
+$rbsMissingPath = Join-Path $tmpRoot 'status-rbs-missing.json'
+New-StatusFixture -StateMachine @{
+    gameplaySurface = 'campaign_map'
+    gameLifecycle = 'campaign_loaded'
+    safeToExecuteTravel = $true
+    canAcceptAssistiveCommand = $true
+} | Set-Content -LiteralPath $rbsMissingPath -Encoding UTF8
+$rbsMissing = Read-Pr11RecursiveBranchStateFromStatus -StatusPath $rbsMissingPath -FreshSec 30
+if ($rbsMissing.hasRecursiveBranchState) { throw 'missing recursiveBranchState must default hasRecursiveBranchState=false' }
+if ($rbsMissing.fresh) { throw 'missing recursiveBranchState must default fresh=false' }
+
 # Legacy fallback without stateMachine
 $legacyPath = Join-Path $tmpRoot 'status-legacy.json'
 New-StatusFixture -Session @{

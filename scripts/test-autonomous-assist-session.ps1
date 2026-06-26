@@ -150,8 +150,35 @@ $tradeRbs = New-RecursiveBranchFixture -NextPlannedBranch 'trade' `
 $readyTrade = Build-Readiness -Surface 'trading' -RecursiveBranchState $tradeRbs
 $decisionTrade = Get-AutonomousAssistIterationDecision -Readiness $readyTrade -AssistProfile 'training-map'
 if ($decisionTrade.decision -eq 'allowed') { throw 'trade branch must not execute without evidence' }
-if ($decisionTrade.decision -ne 'wait') { throw "trade branch must wait got $($decisionTrade.decision)" }
+if ($decisionTrade.decision -ne 'observe') { throw "trade branch must observe got $($decisionTrade.decision)" }
 if ($decisionTrade.plannedBranch -ne 'trade') { throw 'trade branch must preserve planned branch name' }
+
+foreach ($branchCase in @(
+        @{ branch = 'smith_refine'; expect = 'observe' },
+        @{ branch = 'tavern_scan'; expect = 'observe' },
+        @{ branch = 'companion_roster'; expect = 'observe' }
+    )) {
+    $branchRbs = New-RecursiveBranchFixture -NextPlannedBranch $branchCase.branch `
+        -NextActionReason "$($branchCase.branch)_evidence_missing"
+    $readyBranch = Build-Readiness -Surface 'campaign_map' -RecursiveBranchState $branchRbs
+    $decisionBranch = Get-AutonomousAssistIterationDecision -Readiness $readyBranch -AssistProfile 'training-map'
+    if ($decisionBranch.decision -eq 'allowed') { throw "$($branchCase.branch) must not execute without evidence" }
+    if ($decisionBranch.decision -ne $branchCase.expect) {
+        throw "$($branchCase.branch) must $($branchCase.expect) got $($decisionBranch.decision)"
+    }
+    if ($decisionBranch.recursiveBranchConsumed -ne $true) { throw "$($branchCase.branch) must consume fresh recursiveBranchState" }
+}
+
+$threatRbs = New-RecursiveBranchFixture -NextPlannedBranch 'avoid_threat' `
+    -NextActionReason 'threat_gate_blocked' `
+    -BranchOverrides @{ avoid_threat = [ordered]@{ state = 'blocked'; reason = 'threat_gate_blocked' } }
+$readyThreat = Build-Readiness -Surface 'campaign_map' -RecursiveBranchState $threatRbs
+$decisionThreat = Get-AutonomousAssistIterationDecision -Readiness $readyThreat -AssistProfile 'training-map'
+if ($decisionThreat.decision -eq 'allowed') { throw 'avoid_threat must not execute without evidence' }
+if ($decisionThreat.decision -notin @('block', 'observe')) {
+    throw "avoid_threat must block or observe got $($decisionThreat.decision)"
+}
+if ($decisionThreat.plannedBranch -ne 'avoid_threat') { throw 'avoid_threat must preserve planned branch name' }
 
 # stale recursiveBranchState falls back to surface-derived decision
 $staleRbs = New-RecursiveBranchFixture -NextPlannedBranch 'observe_only'
@@ -220,7 +247,7 @@ Write-TbgAssistToggle -BannerlordRoot $tmpRoot -Enabled $false -RequestedBy 'use
 if (-not (Test-TbgAssistToggleOff -BannerlordRoot $tmpRoot)) { throw 'toggle off must be detected' }
 
 # CancelRun cancels entire runner
-$cancelPath = Get-TbgCancelRunJsonPath -BannerlordRoot $tmpRoot
+$cancelPath = Join-Path $tmpRoot 'BlacksmithGuild_CancelRun.json'
 @{ reason = 'user_cancel'; requestedAtUtc = (Get-Date).ToUniversalTime().ToString('o') } | ConvertTo-Json |
     Set-Content -LiteralPath $cancelPath -Encoding UTF8
 $script:TbgCancelRequested = $false

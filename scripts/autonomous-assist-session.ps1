@@ -451,9 +451,54 @@ function Get-AutonomousAssistIterationDecision {
                     $base.recursiveBranchConsumed = $true
                     return [pscustomobject]$base
                 }
+                'trade' {
+                    $base.actionConsidered = 'trade'
+                    $base.decision = 'observe'
+                    $base.reason = if ($branchReason) { $branchReason } else { 'trade_requires_profitability_evidence' }
+                    $base.plannedBranch = 'trade'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                'smith_refine' {
+                    $base.actionConsidered = 'smithing'
+                    $base.decision = 'observe'
+                    $base.reason = if ($branchReason) { $branchReason } else { 'smith_refine_requires_stamina_material_evidence' }
+                    $base.plannedBranch = 'smith_refine'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                'tavern_scan' {
+                    $base.actionConsidered = 'tavern_scan'
+                    $base.decision = 'observe'
+                    $base.reason = if ($branchReason) { $branchReason } else { 'tavern_scan_command_not_available' }
+                    $base.plannedBranch = 'tavern_scan'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                'companion_roster' {
+                    $base.actionConsidered = 'companion_roster'
+                    $base.decision = 'observe'
+                    $base.reason = if ($branchReason) { $branchReason } else { 'companion_roster_requires_capacity_evidence' }
+                    $base.plannedBranch = 'companion_roster'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                'avoid_threat' {
+                    $base.actionConsidered = 'avoid_threat'
+                    if ($gate -and $gate.state -eq 'blocked') {
+                        $base.decision = 'block'
+                        $base.reason = if ($branchReason) { $branchReason } elseif ($gate.reason) { $gate.reason } else { 'avoid_threat_gate_blocked' }
+                    } else {
+                        $base.decision = 'observe'
+                        $base.reason = if ($branchReason) { $branchReason } else { 'avoid_threat_observe_without_fake_scan' }
+                    }
+                    $base.plannedBranch = 'avoid_threat'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
                 default {
                     $base.actionConsidered = $planned
-                    $base.decision = 'wait'
+                    $base.decision = 'observe'
                     $base.reason = if ($gate -and $gate.reason) { $gate.reason } else { "branch_not_executable:$planned" }
                     $base.plannedBranch = $planned
                     $base.recursiveBranchConsumed = $true

@@ -304,10 +304,10 @@ function Get-Pr11AssistiveReadiness {
     $statusFresh = $false
     if ($stateMachine.hasStateMachine -and $stateMachine.updatedAtUtc) {
         $statusFresh = Test-Pr11UtcFresh -Utc $stateMachine.updatedAtUtc -MaxAgeSec $StatusFreshSec
+    } elseif (-not $stateMachine.hasStateMachine -and $legacy.canPollFileInbox -and $legacy.inGameAssistReady) {
+        $statusFresh = $true
     } elseif ($legacy.updatedAtUtc) {
         $statusFresh = Test-Pr11UtcFresh -Utc $legacy.updatedAtUtc -MaxAgeSec $StatusFreshSec
-    } elseif ($legacy.canPollFileInbox -and $legacy.inGameAssistReady) {
-        $statusFresh = $true
     }
 
     $heartbeatFresh = Test-Pr11RuntimeHeartbeatFresh -RuntimeLifecycle $runtime -MaxAgeSec $HeartbeatFreshSec

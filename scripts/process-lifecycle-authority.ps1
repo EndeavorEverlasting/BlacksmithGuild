@@ -60,8 +60,19 @@ function Clear-TbgStaleCancelRun {
             $cancel = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
             $reason = if ($cancel.reason) { [string]$cancel.reason } else { $null }
             if ($cancel.requestedAtUtc) {
-                $requestedAt = [datetime]::Parse([string]$cancel.requestedAtUtc, $null, `
-                    [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
+                if (Get-Command ConvertTo-Pr11Utc -ErrorAction SilentlyContinue) {
+                    $requestedAt = ConvertTo-Pr11Utc -Value $cancel.requestedAtUtc
+                } else {
+                    $parsed = [datetime]::MinValue
+                    if ([datetime]::TryParse([string]$cancel.requestedAtUtc, [Globalization.CultureInfo]::InvariantCulture,
+                            [Globalization.DateTimeStyles]::RoundtripKind, [ref]$parsed)) {
+                        switch ($parsed.Kind) {
+                            ([System.DateTimeKind]::Utc) { $requestedAt = $parsed }
+                            ([System.DateTimeKind]::Local) { $requestedAt = $parsed.ToUniversalTime() }
+                            default { $requestedAt = [datetime]::SpecifyKind($parsed, [System.DateTimeKind]::Utc) }
+                        }
+                    }
+                }
             }
         } catch { }
 
