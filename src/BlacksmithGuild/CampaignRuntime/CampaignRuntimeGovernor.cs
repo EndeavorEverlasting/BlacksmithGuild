@@ -1,6 +1,7 @@
 using System;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Food;
 
 namespace BlacksmithGuild.CampaignRuntime
