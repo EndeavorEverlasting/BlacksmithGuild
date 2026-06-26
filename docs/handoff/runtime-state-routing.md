@@ -2,6 +2,18 @@
 
 This document defines the shared state vocabulary agents use to route launcher, process, runtime, gameplay surface, and assist-loop failures. Read it with [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md).
 
+Window selection authority: [`../control/logs/open/window-delta-doctrine.md`](../control/logs/open/window-delta-doctrine.md) and the Ortysia PID/window rules in [`ortysia-live-cert-landmark.md`](ortysia-live-cert-landmark.md). Agent C is the runner consumer: it consumes runtime outputs from Agent B and must not invent gameplay truth when `stateMachine` or `RuntimeLifecycle` are absent or stale.
+
+## Authority split
+
+| Surface | Owner | Authority |
+|---|---|---|
+| `stateMachine` | Agent B | Runtime gameplay state truth produced by the mod. |
+| `RuntimeLifecycle` | Agent B | Runtime attach, lifecycle, and readiness truth produced by the mod. |
+| Runner lifecycle | Agent C | External launch, process lifecycle, evidence capture, and runtime-state consumption. |
+| Certification judgment | Agent A | PASS / FAIL decision from fresh runner-captured evidence. |
+| Routing board | Agent D | Documentation and branch routing; not gameplay certification. |
+
 F7 remains useful as legacy infrastructure, but it is not the product gate. Current authority flows through:
 
 ```text

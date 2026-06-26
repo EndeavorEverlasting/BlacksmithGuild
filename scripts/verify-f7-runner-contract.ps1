@@ -209,6 +209,20 @@ if (Test-Path -LiteralPath $forgeStatusPath) {
     Add-Failure 'Missing forge-status.ps1'
 }
 
+
+$coordinationContractTest = Join-Path $PSScriptRoot 'test-agent-coordination-contract.ps1'
+if (Test-Path -LiteralPath $coordinationContractTest) {
+    Write-Host 'Running test-agent-coordination-contract.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $coordinationContractTest
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure "test-agent-coordination-contract.ps1 exited $LASTEXITCODE"
+    } else {
+        Write-Host 'PASS agent coordination contract' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-agent-coordination-contract.ps1 coordination doctrine regression'
+}
+
 $grepGuard = Join-Path $PSScriptRoot 'verify-log-grep-patterns.ps1'
 if (Test-Path -LiteralPath $grepGuard) {
     Write-Host 'Running verify-log-grep-patterns.ps1 ...' -ForegroundColor Cyan
