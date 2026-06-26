@@ -1,4 +1,4 @@
-# Offline regression: process detection classification for session 20260622-154012.
+﻿# Offline regression: process detection classification for session 20260622-154012.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

@@ -1,4 +1,4 @@
-$script:AutomationCheckpointSchemaVersion = 1
+﻿$script:AutomationCheckpointSchemaVersion = 1
 $script:AutomationCheckpointEventTypes = @(
     'checkpoint_reached',
     'checkpoint_blocked',

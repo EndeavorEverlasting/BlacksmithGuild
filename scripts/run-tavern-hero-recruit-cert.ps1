@@ -1,4 +1,4 @@
-# Tier 2 visible tavern recruitment cert — disposable save recommended.
+﻿# Tier 2 visible tavern recruitment cert — disposable save recommended.
 param(
     [ValidateSet('AutoLoop', 'Manual')]
     [string]$Mode = 'Manual',

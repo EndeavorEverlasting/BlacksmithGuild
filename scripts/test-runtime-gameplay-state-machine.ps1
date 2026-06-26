@@ -1,4 +1,4 @@
-# Offline regression: runtime gameplay state machine contract mirrors C# classifier rules.
+﻿# Offline regression: runtime gameplay state machine contract mirrors C# classifier rules.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

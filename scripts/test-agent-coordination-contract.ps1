@@ -1,4 +1,4 @@
-# Offline structure check for root coordination, runtime routing, and Window Delta Doctrine.
+﻿# Offline structure check for root coordination, runtime routing, and Window Delta Doctrine.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = New-Object System.Collections.Generic.List[string]

@@ -2,6 +2,8 @@
 
 **Problem:** Player-facing mod strings use Unicode **em dashes** (`—`, U+2014). ASCII hyphens (`-`, U+002D) and en dashes (`–`, U+2013) look similar in editors and agent chat but **do not match** in log grep, golden-path checks, or evidence tails. This has repeatedly broken F7 gate and golden-path automation.
 
+**Encoding prerequisite:** Em dashes in `.ps1` files also require **UTF-8 BOM** or PS 5.1 misreads the file. Read [`powershell-utf8-bom-doctrine.md`](powershell-utf8-bom-doctrine.md) before pasting Unicode into scripts.
+
 ---
 
 ## Three dash characters (do not confuse them)

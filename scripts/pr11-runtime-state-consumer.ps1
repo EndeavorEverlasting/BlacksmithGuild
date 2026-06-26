@@ -1,4 +1,4 @@
-# PR #14 consumer for PR #13 runtime outputs: Status.stateMachine + RuntimeLifecycle.json
+﻿# PR #14 consumer for PR #13 runtime outputs: Status.stateMachine + RuntimeLifecycle.json
 # Dot-source after bannerlord-paths.ps1 and f7-external-state-classifier.ps1
 
 $script:Pr11TravelAllowedSurfaces = @('settlement_menu', 'campaign_map')

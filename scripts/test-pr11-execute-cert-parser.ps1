@@ -1,4 +1,4 @@
-# Offline regression: PR #11 execute cert parser accepts execute proof fields.
+﻿# Offline regression: PR #11 execute cert parser accepts execute proof fields.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

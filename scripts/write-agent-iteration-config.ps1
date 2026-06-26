@@ -1,4 +1,4 @@
-# Writes BlacksmithGuild_AgentIterationConfig.json for agent/manual iteration control.
+﻿# Writes BlacksmithGuild_AgentIterationConfig.json for agent/manual iteration control.
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('AutoLoop', 'Manual')]

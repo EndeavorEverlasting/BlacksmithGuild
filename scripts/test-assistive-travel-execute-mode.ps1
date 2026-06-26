@@ -1,4 +1,4 @@
-# Offline regression: assistive travel execute inbox contract, observation, and certSummary.
+﻿# Offline regression: assistive travel execute inbox contract, observation, and certSummary.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

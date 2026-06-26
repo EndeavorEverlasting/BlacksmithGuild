@@ -1,4 +1,4 @@
-# PR #11 unattended launch/attach classifier — PID/window snapshots + confidence scoring.
+﻿# PR #11 unattended launch/attach classifier — PID/window snapshots + confidence scoring.
 # Dot-source after bannerlord-paths.ps1. No game launch on import.
 
 $script:Pr11ClickConfidenceThreshold = 80

@@ -1,4 +1,4 @@
-# F7 Continue gate — no-click launch, passive stability poll, 60s stability checkpoint.
+﻿# F7 Continue gate — no-click launch, passive stability poll, 60s stability checkpoint.
 param(
     [string]$HookMask,
     [ValidateSet('continue', 'play', 'any')]

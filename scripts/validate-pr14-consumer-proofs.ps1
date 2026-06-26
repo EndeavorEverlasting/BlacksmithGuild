@@ -1,4 +1,4 @@
-# PR #14 consumer proof validation — offline fixtures + optional live session probe.
+﻿# PR #14 consumer proof validation — offline fixtures + optional live session probe.
 param(
     [switch]$Live,
     [string]$EvidenceDir

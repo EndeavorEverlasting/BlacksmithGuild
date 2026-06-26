@@ -1,4 +1,4 @@
-# Offline regression: launcher selection cap + LAUNCH_TIMING evidence (session 20260623-205925 class).
+﻿# Offline regression: launcher selection cap + LAUNCH_TIMING evidence (session 20260623-205925 class).
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

@@ -1,4 +1,4 @@
-# Offline regression: UTC freshness parsing must survive ConvertFrom-Json's datetime coercion.
+﻿# Offline regression: UTC freshness parsing must survive ConvertFrom-Json's datetime coercion.
 #
 # Locks in the fix for the live attach stall where stateMachine.updatedAtUtc ("...Z") was coerced
 # by ConvertFrom-Json into a [datetime] and re-stringified WITHOUT the Z ("06/26/2026 03:40:58"),

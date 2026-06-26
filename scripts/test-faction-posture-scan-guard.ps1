@@ -1,4 +1,4 @@
-# Offline regression: faction-power posture scan must be crash-hardened.
+﻿# Offline regression: faction-power posture scan must be crash-hardened.
 #
 # Locks in the fix for the travel-time native crash where the every-~0.5s status flush ran
 # FactionPowerPostureScan across all nearby parties while the campaign clock was running and

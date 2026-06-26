@@ -1,4 +1,4 @@
-# External state classifier — cert + assistive attach foundation.
+﻿# External state classifier — cert + assistive attach foundation.
 # Dot-sourced from run-f7-gate-continue.ps1, launcher-auto-nav.ps1, offline regressions.
 
 $script:F7ExternalStateTimeline = $null

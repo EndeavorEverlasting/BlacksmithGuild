@@ -1,4 +1,4 @@
-# Offline regression for fix_false_game_spawn_feed3f96, exercising the REAL runtime logic that
+﻿# Offline regression for fix_false_game_spawn_feed3f96, exercising the REAL runtime logic that
 # the autonomous-assist unit tests cover only via mock detection objects:
 #   Fix 1 - deploy-written Status.json / CrashContext.json must NOT signal a running game via
 #           Get-BannerlordProcessDetection, and Phase1.log freshness is gated launch-relative.

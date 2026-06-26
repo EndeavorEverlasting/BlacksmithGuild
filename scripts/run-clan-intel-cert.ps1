@@ -1,4 +1,4 @@
-# Run read-only clan intel cert (009A T1).
+﻿# Run read-only clan intel cert (009A T1).
 param(
     [switch]$WhatIf
 )

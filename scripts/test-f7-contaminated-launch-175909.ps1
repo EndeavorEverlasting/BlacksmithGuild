@@ -1,4 +1,4 @@
-# Offline regression: pre-intent game spawn before automation Continue (session 20260622-175909).
+﻿# Offline regression: pre-intent game spawn before automation Continue (session 20260622-175909).
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

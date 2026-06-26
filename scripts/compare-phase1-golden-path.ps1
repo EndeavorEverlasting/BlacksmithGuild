@@ -1,4 +1,4 @@
-# Compare Phase1 tail against golden Continue boot checklist.
+﻿# Compare Phase1 tail against golden Continue boot checklist.
 # Em dash in tbgReady pattern: docs/conventions/em-dashes-and-log-grep.md
 param(
     [Parameter(Mandatory = $true)]

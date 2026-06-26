@@ -1,4 +1,4 @@
-# Autonomous F7 develop-test-analyze loop — build, gate, analyze manifest, rotate hook masks.
+﻿# Autonomous F7 develop-test-analyze loop — build, gate, analyze manifest, rotate hook masks.
 param(
     [int]$MaxRounds = 6,
     [string[]]$HookMasks = @('0x0F', '0x01', '0x00', '0x1DF', '0x1BF'),

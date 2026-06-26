@@ -1,4 +1,4 @@
-# Autonomous F7 hook-mask bisect — runs masks sequentially, writes summary JSON.
+﻿# Autonomous F7 hook-mask bisect — runs masks sequentially, writes summary JSON.
 param(
     [string[]]$Masks = @('0x0F', '0x01', '0x00', '0x1DF', '0x1BF')
 )

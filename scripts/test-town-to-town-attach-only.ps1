@@ -1,4 +1,4 @@
-# Offline regression: attach-only town-to-town cert never invokes launcher/F7.
+﻿# Offline regression: attach-only town-to-town cert never invokes launcher/F7.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

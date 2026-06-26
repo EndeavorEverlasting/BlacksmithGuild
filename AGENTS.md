@@ -37,6 +37,12 @@ One command should:
 10. stop cleanly
 11. write summary evidence
 
+## PowerShell encoding (non-negotiable)
+
+- **Every** tracked `*.ps1` / `*.psm1` / `*.psd1` must have a **UTF-8 BOM** (`EF BB BF`). PS 5.1 reads no-BOM files as ANSI; pwsh 7 reads them as UTF-8. Em dashes and other non-ASCII in no-BOM scripts are the usual visible break.
+- After editing scripts: `powershell -File scripts\tools\Add-Utf8Bom.ps1 -Fix`, then `powershell -File scripts\test-powershell-utf8-bom-contract.ps1`.
+- Full doctrine: `docs/conventions/powershell-utf8-bom-doctrine.md`. Do not assume pwsh-only green is repo green.
+
 ## Coordination doctrine
 
 - Read `docs/handoff/blacksmithguild-agent-coordination.md` before changing owned files.

@@ -1,4 +1,4 @@
-# Offline regression: F7 cert vs assistive attach mode split.
+﻿# Offline regression: F7 cert vs assistive attach mode split.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

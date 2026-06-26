@@ -1,4 +1,4 @@
-# Offline regression: PR #14 consumer for PR #13 stateMachine + RuntimeLifecycle outputs.
+﻿# Offline regression: PR #14 consumer for PR #13 stateMachine + RuntimeLifecycle outputs.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

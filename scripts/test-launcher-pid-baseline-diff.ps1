@@ -1,4 +1,4 @@
-# Offline regression: launcher UIA must capture a pre-launch PID baseline and prefer
+﻿# Offline regression: launcher UIA must capture a pre-launch PID baseline and prefer
 # before/after process-set diff over coordinate/title window fallback for game-host detection.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot

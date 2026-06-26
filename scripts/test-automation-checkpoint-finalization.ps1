@@ -1,4 +1,4 @@
-# Offline regression: shared checkpoint/finalization contract.
+﻿# Offline regression: shared checkpoint/finalization contract.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

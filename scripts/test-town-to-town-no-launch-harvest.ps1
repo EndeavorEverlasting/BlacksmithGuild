@@ -1,4 +1,4 @@
-# Offline regression: attach-only assist harvest does not require Launch.tail.txt.
+﻿# Offline regression: attach-only assist harvest does not require Launch.tail.txt.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

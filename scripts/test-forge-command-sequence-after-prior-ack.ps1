@@ -1,4 +1,4 @@
-# Offline regression: Send-ForgeCommand must pick sequence=3 after Phase1 shows consumed sequence=2,
+﻿# Offline regression: Send-ForgeCommand must pick sequence=3 after Phase1 shows consumed sequence=2,
 # even when a noisy trace-only tail would break a last-800-lines scan.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot

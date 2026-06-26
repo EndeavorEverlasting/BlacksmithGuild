@@ -1,4 +1,4 @@
-# Offline regression: assistive launch setup allows guarded launcher clicks; cert contamination unchanged.
+﻿# Offline regression: assistive launch setup allows guarded launcher clicks; cert contamination unchanged.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

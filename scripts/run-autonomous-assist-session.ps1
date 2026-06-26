@@ -1,4 +1,4 @@
-# Autonomous assist session — launch, attach, auto-start assist loop, evidence harvest.
+﻿# Autonomous assist session — launch, attach, auto-start assist loop, evidence harvest.
 param(
     [ValidateSet('play', 'continue')]
     [string]$LaunchIntent = 'continue',

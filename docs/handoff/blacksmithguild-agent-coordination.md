@@ -16,6 +16,7 @@ Related:
 - Launch / load playbook: [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md)
 - Sprint control pointer: [`../control/README.md`](../control/README.md)
 - Em-dash grep guard: [`../conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md)
+- PowerShell UTF-8 BOM (PS 5.1 vs pwsh): [`../conventions/powershell-utf8-bom-doctrine.md`](../conventions/powershell-utf8-bom-doctrine.md)
 - Launcher foreground doctrine: [`../conventions/launcher-foreground-doctrine.md`](../conventions/launcher-foreground-doctrine.md)
 
 ---

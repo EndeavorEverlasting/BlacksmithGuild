@@ -1,4 +1,4 @@
-# Offline regression: settlement_menu observation + 15s semantic mismatch fail (session 20260623-205925 class).
+﻿# Offline regression: settlement_menu observation + 15s semantic mismatch fail (session 20260623-205925 class).
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

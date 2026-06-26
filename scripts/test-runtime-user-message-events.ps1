@@ -1,4 +1,4 @@
-# Offline regression: C# runtime checkpoint/user-message surface.
+﻿# Offline regression: C# runtime checkpoint/user-message surface.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

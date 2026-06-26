@@ -1,4 +1,4 @@
-# Agent A: read-only fail-closed contract check for F7 gate runners (no game launch).
+﻿# Agent A: read-only fail-closed contract check for F7 gate runners (no game launch).
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = New-Object System.Collections.Generic.List[string]
@@ -441,6 +441,19 @@ if (Test-Path -LiteralPath $townTradeSkeleton) {
     }
 } else {
     Add-Failure 'Missing run-town-to-town-trade-assist-cert.ps1 assistive skeleton'
+}
+
+$utf8BomContract = Join-Path $PSScriptRoot 'test-powershell-utf8-bom-contract.ps1'
+if (Test-Path -LiteralPath $utf8BomContract) {
+    Write-Host 'Running test-powershell-utf8-bom-contract.ps1 ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $utf8BomContract
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-powershell-utf8-bom-contract.ps1 failed (UTF-8 BOM required for PS 5.1 parity)'
+    } else {
+        Write-Host 'PASS PowerShell UTF-8 BOM contract' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-powershell-utf8-bom-contract.ps1'
 }
 
 $recursiveOutputContract = Join-Path $PSScriptRoot 'test-recursive-campaign-output-contract.ps1'

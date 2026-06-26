@@ -1,4 +1,4 @@
-# Assistive attach cert — town-to-town trade probe (attach-first; no F7 / no launcher by default).
+﻿# Assistive attach cert — town-to-town trade probe (attach-first; no F7 / no launcher by default).
 param(
     [switch]$AttachOnly,
     [switch]$NoLaunch,

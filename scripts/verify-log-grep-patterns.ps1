@@ -1,4 +1,4 @@
-# Verifies automation scripts do not use ASCII-hyphen lookalikes for TBG ready-line greps.
+﻿# Verifies automation scripts do not use ASCII-hyphen lookalikes for TBG ready-line greps.
 # Canonical ready text uses em dash (U+2014): "Blacksmith Guild — Ready:".
 # Scans scripts/** and repo-root *.ps1|*.cmd|*.bat (not docs/).
 param([switch]$Quiet)

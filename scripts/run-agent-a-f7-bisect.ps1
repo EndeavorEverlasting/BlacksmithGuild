@@ -1,4 +1,4 @@
-# Agent A: sequential F7 hook mask bisect (0x01, 0x03, 0x07, 0x0F).
+﻿# Agent A: sequential F7 hook mask bisect (0x01, 0x03, 0x07, 0x0F).
 # End-to-end only — invokes real gate runner via direct PowerShell (no -SkipLaunch).
 param(
     [string[]]$Masks = @('0x01', '0x03', '0x07', '0x0F'),

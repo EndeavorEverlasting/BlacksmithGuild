@@ -1,4 +1,4 @@
-# Central Bannerlord + BlacksmithGuild log/status path helpers.
+﻿# Central Bannerlord + BlacksmithGuild log/status path helpers.
 # C# writes Phase1/Forge/Status under BasePath.Name (usually Documents);
 # PS automation also reads Steam BannerlordRoot — check both.
 

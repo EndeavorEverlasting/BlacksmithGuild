@@ -1,4 +1,4 @@
-# PR #11 unattended launch -> attach -> execute cert runner (Agent C harness).
+﻿# PR #11 unattended launch -> attach -> execute cert runner (Agent C harness).
 param(
     [string]$TargetSettlement = 'Ortysia',
     [ValidateSet('play', 'continue')]

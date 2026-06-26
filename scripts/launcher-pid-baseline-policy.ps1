@@ -1,4 +1,4 @@
-# Testable policy helpers for S1->S2 PID baseline diff launcher selection.
+﻿# Testable policy helpers for S1->S2 PID baseline diff launcher selection.
 # Mirrors the intent of UIAHelper.CaptureBaselineProcessIds / GetNewProcessIdsSinceBaseline.
 
 function Get-TbgNewProcessIdsSinceBaseline {

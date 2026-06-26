@@ -1,4 +1,4 @@
-# 006C-3 weapon smelt cert — probe + optional mutation with delta proof.
+﻿# 006C-3 weapon smelt cert — probe + optional mutation with delta proof.
 param(
     [switch]$WhatIf,
     [switch]$ProbeOnly

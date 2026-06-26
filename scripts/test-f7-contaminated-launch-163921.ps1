@@ -1,4 +1,4 @@
-# Offline regression: contaminated Continue cert launch path (session 20260622-163921).
+﻿# Offline regression: contaminated Continue cert launch path (session 20260622-163921).
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

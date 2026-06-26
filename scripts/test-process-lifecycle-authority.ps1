@@ -1,4 +1,4 @@
-# Offline regression: process lifecycle authority — session modes, termination classification, provenance.
+﻿# Offline regression: process lifecycle authority — session modes, termination classification, provenance.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

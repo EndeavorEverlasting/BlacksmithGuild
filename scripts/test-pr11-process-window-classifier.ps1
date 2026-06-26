@@ -1,4 +1,4 @@
-# Offline regression: PR #11 PID/window classifier without launching the game.
+﻿# Offline regression: PR #11 PID/window classifier without launching the game.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

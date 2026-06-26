@@ -1,4 +1,4 @@
-# Recursive campaign output contract verifier.
+﻿# Recursive campaign output contract verifier.
 #
 # Two modes:
 #   -Fixture                     Build temp fake outputs and validate the contract offline (no game).

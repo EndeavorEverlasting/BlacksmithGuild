@@ -1,4 +1,4 @@
-# Live assistive cert marathon — checkpointed disposable + continue sessions.
+﻿# Live assistive cert marathon — checkpointed disposable + continue sessions.
 param(
     [ValidateSet('disposable', 'continue', 'all')]
     [string]$Session = 'disposable',

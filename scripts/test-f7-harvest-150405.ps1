@@ -1,4 +1,4 @@
-# Offline regression: re-harvest session 20260622-150405 without game launch.
+﻿# Offline regression: re-harvest session 20260622-150405 without game launch.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

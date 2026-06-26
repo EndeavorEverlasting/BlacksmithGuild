@@ -1,4 +1,4 @@
-# F7 gate evidence harvest helpers — dot-sourced from run-f7-gate-continue.ps1 only.
+﻿# F7 gate evidence harvest helpers — dot-sourced from run-f7-gate-continue.ps1 only.
 
 function New-F7JsonSafeValue {
     param($Value)

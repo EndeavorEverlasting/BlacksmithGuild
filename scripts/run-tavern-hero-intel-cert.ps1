@@ -1,4 +1,4 @@
-# Tier 1 tavern hero intel cert — optional autoloop launch + navigation + AnalyzeTavernHeroes.
+﻿# Tier 1 tavern hero intel cert — optional autoloop launch + navigation + AnalyzeTavernHeroes.
 param(
     [ValidateSet('AutoLoop', 'Manual')]
     [string]$Mode = 'Manual',

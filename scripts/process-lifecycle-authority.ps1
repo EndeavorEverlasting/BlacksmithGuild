@@ -1,4 +1,4 @@
-# Process lifecycle authority — session modes, intentional termination, provenance, classification.
+﻿# Process lifecycle authority — session modes, intentional termination, provenance, classification.
 # Dot-source after bannerlord-paths.ps1.
 
 $script:TbgProcessLifecycle = $null

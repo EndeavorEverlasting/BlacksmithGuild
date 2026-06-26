@@ -1,4 +1,4 @@
-# Offline regression: launcher_hosted + fresh Phase1 must not trigger fail_game_gone_definitive (session 20260622-202052).
+﻿# Offline regression: launcher_hosted + fresh Phase1 must not trigger fail_game_gone_definitive (session 20260622-202052).
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

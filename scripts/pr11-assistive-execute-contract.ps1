@@ -1,4 +1,4 @@
-# PR #11 assistive travel execute cert PASS/FAIL contract (runner-side only).
+﻿# PR #11 assistive travel execute cert PASS/FAIL contract (runner-side only).
 
 function Get-AssistiveTravelExecutionJsonPath {
     param([string]$BannerlordRoot)

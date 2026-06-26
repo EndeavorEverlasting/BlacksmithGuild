@@ -1,4 +1,4 @@
-# F7 launch path contract — dot-sourced from run-f7-gate-continue.ps1 and offline regressions.
+﻿# F7 launch path contract — dot-sourced from run-f7-gate-continue.ps1 and offline regressions.
 
 function Get-F7ArtifactFreshnessState {
     param(

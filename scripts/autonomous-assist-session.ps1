@@ -1,4 +1,4 @@
-# Autonomous assist session loop — toggle, safety gates, iteration decisions, evidence writers.
+﻿# Autonomous assist session loop — toggle, safety gates, iteration decisions, evidence writers.
 # Dot-source after bannerlord-paths.ps1, pr11-runtime-state-consumer.ps1, process-lifecycle-authority.ps1
 
 $script:AssistUnsafeSurfaces = @(

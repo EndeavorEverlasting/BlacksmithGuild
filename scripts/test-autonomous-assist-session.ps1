@@ -1,4 +1,4 @@
-# Offline regression: autonomous assist session loop — readiness, toggle, safety, post-handoff fast-fail, evidence.
+﻿# Offline regression: autonomous assist session loop — readiness, toggle, safety, post-handoff fast-fail, evidence.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

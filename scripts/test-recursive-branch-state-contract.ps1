@@ -1,4 +1,4 @@
-# Offline regression: recursive branch state must expose next-action truth without faking gameplay.
+﻿# Offline regression: recursive branch state must expose next-action truth without faking gameplay.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot

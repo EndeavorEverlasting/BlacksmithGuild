@@ -1,4 +1,4 @@
-# Refocus Bannerlord game window or launcher. Use -IfMinimizedOnly to restore without stealing foreground.
+﻿# Refocus Bannerlord game window or launcher. Use -IfMinimizedOnly to restore without stealing foreground.
 param(
     [switch]$IfMinimizedOnly
 )
