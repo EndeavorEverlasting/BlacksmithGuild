@@ -45,10 +45,7 @@ function Read-Pr11RuntimeLifecycle {
         $lc = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
         $result.parseOk = $true
         if ($lc.lastHeartbeatUtc) {
-            try {
-                $result.lastHeartbeatUtc = [datetime]::Parse([string]$lc.lastHeartbeatUtc, $null, `
-                    [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
-            } catch { }
+            $result.lastHeartbeatUtc = ConvertTo-Pr11Utc -Value $lc.lastHeartbeatUtc
         }
         $result.lastCommandName = if ($lc.lastCommandName) { [string]$lc.lastCommandName } else { $null }
         $result.lastCommandStartedAtUtc = if ($lc.lastCommandStartedAtUtc) { [string]$lc.lastCommandStartedAtUtc } else { $null }
@@ -108,19 +105,53 @@ function Read-Pr11StateMachineFromStatus {
     $result.canAcceptAssistiveCommand = ($sm.canAcceptAssistiveCommand -eq $true)
     $result.blockReason = if ($sm.blockReason) { [string]$sm.blockReason } else { $null }
     if ($sm.updatedAtUtc) {
-        try {
-            $result.updatedAtUtc = [datetime]::Parse([string]$sm.updatedAtUtc, $null, `
-                [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
-        } catch { }
+        $result.updatedAtUtc = ConvertTo-Pr11Utc -Value $sm.updatedAtUtc
     }
     if ($sm.heartbeatUtc) {
-        try {
-            $result.heartbeatUtc = [datetime]::Parse([string]$sm.heartbeatUtc, $null, `
-                [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
-        } catch { }
+        $result.heartbeatUtc = ConvertTo-Pr11Utc -Value $sm.heartbeatUtc
     }
 
     return [pscustomobject]$result
+}
+
+# Converts a value from a JSON field that is a UTC instant by contract (e.g. *Utc) into a true
+# UTC [datetime]. ConvertFrom-Json coerces ISO-8601 "...Z" strings into [datetime] objects whose
+# Kind is then lost when re-stringified, so a naive Parse(...).ToUniversalTime() double-applies the
+# local offset and pushes the timestamp into the future (negative age => never "fresh"). For a
+# field that is UTC by contract, an Unspecified-kind wall-clock must be treated AS UTC, not local.
+function ConvertTo-Pr11Utc {
+    param($Value)
+
+    if ($null -eq $Value) { return $null }
+
+    if ($Value -is [datetime]) {
+        switch ($Value.Kind) {
+            ([System.DateTimeKind]::Utc) { return $Value }
+            ([System.DateTimeKind]::Local) { return $Value.ToUniversalTime() }
+            default { return [datetime]::SpecifyKind($Value, [System.DateTimeKind]::Utc) }
+        }
+    }
+
+    $text = [string]$Value
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+
+    $parsed = [datetime]::MinValue
+    if ([datetime]::TryParse($text, [Globalization.CultureInfo]::InvariantCulture,
+            [Globalization.DateTimeStyles]::RoundtripKind, [ref]$parsed)) {
+        switch ($parsed.Kind) {
+            ([System.DateTimeKind]::Utc) { return $parsed }
+            ([System.DateTimeKind]::Local) { return $parsed.ToUniversalTime() }
+            default { return [datetime]::SpecifyKind($parsed, [System.DateTimeKind]::Utc) }
+        }
+    }
+
+    if ([datetime]::TryParse($text, [Globalization.CultureInfo]::CurrentCulture,
+            [Globalization.DateTimeStyles]::AssumeUniversal -bor [Globalization.DateTimeStyles]::AdjustToUniversal,
+            [ref]$parsed)) {
+        return $parsed
+    }
+
+    return $null
 }
 
 function Test-Pr11UtcFresh {
