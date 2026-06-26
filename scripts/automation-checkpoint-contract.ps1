@@ -49,6 +49,95 @@ if (-not $script:AutomationCheckpointThrottle) {
     $script:AutomationCheckpointThrottle = @{}
 }
 
+# --- Runtime event envelope (additive, schema v1) -------------------------------------------
+# Dotted-type runtime events live alongside checkpoint events as append-only evidence (not proof).
+# They are emitted both by the mod (BlacksmithGuild_AutomationEvents.jsonl) and by the runner so
+# that boundary wrappers and economic-loop verifiers can correlate gameplay activity.
+$script:AutomationRuntimeEventSchemaVersion = 1
+$script:AutomationRuntimeEventTypes = @(
+    'boundary.started',
+    'boundary.completed',
+    'boundary.failed',
+    'boundary.blocked',
+    'boundary.skipped',
+    'command.received',
+    'command.started',
+    'command.completed',
+    'command.failed',
+    'travel.started',
+    'travel.progress',
+    'travel.blocked',
+    'travel.completed',
+    'trade.started',
+    'trade.completed',
+    'trade.blocked',
+    'horse_acquisition.started',
+    'horse_acquisition.completed',
+    'horse_acquisition.blocked',
+    'inventory.changed',
+    'inventory.blocked',
+    'smithing.started',
+    'smithing.completed',
+    'smithing.blocked',
+    'rest_wait.started',
+    'rest_wait.completed',
+    'recursiveBranchState.changed'
+)
+
+function Test-AutomationRuntimeEventType {
+    param([string]$EventType)
+    return ($script:AutomationRuntimeEventTypes -contains $EventType)
+}
+
+function New-AutomationRuntimeEvent {
+    param(
+        [Parameter(Mandatory = $true)][string]$Type,
+        [string]$SessionId = $null,
+        [string]$RunId = $null,
+        [nullable[int]]$CycleId = $null,
+        [string]$BoundaryId = $null,
+        [string]$Source = 'runner',
+        [object]$Payload = $null,
+        [string]$Reason = $null
+    )
+    if (-not (Test-AutomationRuntimeEventType -EventType $Type)) {
+        throw "Unknown automation runtime event type: $Type"
+    }
+    $event = [ordered]@{
+        schemaVersion = $script:AutomationRuntimeEventSchemaVersion
+        eventId = [guid]::NewGuid().ToString()
+        envelope = 'runtime_event'
+        sessionId = $SessionId
+        runId = $RunId
+        atUtc = (Get-Date).ToUniversalTime().ToString('o')
+        type = $Type
+        source = $Source
+        boundaryId = $BoundaryId
+        reason = $Reason
+        payload = $Payload
+    }
+    if ($null -ne $CycleId) { $event.cycleId = [int]$CycleId }
+    return [pscustomobject]$event
+}
+
+function Add-AutomationRuntimeEvent {
+    param(
+        [System.Collections.Generic.List[object]]$List,
+        [Parameter(Mandatory = $true)][string]$Type,
+        [string]$SessionId = $null,
+        [string]$RunId = $null,
+        [nullable[int]]$CycleId = $null,
+        [string]$BoundaryId = $null,
+        [string]$Source = 'runner',
+        [object]$Payload = $null,
+        [string]$Reason = $null
+    )
+    $created = New-AutomationRuntimeEvent -Type $Type -SessionId $SessionId -RunId $RunId `
+        -CycleId $CycleId -BoundaryId $BoundaryId -Source $Source -Payload $Payload -Reason $Reason
+    if ($null -ne $List) { $List.Add($created) | Out-Null }
+    return $created
+}
+
 function Test-AutomationCheckpointEventType {
     param([string]$EventType)
     return ($script:AutomationCheckpointEventTypes -contains $EventType)
@@ -321,10 +410,15 @@ function New-AutomationCampaignLoopSummary {
         [bool]$NextActionRequired = $true,
         [string]$NextPlannedBranch = $null,
         [string]$NextActionReason = $null,
-        [string]$Reason = $null
+        [string]$Reason = $null,
+        [nullable[int]]$TradeIterationCount = $null,
+        [nullable[int]]$TradeIterationTarget = $null,
+        [object]$BranchConsiderationLog = $null,
+        [object]$ActiveBoundarySummary = $null,
+        [string]$LastFailureClass = $null
     )
 
-    return [pscustomobject][ordered]@{
+    $summary = [ordered]@{
         schemaVersion = $script:AutomationCheckpointSchemaVersion
         sessionId = $SessionId
         cycleId = $CycleId
@@ -342,6 +436,15 @@ function New-AutomationCampaignLoopSummary {
         nextActionReason = $NextActionReason
         reason = $Reason
     }
+
+    # Economic-loop fields are additive: present only when supplied so legacy summaries are unchanged.
+    if ($null -ne $TradeIterationCount) { $summary.tradeIterationCount = [int]$TradeIterationCount }
+    if ($null -ne $TradeIterationTarget) { $summary.tradeIterationTarget = [int]$TradeIterationTarget }
+    if ($null -ne $BranchConsiderationLog) { $summary.branchConsiderationLog = @($BranchConsiderationLog) }
+    if ($null -ne $ActiveBoundarySummary) { $summary.activeBoundarySummary = $ActiveBoundarySummary }
+    if (-not [string]::IsNullOrWhiteSpace($LastFailureClass)) { $summary.lastFailureClass = $LastFailureClass }
+
+    return [pscustomobject]$summary
 }
 
 function Test-AutomationCampaignLoopSummary {

@@ -3,6 +3,9 @@ param(
     [ValidateSet('play', 'continue')]
     [string]$LaunchIntent = 'continue',
     [string]$AssistProfile = 'training-map',
+    [ValidateSet('default', 'economic_loop')]
+    [string]$CertProfile = 'default',
+    [int]$TradeIterationTarget = 10,
     [string]$TargetSettlement = 'Ortysia',
     [int]$MaxRuntimeMinutes = 30,
     [switch]$StopOnUnsafeState,
@@ -33,6 +36,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
 . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+. (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
@@ -168,7 +172,8 @@ $crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $bannerlordRoot
 $runtimeLifecyclePath = Get-RuntimeLifecycleJsonPath -BannerlordRoot $bannerlordRoot
 
 $evidence = New-AutonomousAssistSessionEvidence -SessionId $sessionId -CheckpointDir $checkpointDir `
-    -AssistProfile $AssistProfile -LaunchIntent $LaunchIntent -TargetSettlement $TargetSettlement
+    -AssistProfile $AssistProfile -LaunchIntent $LaunchIntent -TargetSettlement $TargetSettlement `
+    -CertProfile $CertProfile -TradeIterationTarget $TradeIterationTarget
 Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'session_started' `
     -SessionId $sessionId -Phase 'start' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
 

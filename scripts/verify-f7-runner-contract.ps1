@@ -368,6 +368,33 @@ if (Test-Path -LiteralPath $automationCheckpointContractPath) {
     Add-Failure 'Missing automation-checkpoint-contract.ps1'
 }
 
+$automationBoundaryContractPath = Join-Path $PSScriptRoot 'automation-boundary-contract.ps1'
+if (Test-Path -LiteralPath $automationBoundaryContractPath) {
+    $boundaryContractText = Get-Content -LiteralPath $automationBoundaryContractPath -Raw
+    foreach ($needle in @(
+        'Start-AutomationBoundary',
+        'Complete-AutomationBoundary',
+        'Fail-AutomationBoundary',
+        'Block-AutomationBoundary',
+        'Skip-AutomationBoundary',
+        'Test-AutomationBoundaryClosure',
+        'Test-AutomationEconomicLoopPassCriteria',
+        'New-TradeIterationRecord',
+        'Get-AutomationOrphanCommandStarts',
+        'trade_iteration_target_not_reached',
+        'boundary_open_at_finalization',
+        'fake_gameplay_delta'
+    )) {
+        if ($boundaryContractText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "automation-boundary-contract.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS automation boundary contract contains: $needle" -ForegroundColor Green
+        }
+    }
+} else {
+    Add-Failure 'Missing automation-boundary-contract.ps1'
+}
+
 foreach ($pair in @(
     @{ path = 'src\BlacksmithGuild\DevTools\Automation\AutomationUserMessageService.cs'; needle = 'AutomationCheckpointEventWriter.Append'; label = 'AutomationUserMessageService writer hook' },
     @{ path = 'src\BlacksmithGuild\DevTools\Automation\AutomationCheckpointEventWriter.cs'; needle = 'AutomationCheckpointEvent.FileName'; label = 'AutomationCheckpointEventWriter JSONL path authority' }
@@ -485,6 +512,7 @@ foreach ($pair in @(
     @{ path = 'test-automation-checkpoint-finalization.ps1'; label = 'automation checkpoint finalization' },
     @{ path = 'test-runtime-user-message-events.ps1'; label = 'runtime user message events' },
     @{ path = 'test-recursive-branch-state-contract.ps1'; label = 'recursive branch state contract' },
+    @{ path = 'test-economic-loop-cert-contract.ps1'; label = 'economic loop cert contract' },
     @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' },
     @{ path = 'test-faction-posture-scan-guard.ps1'; label = 'faction posture scan guard' },
     @{ path = 'test-pr11-utc-freshness.ps1'; label = 'pr11 UTC freshness parse' },

@@ -10,6 +10,7 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+. (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $tmpRoot = Join-Path $env:TEMP "autonomous-assist-runner-evidence-$PID"
@@ -153,6 +154,96 @@ if ($campaignParsed.nextActionRequired -eq $true) { throw 'terminal campaign sum
 $recursiveVerifier = Join-Path $PSScriptRoot 'test-recursive-campaign-output-contract.ps1'
 & powershell -NoProfile -ExecutionPolicy Bypass -File $recursiveVerifier -EvidenceDir $evidenceDir
 if ($LASTEXITCODE -ne 0) { throw 'recursive output verifier failed on runner-emitted evidence dir' }
+
+# --- Multi-cycle economic-loop cert fixture (Agent C) ----------------------------------------
+# A 10-cycle economic loop with proven trade deltas + one blocked non-trade branch must produce
+# BoundaryEvents/TradeIterations streams, an economic-loop summary, and a PASSing economic cert.
+$ecoSessionId = 'offline-economic-loop-runner'
+$ecoDir = Join-Path $tmpRoot 'economic-evidence'
+$ecoBannerlord = Join-Path $tmpRoot 'economic-bannerlord'
+New-Item -ItemType Directory -Force -Path $ecoDir, $ecoBannerlord | Out-Null
+
+$ecoEvidence = New-AutonomousAssistSessionEvidence -SessionId $ecoSessionId -CheckpointDir $ecoDir `
+    -AssistProfile 'training-map' -LaunchIntent 'continue' -TargetSettlement 'Ortysia' `
+    -CertProfile 'economic_loop' -TradeIterationTarget 10
+$ecoEvidence.assistLoopStarted = $true
+$ecoEvidence.assistLoopStartedWithoutHotkey = $true
+
+$gold = 1500
+$inv = 30
+for ($cycle = 1; $cycle -le 10; $cycle++) {
+    $observe = Start-AutomationBoundary -SectionName 'observe_runtime_state' -Boundaries $ecoEvidence.boundaries `
+        -RuntimeEvents $ecoEvidence.runtimeEvents -SessionId $ecoSessionId -CycleId $cycle
+    Complete-AutomationBoundary -Boundary $observe -RuntimeEvents $ecoEvidence.runtimeEvents | Out-Null
+
+    $tradeBoundary = Start-AutomationBoundary -SectionName 'execute_trade_iteration' -Boundaries $ecoEvidence.boundaries `
+        -RuntimeEvents $ecoEvidence.runtimeEvents -BranchName 'trade' -SessionId $ecoSessionId -CycleId $cycle
+    $cmdId = "eco-trade-$cycle"
+    Add-AutomationRuntimeEvent -List $ecoEvidence.runtimeEvents -Type 'command.started' -SessionId $ecoSessionId `
+        -CycleId $cycle -BoundaryId $tradeBoundary.boundaryId -Payload ([pscustomobject]@{ commandId = $cmdId }) | Out-Null
+    $goldBefore = $gold; $invBefore = $inv
+    if ($cycle % 2 -eq 1) { $gold -= 100; $inv += 2; $dir = 'buy' } else { $gold += 150; $inv -= 2; $dir = 'sell' }
+    $ecoEvidence.tradeIterations.Add((New-TradeIterationRecord -Iteration $cycle -ItemName 'pottery' -Direction $dir `
+        -GoldBefore $goldBefore -GoldAfter $gold -InventoryBefore $invBefore -InventoryAfter $inv `
+        -SessionId $ecoSessionId -CycleId $cycle)) | Out-Null
+    Add-AutomationRuntimeEvent -List $ecoEvidence.runtimeEvents -Type 'command.completed' -SessionId $ecoSessionId `
+        -CycleId $cycle -BoundaryId $tradeBoundary.boundaryId -Payload ([pscustomobject]@{ commandId = $cmdId }) | Out-Null
+    Complete-AutomationBoundary -Boundary $tradeBoundary -RuntimeEvents $ecoEvidence.runtimeEvents `
+        -EvidenceFiles @('BlacksmithGuild_TradeIterations.jsonl') | Out-Null
+    $ecoEvidence.branchConsiderationLog.Add([pscustomobject]@{ cycleId = $cycle; branch = 'trade'; status = 'executed' }) | Out-Null
+}
+$ecoEvidence.tradeIterationCount = 10
+
+$invBoundary = Start-AutomationBoundary -SectionName 'inventory_management' -Boundaries $ecoEvidence.boundaries `
+    -RuntimeEvents $ecoEvidence.runtimeEvents -BranchName 'inventory_management' -SessionId $ecoSessionId -CycleId 11
+Block-AutomationBoundary -Boundary $invBoundary -FailureClass 'inventory_delta_missing' `
+    -RuntimeEvents $ecoEvidence.runtimeEvents -Reason 'no_capacity_pressure' | Out-Null
+$ecoEvidence.branchConsiderationLog.Add([pscustomobject]@{ cycleId = 11; branch = 'inventory_management'; status = 'blocked'; failureClass = 'inventory_delta_missing' }) | Out-Null
+
+foreach ($checkpoint in @('session_started', 'attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started', 'summary_written')) {
+    Add-AutomationCheckpointEvent -List $ecoEvidence.checkpointEvents -CheckpointName $checkpoint -SessionId $ecoSessionId | Out-Null
+}
+Complete-AutomationFinalization -List $ecoEvidence.checkpointEvents -State pass -SessionId $ecoSessionId `
+    -Reason 'trade_iteration_target_reached' -SummaryWritten $true | Out-Null
+
+$ecoSummary = @{
+    passFail = 'PASS'
+    stopReason = 'trade_iteration_target_reached'
+    endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    terminalState = 'pass'
+    assistLoopStarted = $true
+    nextActionRequired = $false
+    nextPlannedBranch = 'finalize'
+    nextActionReason = 'trade_iteration_target_reached'
+    campaignLoopSummary = (New-AutomationCampaignLoopSummary -SessionId $ecoSessionId -CycleId 11 `
+        -Terminal $true -TerminalState 'pass' -PassFail 'PASS' -NextActionRequired $false `
+        -Reason 'trade_iteration_target_reached' -TradeIterationCount 10 -TradeIterationTarget 10 `
+        -BranchConsiderationLog @($ecoEvidence.branchConsiderationLog.ToArray()))
+}
+
+$ecoStatus = Join-Path $ecoBannerlord 'BlacksmithGuild_Status.json'
+$ecoRuntime = Join-Path $ecoBannerlord 'BlacksmithGuild_RuntimeLifecycle.json'
+'{"stateMachine":{"hasStateMachine":true}}' | Set-Content -LiteralPath $ecoStatus -Encoding UTF8
+'{"parseOk":true}' | Set-Content -LiteralPath $ecoRuntime -Encoding UTF8
+
+Save-AutonomousAssistSessionEvidence -Evidence $ecoEvidence -Summary $ecoSummary `
+    -BannerlordRoot $ecoBannerlord -StatusPath $ecoStatus -RuntimeLifecyclePath $ecoRuntime | Out-Null
+
+foreach ($required in @('BlacksmithGuild_BoundaryEvents.jsonl', 'BlacksmithGuild_TradeIterations.jsonl',
+        'economic-loop-summary.json', 'economic-loop-cert.json')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $ecoDir $required))) { throw "missing economic-loop evidence file: $required" }
+}
+$ecoCert = Get-Content -LiteralPath (Join-Path $ecoDir 'economic-loop-cert.json') -Raw | ConvertFrom-Json
+if (-not $ecoCert.pass) { throw "economic-loop cert must PASS for valid 10-trade loop: $($ecoCert | ConvertTo-Json -Compress)" }
+if ($ecoCert.provenTradeIterationCount -ne 10) { throw "economic-loop cert must count 10 proven trades; got $($ecoCert.provenTradeIterationCount)" }
+$ecoSummaryParsed = Get-Content -LiteralPath (Join-Path $ecoDir 'economic-loop-summary.json') -Raw | ConvertFrom-Json
+if ($ecoSummaryParsed.tradeIterationCount -ne 10) { throw 'economic-loop summary must report tradeIterationCount=10' }
+if ($ecoSummaryParsed.tradeIterationTarget -ne 10) { throw 'economic-loop summary must report tradeIterationTarget=10' }
+$tradeRows = @(Get-Content -LiteralPath (Join-Path $ecoDir 'BlacksmithGuild_TradeIterations.jsonl') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+if ($tradeRows.Count -ne 10) { throw "expected 10 trade iteration rows; got $($tradeRows.Count)" }
+$ecoManifest = Get-Content -LiteralPath (Join-Path $ecoDir 'session-manifest.json') -Raw | ConvertFrom-Json
+if ($ecoManifest.certProfile -ne 'economic_loop') { throw 'session manifest must record certProfile=economic_loop' }
+Write-Host 'PASS offline economic-loop runner evidence emission' -ForegroundColor Green
 
 Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host 'PASS offline autonomous assist runner evidence emission' -ForegroundColor Green

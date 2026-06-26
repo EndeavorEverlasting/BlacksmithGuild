@@ -236,6 +236,47 @@ Assert in-game message shown when game alive, or previous-run notice queued when
 7. Add companion/tavern state probes before implementing companion recruitment or dismissal automation.
 8. Add threat/risk state probes before implementing avoidance automation.
 
+## Economic-loop certification (foundation)
+
+The economic-loop cert is the first recursive objective that proves the loop *earns* progress instead of merely moving. It is enforced offline by `scripts/automation-boundary-contract.ps1` and `scripts/test-economic-loop-cert-contract.ps1`. No live PASS is claimed by landing this foundation; only the offline contract and emitter/runner plumbing are proven.
+
+### PASS criteria (`Test-AutomationEconomicLoopPassCriteria`)
+
+A run may PASS the economic loop only when **all** hold:
+
+- `tradeIterationCount >= 10` proven iterations, and `tradeIterationTarget == 10` (the 10-trade cap).
+- A trade iteration is *proven* only with a real, non-faked gold delta **and** inventory delta (`fakeGameplayDelta=false`). Zero-delta or faked rows are rejected.
+- At least one **non-trade** branch was executed or blocked (multi-branch requirement); a trade-only or observe-only run cannot PASS.
+- Every started boundary reached a terminal status (no open boundary at finalization).
+- No `command.started` was left orphaned (every command closes with completed/failed).
+- Exactly one terminal `finalized_pass` exists (checkpoint-only progress cannot PASS).
+
+### Section boundaries and failure map
+
+Each major section is wrapped in a boundary (`Start/Complete/Fail/Block/Skip-AutomationBoundary`) drawn from 14 section names, and every failure names exactly one of 22 failure classes. The anti-collapse failure map (proven by the offline harness):
+
+| Collapse shape | Rejected with |
+|---|---|
+| One trade only | `trade_iteration_target_not_reached` |
+| Travel only / no trades | `trade_iteration_target_not_reached` |
+| Checkpoint-only (no terminal) | `checkpoint_only_pass_attempt` |
+| Open boundary at finalization | `boundary_open_at_finalization` |
+| Trade with no gold/inventory delta | `trade_delta_missing` (not counted as proven) |
+| Faked gameplay delta | `fake_gameplay_delta` |
+| No non-trade branch considered | `no_non_trade_branch_considered` |
+| Orphan `command.started` | `orphan_command_started` |
+| Unknown threat treated as safe | `threat_state_unknown_blocked` |
+
+Horse/inventory/smithing branches stay `unknown` or `blocked` until the mod reads real game state; an `available` claim without a corresponding delta fails its boundary (`horse_delta_missing` / `inventory_delta_missing` / `smithing_delta_missing` / `stamina_delta_missing`). Unknown threat is never converted to safe.
+
+### Evidence streams
+
+- `BlacksmithGuild_BoundaryEvents.jsonl` — section wrappers with status, failureClass, evidenceFiles.
+- `BlacksmithGuild_TradeIterations.jsonl` — one proven buy/sell iteration per row with gold/inventory before/after deltas.
+- `BlacksmithGuild_AutomationEvents.jsonl` — dotted runtime events (`boundary.*`, `command.*`, `trade.*`, `recursiveBranchState.changed`, ...) as evidence, not proof.
+
+The runner copies these into the session evidence dir and writes `economic-loop-summary.json` + `economic-loop-cert.json` via the `economic_loop` cert profile (`-CertProfile economic_loop -TradeIterationTarget 10`). A live cert run is **not** executed by this foundation.
+
 ## Definition of done for this doctrine
 
 The recursive campaign assist system is not done when it reaches one town.

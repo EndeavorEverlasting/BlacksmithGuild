@@ -68,3 +68,33 @@ Travel execution additionally requires `probe_ack`, `execute_ack`, `party_moveme
 
 - `BlacksmithGuild_AssistToggle.json` = stops assist loop
 - `BlacksmithGuild_CancelRun.json` = cancels entire runner
+
+## Economic-loop cert profile
+
+The `economic_loop` cert profile extends the assist session with a recursive trade objective. It is offline-proven (boundary contract + economic-loop cert test); a live cert run is planned but not executed by the current foundation.
+
+Planned live command (do not run without authorization):
+
+```powershell
+pwsh -NoProfile -File scripts/run-autonomous-assist-session.ps1 `
+  -CertProfile economic_loop -TradeIterationTarget 10 -RequireExecuteMovement
+```
+
+Additional EvidenceDir artifacts written under this profile:
+
+- `BlacksmithGuild_BoundaryEvents.jsonl` — section boundary lifecycle (status, failureClass, evidenceFiles)
+- `BlacksmithGuild_TradeIterations.jsonl` — proven buy/sell iterations with gold/inventory deltas
+- `BlacksmithGuild_AutomationEvents.jsonl` — dotted runtime events (evidence, not proof)
+- `economic-loop-summary.json` — tradeIterationCount / tradeIterationTarget / branchConsiderationLog / lastFailureClass
+- `economic-loop-cert.json` — offline `Test-AutomationEconomicLoopPassCriteria` verdict
+- domain JSON copied when present: `BlacksmithGuild_MapTradeCert.json`, `BlacksmithGuild_HorseMarketIntel.json`, `BlacksmithGuild_SmithingSafeAction.json`
+
+### Economic-loop PASS gate (in addition to the base PASS gate)
+
+`economic-loop-cert.json.pass=true` requires:
+
+- 10 proven trade iterations (real gold AND inventory delta, `fakeGameplayDelta=false`) and `tradeIterationTarget == 10`
+- at least one non-trade branch executed or blocked (multi-branch; no trade-only / observe-only PASS)
+- all started boundaries closed; no orphan `command.started`; exactly one terminal `finalized_pass`
+
+Full failure map and section/failure-class vocabulary: [`docs/handoff/recursive-campaign-assist-loop.md`](../../../handoff/recursive-campaign-assist-loop.md#economic-loop-certification-foundation).
