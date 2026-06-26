@@ -49,7 +49,10 @@ namespace BlacksmithGuild.DevTools.Assistive
                 builder.AppendLine($"  \"movementObservationAttempts\": {result.MovementObservationAttempts},");
                 builder.AppendLine($"  \"movementObservationPassed\": {result.MovementObservationPassed.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"  \"movementObservationFailureReason\": {JsonString(result.MovementObservationFailureReason)},");
-                builder.AppendLine($"  \"fakeGameplayDelta\": false,");
+                builder.AppendLine($"  \"fakeGameplayDelta\": {result.FakeGameplayDelta.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"travelClockRunning\": {result.TravelClockRunning.ToString().ToLowerInvariant()},");
+                builder.AppendLine($"  \"partyMovedDistance\": {result.PartyMovedDistance.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)},");
+                builder.AppendLine($"  \"arrived\": {result.Arrived.ToString().ToLowerInvariant()},");
                 AppendCertSummary(builder, certSummary);
                 builder.Append("  \"steps\": [");
                 for (var i = 0; i < result.Steps.Count; i++)

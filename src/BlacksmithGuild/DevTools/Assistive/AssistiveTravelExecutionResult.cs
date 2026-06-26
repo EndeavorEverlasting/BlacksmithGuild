@@ -33,6 +33,9 @@ namespace BlacksmithGuild.DevTools.Assistive
         public bool MovementIntentSet { get; set; }
         public bool ActualExecutionObserved { get; set; }
         public bool FakeGameplayDelta { get; set; }
+        public bool TravelClockRunning { get; set; }
+        public double PartyMovedDistance { get; set; }
+        public bool Arrived { get; set; }
         public DateTime? MovementObservationStartedAtUtc { get; set; }
         public DateTime? MovementObservationEndedAtUtc { get; set; }
         public int MovementObservationMs { get; set; }

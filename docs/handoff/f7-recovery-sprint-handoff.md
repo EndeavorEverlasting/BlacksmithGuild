@@ -1,6 +1,6 @@
 # F7 Game Load Recovery — Sprint Handoff
 
-> **Live coordination:** read [`f7-agent-coordination.md`](f7-agent-coordination.md) first (agent board, locks, message log).  
+> **Live coordination:** read [`blacksmithguild-agent-coordination.md`](blacksmithguild-agent-coordination.md) first (agent board, locks, message log).
 > **Launch / F7 commands:** [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md).  
 > **Em dashes in log lines:** [`docs/conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md)
 
@@ -113,7 +113,7 @@ Repo: `c:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild`
 Branch: `fix/f7-gate-stability`  
 PR: https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7 (merge only after F7 PASS)
 
-**Read first:** `docs/handoff/f7-agent-coordination.md` — claim your agent row (A/B/C), respect file ownership, update message log before finishing.
+**Read first:** `docs/handoff/blacksmithguild-agent-coordination.md` — claim your agent row (A/B/C), respect file ownership, update message log before finishing.
 
 **Goal:** Autonomous Continue → campaign map ready → F7 gate exit 0 with 60s stability.
 

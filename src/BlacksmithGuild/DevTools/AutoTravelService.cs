@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.Forge;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools
 {
@@ -23,14 +26,26 @@ namespace BlacksmithGuild.DevTools
         private const int ChoiceCount = 5;
         private const float HostilePreFilterDistance = 10f;
         private const int HostileCheckIntervalTicks = 5;
+        private const float AssistMovementThreshold = 0.30f;
         private static readonly List<AutoTravelChoice> _choices = new List<AutoTravelChoice>();
         private static string _lastFailReason;
         private static Settlement _activeDestination;
         private static int _hostileCheckTickCounter;
 
+        private static AssistiveTravelExecutionResult _assistResult;
+        private static Vec2 _assistStartPos;
+        private static DateTime _assistStartUtc;
+        private static double _assistMaxDistance;
+        private static bool _assistMovementObserved;
+
         public static string LastFailReason => _lastFailReason;
 
         public static bool HasActiveRoute => _activeDestination != null;
+
+        // True while an assistive travel is actively driving the party with the campaign clock
+        // running. Heavy diagnostic scans (e.g. faction-power posture) skip while this is set to
+        // avoid touching transient parties mid-simulation.
+        public static bool IsAssistTravelActive => _assistResult != null && _activeDestination != null;
 
         public static Settlement ActiveRouteDestination => _activeDestination;
 
@@ -45,6 +60,7 @@ namespace BlacksmithGuild.DevTools
             {
                 var arrived = _activeDestination.Name?.ToString() ?? _activeDestination.StringId;
                 _activeDestination = null;
+                FinalizeAssistArrival();
                 InGameNotice.Success($"TBG TRAVEL: arrived near {arrived}.");
                 DebugLogger.Test($"[TBG TRAVEL] arrived near {arrived}.", showInGame: false);
                 return;
@@ -60,6 +76,7 @@ namespace BlacksmithGuild.DevTools
                 if (TryInvokeHold(MobileParty.MainParty))
                 {
                     _activeDestination = null;
+                    _assistResult = null;
                     _lastFailReason = hostileDetail;
                     InGameNotice.Blocked($"TBG TRAVEL paused: {hostileDetail}");
                     DebugLogger.Test($"[TBG TRAVEL] paused route monitor: {hostileDetail}", showInGame: false);
@@ -113,7 +130,11 @@ namespace BlacksmithGuild.DevTools
             return StartTravel(choice.Settlement, $"choice {number}");
         }
 
-        public static bool TryStartTravelToSettlement(Settlement destination, string selector, out string detail)
+        public static bool TryStartTravelToSettlement(
+            Settlement destination,
+            string selector,
+            out string detail,
+            AssistiveTravelExecutionResult assistResult = null)
         {
             detail = null;
             if (!GameSessionState.IsCampaignMapReady || MobileParty.MainParty == null)
@@ -142,10 +163,175 @@ namespace BlacksmithGuild.DevTools
 
             _activeDestination = destination;
             _hostileCheckTickCounter = 0;
+            if (assistResult != null)
+            {
+                BeginAssistTravel(assistResult);
+            }
+
             var name = destination.Name?.ToString() ?? destination.StringId;
             detail = $"SetMoveGoToSettlement ok via {selector} to {name}";
             DebugLogger.Test($"[TBG TRAVEL] assist execute started to {name} via {selector}; cautious route monitor active.", showInGame: false);
             return true;
+        }
+
+        // Begins authoritative real-movement observation for an assistive travel command and
+        // resumes the campaign clock so the party actually moves on the map (not just route intent).
+        private static void BeginAssistTravel(AssistiveTravelExecutionResult result)
+        {
+            _assistResult = result;
+            _assistStartUtc = DateTime.UtcNow;
+            _assistStartPos = MobileParty.MainParty != null ? MobileParty.MainParty.GetPosition2D : default(Vec2);
+            _assistMaxDistance = 0;
+            _assistMovementObserved = false;
+
+            if (result != null)
+            {
+                result.MovementObservationStartedAtUtc = _assistStartUtc;
+                result.MovementObservationEndedAtUtc = _assistStartUtc;
+                result.MovementObservationAttempts = 0;
+                result.MovementIntentSet = true;
+                result.ActualExecutionObserved = false;
+                result.MovementObservationPassed = false;
+                result.Arrived = false;
+                result.PartyMovedDistance = 0;
+            }
+
+            ReassertRunningClock();
+            if (result != null)
+            {
+                result.TravelClockRunning = IsClockRunning();
+            }
+        }
+
+        // Frame-rate observation of REAL party position delta. Only flips ActualExecutionObserved
+        // once the party has actually moved on the map, never on route intent alone.
+        public static void OnRealtimeTick()
+        {
+            var result = _assistResult;
+            if (result == null || MobileParty.MainParty == null || !GameSessionState.IsCampaignMapReady)
+            {
+                return;
+            }
+
+            var pos = MobileParty.MainParty.GetPosition2D;
+            var movedFromStart = pos.Distance(_assistStartPos);
+            if (movedFromStart > _assistMaxDistance)
+            {
+                _assistMaxDistance = movedFromStart;
+            }
+
+            var now = DateTime.UtcNow;
+            result.PartyMovedDistance = _assistMaxDistance;
+            result.MovementObservationEndedAtUtc = now;
+            result.MovementObservationMs = (int)Math.Max(0, (now - _assistStartUtc).TotalMilliseconds);
+            result.MovementObservationAttempts++;
+            result.TravelClockRunning = IsClockRunning();
+
+            var changed = false;
+
+            if (!_assistMovementObserved && _assistMaxDistance >= AssistMovementThreshold)
+            {
+                _assistMovementObserved = true;
+                result.MovementIntentSet = true;
+                result.ActualExecutionObserved = true;
+                result.MovementObservationPassed = true;
+                result.MovementObservationFailureReason = null;
+                result.Steps.Add(new AssistiveTravelStep
+                {
+                    Name = "MovementObservation",
+                    Method = "PositionDelta",
+                    Status = "Observed",
+                    Detail = $"distance={_assistMaxDistance.ToString("0.###", CultureInfo.InvariantCulture)} clockRunning={IsClockRunning().ToString().ToLowerInvariant()}"
+                });
+                changed = true;
+            }
+
+            var dest = _activeDestination;
+            if (dest != null && pos.Distance(dest.GetPosition2D) <= 1.5f)
+            {
+                result.Arrived = true;
+                changed = true;
+            }
+
+            if (!result.Arrived && _activeDestination != null)
+            {
+                ReassertRunningClock();
+            }
+
+            if (changed)
+            {
+                AssistiveTravelEvidenceWriter.Write(result);
+                if (result.Arrived)
+                {
+                    _assistResult = null;
+                }
+            }
+        }
+
+        private static void FinalizeAssistArrival()
+        {
+            var result = _assistResult;
+            if (result == null)
+            {
+                return;
+            }
+
+            if (MobileParty.MainParty != null)
+            {
+                var moved = MobileParty.MainParty.GetPosition2D.Distance(_assistStartPos);
+                if (moved > _assistMaxDistance)
+                {
+                    _assistMaxDistance = moved;
+                }
+            }
+
+            result.Arrived = true;
+            result.PartyMovedDistance = _assistMaxDistance;
+            if (_assistMaxDistance >= AssistMovementThreshold)
+            {
+                result.MovementIntentSet = true;
+                result.ActualExecutionObserved = true;
+                result.MovementObservationPassed = true;
+                result.MovementObservationFailureReason = null;
+            }
+
+            AssistiveTravelEvidenceWriter.Write(result);
+            _assistResult = null;
+        }
+
+        private static bool IsClockRunning()
+        {
+            try
+            {
+                return Campaign.Current != null
+                    && Campaign.Current.TimeControlMode != CampaignTimeControlMode.Stop;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void ReassertRunningClock()
+        {
+            try
+            {
+                if (Campaign.Current == null
+                    || GameSessionState.IsMapMenuOpen
+                    || GameSessionState.IsMissionActiveForTrace())
+                {
+                    return;
+                }
+
+                if (Campaign.Current.TimeControlMode == CampaignTimeControlMode.Stop)
+                {
+                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.StoppablePlay;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG TRAVEL] resume clock failed: {ex.Message}", showInGame: false);
+            }
         }
 
         public static DevCommandResult TravelByName(string name)
@@ -178,6 +364,7 @@ namespace BlacksmithGuild.DevTools
             var destination = _activeDestination.Name?.ToString() ?? _activeDestination.StringId;
             TryInvokeHold(MobileParty.MainParty);
             _activeDestination = null;
+            _assistResult = null;
             _lastFailReason = "Aborted by command";
             InGameNotice.Blocked($"TBG TRAVEL: route to {destination} aborted.");
             DebugLogger.Test("[TBG TRAVEL] route aborted by command.", showInGame: false);

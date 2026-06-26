@@ -1,11 +1,11 @@
 # Sprint control (living pointer)
 
-**Branch:** **`main`** @ `09f039f` — PR [#7](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/7) **MERGED** · PR [#10](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/10) **MERGED** · PR [#11](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/11) **MERGED**  
+**Branch:** **`fix/pr11-unattended-execute-cert-runner`** — PR [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) **OPEN / DRAFT**; runner baseline `0277aa4`; do not mark ready or merge
 **Product medals:** [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) — advisory @ `004036`/`020821` · travel execute @ `032408`  
 **Execute readiness (merged):** [`logs/open/pr11-town-travel-execute-readiness.md`](logs/open/pr11-town-travel-execute-readiness.md)  
 **Attach doctrine:** [`logs/open/assistive-current-session-attach.md`](logs/open/assistive-current-session-attach.md)  
 **Mental model:** [`f7-agent-mental-model.mmd`](../handoff/f7-agent-mental-model.mmd)  
-**Authority:** [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)  
+**Authority:** [`blacksmithguild-agent-coordination.md`](../handoff/blacksmithguild-agent-coordination.md)
 **Index:** [`indexes/f7-recovery-index.md`](indexes/f7-recovery-index.md)  
 **Evidence gate:** [`indexes/f7-evidence-requirements.md`](indexes/f7-evidence-requirements.md)  
 **Failure map:** [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) · **Artifact matrix:** [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md)
@@ -30,9 +30,9 @@ Handoff files and raw evidence stay in place. This tree classifies sprint state 
 |-------|-------|--------|
 | Town-to-Town Trade Assist (advisory) | Agent A | **PASS** @ `004036` + `020821` |
 | Travel execute path (PR #11) | Agent B + A | **MERGED** @ `09f039f` · PASS @ `032408` |
-| Runtime gameplay state machine | Agent B | **NEXT** / **STACKED** @ `69263a9` — rebase onto `09f039f` |
-| Unattended execute cert runner | Agent C | **NEXT** / **STACKED** @ `70e5404` — rebase onto `09f039f` |
-| Atlas sync (post-PR #11) | Agent D | **DONE** |
+| Runtime gameplay state machine | Agent B | **ROUTE FIRST** — classify `game_exited_unexpectedly_before_attach` using runtime/process evidence |
+| Unattended execute cert runner | Agent C | **PR #14 OPEN / DRAFT** @ `0277aa4`; post-fix live validation blocked on runtime/process classification |
+| Runtime-state coordination docs | Agent D | **DONE** — live authority is `blacksmithguild-agent-coordination.md` |
 | PR #8 bisect tooling | User + A | **HOLD** — explicit user auth required |
 
 ## Branch cleanup (documented)
@@ -80,7 +80,7 @@ Expect ~15s `fail_settlement_menu_semantic_mismatch` post-`9bdc759` — not 361s
 | [`logs/open/town-to-town-trade-assist-cert.md`](logs/open/town-to-town-trade-assist-cert.md) | Product PASS spec |
 | [`indexes/f7-failure-atlas.md`](indexes/f7-failure-atlas.md) | Session failure map |
 | [`indexes/f7-evidence-matrix.md`](indexes/f7-evidence-matrix.md) | Per-session artifact completeness |
-| [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md) | Living agent board |
+| [`blacksmithguild-agent-coordination.md`](../handoff/blacksmithguild-agent-coordination.md) | Living runtime-state agent board |
 
 ## Latest evidence
 

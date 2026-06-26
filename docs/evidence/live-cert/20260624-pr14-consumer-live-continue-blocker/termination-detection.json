@@ -1,0 +1,25 @@
+﻿{
+    "classification":  "intentional_forge_stop",
+    "routeAgent":  "Agent C - External State Classifier / Assistive Runner",
+    "evidenceSignals":  [
+                            "intentional_termination_recorded",
+                            "fresh_test_launch"
+                        ],
+    "missingSignals":  [
+
+                       ],
+    "StatusPath":  "C:\\Users\\Cheex\\Documents\\Mount and Blade II Bannerlord\\BlacksmithGuild_Status.json",
+    "Phase1Path":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_Phase1.log",
+    "CyclePhase":  "loading",
+    "RuntimeLifecycle":  {
+                             "path":  "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount \u0026 Blade II Bannerlord\\BlacksmithGuild_RuntimeLifecycle.json",
+                             "parseOk":  true,
+                             "lastHeartbeatUtc":  "\/Date(1782321142732)\/",
+                             "lastCommandName":  "AssistiveLeaveTownAndTravel",
+                             "lastCommandStartedAtUtc":  "2026-06-24T17:12:22.6765679Z",
+                             "lastCommandFinishedAtUtc":  "2026-06-24T17:12:22.7396952Z",
+                             "lastCommandResult":  "Success",
+                             "gracefulShutdownObserved":  false,
+                             "shutdownObservedAtUtc":  null
+                         }
+}

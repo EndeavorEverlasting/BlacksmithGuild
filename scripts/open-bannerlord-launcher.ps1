@@ -1,6 +1,7 @@
 ﻿# Opens the Bannerlord launcher (shared by LaunchForge.cmd and ForgeAndLaunch.cmd).
 param(
-    [string]$BannerlordRoot
+    [string]$BannerlordRoot,
+    [switch]$AllowExistingProcess
 )
 
 $ErrorActionPreference = 'Stop'
@@ -31,7 +32,11 @@ if (-not (Test-Path -LiteralPath $LauncherExe)) {
 
 foreach ($procName in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
     if (Get-Process -Name $procName -ErrorAction SilentlyContinue) {
-        throw "Bannerlord is already running ($procName). Close it before opening the launcher."
+        $preflightOk = $false
+        if (Get-Command Test-TbgPreflightCompleted -ErrorAction SilentlyContinue) { $preflightOk = Test-TbgPreflightCompleted }
+        if (-not $AllowExistingProcess -and -not $preflightOk) {
+            throw "Bannerlord is already running ($procName). Close it before opening the launcher."
+        }
     }
 }
 

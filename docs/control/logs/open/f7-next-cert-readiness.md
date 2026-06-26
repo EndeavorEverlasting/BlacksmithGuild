@@ -349,7 +349,7 @@ dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-log-grep-patterns.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-f7-runner-contract.ps1
 Get-Process Bannerlord,TaleWorlds.MountAndBlade.Launcher,Watchdog -ErrorAction SilentlyContinue | Stop-Process -Force
-# claim automation lock in f7-agent-coordination.md
+# claim automation lock in blacksmithguild-agent-coordination.md
 # Product cert (attach-only — preferred):
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\run-town-to-town-trade-assist-cert.ps1 -AttachOnly
 # Optional infra validation only (expect ~15s semantic FAIL post-9bdc759):

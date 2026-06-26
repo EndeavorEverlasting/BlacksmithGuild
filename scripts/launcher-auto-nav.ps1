@@ -15,13 +15,15 @@ param(
     [bool]$AllowCertRetry = $false,
     [int]$CertRetryAttempt = 0,
     [string]$ExternalStateTimelinePath = $null,
-    [switch]$LaunchSetup
+    [switch]$LaunchSetup,
+    [int]$LauncherSelectionMaxMs = 30000
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 . (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
+. (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
@@ -157,6 +159,51 @@ public static class UIAHelper
     private const int LauncherMinCoordWindowHeight = 600;
     private static bool _moduleMismatchAuditDone;
     private static int _moduleMismatchCoordAttemptIndex;
+    private static HashSet<int> _baselineProcessIds = null;
+
+    // Before/after PID diff: snapshot the launcher/game-family process IDs that exist BEFORE we
+    // trigger a launch, so the genuinely NEW game-hosting process can be identified afterward
+    // regardless of its process name. Steam frequently hosts the running game under the launcher
+    // process name, which defeats name-only detection and forces a coordinate/title fallback.
+    public static void CaptureBaselineProcessIds()
+    {
+        var ids = new HashSet<int>();
+        foreach (var name in new[] { GameProcessName, LauncherProcessName })
+        {
+            try
+            {
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { ids.Add(p.Id); } catch { }
+                }
+            }
+            catch { }
+        }
+        _baselineProcessIds = ids;
+        LogLine("AUDIT baseline process snapshot: " + ids.Count + " pre-launch launcher/game pids");
+    }
+
+    // PIDs in the launcher/game process family that were NOT present at baseline capture, i.e. the
+    // process(es) our launch spawned. Under Steam in-launcher hosting these are the strongest
+    // game-window candidates even when their process name is the launcher's.
+    private static HashSet<int> GetNewProcessIdsSinceBaseline()
+    {
+        var newIds = new HashSet<int>();
+        if (_baselineProcessIds == null) { return newIds; }
+        foreach (var name in new[] { GameProcessName, LauncherProcessName })
+        {
+            try
+            {
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { if (!_baselineProcessIds.Contains(p.Id)) { newIds.Add(p.Id); } }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+        return newIds;
+    }
 
     private static void LogLine(string message)
     {
@@ -480,15 +527,29 @@ public static class UIAHelper
                 "CLICK \"{0}\" intent={1} attempt={2} method=coords at ({3},{4}) fractions=({5:F2},{6:F2}) bounds=({7:F0},{8:F0},{9:F0},{10:F0}) in {11} | foreground {12}",
                 label, intent, _coordAttemptIndex + 1, x, y, xFraction, yFraction, bounds.X, bounds.Y, bounds.Width, bounds.Height, scopeDesc, DescribeForegroundWindow()));
 
+            // Custom-rendered launchers (e.g. "MB II: Bannerlord") ignore synthetic WM_LBUTTON*
+            // messages, so SendMessage reports success but the CONTINUE/PLAY button never fires
+            // and the click never verifies. When foreground control is permitted, drive the click
+            // with real hardware input at the screen point — the method that actually registers.
+            if (!RespectUserForeground)
+            {
+                ForceForegroundWindow(hwnd);
+                Thread.Sleep(120);
+                SetCursorPos(x, y);
+                Thread.Sleep(40);
+                mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, UIntPtr.Zero);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, UIntPtr.Zero);
+                Thread.Sleep(200);
+                LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method=real-input-mouse_event at ({1},{2}) in {3}", intent, x, y, scopeDesc));
+                TryFocusGameOrLauncher();
+                return true;
+            }
+
             if (TryClickLauncherHwndAtScreenPoint(hwnd, x, y, scopeDesc, label))
             {
                 Thread.Sleep(200);
                 var method = visuallyObscured ? "hwnd SendMessage-background" : "hwnd SendMessage-first";
                 LogLine(string.Format("CLICK OK \"launcher PLAY/CONTINUE\" intent={0} method={1} at ({2},{3}) in {4}", intent, method, x, y, scopeDesc));
-                if (!RespectUserForeground)
-                {
-                    TryFocusGameOrLauncher();
-                }
                 return true;
             }
 
@@ -1623,6 +1684,13 @@ public static class UIAHelper
         {
             try { ids.Add(process.Id); } catch { }
         }
+        // Before/after diff: also treat processes that appeared after baseline capture as game-host
+        // candidates, so in-game elements are reachable even when the game runs under the launcher
+        // process name (Steam in-launcher hosting). Purely additive: name-matched PIDs are kept.
+        foreach (var newId in GetNewProcessIdsSinceBaseline())
+        {
+            ids.Add(newId);
+        }
         return ids;
     }
 
@@ -2051,6 +2119,9 @@ public static class UIAHelper
 
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
 [UIAHelper]::RespectUserForeground = $RespectUserForeground
+# Pre-launch PID baseline: lets the game-host window be identified by what is NEW after launch,
+# not by process name, which Steam in-launcher hosting makes unreliable.
+[UIAHelper]::CaptureBaselineProcessIds()
 
 Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms respectUserForeground=$RespectUserForeground"
 Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
@@ -2076,11 +2147,18 @@ $script:contaminatedLaunchReason = $null
 $script:automationContinueIntentDeclared = $false
 $script:launcherReadyLogged = $false
 $script:safeModeVisibleLogged = $false
-$script:ContinueClickVerifySec = 8
-$script:ContinueClickVerifySecChrome = 4
-$script:PlayClickVerifySec = 12
-$script:LauncherSelectionMaxMs = 45000
+$script:ContinueClickVerifySec = 4
+$script:ContinueClickVerifySecChrome = 2
+$script:PlayClickVerifySec = 6
+$script:LauncherSelectionMaxMs = $LauncherSelectionMaxMs
+$script:playContinueMenuFirstSeenUtc = $null
 $script:launcherChromeFirstSeenUtc = $null
+if ($LaunchSetup.IsPresent) {
+    $script:ContinueClickVerifySec = 3
+    $script:ContinueClickVerifySecChrome = 2
+    $script:PlayClickVerifySec = 4
+    if ($PollMs -gt 120) { $PollMs = 120 }
+}
 $script:launcherSelectionAttempts = 0
 $script:continueVerifyTotalMs = 0
 $script:safeModeBeforeContinue = $false
@@ -2116,16 +2194,20 @@ function Test-LauncherChromeVisible {
 }
 
 function Update-LauncherSelectionTimer {
-    if (-not (Test-LauncherChromeVisible)) { return }
+    if (-not [UIAHelper]::IsLauncherPlayContinueVisible()) { return }
+    if (-not $script:playContinueMenuFirstSeenUtc) {
+        $script:playContinueMenuFirstSeenUtc = Get-Date
+    }
     if (-not $script:launcherChromeFirstSeenUtc) {
-        $script:launcherChromeFirstSeenUtc = Get-Date
+        $script:launcherChromeFirstSeenUtc = $script:playContinueMenuFirstSeenUtc
     }
 }
 
 function Test-LauncherSelectionBudgetExceeded {
     if ($handoffStarted -or $clickedPlayContinue) { return $false }
-    if (-not $script:launcherChromeFirstSeenUtc) { return $false }
-    $elapsedMs = ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds
+    $anchor = if ($script:playContinueMenuFirstSeenUtc) { $script:playContinueMenuFirstSeenUtc } else { $script:launcherChromeFirstSeenUtc }
+    if (-not $anchor) { return $false }
+    $elapsedMs = ((Get-Date) - $anchor).TotalMilliseconds
     return ($elapsedMs -gt $script:LauncherSelectionMaxMs)
 }
 
@@ -2134,8 +2216,9 @@ function Write-LaunchTimingEvidence {
 
     if ($script:launcherSelectionEnded) { return }
     $selMs = 0
-    if ($script:launcherChromeFirstSeenUtc) {
-        $selMs = [int][Math]::Max(0, ((Get-Date) - $script:launcherChromeFirstSeenUtc).TotalMilliseconds)
+    $timingAnchor = if ($script:playContinueMenuFirstSeenUtc) { $script:playContinueMenuFirstSeenUtc } else { $script:launcherChromeFirstSeenUtc }
+    if ($timingAnchor) {
+        $selMs = [int][Math]::Max(0, ((Get-Date) - $timingAnchor).TotalMilliseconds)
     }
     $safeFlag = if ($script:safeModeBeforeContinue) { 'true' } else { 'false' }
     $line = "LAUNCH_TIMING launcherSelectionMs=$selMs continueVerifyMs=$($script:continueVerifyTotalMs) safeModeBeforeContinue=$safeFlag attempts=$($script:launcherSelectionAttempts) result=$Result"
@@ -2229,6 +2312,10 @@ function Test-GameProcessRunning {
     return [bool](Get-LaunchNavProcessDetection).gameProcessRunning
 }
 
+function Test-RealGameProcessSpawned {
+    return Test-TbgRealGameSpawnDetection -Detection (Get-LaunchNavProcessDetection)
+}
+
 function Get-LaunchNavEnvironmentLine {
     $base = [UIAHelper]::DescribeEnvironment()
     $det = Get-LaunchNavProcessDetection
@@ -2317,6 +2404,24 @@ function Test-PreIntentGameSpawnAndContaminate {
     return $true
 }
 
+function Record-TbgNavLaunchSelection {
+    param(
+        [ValidateSet('play', 'continue')][string]$Intent,
+        [ValidateSet('script', 'user_or_external')][string]$Actor,
+        [string]$ButtonText,
+        [ValidateSet('uia', 'pid_global_uia', 'coordinate_fallback', 'user_handoff')][string]$Method,
+        [int]$Confidence = 85,
+        [int]$ProcessId = 0,
+        [int64]$Hwnd = 0,
+        [string]$WindowTitle = $null,
+        [string]$ProcessName = $null
+    )
+    if (-not (Get-Command Write-TbgLaunchSelection -ErrorAction SilentlyContinue)) { return }
+    Write-TbgLaunchSelection -BannerlordRoot $BannerlordRoot -Actor $Actor -Intent $Intent `
+        -ButtonText $ButtonText -Method $Method -Confidence $Confidence -ProcessId $ProcessId -Hwnd $Hwnd `
+        -WindowTitle $WindowTitle -ProcessName $ProcessName
+}
+
 function Invoke-AdoptLaunchPath {
     param(
         [Parameter(Mandatory = $true)]
@@ -2352,6 +2457,15 @@ function Invoke-AdoptLaunchPath {
     } else {
         Write-LaunchLog "LAUNCH_STATE=play_clicked selectedBy=$SelectedBy"
     }
+    $actor = if ($SelectedBy -eq 'user') { 'user_or_external' } else { 'script' }
+    $method = if ($SelectedBy -eq 'user') { 'user_handoff' } else { 'uia' }
+    $btn = if ($Path -eq 'continue') { 'Continue' } else { 'Play' }
+    $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+    Record-TbgNavLaunchSelection -Intent $Path -Actor $actor -ButtonText $btn -Method $method `
+        -ProcessId $(if ($launcher) { $launcher.Id } else { 0 }) `
+        -Hwnd $(if ($launcher) { [int64]$launcher.MainWindowHandle } else { 0 }) `
+        -WindowTitle $(if ($launcher) { [string]$launcher.MainWindowTitle } else { $null }) `
+        -ProcessName $(if ($launcher) { [string]$launcher.ProcessName } else { $null })
 }
 
 function Test-UserLaunchPathAdopted {
@@ -2364,7 +2478,7 @@ function Test-UserLaunchPathAdopted {
         return $false
     }
 
-    $gameRunning = Test-GameProcessRunning
+    $gameRunning = Test-RealGameProcessSpawned
     $loading = [UIAHelper]::HasLauncherLoadingSurface()
     $launcherGone = -not [UIAHelper]::HasLauncherRoot()
     $buttonsVisible = [UIAHelper]::IsLauncherPlayContinueVisible()
@@ -2374,6 +2488,16 @@ function Test-UserLaunchPathAdopted {
     }
 
     if ($LaunchIntent -eq 'continue' -and $gameRunning -and -not $script:automationClickedPlayContinue) {
+        # An unattended runner-driven continue launch must not assume a *user* launched the game
+        # on a weak/freshness-only signal. Only adopt when a real game process/window exists or the
+        # launcher actually transitioned (loading/gone). Otherwise return false so the runner clicks
+        # CONTINUE itself (continue_escalate) instead of recording a phantom user launch (attempts=0).
+        $adoptDet = Get-LaunchNavProcessDetection
+        $realSignal = $loading -or $launcherGone -or (Test-F7StrongPreIntentGameSignal -Detection $adoptDet `
+                -LoadingSurface $loading -LauncherGone $launcherGone)
+        if (-not $realSignal) {
+            return $false
+        }
         if (-not [UIAHelper]::IsLauncherPlayContinueVisible() -and -not [UIAHelper]::HasLauncherLoadingSurface()) {
             Invoke-AdoptLaunchPath -Path 'play' -SelectedBy 'user'
             return $true
@@ -2819,7 +2943,7 @@ while ((Get-Date) -lt $deadline) {
     if (Test-LauncherSelectionBudgetExceeded) {
         Write-LaunchTimingEvidence -Result 'timeout'
         Write-LaunchLog 'LAUNCH_STATE=launcher_timing_timeout'
-        throw 'launcher selection exceeded 45s budget (launcher_timing_timeout)'
+        throw "launcher selection exceeded $($script:LauncherSelectionMaxMs / 1000)s budget after PLAY/CONTINUE menu (launcher_timing_timeout)"
     }
 
     if (((Get-Date) - $lastHeartbeat).TotalSeconds -ge $heartbeatSec) {
@@ -2835,7 +2959,7 @@ while ((Get-Date) -lt $deadline) {
         $lastHeartbeat = Get-Date
     }
 
-    if ((Test-GameProcessRunning) -and -not $script:gameSpawnLogged) {
+    if ((Test-RealGameProcessSpawned) -and -not $script:gameSpawnLogged) {
         if ((Test-F7ContinueCertStrict) -and -not $script:automationContinueIntentDeclared) {
             $det = Get-LaunchNavProcessDetection
             if (Test-F7StrongPreIntentGameSignal -Detection $det `
@@ -2844,15 +2968,30 @@ while ((Get-Date) -lt $deadline) {
                 if (Test-PreIntentGameSpawnAndContaminate) { return }
             }
         } else {
-            Write-LaunchLog 'LAUNCH_STATE=game_spawned'
-            $script:gameSpawnLogged = $true
-            if (Test-Path -LiteralPath $focusHelperPath) {
-                try {
-                    $raised = & $focusHelperPath
-                    if ($raised) {
-                        Write-LaunchLog 'raised Bannerlord window on game spawn'
-                    }
-                } catch { }
+            # Non-strict path: do not declare game_spawned on a weak/freshness-only signal
+            # (e.g. phase1_active or a deploy-written Status.json). Require either a strong
+            # real process/window signal, or that automation has actually clicked PLAY/CONTINUE.
+            # Otherwise a phantom spawn leads to user-launch-path adoption with attempts=0.
+            $det = Get-LaunchNavProcessDetection
+            $strongSignal = Test-F7StrongPreIntentGameSignal -Detection $det `
+                -LoadingSurface ([UIAHelper]::HasLauncherLoadingSurface()) `
+                -LauncherGone (-not [UIAHelper]::HasLauncherRoot())
+            if ($strongSignal -or $clickedPlayContinue -or $script:automationClickedPlayContinue) {
+                Write-LaunchLog 'LAUNCH_STATE=game_spawned'
+                $script:gameSpawnLogged = $true
+                if (Test-Path -LiteralPath $focusHelperPath) {
+                    try {
+                        $raised = & $focusHelperPath
+                        if ($raised) {
+                            Write-LaunchLog 'raised Bannerlord window on game spawn'
+                        }
+                    } catch { }
+                }
+            } else {
+                if (-not $script:weakSpawnSignalLogged) {
+                    Write-LaunchLog "LAUNCH_STATE=weak_game_signal_ignored confidence=$([string]$det.gameAliveConfidence) method=$([string]$det.gameProcessDetectionMethod) — awaiting real process/window or automation click"
+                    $script:weakSpawnSignalLogged = $true
+                }
             }
         }
     }
@@ -2957,7 +3096,7 @@ while ((Get-Date) -lt $deadline) {
     }
 
     if (Test-UserLaunchPathAdopted) {
-        if (Test-GameProcessRunning) {
+        if (Test-RealGameProcessSpawned) {
             Invoke-Handoff 'user launch path adopted — game running'
             return
         }
@@ -2994,6 +3133,12 @@ while ((Get-Date) -lt $deadline) {
                 } else {
                     Write-LaunchLog 'LAUNCH_STATE=play_clicked selectedBy=automation'
                 }
+                $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
+                Record-TbgNavLaunchSelection -Intent $LaunchIntent -Actor 'script' -ButtonText $displayName `
+                    -Method 'uia' -Confidence 90 -ProcessId $(if ($launcher) { $launcher.Id } else { 0 }) `
+                    -Hwnd $(if ($launcher) { [int64]$launcher.MainWindowHandle } else { 0 }) `
+                    -WindowTitle $(if ($launcher) { [string]$launcher.MainWindowTitle } else { $null }) `
+                    -ProcessName $(if ($launcher) { [string]$launcher.ProcessName } else { $null })
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
                 Extend-DeadlineAfterPlayClick

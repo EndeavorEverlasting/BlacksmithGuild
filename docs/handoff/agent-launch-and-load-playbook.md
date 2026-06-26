@@ -1,6 +1,6 @@
 # Agent Launch and Load Playbook
 
-Read [f7-agent-coordination.md](f7-agent-coordination.md) first. This playbook explains which launch command to use, where a failure belongs, and how to avoid misleading F7 evidence.
+Read [blacksmithguild-agent-coordination.md](blacksmithguild-agent-coordination.md) first. This playbook explains which launch command to use, where a failure belongs, and how to avoid misleading F7 evidence.
 
 Related: [em-dashes-and-log-grep.md](../conventions/em-dashes-and-log-grep.md) · [launcher-foreground-doctrine.md](../conventions/launcher-foreground-doctrine.md) · [f7-recovery-sprint-handoff.md](f7-recovery-sprint-handoff.md)
 
@@ -68,7 +68,7 @@ Do not invoke `launcher-auto-nav.ps1` bare — it requires `-LaunchIntent` and `
 - Game starts but menu intent is wrong: **Agent C** with Layer B log evidence.
 - Map transition crash, status never stabilizes, or 60s poll fails: **Agent A**.
 - Bad grep pattern or em-dash parsing issue: **Agent B** (`verify-log-grep-patterns.ps1`, em-dash docs).
-- Docs disagree with this matrix: update `f7-agent-coordination.md` first.
+- Docs disagree with this matrix: update `blacksmithguild-agent-coordination.md` first.
 
 ---
 

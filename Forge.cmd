@@ -12,7 +12,7 @@ echo In-game: F7 status, F8-F11 dev commands, Ctrl+Alt+S progression test.
 echo Surfaces: docs\in-game-surfaces.md
 echo.
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch -SessionAuthorityMode FreshTestLaunch
 set FORGE_EXIT=%ERRORLEVEL%
 if %FORGE_EXIT% NEQ 0 (
     echo.

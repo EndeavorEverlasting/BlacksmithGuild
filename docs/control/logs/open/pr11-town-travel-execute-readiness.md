@@ -166,4 +166,4 @@ Use **merge commit** (not squash) if preserving discrete evidence commits matter
 
 - Prior assist advisory PASS (attach-only): [`20260624-020821`](../../evidence/live-cert/20260624-020821/checkpoint-01-assistive-town-trade/manifest.json)
 - F7 cert index: [`docs/control/indexes/f7-recovery-index.md`](../../control/indexes/f7-recovery-index.md)
-- Agent coordination: [`docs/handoff/f7-agent-coordination.md`](../../../handoff/f7-agent-coordination.md)
+- Agent coordination: [`docs/handoff/blacksmithguild-agent-coordination.md`](../../../handoff/blacksmithguild-agent-coordination.md)

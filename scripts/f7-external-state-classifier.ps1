@@ -8,7 +8,7 @@ $script:F7ExternalStateLastPollEmitUtc = [datetime]::MinValue
 
 function Initialize-F7ExternalStateTimeline {
     param(
-        [ValidateSet('cert', 'assistive')]
+        [ValidateSet('cert', 'assistive', 'assistive_launch_setup')]
         [string]$Mode = 'cert',
         [string]$OutputPath,
         [string]$SessionId = $null,
@@ -558,7 +558,7 @@ function Get-F7ExternalStateSnapshot {
 function Invoke-F7ExternalStateClassification {
     param(
         [string]$BannerlordRoot,
-        [ValidateSet('cert', 'assistive')]
+        [ValidateSet('cert', 'assistive', 'assistive_launch_setup')]
         [string]$Mode = 'cert',
         [string]$Phase1Path = $null,
         [string]$StatusPath = $null,
@@ -694,7 +694,7 @@ function Add-F7ExternalStateTimelineEvent {
 function Add-F7ExternalStateTimelineEventThrottled {
     param(
         [string]$BannerlordRoot,
-        [ValidateSet('cert', 'assistive')]
+        [ValidateSet('cert', 'assistive', 'assistive_launch_setup')]
         [string]$Mode = 'cert',
         [string]$Phase1Path,
         [string]$StatusPath,
@@ -840,7 +840,7 @@ function Test-F7GuardedActionAllowed {
 function Emit-F7ExternalStateTimelineCheckpoint {
     param(
         [string]$BannerlordRoot,
-        [ValidateSet('cert', 'assistive')]
+        [ValidateSet('cert', 'assistive', 'assistive_launch_setup')]
         [string]$Mode = 'cert',
         [string]$Phase1Path,
         [string]$StatusPath,

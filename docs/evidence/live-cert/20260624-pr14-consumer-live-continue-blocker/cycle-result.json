@@ -1,0 +1,21 @@
+﻿{
+    "sessionId":  "20260624-131721",
+    "checkpointDir":  "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild\\docs\\evidence\\live-cert\\20260624-131721-pr11-launch-attach-execute",
+    "branch":  "fix/pr11-unattended-execute-cert-runner",
+    "startSha":  "613f6069664a281e18844f826878317dc11791f9",
+    "endSha":  "613f6069664a281e18844f826878317dc11791f9",
+    "targetSettlement":  "Ortysia",
+    "launchIntent":  "continue",
+    "dryRun":  false,
+    "attachOnly":  false,
+    "startedAtUtc":  "2026-06-24T17:17:21.8935589Z",
+    "endedAtUtc":  "2026-06-24T17:18:44.4247572Z",
+    "certAttempted":  false,
+    "routeAgent":  "Agent C - External State Classifier / Assistive Runner",
+    "exitCode":  2,
+    "failureClass":  "continue_not_found",
+    "windowClassifierResult":  "continue_not_verified",
+    "navError":  "launcher selection exceeded 45s budget (launcher_timing_timeout)",
+    "passFail":  "FAIL",
+    "attachResult":  "launch_failed"
+}

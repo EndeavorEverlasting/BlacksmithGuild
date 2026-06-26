@@ -4,7 +4,7 @@
 
 **Principle:** Automate the hands, not the user's desktop. F7 cert and launcher nav must work while the user works in other apps (IDE, browser, chat).
 
-Related: [`agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md) · [`f7-agent-coordination.md`](../handoff/f7-agent-coordination.md)
+Related: [`agent-launch-and-load-playbook.md`](../handoff/agent-launch-and-load-playbook.md) · [`blacksmithguild-agent-coordination.md`](../handoff/blacksmithguild-agent-coordination.md)
 
 ---
 

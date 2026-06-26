@@ -56,6 +56,8 @@ namespace BlacksmithGuild
 
             if (IsCampaignActive())
             {
+                RuntimeLifecycleWriter.OnFrameHeartbeat();
+
                 if (!_afterFlushWriteTraced)
                 {
                     _afterFlushWriteTraced = true;
@@ -66,6 +68,8 @@ namespace BlacksmithGuild
 
                 GameSessionState.Refresh();
                 _refreshGenerationAtCampaignTick = GameSessionState.RefreshGeneration;
+
+                AutoTravelService.OnRealtimeTick();
 
                 if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
                     && CampaignMapReadyOrchestrator.ShouldRunOrchestratorTick())
