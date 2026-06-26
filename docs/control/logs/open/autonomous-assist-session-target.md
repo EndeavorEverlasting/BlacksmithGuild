@@ -4,17 +4,19 @@ This document codifies the current user-facing product goal.
 
 ## Target
 
-- Run one command
+- Run one command that starts a **recursive campaign assist session** (not a one-shot cert finish line)
 - game opens automatically
 - Continue selected automatically
 - campaign loads
 - assist loop starts automatically
-- avatar visibly trains / moves / acts on campaign map
+- each cycle: observe state, choose next safe branch, act when allowed, log checkpoints
+- avatar visibly trains / moves / acts on campaign map when travel/training branches run
 - logs document every step
 - user can toggle off
-- runner stops cleanly
-- summary evidence written
-- terminal finalization recorded
+- runner stops cleanly with terminal finalization
+- `assist-loop-summary.json` and `campaign-loop-summary.json` written
+
+Doctrine: [`docs/handoff/recursive-campaign-assist-loop.md`](../../handoff/recursive-campaign-assist-loop.md)
 
 ## Explicit non-goals
 
@@ -33,6 +35,7 @@ A checkpoint is not completion. `checkpoint_reached` events document progress; c
 - `session-manifest.json`
 - `assist-loop-timeline.json`
 - `assist-loop-summary.json`
+- `campaign-loop-summary.json`
 - `state-snapshots.jsonl`
 - `command-timeline.jsonl`
 - `toggle-events.jsonl`

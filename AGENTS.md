@@ -46,6 +46,7 @@ One command should:
 ## Coordination doctrine
 
 - Read `docs/handoff/blacksmithguild-agent-coordination.md` before changing owned files.
+- Recursive campaign loop doctrine: `docs/handoff/recursive-campaign-assist-loop.md` (checkpoints are progress, not completion).
 - Runtime truth and runner consumption must follow `docs/handoff/runtime-state-routing.md`.
 - Window selection must follow `docs/control/logs/open/window-delta-doctrine.md`.
 - The current user-facing product target is `docs/control/logs/open/autonomous-assist-session-target.md`.

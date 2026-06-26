@@ -17,6 +17,7 @@ Related:
 - Sprint control pointer: [`../control/README.md`](../control/README.md)
 - Em-dash grep guard: [`../conventions/em-dashes-and-log-grep.md`](../conventions/em-dashes-and-log-grep.md)
 - PowerShell UTF-8 BOM (PS 5.1 vs pwsh): [`../conventions/powershell-utf8-bom-doctrine.md`](../conventions/powershell-utf8-bom-doctrine.md)
+- Recursive campaign loop doctrine: [`recursive-campaign-assist-loop.md`](recursive-campaign-assist-loop.md)
 - Launcher foreground doctrine: [`../conventions/launcher-foreground-doctrine.md`](../conventions/launcher-foreground-doctrine.md)
 
 ---
@@ -77,9 +78,9 @@ Every agent must:
 
 No agent should route the user into repetitive manual log harvesting, manual launcher babysitting, or manual hotkey ceremony for the preferred path. If a run needs evidence, the runner must capture it. If a target needs a toggle, the file-based toggle must be documented and runner-observable.
 
-## One command, visible gameplay product target
+## One command, recursive campaign assist target
 
-The product target is one command that builds/deploys if needed, launches Bannerlord, selects Continue automatically, waits for campaign attach, consumes `stateMachine` + `RuntimeLifecycle`, starts the autonomous assist loop without hotkey, visibly moves/trains/acts on the campaign map, logs every step, allows user toggle-off, stops cleanly, and writes summary evidence. See [`../control/logs/open/autonomous-assist-session-target.md`](../control/logs/open/autonomous-assist-session-target.md).
+The product target is one command that builds/deploys if needed, launches Bannerlord, selects Continue automatically, waits for campaign attach, consumes `stateMachine` + `RuntimeLifecycle`, starts the autonomous assist loop without hotkey, and runs a **recursive campaign loop** (observe → choose next safe branch → act → log checkpoint → recompute) until a terminal stop. Checkpoints are progress, not completion. See [`autonomous-assist-session-target.md`](../control/logs/open/autonomous-assist-session-target.md) and [`recursive-campaign-assist-loop.md`](recursive-campaign-assist-loop.md).
 
 ## Synthesizing parallel reports
 

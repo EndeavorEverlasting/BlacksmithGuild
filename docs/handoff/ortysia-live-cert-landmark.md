@@ -25,8 +25,10 @@ runtimeLifecycleConsumed=true
 stateMachineConsumed=true
 executeChecks.partyMoved=true
 executeChecks.actualExecutionObserved=true
-executeChecks.fakeGameplayDelta=true
+executeChecks.fakeGameplayDelta=false
 ```
+
+Note: an earlier `cycle-result.json` snapshot incorrectly recorded `fakeGameplayDelta=true`; the authoritative travel execution artifact below shows the correct value.
 
 Live execution proof from `BlacksmithGuild_AssistiveTravelExecution.json` during the run:
 
@@ -103,9 +105,10 @@ For any future live re-cert, use an early-kill rule: if state classification rep
 
 ## Forward Path
 
-Next work should harden the milestone rather than re-prove it from scratch:
+Next work should extend the Ortysia milestone into the recursive campaign loop, not re-prove one-shot travel from scratch:
 
-1. Unify the launcher UIA baseline with `TbgProcessLifecycle.preExistingProcesses` so there is a single lifecycle authority instead of parallel baselines.
+1. Wire live autonomous-assist evidence to `campaign-loop-summary.json` and per-cycle `next_action_planned` checkpoints (see `run-autonomous-assist-session.ps1`).
+2. Unify the launcher UIA baseline with `TbgProcessLifecycle.preExistingProcesses` so there is a single lifecycle authority instead of parallel baselines.
 2. Strengthen `test-launcher-pid-baseline-diff.ps1` from an anchor test into a behavioral fixture: when a new post-baseline PID exists, coordinate/title fallback must be rejected.
 3. Keep `ConvertTo-Pr11Utc` as the only freshness converter for UTC-by-contract fields.
 4. Preserve the execute PASS contract: attach ready, probe ACK, execute ACK, `partyMovedDistance > 0`, `travelClockRunning=true`, `fakeGameplayDelta=false`.

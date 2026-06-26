@@ -129,6 +129,81 @@ function Test-AutonomousAssistLoopReadiness {
     return [pscustomobject]$result
 }
 
+function Get-AutonomousAssistPlannedBranch {
+    param([object]$Decision)
+    if (-not $Decision) { return 'observe_only' }
+    $considered = if ($Decision.actionConsidered) { [string]$Decision.actionConsidered } else { $null }
+    switch ($considered) {
+        'travel_to_training_target' { return 'travel' }
+        'observe_route' { return 'observe_only' }
+        'smithing' { return 'smith' }
+        'trade' { return 'trade' }
+        default {
+            if ($considered) { return $considered }
+            switch ([string]$Decision.decision) {
+                'wait' { return 'rest_wait' }
+                'observe' { return 'observe_only' }
+                'block' { return 'observe_only' }
+                'stop_unsafe_surface' { return 'avoid_threat' }
+                default { return 'observe_only' }
+            }
+        }
+    }
+}
+
+function Merge-AutonomousAssistCampaignLoopSummary {
+    param(
+        [Parameter(Mandatory = $true)][hashtable]$Summary,
+        [string]$SessionId = $null,
+        [string]$TargetSettlement = $null,
+        [object]$LastDecision = $null,
+        [int]$CycleId = 0,
+        [string]$CurrentTown = $null
+    )
+
+    if (-not (Get-Command New-AutomationCampaignLoopSummary -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+    }
+
+    $passFail = if ($Summary.passFail) { [string]$Summary.passFail } else { $null }
+    $stopReason = if ($Summary.stopReason) { [string]$Summary.stopReason } else { $null }
+    $failureClass = if ($Summary.failureClass) { [string]$Summary.failureClass } else { $null }
+    $terminalState = if ($Summary.terminalState) { [string]$Summary.terminalState } else { $null }
+    $isDryRun = ($passFail -eq 'DRY_RUN')
+    $isTerminal = (-not $isDryRun) -and (
+        ($passFail -in @('PASS', 'FAIL')) -or
+        ($terminalState -in @('pass', 'fail', 'abort'))
+    )
+
+    $branch = Get-AutonomousAssistPlannedBranch -Decision $LastDecision
+    $nextReason = if ($LastDecision -and $LastDecision.reason) { [string]$LastDecision.reason } else { $null }
+
+    if ($isTerminal) {
+        $reason = if ($stopReason) { $stopReason } elseif ($failureClass) { $failureClass } else { $passFail }
+        $campaign = New-AutomationCampaignLoopSummary -SessionId $SessionId -CycleId $CycleId `
+            -Phase 'campaign_loop' -CurrentTown $CurrentTown -NextPlannedTown $TargetSettlement `
+            -Terminal:$true -TerminalState $terminalState -PassFail $passFail `
+            -NextActionRequired:$false -Reason $reason
+    } else {
+        $campaign = New-AutomationCampaignLoopSummary -SessionId $SessionId -CycleId $CycleId `
+            -Phase 'campaign_loop' -CurrentTown $CurrentTown -NextPlannedTown $TargetSettlement `
+            -SelectedAction $(if ($LastDecision) { [string]$LastDecision.actionConsidered } else { $null }) `
+            -Terminal:$false -NextActionRequired:$true -NextPlannedBranch $branch `
+            -NextActionReason $nextReason -Reason $nextReason
+    }
+
+    $validation = Test-AutomationCampaignLoopSummary -Summary $campaign
+    if (-not $validation.pass) {
+        throw "campaign loop summary contract failed: $($validation | ConvertTo-Json -Compress)"
+    }
+
+    $Summary.nextActionRequired = $campaign.nextActionRequired
+    $Summary.nextPlannedBranch = $campaign.nextPlannedBranch
+    $Summary.nextActionReason = $campaign.nextActionReason
+    $Summary.campaignLoopSummary = $campaign
+    return $Summary
+}
+
 function Test-TbgPostHandoffFastFail {
     param(
         [object]$Detection,
@@ -405,10 +480,16 @@ function Save-AutonomousAssistSessionEvidence {
         Save-Pr11JsonArtifact -Object $manifest -Path (Join-Path $dir 'session-manifest.json') | Out-Null
         Save-Pr11JsonArtifact -Object @($Evidence.timeline.ToArray()) -Path (Join-Path $dir 'assist-loop-timeline.json') | Out-Null
         Save-Pr11JsonArtifact -Object $Summary -Path (Join-Path $dir 'assist-loop-summary.json') | Out-Null
+        if ($Summary.campaignLoopSummary) {
+            Save-Pr11JsonArtifact -Object $Summary.campaignLoopSummary -Path (Join-Path $dir 'campaign-loop-summary.json') | Out-Null
+        }
     } else {
         $manifest | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $dir 'session-manifest.json') -Encoding UTF8
         @($Evidence.timeline.ToArray()) | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $dir 'assist-loop-timeline.json') -Encoding UTF8
         $Summary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $dir 'assist-loop-summary.json') -Encoding UTF8
+        if ($Summary.campaignLoopSummary) {
+            $Summary.campaignLoopSummary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $dir 'campaign-loop-summary.json') -Encoding UTF8
+        }
     }
 
     Write-AssistSessionJsonlFile -List $Evidence.stateSnapshots -Path (Join-Path $dir 'state-snapshots.jsonl') | Out-Null

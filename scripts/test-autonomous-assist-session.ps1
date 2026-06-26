@@ -10,6 +10,7 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
 . (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
+. (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $tmpRoot = Join-Path $env:TEMP "autonomous-assist-session-$PID"
@@ -229,11 +230,15 @@ Add-AssistSessionJsonl -List $evidence.timeline -Event ([ordered]@{ atUtc = (Get
 $summary = [ordered]@{
     passFail = 'PASS'; failureClass = $null; stopReason = 'user_toggle_off'
     classification = 'user_toggle_off'; endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    iterationCount = 1; terminalState = 'pass'
 }
+$summary = Merge-AutonomousAssistCampaignLoopSummary -Summary $summary -SessionId 'test-session' `
+    -TargetSettlement 'Ortysia' -LastDecision ([pscustomobject]@{ actionConsidered = 'observe_route'; decision = 'observe'; reason = 'campaign_map_observe_no_spam' }) `
+    -CycleId 1
 Save-AutonomousAssistSessionEvidence -Evidence $evidence -Summary $summary -BannerlordRoot $tmpRoot `
     -StatusPath (Join-Path $tmpRoot 'status-settlement_menu.json') -RuntimeLifecyclePath (Join-Path $tmpRoot 'runtime-settlement_menu.json') | Out-Null
 foreach ($required in @(
-    'session-manifest.json', 'assist-loop-timeline.json', 'assist-loop-summary.json',
+    'session-manifest.json', 'assist-loop-timeline.json', 'assist-loop-summary.json', 'campaign-loop-summary.json',
     'state-snapshots.jsonl', 'command-timeline.jsonl', 'toggle-events.jsonl',
     'safety-decisions.jsonl', 'travel-decisions.jsonl', 'training-decisions.jsonl'
 )) {
@@ -242,9 +247,21 @@ foreach ($required in @(
 }
 $summaryParsed = Get-Content -LiteralPath (Join-Path $evidenceDir 'assist-loop-summary.json') -Raw | ConvertFrom-Json
 if ($summaryParsed.classification -ne 'user_toggle_off') { throw 'summary must record final classification' }
+if ($summaryParsed.nextActionRequired -ne $false) { throw 'terminal assist summary must not require next action' }
+$campaignParsed = Get-Content -LiteralPath (Join-Path $evidenceDir 'campaign-loop-summary.json') -Raw | ConvertFrom-Json
+$campaignCheck = Test-AutomationCampaignLoopSummary -Summary $campaignParsed
+if (-not $campaignCheck.pass) { throw 'campaign-loop-summary.json failed contract' }
+
+# attach_ready must require Agent B state_machine confidence, not legacy fields only
+$runnerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1') -Raw
+if ($runnerText -match 'canPollFileInbox\s+-and\s+\$ready\.inGameAssistReady') {
+    throw 'attach loop must not break on legacy readiness fields alone'
+}
+if ($runnerText -notmatch 'Test-AutonomousAssistLoopReadiness') {
+    throw 'attach loop must use Test-AutonomousAssistLoopReadiness'
+}
 
 # runner must not require hotkey
-$runnerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1') -Raw
 foreach ($needle in @(
     'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
     'Test-TbgPostHandoffFastFail', 'Get-AutonomousAssistIterationDecision', 'AssistToggle',
