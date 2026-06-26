@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using BlacksmithGuild.DevTools.Automation;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools
@@ -24,6 +25,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _gracefulShutdownObserved;
         private static DateTime? _shutdownObservedAtUtc;
         private static string _shutdownReason;
+        private static bool _runtimeLifecycleCheckpointEmitted;
 
         public static void OnModuleLoaded()
         {
@@ -58,6 +60,14 @@ namespace BlacksmithGuild.DevTools
             }
 
             WriteLifecycleFile();
+            if (!_runtimeLifecycleCheckpointEmitted)
+            {
+                _runtimeLifecycleCheckpointEmitted = true;
+                AutomationUserMessageService.Checkpoint(
+                    AutomationCheckpointEvent.RuntimeLifecycleConsumed,
+                    "Runtime lifecycle heartbeat consumed.",
+                    phase: "runtime");
+            }
         }
 
         public static void RecordCommandStarted(string commandName, int sequence = -1)

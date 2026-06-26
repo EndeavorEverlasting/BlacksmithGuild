@@ -319,6 +319,7 @@ function New-AutonomousAssistSessionEvidence {
         safetyDecisions = New-Object System.Collections.Generic.List[object]
         travelDecisions = New-Object System.Collections.Generic.List[object]
         trainingDecisions = New-Object System.Collections.Generic.List[object]
+        checkpointEvents = New-Object System.Collections.Generic.List[object]
     }
 }
 
@@ -346,6 +347,31 @@ function Write-AssistSessionJsonlFile {
         Set-Content -LiteralPath $Path -Value $lines -Encoding UTF8
     }
     return $Path
+}
+
+function Get-AutomationModEventPaths {
+    param([string]$BannerlordRoot)
+    $paths = New-Object System.Collections.Generic.List[string]
+    if (Get-Command Get-AssistiveArtifactCandidates -ErrorAction SilentlyContinue) {
+        foreach ($candidate in @(Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot -FileName 'BlacksmithGuild_AutomationEvents.jsonl')) {
+            if ($candidate -and -not $paths.Contains($candidate)) {
+                $paths.Add($candidate) | Out-Null
+            }
+        }
+    }
+    if (Get-Command Get-BannerlordDocsRoot -ErrorAction SilentlyContinue) {
+        $docsPath = Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_AutomationEvents.jsonl'
+        if ($docsPath -and -not $paths.Contains($docsPath)) {
+            $paths.Add($docsPath) | Out-Null
+        }
+    }
+    if ($BannerlordRoot) {
+        $rootPath = Join-Path $BannerlordRoot 'BlacksmithGuild_AutomationEvents.jsonl'
+        if (-not $paths.Contains($rootPath)) {
+            $paths.Add($rootPath) | Out-Null
+        }
+    }
+    return @($paths.ToArray())
 }
 
 function Save-AutonomousAssistSessionEvidence {
@@ -391,6 +417,15 @@ function Save-AutonomousAssistSessionEvidence {
     Write-AssistSessionJsonlFile -List $Evidence.safetyDecisions -Path (Join-Path $dir 'safety-decisions.jsonl') | Out-Null
     Write-AssistSessionJsonlFile -List $Evidence.travelDecisions -Path (Join-Path $dir 'travel-decisions.jsonl') | Out-Null
     Write-AssistSessionJsonlFile -List $Evidence.trainingDecisions -Path (Join-Path $dir 'training-decisions.jsonl') | Out-Null
+    if (Get-Command Write-AutomationCheckpointEventsFile -ErrorAction SilentlyContinue) {
+        $events = @($Evidence.checkpointEvents.ToArray())
+        if (Get-Command Merge-AutomationCheckpointEvents -ErrorAction SilentlyContinue) {
+            $events = Merge-AutomationCheckpointEvents -RunnerEvents $events -ModEventPaths (Get-AutomationModEventPaths -BannerlordRoot $BannerlordRoot)
+        }
+        Write-AutomationCheckpointEventsFile -Events $events -Path (Join-Path $dir 'checkpoint-events.jsonl') | Out-Null
+    } else {
+        Write-AssistSessionJsonlFile -List $Evidence.checkpointEvents -Path (Join-Path $dir 'checkpoint-events.jsonl') | Out-Null
+    }
 
     if (Get-Command Copy-TbgLifecycleArtifacts -ErrorAction SilentlyContinue) {
         Copy-TbgLifecycleArtifacts -BannerlordRoot $BannerlordRoot -CheckpointDir $dir | Out-Null

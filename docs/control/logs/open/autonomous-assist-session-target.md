@@ -14,6 +14,7 @@ This document codifies the current user-facing product goal.
 - user can toggle off
 - runner stops cleanly
 - summary evidence written
+- terminal finalization recorded
 
 ## Explicit non-goals
 
@@ -24,6 +25,8 @@ This document codifies the current user-facing product goal.
 - fake travel/gold/inventory/XP
 
 The preferred path requires no hotkey; the autonomous assist loop starts after the runner reaches campaign attach and consumes runtime state.
+
+A checkpoint is not completion. `checkpoint_reached` events document progress; completion requires `finalization_started` and a terminal `finalized_pass`, `finalized_fail`, or `finalized_abort` event in `checkpoint-events.jsonl`.
 
 ## Required assist loop files
 
@@ -36,6 +39,7 @@ The preferred path requires no hotkey; the autonomous assist loop starts after t
 - `safety-decisions.jsonl`
 - `travel-decisions.jsonl`
 - `training-decisions.jsonl`
+- `checkpoint-events.jsonl`
 - `process-lifecycle.json`
 - `runtime-lifecycle.json`
 - `BlacksmithGuild_Status.json`
@@ -44,6 +48,18 @@ The preferred path requires no hotkey; the autonomous assist loop starts after t
 - `termination-detection.json`
 - `safe-mode-detection.json` if present
 - `BlacksmithGuild_AssistiveTravelExecution.json` if travel executes
+
+## PASS Gate
+
+`assist-loop-summary.json.passFail=PASS` is valid only when `checkpoint-events.jsonl` contains `finalized_pass` and the required checkpoints for the run:
+
+- `attach_ready`
+- `state_machine_consumed`
+- `runtime_lifecycle_consumed`
+- `assist_loop_started`
+- `summary_written`
+
+Travel execution additionally requires `probe_ack`, `execute_ack`, `party_movement_observed`, `partyMovedDistance > 0`, `travelClockRunning=true`, and `fakeGameplayDelta=false`.
 
 ## Toggle mechanism
 

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.Library;
 
@@ -8,6 +9,7 @@ namespace BlacksmithGuild.DevTools.Assistive
     public static class AssistReadinessEvaluator
     {
         private static string _lastTraceFingerprint;
+        private static bool _attachReadyCheckpointEmitted;
 
         public static bool IsOpenMapReady =>
             GameSessionState.IsCampaignMapReady && GameSessionState.IsCampaignMapSurfaceOpen;
@@ -206,6 +208,16 @@ namespace BlacksmithGuild.DevTools.Assistive
 
             if (ready)
             {
+                if (!_attachReadyCheckpointEmitted)
+                {
+                    _attachReadyCheckpointEmitted = true;
+                    AutomationUserMessageService.Checkpoint(
+                        AutomationCheckpointEvent.AttachReady,
+                        "Assist attach ready.",
+                        phase: "attach",
+                        detailsJson: "{\"surface\":\"" + Escape(surface) + "\"}");
+                }
+
                 DebugLogger.Test(
                     $"[TBG TRACE] area=FileInboxReadiness op=Evaluate stage=ok surface={surface} canPollFileInbox=true",
                     showInGame: false);
@@ -224,5 +236,8 @@ namespace BlacksmithGuild.DevTools.Assistive
                 $"[TBG TRACE] area=FileInboxReadiness op=Evaluate stage=skipped reason={skipReason ?? "unknown"}",
                 showInGame: false);
         }
+
+        private static string Escape(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

@@ -20,6 +20,8 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
 . (Join-Path $PSScriptRoot 'forge-status.ps1')
 . (Join-Path $PSScriptRoot 'dev-command-names.ps1')
+. (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+. (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 if ($WhatIf) {
     $modeLabel = if ($LaunchIfNeeded) { 'attach then launch if needed' } else { 'attach-only' }
@@ -60,6 +62,8 @@ $manualLaunchAccepted = $true
 $probeAckOk = $false
 $probeJson = $null
 $harvestResult = $null
+Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'session_started' `
+    -SessionId $sessionId -Phase 'start' -Runner 'run-town-to-town-trade-assist-cert.ps1' | Out-Null
 
 function Test-AssistWallExceeded {
     if ((Get-Date) -gt $wallDeadline) {
@@ -148,6 +152,28 @@ function Complete-AssistCert {
         -LaunchLogPath $launchLogPath `
         -RunnerCommandLine $runnerCommandLine
 
+    $hasTerminal = [bool](@($script:AutomationCheckpointEvents.ToArray() | Where-Object { $_.isTerminal -eq $true }).Count -gt 0)
+    if (-not $hasTerminal) {
+        Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'summary_written' `
+            -SessionId $sessionId -Phase 'assistive_attach' -Runner 'run-town-to-town-trade-assist-cert.ps1' `
+            -Reason 'manifest.json prepared' | Out-Null
+        $state = if ($passFail -eq 'PASS') { 'pass' } elseif ($passFail -eq 'FAIL') { 'fail' } else { 'abort' }
+        $start = Start-AutomationFinalization -List $script:AutomationCheckpointEvents -SessionId $sessionId `
+            -Phase 'assistive_attach' -Runner 'run-town-to-town-trade-assist-cert.ps1' -Reason $failureClass
+        $criteria = Get-AutomationProjectedTerminalCriteria -Events @($script:AutomationCheckpointEvents.ToArray()) `
+            -State $state -Summary ([pscustomobject]@{ passFail = $passFail }) `
+            -RequiredCheckpoints @('attach_ready', 'probe_ack', 'summary_written')
+        $terminal = Complete-AutomationFinalization -List $script:AutomationCheckpointEvents -State $state `
+            -SessionId $sessionId -Phase 'assistive_attach' -Runner 'run-town-to-town-trade-assist-cert.ps1' `
+            -Reason $failureClass -Criteria $criteria -RelatedEventId $start.eventId -SummaryWritten:$true
+        $Extra.finalizedEventId = $terminal.eventId
+        $Extra.terminalState = $state
+        $Extra.finalizationSequence = @($script:AutomationCheckpointEvents.ToArray() | Where-Object { $_.eventType -like 'finalization_*' -or $_.eventType -like 'finalized_*' })
+        $events = Merge-AutomationCheckpointEvents -RunnerEvents @($script:AutomationCheckpointEvents.ToArray()) `
+            -ModEventPaths (Get-AutomationModEventPaths -BannerlordRoot $bannerlordRoot)
+        Write-AutomationCheckpointEventsFile -Events $events -Path (Join-Path $checkpointDir 'checkpoint-events.jsonl') | Out-Null
+    }
+
     $null = Emit-F7ExternalStateTimelineCheckpoint -BannerlordRoot $bannerlordRoot -Mode assistive `
         -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
         -LaunchPath $launchPath -LaunchSelectedBy 'user' `
@@ -219,6 +245,9 @@ if (-not $attach.assistiveAttach) {
     Write-Host "FAIL: $failureClass" -ForegroundColor Red
     exit $exitCode
 }
+Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'attach_ready' `
+    -SessionId $sessionId -Phase 'assistive_attach' -Runner 'run-town-to-town-trade-assist-cert.ps1' `
+    -Reason 'assistive_attach' | Out-Null
 
 $null = Emit-F7ExternalStateTimelineCheckpoint -BannerlordRoot $bannerlordRoot -Mode assistive `
     -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath `
@@ -253,6 +282,8 @@ try {
     Send-ForgeCommand -CommandName $probeCommand -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ProbeTimeoutSec | Out-Null
     $probeAckOk = $true
     $notes += "$probeCommand ack received"
+    Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'probe_ack' `
+        -SessionId $sessionId -Phase 'assistive_attach' -Runner 'run-town-to-town-trade-assist-cert.ps1' | Out-Null
 } catch {
     $failureClass = 'assistive_probe_failed'
     $notes += $_.Exception.Message

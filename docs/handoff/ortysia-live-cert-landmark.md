@@ -59,6 +59,26 @@ These are product invariants, not preferences:
 3. **UTC-by-contract fields stay UTC.** Fields named `*Utc` from JSON must be treated as UTC even when `ConvertFrom-Json` has already coerced them to `[datetime]` with `Kind=Unspecified`.
 4. **Movement evidence must be physical.** A passing execute cert requires real party movement (`partyMovedDistance > 0`) and a running travel clock. Route intent alone is not enough.
 5. **State surfaces must be checked in both locations.** Live status may be written under the Steam Bannerlord root while Documents copies are rotated to `.bak`. A stale Documents file is not proof that state logging stopped.
+6. **A checkpoint is not completion.** `checkpoint_reached` events show progress only. Completion requires a terminal `finalized_pass`, `finalized_fail`, or `finalized_abort` event in `checkpoint-events.jsonl`, linked to the run summary.
+
+## Checkpoint vs Finalization
+
+Every cert runner that claims a terminal result must write `checkpoint-events.jsonl`.
+
+Required execute PASS evidence now includes:
+
+```text
+checkpoint-events.jsonl contains finalized_pass
+attach_ready checkpoint reached
+state_machine_consumed checkpoint reached
+runtime_lifecycle_consumed checkpoint reached
+probe_ack checkpoint reached
+execute_ack checkpoint reached
+party_movement_observed checkpoint reached
+summary_written checkpoint reached
+```
+
+Reaching any checkpoint alone cannot set `passFail=PASS`. The runner must start finalization, evaluate criteria, emit `finalized_pass`, and only then write the summary/termination linkage.
 
 ## Required Validation Before Touching This Lane
 
@@ -75,6 +95,8 @@ test-pr11-utc-freshness.ps1
 test-launcher-pid-baseline-diff.ps1
 test-pr11-execute-cert-parser.ps1
 test-faction-posture-scan-guard.ps1
+test-automation-checkpoint-finalization.ps1
+test-runtime-user-message-events.ps1
 ```
 
 For any future live re-cert, use an early-kill rule: if state classification repeats the same ready state while no command is issued and the attach gate does not transition, stop the run, capture evidence, and diagnose the gate. Do not burn the full timeout on a dead run.

@@ -36,8 +36,9 @@ $lifecyclePath = Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1'
 $pr11ConsumerPath = Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1'
 $autonomousAssistPath = Join-Path $PSScriptRoot 'autonomous-assist-session.ps1'
 $autonomousRunnerPath = Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1'
+$automationCheckpointContractPath = Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1'
 
-foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath, $pr11ConsumerPath, $autonomousAssistPath, $autonomousRunnerPath)) {
+foreach ($p in @($gatePath, $bisectPath, $launchLogPath, $harvestPath, $launchContractPath, $classifierPath, $pathsPath, $navPath, $forgeStatusPath, $pr11ClassifierPath, $pr11ExecuteRunnerPath, $lifecyclePath, $pr11ConsumerPath, $autonomousAssistPath, $autonomousRunnerPath, $automationCheckpointContractPath)) {
     if (-not (Test-Path -LiteralPath $p)) {
         Add-Failure "Missing required script: $p"
         continue
@@ -344,6 +345,46 @@ if (Test-Path -LiteralPath $autonomousRunnerPath) {
     Add-Failure 'Missing run-autonomous-assist-session.ps1'
 }
 
+if (Test-Path -LiteralPath $automationCheckpointContractPath) {
+    $checkpointContractText = Get-Content -LiteralPath $automationCheckpointContractPath -Raw
+    foreach ($needle in @(
+        'New-AutomationCheckpointEvent',
+        'Add-AutomationCheckpointEvent',
+        'Start-AutomationFinalization',
+        'Complete-AutomationFinalization',
+        'Test-AutomationPassCriteria',
+        'Merge-AutomationCheckpointEvents',
+        'Write-AutomationCheckpointEventsFile',
+        'finalized_pass',
+        'checkpoint_reached'
+    )) {
+        if ($checkpointContractText -notmatch [regex]::Escape($needle)) {
+            Add-Failure "automation-checkpoint-contract.ps1 missing: $needle"
+        } else {
+            Write-Host "PASS automation checkpoint contract contains: $needle" -ForegroundColor Green
+        }
+    }
+} else {
+    Add-Failure 'Missing automation-checkpoint-contract.ps1'
+}
+
+foreach ($pair in @(
+    @{ path = 'src\BlacksmithGuild\DevTools\Automation\AutomationUserMessageService.cs'; needle = 'AutomationCheckpointEventWriter.Append'; label = 'AutomationUserMessageService writer hook' },
+    @{ path = 'src\BlacksmithGuild\DevTools\Automation\AutomationCheckpointEventWriter.cs'; needle = 'AutomationCheckpointEvent.FileName'; label = 'AutomationCheckpointEventWriter JSONL path authority' }
+)) {
+    $needlePath = Join-Path $repoRoot $pair.path
+    if (-not (Test-Path -LiteralPath $needlePath)) {
+        Add-Failure "Missing $($pair.label): $needlePath"
+        continue
+    }
+    $needleText = Get-Content -LiteralPath $needlePath -Raw
+    if ($needleText -notmatch [regex]::Escape($pair.needle)) {
+        Add-Failure "$($pair.label) missing: $($pair.needle)"
+    } else {
+        Write-Host "PASS $($pair.label)" -ForegroundColor Green
+    }
+}
+
 $assistiveRegression = Join-Path $PSScriptRoot 'test-f7-assistive-attach-mode.ps1'
 if (Test-Path -LiteralPath $assistiveRegression) {
     Write-Host 'Running test-f7-assistive-attach-mode.ps1 ...' -ForegroundColor Cyan
@@ -414,10 +455,13 @@ foreach ($pair in @(
     @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' },
     @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' },
     @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' },
+    @{ path = 'test-automation-checkpoint-finalization.ps1'; label = 'automation checkpoint finalization' },
+    @{ path = 'test-runtime-user-message-events.ps1'; label = 'runtime user message events' },
     @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' },
     @{ path = 'test-faction-posture-scan-guard.ps1'; label = 'faction posture scan guard' },
     @{ path = 'test-pr11-utc-freshness.ps1'; label = 'pr11 UTC freshness parse' },
-    @{ path = 'test-launcher-pid-baseline-diff.ps1'; label = 'launcher PID baseline diff' }
+    @{ path = 'test-launcher-pid-baseline-diff.ps1'; label = 'launcher PID baseline diff' },
+    @{ path = 'automation-checkpoint-contract.ps1'; label = 'automation checkpoint contract' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {

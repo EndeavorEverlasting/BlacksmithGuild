@@ -1,4 +1,5 @@
 using BlacksmithGuild.DevTools.Assistive;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using System;
@@ -92,6 +93,7 @@ namespace BlacksmithGuild.DevTools
                 var commandSource = string.IsNullOrWhiteSpace(source) ? "file-inbox" : source;
                 var result = DevCommandBus.TryRun(command, commandSource, sequence: sequence, payload: payload);
                 WriteAck(sequence, command, result.ToString());
+                EmitCommandCheckpoint(sequence, command, result.ToString());
                 TryClearInboxAfterConsume(sequence, command, result);
             }
             catch (Exception ex)
@@ -140,6 +142,39 @@ namespace BlacksmithGuild.DevTools
             }
         }
 
+        private static void EmitCommandCheckpoint(int sequence, string command, string result)
+        {
+            var checkpointName = default(string);
+            if (!string.IsNullOrEmpty(command)
+                && command.IndexOf("Probe", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                checkpointName = AutomationCheckpointEvent.ProbeAck;
+            }
+            else if (!string.IsNullOrEmpty(command)
+                && (command.IndexOf("Travel", StringComparison.OrdinalIgnoreCase) >= 0
+                    || command.IndexOf("Execute", StringComparison.OrdinalIgnoreCase) >= 0))
+            {
+                checkpointName = AutomationCheckpointEvent.ExecuteAck;
+            }
+            else if (!string.IsNullOrEmpty(command)
+                && command.IndexOf("Toggle", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                checkpointName = AutomationCheckpointEvent.ToggleReceived;
+            }
+
+            if (string.IsNullOrEmpty(checkpointName))
+            {
+                return;
+            }
+
+            AutomationUserMessageService.Checkpoint(
+                checkpointName,
+                null,
+                phase: "command",
+                reason: result,
+                detailsJson: "{\"sequence\":" + sequence + ",\"command\":\"" + Escape(command) + "\"}");
+        }
+
         private static bool TryParseInbox(string json, out int sequence, out string command, out string source)
         {
             sequence = -1;
@@ -173,5 +208,8 @@ namespace BlacksmithGuild.DevTools
 
             return !string.IsNullOrWhiteSpace(command);
         }
+
+        private static string Escape(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

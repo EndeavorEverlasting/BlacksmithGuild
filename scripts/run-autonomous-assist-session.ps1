@@ -32,6 +32,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
+. (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
@@ -54,12 +55,52 @@ function Write-SessionLog {
     Write-Host $line
 }
 
+function Complete-AssistAutomationFinalization {
+    param(
+        [hashtable]$Evidence,
+        [hashtable]$Summary
+    )
+    if (-not (Get-Command Complete-AutomationFinalization -ErrorAction SilentlyContinue) -or -not $Evidence) {
+        return
+    }
+
+    $events = $Evidence.checkpointEvents
+    if (-not $events) {
+        return
+    }
+
+    $hasTerminal = [bool](@($events.ToArray() | Where-Object { $_.isTerminal -eq $true }).Count -gt 0)
+    if ($hasTerminal) {
+        return
+    }
+
+    Add-AutomationCheckpointEvent -List $events -CheckpointName 'summary_written' -SessionId $sessionId `
+        -Phase $cyclePhase -Runner 'run-autonomous-assist-session.ps1' -Reason 'assist-loop-summary.json prepared' | Out-Null
+
+    $state = switch ([string]$Summary.passFail) {
+        'PASS' { 'pass' }
+        'FAIL' { 'fail' }
+        default { 'abort' }
+    }
+    $start = Start-AutomationFinalization -List $events -SessionId $sessionId -Phase $cyclePhase `
+        -Runner 'run-autonomous-assist-session.ps1' -Reason ([string]$Summary.failureClass)
+    $criteria = Get-AutomationProjectedTerminalCriteria -Events @($events.ToArray()) -State $state `
+        -Summary ([pscustomobject]$Summary) -RequireAssistLoopStarted
+    Complete-AutomationFinalization -List $events -State $state -SessionId $sessionId -Phase $cyclePhase `
+        -Runner 'run-autonomous-assist-session.ps1' -Reason ([string]$Summary.failureClass) `
+        -Criteria $criteria -RelatedEventId $start.eventId -SummaryWritten:$true | Out-Null
+    $Summary.finalizedEventId = @($events.ToArray() | Where-Object { $_.isTerminal -eq $true } | Select-Object -Last 1).eventId
+    $Summary.terminalState = $state
+    $Summary.finalizationSequence = @($events.ToArray() | Where-Object { $_.eventType -like 'finalization_*' -or $_.eventType -like 'finalized_*' })
+}
+
 function Exit-AssistSession {
     param(
         [int]$Code,
         [hashtable]$Evidence,
         [hashtable]$Summary
     )
+    Complete-AssistAutomationFinalization -Evidence $Evidence -Summary $Summary
     if (Get-Command Write-TbgTerminationDetection -ErrorAction SilentlyContinue) {
         $runtimeLc = Read-Pr11RuntimeLifecycle -BannerlordRoot $bannerlordRoot
         Write-TbgTerminationDetection -BannerlordRoot $bannerlordRoot `
@@ -70,6 +111,8 @@ function Exit-AssistSession {
                 StatusPath = $statusPath
                 RuntimeLifecycle = $runtimeLc
                 BannerlordRoot = $bannerlordRoot
+                TerminalState = $Summary.terminalState
+                FinalizedEventId = $Summary.finalizedEventId
             } | Out-Null
     }
     Save-AutonomousAssistSessionEvidence -Evidence $Evidence -Summary $Summary `
@@ -95,6 +138,8 @@ $runtimeLifecyclePath = Get-RuntimeLifecycleJsonPath -BannerlordRoot $bannerlord
 
 $evidence = New-AutonomousAssistSessionEvidence -SessionId $sessionId -CheckpointDir $checkpointDir `
     -AssistProfile $AssistProfile -LaunchIntent $LaunchIntent -TargetSettlement $TargetSettlement
+Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'session_started' `
+    -SessionId $sessionId -Phase 'start' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
 
 Initialize-TbgProcessLifecycle -RunId "${sessionId}-assist" -BannerlordRoot $bannerlordRoot `
     -SessionAuthorityMode FreshTestLaunch -Operation 'autonomous_assist_session' `
@@ -205,6 +250,9 @@ if (-not $SkipLaunch) {
         Write-SessionLog 'Existing attachable session detected; skipping launch'
         $attachReady = $true
         $attachResult = 'existing_session'
+        Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'attach_ready' `
+            -SessionId $sessionId -Phase 'attach' -Runner 'run-autonomous-assist-session.ps1' `
+            -Reason 'existing_session' | Out-Null
     }
 } else {
     $handoffCompleted = $true
@@ -230,6 +278,8 @@ if (-not $attachReady) {
         if ($ready.canPollFileInbox -and $ready.inGameAssistReady -and $ready.canAcceptAssistiveCommand -and $ready.statusFresh) {
             $attachReady = $true
             $attachResult = 'attach_ready'
+            Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'attach_ready' `
+                -SessionId $sessionId -Phase 'attach' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
             End-TbgWaitSegment -Result 'attach_ready' | Out-Null
             break
         }
@@ -263,6 +313,14 @@ if (-not $attachReady) {
 $cyclePhase = 'assist_loop'
 $readyAtAttach = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
 $loopReadiness = Test-AutonomousAssistLoopReadiness -Readiness $readyAtAttach
+if ($loopReadiness.stateMachineConsumed) {
+    Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'state_machine_consumed' `
+        -SessionId $sessionId -Phase 'attach' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
+}
+if ($loopReadiness.runtimeLifecycleConsumed) {
+    Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'runtime_lifecycle_consumed' `
+        -SessionId $sessionId -Phase 'attach' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
+}
 if (-not $loopReadiness.ready) {
     Exit-AssistSession -Code 2 -Evidence $evidence -Summary @{
         passFail = 'FAIL'; failureClass = 'assist_loop_not_ready'; exitCode = 2
@@ -283,6 +341,8 @@ Add-AssistSessionJsonl -List $evidence.toggleEvents -Event ([ordered]@{
 })
 $evidence.assistLoopStarted = $true
 $evidence.assistLoopStartedWithoutHotkey = $true
+Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'assist_loop_started' `
+    -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
 
 $loopDeadline = (Get-Date).AddMinutes($MaxRuntimeMinutes)
 $lastTravelCommandUtc = $null
@@ -400,9 +460,14 @@ Add-AssistSessionJsonl -List $evidence.toggleEvents -Event ([ordered]@{
 
 $endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
 $evidence.endedAtUtc = $endedAtUtc
-$passFail = if ($stopReason -in @('user_toggle_off', 'timeout', $null) -and $actionsLogged -gt 0) { 'PASS' } `
-    elseif ($stopReason -eq 'user_toggle_off') { 'PASS' } `
-    elseif ($actionsLogged -gt 0 -and -not $stopReason) { 'PASS' } `
+$criteriaPreview = Test-AutomationPassCriteria -Events @($evidence.checkpointEvents.ToArray()) `
+    -Summary ([pscustomobject]@{
+        assistLoopStarted = $evidence.assistLoopStarted
+        stateMachineConsumed = $loopReadiness.stateMachineConsumed
+        runtimeLifecycleConsumed = $loopReadiness.runtimeLifecycleConsumed
+    }) -RequiredCheckpoints @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started') `
+    -RequireAssistLoopStarted -AllowPreFinalizationPreview
+$passFail = if ($stopReason -in @('user_toggle_off', 'timeout', $null) -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
     else { 'FAIL' }
 
 $summary = [ordered]@{
@@ -423,6 +488,7 @@ $summary = [ordered]@{
     readinessConfidence = $loopReadiness.readinessConfidence
     iterationCount = $evidence.iterationCount
     actionsLogged = $actionsLogged
+    automationPassCriteria = $criteriaPreview
     endedAtUtc = $endedAtUtc
     checkpointDir = $checkpointDir
 }

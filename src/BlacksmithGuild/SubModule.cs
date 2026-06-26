@@ -1,5 +1,6 @@
 using BlacksmithGuild.Behaviors;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
@@ -23,6 +24,7 @@ namespace BlacksmithGuild
             base.OnSubModuleLoad();
             ForgeStatus.SetModLoaded(true);
             RuntimeLifecycleWriter.OnModuleLoaded();
+            AutomationPreviousRunNotice.TryShow();
             ForgeStatus.SetStep("module_load", "PASS");
             DevToolsConfig.TryLoadMapReadyBisectFromEnvironment();
             PendingReloadWatcher.OnModuleLoad();

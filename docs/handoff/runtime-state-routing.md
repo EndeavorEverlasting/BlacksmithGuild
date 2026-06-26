@@ -20,6 +20,8 @@ F7 remains useful as legacy infrastructure, but it is not the product gate. Curr
 launcher -> handoff -> game process -> RuntimeLifecycle heartbeat -> stateMachine -> assist loop -> evidence
 ```
 
+Checkpoint routing rule: a checkpoint is progress, not completion. `checkpoint_reached` events are never terminal and must not set PASS/FAIL by themselves. Completion routes through `finalization_started` followed by exactly one terminal `finalized_pass`, `finalized_fail`, or `finalized_abort` event in runner-owned `checkpoint-events.jsonl`.
+
 ```mermaid
 flowchart TD
     launcherState --> handoffState
@@ -153,6 +155,19 @@ Known script/mod surface aliases include `loading`, `conversation`, `trading`, `
 | `execute_completed` | command lifecycle/evidence | Agent A | Judge manifest and PR posture. |
 | `blocked` | status/manifest/failure class | Agent B | Route blocker before rerun. |
 | `stop_unsafe` | status/manifest/failure class | Agent B | Stop automation and capture transparent failure evidence. |
+
+---
+
+## `automationCheckpoint`
+
+| eventType | checkpointName | ownerAgent | nextAction |
+|-----------|----------------|------------|------------|
+| `checkpoint_reached` | `attach_ready`, `state_machine_consumed`, `runtime_lifecycle_consumed`, `travel_gate_ready`, `probe_ack`, `execute_ack`, `party_movement_observed`, `toggle_received`, `assist_loop_started`, `summary_written` | Agent C consumes Agent B runtime truth; Agent A judges evidence | Treat as progress evidence only; never mark completion from this event alone. |
+| `finalization_started` | `finalization_started` | Agent C | Freeze terminal criteria evaluation and prepare summary/termination linkage. |
+| `finalized_pass` | `finalized_pass` | Agent A | PASS may be claimed only when criteria and required checkpoints are present in fresh runner evidence. |
+| `finalized_fail` | `finalized_fail` | Agent A with routed owner | Report failed gate and route next action by `failureClass`/`routeAgent`. |
+| `finalized_abort` | `finalized_abort` / `automation_not_running` | Agent A | Classify cancellation, dry run, missing runtime, or game-not-running cases without pretending an in-game message was shown. |
+| `checkpoint_reached` | `previous_run_terminal_notice` | Agent B | Mod replayed the prior terminal result in game after the previous run could not show it live. |
 
 ---
 

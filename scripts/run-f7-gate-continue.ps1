@@ -17,6 +17,8 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'f7-evidence-harvest.ps1')
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 . (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
+. (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+. (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 # Gate uses f7-launch-contract helpers: Test-F7StrongPreIntentGameSignal, Get-F7PreIntentContaminationResult, pre_intent_game_spawn
 # Wrong-window guard lives in f7-external-state-classifier.ps1: Test-F7GuardedActionAllowed (used by launcher-auto-nav.ps1)
 
@@ -32,6 +34,8 @@ $crashContextPath = Get-CrashContextJsonPath -BannerlordRoot $bannerlordRoot
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\$sessionId\checkpoint-01-f7-gate"
 $startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'session_started' `
+    -SessionId $sessionId -Phase 'start' -Runner 'run-f7-gate-continue.ps1' | Out-Null
 
 $hookMaskWasSet = $false
 $resolvedHookMask = $HookMask
@@ -1012,6 +1016,28 @@ function Save-CheckpointEvidence {
     }
     foreach ($key in $script:F7ManifestExtra.Keys) {
         $manifest[$key] = $script:F7ManifestExtra[$key]
+    }
+
+    $hasTerminal = [bool](@($script:AutomationCheckpointEvents.ToArray() | Where-Object { $_.isTerminal -eq $true }).Count -gt 0)
+    if (-not $hasTerminal) {
+        Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'summary_written' `
+            -SessionId $sessionId -Phase 'f7_gate' -Runner 'run-f7-gate-continue.ps1' `
+            -Reason 'manifest.json prepared' | Out-Null
+        $state = if ($PassFail -eq 'PASS') { 'pass' } else { 'fail' }
+        $start = Start-AutomationFinalization -List $script:AutomationCheckpointEvents -SessionId $sessionId `
+            -Phase 'f7_gate' -Runner 'run-f7-gate-continue.ps1' -Reason $Notes
+        $criteria = Get-AutomationProjectedTerminalCriteria -Events @($script:AutomationCheckpointEvents.ToArray()) `
+            -State $state -Summary ([pscustomobject]@{ passFail = $PassFail }) `
+            -RequiredCheckpoints @('summary_written')
+        $terminal = Complete-AutomationFinalization -List $script:AutomationCheckpointEvents -State $state `
+            -SessionId $sessionId -Phase 'f7_gate' -Runner 'run-f7-gate-continue.ps1' `
+            -Reason $Notes -Criteria $criteria -RelatedEventId $start.eventId -SummaryWritten:$true
+        $manifest.finalizedEventId = $terminal.eventId
+        $manifest.terminalState = $state
+        $manifest.finalizationSequence = @($script:AutomationCheckpointEvents.ToArray() | Where-Object { $_.eventType -like 'finalization_*' -or $_.eventType -like 'finalized_*' })
+        $events = Merge-AutomationCheckpointEvents -RunnerEvents @($script:AutomationCheckpointEvents.ToArray()) `
+            -ModEventPaths (Get-AutomationModEventPaths -BannerlordRoot $bannerlordRoot)
+        Write-AutomationCheckpointEventsFile -Events $events -Path (Join-Path $checkpointDir 'checkpoint-events.jsonl') | Out-Null
     }
 
     $manifest | ConvertTo-Json -Depth 10 |

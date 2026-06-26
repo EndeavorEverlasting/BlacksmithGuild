@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using BlacksmithGuild.DevTools.Automation;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools.Assistive
@@ -80,6 +81,14 @@ namespace BlacksmithGuild.DevTools.Assistive
                 builder.AppendLine("  ]");
                 builder.AppendLine("}");
                 File.WriteAllText(ExecutionPath, builder.ToString());
+                if (result.PartyMovedDistance > 0)
+                {
+                    AutomationUserMessageService.Checkpoint(
+                        AutomationCheckpointEvent.PartyMovementObserved,
+                        "Party movement observed.",
+                        phase: "travel",
+                        detailsJson: "{\"partyMovedDistance\":" + result.PartyMovedDistance.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "}");
+                }
             }
             catch (Exception ex)
             {

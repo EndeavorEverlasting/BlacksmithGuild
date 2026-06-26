@@ -28,6 +28,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
+. (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
@@ -38,6 +39,7 @@ $classifications = New-Object System.Collections.Generic.List[object]
 $transcriptStarted = $false
 $cyclePhase = 'loading'
 $cancelled = $false
+$script:AutomationExecutionJson = $null
 
 function Write-CertLog {
     param([string]$Message)
@@ -81,6 +83,44 @@ function Exit-Pr11Cycle {
 function Complete-CycleResult {
     param([hashtable]$Extra = @{})
 
+    if (Get-Command Complete-AutomationFinalization -ErrorAction SilentlyContinue) {
+        $hasTerminal = [bool](@($script:AutomationCheckpointEvents.ToArray() | Where-Object { $_.isTerminal -eq $true }).Count -gt 0)
+        if (-not $hasTerminal) {
+            Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'summary_written' `
+                -SessionId $sessionId -Phase $cyclePhase -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' `
+                -Reason 'cycle-result.json prepared' | Out-Null
+            $state = switch ([string]$Extra.passFail) {
+                'PASS' { 'pass' }
+                'PASS_ATTACH' { 'pass' }
+                'FAIL' { 'fail' }
+                default { 'abort' }
+            }
+            $start = Start-AutomationFinalization -List $script:AutomationCheckpointEvents -SessionId $sessionId `
+                -Phase $cyclePhase -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' -Reason ([string]$Extra.failureClass)
+            $criteriaArgs = @{
+                Events = @($script:AutomationCheckpointEvents.ToArray())
+                Summary = ([pscustomobject]$Extra)
+                RequiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'summary_written')
+            }
+            if ($Extra.certAttempted -eq $true) {
+                $criteriaArgs.RequiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'travel_gate_ready', 'probe_ack', 'execute_ack', 'party_movement_observed', 'summary_written')
+                $criteriaArgs.RequireExecuteMovement = $true
+                $criteriaArgs.ExecutionJson = $script:AutomationExecutionJson
+            }
+            $criteriaArgs.State = $state
+            $criteria = Get-AutomationProjectedTerminalCriteria @criteriaArgs
+            $terminal = Complete-AutomationFinalization -List $script:AutomationCheckpointEvents -State $state `
+                -SessionId $sessionId -Phase $cyclePhase -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' `
+                -Reason ([string]$Extra.failureClass) -Criteria $criteria -RelatedEventId $start.eventId -SummaryWritten:$true
+            $Extra.finalizedEventId = $terminal.eventId
+            $Extra.terminalState = $state
+            $Extra.finalizationSequence = @($script:AutomationCheckpointEvents.ToArray() | Where-Object { $_.eventType -like 'finalization_*' -or $_.eventType -like 'finalized_*' })
+            $events = Merge-AutomationCheckpointEvents -RunnerEvents @($script:AutomationCheckpointEvents.ToArray()) `
+                -ModEventPaths (Get-AutomationModEventPaths -BannerlordRoot $bannerlordRoot)
+            Write-AutomationCheckpointEventsFile -Events $events -Path (Join-Path $checkpointDir 'checkpoint-events.jsonl') | Out-Null
+        }
+    }
+
     $result = [ordered]@{
         sessionId = $sessionId
         checkpointDir = $checkpointDir
@@ -109,6 +149,8 @@ New-Item -ItemType Directory -Force -Path $checkpointDir | Out-Null
 Start-Transcript -LiteralPath $certLogPath -Append | Out-Null
 $transcriptStarted = $true
 $startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'session_started' `
+    -SessionId $sessionId -Phase 'start' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' | Out-Null
 
 $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
 $phase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
@@ -304,6 +346,8 @@ while ((Get-Date) -lt $attachDeadline) {
     if ($ready.canPollFileInbox -and $ready.inGameAssistReady -and $ready.canAcceptAssistiveCommand -and $ready.statusFresh) {
         $attachReady = $true
         $attachResult = 'attach_ready'
+        Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'attach_ready' `
+            -SessionId $sessionId -Phase 'attach' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' | Out-Null
         Update-TbgWaitProgress -ProgressSignal "assistive_attach_ready confidence=$($ready.confidence)"
         break
     }
@@ -341,6 +385,14 @@ $probeOk = $false
 $executeOk = $false
 $readyAtExecute = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
 $travelGateAtExecute = Test-Pr11TravelExecuteAllowed -Readiness $readyAtExecute
+if ($readyAtExecute.stateMachine.hasStateMachine) {
+    Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'state_machine_consumed' `
+        -SessionId $sessionId -Phase 'cert' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' | Out-Null
+}
+if ($readyAtExecute.runtimeLifecycle -and $readyAtExecute.runtimeLifecycle.parseOk) {
+    Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'runtime_lifecycle_consumed' `
+        -SessionId $sessionId -Phase 'cert' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' | Out-Null
+}
 
 if (-not $travelGateAtExecute.allowed) {
     $failureClass = 'travel_execute_blocked'
@@ -348,6 +400,9 @@ if (-not $travelGateAtExecute.allowed) {
     Write-CertLog "Travel execute blocked: $($travelGateAtExecute.reason) confidence=$($travelGateAtExecute.confidence)"
 } else {
     Write-CertLog "Travel execute gate PASS reason=$($travelGateAtExecute.reason) confidence=$($travelGateAtExecute.confidence)"
+    Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'travel_gate_ready' `
+        -SessionId $sessionId -Phase 'cert' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' `
+        -Reason $travelGateAtExecute.reason | Out-Null
 }
 
 if ($travelGateAtExecute.allowed) {
@@ -355,6 +410,8 @@ try {
     Write-CertLog 'Send-ForgeCommand AssistiveTownToTownProbe -Wait'
     Send-ForgeCommand -CommandName AssistiveTownToTownProbe -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ProbeTimeoutSec | Out-Null
     $probeOk = $true
+    Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'probe_ack' `
+        -SessionId $sessionId -Phase 'cert' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' | Out-Null
 } catch {
     $failureClass = 'probe_failed'
     $routeAgent = 'Agent B - Runtime / Readiness / Gameplay safety'
@@ -367,6 +424,8 @@ if ($probeOk) {
         Send-ForgeCommand -CommandName AssistiveLeaveTownAndTravel -Execute -TargetSettlement $TargetSettlement `
             -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
         $executeOk = $true
+        Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'execute_ack' `
+            -SessionId $sessionId -Phase 'cert' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' | Out-Null
     } catch {
         $failureClass = 'inbox_command_failed'
         $routeAgent = 'Agent C - External State Classifier / Assistive Runner'
@@ -390,6 +449,9 @@ if ($probeOk) {
                 if ($null -ne $live.partyMovedDistance) { [double]::TryParse([string]$live.partyMovedDistance, [ref]$dist) | Out-Null }
                 if ($live.actualExecutionObserved -eq $true -and $dist -gt 0) {
                     $movementObservedLive = $true
+                    Add-AutomationCheckpointEvent -List $script:AutomationCheckpointEvents -CheckpointName 'party_movement_observed' `
+                        -SessionId $sessionId -Phase 'cert' -Runner 'run-pr11-town-travel-launch-attach-execute.ps1' `
+                        -Details ([ordered]@{ partyMovedDistance = $dist; travelClockRunning = $live.travelClockRunning; fakeGameplayDelta = $live.fakeGameplayDelta }) | Out-Null
                     Write-CertLog "Real movement observed: partyMovedDistance=$dist arrived=$($live.arrived) clockRunning=$($live.travelClockRunning)"
                     break
                 }
@@ -419,6 +481,7 @@ $execPath = Join-Path $checkpointDir 'BlacksmithGuild_AssistiveTravelExecution.j
 if (Test-Path -LiteralPath $execPath) {
     try { $executionJson = Get-Content -LiteralPath $execPath -Raw | ConvertFrom-Json } catch { }
 }
+$script:AutomationExecutionJson = $executionJson
 
 $executePass = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $executionJson -Readiness $readyAtExecute -RequireLeaveTown
 if ($executePass.pass -and (Test-Pr11ExecutePassBlockedByRuntime -Readiness $readyAtExecute)) {

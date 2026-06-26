@@ -5,6 +5,7 @@ using System.Text;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.Reporting;
@@ -52,6 +53,7 @@ namespace BlacksmithGuild
         private static bool _autoCharacterBuildRecorded;
         private static SessionPhase _sessionPhase = SessionPhase.ModuleOnly;
         private static bool _sessionTimePaused;
+        private static bool _stateMachineCheckpointEmitted;
 
         private struct GoldTestSnapshot
         {
@@ -830,6 +832,14 @@ namespace BlacksmithGuild
             }
 
             RuntimeLifecycleWriter.AppendStateMachine(builder, snapshot);
+            if (!_stateMachineCheckpointEmitted)
+            {
+                _stateMachineCheckpointEmitted = true;
+                AutomationUserMessageService.Checkpoint(
+                    AutomationCheckpointEvent.StateMachineConsumed,
+                    "Runtime state machine consumed.",
+                    phase: "runtime");
+            }
         }
 
         private const double FactionPostureScanMinIntervalSec = 5.0;
