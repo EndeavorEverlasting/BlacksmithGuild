@@ -7,7 +7,11 @@ Read this file before touching code, docs, evidence, or automation for the activ
 
 Related:
 
+- Root agent contract: [`AGENTS.md`](../../AGENTS.md)
 - State vocabulary authority: [`runtime-state-routing.md`](runtime-state-routing.md)
+- Ortysia live cert landmark: [`ortysia-live-cert-landmark.md`](ortysia-live-cert-landmark.md)
+- Window delta doctrine: [`../control/logs/open/window-delta-doctrine.md`](../control/logs/open/window-delta-doctrine.md)
+- Autonomous assist target: [`../control/logs/open/autonomous-assist-session-target.md`](../control/logs/open/autonomous-assist-session-target.md)
 - Legacy F7 redirect: [`f7-agent-coordination.md`](f7-agent-coordination.md)
 - Launch / load playbook: [`agent-launch-and-load-playbook.md`](agent-launch-and-load-playbook.md)
 - Sprint control pointer: [`../control/README.md`](../control/README.md)
@@ -29,19 +33,81 @@ Every agent must:
 
 ---
 
+## Current branch map
+
+| Branch / PR | Role | Current relationship |
+|---|---|---|
+| `main` | Product baseline | @ `3127acd` after PR #14 merge (`85f2f33`); Ortysia live cert landmark |
+| PR #11–#13 | Travel execute + runtime producer | Merged into `main` |
+| PR #14 | Unattended execute cert runner | **MERGED** @ `85f2f33`; Quyaz→Ortysia travel execute PASS |
+| PR #15 | Governance hardening | Rebasing docs/tests onto Ortysia `main`; must not replace this board |
+| PR #8 | F7 bisect tooling | **HOLD** — do not merge unless user explicitly authorizes |
+| PR #9 | F7 bisect evidence docs | **DEFER** — superseded by Ortysia milestone |
+
+## Routing matrix
+
+| Work item | Primary owner | Consult | Notes |
+|---|---|---|---|
+| Product PASS / FAIL judgment | Agent A | B, C | Evidence must be fresh and runner-captured. |
+| Runtime state machine and readiness truth | Agent B | A | B owns gameplay truth, not launcher choreography. |
+| Launcher selection, lifecycle, window classification | Agent C | A, B | Must follow Window Delta Doctrine and PID baseline diff. |
+| Docs, atlas, branch routing board | Agent D | All | D records decisions; D does not certify gameplay. |
+| PR merge recommendation | Agent A | D | PR #8 remains blocked unless user explicitly authorizes. |
+| Autonomous assist target drift | Agent D | A, B, C | Keep docs and tests aligned to the user-facing target. |
+
+## Merge order rules
+
+1. Keep `main` aligned with merged PR #11, PR #12, PR #13, and PR #14.
+2. Treat PR #13 runtime outputs as the truth producer for runner work.
+3. Do not merge PR #8 unless the user explicitly authorizes that PR.
+4. Do not merge coordination docs that contradict this board, `AGENTS.md`, runtime-state routing, Window Delta Doctrine, or the autonomous assist target.
+
+## Evidence rules
+
+- Runner owns evidence capture.
+- Do not ask the user to harvest logs manually.
+- Do not commit scratch evidence folders, large logs, or transient local dumps.
+- Do not claim PASS from stale `Status.json` or stale `BlacksmithGuild_Status.json`.
+- PASS requires fresh evidence from the current run, with lifecycle and termination artifacts where applicable.
+- If evidence is partial, say partial. If state is inferred, label it as inference.
+- F7 is not the product gate; old F7 is infrastructure/regression context unless explicitly routed by the user.
+
+## No manual tedium rule
+
+No agent should route the user into repetitive manual log harvesting, manual launcher babysitting, or manual hotkey ceremony for the preferred path. If a run needs evidence, the runner must capture it. If a target needs a toggle, the file-based toggle must be documented and runner-observable.
+
+## One command, visible gameplay product target
+
+The product target is one command that builds/deploys if needed, launches Bannerlord, selects Continue automatically, waits for campaign attach, consumes `stateMachine` + `RuntimeLifecycle`, starts the autonomous assist loop without hotkey, visibly moves/trains/acts on the campaign map, logs every step, allows user toggle-off, stops cleanly, and writes summary evidence. See [`../control/logs/open/autonomous-assist-session-target.md`](../control/logs/open/autonomous-assist-session-target.md).
+
+## Synthesizing parallel reports
+
+When multiple agents report in parallel:
+
+1. Preserve each agent's concrete findings and file ownership boundaries.
+2. Separate facts, inferences, blockers, and recommended routes.
+3. Resolve conflicts using the ownership table and routing matrix.
+4. Prefer the newest fresh evidence over stale summaries.
+5. Do not overwrite another agent's branch or lane without explicit routing.
+6. Produce one synthesis that names remaining uncertainty instead of hiding disagreement.
+
+## Stale doctrine
+
+Doctrine is stale when it contradicts current merged code, current runner evidence, this board, `AGENTS.md`, runtime-state routing, Window Delta Doctrine, the autonomous assist target, or the user's explicit current target. Stale doctrine must be updated or explicitly marked historical. Stale evidence must not be used to claim readiness, certification, or gameplay PASS.
+
+---
+
 ## Current Sprint Snapshot
 
 | Field | Value |
 |-------|-------|
-| Active PR | [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) — open draft; do not mark ready or merge |
-| Branch | `fix/pr11-unattended-execute-cert-runner` |
-| Runner baseline | `0277aa4` — `fix(runner): preserve post-handoff exit classification` |
-| Docs posture | Runtime-state coordination docs landed after runner baseline; use branch HEAD for current docs |
-| Product baseline | `main` after PR #11 travel execute merge |
-| Current blocker | `game_exited_unexpectedly_before_attach` |
-| Controlling evidence | `docs/evidence/live-cert/20260625-074633-autonomous-assist-session/` (ignored scratch; cite only, do not commit) |
-| Current gate | Runtime/process/assist evidence, not legacy F7 ceremony |
-| Out of scope | Product code changes, PR #14 merge/ready state, PR body refresh, live evidence commits, remote branch deletion |
+| Product baseline | `main` @ `3127acd` |
+| PR #14 | **MERGED** @ `85f2f33` — Ortysia travel execute PASS |
+| Landmark | [`ortysia-live-cert-landmark.md`](ortysia-live-cert-landmark.md) |
+| Live evidence | `docs/evidence/live-cert/20260625-235004-pr11-launch-attach-execute/` (cite only; do not commit scratch) |
+| Active PR | [#15](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/15) — governance/docs selective rebase onto Ortysia `main` |
+| Next product target | One-command autonomous assist session ([`autonomous-assist-session-target.md`](../control/logs/open/autonomous-assist-session-target.md)) |
+| Current gate | Autonomous assist loop + visible gameplay; not legacy F7 ceremony |
 
 ---
 
@@ -61,10 +127,10 @@ Every agent must:
 
 | Agent | Letter-first identity | Status | Current task | Blockers for others | Last known commit |
 |-------|----------------------|--------|--------------|---------------------|-------------------|
-| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | PR #14 readiness and evidence judgment after runtime/runner fix | Owns final PASS/FAIL and push/PR hygiene | `0277aa4` |
-| **B** | Agent B — Runtime / Readiness / Gameplay safety | `NEXT` | Runtime lifecycle and `stateMachine` authority for game exit diagnosis | Must classify runtime-owned failures before more runner churn | `0277aa4` |
-| **C** | Agent C — External State Classifier / Assistive Runner | `NEXT` | Launcher, process, and unattended runner classification after runtime diagnosis | Owns automation lock and post-fix live runner validation | `0277aa4` |
-| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | Added `launcher_menu_misclassified_as_game` routing; preserved F7 redirect stub | Active docs distinguish launcher-menu misclassification from true attach-time exit | branch HEAD |
+| **A** | Agent A — Cert / Evidence / Git / PR | `IDLE` | PR #15 governance rebase + merge readiness | Owns final PASS/FAIL and push/PR hygiene | `3127acd` |
+| **B** | Agent B — Runtime / Readiness / Gameplay safety | `IDLE` | Runtime lifecycle and `stateMachine` authority maintenance | Must classify runtime-owned failures before runner churn | `3127acd` |
+| **C** | Agent C — External State Classifier / Assistive Runner | `NEXT` | Autonomous assist session one-command target | Owns automation lock and live runner validation | `3127acd` |
+| **D** | Agent D — Docs / Atlas / Integration / Routing board | `DONE` | PR #15 governance folded into living board | Preserved runtime routing tables + Ortysia snapshot | branch HEAD |
 
 Status values: `IDLE` | `IN_PROGRESS` | `BLOCKED` | `DONE`.
 
@@ -136,12 +202,10 @@ Clear the lock when the run finishes, fails, or the owning agent sets its row ba
 
 | PR | State | Posture |
 |----|-------|---------|
-| [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) | OPEN / DRAFT | Active unattended execute cert runner branch; blocked on `game_exited_unexpectedly_before_attach`; do not mark ready or merge without user authorization. |
-| [#9](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/9) | OPEN / DIRTY | Bisect evidence docs; hold unless explicitly revived. |
-| [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | OPEN / DIRTY | F7 bisect tooling; HOLD, do not merge without user authorization. |
-| [#6](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6) | OPEN / DRAFT / CLEAN | Second-leg travel feature; not part of PR #14. |
-| [#5](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5) | OPEN / DRAFT / CLEAN | Sell-loop feature; not part of PR #14. |
-| [#2](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/2) | OPEN / CLEAN | Identity schema docs; not part of PR #14. |
+| [#14](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/14) | **MERGED** @ `85f2f33` | Ortysia travel execute PASS; landmark on `main` |
+| [#15](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/15) | OPEN / rebasing | Governance/docs selective integration onto Ortysia `main` |
+| [#9](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/9) | OPEN / DIRTY | Bisect evidence docs; defer unless explicitly revived |
+| [#8](https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8) | OPEN / DIRTY | F7 bisect tooling; **HOLD**, do not merge without user authorization |
 
 ---
 
@@ -160,6 +224,12 @@ Do not rerun legacy F7 Continue as a treadmill seeking PASS.
 ---
 
 ## Condensed Message Log
+
+### 2026-06-26 — Agent D — PR #15 governance folded onto Ortysia main
+
+- Rebased PR #15 onto `main` @ `3127acd`; preserved living board rows and full `runtime-state-routing.md` tables.
+- Added `AGENTS.md`, window-delta doctrine, autonomous assist target, contract redirect, and coordination contract test.
+- Refreshed sprint snapshot: PR #14 merged, Ortysia landmark authoritative, next target = one-command autonomous assist.
 
 ### 2026-06-25 — Agent D — launcher-menu misclassification routing
 

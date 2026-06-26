@@ -61,7 +61,7 @@ Require-Match 'Runtime routing runner consumes runtime outputs' $runtimeRouting 
 foreach ($snapshot in @('S0', 'S1', 'S2', 'S3')) {
     Require-Match "Window Delta Doctrine mentions $snapshot" $windowDoctrine "\b$snapshot\b"
 }
-Require-Match 'Window Delta Doctrine S1 to S2 primary' $windowDoctrine 'S1\s*(?:->|→)\s*S2[\s\S]{0,120}primary launcher-selection method'
+Require-Match 'Window Delta Doctrine S1 to S2 primary' $windowDoctrine 'S1\s*->\s*S2[\s\S]{0,120}primary launcher-selection method'
 Require-Match 'Window Delta Doctrine global fallback' $windowDoctrine 'Global scan is fallback only'
 
 Require-Match 'Autonomous target rejects manual log harvesting' $autonomousTarget 'manual log harvesting'
