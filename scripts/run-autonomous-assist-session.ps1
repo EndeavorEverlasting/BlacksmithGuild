@@ -397,6 +397,9 @@ $partyMovementCheckpointEmitted = $false
 $nonTradeBranchDone = $false
 $provenTradeCount = 0
 $isEconomicLoop = ($CertProfile -eq 'economic_loop')
+# Only proven trade rows stamped at/after this moment are attributed to the current run, so a prior
+# cert's append-only rows in the game-root trade file cannot trip the target before this session buys.
+$tradeScopeSinceUtc = (Get-Date).ToUniversalTime()
 $lastDecision = $null
 $lastRecursiveBranchState = $null
 $lastRecursiveBranchFresh = $false
@@ -432,7 +435,8 @@ while ((Get-Date) -lt $loopDeadline) {
 
     $tradeTargetReached = $false
     if ($isEconomicLoop) {
-        $provenTradeCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot
+        $provenTradeCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot -SinceUtc $tradeScopeSinceUtc
+        $evidence.tradeIterationCount = $provenTradeCount
         $tradeTargetReached = ($provenTradeCount -ge $TradeIterationTarget)
         if ($tradeTargetReached) {
             $stopReason = 'trade_iteration_target_reached'
@@ -521,8 +525,18 @@ while ((Get-Date) -lt $loopDeadline) {
                 }
             } elseif ($decision.commandSent -eq 'ProbeVanillaTradeExecutionNow') {
                 Write-SessionLog "Iteration $iteration sending ProbeVanillaTradeExecutionNow (economic_loop drive proven buy) at $TargetSettlement"
+                # Send-ForgeCommand returns the command sequence, not the trade verdict. Derive the real
+                # outcome from the mod's proven-trade delta on disk so a blocked buy is recorded as blocked.
+                $provenBeforeSend = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot -SinceUtc $tradeScopeSinceUtc
                 Send-ForgeCommand -CommandName ProbeVanillaTradeExecutionNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
-                $cmdResult = 'Success'
+                $provenAfterSend = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot -SinceUtc $tradeScopeSinceUtc
+                if ($provenAfterSend -gt $provenBeforeSend) {
+                    $cmdResult = 'Success'
+                    $provenTradeCount = $provenAfterSend
+                    $evidence.tradeIterationCount = $provenAfterSend
+                } else {
+                    $cmdResult = 'Failed: trade_not_proven'
+                }
             }
         } catch {
             $cmdResult = "Failed: $($_.Exception.Message)"

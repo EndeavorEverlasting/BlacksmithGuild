@@ -280,6 +280,28 @@ $defaultDecision = Get-AutonomousAssistIterationDecision -Readiness $tradeReady 
 if ($defaultDecision.commandSent -eq 'ProbeVanillaTradeExecutionNow') { throw 'default profile must never drive trade commands' }
 Write-Host 'PASS economic-loop trade-driving decision policy' -ForegroundColor Green
 
+# --- Proven-trade count session scoping ------------------------------------------------------
+# Get-EconomicLoopProvenTradeCount must count every proven row by default, but with -SinceUtc must
+# exclude rows stamped before the cutoff. This is the guard against a prior cert's append-only rows
+# tripping trade_iteration_target_reached before the live session buys anything.
+$tradeCountRoot = Join-Path $tmpRoot 'trade-count'
+New-Item -ItemType Directory -Force -Path $tradeCountRoot | Out-Null
+$tcFile = Join-Path $tradeCountRoot 'BlacksmithGuild_TradeIterations.jsonl'
+$staleRow = ([ordered]@{ schemaVersion = 1; iteration = 1; atUtc = (Get-Date).AddHours(-2).ToUniversalTime().ToString('o')
+    goldBefore = 1000; goldAfter = 900; goldDelta = -100; inventoryBefore = 0; inventoryAfter = 2; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
+$cutoffUtc = (Get-Date).ToUniversalTime()
+$freshRow = ([ordered]@{ schemaVersion = 1; iteration = 2; atUtc = (Get-Date).AddSeconds(5).ToUniversalTime().ToString('o')
+    goldBefore = 900; goldAfter = 800; goldDelta = -100; inventoryBefore = 2; inventoryAfter = 4; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
+Set-Content -LiteralPath $tcFile -Value @($staleRow, $freshRow) -Encoding UTF8
+
+$allCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $tradeCountRoot
+if ($allCount -ne 2) { throw "expected 2 proven rows total; got $allCount" }
+$scopedCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $tradeCountRoot -SinceUtc $cutoffUtc
+if ($scopedCount -ne 1) { throw "expected 1 proven row at/after cutoff (stale row excluded); got $scopedCount" }
+$missingRoot = Join-Path $tmpRoot 'trade-count-missing'
+if ((Get-EconomicLoopProvenTradeCount -BannerlordRoot $missingRoot) -ne 0) { throw 'missing trade file must count 0' }
+Write-Host 'PASS economic-loop proven-trade count session scoping' -ForegroundColor Green
+
 Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host 'PASS offline autonomous assist runner evidence emission' -ForegroundColor Green
 exit 0
