@@ -9,6 +9,7 @@ using BlacksmithGuild.TavernHeroes;
 using BlacksmithGuild.Treasury;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.Reporting;
 
 namespace BlacksmithGuild.DevTools
@@ -31,6 +32,9 @@ namespace BlacksmithGuild.DevTools
             AssistiveCommandInboxPayload payload = null)
         {
             GameSessionState.SyncForgeStatus();
+
+            var commandId = System.Guid.NewGuid().ToString("N");
+            EmitCommandEvent(AutomationRuntimeEventEmitter.CommandReceived, commandId, commandName);
 
             DebugLogger.Test(
                 $"Command received: {commandName} (source: {source})",
@@ -94,8 +98,16 @@ namespace BlacksmithGuild.DevTools
 
             DebugLogger.Test($"Command started: {commandName}", showInGame: false);
             RuntimeLifecycleWriter.RecordCommandStarted(commandName, sequence);
+            EmitCommandEvent(AutomationRuntimeEventEmitter.CommandStarted, commandId, commandName);
 
             var result = Execute(commandName, payload);
+            EmitCommandEvent(
+                result == DevCommandResult.Success
+                    ? AutomationRuntimeEventEmitter.CommandCompleted
+                    : AutomationRuntimeEventEmitter.CommandFailed,
+                commandId,
+                commandName,
+                result);
             ForgeStatus.RecordCommand(commandName, source, result.ToString(), null, sequence);
             CertificationTracker.OnCommandResult(commandName, result);
             Sprint002CertificationTracker.OnCommandResult(commandName, result);
@@ -856,5 +868,24 @@ namespace BlacksmithGuild.DevTools
                 || commandName == TavernHeroDoctrine.SetScoutQuartermasterCommand
                 || commandName == TavernHeroDoctrine.SetCombatEscortCommand;
         }
+
+        // Emits a command lifecycle runtime event. The commandId pairs started <-> completed/failed so the
+        // offline economic-loop certifier can prove no command.started was orphaned.
+        private static void EmitCommandEvent(
+            string type,
+            string commandId,
+            string commandName,
+            DevCommandResult? result = null,
+            string reason = null)
+        {
+            var payload = "{\"commandId\":\"" + JsonEscape(commandId)
+                + "\",\"command\":\"" + JsonEscape(commandName) + "\""
+                + (result.HasValue ? ",\"result\":\"" + result.Value + "\"" : string.Empty)
+                + "}";
+            AutomationRuntimeEventEmitter.Emit(type, reason: reason, payloadJson: payload);
+        }
+
+        private static string JsonEscape(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

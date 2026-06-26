@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using BlacksmithGuild.DevTools.Automation;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
@@ -13,6 +15,45 @@ namespace BlacksmithGuild.MapTrade
 {
     public static class MapTradeTradeActionReflection
     {
+        private static int _tradeIterationSeq;
+
+        // Records a real, mod-observed trade iteration to BlacksmithGuild_TradeIterations.jsonl and emits a
+        // trade.completed runtime event. Deltas come straight from live gold/inventory reads in TryExecuteBuy;
+        // nothing is synthesized. The offline economic-loop certifier counts only rows with a real gold AND
+        // inventory delta (FakeGameplayDelta=false). This is the single chokepoint for every proven buy
+        // (vanilla driver, autonomous trade route, guild loop, probes, pack-animal buys).
+        private static void RecordProvenTradeIteration(MapTradeExecutionResult execution, string direction)
+        {
+            if (execution == null)
+            {
+                return;
+            }
+
+            var iteration = Interlocked.Increment(ref _tradeIterationSeq);
+            MapTradeTradeIterationWriter.Append(new MapTradeIterationRecord
+            {
+                Iteration = iteration,
+                ItemName = execution.ItemName,
+                Direction = direction,
+                GoldBefore = execution.GoldBefore,
+                GoldAfter = execution.GoldAfter,
+                InventoryBefore = execution.InventoryBefore,
+                InventoryAfter = execution.InventoryAfter,
+                FakeGameplayDelta = false
+            });
+
+            var payload = "{\"iteration\":" + iteration
+                + ",\"goldDelta\":" + (execution.GoldAfter - execution.GoldBefore)
+                + ",\"inventoryDelta\":" + (execution.InventoryAfter - execution.InventoryBefore)
+                + ",\"itemName\":\"" + EscapeJson(execution.ItemName) + "\"}";
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.TradeCompleted,
+                reason: direction,
+                payloadJson: payload);
+        }
+
+        private static string EscapeJson(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
         public static List<string> ProbeApplySignatures()
         {
             var signatures = new List<string>();
@@ -72,6 +113,11 @@ namespace BlacksmithGuild.MapTrade
             var goldBefore = hero.Gold;
             var inventoryBefore = GetItemCount(mainParty, item);
 
+            AutomationRuntimeEventEmitter.Emit(
+                AutomationRuntimeEventEmitter.TradeStarted,
+                reason: "buy",
+                payloadJson: "{\"itemId\":\"" + EscapeJson(item.StringId) + "\",\"quantity\":" + quantity + "}");
+
             if (TryInvokeBuyItemsAction(mainParty.Party, settlement, item, quantity, out var methodUsed)
                 || TryInvokeSellItemsActionBuy(mainParty.Party, settlement, item, quantity, out methodUsed))
             {
@@ -96,14 +142,17 @@ namespace BlacksmithGuild.MapTrade
                 if (inventoryDelta > 0 && goldDelta < 0)
                 {
                     detail = $"buy verified via {methodUsed}: gold {goldDelta}, items +{inventoryDelta}";
+                    RecordProvenTradeIteration(result, "buy");
                     return true;
                 }
 
                 detail = $"{methodUsed} invoked but delta not proven (gold {goldDelta}, items {inventoryDelta})";
+                AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.TradeBlocked, reason: detail);
                 return false;
             }
 
             detail = detail ?? "no applicable BuyItemsAction/SellItemsAction Apply overload succeeded";
+            AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.TradeBlocked, reason: detail);
             return false;
         }
 

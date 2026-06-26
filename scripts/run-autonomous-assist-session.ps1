@@ -518,6 +518,24 @@ while ((Get-Date) -lt $loopDeadline) {
         Add-AssistSessionJsonl -List $evidence.trainingDecisions -Event $iterEvent
     }
 
+    # Record the branch the loop actually considered this cycle as real evidence for the economic-loop
+    # certifier's non-trade-branch requirement. Status reflects the observed outcome, never a synthesized one.
+    $branchName = if ($decision.actionConsidered) { [string]$decision.actionConsidered } else { 'observe_only' }
+    $branchStatus = switch ([string]$decision.decision) {
+        'allowed' {
+            if ($decision.commandSent -and [string]$iterEvent.result -eq 'Success') { 'executed' }
+            elseif ([string]$iterEvent.result -like 'Failed*') { 'blocked' }
+            else { 'considered' }
+        }
+        'block' { 'blocked' }
+        'stop_unsafe_surface' { 'blocked' }
+        default { 'considered' }
+    }
+    Add-AssistSessionJsonl -List $evidence.branchConsiderationLog -Event ([ordered]@{
+        atUtc = $decision.atUtc; cycleId = $iteration; branch = $branchName; status = $branchStatus
+        surface = $decision.surface; reason = $decision.reason
+    })
+
     $plannedBranch = Get-AutonomousAssistPlannedBranch -Decision $decision
     Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'cycle_completed' `
         -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
