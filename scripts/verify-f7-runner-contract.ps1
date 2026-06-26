@@ -470,6 +470,7 @@ foreach ($pair in @(
     @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' },
     @{ path = 'test-automation-checkpoint-finalization.ps1'; label = 'automation checkpoint finalization' },
     @{ path = 'test-runtime-user-message-events.ps1'; label = 'runtime user message events' },
+    @{ path = 'test-recursive-branch-state-contract.ps1'; label = 'recursive branch state contract' },
     @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' },
     @{ path = 'test-faction-posture-scan-guard.ps1'; label = 'faction posture scan guard' },
     @{ path = 'test-pr11-utc-freshness.ps1'; label = 'pr11 UTC freshness parse' },
