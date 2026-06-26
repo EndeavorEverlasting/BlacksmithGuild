@@ -400,6 +400,11 @@ $isEconomicLoop = ($CertProfile -eq 'economic_loop')
 # Only proven trade rows stamped at/after this moment are attributed to the current run, so a prior
 # cert's append-only rows in the game-root trade file cannot trip the target before this session buys.
 $tradeScopeSinceUtc = (Get-Date).ToUniversalTime()
+# Fail-closed safety valve: economic-loop trade driving only begins once a real non-trade branch has
+# executed/blocked (the travel leg). If travel never becomes possible, the run would otherwise spin to
+# timeout without ever trading. After this many no-progress cycles, stop with a clear diagnostic instead.
+$economicNoBranchCycles = 0
+$nonTradeBranchMaxCycles = [Math]::Max(12, [int](180 / [Math]::Max(1, $PollIntervalSec)))
 $lastDecision = $null
 $lastRecursiveBranchState = $null
 $lastRecursiveBranchFresh = $false
@@ -442,6 +447,14 @@ while ((Get-Date) -lt $loopDeadline) {
             $stopReason = 'trade_iteration_target_reached'
             Write-SessionLog "Economic loop target reached: $provenTradeCount/$TradeIterationTarget proven trades"
             break
+        }
+        if (-not $nonTradeBranchDone) {
+            $economicNoBranchCycles++
+            if ($economicNoBranchCycles -ge $nonTradeBranchMaxCycles) {
+                $stopReason = 'non_trade_branch_unavailable'
+                Write-SessionLog "Economic loop stopping: no non-trade branch executed/blocked within $economicNoBranchCycles cycles; cannot establish multi-branch evidence (is the party able to travel to a trade town?)"
+                break
+            }
         }
     }
 
