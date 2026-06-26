@@ -352,21 +352,22 @@ function Test-AutomationCampaignLoopSummary {
         terminalHasNoNextAction = $true
         nonTerminalHasNextAction = $true
         nonTerminalHasPlannedBranch = $true
+        nonTerminalHasNextActionReason = $true
         terminalHasReason = $true
     }
 
     if ($Summary.terminal -eq $true) {
         $result.terminalHasNoNextAction = ($Summary.nextActionRequired -eq $false)
         $result.terminalHasReason = -not [string]::IsNullOrWhiteSpace([string]$Summary.reason)
+        $result.pass = ($result.terminalHasNoNextAction -and $result.terminalHasReason)
     } else {
         $result.nonTerminalHasNextAction = ($Summary.nextActionRequired -eq $true)
         $result.nonTerminalHasPlannedBranch = -not [string]::IsNullOrWhiteSpace([string]$Summary.nextPlannedBranch)
+        $result.nonTerminalHasNextActionReason = -not [string]::IsNullOrWhiteSpace([string]$Summary.nextActionReason)
+        $result.pass = ($result.nonTerminalHasNextAction `
+            -and $result.nonTerminalHasPlannedBranch `
+            -and $result.nonTerminalHasNextActionReason)
     }
-
-    $result.pass = ($result.terminalHasNoNextAction `
-        -and $result.nonTerminalHasNextAction `
-        -and $result.nonTerminalHasPlannedBranch `
-        -and $result.terminalHasReason)
     return [pscustomobject]$result
 }
 

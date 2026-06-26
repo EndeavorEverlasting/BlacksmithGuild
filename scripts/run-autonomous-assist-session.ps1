@@ -87,15 +87,25 @@ function Complete-AssistAutomationFinalization {
         'cancelled' { 'abort' }
         default { 'abort' }
     }
+    $finalReason = [string]$Summary.failureClass
+    if ([string]::IsNullOrWhiteSpace($finalReason)) { $finalReason = [string]$Summary.stopReason }
+    if ([string]::IsNullOrWhiteSpace($finalReason)) { $finalReason = $state }
+    $gameProcessAlive = $null
+    if ($Summary.ContainsKey('gameProcessAlive') -and $null -ne $Summary.gameProcessAlive) {
+        $gameProcessAlive = [bool]$Summary.gameProcessAlive
+    } elseif ([string]$Summary.stopReason -match 'game_process_gone|process_disappeared|game_gone|game_exited') {
+        $gameProcessAlive = $false
+    }
     $start = Start-AutomationFinalization -List $events -SessionId $sessionId -Phase $cyclePhase `
-        -Runner 'run-autonomous-assist-session.ps1' -Reason ([string]$Summary.failureClass)
+        -Runner 'run-autonomous-assist-session.ps1' -Reason $finalReason
     $requiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started', 'summary_written')
     $criteria = Get-AutomationProjectedTerminalCriteria -Events @($events.ToArray()) -State $state `
         -Summary ([pscustomobject]$Summary) -RequireAssistLoopStarted `
         -RequiredCheckpoints $requiredCheckpoints -RequireExecuteMovement:$RequireExecuteMovement
     Complete-AutomationFinalization -List $events -State $state -SessionId $sessionId -Phase $cyclePhase `
-        -Runner 'run-autonomous-assist-session.ps1' -Reason ([string]$Summary.failureClass) `
-        -Criteria $criteria -RelatedEventId $start.eventId -SummaryWritten:$true | Out-Null
+        -Runner 'run-autonomous-assist-session.ps1' -Reason $finalReason `
+        -Criteria $criteria -RelatedEventId $start.eventId -SummaryWritten:$true `
+        -GameProcessAlive $gameProcessAlive | Out-Null
     $Summary.finalizedEventId = @($events.ToArray() | Where-Object { $_.isTerminal -eq $true } | Select-Object -Last 1).eventId
     $Summary.terminalState = $state
     $Summary.finalizationSequence = @($events.ToArray() | Where-Object { $_.eventType -like 'finalization_*' -or $_.eventType -like 'finalized_*' })
@@ -115,9 +125,9 @@ function Exit-AssistSession {
         [switch]$RequireExecuteMovement
     )
     Complete-AssistAutomationFinalization -Evidence $Evidence -Summary $Summary -RequireExecuteMovement:$RequireExecuteMovement
-    Merge-AutonomousAssistCampaignLoopSummary -Summary $Summary -SessionId $sessionId `
+    $Summary = Merge-AutonomousAssistCampaignLoopSummary -Summary $Summary -SessionId $sessionId `
         -TargetSettlement $TargetSettlement -LastDecision $LastDecision `
-        -CycleId $(if ($Summary.iterationCount) { [int]$Summary.iterationCount } else { 0 }) | Out-Null
+        -CycleId $(if ($Summary.iterationCount) { [int]$Summary.iterationCount } else { 0 })
     if (Get-Command Write-TbgTerminationDetection -ErrorAction SilentlyContinue) {
         $runtimeLc = Read-Pr11RuntimeLifecycle -BannerlordRoot $bannerlordRoot
         Write-TbgTerminationDetection -BannerlordRoot $bannerlordRoot `
@@ -552,6 +562,7 @@ $summary = [ordered]@{
     actionsLogged = $actionsLogged
     travelExecuted = $travelExecuted
     automationPassCriteria = $criteriaPreview
+    gameProcessAlive = $(if ($stopReason -match 'game_process_gone|process_disappeared|game_gone|game_exited') { $false } else { $true })
     endedAtUtc = $endedAtUtc
     checkpointDir = $checkpointDir
 }

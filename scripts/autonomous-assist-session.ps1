@@ -153,7 +153,7 @@ function Get-AutonomousAssistPlannedBranch {
 
 function Merge-AutonomousAssistCampaignLoopSummary {
     param(
-        [Parameter(Mandatory = $true)][hashtable]$Summary,
+        [Parameter(Mandatory = $true)]$Summary,
         [string]$SessionId = $null,
         [string]$TargetSettlement = $null,
         [object]$LastDecision = $null,
@@ -185,6 +185,13 @@ function Merge-AutonomousAssistCampaignLoopSummary {
             -Terminal:$true -TerminalState $terminalState -PassFail $passFail `
             -NextActionRequired:$false -Reason $reason
     } else {
+        if ([string]::IsNullOrWhiteSpace($nextReason)) {
+            $nextReason = if ($LastDecision -and $LastDecision.decision) {
+                "decision=$([string]$LastDecision.decision)"
+            } else {
+                "next_branch=$branch"
+            }
+        }
         $campaign = New-AutomationCampaignLoopSummary -SessionId $SessionId -CycleId $CycleId `
             -Phase 'campaign_loop' -CurrentTown $CurrentTown -NextPlannedTown $TargetSettlement `
             -SelectedAction $(if ($LastDecision) { [string]$LastDecision.actionConsidered } else { $null }) `
@@ -519,6 +526,24 @@ function Save-AutonomousAssistSessionEvidence {
     $runtimeLcPath = Join-Path $dir 'BlacksmithGuild_RuntimeLifecycle.json'
     if (Test-Path -LiteralPath $runtimeLcPath) {
         Copy-Item -LiteralPath $runtimeLcPath -Destination (Join-Path $dir 'runtime-lifecycle.json') -Force
+    }
+
+    if ($Summary.travelExecuted -eq $true) {
+        if (-not (Get-Command Get-AssistiveTravelExecutionJsonPath -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
+        }
+        if (Get-Command Get-AssistiveTravelExecutionJsonPath -ErrorAction SilentlyContinue) {
+            $execSrc = Get-AssistiveTravelExecutionJsonPath -BannerlordRoot $BannerlordRoot
+            if ($execSrc -and (Test-Path -LiteralPath $execSrc)) {
+                if (Get-Command Copy-Pr11EvidenceArtifact -ErrorAction SilentlyContinue) {
+                    Copy-Pr11EvidenceArtifact -SourcePath $execSrc -CheckpointDir $dir `
+                        -DestName 'BlacksmithGuild_AssistiveTravelExecution.json' | Out-Null
+                } else {
+                    Copy-Item -LiteralPath $execSrc `
+                        -Destination (Join-Path $dir 'BlacksmithGuild_AssistiveTravelExecution.json') -Force
+                }
+            }
+        }
     }
 
     return $dir

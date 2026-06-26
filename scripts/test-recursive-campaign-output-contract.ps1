@@ -126,8 +126,12 @@ function Assert-RecursiveOutputContract {
         if (($event.gameProcessAlive -eq $true) -and ($event.messageShownInGame -ne $true)) {
             throw "Game alive but messageShownInGame was not true for checkpoint '$([string]$event.checkpointName)'"
         }
-        if (($event.gameProcessAlive -eq $false) -and ($terminalEvents.Count -ne 1)) {
-            throw "Game gone for checkpoint '$([string]$event.checkpointName)' but no single terminal event explains it"
+    }
+    $gameGoneObserved = @($Events | Where-Object { $_.gameProcessAlive -eq $false })
+    if ($gameGoneObserved.Count -gt 0) {
+        $terminal = $terminalEvents | Select-Object -First 1
+        if ([string]::IsNullOrWhiteSpace([string]$terminal.reason)) {
+            throw "Terminal event must include reason when gameProcessAlive=false was observed (from: $(@($gameGoneObserved | ForEach-Object { $_.checkpointName }) -join ', '))"
         }
     }
 
@@ -166,6 +170,24 @@ function Assert-ContractRejectsBadShapes {
     $badSummaryResult = Test-AutomationCampaignLoopSummary -Summary $badSummary
     if ($badSummaryResult.pass) {
         throw 'NEGATIVE CHECK FAILED: non-terminal summary without nextPlannedBranch must not pass'
+    }
+
+    # Game-gone terminal without reason must fail the output contract assertion path.
+    $gameGoneEvents = New-Object System.Collections.Generic.List[object]
+    $gameGoneEvents.Add((New-AutomationCheckpointEvent -EventType 'checkpoint_reached' -CheckpointName 'attach_ready' `
+            -GameProcessAlive $false -Reason 'game_process_gone')) | Out-Null
+    $gameGoneEvents.Add((New-AutomationCheckpointEvent -EventType 'finalized_fail' -CheckpointName 'finalized_fail' `
+            -IsTerminal $true -TerminalState 'fail' -SummaryWritten:$true -Reason $null)) | Out-Null
+    try {
+        Assert-RecursiveOutputContract -Events @($gameGoneEvents.ToArray()) `
+            -CampaignSummary (New-AutomationCampaignLoopSummary -SessionId 'neg' -Terminal $true -PassFail 'FAIL' `
+                -NextActionRequired $false -Reason 'game_process_gone') `
+            -AssistSummary ([pscustomobject]@{ passFail = 'FAIL' })
+        throw 'NEGATIVE CHECK FAILED: game-gone terminal without reason must not pass'
+    } catch {
+        if ($_.Exception.Message -notmatch 'reason') {
+            throw "NEGATIVE CHECK FAILED: expected reason enforcement, got: $($_.Exception.Message)"
+        }
     }
 }
 

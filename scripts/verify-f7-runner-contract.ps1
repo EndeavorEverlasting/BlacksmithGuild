@@ -481,6 +481,7 @@ foreach ($pair in @(
     @{ path = 'test-process-lifecycle-authority.ps1'; label = 'process lifecycle authority' },
     @{ path = 'test-pr11-runtime-state-consumer.ps1'; label = 'pr11 runtime state consumer' },
     @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' },
+    @{ path = 'test-autonomous-assist-runner-evidence.ps1'; label = 'autonomous assist runner evidence emission' },
     @{ path = 'test-automation-checkpoint-finalization.ps1'; label = 'automation checkpoint finalization' },
     @{ path = 'test-runtime-user-message-events.ps1'; label = 'runtime user message events' },
     @{ path = 'test-recursive-branch-state-contract.ps1'; label = 'recursive branch state contract' },
