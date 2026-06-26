@@ -833,6 +833,8 @@ namespace BlacksmithGuild
 
             RuntimeLifecycleWriter.AppendStateMachine(builder, snapshot);
             builder.Append(RecursiveCampaignBranchState.BuildJsonBlock(snapshot));
+            AutomationRuntimeEventEmitter.EmitRecursiveBranchStateChanged(
+                RecursiveCampaignBranchState.BuildSignature(snapshot));
             if (!_stateMachineCheckpointEmitted)
             {
                 _stateMachineCheckpointEmitted = true;

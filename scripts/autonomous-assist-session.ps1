@@ -563,12 +563,15 @@ function New-AutonomousAssistSessionEvidence {
         [string]$CheckpointDir,
         [string]$AssistProfile,
         [string]$LaunchIntent,
-        [string]$TargetSettlement
+        [string]$TargetSettlement,
+        [string]$CertProfile = 'default',
+        [int]$TradeIterationTarget = 10
     )
     return [ordered]@{
         sessionId = $SessionId
         checkpointDir = $CheckpointDir
         assistProfile = $AssistProfile
+        certProfile = $CertProfile
         launchIntent = $LaunchIntent
         targetSettlement = $TargetSettlement
         startedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -576,6 +579,8 @@ function New-AutonomousAssistSessionEvidence {
         assistLoopStarted = $false
         assistLoopStartedWithoutHotkey = $false
         iterationCount = 0
+        tradeIterationCount = 0
+        tradeIterationTarget = $TradeIterationTarget
         timeline = New-Object System.Collections.Generic.List[object]
         stateSnapshots = New-Object System.Collections.Generic.List[object]
         commandTimeline = New-Object System.Collections.Generic.List[object]
@@ -584,6 +589,10 @@ function New-AutonomousAssistSessionEvidence {
         travelDecisions = New-Object System.Collections.Generic.List[object]
         trainingDecisions = New-Object System.Collections.Generic.List[object]
         checkpointEvents = New-Object System.Collections.Generic.List[object]
+        boundaries = New-Object System.Collections.Generic.List[object]
+        runtimeEvents = New-Object System.Collections.Generic.List[object]
+        tradeIterations = New-Object System.Collections.Generic.List[object]
+        branchConsiderationLog = New-Object System.Collections.Generic.List[object]
     }
 }
 
@@ -638,6 +647,95 @@ function Get-AutomationModEventPaths {
     return @($paths.ToArray())
 }
 
+function Copy-EconomicLoopArtifact {
+    param(
+        [string]$BannerlordRoot,
+        [string]$CheckpointDir,
+        [string]$FileName
+    )
+    if ([string]::IsNullOrWhiteSpace($BannerlordRoot)) { return $false }
+    $src = Join-Path $BannerlordRoot $FileName
+    if (-not (Test-Path -LiteralPath $src)) { return $false }
+    if (Get-Command Copy-Pr11EvidenceArtifact -ErrorAction SilentlyContinue) {
+        Copy-Pr11EvidenceArtifact -SourcePath $src -CheckpointDir $CheckpointDir -DestName $FileName | Out-Null
+    } else {
+        Copy-Item -LiteralPath $src -Destination (Join-Path $CheckpointDir $FileName) -Force
+    }
+    return $true
+}
+
+function Save-EconomicLoopCertEvidence {
+    # Writes the economic-loop evidence streams the offline cert consumes:
+    #   BlacksmithGuild_BoundaryEvents.jsonl, BlacksmithGuild_TradeIterations.jsonl,
+    #   economic-loop-summary.json, economic-loop-cert.json
+    # It also copies any mod-emitted boundary/trade/domain artifacts from BannerlordRoot.
+    param(
+        [hashtable]$Evidence,
+        [string]$BannerlordRoot,
+        [int]$TradeIterationTarget = 10
+    )
+
+    $dir = $Evidence.checkpointDir
+    if (-not (Get-Command Test-AutomationEconomicLoopPassCriteria -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
+    }
+
+    $boundaries = if ($Evidence.boundaries) { @($Evidence.boundaries.ToArray()) } else { @() }
+    $runtimeEvents = if ($Evidence.runtimeEvents) { @($Evidence.runtimeEvents.ToArray()) } else { @() }
+    $tradeIterations = if ($Evidence.tradeIterations) { @($Evidence.tradeIterations.ToArray()) } else { @() }
+    $branchLog = if ($Evidence.branchConsiderationLog) { @($Evidence.branchConsiderationLog.ToArray()) } else { @() }
+
+    # Prefer mod-emitted append-only streams if the runner harvested them; otherwise fall back to
+    # the runner's in-memory accumulation. Copy first so on-disk mod truth wins.
+    $copiedBoundary = Copy-EconomicLoopArtifact -BannerlordRoot $BannerlordRoot -CheckpointDir $dir -FileName 'BlacksmithGuild_BoundaryEvents.jsonl'
+    $copiedTrades = Copy-EconomicLoopArtifact -BannerlordRoot $BannerlordRoot -CheckpointDir $dir -FileName 'BlacksmithGuild_TradeIterations.jsonl'
+    foreach ($domain in @('BlacksmithGuild_MapTradeCert.json', 'BlacksmithGuild_HorseMarketIntel.json',
+            'BlacksmithGuild_SmithingSafeAction.json', 'BlacksmithGuild_AutomationEvents.jsonl')) {
+        Copy-EconomicLoopArtifact -BannerlordRoot $BannerlordRoot -CheckpointDir $dir -FileName $domain | Out-Null
+    }
+
+    if (-not $copiedBoundary -and (Get-Command Write-AutomationBoundaryEventsFile -ErrorAction SilentlyContinue)) {
+        Write-AutomationBoundaryEventsFile -Boundaries $boundaries -Path (Join-Path $dir 'BlacksmithGuild_BoundaryEvents.jsonl') | Out-Null
+    }
+    if (-not $copiedTrades) {
+        $tradeLines = @($tradeIterations | Where-Object { $null -ne $_ } | ForEach-Object { $_ | ConvertTo-Json -Depth 10 -Compress })
+        Set-Content -LiteralPath (Join-Path $dir 'BlacksmithGuild_TradeIterations.jsonl') -Value $(if ($tradeLines.Count -eq 0) { '' } else { $tradeLines }) -Encoding UTF8
+    }
+
+    # If mod emitted trade rows on disk, count those; else count the in-memory rows.
+    $diskTradePath = Join-Path $dir 'BlacksmithGuild_TradeIterations.jsonl'
+    if ($copiedTrades -and (Test-Path -LiteralPath $diskTradePath)) {
+        $tradeIterations = @(Get-Content -LiteralPath $diskTradePath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_ | ConvertFrom-Json })
+    }
+    $diskBoundaryPath = Join-Path $dir 'BlacksmithGuild_BoundaryEvents.jsonl'
+    if ($copiedBoundary -and (Test-Path -LiteralPath $diskBoundaryPath)) {
+        $boundaries = @(Get-Content -LiteralPath $diskBoundaryPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_ | ConvertFrom-Json })
+    }
+
+    $proven = @($tradeIterations | Where-Object { Test-TradeIterationProven -Iteration $_ })
+    $criteria = Test-AutomationEconomicLoopPassCriteria -Boundaries $boundaries -RuntimeEvents $runtimeEvents `
+        -TradeIterations $tradeIterations -BranchConsiderationLog $branchLog `
+        -CheckpointEvents @($Evidence.checkpointEvents.ToArray()) -TradeIterationTarget $TradeIterationTarget
+
+    $economicSummary = [ordered]@{
+        sessionId = $Evidence.sessionId
+        certProfile = if ($Evidence.certProfile) { $Evidence.certProfile } else { 'economic_loop' }
+        tradeIterationTarget = $TradeIterationTarget
+        tradeIterationCount = $proven.Count
+        boundaryCount = @($boundaries).Count
+        branchConsiderationLog = @($branchLog)
+        lastFailureClass = $(if ($criteria.failureClasses.Count -gt 0) { @($criteria.failureClasses)[-1] } else { $null })
+    }
+    if (Get-Command Save-Pr11JsonArtifact -ErrorAction SilentlyContinue) {
+        Save-Pr11JsonArtifact -Object $economicSummary -Path (Join-Path $dir 'economic-loop-summary.json') | Out-Null
+        Save-Pr11JsonArtifact -Object $criteria -Path (Join-Path $dir 'economic-loop-cert.json') | Out-Null
+    } else {
+        $economicSummary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $dir 'economic-loop-summary.json') -Encoding UTF8
+        $criteria | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $dir 'economic-loop-cert.json') -Encoding UTF8
+    }
+    return $criteria
+}
+
 function Save-AutonomousAssistSessionEvidence {
     param(
         [hashtable]$Evidence,
@@ -664,6 +762,9 @@ function Save-AutonomousAssistSessionEvidence {
         assistLoopStartedWithoutHotkey = $Evidence.assistLoopStartedWithoutHotkey
         iterationCount = $Evidence.iterationCount
     }
+    if ($Evidence.certProfile) { $manifest.certProfile = [string]$Evidence.certProfile }
+    if ($null -ne $Evidence.tradeIterationTarget) { $manifest.tradeIterationTarget = [int]$Evidence.tradeIterationTarget }
+    if ($null -ne $Evidence.tradeIterationCount) { $manifest.tradeIterationCount = [int]$Evidence.tradeIterationCount }
 
     if (Get-Command Save-Pr11JsonArtifact -ErrorAction SilentlyContinue) {
         Save-Pr11JsonArtifact -Object $manifest -Path (Join-Path $dir 'session-manifest.json') | Out-Null
@@ -708,6 +809,15 @@ function Save-AutonomousAssistSessionEvidence {
     $runtimeLcPath = Join-Path $dir 'BlacksmithGuild_RuntimeLifecycle.json'
     if (Test-Path -LiteralPath $runtimeLcPath) {
         Copy-Item -LiteralPath $runtimeLcPath -Destination (Join-Path $dir 'runtime-lifecycle.json') -Force
+    }
+
+    # Economic-loop cert profile: harvest boundary/trade streams and emit the offline cert verdict.
+    $isEconomicLoop = ([string]$Evidence.certProfile -eq 'economic_loop') -or
+        ($Evidence.tradeIterations -and $Evidence.tradeIterations.Count -gt 0) -or
+        ($Evidence.boundaries -and $Evidence.boundaries.Count -gt 0)
+    if ($isEconomicLoop -and (Get-Command Save-EconomicLoopCertEvidence -ErrorAction SilentlyContinue)) {
+        $target = if ($null -ne $Evidence.tradeIterationTarget) { [int]$Evidence.tradeIterationTarget } else { 10 }
+        Save-EconomicLoopCertEvidence -Evidence $Evidence -BannerlordRoot $BannerlordRoot -TradeIterationTarget $target | Out-Null
     }
 
     if ($Summary.travelExecuted -eq $true) {

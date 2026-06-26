@@ -33,14 +33,28 @@ function New-BranchState {
         nextPlannedBranch = $next
         nextActionReason = if ($next -eq 'travel') { 'surface_allows_travel_recompute_destination_from_fresh_state' } elseif ($next -eq 'rest_wait') { 'productive_branch_blocked_wait_is_safe' } else { $defaultNextReason }
         branches = [pscustomobject]@{
-            travel = [pscustomobject]@{ state = if ($SafeTravel) { 'available' } else { 'blocked' }; reason = if ($SafeTravel) { 'surface_allows_travel' } else { $travelBlockedReason } }
-            trade = [pscustomobject]@{ state = if ($SafeTrade) { 'unknown' } else { 'blocked' }; reason = if ($SafeTrade) { 'market_profitability_not_evaluated' } else { 'trade_surface_not_open' } }
-            smith_refine = [pscustomobject]@{ state = if ($SafeSmith) { 'unknown' } else { 'blocked' }; reason = if ($SafeSmith) { 'smithing_stamina_materials_not_evaluated' } else { 'smithing_surface_not_open' } }
-            rest_wait = [pscustomobject]@{ state = if ($SafeWait) { 'available' } else { 'blocked' }; reason = if ($SafeWait) { 'safe_wait_surface' } else { 'wait_not_safe_on_surface' } }
-            tavern_scan = [pscustomobject]@{ state = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'unknown' } else { 'blocked' }; reason = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'tavern_candidates_not_scanned' } else { 'not_at_settlement_surface' } }
-            companion_roster = [pscustomobject]@{ state = if ($CampaignLoaded) { 'unknown' } else { 'blocked' }; reason = if ($CampaignLoaded) { 'companion_roster_not_scanned' } else { 'campaign_not_loaded' } }
-            avoid_threat = [pscustomobject]@{ state = 'unknown'; reason = 'threat_state_unknown_until_posture_scan_consumed' }
-            observe_only = [pscustomobject]@{ state = 'available'; reason = 'always_safe_fallback' }
+            travel = [pscustomobject]@{ state = if ($SafeTravel) { 'available' } else { 'blocked' }; reason = if ($SafeTravel) { 'surface_allows_travel' } else { $travelBlockedReason }; evidenceSource = 'status'; boundaryName = 'map_traversal'; failureClass = $null }
+            trade = [pscustomobject]@{ state = if ($SafeTrade) { 'unknown' } else { 'blocked' }; reason = if ($SafeTrade) { 'market_profitability_not_evaluated' } else { 'trade_surface_not_open' }; evidenceSource = 'map_trade'; boundaryName = 'execute_trade_iteration'; failureClass = $null }
+            smith_refine = [pscustomobject]@{ state = if ($SafeSmith) { 'unknown' } else { 'blocked' }; reason = if ($SafeSmith) { 'smithing_stamina_materials_not_evaluated' } else { 'smithing_surface_not_open' }; evidenceSource = 'smithing'; boundaryName = 'smithing_or_prep'; failureClass = $null }
+            rest_wait = [pscustomobject]@{ state = if ($SafeWait) { 'available' } else { 'blocked' }; reason = if ($SafeWait) { 'safe_wait_surface' } else { 'wait_not_safe_on_surface' }; evidenceSource = 'status'; boundaryName = 'rest_wait'; failureClass = $null }
+            tavern_scan = [pscustomobject]@{ state = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'unknown' } else { 'blocked' }; reason = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'tavern_candidates_not_scanned' } else { 'not_at_settlement_surface' }; evidenceSource = 'status'; boundaryName = 'observe_runtime_state'; failureClass = $null }
+            companion_roster = [pscustomobject]@{ state = if ($CampaignLoaded) { 'unknown' } else { 'blocked' }; reason = if ($CampaignLoaded) { 'companion_roster_not_scanned' } else { 'campaign_not_loaded' }; evidenceSource = 'status'; boundaryName = 'observe_runtime_state'; failureClass = $null }
+            horse_acquisition = [pscustomobject]@{
+                state = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'unknown' } else { 'blocked' }
+                reason = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'horse_market_affordability_not_evaluated' } else { 'not_at_settlement_surface' }
+                evidenceSource = if ($Surface -in @('settlement_menu','settlement_city','settlement_interior')) { 'horse_market' } else { 'none' }
+                boundaryName = 'horse_acquisition'
+                failureClass = $null
+            }
+            inventory_management = [pscustomobject]@{
+                state = if ($CampaignLoaded) { 'unknown' } else { 'blocked' }
+                reason = if ($CampaignLoaded) { 'inventory_pressure_not_evaluated' } else { 'campaign_not_loaded' }
+                evidenceSource = if ($CampaignLoaded) { 'status' } else { 'none' }
+                boundaryName = 'inventory_management'
+                failureClass = $null
+            }
+            avoid_threat = [pscustomobject]@{ state = 'unknown'; reason = 'threat_state_unknown_until_posture_scan_consumed'; evidenceSource = 'threat_scan'; boundaryName = 'evaluate_threat_state'; failureClass = $null }
+            observe_only = [pscustomobject]@{ state = 'available'; reason = 'always_safe_fallback'; evidenceSource = 'none'; boundaryName = 'observe_only'; failureClass = $null }
         }
     }
 }
@@ -53,6 +67,21 @@ if ($travel.branches.trade.state -eq 'available') { throw 'trade must not be ava
 if ($travel.branches.smith_refine.state -eq 'available') { throw 'smith/refine must not be available without stamina/material evidence' }
 if ($travel.branches.companion_roster.state -eq 'available') { throw 'companion roster must not be available without roster/capacity evidence' }
 if ($travel.branches.avoid_threat.state -eq 'available') { throw 'avoid threat must not be available without threat evidence' }
+if ($travel.branches.horse_acquisition.state -eq 'available') { throw 'horse acquisition must not be available without affordability evidence' }
+if ($travel.branches.inventory_management.state -eq 'available') { throw 'inventory management must not be available without inventory pressure evidence' }
+foreach ($richBranch in @('travel','trade','horse_acquisition','inventory_management','smith_refine','rest_wait','avoid_threat','observe_only')) {
+    $gate = $travel.branches.$richBranch
+    foreach ($field in @('state','reason','evidenceSource','boundaryName')) {
+        if (-not ($gate.PSObject.Properties.Name -contains $field)) {
+            throw "branch '$richBranch' gate missing v2 field: $field"
+        }
+    }
+}
+
+$settlementHorse = New-BranchState -Surface 'settlement_menu' -SafeTravel $true
+if ($settlementHorse.branches.horse_acquisition.state -ne 'unknown' -or $settlementHorse.branches.horse_acquisition.reason -ne 'horse_market_affordability_not_evaluated') {
+    throw 'settlement surface should expose horse acquisition as unknown until affordability is evaluated'
+}
 
 $tradeSurface = New-BranchState -Surface 'trading' -SafeTrade $true -SafeWait $true
 if ($tradeSurface.branches.trade.state -ne 'unknown' -or $tradeSurface.branches.trade.reason -ne 'market_profitability_not_evaluated') {
@@ -80,7 +109,16 @@ foreach ($needle in @(
     'market_profitability_not_evaluated',
     'smithing_stamina_materials_not_evaluated',
     'companion_roster_not_scanned',
-    'threat_state_unknown_until_posture_scan_consumed')) {
+    'threat_state_unknown_until_posture_scan_consumed',
+    'SchemaVersion = 2',
+    'horse_acquisition',
+    'inventory_management',
+    'horse_market_affordability_not_evaluated',
+    'inventory_pressure_not_evaluated',
+    'evidenceSource',
+    'boundaryName',
+    'failureClass',
+    'BuildSignature')) {
     if ($src -notmatch [regex]::Escape($needle)) {
         throw "RecursiveCampaignBranchState.cs missing contract needle: $needle"
     }

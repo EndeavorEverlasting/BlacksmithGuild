@@ -25,6 +25,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 
 . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+. (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
 
 $script:NonTerminalEventTypes = @(
     'checkpoint_reached',
@@ -191,11 +192,55 @@ function Assert-ContractRejectsBadShapes {
     }
 }
 
+function Assert-EconomicLoopNegativeShapes {
+    # Economic-loop collapse shapes must be rejected by the boundary contract verifier.
+    # This keeps the recursive output gate aligned with the dedicated economic-loop cert.
+
+    $sessionId = 'recursive-output-economic-negative'
+    $boundaries = New-Object System.Collections.Generic.List[object]
+    $runtime = New-Object System.Collections.Generic.List[object]
+    $checkpoints = New-Object System.Collections.Generic.List[object]
+    foreach ($c in @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started', 'summary_written')) {
+        Add-AutomationCheckpointEvent -List $checkpoints -CheckpointName $c -SessionId $sessionId | Out-Null
+    }
+    Complete-AutomationFinalization -List $checkpoints -State pass -SessionId $sessionId `
+        -Reason 'trade_iteration_target_reached' -SummaryWritten $true | Out-Null
+    $b = Start-AutomationBoundary -SectionName 'execute_trade_iteration' -Boundaries $boundaries `
+        -RuntimeEvents $runtime -BranchName 'trade' -SessionId $sessionId -CycleId 1
+    Complete-AutomationBoundary -Boundary $b -RuntimeEvents $runtime | Out-Null
+
+    # One proven trade + one non-trade branch is NOT enough: target is 10.
+    $oneTrade = @(New-TradeIterationRecord -Iteration 1 -GoldBefore 100 -GoldAfter 220 -InventoryBefore 5 -InventoryAfter 4)
+    $log = @([pscustomobject]@{ branch = 'trade'; status = 'executed' }, [pscustomobject]@{ branch = 'rest_wait'; status = 'blocked' })
+    $result = Test-AutomationEconomicLoopPassCriteria -Boundaries @($boundaries.ToArray()) `
+        -RuntimeEvents @($runtime.ToArray()) -TradeIterations $oneTrade -BranchConsiderationLog $log `
+        -CheckpointEvents @($checkpoints.ToArray()) -TradeIterationTarget 10
+    if ($result.pass) {
+        throw 'NEGATIVE CHECK FAILED: single proven trade must not satisfy economic-loop PASS (target 10)'
+    }
+    if ($result.failureClasses -notcontains 'trade_iteration_target_not_reached') {
+        throw "NEGATIVE CHECK FAILED: expected trade_iteration_target_not_reached, got: $($result.failureClasses -join ',')"
+    }
+
+    # fakeGameplayDelta must be rejected even at full count.
+    $fake = New-Object System.Collections.Generic.List[object]
+    for ($i = 1; $i -le 10; $i++) {
+        $fake.Add((New-TradeIterationRecord -Iteration $i -GoldBefore 100 -GoldAfter 220 -InventoryBefore 5 -InventoryAfter 4 -FakeGameplayDelta:$true)) | Out-Null
+    }
+    $fakeResult = Test-AutomationEconomicLoopPassCriteria -Boundaries @($boundaries.ToArray()) `
+        -RuntimeEvents @($runtime.ToArray()) -TradeIterations @($fake.ToArray()) -BranchConsiderationLog $log `
+        -CheckpointEvents @($checkpoints.ToArray()) -TradeIterationTarget 10
+    if ($fakeResult.pass -or ($fakeResult.failureClasses -notcontains 'fake_gameplay_delta')) {
+        throw 'NEGATIVE CHECK FAILED: fakeGameplayDelta trade iterations must be rejected'
+    }
+}
+
 $tmpRoot = $null
 
 try {
     if ($Fixture) {
         Assert-ContractRejectsBadShapes
+        Assert-EconomicLoopNegativeShapes
 
         $tmpRoot = Join-Path $env:TEMP "recursive-campaign-output-contract-$PID"
         if (Test-Path -LiteralPath $tmpRoot) { Remove-Item -LiteralPath $tmpRoot -Recurse -Force }
