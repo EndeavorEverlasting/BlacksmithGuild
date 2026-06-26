@@ -309,8 +309,8 @@ function Test-AutomationEconomicLoopPassCriteria {
 
     $closure = Test-AutomationBoundaryClosure -Boundaries $Boundaries
 
-    $provenTrades = @($TradeIterations | Where-Object { Test-TradeIterationProven -Iteration $_ })
-    $fakeTrades = @($TradeIterations | Where-Object { $_.fakeGameplayDelta -eq $true })
+    $provenTrades = @($TradeIterations | Where-Object { $_ -and (Test-TradeIterationProven -Iteration $_) })
+    $fakeTrades = @($TradeIterations | Where-Object { $_ -and ($_.fakeGameplayDelta -eq $true) })
 
     # Non-trade branch must have been considered with executed/blocked evidence (not observe_only alone).
     $nonTradeConsidered = @($BranchConsiderationLog | Where-Object {

@@ -776,14 +776,18 @@ function Save-EconomicLoopCertEvidence {
     # If mod emitted trade rows on disk, count those; else count the in-memory rows.
     $diskTradePath = Join-Path $dir 'BlacksmithGuild_TradeIterations.jsonl'
     if ($copiedTrades -and (Test-Path -LiteralPath $diskTradePath)) {
-        $tradeIterations = @(Get-Content -LiteralPath $diskTradePath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_ | ConvertFrom-Json })
+        $tradeIterations = @(Get-Content -LiteralPath $diskTradePath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+            try { $_ | ConvertFrom-Json } catch { $null }
+        } | Where-Object { $null -ne $_ })
     }
     $diskBoundaryPath = Join-Path $dir 'BlacksmithGuild_BoundaryEvents.jsonl'
     if ($copiedBoundary -and (Test-Path -LiteralPath $diskBoundaryPath)) {
-        $boundaries = @(Get-Content -LiteralPath $diskBoundaryPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_ | ConvertFrom-Json })
+        $boundaries = @(Get-Content -LiteralPath $diskBoundaryPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+            try { $_ | ConvertFrom-Json } catch { $null }
+        } | Where-Object { $null -ne $_ })
     }
 
-    $proven = @($tradeIterations | Where-Object { Test-TradeIterationProven -Iteration $_ })
+    $proven = @($tradeIterations | Where-Object { $_ -and (Test-TradeIterationProven -Iteration $_) })
     $criteria = Test-AutomationEconomicLoopPassCriteria -Boundaries $boundaries -RuntimeEvents $runtimeEvents `
         -TradeIterations $tradeIterations -BranchConsiderationLog $branchLog `
         -CheckpointEvents @($Evidence.checkpointEvents.ToArray()) -TradeIterationTarget $TradeIterationTarget
