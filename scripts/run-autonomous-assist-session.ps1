@@ -122,12 +122,16 @@ function Exit-AssistSession {
         [hashtable]$Evidence,
         [hashtable]$Summary,
         [object]$LastDecision = $null,
+        [object]$RecursiveBranchState = $null,
+        [bool]$RecursiveBranchFresh = $false,
         [switch]$RequireExecuteMovement
     )
     Complete-AssistAutomationFinalization -Evidence $Evidence -Summary $Summary -RequireExecuteMovement:$RequireExecuteMovement
     $Summary = Merge-AutonomousAssistCampaignLoopSummary -Summary $Summary -SessionId $sessionId `
         -TargetSettlement $TargetSettlement -LastDecision $LastDecision `
-        -CycleId $(if ($Summary.iterationCount) { [int]$Summary.iterationCount } else { 0 })
+        -CycleId $(if ($Summary.iterationCount) { [int]$Summary.iterationCount } else { 0 }) `
+        -RecursiveBranchState $RecursiveBranchState -RecursiveBranchFresh $RecursiveBranchFresh `
+        -CurrentTown $(if ($RecursiveBranchState -and $RecursiveBranchState.currentTown) { [string]$RecursiveBranchState.currentTown } else { $null })
     if (Get-Command Write-TbgTerminationDetection -ErrorAction SilentlyContinue) {
         $runtimeLc = Read-Pr11RuntimeLifecycle -BannerlordRoot $bannerlordRoot
         Write-TbgTerminationDetection -BannerlordRoot $bannerlordRoot `
@@ -386,6 +390,8 @@ $actionsLogged = 0
 $travelExecuted = $false
 $partyMovementCheckpointEmitted = $false
 $lastDecision = $null
+$lastRecursiveBranchState = $null
+$lastRecursiveBranchFresh = $false
 
 $null = Start-TbgWaitSegment -WaitReason 'autonomous_assist_loop' -TimeoutSec ($MaxRuntimeMinutes * 60) -PollIntervalMs ($PollIntervalSec * 1000)
 
@@ -417,6 +423,8 @@ while ((Get-Date) -lt $loopDeadline) {
     }
 
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
+    $lastRecursiveBranchState = $ready.recursiveBranchState
+    $lastRecursiveBranchFresh = [bool]$ready.recursiveBranchFresh
     $decision = Get-AutonomousAssistIterationDecision -Readiness $ready -AssistProfile $AssistProfile `
         -TargetSettlement $TargetSettlement -StopOnUnsafeState:$StopOnUnsafeState `
         -LastTravelCommandUtc $lastTravelCommandUtc -TravelCommandCooldownSec $TravelCommandCooldownSec
@@ -511,6 +519,9 @@ while ((Get-Date) -lt $loopDeadline) {
         Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'next_action_planned' `
             -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
             -Reason "branch=$plannedBranch" | Out-Null
+        Write-AutonomousAssistCycleCampaignSummary -Evidence $evidence -LastDecision $decision `
+            -SessionId $sessionId -TargetSettlement $TargetSettlement -CycleId $iteration `
+            -RecursiveBranchState $lastRecursiveBranchState -RecursiveBranchFresh $lastRecursiveBranchFresh | Out-Null
     }
 
     Update-TbgWaitProgress -ProgressSignal "iter=$iteration decision=$($decision.decision) surface=$($decision.surface)"
@@ -569,4 +580,5 @@ $summary = [ordered]@{
 
 Write-SessionLog "Session complete passFail=$passFail stopReason=$stopReason iterations=$iteration actionsLogged=$actionsLogged"
 Exit-AssistSession -Code $(if ($passFail -eq 'PASS') { 0 } else { 2 }) -Evidence $evidence -Summary $summary `
-    -LastDecision $lastDecision -RequireExecuteMovement:$travelExecuted
+    -LastDecision $lastDecision -RecursiveBranchState $lastRecursiveBranchState `
+    -RecursiveBranchFresh $lastRecursiveBranchFresh -RequireExecuteMovement:$travelExecuted

@@ -18,14 +18,55 @@ if (Test-Path -LiteralPath $tmpRoot) { Remove-Item -LiteralPath $tmpRoot -Recurs
 New-Item -ItemType Directory -Force -Path $tmpRoot | Out-Null
 
 function New-StatusFixture {
-    param([hashtable]$StateMachine = $null, [hashtable]$Session = $null)
+    param(
+        [hashtable]$StateMachine = $null,
+        [hashtable]$Session = $null,
+        [hashtable]$RecursiveBranchState = $null
+    )
     $now = (Get-Date).ToUniversalTime().ToString('o')
     $obj = [ordered]@{ updatedAt = $now; session = if ($Session) { $Session } else { [ordered]@{} } }
     if ($StateMachine) {
         if (-not $StateMachine.Contains('updatedAtUtc')) { $StateMachine['updatedAtUtc'] = $now }
         $obj['stateMachine'] = $StateMachine
     }
-    return ($obj | ConvertTo-Json -Depth 8)
+    if ($RecursiveBranchState) {
+        if (-not $RecursiveBranchState.Contains('updatedAtUtc')) { $RecursiveBranchState['updatedAtUtc'] = $now }
+        $obj['recursiveBranchState'] = $RecursiveBranchState
+    }
+    return ($obj | ConvertTo-Json -Depth 10)
+}
+
+function New-RecursiveBranchFixture {
+    param(
+        [string]$NextPlannedBranch = 'observe_only',
+        [string]$NextActionReason = 'recursive_branch_observe_only',
+        [string]$CurrentTown = 'Ortysia',
+        [hashtable]$BranchOverrides = @{}
+    )
+    $now = (Get-Date).ToUniversalTime().ToString('o')
+    $branches = [ordered]@{
+        travel = [ordered]@{ state = 'blocked'; reason = 'travel_surface_blocked' }
+        trade = [ordered]@{ state = 'blocked'; reason = 'trade_surface_not_open' }
+        smith_refine = [ordered]@{ state = 'blocked'; reason = 'smithing_surface_not_open' }
+        rest_wait = [ordered]@{ state = 'available'; reason = 'safe_wait_surface' }
+        tavern_scan = [ordered]@{ state = 'blocked'; reason = 'not_at_settlement_surface' }
+        companion_roster = [ordered]@{ state = 'unknown'; reason = 'companion_roster_not_scanned' }
+        avoid_threat = [ordered]@{ state = 'unknown'; reason = 'threat_state_unknown_until_posture_scan_consumed' }
+        observe_only = [ordered]@{ state = 'available'; reason = 'always_safe_fallback' }
+    }
+    foreach ($k in $BranchOverrides.Keys) { $branches[$k] = $BranchOverrides[$k] }
+    return @{
+        schemaVersion = 1
+        updatedAtUtc = $now
+        currentTown = $CurrentTown
+        currentSettlementId = 'town_ES3'
+        gameplaySurface = 'campaign_map'
+        terminal = $false
+        nextActionRequired = $true
+        nextPlannedBranch = $NextPlannedBranch
+        nextActionReason = $NextActionReason
+        branches = $branches
+    }
 }
 
 function New-RuntimeFixture {
@@ -40,7 +81,13 @@ function New-RuntimeFixture {
 }
 
 function Build-Readiness {
-    param([string]$Surface, [bool]$WithStateMachine = $true, [bool]$StaleHeartbeat = $false)
+    param(
+        [string]$Surface,
+        [bool]$WithStateMachine = $true,
+        [bool]$StaleHeartbeat = $false,
+        [hashtable]$RecursiveBranchState = $null,
+        [bool]$StaleRecursiveBranch = $false
+    )
     $statusPath = Join-Path $tmpRoot "status-$Surface.json"
     $session = [ordered]@{
         readinessSurface = $Surface
@@ -60,7 +107,13 @@ function Build-Readiness {
             blockReason = $null
         }
     } else { $null }
-    New-StatusFixture -StateMachine $sm -Session $session | Set-Content -LiteralPath $statusPath -Encoding UTF8
+    $rbs = $RecursiveBranchState
+    if ($rbs -and $StaleRecursiveBranch) {
+        $rbs = @{} + $rbs
+        $rbs['updatedAtUtc'] = (Get-Date).ToUniversalTime().AddMinutes(-10).ToString('o')
+    }
+    New-StatusFixture -StateMachine $sm -Session $session -RecursiveBranchState $rbs |
+        Set-Content -LiteralPath $statusPath -Encoding UTF8
 
     $hb = if ($StaleHeartbeat) { (Get-Date).ToUniversalTime().AddMinutes(-10).ToString('o') } else { (Get-Date).ToUniversalTime().ToString('o') }
     $runtimePath = Join-Path $tmpRoot "runtime-$Surface.json"
@@ -70,6 +123,57 @@ function Build-Readiness {
     $ready.runtimeLifecycle = Read-Pr11RuntimeLifecycle -BannerlordRoot $tmpRoot -Path $runtimePath
     $ready.heartbeatFresh = Test-Pr11RuntimeHeartbeatFresh -RuntimeLifecycle $ready.runtimeLifecycle
     return $ready
+}
+
+# fresh recursiveBranchState.observe_only drives observe decision on campaign_map
+$observeRbs = New-RecursiveBranchFixture -NextPlannedBranch 'observe_only' -NextActionReason 'branch_truth_requires_fresh_observation'
+$readyObserve = Build-Readiness -Surface 'campaign_map' -RecursiveBranchState $observeRbs
+if (-not $readyObserve.recursiveBranchFresh) { throw 'recursiveBranchState fixture must be fresh' }
+$decisionObserve = Get-AutonomousAssistIterationDecision -Readiness $readyObserve -AssistProfile 'training-map'
+if ($decisionObserve.decision -ne 'observe') { throw "recursive observe_only must observe got $($decisionObserve.decision)" }
+if ($decisionObserve.recursiveBranchConsumed -ne $true) { throw 'recursiveBranchState must be consumed when fresh' }
+if ($decisionObserve.plannedBranch -ne 'observe_only') { throw "expected plannedBranch observe_only got $($decisionObserve.plannedBranch)" }
+
+# fresh recursiveBranchState.travel on settlement_menu allows travel when gate open
+$travelRbs = New-RecursiveBranchFixture -NextPlannedBranch 'travel' `
+    -NextActionReason 'surface_allows_travel_recompute_destination_from_fresh_state' `
+    -BranchOverrides @{ travel = [ordered]@{ state = 'available'; reason = 'surface_allows_travel' } }
+$readyTravel = Build-Readiness -Surface 'settlement_menu' -RecursiveBranchState $travelRbs
+$decisionTravel = Get-AutonomousAssistIterationDecision -Readiness $readyTravel -AssistProfile 'training-map' -TargetSettlement 'Ortysia'
+if ($decisionTravel.decision -ne 'allowed') { throw "recursive travel must allow travel got $($decisionTravel.decision)" }
+if ($decisionTravel.plannedBranch -ne 'travel') { throw 'recursive travel must plan travel branch' }
+
+# trade branch must not execute without profitability evidence
+$tradeRbs = New-RecursiveBranchFixture -NextPlannedBranch 'trade' `
+    -NextActionReason 'market_profitability_not_evaluated' `
+    -BranchOverrides @{ trade = [ordered]@{ state = 'unknown'; reason = 'market_profitability_not_evaluated' } }
+$readyTrade = Build-Readiness -Surface 'trading' -RecursiveBranchState $tradeRbs
+$decisionTrade = Get-AutonomousAssistIterationDecision -Readiness $readyTrade -AssistProfile 'training-map'
+if ($decisionTrade.decision -eq 'allowed') { throw 'trade branch must not execute without evidence' }
+if ($decisionTrade.decision -ne 'wait') { throw "trade branch must wait got $($decisionTrade.decision)" }
+if ($decisionTrade.plannedBranch -ne 'trade') { throw 'trade branch must preserve planned branch name' }
+
+# stale recursiveBranchState falls back to surface-derived decision
+$staleRbs = New-RecursiveBranchFixture -NextPlannedBranch 'observe_only'
+$readyStaleRbs = Build-Readiness -Surface 'settlement_menu' -RecursiveBranchState $staleRbs -StaleRecursiveBranch $true
+if ($readyStaleRbs.recursiveBranchFresh) { throw 'stale recursiveBranchState must not be fresh' }
+$decisionStaleRbs = Get-AutonomousAssistIterationDecision -Readiness $readyStaleRbs -AssistProfile 'training-map' -TargetSettlement 'Ortysia'
+if ($decisionStaleRbs.recursiveBranchConsumed -eq $true) { throw 'stale recursiveBranchState must not be consumed' }
+if ($decisionStaleRbs.decision -ne 'allowed') { throw 'stale recursiveBranchState must fall back to surface travel on settlement_menu' }
+
+# campaign-loop-summary from recursiveBranchState preserves nextPlannedBranch on non-terminal cycle
+$cycleSummary = Merge-AutonomousAssistCampaignLoopSummary -Summary @{ passFail = 'IN_PROGRESS' } `
+    -SessionId 'recursive-branch-test' -TargetSettlement 'Danustica' `
+    -LastDecision $decisionObserve -CycleId 3 `
+    -RecursiveBranchState $readyObserve.recursiveBranchState -RecursiveBranchFresh $true
+if (-not $cycleSummary.campaignLoopSummary) { throw 'campaignLoopSummary missing' }
+if ($cycleSummary.campaignLoopSummary.terminal -ne $false) { throw 'non-terminal cycle must have terminal=false' }
+if ($cycleSummary.campaignLoopSummary.nextActionRequired -ne $true) { throw 'non-terminal cycle must require next action' }
+if ($cycleSummary.campaignLoopSummary.nextPlannedBranch -ne 'observe_only') {
+    throw "campaign summary must use recursive nextPlannedBranch got $($cycleSummary.campaignLoopSummary.nextPlannedBranch)"
+}
+if ($cycleSummary.campaignLoopSummary.currentTown -ne 'Ortysia') {
+    throw "campaign summary must use recursive currentTown got $($cycleSummary.campaignLoopSummary.currentTown)"
 }
 
 # AutoAssistLoop starts after stateMachine readiness

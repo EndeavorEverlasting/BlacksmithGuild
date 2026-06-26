@@ -114,6 +114,87 @@ function Read-Pr11StateMachineFromStatus {
     return [pscustomobject]$result
 }
 
+function Read-Pr11RecursiveBranchGate {
+    param($BranchObj)
+    if (-not $BranchObj) {
+        return [pscustomobject]@{ state = 'blocked'; reason = 'missing_branch_gate' }
+    }
+    return [pscustomobject]@{
+        state = if ($BranchObj.state) { [string]$BranchObj.state } else { 'blocked' }
+        reason = if ($BranchObj.reason) { [string]$BranchObj.reason } else { $null }
+    }
+}
+
+function Read-Pr11RecursiveBranchStateFromStatus {
+    param(
+        [string]$StatusPath,
+        [int]$FreshSec = 30
+    )
+
+    $emptyBranches = @{}
+    foreach ($name in @('travel', 'trade', 'smith_refine', 'rest_wait', 'tavern_scan', 'companion_roster', 'avoid_threat', 'observe_only')) {
+        $emptyBranches[$name] = [pscustomobject]@{ state = 'blocked'; reason = 'missing_branch_gate' }
+    }
+
+    $result = [ordered]@{
+        hasRecursiveBranchState = $false
+        fresh = $false
+        schemaVersion = 0
+        updatedAtUtc = $null
+        currentTown = $null
+        currentSettlementId = $null
+        gameplaySurface = $null
+        terminal = $false
+        nextActionRequired = $false
+        nextPlannedBranch = $null
+        nextActionReason = $null
+        branches = $emptyBranches
+    }
+
+    if (-not $StatusPath -or -not (Test-Path -LiteralPath $StatusPath)) {
+        return [pscustomobject]$result
+    }
+
+    $st = $null
+    if (Get-Command Read-F7StatusJsonSafe -ErrorAction SilentlyContinue) {
+        $st = Read-F7StatusJsonSafe -StatusPath $StatusPath
+    } else {
+        try { $st = Get-Content -LiteralPath $StatusPath -Raw | ConvertFrom-Json } catch { }
+    }
+    if (-not $st -or -not $st.recursiveBranchState) {
+        return [pscustomobject]$result
+    }
+
+    $rbs = $st.recursiveBranchState
+    $result.hasRecursiveBranchState = $true
+    $result.schemaVersion = if ($null -ne $rbs.schemaVersion) { [int]$rbs.schemaVersion } else { 0 }
+    $result.currentTown = if ($rbs.currentTown) { [string]$rbs.currentTown } else { $null }
+    $result.currentSettlementId = if ($rbs.currentSettlementId) { [string]$rbs.currentSettlementId } else { $null }
+    $result.gameplaySurface = if ($rbs.gameplaySurface) { [string]$rbs.gameplaySurface } else { $null }
+    $result.terminal = ($rbs.terminal -eq $true)
+    $result.nextActionRequired = ($rbs.nextActionRequired -eq $true)
+    $result.nextPlannedBranch = if ($rbs.nextPlannedBranch) { [string]$rbs.nextPlannedBranch } else { $null }
+    $result.nextActionReason = if ($rbs.nextActionReason) { [string]$rbs.nextActionReason } else { $null }
+    if ($rbs.updatedAtUtc) {
+        $result.updatedAtUtc = ConvertTo-Pr11Utc -Value $rbs.updatedAtUtc
+        $result.fresh = Test-Pr11UtcFresh -Utc $result.updatedAtUtc -MaxAgeSec $FreshSec
+    }
+
+    $branches = @{}
+    foreach ($name in @('travel', 'trade', 'smith_refine', 'rest_wait', 'tavern_scan', 'companion_roster', 'avoid_threat', 'observe_only')) {
+        $gateObj = $null
+        if ($rbs.branches) {
+            if ($rbs.branches.PSObject.Properties.Name -contains $name) {
+                $gateObj = $rbs.branches.$name
+            }
+        }
+        $branches[$name] = Read-Pr11RecursiveBranchGate -BranchObj $gateObj
+    }
+    $result.branches = $branches
+
+    return [pscustomobject]$result
+}
+
 # Converts a value from a JSON field that is a UTC instant by contract (e.g. *Utc) into a true
 # UTC [datetime]. ConvertFrom-Json coerces ISO-8601 "...Z" strings into [datetime] objects whose
 # Kind is then lost when re-stringified, so a naive Parse(...).ToUniversalTime() double-applies the
@@ -213,6 +294,7 @@ function Get-Pr11AssistiveReadiness {
 
     $legacy = Get-F7AssistiveReadinessFromStatus -StatusPath $StatusPath
     $stateMachine = Read-Pr11StateMachineFromStatus -StatusPath $StatusPath
+    $recursiveBranchState = Read-Pr11RecursiveBranchStateFromStatus -StatusPath $StatusPath -FreshSec $StatusFreshSec
     $runtime = $null
     if ($BannerlordRoot) {
         $runtime = Read-Pr11RuntimeLifecycle -BannerlordRoot $BannerlordRoot
@@ -262,6 +344,8 @@ function Get-Pr11AssistiveReadiness {
         heartbeatFresh = [bool]$heartbeatFresh
         safeToExecuteTravel = [bool]$stateMachine.safeToExecuteTravel
         blockReason = $stateMachine.blockReason
+        recursiveBranchState = $recursiveBranchState
+        recursiveBranchFresh = [bool]$recursiveBranchState.fresh
     }
 }
 

@@ -5,6 +5,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
+. (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
 . (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
@@ -29,7 +31,46 @@ $lastDecision = [pscustomobject]@{
     actionConsidered = 'observe_route'
     decision = 'observe'
     reason = 'campaign_map_observe_no_spam'
+    plannedBranch = 'observe_only'
+    recursiveBranchConsumed = $true
 }
+
+$recursiveBranchState = @{
+    schemaVersion = 1
+    updatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    currentTown = 'Ortysia'
+    currentSettlementId = 'town_ES3'
+    gameplaySurface = 'campaign_map'
+    terminal = $false
+    nextActionRequired = $true
+    nextPlannedBranch = 'observe_only'
+    nextActionReason = 'branch_truth_requires_fresh_observation'
+    branches = @{
+        travel = @{ state = 'blocked'; reason = 'travel_surface_blocked' }
+        trade = @{ state = 'blocked'; reason = 'trade_surface_not_open' }
+        smith_refine = @{ state = 'blocked'; reason = 'smithing_surface_not_open' }
+        rest_wait = @{ state = 'available'; reason = 'safe_wait_surface' }
+        tavern_scan = @{ state = 'blocked'; reason = 'not_at_settlement_surface' }
+        companion_roster = @{ state = 'unknown'; reason = 'companion_roster_not_scanned' }
+        avoid_threat = @{ state = 'unknown'; reason = 'threat_state_unknown_until_posture_scan_consumed' }
+        observe_only = @{ state = 'available'; reason = 'always_safe_fallback' }
+    }
+}
+$rbsDir = Join-Path $tmpRoot 'rbs'
+New-Item -ItemType Directory -Force -Path $rbsDir | Out-Null
+$rbsPath = Join-Path $rbsDir 'status.json'
+(@{ stateMachine = @{ gameplaySurface = 'campaign_map' }; recursiveBranchState = $recursiveBranchState } |
+    ConvertTo-Json -Depth 10) | Set-Content -LiteralPath $rbsPath -Encoding UTF8
+$parsedRbs = Read-Pr11RecursiveBranchStateFromStatus -StatusPath $rbsPath
+if (-not $parsedRbs.fresh) { throw 'runner evidence recursiveBranchState fixture must be fresh' }
+
+Write-AutonomousAssistCycleCampaignSummary -Evidence $evidence -LastDecision $lastDecision `
+    -SessionId $sessionId -TargetSettlement 'Ortysia' -CycleId 2 `
+    -RecursiveBranchState $parsedRbs -RecursiveBranchFresh $true | Out-Null
+$midCycle = Get-Content -LiteralPath (Join-Path $evidenceDir 'campaign-loop-summary.json') -Raw | ConvertFrom-Json
+if ($midCycle.terminal -ne $false) { throw 'mid-cycle campaign summary must be non-terminal' }
+if ($midCycle.nextPlannedBranch -ne 'observe_only') { throw 'mid-cycle summary must use recursive nextPlannedBranch' }
+if ($midCycle.currentTown -ne 'Ortysia') { throw 'mid-cycle summary must use recursive currentTown' }
 
 foreach ($checkpoint in @(
     'session_started', 'attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed',
@@ -72,12 +113,16 @@ $assistSummary.finalizedEventId = @($evidence.checkpointEvents.ToArray() | Where
 $assistSummary.automationPassCriteria = $criteria
 
 $assistSummary = Merge-AutonomousAssistCampaignLoopSummary -Summary $assistSummary -SessionId $sessionId `
-    -TargetSettlement 'Ortysia' -LastDecision $lastDecision -CycleId 2
+    -TargetSettlement 'Ortysia' -LastDecision $lastDecision -CycleId 2 `
+    -RecursiveBranchState $parsedRbs -RecursiveBranchFresh $true -CurrentTown 'Ortysia'
 if (-not $assistSummary.campaignLoopSummary) { throw 'Merge-AutonomousAssistCampaignLoopSummary did not set campaignLoopSummary' }
 
 $statusPath = Join-Path $bannerlordRoot 'BlacksmithGuild_Status.json'
 $runtimePath = Join-Path $bannerlordRoot 'BlacksmithGuild_RuntimeLifecycle.json'
-'{"stateMachine":{"hasStateMachine":true}}' | Set-Content -LiteralPath $statusPath -Encoding UTF8
+(@{
+    stateMachine = @{ hasStateMachine = $true; gameplaySurface = 'campaign_map' }
+    recursiveBranchState = $recursiveBranchState
+} | ConvertTo-Json -Depth 10) | Set-Content -LiteralPath $statusPath -Encoding UTF8
 '{"parseOk":true,"lastHeartbeatUtc":"2026-01-01T00:00:00Z"}' | Set-Content -LiteralPath $runtimePath -Encoding UTF8
 
 Save-AutonomousAssistSessionEvidence -Evidence $evidence -Summary $assistSummary `

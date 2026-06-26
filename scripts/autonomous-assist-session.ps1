@@ -129,9 +129,26 @@ function Test-AutonomousAssistLoopReadiness {
     return [pscustomobject]$result
 }
 
+function Get-RecursiveBranchGate {
+    param(
+        [object]$RecursiveBranchState,
+        [string]$BranchName
+    )
+    if (-not $RecursiveBranchState -or -not $RecursiveBranchState.branches) { return $null }
+    $branches = $RecursiveBranchState.branches
+    if ($branches -is [hashtable] -and $branches.ContainsKey($BranchName)) {
+        return $branches[$BranchName]
+    }
+    if ($branches.PSObject.Properties.Name -contains $BranchName) {
+        return $branches.$BranchName
+    }
+    return $null
+}
+
 function Get-AutonomousAssistPlannedBranch {
     param([object]$Decision)
     if (-not $Decision) { return 'observe_only' }
+    if ($Decision.plannedBranch) { return [string]$Decision.plannedBranch }
     $considered = if ($Decision.actionConsidered) { [string]$Decision.actionConsidered } else { $null }
     switch ($considered) {
         'travel_to_training_target' { return 'travel' }
@@ -158,7 +175,9 @@ function Merge-AutonomousAssistCampaignLoopSummary {
         [string]$TargetSettlement = $null,
         [object]$LastDecision = $null,
         [int]$CycleId = 0,
-        [string]$CurrentTown = $null
+        [string]$CurrentTown = $null,
+        [object]$RecursiveBranchState = $null,
+        [bool]$RecursiveBranchFresh = $false
     )
 
     if (-not (Get-Command New-AutomationCampaignLoopSummary -ErrorAction SilentlyContinue)) {
@@ -177,11 +196,25 @@ function Merge-AutonomousAssistCampaignLoopSummary {
 
     $branch = Get-AutonomousAssistPlannedBranch -Decision $LastDecision
     $nextReason = if ($LastDecision -and $LastDecision.reason) { [string]$LastDecision.reason } else { $null }
+    $resolvedTown = $CurrentTown
+    if ($RecursiveBranchFresh -and $RecursiveBranchState -and $RecursiveBranchState.hasRecursiveBranchState) {
+        if ($RecursiveBranchState.currentTown) {
+            $resolvedTown = [string]$RecursiveBranchState.currentTown
+        }
+        if (-not $isTerminal) {
+            if ($RecursiveBranchState.nextPlannedBranch) {
+                $branch = [string]$RecursiveBranchState.nextPlannedBranch
+            }
+            if ($RecursiveBranchState.nextActionReason) {
+                $nextReason = [string]$RecursiveBranchState.nextActionReason
+            }
+        }
+    }
 
     if ($isTerminal) {
         $reason = if ($stopReason) { $stopReason } elseif ($failureClass) { $failureClass } else { $passFail }
         $campaign = New-AutomationCampaignLoopSummary -SessionId $SessionId -CycleId $CycleId `
-            -Phase 'campaign_loop' -CurrentTown $CurrentTown -NextPlannedTown $TargetSettlement `
+            -Phase 'campaign_loop' -CurrentTown $resolvedTown -NextPlannedTown $TargetSettlement `
             -Terminal:$true -TerminalState $terminalState -PassFail $passFail `
             -NextActionRequired:$false -Reason $reason
     } else {
@@ -193,7 +226,7 @@ function Merge-AutonomousAssistCampaignLoopSummary {
             }
         }
         $campaign = New-AutomationCampaignLoopSummary -SessionId $SessionId -CycleId $CycleId `
-            -Phase 'campaign_loop' -CurrentTown $CurrentTown -NextPlannedTown $TargetSettlement `
+            -Phase 'campaign_loop' -CurrentTown $resolvedTown -NextPlannedTown $TargetSettlement `
             -SelectedAction $(if ($LastDecision) { [string]$LastDecision.actionConsidered } else { $null }) `
             -Terminal:$false -NextActionRequired:$true -NextPlannedBranch $branch `
             -NextActionReason $nextReason -Reason $nextReason
@@ -209,6 +242,35 @@ function Merge-AutonomousAssistCampaignLoopSummary {
     $Summary.nextActionReason = $campaign.nextActionReason
     $Summary.campaignLoopSummary = $campaign
     return $Summary
+}
+
+function Write-AutonomousAssistCycleCampaignSummary {
+    param(
+        [hashtable]$Evidence,
+        [object]$LastDecision,
+        [string]$SessionId,
+        [string]$TargetSettlement,
+        [int]$CycleId,
+        [object]$RecursiveBranchState = $null,
+        [bool]$RecursiveBranchFresh = $false
+    )
+
+    $cycleSummary = Merge-AutonomousAssistCampaignLoopSummary -Summary @{
+        passFail = 'IN_PROGRESS'
+        iterationCount = $CycleId
+    } -SessionId $SessionId -TargetSettlement $TargetSettlement `
+        -LastDecision $LastDecision -CycleId $CycleId `
+        -RecursiveBranchState $RecursiveBranchState -RecursiveBranchFresh $RecursiveBranchFresh `
+        -CurrentTown $(if ($RecursiveBranchState -and $RecursiveBranchState.currentTown) { [string]$RecursiveBranchState.currentTown } else { $null })
+
+    $path = Join-Path $Evidence.checkpointDir 'campaign-loop-summary.json'
+    if (Get-Command Save-Pr11JsonArtifact -ErrorAction SilentlyContinue) {
+        Save-Pr11JsonArtifact -Object $cycleSummary.campaignLoopSummary -Path $path | Out-Null
+    } else {
+        $cycleSummary.campaignLoopSummary | ConvertTo-Json -Depth 10 |
+            Set-Content -LiteralPath $path -Encoding UTF8
+    }
+    return $cycleSummary.campaignLoopSummary
 }
 
 function Test-TbgPostHandoffFastFail {
@@ -325,6 +387,81 @@ function Get-AutonomousAssistIterationDecision {
     }
 
     $travelGate = Test-Pr11TravelExecuteAllowed -Readiness $Readiness
+
+    $rbs = $Readiness.recursiveBranchState
+    if ($Readiness.recursiveBranchFresh -and $rbs -and $rbs.hasRecursiveBranchState -and $rbs.nextActionRequired -and -not $rbs.terminal) {
+        $planned = [string]$rbs.nextPlannedBranch
+        if (-not [string]::IsNullOrWhiteSpace($planned)) {
+            $gate = Get-RecursiveBranchGate -RecursiveBranchState $rbs -BranchName $planned
+            $branchReason = if ($rbs.nextActionReason) { [string]$rbs.nextActionReason } elseif ($gate -and $gate.reason) { [string]$gate.reason } else { $null }
+
+            switch ($planned) {
+                'travel' {
+                    if ($gate -and ($gate.state -eq 'available') -and $travelGate.allowed -and ($surface -eq 'settlement_menu')) {
+                        $cooldownOk = $true
+                        if ($LastTravelCommandUtc) {
+                            $elapsed = ($nowUtc - $LastTravelCommandUtc).TotalSeconds
+                            $cooldownOk = ($elapsed -ge $TravelCommandCooldownSec)
+                        }
+                        if ($cooldownOk) {
+                            $base.actionConsidered = 'travel_to_training_target'
+                            $base.decision = 'allowed'
+                            $base.commandSent = 'AssistiveLeaveTownAndTravel'
+                            $base.target = $TargetSettlement
+                            $base.reason = $branchReason
+                            $base.plannedBranch = 'travel'
+                            $base.recursiveBranchConsumed = $true
+                            return [pscustomobject]$base
+                        }
+                        $base.actionConsidered = 'travel_to_training_target'
+                        $base.decision = 'wait'
+                        $base.reason = 'travel_command_cooldown'
+                        $base.plannedBranch = 'travel'
+                        $base.recursiveBranchConsumed = $true
+                        return [pscustomobject]$base
+                    }
+                    if ($surface -eq 'campaign_map') {
+                        $base.actionConsidered = 'observe_route'
+                        $base.decision = if ($travelGate.allowed) { 'observe' } else { 'wait' }
+                        $base.reason = if ($branchReason) { $branchReason } elseif ($travelGate.reason) { $travelGate.reason } else { 'travel_planned_map_observe' }
+                        $base.plannedBranch = 'travel'
+                        $base.recursiveBranchConsumed = $true
+                        return [pscustomobject]$base
+                    }
+                    $base.actionConsidered = 'travel_to_training_target'
+                    $base.decision = 'wait'
+                    $base.reason = if ($gate -and $gate.reason) { $gate.reason } elseif ($travelGate.reason) { $travelGate.reason } else { 'travel_branch_not_available' }
+                    $base.plannedBranch = 'travel'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                'rest_wait' {
+                    $base.actionConsidered = 'rest_wait'
+                    $base.decision = 'wait'
+                    $base.reason = if ($gate -and ($gate.state -eq 'available') -and $branchReason) { $branchReason } elseif ($gate -and $gate.reason) { $gate.reason } else { 'rest_wait_not_available' }
+                    $base.plannedBranch = 'rest_wait'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                'observe_only' {
+                    $base.actionConsidered = 'observe_route'
+                    $base.decision = 'observe'
+                    $base.reason = if ($branchReason) { $branchReason } else { 'recursive_branch_observe_only' }
+                    $base.plannedBranch = 'observe_only'
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+                default {
+                    $base.actionConsidered = $planned
+                    $base.decision = 'wait'
+                    $base.reason = if ($gate -and $gate.reason) { $gate.reason } else { "branch_not_executable:$planned" }
+                    $base.plannedBranch = $planned
+                    $base.recursiveBranchConsumed = $true
+                    return [pscustomobject]$base
+                }
+            }
+        }
+    }
 
     switch ($AssistProfile) {
         'training-map' {
