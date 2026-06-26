@@ -106,6 +106,14 @@ if (-not (Test-Pr11ExecutePassBlockedByRuntime -Readiness $legacyReady)) {
     throw 'stale heartbeat must block PASS'
 }
 
+# Missing heartbeat is stale, not a runner exception
+$missingHeartbeatPath = Join-Path $tmpRoot 'runtime-missing-heartbeat.json'
+New-RuntimeFixture @{ lastHeartbeatUtc = $null } | Set-Content -LiteralPath $missingHeartbeatPath -Encoding UTF8
+$missingHeartbeatRuntime = Read-Pr11RuntimeLifecycle -BannerlordRoot $tmpRoot -Path $missingHeartbeatPath
+if (Test-Pr11RuntimeHeartbeatFresh -RuntimeLifecycle $missingHeartbeatRuntime) {
+    throw 'missing heartbeat must not be fresh'
+}
+
 # Termination: graceful shutdown
 $gracePath = Join-Path $tmpRoot 'runtime-grace.json'
 New-RuntimeFixture @{

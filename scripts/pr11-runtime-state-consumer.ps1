@@ -139,6 +139,7 @@ function Test-Pr11RuntimeHeartbeatFresh {
         [int]$MaxAgeSec = 30
     )
     if (-not $RuntimeLifecycle -or -not $RuntimeLifecycle.parseOk) { return $false }
+    if (-not $RuntimeLifecycle.lastHeartbeatUtc) { return $false }
     return Test-Pr11UtcFresh -Utc $RuntimeLifecycle.lastHeartbeatUtc -MaxAgeSec $MaxAgeSec
 }
 
