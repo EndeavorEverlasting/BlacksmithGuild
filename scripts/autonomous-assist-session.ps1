@@ -350,7 +350,10 @@ function Get-AutonomousAssistIterationDecision {
         [string]$TargetSettlement = 'Ortysia',
         [bool]$StopOnUnsafeState = $true,
         [nullable[datetime]]$LastTravelCommandUtc = $null,
-        [int]$TravelCommandCooldownSec = 45
+        [int]$TravelCommandCooldownSec = 45,
+        [string]$CertProfile = 'default',
+        [bool]$TradeTargetReached = $false,
+        [bool]$NonTradeBranchDone = $false
     )
 
     $nowUtc = (Get-Date).ToUniversalTime()
@@ -387,6 +390,29 @@ function Get-AutonomousAssistIterationDecision {
     }
 
     $travelGate = Test-Pr11TravelExecuteAllowed -Readiness $Readiness
+
+    # Economic-loop cert profile: drive real proven buys. Once a non-trade branch (the travel leg) has
+    # executed/blocked, request ProbeVanillaTradeExecutionNow on trade-capable surfaces until the
+    # proven-trade target is reached. The mod's trade chokepoint writes BlacksmithGuild_TradeIterations.jsonl
+    # from live gold/inventory deltas; this policy only requests buys and never fabricates a delta.
+    if ($CertProfile -eq 'economic_loop') {
+        if ($TradeTargetReached) {
+            $base.actionConsidered = 'trade'
+            $base.decision = 'observe'
+            $base.reason = 'economic_loop_trade_target_reached'
+            $base.plannedBranch = 'trade'
+            return [pscustomobject]$base
+        }
+        if ($NonTradeBranchDone -and ($surface -in @('trading', 'settlement_menu'))) {
+            $base.actionConsidered = 'trade'
+            $base.decision = 'allowed'
+            $base.commandSent = 'ProbeVanillaTradeExecutionNow'
+            $base.target = $TargetSettlement
+            $base.reason = 'economic_loop_drive_proven_buy'
+            $base.plannedBranch = 'trade'
+            return [pscustomobject]$base
+        }
+    }
 
     $rbs = $Readiness.recursiveBranchState
     if ($Readiness.recursiveBranchFresh -and $rbs -and $rbs.hasRecursiveBranchState -and $rbs.nextActionRequired -and -not $rbs.terminal) {
@@ -662,6 +688,51 @@ function Copy-EconomicLoopArtifact {
         Copy-Item -LiteralPath $src -Destination (Join-Path $CheckpointDir $FileName) -Force
     }
     return $true
+}
+
+function Get-EconomicLoopProvenTradeCount {
+    # Counts proven trade iterations the mod has written to BlacksmithGuild_TradeIterations.jsonl at the
+    # game root. Used by the live runner to decide when the proven-buy target is reached. Never fabricates:
+    # a row only counts when Test-TradeIterationProven confirms a real gold/inventory delta.
+    #
+    # The on-disk file is append-only and is NOT cleared between cert runs, and mod-emitted rows do not carry
+    # this runner's sessionId. To avoid counting a prior run's rows (which would trip the target before this
+    # session buys anything), pass -SinceUtc with the loop start time: only rows stamped at/after that moment
+    # are attributed to this run. The read is IO-resilient so a transient sharing error while the mod appends
+    # cannot abort the live loop.
+    param(
+        [string]$BannerlordRoot,
+        [nullable[datetime]]$SinceUtc = $null
+    )
+    if ([string]::IsNullOrWhiteSpace($BannerlordRoot)) { return 0 }
+    $tradePath = Join-Path $BannerlordRoot 'BlacksmithGuild_TradeIterations.jsonl'
+    if (-not (Test-Path -LiteralPath $tradePath)) { return 0 }
+    if (-not (Get-Command Test-TradeIterationProven -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
+    }
+    try {
+        $lines = Get-Content -LiteralPath $tradePath -ErrorAction Stop
+    } catch {
+        return 0
+    }
+    $rows = @($lines | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+        try { $_ | ConvertFrom-Json } catch { $null }
+    })
+    $proven = @($rows | Where-Object { $_ -and (Test-TradeIterationProven -Iteration $_) })
+    if ($SinceUtc) {
+        $proven = @($proven | Where-Object {
+            if (($_.PSObject.Properties.Name -contains 'atUtc') -and -not [string]::IsNullOrWhiteSpace([string]$_.atUtc)) {
+                [datetime]$rowUtc = [datetime]::MinValue
+                if ([datetime]::TryParse([string]$_.atUtc, [Globalization.CultureInfo]::InvariantCulture,
+                        [Globalization.DateTimeStyles]::RoundtripKind, [ref]$rowUtc)) {
+                    return ($rowUtc.ToUniversalTime() -ge $SinceUtc)
+                }
+            }
+            # Rows without a parseable timestamp cannot be attributed to this run; exclude them.
+            return $false
+        })
+    }
+    return @($proven).Count
 }
 
 function Save-EconomicLoopCertEvidence {

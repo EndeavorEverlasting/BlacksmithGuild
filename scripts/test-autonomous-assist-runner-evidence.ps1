@@ -245,6 +245,63 @@ $ecoManifest = Get-Content -LiteralPath (Join-Path $ecoDir 'session-manifest.jso
 if ($ecoManifest.certProfile -ne 'economic_loop') { throw 'session manifest must record certProfile=economic_loop' }
 Write-Host 'PASS offline economic-loop runner evidence emission' -ForegroundColor Green
 
+# --- Economic-loop decision policy (trade-driving) -------------------------------------------
+# The economic_loop CertProfile must drive ProbeVanillaTradeExecutionNow once a non-trade branch has
+# executed, observe (not trade) once the proven-trade target is reached, and never trade under the
+# default profile. This proves the live runner requests real buys instead of only observing.
+$tradeReady = [pscustomobject]@{
+    parseOk = $true
+    statusFresh = $true
+    heartbeatFresh = $true
+    confidence = 'state_machine'
+    canAcceptAssistiveCommand = $true
+    recursiveBranchFresh = $false
+    recursiveBranchState = $null
+    runtimeLifecycle = [pscustomobject]@{ parseOk = $true }
+    stateMachine = [pscustomobject]@{ hasStateMachine = $true; gameplaySurface = 'trading'; gameLifecycle = 'campaign'; safeToExecuteTravel = $true }
+}
+
+$ecoDrive = Get-AutonomousAssistIterationDecision -Readiness $tradeReady -CertProfile 'economic_loop' `
+    -NonTradeBranchDone:$true -TradeTargetReached:$false
+if ($ecoDrive.commandSent -ne 'ProbeVanillaTradeExecutionNow') { throw "economic_loop must drive a buy on trading surface; got commandSent=$($ecoDrive.commandSent)" }
+if ($ecoDrive.decision -ne 'allowed') { throw "economic_loop trade drive must be allowed; got $($ecoDrive.decision)" }
+if ($ecoDrive.plannedBranch -ne 'trade') { throw 'economic_loop trade drive must plan the trade branch' }
+
+$ecoReached = Get-AutonomousAssistIterationDecision -Readiness $tradeReady -CertProfile 'economic_loop' `
+    -NonTradeBranchDone:$true -TradeTargetReached:$true
+if ($ecoReached.commandSent) { throw "economic_loop must stop driving buys once target reached; got commandSent=$($ecoReached.commandSent)" }
+if ($ecoReached.decision -ne 'observe' -or $ecoReached.reason -ne 'economic_loop_trade_target_reached') { throw 'economic_loop target-reached must observe with reason economic_loop_trade_target_reached' }
+
+$ecoNoBranch = Get-AutonomousAssistIterationDecision -Readiness $tradeReady -CertProfile 'economic_loop' `
+    -NonTradeBranchDone:$false -TradeTargetReached:$false
+if ($ecoNoBranch.commandSent -eq 'ProbeVanillaTradeExecutionNow') { throw 'economic_loop must not trade before a non-trade branch has executed/blocked' }
+
+$defaultDecision = Get-AutonomousAssistIterationDecision -Readiness $tradeReady -CertProfile 'default'
+if ($defaultDecision.commandSent -eq 'ProbeVanillaTradeExecutionNow') { throw 'default profile must never drive trade commands' }
+Write-Host 'PASS economic-loop trade-driving decision policy' -ForegroundColor Green
+
+# --- Proven-trade count session scoping ------------------------------------------------------
+# Get-EconomicLoopProvenTradeCount must count every proven row by default, but with -SinceUtc must
+# exclude rows stamped before the cutoff. This is the guard against a prior cert's append-only rows
+# tripping trade_iteration_target_reached before the live session buys anything.
+$tradeCountRoot = Join-Path $tmpRoot 'trade-count'
+New-Item -ItemType Directory -Force -Path $tradeCountRoot | Out-Null
+$tcFile = Join-Path $tradeCountRoot 'BlacksmithGuild_TradeIterations.jsonl'
+$staleRow = ([ordered]@{ schemaVersion = 1; iteration = 1; atUtc = (Get-Date).AddHours(-2).ToUniversalTime().ToString('o')
+    goldBefore = 1000; goldAfter = 900; goldDelta = -100; inventoryBefore = 0; inventoryAfter = 2; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
+$cutoffUtc = (Get-Date).ToUniversalTime()
+$freshRow = ([ordered]@{ schemaVersion = 1; iteration = 2; atUtc = (Get-Date).AddSeconds(5).ToUniversalTime().ToString('o')
+    goldBefore = 900; goldAfter = 800; goldDelta = -100; inventoryBefore = 2; inventoryAfter = 4; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
+Set-Content -LiteralPath $tcFile -Value @($staleRow, $freshRow) -Encoding UTF8
+
+$allCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $tradeCountRoot
+if ($allCount -ne 2) { throw "expected 2 proven rows total; got $allCount" }
+$scopedCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $tradeCountRoot -SinceUtc $cutoffUtc
+if ($scopedCount -ne 1) { throw "expected 1 proven row at/after cutoff (stale row excluded); got $scopedCount" }
+$missingRoot = Join-Path $tmpRoot 'trade-count-missing'
+if ((Get-EconomicLoopProvenTradeCount -BannerlordRoot $missingRoot) -ne 0) { throw 'missing trade file must count 0' }
+Write-Host 'PASS economic-loop proven-trade count session scoping' -ForegroundColor Green
+
 Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host 'PASS offline autonomous assist runner evidence emission' -ForegroundColor Green
 exit 0
