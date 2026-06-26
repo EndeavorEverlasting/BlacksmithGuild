@@ -402,7 +402,8 @@ foreach ($pair in @(
     @{ path = 'test-autonomous-assist-session.ps1'; label = 'autonomous assist session' },
     @{ path = 'test-f7-false-spawn-feed3f96.ps1'; label = 'false game-spawn detection/preflight/classifier' },
     @{ path = 'test-faction-posture-scan-guard.ps1'; label = 'faction posture scan guard' },
-    @{ path = 'test-pr11-utc-freshness.ps1'; label = 'pr11 UTC freshness parse' }
+    @{ path = 'test-pr11-utc-freshness.ps1'; label = 'pr11 UTC freshness parse' },
+    @{ path = 'test-launcher-pid-baseline-diff.ps1'; label = 'launcher PID baseline diff' }
 )) {
     $regPath = Join-Path $PSScriptRoot $pair.path
     if (Test-Path -LiteralPath $regPath) {

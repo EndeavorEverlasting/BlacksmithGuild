@@ -159,6 +159,51 @@ public static class UIAHelper
     private const int LauncherMinCoordWindowHeight = 600;
     private static bool _moduleMismatchAuditDone;
     private static int _moduleMismatchCoordAttemptIndex;
+    private static HashSet<int> _baselineProcessIds = null;
+
+    // Before/after PID diff: snapshot the launcher/game-family process IDs that exist BEFORE we
+    // trigger a launch, so the genuinely NEW game-hosting process can be identified afterward
+    // regardless of its process name. Steam frequently hosts the running game under the launcher
+    // process name, which defeats name-only detection and forces a coordinate/title fallback.
+    public static void CaptureBaselineProcessIds()
+    {
+        var ids = new HashSet<int>();
+        foreach (var name in new[] { GameProcessName, LauncherProcessName })
+        {
+            try
+            {
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { ids.Add(p.Id); } catch { }
+                }
+            }
+            catch { }
+        }
+        _baselineProcessIds = ids;
+        LogLine("AUDIT baseline process snapshot: " + ids.Count + " pre-launch launcher/game pids");
+    }
+
+    // PIDs in the launcher/game process family that were NOT present at baseline capture, i.e. the
+    // process(es) our launch spawned. Under Steam in-launcher hosting these are the strongest
+    // game-window candidates even when their process name is the launcher's.
+    private static HashSet<int> GetNewProcessIdsSinceBaseline()
+    {
+        var newIds = new HashSet<int>();
+        if (_baselineProcessIds == null) { return newIds; }
+        foreach (var name in new[] { GameProcessName, LauncherProcessName })
+        {
+            try
+            {
+                foreach (var p in Process.GetProcessesByName(name))
+                {
+                    try { if (!_baselineProcessIds.Contains(p.Id)) { newIds.Add(p.Id); } }
+                    catch { }
+                }
+            }
+            catch { }
+        }
+        return newIds;
+    }
 
     private static void LogLine(string message)
     {
@@ -1639,6 +1684,13 @@ public static class UIAHelper
         {
             try { ids.Add(process.Id); } catch { }
         }
+        // Before/after diff: also treat processes that appeared after baseline capture as game-host
+        // candidates, so in-game elements are reachable even when the game runs under the launcher
+        // process name (Steam in-launcher hosting). Purely additive: name-matched PIDs are kept.
+        foreach (var newId in GetNewProcessIdsSinceBaseline())
+        {
+            ids.Add(newId);
+        }
         return ids;
     }
 
@@ -2067,6 +2119,9 @@ public static class UIAHelper
 
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
 [UIAHelper]::RespectUserForeground = $RespectUserForeground
+# Pre-launch PID baseline: lets the game-host window be identified by what is NEW after launch,
+# not by process name, which Steam in-launcher hosting makes unreliable.
+[UIAHelper]::CaptureBaselineProcessIds()
 
 Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms respectUserForeground=$RespectUserForeground"
 Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
