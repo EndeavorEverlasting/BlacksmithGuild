@@ -443,6 +443,19 @@ if (Test-Path -LiteralPath $townTradeSkeleton) {
     Add-Failure 'Missing run-town-to-town-trade-assist-cert.ps1 assistive skeleton'
 }
 
+$recursiveOutputContract = Join-Path $PSScriptRoot 'test-recursive-campaign-output-contract.ps1'
+if (Test-Path -LiteralPath $recursiveOutputContract) {
+    Write-Host 'Running test-recursive-campaign-output-contract.ps1 -Fixture ...' -ForegroundColor Cyan
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $recursiveOutputContract -Fixture -RequireExecuteMovement
+    if ($LASTEXITCODE -ne 0) {
+        Add-Failure 'test-recursive-campaign-output-contract.ps1 failed (recursive output contract)'
+    } else {
+        Write-Host 'PASS recursive campaign output contract' -ForegroundColor Green
+    }
+} else {
+    Add-Failure 'Missing test-recursive-campaign-output-contract.ps1'
+}
+
 foreach ($pair in @(
     @{ path = 'test-town-to-town-attach-only.ps1'; label = 'town-to-town attach-only' },
     @{ path = 'test-town-to-town-no-launch-harvest.ps1'; label = 'town-to-town no-launch harvest' },
