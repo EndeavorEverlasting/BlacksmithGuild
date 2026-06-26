@@ -377,11 +377,17 @@ function Invoke-Pr11UiStateClassification {
 }
 
 function Save-Pr11JsonArtifact {
-    param([Parameter(Mandatory = $true)]$Object, [Parameter(Mandatory = $true)][string]$Path)
+    param([AllowNull()]$Object, [Parameter(Mandatory = $true)][string]$Path)
     $dir = Split-Path -Parent $Path
     if ($dir -and -not (Test-Path -LiteralPath $dir)) {
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
     }
-    $Object | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $Path -Encoding UTF8
+    if ($null -eq $Object) {
+        'null' | Set-Content -LiteralPath $Path -Encoding UTF8
+    } elseif ($Object -is [System.Array] -and $Object.Count -eq 0) {
+        '[]' | Set-Content -LiteralPath $Path -Encoding UTF8
+    } else {
+        $Object | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $Path -Encoding UTF8
+    }
     return $Path
 }

@@ -292,8 +292,8 @@ while ((Get-Date) -lt $attachDeadline) {
     $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $s1 -AfterSnapshot (Get-Pr11ProcessSnapshot -Label 'poll' -BannerlordRoot $bannerlordRoot)
     $phase1Fresh = Test-BannerlordLogFresh -Path $phase1Path -MaxAgeSec 15
     $statusFresh = Test-BannerlordLogFresh -Path $statusPath -MaxAgeSec 15
-    $candidates = Get-Pr11WindowCandidates -Delta $delta -BannerlordRoot $bannerlordRoot `
-        -LaunchRequestedUtc $launchRequestedUtc -Phase1Fresh $phase1Fresh -StatusFresh $statusFresh
+    $candidates = @(Get-Pr11WindowCandidates -Delta $delta -BannerlordRoot $bannerlordRoot `
+        -LaunchRequestedUtc $launchRequestedUtc -Phase1Fresh $phase1Fresh -StatusFresh $statusFresh)
     Save-Pr11JsonArtifact -Object $candidates -Path (Join-Path $checkpointDir 'window-candidates.json') | Out-Null
     $cls = Invoke-Pr11UiStateClassification -BannerlordRoot $bannerlordRoot -Candidates $candidates `
         -Readiness $ready -Detection $det -LaunchPhase $(if ($SkipLaunch) { 'skip_launch' } else { 'after_launch' })

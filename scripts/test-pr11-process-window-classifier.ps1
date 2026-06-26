@@ -76,6 +76,21 @@ if ($cls.state -ne 'settlement_menu' -or $cls.nextAction -ne 'run_assistive_cert
     throw "attach-ready settlement must classify settlement_menu got $($cls.state)"
 }
 
+# empty/null evidence snapshots must serialize instead of crashing the runner
+$emptyJsonPath = Join-Path $env:TEMP "pr11-empty-window-candidates-$PID.json"
+Save-Pr11JsonArtifact -Object @() -Path $emptyJsonPath | Out-Null
+if ((Get-Content -LiteralPath $emptyJsonPath -Raw).Trim() -ne '[]') {
+    throw 'empty window candidates must serialize as []'
+}
+Remove-Item -LiteralPath $emptyJsonPath -Force
+
+$nullJsonPath = Join-Path $env:TEMP "pr11-null-artifact-$PID.json"
+Save-Pr11JsonArtifact -Object $null -Path $nullJsonPath | Out-Null
+if ((Get-Content -LiteralPath $nullJsonPath -Raw).Trim() -ne 'null') {
+    throw 'null artifact snapshots must serialize as null'
+}
+Remove-Item -LiteralPath $nullJsonPath -Force
+
 # existing advisory fixture unaffected — probe-only execution JSON absent still advisory path
 . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
 $advisoryFail = Test-Pr11AssistiveTravelExecutePass -ExecutionJson $null
