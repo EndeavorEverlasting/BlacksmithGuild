@@ -14,6 +14,7 @@ namespace BlacksmithGuild.Food
             {
                 status.QuantityStatus = "unknown";
                 status.DiversityStatus = "unknown";
+                status.ForecastStatus = "unknown";
                 status.Detail = "party inventory unavailable";
                 return status;
             }
@@ -33,6 +34,15 @@ namespace BlacksmithGuild.Food
             }
 
             status.UniqueFoodTypes = unique.Count;
+            status.TroopCount = ResolveTroopCount(party);
+            status.EstimatedDailyFoodDemand = FoodDemandPolicy.EstimateDailyDemand(status.TroopCount);
+            status.EstimatedDaysRemaining = status.EstimatedDailyFoodDemand <= 0f
+                ? 999f
+                : status.TotalFoodItems / status.EstimatedDailyFoodDemand;
+            status.EstimatedDaysUntilFloor = status.EstimatedDailyFoodDemand <= 0f
+                ? 999f
+                : Math.Max(0f, status.TotalFoodItems - FoodProtectionPolicy.MinimumFoodItemFloor) / status.EstimatedDailyFoodDemand;
+
             status.QuantityStatus = status.TotalFoodItems <= 0
                 ? "critical"
                 : status.TotalFoodItems < FoodProtectionPolicy.MinimumFoodItemFloor
@@ -41,8 +51,28 @@ namespace BlacksmithGuild.Food
             status.DiversityStatus = status.UniqueFoodTypes < FoodProtectionPolicy.MinimumFoodDiversityFloor
                 ? "low"
                 : "ok";
-            status.Detail = $"foodItems={status.TotalFoodItems} uniqueTypes={status.UniqueFoodTypes}";
+            status.ForecastStatus = FoodDemandPolicy.ClassifyForecast(
+                status.EstimatedDaysRemaining,
+                status.EstimatedDaysUntilFloor);
+            status.NeedsFoodProcurement = status.QuantityStatus != "ok"
+                || status.DiversityStatus != "ok"
+                || status.ForecastStatus == "critical"
+                || status.ForecastStatus == "low";
+            status.Detail =
+                $"foodItems={status.TotalFoodItems} uniqueTypes={status.UniqueFoodTypes} troops={status.TroopCount} dailyDemand={status.EstimatedDailyFoodDemand:0.##} daysRemaining={status.EstimatedDaysRemaining:0.##} daysUntilFloor={status.EstimatedDaysUntilFloor:0.##}";
             return status;
+        }
+
+        private static int ResolveTroopCount(MobileParty party)
+        {
+            try
+            {
+                return Math.Max(1, party.MemberRoster.TotalManCount);
+            }
+            catch
+            {
+                return 1;
+            }
         }
     }
 
@@ -50,8 +80,14 @@ namespace BlacksmithGuild.Food
     {
         public int TotalFoodItems { get; set; }
         public int UniqueFoodTypes { get; set; }
+        public int TroopCount { get; set; }
+        public float EstimatedDailyFoodDemand { get; set; }
+        public float EstimatedDaysRemaining { get; set; }
+        public float EstimatedDaysUntilFloor { get; set; }
         public string QuantityStatus { get; set; }
         public string DiversityStatus { get; set; }
+        public string ForecastStatus { get; set; }
+        public bool NeedsFoodProcurement { get; set; }
         public string Detail { get; set; }
     }
 }
