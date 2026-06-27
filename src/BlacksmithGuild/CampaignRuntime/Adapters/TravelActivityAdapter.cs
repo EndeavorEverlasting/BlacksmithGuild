@@ -21,10 +21,14 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Blocked(request, detail + "; travel execution must route through proven visible travel driver", "travel_execution_not_implemented");
+                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; travel action step is pending implementation", "travel_action_pending");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Travel(request, "Prepare travel only after destination, visible map surface, and stop-condition evidence are present."));
+                return blocked;
             }
 
-            return CampaignActivityDispatcher.Deferred(request, detail + "; travel proposal recorded only");
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; travel proposal recorded only");
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.Travel(request, "Use the travel narrative to compare destination context and missing surface evidence."));
+            return deferred;
         }
     }
 }
