@@ -38,6 +38,28 @@ namespace BlacksmithGuild.CampaignRuntime
         ObserveOnly
     }
 
+    public sealed class CampaignActivityNarrativeDetail
+    {
+        public string Engine { get; set; }
+        public string Operation { get; set; }
+        public string Narrative { get; set; }
+        public string KnownState { get; set; }
+        public string NeededProof { get; set; }
+        public string NextAction { get; set; }
+        public List<string> Signals { get; set; } = new List<string>();
+        public List<string> Constraints { get; set; } = new List<string>();
+        public List<string> Blockers { get; set; } = new List<string>();
+
+        public string ToDetailString()
+        {
+            return "narrative engine=" + Engine
+                + " operation=" + Operation
+                + " knownState=" + KnownState
+                + " neededProof=" + NeededProof
+                + " nextAction=" + NextAction;
+        }
+    }
+
     public sealed class CampaignActivityRequest
     {
         public string ActivityId { get; set; }
@@ -78,6 +100,7 @@ namespace BlacksmithGuild.CampaignRuntime
         public bool InventoryDeltaObserved { get; set; }
         public bool GoldDeltaObserved { get; set; }
         public string FailureClass { get; set; }
+        public List<CampaignActivityNarrativeDetail> NarrativeDetails { get; set; } = new List<CampaignActivityNarrativeDetail>();
         public List<CampaignActivityHandoff> HandoffTrail { get; set; } = new List<CampaignActivityHandoff>();
     }
 
