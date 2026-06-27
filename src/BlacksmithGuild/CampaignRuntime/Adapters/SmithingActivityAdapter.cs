@@ -21,10 +21,14 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Blocked(request, detail + "; smithing execution must route through proven safe-action service", "smithing_execution_not_implemented");
+                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; smithing action step must route through the known safe service", "smithing_action_pending");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Smithing(request, "Prepare smithing work only through the known safe service and require material/stamina evidence."));
+                return blocked;
             }
 
-            return CampaignActivityDispatcher.Deferred(request, detail + "; smithing proposal recorded only");
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; smithing proposal recorded only");
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.Smithing(request, "Use the smithing narrative to identify missing stamina, material, or smithy surface evidence."));
+            return deferred;
         }
     }
 }
