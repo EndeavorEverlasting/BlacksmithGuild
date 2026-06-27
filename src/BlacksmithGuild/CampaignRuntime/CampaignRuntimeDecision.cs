@@ -17,6 +17,7 @@ namespace BlacksmithGuild.CampaignRuntime
         public string DestinationCandidate { get; set; }
         public string FoodStatus { get; set; }
         public string FoodDiversityStatus { get; set; }
+        public string FoodForecastStatus { get; set; }
         public string CapacityStatus { get; set; }
         public string HorseStatus { get; set; }
         public string StaminaStatus { get; set; }
@@ -31,6 +32,8 @@ namespace BlacksmithGuild.CampaignRuntime
         public string Confidence { get; set; }
         public bool Allowed { get; set; }
         public string FailureClass { get; set; }
+        public CampaignActivityRequest ProposedActivity { get; set; }
+        public CampaignActivityResult LatestActivityResult { get; set; }
     }
 
     public sealed class CampaignRuntimeBlockedBranch
