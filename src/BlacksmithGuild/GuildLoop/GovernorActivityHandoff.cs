@@ -140,8 +140,7 @@ namespace BlacksmithGuild.GuildLoop
             int cycleId,
             string sourceEngine,
             MapTradeExecutionResult execution,
-            string detail,
-            GovernorActivityBranch branch = GovernorActivityBranch.Trade)
+            string detail)
         {
             if (execution == null)
             {
@@ -149,10 +148,10 @@ namespace BlacksmithGuild.GuildLoop
                     cycleId,
                     sourceEngine,
                     "MapTrade",
-                    branch,
+                    GovernorActivityBranch.Trade,
                     "TradeExecution",
                     detail ?? "trade execution did not produce a proven delta",
-                    branch == GovernorActivityBranch.HorseAcquisition ? "horse_delta_missing" : "trade_delta_missing",
+                    "trade_delta_missing",
                     "BlacksmithGuild_MapTradeCert.json");
             }
 
@@ -160,16 +159,14 @@ namespace BlacksmithGuild.GuildLoop
                 cycleId,
                 sourceEngine,
                 "Governor",
-                branch,
+                GovernorActivityBranch.Trade,
                 GovernorActivityPhase.Verify,
                 GovernorAuthorityMode.ObservedOnly,
-                branch == GovernorActivityBranch.HorseAcquisition ? "PackAnimalBuyVerified" : "TradeExecutionVerified",
+                "TradeExecutionVerified",
                 $"item={execution.ItemName}; goldDelta={execution.GoldDelta}; inventoryBefore={execution.InventoryBefore}; inventoryAfter={execution.InventoryAfter}",
                 execution.GoldDelta != 0 && execution.InventoryAfter != execution.InventoryBefore ? "delta_proven" : "delta_missing",
-                ProofForBranch(branch),
-                branch == GovernorActivityBranch.HorseAcquisition
-                    ? "BlacksmithGuild_MapTradePackAnimalProbe.json"
-                    : "BlacksmithGuild_TradeIterations.jsonl",
+                "gold delta and inventory delta must both be non-zero; fakeGameplayDelta=false",
+                "BlacksmithGuild_TradeIterations.jsonl",
                 "select next branch from fresh state",
                 isCheckpoint: true,
                 isTerminal: false);
