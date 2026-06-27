@@ -27,6 +27,14 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisi
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public bool ReportInsufficient'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public bool MapScanRequired'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public bool Allowed'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public string FoodForecastStatus'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public CampaignActivityRequest ProposedActivity'
+
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'public enum CampaignActivityMode'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'public sealed class CampaignActivityRequest'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'MutationAuthorized'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'RequiresInventoryDelta'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'ExpectedProof'
 
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'RunCampaignGovernorCycleNow'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'MapTransitionGuard.ShouldDeferHeavyCampaignTouch()'
@@ -34,9 +42,16 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovern
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignRuntimePolicy.BranchFoodDiversity'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignRuntimePolicy.BranchCapacityPressure'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignRuntimePolicy.BranchReportInsufficient'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'AttachProposedActivity'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'AcquireFoodBeforeRunwayBreach'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern '_paused = true'
 
 Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodInventoryAnalyzer.cs' -Pattern 'public static FoodInventoryStatus Analyze'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodInventoryAnalyzer.cs' -Pattern 'EstimatedDaysRemaining'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodInventoryAnalyzer.cs' -Pattern 'EstimatedDaysUntilFloor'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodInventoryAnalyzer.cs' -Pattern 'NeedsFoodProcurement'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodDemandPolicy.cs' -Pattern 'EstimatedFoodItemsPerTroopPerDay'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodDemandPolicy.cs' -Pattern 'TargetFoodBufferDays'
 Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProtectionPolicy.cs' -Pattern 'MinimumFoodDiversityFloor'
 Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProtectionPolicy.cs' -Pattern 'IsProtectedFood'
 
