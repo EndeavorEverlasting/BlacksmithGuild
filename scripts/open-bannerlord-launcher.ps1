@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot)
@@ -30,17 +31,33 @@ if (-not (Test-Path -LiteralPath $LauncherExe)) {
     throw "Launcher not found: $LauncherExe"
 }
 
-foreach ($procName in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
-    if (Get-Process -Name $procName -ErrorAction SilentlyContinue) {
-        $preflightOk = $false
-        if (Get-Command Test-TbgPreflightCompleted -ErrorAction SilentlyContinue) { $preflightOk = Test-TbgPreflightCompleted }
-        if (-not $AllowExistingProcess -and -not $preflightOk) {
-            throw "Bannerlord is already running ($procName). Close it before opening the launcher."
-        }
-    }
+# Distinguish the actual game process (Bannerlord.exe) from the launcher
+# (TaleWorlds.MountAndBlade.Launcher.exe). An already-running launcher is the target, not a blocker;
+# only a running game process needs Forge Stop approval before we open the launcher.
+$gameRunning = [bool](Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
+$launcherRunning = [bool](Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)
+$preflightOk = $false
+if (Get-Command Test-TbgPreflightCompleted -ErrorAction SilentlyContinue) { $preflightOk = Test-TbgPreflightCompleted }
+
+# Case 2: the actual game is running. Reuse is unsafe without Forge Stop approval.
+# -AllowExistingProcess signals that approval (save/cancel) has already been granted upstream.
+if ($gameRunning -and -not $AllowExistingProcess -and -not $preflightOk) {
+    throw "Bannerlord game is already running (Bannerlord.exe). Forge Stop approval (save then stop, or stop without saving) is required before opening the launcher."
+}
+
+# Case 1: only the launcher is running (no game). Reuse the existing launcher instead of starting a
+# second one; launcher-auto-nav.ps1 -LaunchSetup binds it via the baseline PID/window selection.
+if ($launcherRunning -and -not $gameRunning) {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message 'open-launcher: existing launcher detected; reusing'
+    Write-Host 'open-launcher: existing launcher detected; reusing' -ForegroundColor Cyan
+    $s1Snapshot = Get-Pr11ProcessSnapshot -Label 'S1_pre_launch' -BannerlordRoot $BannerlordRoot
+    Save-Pr11ProcessSnapshot -Snapshot $s1Snapshot -OutputPath (Join-Path $BannerlordRoot 'window-snapshot-S1-pre-launch.json') | Out-Null
+    return
 }
 
 Write-Host 'Opening Bannerlord launcher...' -ForegroundColor Cyan
+$s1Snapshot = Get-Pr11ProcessSnapshot -Label 'S1_pre_launch' -BannerlordRoot $BannerlordRoot
+Save-Pr11ProcessSnapshot -Snapshot $s1Snapshot -OutputPath (Join-Path $BannerlordRoot 'window-snapshot-S1-pre-launch.json') | Out-Null
 & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: Start-Process $LauncherExe"
 Start-Process -FilePath $LauncherExe -WorkingDirectory (Split-Path -Parent $LauncherExe)
 Start-Sleep -Seconds 2

@@ -26,9 +26,12 @@ $oldTimeout = $env:TBG_OPERATOR_INTERACTIVE_FOCUS_TIMEOUT_SEC
 try {
     $env:TBG_OPERATOR_INTERACTIVE_FOCUS = '1'
     $env:TBG_OPERATOR_INTERACTIVE_FOCUS_TIMEOUT_SEC = [string]$TimeoutSec
-    $args = @('-Launch', '-LaunchIntent', $LaunchIntent)
-    if ($SkipSaveBackup) { $args += '-SkipSaveBackup' }
-    & (Join-Path $RepoRoot 'forge.ps1') @args
+    if ($SkipSaveBackup) {
+        & (Join-Path $RepoRoot 'forge.ps1') -Launch -LaunchIntent $LaunchIntent -SkipSaveBackup
+    }
+    else {
+        & (Join-Path $RepoRoot 'forge.ps1') -Launch -LaunchIntent $LaunchIntent
+    }
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 finally {

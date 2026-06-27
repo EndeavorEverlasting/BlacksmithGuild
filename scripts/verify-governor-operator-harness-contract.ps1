@@ -89,8 +89,18 @@ foreach ($cmdWrapper in @(
 }
 
 Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' 'TBG_OPERATOR_INTERACTIVE_FOCUS' 'interactive focus env gate'
+Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' '-LaunchIntent $LaunchIntent' 'forge launch must bind LaunchIntent by name'
+Assert-NotContains 'scripts\invoke-forge-launch-operator.ps1' "@('-Launch', '-LaunchIntent', `$LaunchIntent)" 'avoid positional array splatting into forge.ps1'
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'Invoke-OperatorInteractiveFocusPrompt' 'focus prompt hook'
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'guarded_click_denied' 'focus prompt trigger reason'
+
+# Launch-setup mode must reach launcher-auto-nav so guarded PLAY/CONTINUE clicks are permitted.
+Assert-Contains 'scripts\install-mod.ps1' '-LaunchSetup' 'install-mod must request launch-setup mode'
+# Existing-launcher reuse: an already-running launcher is the target, not a fatal blocker.
+Assert-Contains 'scripts\open-bannerlord-launcher.ps1' 'existing launcher detected; reusing' 'reuse existing launcher during launch setup'
+Assert-Contains 'scripts\open-bannerlord-launcher.ps1' 'Forge Stop approval' 'running game process still requires Forge Stop approval'
+# F7 guard must keep blocking launcher clicks in plain assistive mode.
+Assert-Contains 'scripts\f7-external-state-classifier.ps1' 'click_launcher_play' 'plain assistive must not permit PLAY click'
 
 Assert-Contains 'scripts\forge-stop.ps1' 'Write-GovernorStopSentinel' 'soft stop sentinel'
 Assert-Contains 'scripts\forge-stop.ps1' 'PauseCampaignGovernorAutomation' 'governor pause command'
