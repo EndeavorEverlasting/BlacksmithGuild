@@ -48,7 +48,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 AutomationRuntimeEventEmitter.Emit(
                     AutomationRuntimeEventEmitter.GovernorDecisionCompleted,
                     reason: decision.SelectedBranch,
-                    payloadJson: "{\"cycleId\":\"" + Escape(decision.CycleId) + "\",\"selectedBranch\":\"" + Escape(decision.SelectedBranch) + "\"}");
+                    payloadJson: "{\"cycleId\":\"" + Escape(decision.CycleId) + "\",\"selectedBranch\":\"" + Escape(decision.SelectedBranch) + "\",\"activityId\":\"" + Escape(decision.ProposedActivity?.ActivityId) + "\"}");
 
                 InGameNotice.Info(ModDisplay.CompactLine("Governor", $"{decision.SelectedBranch}: {decision.SelectedReason}"));
                 return true;
@@ -122,6 +122,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 DestinationCandidate = CampaignRuntimeStatusReaders.ReadDestinationCandidate(),
                 FoodStatus = food.QuantityStatus + ":" + food.Detail,
                 FoodDiversityStatus = food.DiversityStatus + ":uniqueTypes=" + food.UniqueFoodTypes,
+                FoodForecastStatus = food.ForecastStatus + ":daysRemaining=" + food.EstimatedDaysRemaining.ToString("0.##") + " daysUntilFloor=" + food.EstimatedDaysUntilFloor.ToString("0.##"),
                 CapacityStatus = capacityStatus,
                 HorseStatus = horseStatus,
                 StaminaStatus = staminaStatus,
@@ -139,6 +140,7 @@ namespace BlacksmithGuild.CampaignRuntime
 
             RankAndSelect(decision, food);
             decision.PriorityRank = CampaignRuntimePolicy.RankForBranch(decision.SelectedBranch);
+            AttachProposedActivity(decision);
             return decision;
         }
 
@@ -170,10 +172,10 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
             }
 
-            if (food.QuantityStatus == "critical" || food.QuantityStatus == "low")
+            if (food.QuantityStatus == "critical" || food.QuantityStatus == "low" || food.ForecastStatus == "critical" || food.ForecastStatus == "low")
             {
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.FoodQuantityLow, reason: food.Detail);
-                AddBlocked(decision, CampaignRuntimePolicy.BranchProfitableTrade, "food quantity below floor");
+                AddBlocked(decision, CampaignRuntimePolicy.BranchProfitableTrade, "food runway below planning horizon");
                 Select(decision, CampaignRuntimePolicy.BranchFoodQuantity, food.Detail, false, "branch_gate_blocked");
                 return;
             }
@@ -229,6 +231,74 @@ namespace BlacksmithGuild.CampaignRuntime
             decision.Confidence = "low";
         }
 
+        private static void AttachProposedActivity(CampaignRuntimeDecision decision)
+        {
+            var mutationAuthorized = DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution && decision.Allowed;
+            var branch = decision.SelectedBranch;
+            var rank = decision.PriorityRank;
+            var reason = decision.SelectedReason;
+
+            switch (branch)
+            {
+                case CampaignRuntimePolicy.BranchFoodQuantity:
+                case CampaignRuntimePolicy.BranchFoodDiversity:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Food, "AcquireFoodBeforeRunwayBreach", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    decision.ProposedActivity.RequiresFreshMarketScan = true;
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.RequiresInventoryDelta = true;
+                    decision.ProposedActivity.RequiresGoldDelta = true;
+                    decision.ProposedActivity.ExpectedProof = "fresh market scan plus vanilla buy inventory/gold delta before food runway breach";
+                    return;
+                case CampaignRuntimePolicy.BranchCapacityPressure:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AcquirePackAnimalForCapacity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    decision.ProposedActivity.RequiresFreshMarketScan = true;
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.RequiresInventoryDelta = true;
+                    decision.ProposedActivity.RequiresGoldDelta = true;
+                    decision.ProposedActivity.ExpectedProof = "pack animal buy delta or explicit blocked no-market/no-gold result";
+                    return;
+                case CampaignRuntimePolicy.BranchSmithingReadiness:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Smithing, "PrepareOrExecuteSafeSmithing", reason, rank, mutationAuthorized, decision.CurrentTown, null);
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.RequiresInventoryDelta = true;
+                    decision.ProposedActivity.ExpectedProof = "smithing advisory or bounded refine/smelt delta";
+                    return;
+                case CampaignRuntimePolicy.BranchProfitableTrade:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Trade, "EvaluateOrExecuteTradeRoute", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    decision.ProposedActivity.RequiresFreshMarketScan = false;
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.RequiresInventoryDelta = true;
+                    decision.ProposedActivity.RequiresGoldDelta = true;
+                    decision.ProposedActivity.ExpectedProof = "trade iteration record with nonfake inventory/gold delta";
+                    return;
+                case CampaignRuntimePolicy.BranchTravelOpportunity:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.MapTravel, "TravelToBestKnownOpportunity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.ExpectedProof = "party movement observed and destination arrival or blocked safety reason";
+                    return;
+                case CampaignRuntimePolicy.BranchCompanionOpportunity:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Companion, "EvaluateTavernRecruitment", reason, rank, mutationAuthorized, decision.CurrentTown, null);
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.RequiresGoldDelta = true;
+                    decision.ProposedActivity.ExpectedProof = "roster decision report and vanilla recruitment delta if executed";
+                    return;
+                case CampaignRuntimePolicy.BranchThreatPoliticsSafety:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Cohesion, "HoldOrFindSafeRoute", reason, rank, false, decision.CurrentTown, null);
+                    decision.ProposedActivity.RequiresVisibleSurface = true;
+                    decision.ProposedActivity.ExpectedProof = "cohesion/threat report with selected safe action or hold reason";
+                    return;
+                case CampaignRuntimePolicy.BranchReportInsufficient:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Market, "RefreshMarketScan", reason, rank, false, decision.CurrentTown, null);
+                    decision.ProposedActivity.RequiresFreshMarketScan = true;
+                    decision.ProposedActivity.ExpectedProof = "fresh market intelligence report written";
+                    return;
+                default:
+                    decision.ProposedActivity = CampaignActivityFactory.ObserveOnly(decision.CycleId, branch, reason, rank);
+                    decision.ProposedActivity.ExpectedProof = "decision only; no engine execution authorized";
+                    return;
+            }
+        }
+
         private static bool IsUnknownOrUnsafeThreat(string threatStatus)
         {
             if (string.IsNullOrWhiteSpace(threatStatus))
@@ -267,7 +337,7 @@ namespace BlacksmithGuild.CampaignRuntime
 
         private static CampaignRuntimeDecision BuildFailedDecision(string source, Exception ex)
         {
-            return new CampaignRuntimeDecision
+            var decision = new CampaignRuntimeDecision
             {
                 CycleId = Guid.NewGuid().ToString("N"),
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
@@ -281,6 +351,12 @@ namespace BlacksmithGuild.CampaignRuntime
                 Allowed = false,
                 FailureClass = "governor_exception"
             };
+            decision.ProposedActivity = CampaignActivityFactory.ObserveOnly(
+                decision.CycleId,
+                CampaignRuntimePolicy.BranchFailSafePause,
+                ex.Message,
+                decision.PriorityRank);
+            return decision;
         }
 
         private static void TryWriteFailedDecision(CampaignRuntimeDecision decision)
