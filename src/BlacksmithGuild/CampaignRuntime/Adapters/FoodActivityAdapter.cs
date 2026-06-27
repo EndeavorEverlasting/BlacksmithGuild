@@ -22,9 +22,13 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
             var food = FoodInventoryAnalyzer.Analyze(MobileParty.MainParty);
             var plan = FoodProcurementPlanner.Plan(food);
             var candidates = FoodProcurementCandidatePlanner.Plan(plan);
+            var marketStock = FoodMarketStockScanner.ScanCurrentSettlement(MobileParty.MainParty);
+            var marketMatches = FoodMarketCandidateMatcher.Match(candidates, marketStock);
             var gate = FoodProcurementExecutionGate.Evaluate(request, plan);
             var detail = plan.ToDetailString()
                 + " " + candidates.ToDetailString()
+                + " " + marketStock.ToDetailString()
+                + " " + marketMatches.ToDetailString()
                 + " " + gate.ToDetailString()
                 + " expectedProof=" + request.ExpectedProof;
 
