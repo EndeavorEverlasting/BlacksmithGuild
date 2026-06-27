@@ -1,3 +1,4 @@
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.Forge;
@@ -218,6 +219,10 @@ namespace BlacksmithGuild.DevTools
                 commandName == MapTradeAutonomousService.ShowMapTradeRouteStatusCommand ||
                 commandName == MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand ||
                 commandName == MapTradeAutonomousService.ShowTacticalConvergenceCommand ||
+                commandName == CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand ||
+                commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
+                commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
+                commandName == CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand ||
                 commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand ||
                 commandName == ClanContextService.AnalyzeClanContextCommand ||
                 commandName == ClanContextService.ShowClanContextCommand ||
@@ -418,6 +423,13 @@ namespace BlacksmithGuild.DevTools
                 return AssistiveTownToTownProbeService.LastFailReason ?? "assistive town-trade probe failed";
             }
 
+            if (commandName == CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand ||
+                commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
+                commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
+                commandName == CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand)
+            {
+                return "campaign governor command failed";
+            }
             if (commandName == AssistiveLeaveTownTravelService.Command)
             {
                 return AssistiveLeaveTownTravelService.LastFailReason ?? "assistive leave-town travel failed";
@@ -622,6 +634,22 @@ namespace BlacksmithGuild.DevTools
                     return CharacterBuildVariantService.SelectBestNow();
                 case CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand:
                     return CharacterBuildVariantService.RunVisibleReplayNow();
+                case CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand:
+                    return CampaignRuntimeGovernor.RunCycleNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand:
+                    return CampaignRuntimeGovernor.ShowLastDecision()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand:
+                    return CampaignRuntimeGovernor.PauseAutomation("command")
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand:
+                    return CampaignRuntimeGovernor.ResumeAutomation("command")
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand:
                     return CharacterBuildVariantService.DumpSnapshotNow();
                 case AutoTravelService.ShowAutoTravelChoicesCommand:
