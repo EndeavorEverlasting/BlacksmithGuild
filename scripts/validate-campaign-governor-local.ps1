@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$ApplyCommandBusPatch,
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 )
