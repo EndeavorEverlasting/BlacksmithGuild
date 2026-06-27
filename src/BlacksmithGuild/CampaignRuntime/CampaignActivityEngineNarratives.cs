@@ -9,7 +9,7 @@ namespace BlacksmithGuild.CampaignRuntime
             return CampaignActivityNarrativeFactory.Create(
                 request,
                 "Market engine evaluated whether a read-only market refresh is needed before any market-dependent step.",
-                "currentTown=" + (request.CurrentTown ?? "unknown") + "; targetItemId=" + (request.TargetItemId ?? "none"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown") + "; targetItemId=" + Value(request?.TargetItemId, "none"),
                 "fresh market scan evidence, visible market surface when required, and structured stock or price output",
                 nextAction,
                 BaseSignals(request),
@@ -22,7 +22,7 @@ namespace BlacksmithGuild.CampaignRuntime
             return CampaignActivityNarrativeFactory.Create(
                 request,
                 "Trade engine evaluated route or transaction context for downstream analysis.",
-                "currentTown=" + (request.CurrentTown ?? "unknown") + "; targetTown=" + (request.TargetTown ?? "unknown") + "; targetItemId=" + (request.TargetItemId ?? "none"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown") + "; targetTown=" + Value(request?.TargetTown, "unknown") + "; targetItemId=" + Value(request?.TargetItemId, "none"),
                 "market evidence, inventory delta evidence, gold delta evidence, and route value evidence",
                 nextAction,
                 BaseSignals(request),
@@ -35,7 +35,7 @@ namespace BlacksmithGuild.CampaignRuntime
             return CampaignActivityNarrativeFactory.Create(
                 request,
                 "Smithing engine evaluated whether safe smithing or refine work should be prepared through the known smithing service.",
-                "currentTown=" + (request.CurrentTown ?? "unknown") + "; targetItemId=" + (request.TargetItemId ?? "none"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown") + "; targetItemId=" + Value(request?.TargetItemId, "none"),
                 "visible smithy surface, stamina and material evidence, inventory delta evidence, and safe service routing",
                 nextAction,
                 BaseSignals(request),
@@ -48,7 +48,7 @@ namespace BlacksmithGuild.CampaignRuntime
             return CampaignActivityNarrativeFactory.Create(
                 request,
                 "Map travel engine evaluated movement toward the best known opportunity.",
-                "currentTown=" + (request.CurrentTown ?? "unknown") + "; targetTown=" + (request.TargetTown ?? "unknown"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown") + "; targetTown=" + Value(request?.TargetTown, "unknown"),
                 "visible campaign map surface, destination confirmation, path intent evidence, and stop-condition evidence",
                 nextAction,
                 BaseSignals(request),
@@ -61,7 +61,7 @@ namespace BlacksmithGuild.CampaignRuntime
             return CampaignActivityNarrativeFactory.Create(
                 request,
                 "Horse-market engine evaluated pack-animal acquisition context for capacity pressure.",
-                "currentTown=" + (request.CurrentTown ?? "unknown") + "; targetTown=" + (request.TargetTown ?? "unknown") + "; targetItemId=" + (request.TargetItemId ?? "any_pack_animal"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown") + "; targetTown=" + Value(request?.TargetTown, "unknown") + "; targetItemId=" + Value(request?.TargetItemId, "any_pack_animal"),
                 "fresh market evidence, pack animal candidate evidence, inventory delta evidence, and gold delta evidence",
                 nextAction,
                 BaseSignals(request),
@@ -74,7 +74,7 @@ namespace BlacksmithGuild.CampaignRuntime
             return CampaignActivityNarrativeFactory.Create(
                 request,
                 "Companion engine evaluated tavern recruitment context for downstream analysis.",
-                "currentTown=" + (request.CurrentTown ?? "unknown") + "; targetTown=" + (request.TargetTown ?? "unknown"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown") + "; targetTown=" + Value(request?.TargetTown, "unknown"),
                 "visible tavern surface, candidate identity evidence, cost evidence, roster delta evidence, and gold delta evidence",
                 nextAction,
                 BaseSignals(request),
@@ -86,13 +86,13 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             return new List<string>
             {
-                "branch=" + (request.Branch ?? "unknown"),
-                "operation=" + (request.Operation ?? "unknown"),
-                "currentTown=" + (request.CurrentTown ?? "unknown"),
-                "targetTown=" + (request.TargetTown ?? "none"),
-                "targetItemId=" + (request.TargetItemId ?? "none"),
-                "targetItemName=" + (request.TargetItemName ?? "none"),
-                "priorityRank=" + request.PriorityRank
+                "branch=" + Value(request?.Branch, "unknown"),
+                "operation=" + Value(request?.Operation, "unknown"),
+                "currentTown=" + Value(request?.CurrentTown, "unknown"),
+                "targetTown=" + Value(request?.TargetTown, "none"),
+                "targetItemId=" + Value(request?.TargetItemId, "none"),
+                "targetItemName=" + Value(request?.TargetItemName, "none"),
+                "priorityRank=" + (request == null ? 0 : request.PriorityRank)
             };
         }
 
@@ -100,31 +100,36 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             return new List<string>
             {
-                "changeRequested=" + request.MutationAuthorized,
-                "requiresFreshMarketScan=" + request.RequiresFreshMarketScan,
-                "requiresVisibleSurface=" + request.RequiresVisibleSurface,
-                "requiresInventoryDelta=" + request.RequiresInventoryDelta,
-                "requiresGoldDelta=" + request.RequiresGoldDelta,
-                "expectedProof=" + (request.ExpectedProof ?? "none")
+                "changeRequested=" + (request != null && request.MutationAuthorized),
+                "requiresFreshMarketScan=" + (request != null && request.RequiresFreshMarketScan),
+                "requiresVisibleSurface=" + (request != null && request.RequiresVisibleSurface),
+                "requiresInventoryDelta=" + (request != null && request.RequiresInventoryDelta),
+                "requiresGoldDelta=" + (request != null && request.RequiresGoldDelta),
+                "expectedProof=" + Value(request?.ExpectedProof, "none")
             };
         }
 
         private static List<string> BuildBlockers(CampaignActivityRequest request, string engineBlocker)
         {
             var blockers = new List<string>();
-            if (!request.MutationAuthorized)
+            if (request == null || !request.MutationAuthorized)
             {
                 blockers.Add("proposal-only request; state-changing action not requested");
             }
 
             blockers.Add(engineBlocker);
 
-            if (string.IsNullOrWhiteSpace(request.ExpectedProof))
+            if (request == null || string.IsNullOrWhiteSpace(request.ExpectedProof))
             {
                 blockers.Add("expected evidence is missing or incomplete");
             }
 
             return blockers;
+        }
+
+        private static string Value(string value, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
     }
 }
