@@ -64,6 +64,7 @@ namespace BlacksmithGuild.CampaignRuntime
         public string BlockedReason { get; set; }
         public List<string> Inputs { get; set; } = new List<string>();
         public List<string> ExpectedOutputs { get; set; } = new List<string>();
+        public List<CampaignActivityHandoff> HandoffTrail { get; set; } = new List<CampaignActivityHandoff>();
     }
 
     public sealed class CampaignActivityResult
@@ -77,6 +78,7 @@ namespace BlacksmithGuild.CampaignRuntime
         public bool InventoryDeltaObserved { get; set; }
         public bool GoldDeltaObserved { get; set; }
         public string FailureClass { get; set; }
+        public List<CampaignActivityHandoff> HandoffTrail { get; set; } = new List<CampaignActivityHandoff>();
     }
 
     public static class CampaignActivityFactory
@@ -92,7 +94,7 @@ namespace BlacksmithGuild.CampaignRuntime
             string currentTown = null,
             string targetTown = null)
         {
-            return new CampaignActivityRequest
+            var request = new CampaignActivityRequest
             {
                 ActivityId = Guid.NewGuid().ToString("N"),
                 CycleId = cycleId,
@@ -109,11 +111,21 @@ namespace BlacksmithGuild.CampaignRuntime
                 CurrentTown = currentTown,
                 TargetTown = targetTown
             };
+
+            CampaignActivityHandoffRecorder.RecordRequest(
+                request,
+                CampaignActivityEngine.Governor.ToString(),
+                targetEngine.ToString(),
+                "governor_selection",
+                request.Status,
+                mutationAuthorized ? "Governor dictated bounded activity to target engine." : "Governor proposed activity to target engine.");
+
+            return request;
         }
 
         public static CampaignActivityRequest ObserveOnly(string cycleId, string branch, string reason, int priorityRank)
         {
-            return new CampaignActivityRequest
+            var request = new CampaignActivityRequest
             {
                 ActivityId = Guid.NewGuid().ToString("N"),
                 CycleId = cycleId,
@@ -128,6 +140,16 @@ namespace BlacksmithGuild.CampaignRuntime
                 PriorityRank = priorityRank,
                 MutationAuthorized = false
             };
+
+            CampaignActivityHandoffRecorder.RecordRequest(
+                request,
+                CampaignActivityEngine.Governor.ToString(),
+                CampaignActivityEngine.ObserveOnly.ToString(),
+                "governor_observation",
+                request.Status,
+                "Governor observed state and did not authorize engine execution.");
+
+            return request;
         }
     }
 }
