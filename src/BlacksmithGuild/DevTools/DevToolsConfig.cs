@@ -124,9 +124,13 @@ namespace BlacksmithGuild.DevTools
         public static bool GuildLoopAutoTravelToSellTown = true;
         public static bool MapTradeAutoTravelToSellTown = true;
 
+        // Governor spine ships disabled for autonomous takeover until live cert proves branch policy.
+        public static bool CampaignRuntimeGovernorAutonomousMode = false;
+        public static int CampaignRuntimeGovernorDecisionIntervalMs = 4000;
+        public static bool CampaignRuntimeGovernorAllowBoundedExecution = false;
+
         public static int SmithingSmeltMaxWeaponTier = 2;
         public static int SmithingSmeltMaxPerInvocation = 1;
         public static bool SmithingSmeltRequireLootOnly = true;
     }
 }
-

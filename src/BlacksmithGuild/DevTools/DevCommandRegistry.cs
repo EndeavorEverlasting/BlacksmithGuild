@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.Assistive;
@@ -65,6 +66,10 @@ namespace BlacksmithGuild.DevTools
                 CharacterBuildVariantService.SelectCharacterBuildBestNowCommand,
                 CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand,
                 CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand,
+                CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand,
+                CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand,
+                CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand,
+                CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand,
                 MarketIntelligenceService.MarketSnapshotNowCommand,
                 HorseMarketRecommendationService.AnalyzeHorseMarketCommand,
                 HorseMarketRecommendationService.ShowHorseMarketIntelCommand,

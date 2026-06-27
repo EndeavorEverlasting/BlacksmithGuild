@@ -1,3 +1,4 @@
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.QuickStart;
@@ -108,6 +109,7 @@ namespace BlacksmithGuild.Behaviors
 
             RuntimeTrace.Run("CampaignTick", "AutonomousDrivers", () =>
             {
+                CampaignRuntimeGovernor.OnCampaignTick();
                 TreasuryDeltaWatchService.ProcessPendingSnapshot();
                 AutoTravelService.OnCampaignTick();
                 CohesionExecutionDriver.OnCampaignTick();
