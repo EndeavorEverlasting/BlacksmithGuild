@@ -1,0 +1,59 @@
+name: Governor Contracts
+
+on:
+  pull_request:
+    paths:
+      - 'src/BlacksmithGuild/CampaignRuntime/**'
+      - 'src/BlacksmithGuild/Food/**'
+      - 'src/BlacksmithGuild/DevTools/Automation/**'
+      - 'src/BlacksmithGuild/DevTools/DevToolsConfig.cs'
+      - 'scripts/verify-campaign-*.ps1'
+      - 'scripts/patch-campaign-governor-commandbus-local.ps1'
+      - 'scripts/validate-campaign-governor-local.ps1'
+      - '.github/workflows/governor-contracts.yml'
+  push:
+    branches:
+      - feat/campaign-runtime-governor
+    paths:
+      - 'src/BlacksmithGuild/CampaignRuntime/**'
+      - 'src/BlacksmithGuild/Food/**'
+      - 'src/BlacksmithGuild/DevTools/Automation/**'
+      - 'src/BlacksmithGuild/DevTools/DevToolsConfig.cs'
+      - 'scripts/verify-campaign-*.ps1'
+      - 'scripts/patch-campaign-governor-commandbus-local.ps1'
+      - 'scripts/validate-campaign-governor-local.ps1'
+      - '.github/workflows/governor-contracts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Governor contract verifiers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify campaign governor contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-governor-contract.ps1
+
+      - name: Verify campaign activity dispatcher contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-activity-dispatcher-contract.ps1
+
+      - name: Verify campaign activity handoff contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-activity-handoff-contract.ps1
+
+      - name: Verify command-bus patch contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-governor-commandbus-patch-contract.ps1
+
+      - name: Document source wiring gate
+        shell: pwsh
+        run: |
+          Write-Host 'Command-bus source verifier intentionally requires the local patch output.'
+          Write-Host 'Run scripts/validate-campaign-governor-local.ps1 -ApplyCommandBusPatch on Windows/dev box before marking PR ready.'
