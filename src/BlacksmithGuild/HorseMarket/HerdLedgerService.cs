@@ -59,6 +59,8 @@ namespace BlacksmithGuild.HorseMarket
         public bool PackAnimalReserveProtected;
         public bool WarNobleReserveProtected;
         public bool LocalVerificationRequiredBeforeBuySell;
+        public bool FoodCapacityBufferProtected;
+        public bool ProfitPostureBasesCovered;
         public string BuyPosture;
         public string SellPosture;
         public string RecommendedPosture;
@@ -182,7 +184,8 @@ namespace BlacksmithGuild.HorseMarket
             var hasProfitCandidate = HorseMarketAtlasService.LastReport != null && HorseMarketAtlasService.LastReport.TopDestination != null;
             var projectedRecruitmentNeed = ridingCount < Math.Max(1, troopCount / 20) ? Math.Max(1, troopCount / 20) - ridingCount : 0;
             var projectedUpgradeNeed = (warCount + nobleCount) < Math.Max(1, troopCount / 25) ? Math.Max(1, troopCount / 25) - (warCount + nobleCount) : 0;
-            var posture = DeterminePosture(bufferPct, targetBuffer, packCount, spendable, unknownPresent, herdPenalty, gold, reserve, hasProfitCandidate);
+            var profitBasesCovered = bufferPct >= targetBuffer && !unknownPresent && herdPenalty != true && projectedRecruitmentNeed <= 0 && projectedUpgradeNeed <= 0 && spendable > 0;
+            var posture = DeterminePosture(bufferPct, targetBuffer, packCount, spendable, unknownPresent, herdPenalty, gold, reserve, hasProfitCandidate, projectedRecruitmentNeed, projectedUpgradeNeed, profitBasesCovered);
 
             var snapshot = new HerdLedgerSnapshot
             {
@@ -210,7 +213,7 @@ namespace BlacksmithGuild.HorseMarket
                 HerdPenaltyObserved = herdPenalty,
                 SpeedSummary = $"speed={speed:0.##}",
                 CapacityNeed = bufferPct < targetBuffer ? $"deficit buffer={bufferPct:0.#}%<{targetBuffer:0.#}%" : "ok",
-                TradeLoadNeed = "not_computed",
+                TradeLoadNeed = $"estimated_no_exact_route trade={Math.Max(0f, capacity * 0.15f):0.#} smithing={Math.Max(0f, capacity * 0.05f):0.#} food={Math.Max(0f, troopCount * 2f):0.#} loot={Math.Max(0f, capacity * 0.10f):0.#}",
                 RecruitmentMountNeed = ridingCount < 1 ? "low" : "ok",
                 UpgradeReserveNeed = (warCount + nobleCount) < 1 ? "unknown" : "ok",
                 ExcessSellableCount = excessSellable,
@@ -219,6 +222,8 @@ namespace BlacksmithGuild.HorseMarket
                 PackAnimalReserveProtected = bufferPct < targetBuffer || packCount <= 1,
                 WarNobleReserveProtected = (warCount + nobleCount) > 0,
                 LocalVerificationRequiredBeforeBuySell = true,
+                FoodCapacityBufferProtected = bufferPct >= targetBuffer,
+                ProfitPostureBasesCovered = profitBasesCovered,
                 BuyPosture = posture == HerdLedgerPosture.CapacityDeficitBuyPack ? "buy_pack_animal" : "hold",
                 SellPosture = herdPenalty == true ? "sell_excess_livestock_or_surplus_riding; protect_pack_war_noble_reserve" : "hold",
                 RecommendedPosture = posture.ToString()
@@ -227,7 +232,7 @@ namespace BlacksmithGuild.HorseMarket
             return snapshot;
         }
 
-        private static HerdLedgerPosture DeterminePosture(float bufferPct, float targetBuffer, int packCount, int spendable, bool unknownPresent, bool? herdPenalty, int gold, int reserve, bool hasProfitCandidate)
+        private static HerdLedgerPosture DeterminePosture(float bufferPct, float targetBuffer, int packCount, int spendable, bool unknownPresent, bool? herdPenalty, int gold, int reserve, bool hasProfitCandidate, int projectedRecruitmentNeed, int projectedUpgradeNeed, bool profitBasesCovered)
         {
             if (unknownPresent)
                 return HerdLedgerPosture.BlockedUnknownClassification;
@@ -237,9 +242,13 @@ namespace BlacksmithGuild.HorseMarket
                 return HerdLedgerPosture.CapacityDeficitBuyPack;
             if (bufferPct < targetBuffer)
                 return HerdLedgerPosture.TradeLoadPrepareCapacity;
+            if (projectedRecruitmentNeed > 0)
+                return HerdLedgerPosture.RecruitmentPrepareMounts;
+            if (projectedUpgradeNeed > 0)
+                return HerdLedgerPosture.UpgradeReserveHold;
             if (herdPenalty == true)
                 return HerdLedgerPosture.HerdPenaltySellExcess;
-            if (hasProfitCandidate && spendable > 0)
+            if (hasProfitCandidate && profitBasesCovered)
                 return HerdLedgerPosture.ProfitBuyIfUnderpriced;
             return HerdLedgerPosture.HoldBalanced;
         }
@@ -282,6 +291,8 @@ namespace BlacksmithGuild.HorseMarket
             sb.AppendLine($"  \"packAnimalReserveProtected\": {(s.PackAnimalReserveProtected ? "true" : "false")},");
             sb.AppendLine($"  \"warNobleReserveProtected\": {(s.WarNobleReserveProtected ? "true" : "false")},");
             sb.AppendLine($"  \"localVerificationRequiredBeforeBuySell\": {(s.LocalVerificationRequiredBeforeBuySell ? "true" : "false")},");
+            sb.AppendLine($"  \"foodCapacityBufferProtected\": {(s.FoodCapacityBufferProtected ? "true" : "false")},");
+            sb.AppendLine($"  \"profitPostureBasesCovered\": {(s.ProfitPostureBasesCovered ? "true" : "false")},");
             Str(sb, "buyPosture", s.BuyPosture, true);
             Str(sb, "sellPosture", s.SellPosture, true);
             Str(sb, "recommendedPosture", s.RecommendedPosture, false);

@@ -29,6 +29,8 @@ namespace BlacksmithGuild.CampaignRuntime
         public const string Trade = "trade";
         public const string Horse = "horse";
         public const string Safety = "safety";
+        public const string Observe = "observe";
+        public const string Recovery = "recovery";
     }
 
     public sealed class CampaignRouteCouncilDecision
@@ -157,6 +159,7 @@ namespace BlacksmithGuild.CampaignRuntime
 
             var herdPosture = HerdLedgerService.LastSnapshot?.RecommendedPosture;
             var atlasTop = HorseMarketAtlasService.LastReport?.TopDestination;
+            var ledger = HerdLedgerService.LastSnapshot;
             var capacityPressure = StartsWithAny(d.CapacityStatus, "pressure")
                 || string.Equals(herdPosture, "CapacityDeficitBuyPack", StringComparison.Ordinal)
                 || string.Equals(herdPosture, "TradeLoadPrepareCapacity", StringComparison.Ordinal);
@@ -164,20 +167,28 @@ namespace BlacksmithGuild.CampaignRuntime
                 AddVote(result, CampaignRouteVoteKind.Horse, "buy_pack_capacity", atlasTop ?? d.DestinationCandidate, 80,
                     $"horse capacity vs trade interaction: capacity={d.CapacityStatus} herd={herdPosture ?? "n/a"}", "medium", false);
 
+            if (string.Equals(herdPosture, "RecruitmentPrepareMounts", StringComparison.Ordinal))
+                AddVote(result, CampaignRouteVoteKind.Horse, "prepare_recruitment_mounts", atlasTop ?? d.DestinationCandidate, 75,
+                    $"horse recruitment need: projectedRecruitmentNeed={ledger?.ProjectedRecruitmentNeed ?? 0}", "medium", false);
+
+            if (string.Equals(herdPosture, "UpgradeReserveHold", StringComparison.Ordinal))
+                AddVote(result, CampaignRouteVoteKind.Horse, "hold_or_find_war_mount_reserve", atlasTop ?? d.DestinationCandidate, 74,
+                    $"horse upgrade reserve need: projectedCavalryUpgradeNeed={ledger?.ProjectedCavalryUpgradeNeed ?? 0}", "medium", false);
+
             if (!capacityPressure && StartsWithAny(d.TradeStatus, "report_insufficient"))
-                AddVote(result, CampaignRouteVoteKind.Trade, "map_scan", null, 40, $"trade={d.TradeStatus}", "low", false);
-            else if (!capacityPressure && (Contains(d.TradeStatus, "profitable") || Contains(d.TradeStatus, "opportunity")))
+                AddVote(result, CampaignRouteVoteKind.Recovery, "map_scan", null, 40, $"trade={d.TradeStatus}", "low", false);
+            else if (!capacityPressure && (Contains(d.TradeStatus, "profitable") || Contains(d.TradeStatus, "opportunity") || CachedTradeRoutesAvailable(d.TradeStatus)))
                 AddVote(result, CampaignRouteVoteKind.Trade, "profitable_trade", d.DestinationCandidate, 60, $"trade={d.TradeStatus}", "medium", false);
 
             if (Contains(d.HorseStatus, "deficit") || Contains(d.HorseStatus, "low"))
                 AddVote(result, CampaignRouteVoteKind.Horse, "improve_party_speed", atlasTop ?? d.DestinationCandidate, 50,
                     $"horse={d.HorseStatus}", "low", false);
 
-            if (!capacityPressure && string.Equals(herdPosture, "ProfitBuyIfUnderpriced", StringComparison.Ordinal) && atlasTop != null)
+            if (!capacityPressure && ledger?.ProfitPostureBasesCovered == true && string.Equals(herdPosture, "ProfitBuyIfUnderpriced", StringComparison.Ordinal) && atlasTop != null)
                 AddVote(result, CampaignRouteVoteKind.Horse, "horse_profit", atlasTop, 70,
-                    "horse profit only when bases covered: food/safety/capacity clear and atlas candidate exists", "medium", false);
+                    $"horse profit only when bases covered: food/safety/capacity/recruitment/upgrade/gold clear and atlas candidate exists profitCandidates={ledger.ProfitTradeCandidatesCount}", "medium", false);
 
-            AddVote(result, "observe", "observe_only", null, 10, "no dominant route signal", "low", false);
+            AddVote(result, CampaignRouteVoteKind.Observe, "observe_only", null, 10, "no dominant route signal", "low", false);
         }
 
         private static void Tally(CampaignRouteCouncilDecision result)
@@ -225,6 +236,8 @@ namespace BlacksmithGuild.CampaignRuntime
             if (string.Equals(winner.ProposedActivity, "AnalyzeHerdLedger", StringComparison.OrdinalIgnoreCase)) return "AnalyzeHerdLedger";
             if (string.Equals(winner.ProposedActivity, "buy_pack_capacity", StringComparison.OrdinalIgnoreCase)) return "LocalVerifyHorseMarketBeforeBuySell at " + (winner.ProposedDestination ?? "current settlement");
             if (string.Equals(winner.ProposedActivity, "horse_profit", StringComparison.OrdinalIgnoreCase)) return "LocalVerifyHorseMarketBeforeBuySell at " + (winner.ProposedDestination ?? "candidate settlement");
+            if (string.Equals(winner.ProposedActivity, "prepare_recruitment_mounts", StringComparison.OrdinalIgnoreCase)) return "ScanHorseAtlas then local verify recruitment mount at " + (winner.ProposedDestination ?? "candidate settlement");
+            if (string.Equals(winner.ProposedActivity, "hold_or_find_war_mount_reserve", StringComparison.OrdinalIgnoreCase)) return "Protect war/noble reserve; scan atlas for upgrade mount at " + (winner.ProposedDestination ?? "candidate settlement");
             if (string.Equals(winner.ProposedActivity, "profitable_trade", StringComparison.OrdinalIgnoreCase)) return "EvaluateOrExecuteTradeRoute when bounded execution is enabled";
             if (string.Equals(winner.ProposedActivity, "map_scan", StringComparison.OrdinalIgnoreCase)) return "RefreshMarketScan";
             if (string.Equals(winner.ProposedActivity, "resupply_food", StringComparison.OrdinalIgnoreCase)) return "AcquireFoodBeforeRunwayBreach";
@@ -256,6 +269,11 @@ namespace BlacksmithGuild.CampaignRuntime
 
         private static bool Contains(string value, string needle) =>
             !string.IsNullOrEmpty(value) && value.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
+
+        private static bool CachedTradeRoutesAvailable(string status) =>
+            !string.IsNullOrEmpty(status)
+            && status.StartsWith("cached", StringComparison.OrdinalIgnoreCase)
+            && status.IndexOf("routes=0", StringComparison.OrdinalIgnoreCase) < 0;
 
         private static void WriteJson(CampaignRouteCouncilDecision r)
         {

@@ -46,8 +46,13 @@ namespace BlacksmithGuild.HorseMarket
         public string BestRecruitmentMountName;
         public string BestWarMountId;
         public string BestWarMountName;
+        public int? BestWarMountPrice;
+        public int? BestWarMountStock;
         public string BestProfitBuyId;
         public string BestProfitBuyName;
+        public int? BestProfitBuyPrice;
+        public int? BestProfitExpectedMargin;
+        public int? BestProfitBuyStock;
         public List<string> RiskFlags = new List<string>();
     }
 
@@ -205,6 +210,13 @@ namespace BlacksmithGuild.HorseMarket
             int? cheapestPackPrice = null;
             string cheapestPackId = null, cheapestPackName = null;
             int cheapestPackStock = 0;
+            int? bestRecruitmentPrice = null;
+            int? bestWarPrice = null;
+            int bestWarStock = 0;
+            int? bestProfitPrice = null;
+            int? bestProfitMargin = null;
+            string bestProfitId = null, bestProfitName = null;
+            int bestProfitStock = 0;
 
             for (var i = 0; i < roster.Count; i++)
             {
@@ -213,6 +225,7 @@ namespace BlacksmithGuild.HorseMarket
                 if (item == null || element.Amount <= 0 || !HorseMarketClassifier.IsHorseOrAnimalCandidate(item)) continue;
 
                 var cls = HorseMarketClassifier.Classify(item);
+                var price = TryGetMarketPrice(town, item, party);
                 switch (cls.Classification)
                 {
                     case HorseAnimalClassification.PackAnimal: entry.PackAnimalCount += element.Amount; break;
@@ -225,8 +238,6 @@ namespace BlacksmithGuild.HorseMarket
 
                 if (cls.Classification == HorseAnimalClassification.PackAnimal)
                 {
-                    int? price = null;
-                    try { if (town != null) { var p = town.GetItemPrice(item, party, false); if (p > 0) price = p; } } catch { }
                     if (price.HasValue && (!cheapestPackPrice.HasValue || price.Value < cheapestPackPrice.Value))
                     {
                         cheapestPackPrice = price;
@@ -234,6 +245,37 @@ namespace BlacksmithGuild.HorseMarket
                         cheapestPackName = item.Name?.ToString();
                         cheapestPackStock = element.Amount;
                     }
+                }
+
+                if (cls.Classification == HorseAnimalClassification.WarMount
+                    || cls.Classification == HorseAnimalClassification.NobleMount)
+                {
+                    if (entry.BestWarMountId == null || (price.HasValue && (!bestWarPrice.HasValue || price.Value < bestWarPrice.Value)))
+                    {
+                        entry.BestWarMountId = item.StringId;
+                        entry.BestWarMountName = item.Name?.ToString();
+                        bestWarPrice = price;
+                        bestWarStock = element.Amount;
+                    }
+                }
+
+                if (cls.Classification == HorseAnimalClassification.RidingMount
+                    && (entry.BestRecruitmentMountId == null || (price.HasValue && (!bestRecruitmentPrice.HasValue || price.Value < bestRecruitmentPrice.Value))))
+                {
+                    entry.BestRecruitmentMountId = item.StringId;
+                    entry.BestRecruitmentMountName = item.Name?.ToString();
+                    bestRecruitmentPrice = price;
+                }
+
+                var expectedMargin = EstimateProfitMargin(item, price);
+                if (expectedMargin.HasValue && expectedMargin.Value > 0
+                    && (!bestProfitMargin.HasValue || expectedMargin.Value > bestProfitMargin.Value))
+                {
+                    bestProfitMargin = expectedMargin;
+                    bestProfitPrice = price;
+                    bestProfitId = item.StringId;
+                    bestProfitName = item.Name?.ToString();
+                    bestProfitStock = element.Amount;
                 }
 
                 if (cls.Classification == HorseAnimalClassification.WarMount && entry.BestWarMountId == null)
@@ -246,6 +288,13 @@ namespace BlacksmithGuild.HorseMarket
             entry.CheapestPackAnimalName = cheapestPackName;
             entry.CheapestPackAnimalPrice = cheapestPackPrice;
             entry.CheapestPackAnimalStock = cheapestPackStock;
+            entry.BestWarMountPrice = bestWarPrice;
+            entry.BestWarMountStock = bestWarStock;
+            entry.BestProfitBuyId = bestProfitId;
+            entry.BestProfitBuyName = bestProfitName;
+            entry.BestProfitBuyPrice = bestProfitPrice;
+            entry.BestProfitExpectedMargin = bestProfitMargin;
+            entry.BestProfitBuyStock = bestProfitStock;
 
             var totalAnimals = entry.PackAnimalCount + entry.RidingMountCount + entry.WarMountCount + entry.NobleMountCount + entry.LivestockCount + entry.UnknownHorseCount;
             if (totalAnimals == 0) entry.RiskFlags.Add("no_horse_animals_in_roster");
@@ -260,8 +309,10 @@ namespace BlacksmithGuild.HorseMarket
             var spendable = Math.Max(0, gold - HorseMarketDoctrine.DefaultSafeGoldReserve);
 
             var candidates = report.Entries
-                .Where(e => !e.IsCurrentSettlement && e.MarketAvailable && e.PackAnimalCount > 0 && e.Distance < DevToolsConfig.MapTradeMaxRouteDistance)
-                .OrderBy(e => underBuffer ? e.CheapestPackAnimalPrice ?? int.MaxValue : e.Distance)
+                .Where(e => !e.IsCurrentSettlement && e.MarketAvailable && e.Distance < DevToolsConfig.MapTradeMaxRouteDistance)
+                .Where(e => e.PackAnimalCount > 0 || e.BestRecruitmentMountId != null || e.BestWarMountId != null || e.BestProfitBuyId != null)
+                .OrderByDescending(e => ScoreDestination(e, underBuffer, spendable))
+                .ThenBy(e => e.Distance)
                 .Take(DevToolsConfig.HorseMarketAtlasMaxDestinationCount)
                 .ToList();
 
@@ -271,7 +322,7 @@ namespace BlacksmithGuild.HorseMarket
             if (!report.Entries.Any())
                 report.BlockedReason = "no settlements with market roster found";
             else if (!candidates.Any())
-                report.BlockedReason = "no pack animal destinations within range";
+                report.BlockedReason = "no horse destination candidates within range";
 
             report.Verdict = report.TopDestination != null ? "destination_ranked" : "no_destination";
         }
@@ -304,6 +355,8 @@ namespace BlacksmithGuild.HorseMarket
                 sb.AppendLine("    {");
                 Str(sb, "settlementId", e.SettlementId, true, "      ");
                 Str(sb, "settlementName", e.SettlementName, true, "      ");
+                Str(sb, "settlementType", e.SettlementType, true, "      ");
+                sb.AppendLine($"      \"distance\": {e.Distance:0.##},");
                 Str(sb, "freshnessState", e.FreshnessState, true, "      ");
                 sb.AppendLine($"      \"packAnimalStock\": {e.PackAnimalCount},");
                 sb.AppendLine($"      \"ridingMountStock\": {e.RidingMountCount},");
@@ -314,6 +367,17 @@ namespace BlacksmithGuild.HorseMarket
                 Str(sb, "cheapestPackAnimalName", e.CheapestPackAnimalName, true, "      ");
                 sb.AppendLine($"      \"cheapestPackAnimalPrice\": {(e.CheapestPackAnimalPrice.HasValue ? e.CheapestPackAnimalPrice.Value.ToString() : "null")},");
                 sb.AppendLine($"      \"cheapestPackAnimalStock\": {e.CheapestPackAnimalStock},");
+                Str(sb, "bestRecruitmentMountId", e.BestRecruitmentMountId, true, "      ");
+                Str(sb, "bestRecruitmentMountName", e.BestRecruitmentMountName, true, "      ");
+                Str(sb, "bestWarMountId", e.BestWarMountId, true, "      ");
+                Str(sb, "bestWarMountName", e.BestWarMountName, true, "      ");
+                sb.AppendLine($"      \"bestWarMountPrice\": {(e.BestWarMountPrice.HasValue ? e.BestWarMountPrice.Value.ToString() : "null")},");
+                sb.AppendLine($"      \"bestWarMountStock\": {(e.BestWarMountStock.HasValue ? e.BestWarMountStock.Value.ToString() : "null")},");
+                Str(sb, "bestProfitBuyId", e.BestProfitBuyId, true, "      ");
+                Str(sb, "bestProfitBuyName", e.BestProfitBuyName, true, "      ");
+                sb.AppendLine($"      \"bestProfitBuyPrice\": {(e.BestProfitBuyPrice.HasValue ? e.BestProfitBuyPrice.Value.ToString() : "null")},");
+                sb.AppendLine($"      \"bestProfitExpectedMargin\": {(e.BestProfitExpectedMargin.HasValue ? e.BestProfitExpectedMargin.Value.ToString() : "null")},");
+                sb.AppendLine($"      \"bestProfitBuyStock\": {(e.BestProfitBuyStock.HasValue ? e.BestProfitBuyStock.Value.ToString() : "null")},");
                 sb.AppendLine($"      \"localVerificationRequiredBeforeBuySell\": {(e.LocalVerificationRequiredBeforeBuySell ? "true" : "false")}");
                 sb.AppendLine(i < r.Entries.Count - 1 ? "    }," : "    }");
             }
@@ -324,6 +388,32 @@ namespace BlacksmithGuild.HorseMarket
 
         private static float TrySafeFloat(Func<float> fn) { try { return fn(); } catch { return 0f; } }
         private static int TrySafeInt(Func<int> fn) { try { return fn(); } catch { return 0; } }
+        private static int? TryGetMarketPrice(TaleWorlds.CampaignSystem.Settlements.Town town, TaleWorlds.Core.ItemObject item, MobileParty party)
+        {
+            try { if (town != null && item != null) { var p = town.GetItemPrice(item, party, false); if (p > 0) return p; } } catch { }
+            return null;
+        }
+        private static int? EstimateProfitMargin(TaleWorlds.Core.ItemObject item, int? askPrice)
+        {
+            if (item == null || !askPrice.HasValue) return null;
+            try
+            {
+                var baseValue = item.Value;
+                var threshold = (int)Math.Round(baseValue * HorseMarketDoctrine.ProfitVsBaseValueThreshold);
+                return threshold > askPrice.Value ? threshold - askPrice.Value : 0;
+            }
+            catch { return null; }
+        }
+        private static double ScoreDestination(HorseMarketAtlasEntry e, bool underBuffer, int spendable)
+        {
+            var score = 0.0;
+            if (underBuffer && e.PackAnimalCount > 0 && (!e.CheapestPackAnimalPrice.HasValue || e.CheapestPackAnimalPrice.Value <= spendable)) score += 1000;
+            if (e.BestRecruitmentMountId != null) score += 120;
+            if (e.BestWarMountId != null) score += 100;
+            if (e.BestProfitExpectedMargin.HasValue && e.BestProfitExpectedMargin.Value > 0) score += 80 + e.BestProfitExpectedMargin.Value;
+            score += Math.Max(0, 160 - e.Distance) * 0.1;
+            return score;
+        }
         private static void Str(StringBuilder sb, string key, string value, bool comma, string indent = "  ")
         {
             sb.Append(indent).Append("\"").Append(key).Append("\": ");

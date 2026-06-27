@@ -92,7 +92,9 @@ evidence only; inventory, gold, travel, and autonomous execution remain guarded
 by the existing governor gates. When bounded execution is disabled, the Governor
 should still surface the exact next action in its decision/activity result, for
 example `ScanHorseAtlas`, `AnalyzeHerdLedger`, or local horse-market verification
-before buy/sell.
+before buy/sell. Functional output should answer where to go, why that place,
+which engine voted for it, what horse/capacity/trade/food/recruitment facts
+support it, and what proof is still missing before any mutation.
 
 ## Offline verification
 

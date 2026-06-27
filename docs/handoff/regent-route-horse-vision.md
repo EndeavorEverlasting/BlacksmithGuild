@@ -40,7 +40,9 @@ answer where horse-related opportunities might be before the Governor chooses
 travel. The default mode is `LayOfLandScan`; `DiscoveredOnly` exists as the
 restricted-mode design stub. Runtime output includes destination candidates,
 top destination, settlement/animal/price/stock/freshness entry fields, and a
-local-verification-required marker before any buy/sell step.
+local-verification-required marker before any buy/sell step. It captures the
+cheapest pack animal, recruitment mount candidate, war/upgrade mount candidate,
+and profit candidate using read-only market pricing.
 
 ### The Herd Ledger
 
@@ -50,7 +52,8 @@ spendable-gold posture for the player party. It writes
 changing inventory or gold. Unknown classifications block mutation. Low-capacity
 states protect pack-animal reserve, and war/noble reserve is protected from
 sell posture. Profit posture only appears after basic safety, food, and capacity
-coverage.
+coverage. If no exact route load exists, the ledger writes conservative trade,
+smithing, food, and loot-buffer forecasts instead of pretending certainty.
 
 ### Governor integration
 

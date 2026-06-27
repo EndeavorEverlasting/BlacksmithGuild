@@ -85,6 +85,12 @@ Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'La
 Assert-Contains 'src\BlacksmithGuild\DevTools\DevToolsConfig.cs' 'HorseMarketAtlasMode.LayOfLandScan' 'LayOfLandScan default missing'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'DiscoveredOnly' 'discovered-only mode stub'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'Settlement.All' 'scans all settlements'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'HorseMarketClassifier.Classify' 'atlas classifies animal roster'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'GetItemPrice' 'atlas prices via market price helper'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'BestRecruitmentMountId' 'recruitment mount candidate'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'BestWarMountId' 'war/upgrade mount candidate'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'BestProfitBuyId' 'profit mount candidate'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'ScoreDestination' 'destination ranking policy'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'entries' 'runtime output includes entries'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'cheapestPackAnimalPrice' 'entry price field'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HorseMarketAtlasService.cs' 'localVerificationRequiredBeforeBuySell' 'local verification before buy/sell'
@@ -100,7 +106,18 @@ Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'BlockedU
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'UnknownClassificationMutationBlocked' 'unknown classification mutation block output'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'PackAnimalReserveProtected' 'pack animal reserve protection'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'WarNobleReserveProtected' 'war/noble reserve protection'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'estimated_no_exact_route' 'conservative route-unknown load forecast'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'ProfitPostureBasesCovered' 'profit posture requires bases covered'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'RecruitmentPrepareMounts' 'recruitment posture'
+Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'UpgradeReserveHold' 'upgrade reserve posture'
 Assert-Contains 'src\BlacksmithGuild\HorseMarket\HerdLedgerService.cs' 'readOnly' 'ledger is read-only'
+
+# Route Council must include functional vote coverage.
+Assert-Contains 'src\BlacksmithGuild\CampaignRuntime\CampaignRouteCouncil.cs' 'prepare_recruitment_mounts' 'horse recruitment vote'
+Assert-Contains 'src\BlacksmithGuild\CampaignRuntime\CampaignRouteCouncil.cs' 'hold_or_find_war_mount_reserve' 'horse upgrade vote'
+Assert-Contains 'src\BlacksmithGuild\CampaignRuntime\CampaignRouteCouncil.cs' 'CachedTradeRoutesAvailable' 'trade can win when routes exist'
+Assert-Contains 'src\BlacksmithGuild\CampaignRuntime\CampaignRouteCouncil.cs' 'CampaignRouteVoteKind.Observe' 'observe vote only after actionable votes'
+Assert-Contains 'src\BlacksmithGuild\CampaignRuntime\CampaignRouteCouncil.cs' 'CampaignRouteVoteKind.Recovery' 'recovery vote kind'
 
 # Governor must surface useful next actions instead of silently observing.
 Assert-Contains 'src\BlacksmithGuild\CampaignRuntime\CampaignRuntimeGovernor.cs' 'ApplyRouteCouncil' 'governor attaches council decision'
