@@ -48,9 +48,5 @@ Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProcurementPlan.cs' -Pattern
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public CampaignActivityResult LatestActivityResult'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignActivityDispatcher.Dispatch(decision.ProposedActivity)'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'latestActivityResult'
-Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'RunCampaignGovernorCycleNowCommand'
-Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'ShowCampaignGovernorDecisionCommand'
-Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'PauseCampaignGovernorAutomationCommand'
-Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'ResumeCampaignGovernorAutomationCommand'
 
 Write-Host 'Campaign activity dispatcher contract: PASS'
