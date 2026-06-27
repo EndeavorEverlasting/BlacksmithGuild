@@ -23,6 +23,14 @@ All harness outputs are local-only:
 - `.local/governor-smoke/<sessionId>/BlacksmithGuild_CampaignGovernorDecision.json`
 - `.local/operator-stop/forge-stop-requested.json`
 
+The Regent/Route/Horse read-only spine may also write local runtime evidence at
+the configured Bannerlord output root:
+
+- `BlacksmithGuild_RuntimeRegent.json`
+- `BlacksmithGuild_RouteCouncil.json`
+- `BlacksmithGuild_HorseAtlas.json`
+- `BlacksmithGuild_HerdLedger.json`
+
 The `.local/` tree is ignored and must not be committed.
 
 ## Classifications
@@ -69,14 +77,33 @@ application, and audit logging may occur.
 Use force-kill only for emergencies; it explicitly terminates Bannerlord and the
 launcher.
 
+## Regent / Route / Horse spine
+
+The Governor should not blindly choose activity. The read-only strategy spine is:
+
+1. The Regent classifies runtime state and recovery posture.
+2. The Route Council compares route votes and vetoes.
+3. The Horse Atlas ranks horse-market destinations before travel.
+4. The Herd Ledger forecasts pack, mount, capacity, and gold posture.
+
+These systems expose diagnostic commands such as `ShowRuntimeRegentState`,
+`ConveneRouteCouncil`, `ScanHorseAtlas`, and `AnalyzeHerdLedger`. They produce
+evidence only; inventory, gold, travel, and autonomous execution remain guarded
+by the existing governor gates. When bounded execution is disabled, the Governor
+should still surface the exact next action in its decision/activity result, for
+example `ScanHorseAtlas`, `AnalyzeHerdLedger`, or local horse-market verification
+before buy/sell.
+
 ## Offline verification
 
 Run:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-governor-operator-harness-contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-regent-route-horse-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
 ```
 
-The verifier checks that smoke outputs use `.local/`, stop/focus safety is wired,
-decision JSON fields are validated, and the operator guide is present.
+The verifiers check that smoke outputs use `.local/`, stop/focus safety is wired,
+decision JSON fields are validated, the Regent/Route/Horse commands stay
+registered, and local-only runtime JSON remains ignored.

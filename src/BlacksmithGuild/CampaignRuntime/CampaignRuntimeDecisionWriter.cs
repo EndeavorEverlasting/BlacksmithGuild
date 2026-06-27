@@ -65,6 +65,16 @@ namespace BlacksmithGuild.CampaignRuntime
             AppendString(sb, "confidence", decision.Confidence, comma: true);
             sb.AppendLine($"  \"allowed\": {JsonBool(decision.Allowed)},");
             AppendString(sb, "failureClass", decision.FailureClass, comma: true);
+            AppendString(sb, "routeCouncilWinningEngine", decision.RouteCouncilWinningEngine, comma: true);
+            AppendString(sb, "routeCouncilRecommendedActivity", decision.RouteCouncilRecommendedActivity, comma: true);
+            AppendString(sb, "routeCouncilRecommendedDestination", decision.RouteCouncilRecommendedDestination, comma: true);
+            AppendString(sb, "routeCouncilBlockedReason", decision.RouteCouncilBlockedReason, comma: true);
+            AppendString(sb, "routeCouncilVerdict", decision.RouteCouncilVerdict, comma: true);
+            AppendString(sb, "horseAtlasVerdict", decision.HorseAtlasVerdict, comma: true);
+            AppendString(sb, "horseAtlasTopDestination", decision.HorseAtlasTopDestination, comma: true);
+            sb.AppendLine($"  \"horseAtlasLocalVerificationRequired\": {JsonBool(decision.HorseAtlasLocalVerificationRequired)},");
+            AppendString(sb, "herdLedgerPosture", decision.HerdLedgerPosture, comma: true);
+            AppendString(sb, "nextAction", decision.NextAction, comma: true);
             AppendActivityRequest(sb, "proposedActivity", decision.ProposedActivity, comma: true);
             AppendActivityResult(sb, "latestActivityResult", decision.LatestActivityResult, comma: false);
             sb.AppendLine("}");

@@ -3,6 +3,7 @@ using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Food;
+using BlacksmithGuild.HorseMarket;
 
 namespace BlacksmithGuild.CampaignRuntime
 {
@@ -139,9 +140,12 @@ namespace BlacksmithGuild.CampaignRuntime
             };
 
             RankAndSelect(decision, food);
+            AttachSpineEvidence(decision);
+            ApplyRouteCouncil(decision);
             decision.PriorityRank = CampaignRuntimePolicy.RankForBranch(decision.SelectedBranch);
             AttachProposedActivity(decision);
             decision.LatestActivityResult = CampaignActivityDispatcher.Dispatch(decision.ProposedActivity);
+            AnnotateDeferredNextAction(decision);
             return decision;
         }
 
@@ -189,6 +193,20 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
             }
 
+            if (HorseMarketAtlasService.IsMissingOrStale(out var atlasReason))
+            {
+                Select(decision, CampaignRuntimePolicy.BranchRefreshHorseAtlas, atlasReason, false, null);
+                decision.NextAction = "RefreshHorseAtlas -> ScanHorseAtlas";
+                return;
+            }
+
+            if (HerdLedgerService.IsMissingOrStale(out var ledgerReason))
+            {
+                Select(decision, CampaignRuntimePolicy.BranchAnalyzeHerdLedger, ledgerReason, false, null);
+                decision.NextAction = "AnalyzeHerdLedger";
+                return;
+            }
+
             if (decision.CapacityStatus.StartsWith("pressure", StringComparison.OrdinalIgnoreCase))
             {
                 Select(decision, CampaignRuntimePolicy.BranchCapacityPressure, decision.CapacityStatus, false, "branch_gate_blocked");
@@ -232,6 +250,59 @@ namespace BlacksmithGuild.CampaignRuntime
             decision.Confidence = "low";
         }
 
+        private static void AttachSpineEvidence(CampaignRuntimeDecision decision)
+        {
+            var atlas = HorseMarketAtlasService.LastReport;
+            decision.HorseAtlasVerdict = atlas?.Verdict;
+            decision.HorseAtlasTopDestination = atlas?.TopDestination;
+            decision.HorseAtlasLocalVerificationRequired = atlas?.LocalVerificationRequiredBeforeBuySell ?? false;
+            decision.HerdLedgerPosture = HerdLedgerService.LastSnapshot?.RecommendedPosture;
+        }
+
+        private static void ApplyRouteCouncil(CampaignRuntimeDecision decision)
+        {
+            var council = CampaignRouteCouncil.BuildFromDecision(decision, "governor_cycle");
+            CampaignRouteCouncil.Record(council);
+            decision.RouteCouncilWinningEngine = council.WinningEngine;
+            decision.RouteCouncilRecommendedActivity = council.RecommendedActivity;
+            decision.RouteCouncilRecommendedDestination = council.RecommendedDestination;
+            decision.RouteCouncilBlockedReason = council.BlockedReason;
+            decision.RouteCouncilVerdict = council.Verdict;
+            if (!string.IsNullOrWhiteSpace(council.NextAction))
+                decision.NextAction = council.NextAction;
+
+            if (string.Equals(council.Verdict, "vetoed", StringComparison.OrdinalIgnoreCase))
+            {
+                AddBlocked(decision, CampaignRuntimePolicy.BranchTravelOpportunity, council.BlockedReason);
+                Select(decision, CampaignRuntimePolicy.BranchThreatPoliticsSafety, council.BlockedReason, false, "route_council_safety_veto");
+                return;
+            }
+
+            if (!string.Equals(decision.SelectedBranch, CampaignRuntimePolicy.BranchObserveOnly, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            if (string.IsNullOrWhiteSpace(council.RecommendedActivity) || string.Equals(council.WinningEngine, "observe", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var branch = BranchForCouncilActivity(council.RecommendedActivity);
+            Select(decision, branch, "route council: " + council.RecommendedActivity, false, null);
+            if (!string.IsNullOrWhiteSpace(council.RecommendedDestination))
+                decision.DestinationCandidate = council.RecommendedDestination;
+        }
+
+        private static string BranchForCouncilActivity(string activity)
+        {
+            if (string.Equals(activity, "RefreshHorseAtlas", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchRefreshHorseAtlas;
+            if (string.Equals(activity, "AnalyzeHerdLedger", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchAnalyzeHerdLedger;
+            if (string.Equals(activity, "buy_pack_capacity", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchCapacityPressure;
+            if (string.Equals(activity, "improve_party_speed", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchHorseSpeedUtility;
+            if (string.Equals(activity, "horse_profit", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchHorseSpeedUtility;
+            if (string.Equals(activity, "profitable_trade", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchProfitableTrade;
+            if (string.Equals(activity, "map_scan", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchReportInsufficient;
+            if (string.Equals(activity, "resupply_food", StringComparison.OrdinalIgnoreCase)) return CampaignRuntimePolicy.BranchFoodQuantity;
+            return CampaignRuntimePolicy.BranchObserveOnly;
+        }
+
         private static void AttachProposedActivity(CampaignRuntimeDecision decision)
         {
             var mutationAuthorized = DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution && decision.Allowed;
@@ -241,6 +312,18 @@ namespace BlacksmithGuild.CampaignRuntime
 
             switch (branch)
             {
+                case CampaignRuntimePolicy.BranchRefreshHorseAtlas:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "RefreshHorseAtlas", reason, rank, false, decision.CurrentTown, decision.HorseAtlasTopDestination);
+                    decision.ProposedActivity.ExpectedProof = "run ScanHorseAtlas and refresh BlacksmithGuild_HorseAtlas.json before buy/sell; local verification required before buy/sell";
+                    decision.ProposedActivity.BlockedReason = "bounded execution disabled; next action: ScanHorseAtlas";
+                    decision.ProposedActivity.Inputs.Add("horseAtlasVerdict=" + (decision.HorseAtlasVerdict ?? "missing"));
+                    return;
+                case CampaignRuntimePolicy.BranchAnalyzeHerdLedger:
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AnalyzeHerdLedger", reason, rank, false, decision.CurrentTown, decision.HorseAtlasTopDestination);
+                    decision.ProposedActivity.ExpectedProof = "run AnalyzeHerdLedger and refresh BlacksmithGuild_HerdLedger.json before horse buy/sell";
+                    decision.ProposedActivity.BlockedReason = "bounded execution disabled; next action: AnalyzeHerdLedger";
+                    decision.ProposedActivity.Inputs.Add("herdLedgerPosture=" + (decision.HerdLedgerPosture ?? "missing"));
+                    return;
                 case CampaignRuntimePolicy.BranchFoodQuantity:
                 case CampaignRuntimePolicy.BranchFoodDiversity:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Food, "AcquireFoodBeforeRunwayBreach", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
@@ -251,12 +334,15 @@ namespace BlacksmithGuild.CampaignRuntime
                     decision.ProposedActivity.ExpectedProof = "fresh market scan plus vanilla buy inventory/gold delta before food runway breach";
                     return;
                 case CampaignRuntimePolicy.BranchCapacityPressure:
-                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AcquirePackAnimalForCapacity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AcquirePackAnimalForCapacity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.RouteCouncilRecommendedDestination ?? decision.HorseAtlasTopDestination ?? decision.DestinationCandidate);
                     decision.ProposedActivity.RequiresFreshMarketScan = true;
                     decision.ProposedActivity.RequiresVisibleSurface = true;
                     decision.ProposedActivity.RequiresInventoryDelta = true;
                     decision.ProposedActivity.RequiresGoldDelta = true;
-                    decision.ProposedActivity.ExpectedProof = "pack animal buy delta or explicit blocked no-market/no-gold result";
+                    decision.ProposedActivity.ExpectedProof = "pack animal buy delta or explicit blocked no-market/no-gold result; local verification required before buy/sell";
+                    decision.ProposedActivity.BlockedReason = mutationAuthorized ? null : "bounded execution disabled; next action: " + (decision.NextAction ?? "LocalVerifyHorseMarketBeforeBuySell");
+                    decision.ProposedActivity.Inputs.Add("horseAtlasTopDestination=" + (decision.HorseAtlasTopDestination ?? "none"));
+                    decision.ProposedActivity.Inputs.Add("herdLedgerPosture=" + (decision.HerdLedgerPosture ?? "missing"));
                     return;
                 case CampaignRuntimePolicy.BranchSmithingReadiness:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Smithing, "PrepareOrExecuteSafeSmithing", reason, rank, mutationAuthorized, decision.CurrentTown, null);
@@ -273,9 +359,10 @@ namespace BlacksmithGuild.CampaignRuntime
                     decision.ProposedActivity.ExpectedProof = "trade iteration record with nonfake inventory/gold delta";
                     return;
                 case CampaignRuntimePolicy.BranchTravelOpportunity:
-                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.MapTravel, "TravelToBestKnownOpportunity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.MapTravel, "TravelToBestKnownOpportunity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.RouteCouncilRecommendedDestination ?? decision.DestinationCandidate);
                     decision.ProposedActivity.RequiresVisibleSurface = true;
                     decision.ProposedActivity.ExpectedProof = "party movement observed and destination arrival or blocked safety reason";
+                    decision.ProposedActivity.BlockedReason = mutationAuthorized ? null : "bounded execution disabled; next action: " + (decision.NextAction ?? "TravelToBestKnownOpportunity");
                     return;
                 case CampaignRuntimePolicy.BranchCompanionOpportunity:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Companion, "EvaluateTavernRecruitment", reason, rank, mutationAuthorized, decision.CurrentTown, null);
@@ -298,6 +385,16 @@ namespace BlacksmithGuild.CampaignRuntime
                     decision.ProposedActivity.ExpectedProof = "decision only; no engine execution authorized";
                     return;
             }
+        }
+
+        private static void AnnotateDeferredNextAction(CampaignRuntimeDecision decision)
+        {
+            if (decision?.LatestActivityResult == null || string.IsNullOrWhiteSpace(decision.NextAction))
+                return;
+            if (!string.Equals(decision.LatestActivityResult.Status, CampaignActivityStatus.Deferred.ToString(), StringComparison.OrdinalIgnoreCase))
+                return;
+            if (decision.LatestActivityResult.Detail == null || decision.LatestActivityResult.Detail.IndexOf("nextAction=", StringComparison.OrdinalIgnoreCase) < 0)
+                decision.LatestActivityResult.Detail = (decision.LatestActivityResult.Detail ?? string.Empty) + "; nextAction=" + decision.NextAction;
         }
 
         private static bool IsUnknownOrUnsafeThreat(string threatStatus)

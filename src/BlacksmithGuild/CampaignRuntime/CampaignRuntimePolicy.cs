@@ -7,6 +7,8 @@ namespace BlacksmithGuild.CampaignRuntime
         public const string BranchThreatPoliticsSafety = "threat_politics_safety";
         public const string BranchFoodQuantity = "food_quantity";
         public const string BranchFoodDiversity = "food_diversity";
+        public const string BranchRefreshHorseAtlas = "refresh_horse_atlas";
+        public const string BranchAnalyzeHerdLedger = "analyze_herd_ledger";
         public const string BranchCapacityPressure = "capacity_pressure";
         public const string BranchHorseSpeedUtility = "horse_speed_utility";
         public const string BranchSmithingReadiness = "smithing_or_prep";
@@ -32,24 +34,28 @@ namespace BlacksmithGuild.CampaignRuntime
                     return 4;
                 case BranchFoodDiversity:
                     return 5;
-                case BranchCapacityPressure:
+                case BranchRefreshHorseAtlas:
                     return 6;
-                case BranchHorseSpeedUtility:
+                case BranchAnalyzeHerdLedger:
                     return 7;
-                case BranchSmithingReadiness:
+                case BranchCapacityPressure:
                     return 8;
-                case BranchProfitableTrade:
+                case BranchHorseSpeedUtility:
                     return 9;
-                case BranchTravelOpportunity:
+                case BranchSmithingReadiness:
                     return 10;
-                case BranchCompanionOpportunity:
+                case BranchProfitableTrade:
                     return 11;
-                case BranchDiplomacyAdjustment:
+                case BranchTravelOpportunity:
                     return 12;
-                case BranchReportInsufficient:
+                case BranchCompanionOpportunity:
                     return 13;
-                case BranchObserveOnly:
+                case BranchDiplomacyAdjustment:
                     return 14;
+                case BranchReportInsufficient:
+                    return 15;
+                case BranchObserveOnly:
+                    return 16;
                 default:
                     return 99;
             }

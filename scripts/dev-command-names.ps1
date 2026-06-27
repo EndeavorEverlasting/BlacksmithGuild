@@ -97,7 +97,15 @@ function Get-DevCommandNames {
         'RunCampaignGovernorCycleNow',
         'ShowCampaignGovernorDecision',
         'PauseCampaignGovernorAutomation',
-        'ResumeCampaignGovernorAutomation'
+        'ResumeCampaignGovernorAutomation',
+        'ShowRuntimeRegentState',
+        'ConveneRouteCouncil',
+        'ShowRouteCouncil',
+        'ScanHorseAtlas',
+        'ShowHorseAtlas',
+        'RankHorseDestinations',
+        'AnalyzeHerdLedger',
+        'ShowHerdLedger'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

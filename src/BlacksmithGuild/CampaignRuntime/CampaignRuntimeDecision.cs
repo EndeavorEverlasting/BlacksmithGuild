@@ -32,6 +32,16 @@ namespace BlacksmithGuild.CampaignRuntime
         public string Confidence { get; set; }
         public bool Allowed { get; set; }
         public string FailureClass { get; set; }
+        public string RouteCouncilWinningEngine { get; set; }
+        public string RouteCouncilRecommendedActivity { get; set; }
+        public string RouteCouncilRecommendedDestination { get; set; }
+        public string RouteCouncilBlockedReason { get; set; }
+        public string RouteCouncilVerdict { get; set; }
+        public string HorseAtlasVerdict { get; set; }
+        public string HorseAtlasTopDestination { get; set; }
+        public bool HorseAtlasLocalVerificationRequired { get; set; }
+        public string HerdLedgerPosture { get; set; }
+        public string NextAction { get; set; }
         public CampaignActivityRequest ProposedActivity { get; set; }
         public CampaignActivityResult LatestActivityResult { get; set; }
     }

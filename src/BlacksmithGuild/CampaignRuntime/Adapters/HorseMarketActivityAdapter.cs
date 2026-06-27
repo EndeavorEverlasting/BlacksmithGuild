@@ -21,6 +21,20 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
                 + " requiresGoldDelta=" + request.RequiresGoldDelta
                 + " expectedProof=" + request.ExpectedProof;
 
+            if (string.Equals(request.Operation, "RefreshHorseAtlas", StringComparison.OrdinalIgnoreCase))
+            {
+                var refresh = CampaignActivityDispatcher.Deferred(request, detail + "; nextAction=ScanHorseAtlas; localVerificationRequiredBeforeBuySell=true");
+                refresh.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "ScanHorseAtlas before any horse buy/sell."));
+                return refresh;
+            }
+
+            if (string.Equals(request.Operation, "AnalyzeHerdLedger", StringComparison.OrdinalIgnoreCase))
+            {
+                var analyze = CampaignActivityDispatcher.Deferred(request, detail + "; nextAction=AnalyzeHerdLedger; mutationBlockedUntilLedgerFresh=true");
+                analyze.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "AnalyzeHerdLedger before any horse buy/sell."));
+                return analyze;
+            }
+
             if (request.MutationAuthorized)
             {
                 var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; horse-market action step is pending implementation", "horse_market_action_pending");
@@ -28,8 +42,8 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
                 return blocked;
             }
 
-            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; horse-market proposal recorded only");
-            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "Use the horse-market narrative to identify missing pack-animal and market evidence."));
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; horse-market proposal recorded only; nextAction=" + (request.BlockedReason ?? "LocalVerifyHorseMarketBeforeBuySell"));
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "Local verification required before buy/sell; use the horse-market narrative to identify missing pack-animal and market evidence."));
             return deferred;
         }
     }

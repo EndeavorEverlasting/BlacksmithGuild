@@ -129,6 +129,13 @@ namespace BlacksmithGuild.DevTools
         public static int CampaignRuntimeGovernorDecisionIntervalMs = 4000;
         public static bool CampaignRuntimeGovernorAllowBoundedExecution = false;
 
+        // Horse Atlas read-only intelligence: lay-of-land scan defaults.
+        public static BlacksmithGuild.HorseMarket.HorseMarketAtlasMode HorseMarketAtlasMode =
+            BlacksmithGuild.HorseMarket.HorseMarketAtlasMode.LayOfLandScan;
+        public static int HorseMarketAtlasFreshnessHours = 24;
+        public static int HorseMarketAtlasMaxDestinationCount = 5;
+        public static int HerdLedgerFreshnessHours = 6;
+
         public static int SmithingSmeltMaxWeaponTier = 2;
         public static int SmithingSmeltMaxPerInvocation = 1;
         public static bool SmithingSmeltRequireLootOnly = true;

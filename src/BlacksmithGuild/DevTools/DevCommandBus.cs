@@ -224,6 +224,14 @@ namespace BlacksmithGuild.DevTools
                 commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
                 commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
                 commandName == CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand ||
+                commandName == CampaignRuntimeRegent.ShowRuntimeRegentStateCommand ||
+                commandName == CampaignRouteCouncil.ConveneRouteCouncilCommand ||
+                commandName == CampaignRouteCouncil.ShowRouteCouncilCommand ||
+                commandName == HorseMarketAtlasService.ScanHorseAtlasCommand ||
+                commandName == HorseMarketAtlasService.ShowHorseAtlasCommand ||
+                commandName == HorseMarketAtlasService.RankHorseDestinationsCommand ||
+                commandName == HerdLedgerService.AnalyzeHerdLedgerCommand ||
+                commandName == HerdLedgerService.ShowHerdLedgerCommand ||
                 commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand ||
                 commandName == ClanContextService.AnalyzeClanContextCommand ||
                 commandName == ClanContextService.ShowClanContextCommand ||
@@ -660,6 +668,35 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand:
                     return CampaignRuntimeGovernor.ResumeAutomation("command")
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeRegent.ShowRuntimeRegentStateCommand:
+                    return CampaignRuntimeRegent.ShowNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRouteCouncil.ConveneRouteCouncilCommand:
+                    return CampaignRouteCouncil.Convene(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRouteCouncil.ShowRouteCouncilCommand:
+                    return CampaignRouteCouncil.ShowLast()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HorseMarketAtlasService.ScanHorseAtlasCommand:
+                case HorseMarketAtlasService.RankHorseDestinationsCommand:
+                    return HorseMarketAtlasService.RunScanNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HorseMarketAtlasService.ShowHorseAtlasCommand:
+                    return HorseMarketAtlasService.ShowLastReport()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HerdLedgerService.AnalyzeHerdLedgerCommand:
+                    return HerdLedgerService.RunAnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HerdLedgerService.ShowHerdLedgerCommand:
+                    return HerdLedgerService.ShowLast()
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand:
