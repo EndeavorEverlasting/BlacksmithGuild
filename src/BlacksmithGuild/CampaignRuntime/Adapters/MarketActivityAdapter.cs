@@ -20,10 +20,14 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Blocked(request, detail + "; market execution path not proven by this adapter yet", "market_execution_not_implemented");
+                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; market action step is pending implementation", "market_action_pending");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Market(request, "Prepare a read-only market scan and keep later market steps pending until scan output is available."));
+                return blocked;
             }
 
-            return CampaignActivityDispatcher.Deferred(request, detail + "; market scan proposal recorded only");
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; market scan proposal recorded only");
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.Market(request, "Use the market narrative to decide whether a read-only scan should be scheduled."));
+            return deferred;
         }
     }
 }
