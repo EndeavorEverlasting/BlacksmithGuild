@@ -141,6 +141,7 @@ namespace BlacksmithGuild.CampaignRuntime
             RankAndSelect(decision, food);
             decision.PriorityRank = CampaignRuntimePolicy.RankForBranch(decision.SelectedBranch);
             AttachProposedActivity(decision);
+            decision.LatestActivityResult = CampaignActivityDispatcher.Dispatch(decision.ProposedActivity);
             return decision;
         }
 
@@ -356,6 +357,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 CampaignRuntimePolicy.BranchFailSafePause,
                 ex.Message,
                 decision.PriorityRank);
+            decision.LatestActivityResult = CampaignActivityDispatcher.Dispatch(decision.ProposedActivity);
             return decision;
         }
 
