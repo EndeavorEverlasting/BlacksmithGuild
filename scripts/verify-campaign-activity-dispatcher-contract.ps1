@@ -26,6 +26,16 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/ICampaignActivityAdap
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/ICampaignActivityAdapter.cs' -Pattern 'bool CanHandle(CampaignActivityRequest request)'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/ICampaignActivityAdapter.cs' -Pattern 'CampaignActivityResult TryHandle(CampaignActivityRequest request)'
 
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'public sealed class CampaignActivityNarrativeDetail'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityContract.cs' -Pattern 'public List<CampaignActivityNarrativeDetail> NarrativeDetails'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityNarrativeFactory.cs' -Pattern 'public static class CampaignActivityNarrativeFactory'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityNarrativeFactory.cs' -Pattern 'AttachDefault'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityNarrativeFactory.cs' -Pattern 'Activity result captured for downstream engine analysis.'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'narrativeDetails'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'AppendNarrativeDetails'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'AppendStringList(sb, "inputs"'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'AppendStringList(sb, "expectedOutputs"'
+
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'public static CampaignActivityResult Dispatch(CampaignActivityRequest request)'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'ICampaignActivityAdapter[] Adapters'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'new FoodActivityAdapter()'
@@ -37,6 +47,7 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispa
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'new CompanionActivityAdapter()'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'new DeferredActivityAdapter()'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'request.MutationAuthorized'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'CampaignActivityNarrativeFactory.AttachDefault'
 
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'public sealed class FoodActivityAdapter'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'AcquireFoodBeforeRunwayBreach'
@@ -45,6 +56,8 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivity
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodProcurementCandidatePlanner.Plan'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodMarketStockScanner.ScanCurrentSettlement'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodMarketCandidateMatcher.Match'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'AddFoodNarrative'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'Food engine evaluated runway, procurement candidates, read-only market stock, and execution proof readiness.'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodProcurementExecutionGate.Evaluate'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'food_vanilla_driver_not_wired'
 
