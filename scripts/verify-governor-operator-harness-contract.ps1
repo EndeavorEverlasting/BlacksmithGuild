@@ -79,6 +79,14 @@ Assert-Contains 'scripts\ensure-dev-save.ps1' 'invoke-forge-launch-operator.ps1'
 Assert-Contains 'scripts\ensure-dev-save.ps1' 'Assert-GovernorNotStopped' 'stop polling during waits'
 Assert-Contains 'Run-Governor-Ensure-DevSave.cmd' 'ensure-governor-dev-save-operator.ps1' 'cmd wrapper must call file wrapper'
 Assert-NotContains 'Run-Governor-Ensure-DevSave.cmd' '-Command' 'avoid inline PowerShell variables in cmd wrapper'
+foreach ($cmdWrapper in @(
+    'Run-Governor-Disposable-Smoke.cmd',
+    'Run-Governor-Disposable-Smoke-SkipLaunch.cmd',
+    'Run-Governor-Ensure-DevSave.cmd'
+)) {
+    Assert-Contains $cmdWrapper 'set TBG_EXIT=%ERRORLEVEL%' 'wrapper must preserve PowerShell exit code before pause'
+    Assert-Contains $cmdWrapper 'exit /b %TBG_EXIT%' 'wrapper must return PowerShell exit code after pause'
+}
 
 Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' 'TBG_OPERATOR_INTERACTIVE_FOCUS' 'interactive focus env gate'
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'Invoke-OperatorInteractiveFocusPrompt' 'focus prompt hook'
