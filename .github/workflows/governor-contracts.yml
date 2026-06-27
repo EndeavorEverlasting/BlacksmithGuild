@@ -18,6 +18,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Scope note
+        shell: pwsh
+        run: |
+          Write-Host 'This workflow runs text and contract verifiers only.'
+          Write-Host 'Bannerlord compile remains a separate Windows developer box validation gate.'
+
       - name: Verify campaign governor contract
         shell: pwsh
         run: ./scripts/verify-campaign-governor-contract.ps1
@@ -38,4 +44,4 @@ jobs:
         shell: pwsh
         run: |
           Write-Host 'Command-bus source verifier intentionally requires the local patch output.'
-          Write-Host 'Run scripts/validate-campaign-governor-local.ps1 -ApplyCommandBusPatch on Windows/dev box before marking PR ready.'
+          Write-Host 'Run scripts/validate-campaign-governor-local.ps1 -ApplyCommandBusPatch on Windows developer box before marking PR ready.'
