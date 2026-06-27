@@ -108,6 +108,8 @@ namespace BlacksmithGuild.CampaignRuntime
             sb.AppendLine($"    \"requiresGoldDelta\": {JsonBool(activity.RequiresGoldDelta)},");
             AppendString(sb, "expectedProof", activity.ExpectedProof, comma: true, indent: "    ");
             AppendString(sb, "blockedReason", activity.BlockedReason, comma: true, indent: "    ");
+            AppendStringList(sb, "inputs", activity.Inputs, comma: true, indent: "    ");
+            AppendStringList(sb, "expectedOutputs", activity.ExpectedOutputs, comma: true, indent: "    ");
             AppendHandoffTrail(sb, "handoffTrail", activity.HandoffTrail, comma: false, indent: "    ");
             sb.Append(comma ? "  }," : "  }");
             sb.AppendLine();
@@ -137,8 +139,79 @@ namespace BlacksmithGuild.CampaignRuntime
             sb.AppendLine($"    \"inventoryDeltaObserved\": {JsonBool(result.InventoryDeltaObserved)},");
             sb.AppendLine($"    \"goldDeltaObserved\": {JsonBool(result.GoldDeltaObserved)},");
             AppendString(sb, "failureClass", result.FailureClass, comma: true, indent: "    ");
+            AppendNarrativeDetails(sb, "narrativeDetails", result.NarrativeDetails, comma: true, indent: "    ");
             AppendHandoffTrail(sb, "handoffTrail", result.HandoffTrail, comma: false, indent: "    ");
             sb.Append(comma ? "  }," : "  }");
+            sb.AppendLine();
+        }
+
+        private static void AppendNarrativeDetails(StringBuilder sb, string name, List<CampaignActivityNarrativeDetail> details, bool comma, string indent)
+        {
+            sb.Append(indent).Append("\"").Append(Escape(name)).Append("\": ");
+            if (details == null || details.Count == 0)
+            {
+                sb.Append("[]");
+                if (comma)
+                {
+                    sb.Append(",");
+                }
+                sb.AppendLine();
+                return;
+            }
+
+            sb.AppendLine("[");
+            for (var i = 0; i < details.Count; i++)
+            {
+                var detail = details[i];
+                sb.Append(indent).AppendLine("  {");
+                AppendString(sb, "engine", detail.Engine, comma: true, indent: indent + "    ");
+                AppendString(sb, "operation", detail.Operation, comma: true, indent: indent + "    ");
+                AppendString(sb, "narrative", detail.Narrative, comma: true, indent: indent + "    ");
+                AppendString(sb, "knownState", detail.KnownState, comma: true, indent: indent + "    ");
+                AppendString(sb, "neededProof", detail.NeededProof, comma: true, indent: indent + "    ");
+                AppendString(sb, "nextAction", detail.NextAction, comma: true, indent: indent + "    ");
+                AppendStringList(sb, "signals", detail.Signals, comma: true, indent: indent + "    ");
+                AppendStringList(sb, "constraints", detail.Constraints, comma: true, indent: indent + "    ");
+                AppendStringList(sb, "blockers", detail.Blockers, comma: false, indent: indent + "    ");
+                sb.Append(indent).Append(i < details.Count - 1 ? "  }," : "  }");
+                sb.AppendLine();
+            }
+            sb.Append(indent).Append("]");
+            if (comma)
+            {
+                sb.Append(",");
+            }
+            sb.AppendLine();
+        }
+
+        private static void AppendStringList(StringBuilder sb, string name, List<string> values, bool comma, string indent)
+        {
+            sb.Append(indent).Append("\"").Append(Escape(name)).Append("\": ");
+            if (values == null || values.Count == 0)
+            {
+                sb.Append("[]");
+                if (comma)
+                {
+                    sb.Append(",");
+                }
+                sb.AppendLine();
+                return;
+            }
+
+            sb.Append("[");
+            for (var i = 0; i < values.Count; i++)
+            {
+                sb.Append("\"").Append(Escape(values[i])).Append("\"");
+                if (i < values.Count - 1)
+                {
+                    sb.Append(", ");
+                }
+            }
+            sb.Append("]");
+            if (comma)
+            {
+                sb.Append(",");
+            }
             sb.AppendLine();
         }
 
