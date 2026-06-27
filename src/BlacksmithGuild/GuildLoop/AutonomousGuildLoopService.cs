@@ -69,6 +69,14 @@ namespace BlacksmithGuild.GuildLoop
             };
 
             AddStep("Preflight", "Success", "campaign map ready");
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                CurrentCycleId,
+                "Runner",
+                "Governor",
+                GovernorActivityBranch.ObserveOnly,
+                "Preflight",
+                "campaign map ready",
+                ReportFileName));
             return ContinueFromFactionPosture(source);
         }
 
@@ -77,6 +85,14 @@ namespace BlacksmithGuild.GuildLoop
             var posture = FactionPowerPostureScanner.Scan();
             var summary = $"{posture.AllegianceMode} power={posture.PowerVerdict} hostiles={posture.HostileCountInRadius}";
             AddStep("FactionPosture", "Success", summary);
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                CurrentCycleId,
+                "FactionPowerPostureScanner",
+                "Governor",
+                GovernorActivityBranch.ThreatAvoidance,
+                "FactionPosture",
+                summary,
+                ReportFileName));
             return ContinueFromMarketScan(source);
         }
 
@@ -122,21 +138,52 @@ namespace BlacksmithGuild.GuildLoop
             if (!MarketIntelligenceService.RunScanNow(source))
             {
                 AddStep("MarketScan", "Blocked", "market scan failed");
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "MarketIntelligenceService",
+                    "Governor",
+                    GovernorActivityBranch.ObserveOnly,
+                    "MarketScan",
+                    "market scan failed",
+                    "runtime_state_stale",
+                    "BlacksmithGuild_MarketIntel.json"));
                 Complete("Blocked", "market scan failed");
                 return false;
             }
 
             AddStep("MarketScan", "Success", MarketIntelligenceService.Summary?.NearestTown ?? "scan ok");
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                CurrentCycleId,
+                "MarketIntelligenceService",
+                "Governor",
+                GovernorActivityBranch.Trade,
+                "MarketScan",
+                MarketIntelligenceService.Summary?.NearestTown ?? "scan ok",
+                "BlacksmithGuild_MarketIntel.json"));
             _activeReport.Phase = GuildLoopPhase.SelectMission;
             _mission = MapTradeMissionSelector.SelectBestMission();
             if (_mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
             {
                 AddStep("SelectMission", "Blocked", _mission.BlockReason);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "Governor",
+                    "MapTrade",
+                    GovernorActivityBranch.ObserveOnly,
+                    _mission.MissionType.ToString(),
+                    _mission.BlockReason,
+                    "branch_gate_blocked",
+                    ReportFileName));
                 Complete("Blocked", _mission.BlockReason);
                 return false;
             }
 
             AddStep("SelectMission", "Success", $"{_mission.MissionType} -> {_mission.TargetSettlementName}");
+            AddGovernorHandoff(GovernorActivityHandoffFactory.FromMission(
+                CurrentCycleId,
+                "Governor",
+                _mission,
+                "movement engine then arrival verification"));
 
             if (MapTradeMissionSelector.NeedsCohesionCheck(_mission))
             {
@@ -168,11 +215,28 @@ namespace BlacksmithGuild.GuildLoop
                 && opportunity.RecommendedAction.ToString().StartsWith("Blocked", StringComparison.Ordinal))
             {
                 AddStep("CohesionCheck", "Blocked", opportunity.BlockedReason);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "CohesionEngine",
+                    "Governor",
+                    GovernorActivityBranch.ThreatAvoidance,
+                    opportunity.RecommendedAction.ToString(),
+                    opportunity.BlockedReason,
+                    "threat_state_unknown_blocked",
+                    "BlacksmithGuild_CohesionPlan.json"));
                 Complete("Blocked", opportunity.BlockedReason);
                 return false;
             }
 
             AddStep("CohesionCheck", "Success", opportunity?.RecommendedAction.ToString() ?? "None");
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                CurrentCycleId,
+                "CohesionEngine",
+                "Governor",
+                GovernorActivityBranch.ThreatAvoidance,
+                "CohesionCheck",
+                opportunity?.RecommendedAction.ToString() ?? "None",
+                "BlacksmithGuild_CohesionPlan.json"));
             return BeginTravel(source);
         }
 
@@ -182,11 +246,30 @@ namespace BlacksmithGuild.GuildLoop
             if (!MapTradeVisibleMovementDriver.TryStartTravel(_mission, out var detail))
             {
                 AddStep("TravelToTown", "Blocked", detail);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "MapTradeVisibleMovementDriver",
+                    "Governor",
+                    GovernorActivityBranch.Travel,
+                    "TravelToTown",
+                    detail,
+                    "movement_delta_missing",
+                    ReportFileName));
                 Complete("Blocked", detail);
                 return false;
             }
 
             AddStep("TravelToTown", "Started", _mission.TargetSettlementName);
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Dictated(
+                CurrentCycleId,
+                "Governor",
+                "MapTradeVisibleMovementDriver",
+                GovernorActivityBranch.Travel,
+                "TravelToTown",
+                $"target={_mission.TargetSettlementName}",
+                GovernorActivityHandoffFactory.ProofForBranch(GovernorActivityBranch.Travel),
+                ReportFileName,
+                "wait for arrival then verify target state"));
             InGameNotice.Info($"TBG GUILD LOOP MOVE: riding toward {_mission.TargetSettlementName}.");
             WriteReport();
             return true;
@@ -195,6 +278,14 @@ namespace BlacksmithGuild.GuildLoop
         private static void ContinueFromArrival(string source)
         {
             AddStep("TravelToTown", "Success", "arrived");
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                CurrentCycleId,
+                "MapTradeVisibleMovementDriver",
+                "Governor",
+                GovernorActivityBranch.Travel,
+                "ArrivedAtTarget",
+                _mission?.TargetSettlementName ?? "arrived",
+                ReportFileName));
             _activeReport.Phase = GuildLoopPhase.EnterTown;
 
             MapTradeVanillaTradeDriver.ProbeTradeApi(out var probeDetail);
@@ -221,13 +312,30 @@ namespace BlacksmithGuild.GuildLoop
                     ? "TryPackAnimalBuy"
                     : "TryVanillaBuy";
                 AddStep(step, "Success", buyDetail);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.FromTradeExecution(
+                    CurrentCycleId,
+                    "MapTradeVanillaTradeDriver",
+                    _activeReport.TradeExecution,
+                    buyDetail));
             }
             else
             {
                 var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
                     ? "TryPackAnimalBuy"
                     : "TryVanillaBuy";
-                AddStep(step, "Blocked", buyDetail ?? probeDetail ?? "VisibleTradeDriverUnavailable");
+                var blockDetail = buyDetail ?? probeDetail ?? "VisibleTradeDriverUnavailable";
+                AddStep(step, "Blocked", blockDetail);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "MapTradeVanillaTradeDriver",
+                    "Governor",
+                    GovernorActivityHandoffFactory.BranchFromMission(_mission),
+                    step,
+                    blockDetail,
+                    _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                        ? "horse_delta_missing"
+                        : "trade_delta_missing",
+                    "BlacksmithGuild_MapTradeCert.json"));
                 if (!DevToolsConfig.GuildLoopAllowTravelOnlyIfTradeBlocked)
                 {
                     Complete("Blocked", buyDetail ?? "trade driver unavailable");
@@ -235,6 +343,15 @@ namespace BlacksmithGuild.GuildLoop
                 }
 
                 AddStep("TravelOnlyCert", "Success", "trade blocked; travel-only cert path");
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "Governor",
+                    "EconomicLoopCert",
+                    GovernorActivityBranch.Trade,
+                    "TravelOnlyCert",
+                    "movement checkpoint only; economic delta not proven",
+                    "trade_delta_missing",
+                    ReportFileName));
             }
 
             RunForgeHandoff(source);
@@ -248,6 +365,16 @@ namespace BlacksmithGuild.GuildLoop
                 BeforeCharcoal = SmithingAdvisoryPlanner.BuildReserveHealth().CharcoalHave,
                 BeforeHardwood = SmithingAdvisoryPlanner.BuildReserveHealth().HardwoodHave
             };
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Dictated(
+                CurrentCycleId,
+                "Governor",
+                "Forge",
+                GovernorActivityBranch.SmithingPrep,
+                "ForgeHandoff",
+                "arrival checkpoint complete; test bounded smithing prep",
+                GovernorActivityHandoffFactory.ProofForBranch(GovernorActivityBranch.SmithingPrep),
+                "BlacksmithGuild_BlacksmithAutomation.json",
+                "verify materials and stamina deltas or blocked reason"));
 
             if (DevToolsConfig.GuildLoopAutoRunForgeHandoff
                 && SmithingSmeltService.TrySmeltOneLootWeaponNow(source))
@@ -255,6 +382,14 @@ namespace BlacksmithGuild.GuildLoop
                 var smelt = SmithingSmeltService.LastExecutionResult;
                 _activeReport.ForgeHandoff.Result = "RunWeaponSmeltNow";
                 AddStep("TryWeaponSmelt", "Success", smelt?.WeaponName ?? "smelt ok");
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                    CurrentCycleId,
+                    "SmithingSmeltService",
+                    "Governor",
+                    GovernorActivityBranch.SmithingPrep,
+                    "TryWeaponSmelt",
+                    smelt?.WeaponName ?? "smelt ok",
+                    "BlacksmithGuild_BlacksmithAutomation.json"));
             }
             else if (!string.IsNullOrWhiteSpace(SmithingSmeltService.LastBlockedReason))
             {
@@ -264,6 +399,15 @@ namespace BlacksmithGuild.GuildLoop
                         ? "Blocked"
                         : "Blocked",
                     SmithingSmeltService.LastBlockedReason);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "SmithingSmeltService",
+                    "Governor",
+                    GovernorActivityBranch.SmithingPrep,
+                    "TryWeaponSmelt",
+                    SmithingSmeltService.LastBlockedReason,
+                    "smithing_delta_missing",
+                    "BlacksmithGuild_BlacksmithAutomation.json"));
             }
 
             if (DevToolsConfig.GuildLoopAutoRunForgeHandoff
@@ -274,14 +418,43 @@ namespace BlacksmithGuild.GuildLoop
                 _activeReport.ForgeHandoff.AfterHardwood = after.HardwoodHave;
                 _activeReport.ForgeHandoff.Result = "RunBlacksmithAutomationNow";
                 AddStep("ForgeHandoff", "Success", _activeReport.ForgeHandoff.Result);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Observed(
+                    CurrentCycleId,
+                    "BlacksmithAutomationService",
+                    "Governor",
+                    GovernorActivityBranch.SmithingPrep,
+                    "ForgeHandoff",
+                    _activeReport.ForgeHandoff.Result,
+                    "BlacksmithGuild_BlacksmithAutomation.json"));
             }
             else
             {
                 _activeReport.ForgeHandoff.Result = BlacksmithAutomationService.LastBlockedReason ?? "skipped";
                 AddStep("ForgeHandoff", "Blocked", _activeReport.ForgeHandoff.Result);
+                AddGovernorHandoff(GovernorActivityHandoffFactory.Blocked(
+                    CurrentCycleId,
+                    "BlacksmithAutomationService",
+                    "Governor",
+                    GovernorActivityBranch.SmithingPrep,
+                    "ForgeHandoff",
+                    _activeReport.ForgeHandoff.Result,
+                    "smithing_delta_missing",
+                    "BlacksmithGuild_BlacksmithAutomation.json"));
             }
 
             Complete("Complete", null);
+        }
+
+        private static int CurrentCycleId => 1;
+
+        private static void AddGovernorHandoff(GovernorActivityHandoff handoff)
+        {
+            if (_activeReport == null || handoff == null)
+            {
+                return;
+            }
+
+            _activeReport.GovernorActivityHandoffs.Add(handoff);
         }
 
         private static GuildLoopCapabilities ProbeCapabilities()
@@ -307,6 +480,11 @@ namespace BlacksmithGuild.GuildLoop
             _activeReport.NextRecommendedCommand =
                 verdict == "Complete" ? RunAutonomousGuildLoopNowCommand : "manual trade or RunAutonomousVisibleTradeRouteNow";
             _activeReport.GeneratedUtc = DateTime.UtcNow.ToString("o");
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Finalized(
+                CurrentCycleId,
+                "AutonomousGuildLoopService",
+                verdict,
+                reason ?? _activeReport.NextRecommendedCommand));
             WriteReport();
 
             if (verdict == "Complete")
@@ -332,6 +510,11 @@ namespace BlacksmithGuild.GuildLoop
                 BlockedReason = reason,
                 Capabilities = ProbeCapabilities()
             };
+            AddGovernorHandoff(GovernorActivityHandoffFactory.Finalized(
+                CurrentCycleId,
+                "AutonomousGuildLoopService",
+                verdict,
+                reason));
             WriteReport();
             _activeReport = null;
         }
@@ -386,6 +569,9 @@ namespace BlacksmithGuild.GuildLoop
             sb.AppendLine("  \"tradeExecution\": ");
             AppendTradeExecution(sb, report.TradeExecution, "  ");
             sb.AppendLine(",");
+            sb.AppendLine("  \"governorActivityHandoffs\": [");
+            AppendGovernorActivityHandoffs(sb, report.GovernorActivityHandoffs);
+            sb.AppendLine("  ],");
             sb.AppendLine("  \"cycleSteps\": [");
             for (var i = 0; i < report.CycleSteps.Count; i++)
             {
@@ -456,6 +642,32 @@ namespace BlacksmithGuild.GuildLoop
             sb.Append($"{indent}}}");
         }
 
+        private static void AppendGovernorActivityHandoffs(StringBuilder sb, List<GovernorActivityHandoff> handoffs)
+        {
+            for (var i = 0; i < handoffs.Count; i++)
+            {
+                var handoff = handoffs[i];
+                sb.AppendLine("    {");
+                sb.AppendLine($"      \"generatedUtc\": \"{Escape(handoff.GeneratedUtc)}\",");
+                sb.AppendLine($"      \"cycleId\": {handoff.CycleId},");
+                sb.AppendLine($"      \"sourceEngine\": {NullableString(handoff.SourceEngine)},");
+                sb.AppendLine($"      \"targetEngine\": {NullableString(handoff.TargetEngine)},");
+                sb.AppendLine($"      \"branch\": \"{handoff.Branch}\",");
+                sb.AppendLine($"      \"phase\": \"{handoff.Phase}\",");
+                sb.AppendLine($"      \"authority\": \"{handoff.Authority}\",");
+                sb.AppendLine($"      \"actionName\": {NullableString(handoff.ActionName)},");
+                sb.AppendLine($"      \"observationSummary\": {NullableString(handoff.ObservationSummary)},");
+                sb.AppendLine($"      \"gateVerdict\": {NullableString(handoff.GateVerdict)},");
+                sb.AppendLine($"      \"proofRequired\": {NullableString(handoff.ProofRequired)},");
+                sb.AppendLine($"      \"evidenceFile\": {NullableString(handoff.EvidenceFile)},");
+                sb.AppendLine($"      \"nextEngineHint\": {NullableString(handoff.NextEngineHint)},");
+                sb.AppendLine($"      \"isCheckpoint\": {(handoff.IsCheckpoint ? "true" : "false")},");
+                sb.AppendLine($"      \"isTerminal\": {(handoff.IsTerminal ? "true" : "false")}");
+                sb.Append(i < handoffs.Count - 1 ? "    }," : "    }");
+                sb.AppendLine();
+            }
+        }
+
         private static string Escape(string value) =>
             (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
@@ -486,6 +698,7 @@ namespace BlacksmithGuild.GuildLoop
         public GuildLoopForgeHandoffBlock ForgeHandoff { get; set; }
         public GuildLoopCohesionSummary CohesionSummary { get; set; }
         public MapTradeExecutionResult TradeExecution { get; set; }
+        public List<GovernorActivityHandoff> GovernorActivityHandoffs { get; set; } = new List<GovernorActivityHandoff>();
         public List<GuildLoopCycleStep> CycleSteps { get; set; } = new List<GuildLoopCycleStep>();
     }
 
