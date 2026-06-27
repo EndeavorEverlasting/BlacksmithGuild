@@ -23,10 +23,14 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Blocked(request, detail + "; horse-market action path is not proven by this adapter yet", "horse_market_action_not_implemented");
+                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; horse-market action step is pending implementation", "horse_market_action_pending");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "Prepare pack-animal evaluation only after market evidence, cost evidence, and capacity need are present."));
+                return blocked;
             }
 
-            return CampaignActivityDispatcher.Deferred(request, detail + "; horse-market proposal recorded only");
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; horse-market proposal recorded only");
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "Use the horse-market narrative to identify missing pack-animal and market evidence."));
+            return deferred;
         }
     }
 }
