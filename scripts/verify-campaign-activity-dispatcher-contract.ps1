@@ -38,6 +38,7 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityEngin
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityEngineNarratives.cs' -Pattern 'public static CampaignActivityNarrativeDetail Travel'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityEngineNarratives.cs' -Pattern 'public static CampaignActivityNarrativeDetail HorseMarket'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityEngineNarratives.cs' -Pattern 'public static CampaignActivityNarrativeDetail Companion'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityEngineNarratives.cs' -Pattern 'private static string Value'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'narrativeDetails'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'AppendNarrativeDetails'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'AppendStringList(sb, "inputs"'
