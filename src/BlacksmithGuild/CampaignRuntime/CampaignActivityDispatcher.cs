@@ -6,6 +6,8 @@ namespace BlacksmithGuild.CampaignRuntime
 {
     public static class CampaignActivityDispatcher
     {
+        private const string DispatcherEngine = "ActivityDispatcher";
+
         private static readonly ICampaignActivityAdapter[] Adapters =
         {
             new FoodActivityAdapter(),
@@ -21,6 +23,14 @@ namespace BlacksmithGuild.CampaignRuntime
 
             try
             {
+                CampaignActivityHandoffRecorder.RecordRequest(
+                    request,
+                    request.SourceEngine,
+                    DispatcherEngine,
+                    "dispatch_received",
+                    CampaignActivityStatus.Started.ToString(),
+                    "Dispatcher received governor activity request for routing.");
+
                 if (request.MutationAuthorized && !DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution)
                 {
                     return Result(request, CampaignActivityStatus.Blocked, "bounded execution disabled by governor config", false, "bounded_execution_disabled");
@@ -30,7 +40,16 @@ namespace BlacksmithGuild.CampaignRuntime
                 {
                     if (Adapters[i].CanHandle(request))
                     {
-                        return Normalize(request, Adapters[i].TryHandle(request));
+                        var adapterName = Adapters[i].GetType().Name;
+                        CampaignActivityHandoffRecorder.RecordRequest(
+                            request,
+                            DispatcherEngine,
+                            adapterName,
+                            "adapter_selected",
+                            CampaignActivityStatus.Started.ToString(),
+                            "Dispatcher selected adapter for target engine " + request.TargetEngine + ".");
+
+                        return Normalize(request, Adapters[i].TryHandle(request), adapterName);
                     }
                 }
 
@@ -59,7 +78,7 @@ namespace BlacksmithGuild.CampaignRuntime
 
         public static CampaignActivityResult Completed(CampaignActivityRequest request, string detail, bool inventoryDeltaObserved, bool goldDeltaObserved)
         {
-            return new CampaignActivityResult
+            var result = new CampaignActivityResult
             {
                 ActivityId = request?.ActivityId,
                 CompletedUtc = DateTime.UtcNow.ToString("o"),
@@ -70,9 +89,17 @@ namespace BlacksmithGuild.CampaignRuntime
                 InventoryDeltaObserved = inventoryDeltaObserved,
                 GoldDeltaObserved = goldDeltaObserved
             };
+
+            return CampaignActivityHandoffRecorder.RecordResult(
+                request,
+                result,
+                request?.TargetEngine,
+                CampaignActivityEngine.Governor.ToString(),
+                "adapter_completed",
+                detail);
         }
 
-        private static CampaignActivityResult Normalize(CampaignActivityRequest request, CampaignActivityResult result)
+        private static CampaignActivityResult Normalize(CampaignActivityRequest request, CampaignActivityResult result, string adapterName)
         {
             if (result == null)
             {
@@ -89,12 +116,18 @@ namespace BlacksmithGuild.CampaignRuntime
                 return Result(request, CampaignActivityStatus.Failed, "adapter reported a change while request was propose-only", false, "mutation_gate_violation");
             }
 
-            return result;
+            return CampaignActivityHandoffRecorder.RecordResult(
+                request,
+                result,
+                adapterName,
+                CampaignActivityEngine.Governor.ToString(),
+                "adapter_result",
+                result.Detail);
         }
 
         private static CampaignActivityResult Result(CampaignActivityRequest request, CampaignActivityStatus status, string detail, bool mutationApplied, string failureClass)
         {
-            return new CampaignActivityResult
+            var result = new CampaignActivityResult
             {
                 ActivityId = request?.ActivityId,
                 CompletedUtc = DateTime.UtcNow.ToString("o"),
@@ -106,6 +139,14 @@ namespace BlacksmithGuild.CampaignRuntime
                 GoldDeltaObserved = false,
                 FailureClass = failureClass
             };
+
+            return CampaignActivityHandoffRecorder.RecordResult(
+                request,
+                result,
+                DispatcherEngine,
+                CampaignActivityEngine.Governor.ToString(),
+                "dispatch_result",
+                detail);
         }
     }
 }
