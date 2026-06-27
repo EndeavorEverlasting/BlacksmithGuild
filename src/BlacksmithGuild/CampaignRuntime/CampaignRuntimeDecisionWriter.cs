@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using TaleWorlds.Library;
@@ -106,7 +107,8 @@ namespace BlacksmithGuild.CampaignRuntime
             sb.AppendLine($"    \"requiresInventoryDelta\": {JsonBool(activity.RequiresInventoryDelta)},");
             sb.AppendLine($"    \"requiresGoldDelta\": {JsonBool(activity.RequiresGoldDelta)},");
             AppendString(sb, "expectedProof", activity.ExpectedProof, comma: true, indent: "    ");
-            AppendString(sb, "blockedReason", activity.BlockedReason, comma: false, indent: "    ");
+            AppendString(sb, "blockedReason", activity.BlockedReason, comma: true, indent: "    ");
+            AppendHandoffTrail(sb, "handoffTrail", activity.HandoffTrail, comma: false, indent: "    ");
             sb.Append(comma ? "  }," : "  }");
             sb.AppendLine();
         }
@@ -134,8 +136,51 @@ namespace BlacksmithGuild.CampaignRuntime
             sb.AppendLine($"    \"mutationApplied\": {JsonBool(result.MutationApplied)},");
             sb.AppendLine($"    \"inventoryDeltaObserved\": {JsonBool(result.InventoryDeltaObserved)},");
             sb.AppendLine($"    \"goldDeltaObserved\": {JsonBool(result.GoldDeltaObserved)},");
-            AppendString(sb, "failureClass", result.FailureClass, comma: false, indent: "    ");
+            AppendString(sb, "failureClass", result.FailureClass, comma: true, indent: "    ");
+            AppendHandoffTrail(sb, "handoffTrail", result.HandoffTrail, comma: false, indent: "    ");
             sb.Append(comma ? "  }," : "  }");
+            sb.AppendLine();
+        }
+
+        private static void AppendHandoffTrail(StringBuilder sb, string name, List<CampaignActivityHandoff> trail, bool comma, string indent)
+        {
+            sb.Append(indent).Append("\"").Append(Escape(name)).Append("\": ");
+            if (trail == null || trail.Count == 0)
+            {
+                sb.Append("[]");
+                if (comma)
+                {
+                    sb.Append(",");
+                }
+                sb.AppendLine();
+                return;
+            }
+
+            sb.AppendLine("[");
+            for (var i = 0; i < trail.Count; i++)
+            {
+                var handoff = trail[i];
+                sb.Append(indent).AppendLine("  {");
+                AppendString(sb, "handoffId", handoff.HandoffId, comma: true, indent: indent + "    ");
+                AppendString(sb, "activityId", handoff.ActivityId, comma: true, indent: indent + "    ");
+                AppendString(sb, "occurredUtc", handoff.OccurredUtc, comma: true, indent: indent + "    ");
+                AppendString(sb, "fromEngine", handoff.FromEngine, comma: true, indent: indent + "    ");
+                AppendString(sb, "toEngine", handoff.ToEngine, comma: true, indent: indent + "    ");
+                AppendString(sb, "governorMode", handoff.GovernorMode, comma: true, indent: indent + "    ");
+                AppendString(sb, "stage", handoff.Stage, comma: true, indent: indent + "    ");
+                AppendString(sb, "status", handoff.Status, comma: true, indent: indent + "    ");
+                sb.Append(indent).AppendLine($"    \"mutationAuthorized\": {JsonBool(handoff.MutationAuthorized)},");
+                sb.Append(indent).AppendLine($"    \"mutationApplied\": {JsonBool(handoff.MutationApplied)},");
+                AppendString(sb, "expectedProof", handoff.ExpectedProof, comma: true, indent: indent + "    ");
+                AppendString(sb, "detail", handoff.Detail, comma: false, indent: indent + "    ");
+                sb.Append(indent).Append(i < trail.Count - 1 ? "  }," : "  }");
+                sb.AppendLine();
+            }
+            sb.Append(indent).Append("]");
+            if (comma)
+            {
+                sb.Append(",");
+            }
             sb.AppendLine();
         }
 
