@@ -1,4 +1,4 @@
-using BlacksmithGuild.CampaignRuntime;
+﻿using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.Forge;
@@ -11,6 +11,7 @@ using BlacksmithGuild.Treasury;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 
 namespace BlacksmithGuild.DevTools
@@ -423,6 +424,11 @@ namespace BlacksmithGuild.DevTools
                 return AssistiveTownToTownProbeService.LastFailReason ?? "assistive town-trade probe failed";
             }
 
+            if (commandName == DevSaveService.SaveDevStartSaveNowCommand)
+            {
+                return DevSaveService.LastFailReason ?? "dev save failed";
+            }
+
             if (commandName == CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand ||
                 commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
                 commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
@@ -448,6 +454,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
                 || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == DevSaveService.SaveDevStartSaveNowCommand
                 || commandName == AutoTravelService.AutoTravelToRecommendedCommand
                 || commandName == AutoTravelService.AutoTravelChoice1Command
                 || commandName == AutoTravelService.AutoTravelChoice2Command
@@ -471,6 +478,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
                 || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == DevSaveService.SaveDevStartSaveNowCommand
                 || commandName == SmithingSafeActionService.RunSmithingSafeActionNowCommand
                 || commandName == AutoTravelService.AutoTravelToRecommendedCommand
                 || commandName == AutoTravelService.AutoTravelChoice1Command
@@ -561,6 +569,10 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case AutoCharacterBuildService.ApplyAutoCharacterBuildCommand:
                     return AutoCharacterBuildService.TryApplyFromCommand();
+                case DevSaveService.SaveDevStartSaveNowCommand:
+                    return DevSaveService.SaveDevStartNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand:
                     return AutoCharacterBuildService.ShowProfiles();
                 case AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand:

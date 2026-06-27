@@ -33,6 +33,7 @@ function Get-DevCommandNames {
         'ShowHorseMarketIntel',
         'RankHorseMarketActions',
         'ApplyAutoCharacterBuild',
+        'SaveDevStartSaveNow',
         'ShowAutoCharacterBuildProfiles',
         'ShowAutoCharacterBuildProfile',
         'SetAutoCharacterBuildForgeQuartermasterWarlord',
@@ -92,7 +93,11 @@ function Get-DevCommandNames {
         'AnalyzeClanRoles',
         'ProbeCourtshipApi',
         'AssistiveTownToTownProbe',
-        'AssistiveLeaveTownAndTravel'
+        'AssistiveLeaveTownAndTravel',
+        'RunCampaignGovernorCycleNow',
+        'ShowCampaignGovernorDecision',
+        'PauseCampaignGovernorAutomation',
+        'ResumeCampaignGovernorAutomation'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }

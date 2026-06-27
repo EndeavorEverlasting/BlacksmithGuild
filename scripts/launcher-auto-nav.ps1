@@ -27,6 +27,7 @@ $ErrorActionPreference = 'Stop'
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
+$script:operatorGuardedClickDeniedCount = 0
 
 function Test-NavLockActive {
     if (-not (Test-Path -LiteralPath $lockPath)) { return $false }
@@ -64,6 +65,23 @@ function Write-LaunchLog {
     $line = "[{0}] launcher-auto: {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
     Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
     Write-Host $line -ForegroundColor DarkGray
+}
+
+function Invoke-OperatorInteractiveFocusPrompt {
+    param([string]$Reason)
+    if ($env:TBG_OPERATOR_INTERACTIVE_FOCUS -ne '1') { return $false }
+    Write-LaunchLog "LAUNCH_STATE=operator_focus_required reason=$Reason"
+    Write-Host ''
+    Write-Host 'Launcher focus required.' -ForegroundColor Yellow
+    Write-Host 'Bring the Bannerlord launcher to the front, then press Enter to continue.' -ForegroundColor Yellow
+    Write-Host 'Press C to cancel.' -ForegroundColor Yellow
+    $answer = Read-Host 'Continue or C'
+    if ($answer -and $answer.Trim().ToUpperInvariant() -eq 'C') {
+        Write-LaunchLog 'LAUNCH_STATE=user_cancelled operator focus prompt'
+        throw 'USER CANCELLED: launcher focus unavailable'
+    }
+    $script:operatorGuardedClickDeniedCount = 0
+    return $true
 }
 
 function Get-NavExternalStateMode {
@@ -3116,9 +3134,14 @@ while ((Get-Date) -lt $deadline) {
             continue
         }
         if (-not (Test-NavGuardedLauncherClick -Intent $LaunchIntent)) {
+            $script:operatorGuardedClickDeniedCount++
+            if ($script:operatorGuardedClickDeniedCount -ge 10) {
+                Invoke-OperatorInteractiveFocusPrompt -Reason 'guarded_click_denied' | Out-Null
+            }
             Start-Sleep -Milliseconds $PollMs
             continue
         }
+        $script:operatorGuardedClickDeniedCount = 0
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }

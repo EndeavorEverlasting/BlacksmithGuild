@@ -4,6 +4,7 @@ using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
@@ -52,6 +53,7 @@ namespace BlacksmithGuild.DevTools
                 GuildLoopService.RunGuildLoopNowCommand,
                 CharacterDoctrineService.ShowCharacterDoctrineCommand,
                 AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
+                DevSaveService.SaveDevStartSaveNowCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildForgeQuartermasterWarlordCommand,
