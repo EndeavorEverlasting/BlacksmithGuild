@@ -11,6 +11,12 @@ namespace BlacksmithGuild.CampaignRuntime
         private static readonly ICampaignActivityAdapter[] Adapters =
         {
             new FoodActivityAdapter(),
+            new MarketActivityAdapter(),
+            new TradeActivityAdapter(),
+            new SmithingActivityAdapter(),
+            new TravelActivityAdapter(),
+            new HorseMarketActivityAdapter(),
+            new CompanionActivityAdapter(),
             new DeferredActivityAdapter()
         };
 
