@@ -96,6 +96,8 @@ namespace BlacksmithGuild.CampaignRuntime
                 GoldDeltaObserved = goldDeltaObserved
             };
 
+            CampaignActivityNarrativeFactory.AttachDefault(result, request, detail, null);
+
             return CampaignActivityHandoffRecorder.RecordResult(
                 request,
                 result,
@@ -122,6 +124,8 @@ namespace BlacksmithGuild.CampaignRuntime
                 return Result(request, CampaignActivityStatus.Failed, "adapter reported a change while request was propose-only", false, "mutation_gate_violation");
             }
 
+            CampaignActivityNarrativeFactory.AttachDefault(result, request, result.Detail, result.FailureClass);
+
             return CampaignActivityHandoffRecorder.RecordResult(
                 request,
                 result,
@@ -145,6 +149,8 @@ namespace BlacksmithGuild.CampaignRuntime
                 GoldDeltaObserved = false,
                 FailureClass = failureClass
             };
+
+            CampaignActivityNarrativeFactory.AttachDefault(result, request, detail, failureClass);
 
             return CampaignActivityHandoffRecorder.RecordResult(
                 request,
