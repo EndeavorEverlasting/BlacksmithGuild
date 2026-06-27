@@ -59,7 +59,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 return null;
             }
 
-            if (request != null)
+            if (request != null && result.HandoffTrail.Count == 0)
             {
                 for (var i = 0; i < request.HandoffTrail.Count; i++)
                 {
