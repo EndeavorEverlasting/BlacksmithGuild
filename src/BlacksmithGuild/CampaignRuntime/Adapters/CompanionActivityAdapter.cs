@@ -21,10 +21,14 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Blocked(request, detail + "; companion action path must be proven before mutation", "companion_execution_not_implemented");
+                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; companion action step is pending implementation", "companion_action_pending");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Companion(request, "Prepare tavern recruitment evaluation only after candidate, cost, and roster evidence are present."));
+                return blocked;
             }
 
-            return CampaignActivityDispatcher.Deferred(request, detail + "; companion proposal recorded only");
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; companion proposal recorded only");
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.Companion(request, "Use the companion narrative to identify missing candidate, cost, or roster evidence."));
+            return deferred;
         }
     }
 }
