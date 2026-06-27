@@ -28,15 +28,29 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/ICampaignActivityAdap
 
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'public static CampaignActivityResult Dispatch(CampaignActivityRequest request)'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'ICampaignActivityAdapter[] Adapters'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'new FoodActivityAdapter()'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'new DeferredActivityAdapter()'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignActivityDispatcher.cs' -Pattern 'request.MutationAuthorized'
 
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'public sealed class FoodActivityAdapter'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'AcquireFoodBeforeRunwayBreach'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodInventoryAnalyzer.Analyze'
-Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodDemandPolicy.TargetFoodBufferDays'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodProcurementPlanner.Plan'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/DeferredActivityAdapter.cs' -Pattern 'public sealed class DeferredActivityAdapter'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/DeferredActivityAdapter.cs' -Pattern 'engine_adapter_not_implemented'
+
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProcurementPlan.cs' -Pattern 'public sealed class FoodProcurementPlan'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProcurementPlan.cs' -Pattern 'public static class FoodProcurementPlanner'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProcurementPlan.cs' -Pattern 'FoodShortfall'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProcurementPlan.cs' -Pattern 'UniqueFoodTypeShortfall'
+Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodProcurementPlan.cs' -Pattern 'TargetFoodBufferDays'
 
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public CampaignActivityResult LatestActivityResult'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignActivityDispatcher.Dispatch(decision.ProposedActivity)'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs' -Pattern 'latestActivityResult'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'RunCampaignGovernorCycleNowCommand'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'ShowCampaignGovernorDecisionCommand'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'PauseCampaignGovernorAutomationCommand'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/DevCommandRegistry.cs' -Pattern 'ResumeCampaignGovernorAutomationCommand'
 
 Write-Host 'Campaign activity dispatcher contract: PASS'
