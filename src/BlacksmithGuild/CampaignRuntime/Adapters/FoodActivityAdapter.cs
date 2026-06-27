@@ -20,39 +20,15 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
         public CampaignActivityResult TryHandle(CampaignActivityRequest request)
         {
             var food = FoodInventoryAnalyzer.Analyze(MobileParty.MainParty);
-            var targetFoodItems = EstimateTargetFoodItems(food.TroopCount);
-            var shortfall = Math.Max(0, targetFoodItems - food.TotalFoodItems);
-            var detail =
-                "food plan: current=" + food.TotalFoodItems
-                + " target=" + targetFoodItems
-                + " shortfall=" + shortfall
-                + " uniqueTypes=" + food.UniqueFoodTypes
-                + " troops=" + food.TroopCount
-                + " dailyDemand=" + food.EstimatedDailyFoodDemand.ToString("0.##")
-                + " daysRemaining=" + food.EstimatedDaysRemaining.ToString("0.##")
-                + " daysUntilFloor=" + food.EstimatedDaysUntilFloor.ToString("0.##")
-                + " forecast=" + food.ForecastStatus
-                + " expectedProof=" + request.ExpectedProof;
+            var plan = FoodProcurementPlanner.Plan(food);
+            var detail = plan.ToDetailString() + " expectedProof=" + request.ExpectedProof;
 
             if (!request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Deferred(
-                    request,
-                    detail + "; execution disabled, proposal recorded only");
+                return CampaignActivityDispatcher.Deferred(request, detail + "; proposal recorded only");
             }
 
-            return CampaignActivityDispatcher.Blocked(
-                request,
-                detail + "; food purchase execution adapter is not implemented yet",
-                "food_execution_not_implemented");
-        }
-
-        private static int EstimateTargetFoodItems(int troopCount)
-        {
-            var demand = FoodDemandPolicy.EstimateDailyDemand(troopCount);
-            return Math.Max(
-                FoodProtectionPolicy.MinimumFoodItemFloor,
-                (int)Math.Ceiling(demand * FoodDemandPolicy.TargetFoodBufferDays));
+            return CampaignActivityDispatcher.Blocked(request, detail + "; procurement action path is not implemented yet", "food_action_path_not_implemented");
         }
     }
 }
