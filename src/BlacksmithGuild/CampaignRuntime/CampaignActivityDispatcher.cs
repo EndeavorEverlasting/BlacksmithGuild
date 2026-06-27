@@ -1,5 +1,6 @@
 using System;
 using BlacksmithGuild.CampaignRuntime.Adapters;
+using BlacksmithGuild.DevTools;
 
 namespace BlacksmithGuild.CampaignRuntime
 {
@@ -19,6 +20,11 @@ namespace BlacksmithGuild.CampaignRuntime
 
             try
             {
+                if (request.MutationAuthorized && !DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution)
+                {
+                    return Result(request, CampaignActivityStatus.Blocked, "bounded execution disabled by governor config", false, "bounded_execution_disabled");
+                }
+
                 for (var i = 0; i < Adapters.Length; i++)
                 {
                     if (Adapters[i].CanHandle(request))
