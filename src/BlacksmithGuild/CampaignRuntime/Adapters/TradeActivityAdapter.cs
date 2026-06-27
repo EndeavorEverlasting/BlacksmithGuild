@@ -22,10 +22,14 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                return CampaignActivityDispatcher.Blocked(request, detail + "; trade execution path must be proven before mutation", "trade_execution_not_implemented");
+                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; trade action step is pending implementation", "trade_action_pending");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Trade(request, "Use route and market evidence to prepare a future trade step without changing inventory or gold."));
+                return blocked;
             }
 
-            return CampaignActivityDispatcher.Deferred(request, detail + "; trade proposal recorded only");
+            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; trade proposal recorded only");
+            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.Trade(request, "Use the trade narrative to compare route context and identify missing evidence."));
+            return deferred;
         }
     }
 }
