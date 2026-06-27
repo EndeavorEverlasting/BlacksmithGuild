@@ -8,7 +8,8 @@ namespace BlacksmithGuild.CampaignRuntime
     {
         private static readonly ICampaignActivityAdapter[] Adapters =
         {
-            new FoodActivityAdapter()
+            new FoodActivityAdapter(),
+            new DeferredActivityAdapter()
         };
 
         public static CampaignActivityResult Dispatch(CampaignActivityRequest request)
