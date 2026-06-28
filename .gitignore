@@ -72,6 +72,7 @@ BlacksmithGuild_HerdLedger.json
 # Scratch PR11 runner sessions (local only); curated PR14 proof folders may be committed
 docs/evidence/live-cert/*-pr11-launch-attach-execute/
 docs/evidence/live-cert/*-autonomous-assist-session/
+docs/evidence/reboot*-reboot-session/
 !docs/evidence/live-cert/20260624-pr14-consumer-live-continue-blocker/
 !docs/evidence/live-cert/20260624-pr14-consumer-live-continue-blocker/**
 
