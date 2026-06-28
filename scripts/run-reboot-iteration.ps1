@@ -19,6 +19,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'reboot-context-classifier.ps1')
+. (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
 
 if ($MaxIterations -lt 1) { throw 'MaxIterations must be >= 1' }
 if ($RepeatThreshold -lt 2) { throw 'RepeatThreshold must be >= 2' }
@@ -29,6 +30,10 @@ $rebootDir = Join-Path $repoRoot (Join-Path 'docs\evidence' $sessionId)
 New-Item -ItemType Directory -Force -Path $rebootDir | Out-Null
 $commandsRun = New-Object System.Collections.Generic.List[string]
 $iterationRecords = New-Object System.Collections.Generic.List[object]
+$operatorStopRequested = $false
+$operatorStopReason = $null
+$script:RebootOperatorStopRequested = $false
+$script:RebootRepoRoot = $repoRoot
 $executeTimeout = Get-RebootActionTimeoutSec -ActionClass $ActionTimeoutClass `
     -NormalActionTimeoutSec $NormalActionTimeoutSec -LongTravelTimeoutSec $LongTravelTimeoutSec `
     -LargeSmithingTimeoutSec $LargeSmithingTimeoutSec -MassTradeTimeoutSec $MassTradeTimeoutSec
@@ -57,6 +62,26 @@ function New-RebootMissingEvidenceContext {
     return [pscustomobject]$ctx
 }
 
+function Stop-RebootForOperator {
+    param([string]$Reason)
+    $script:RebootOperatorStopRequested = $true
+    $script:operatorStopRequested = $true
+    $script:operatorStopReason = $Reason
+    try { Write-GovernorStopSentinel -RepoRoot $script:RebootRepoRoot -Reason $Reason | Out-Null } catch { }
+}
+
+Clear-GovernorStopSentinel -RepoRoot $repoRoot
+$cancelHandler = $null
+try {
+    $cancelHandler = [System.ConsoleCancelEventHandler]{
+        param($cancelSender, $cancelEventArgs)
+        $cancelEventArgs.Cancel = $true
+        Stop-RebootForOperator -Reason 'operator_stop_ctrl_c'
+        Write-Host 'Forge Reboot: Ctrl+C requested, stopping after current child process exits...' -ForegroundColor Yellow
+    }
+    [Console]::CancelKeyPress += $cancelHandler
+} catch { $cancelHandler = $null }
+
 Write-Host 'The Blacksmith Guild - Forge Reboot' -ForegroundColor Cyan
 Write-Host "Evidence: $rebootDir"
 Write-Host "Normal action timeout: ${NormalActionTimeoutSec}s; action class=$ActionTimeoutClass execute timeout=${executeTimeout}s"
@@ -69,6 +94,12 @@ $latestContext = $null
 $latestEvidence = $null
 
 for ($i = 1; $i -le $MaxIterations; $i++) {
+    if ($script:RebootOperatorStopRequested -or (Test-GovernorStopRequested -RepoRoot $repoRoot)) {
+        $operatorStopRequested = $true
+        $operatorStopReason = if ($operatorStopReason) { $operatorStopReason } else { 'operator_stop_forge_stop' }
+        $latestContext = New-RebootMissingEvidenceContext -Reason $operatorStopReason
+        break
+    }
     $runStartedUtc = (Get-Date).ToUniversalTime()
     $runnerArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1'),
         '-LaunchIntent',$LaunchIntent,'-ProbeTimeoutSec',$NormalActionTimeoutSec,'-ExecuteTimeoutSec',$executeTimeout)
@@ -91,6 +122,11 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $repeatCount = if ($matchesPrevious) { $repeatCount + 1 } else { 1 }
     $iterationRecords.Add([ordered]@{ iteration = $i; runnerExit = $runnerExit; evidencePath = $evidencePath; outputPath = $outputPath; repeatCount = $repeatCount; normalizedContext = $context }) | Out-Null
     Write-RebootJson -Object @($iterationRecords.ToArray()) -Path (Join-Path $rebootDir 'reboot-iterations.json') | Out-Null
+    if ($script:RebootOperatorStopRequested -or (Test-GovernorStopRequested -RepoRoot $repoRoot) -or $context.stopReason -eq 'operator_stop_forge_stop') {
+        $operatorStopRequested = $true
+        $operatorStopReason = if ($context.stopReason) { [string]$context.stopReason } else { 'operator_stop_forge_stop' }
+        break
+    }
     if ($matchesPrevious -and $repeatCount -ge $RepeatThreshold) {
         $stableGap = $true
         Write-RebootStableGapHandoff -Context $context -EvidenceA $previousEvidence -EvidenceB $evidencePath `
@@ -101,11 +137,17 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $previousEvidence = $evidencePath
 }
 
-$classification = if ($stableGap) { 'stable_gap' } elseif ($DryRun) { 'dry_run_no_repeat' } else { 'max_iterations_no_repeat' }
+if ($cancelHandler) {
+    try { [Console]::CancelKeyPress -= $cancelHandler } catch { }
+}
+
+$classification = if ($stableGap) { 'stable_gap' } elseif ($operatorStopRequested) { $operatorStopReason } elseif ($DryRun) { 'dry_run_no_repeat' } else { 'max_iterations_no_repeat' }
 $summary = [ordered]@{
     iterationsRun = $iterationRecords.Count
     finalClassification = $classification
     repeatedContext = [bool]$stableGap
+    operatorStopRequested = [bool]$operatorStopRequested
+    operatorStopReason = $operatorStopReason
     latestEvidencePath = $latestEvidence
     latestNormalizedContext = $latestContext
     nextLocalAction = if ($stableGap) { 'open stable-gap-handoff.md and patch the named owner seam' } else { 'rerun ForgeReboot.cmd or inspect latest evidence if user-visible behavior surprised you' }
@@ -120,4 +162,5 @@ Write-RebootSummaryMarkdown -Summary ([pscustomobject]$summary) -Path (Join-Path
 Write-Host "Reboot classification: $classification"
 Write-Host "Summary: $(Join-Path $rebootDir 'reboot-summary.md')"
 if ($stableGap) { exit 2 }
+if ($operatorStopRequested) { exit 130 }
 exit 0

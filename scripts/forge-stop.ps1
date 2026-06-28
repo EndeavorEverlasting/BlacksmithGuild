@@ -46,7 +46,7 @@ if ($ForceKill) {
 
 Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='pwsh.exe'" | Where-Object {
     $_.ProcessId -ne $callerPid -and
-    $_.CommandLine -match 'run-governor-disposable-smoke|ensure-dev-save|invoke-forge-launch-operator|launcher-auto-nav|ForgeWatch|ForgeContinue'
+    $_.CommandLine -match 'run-governor-disposable-smoke|ensure-dev-save|invoke-forge-launch-operator|launcher-auto-nav|ForgeWatch|ForgeContinue|ForgeReboot|run-reboot-iteration|run-autonomous-assist-session'
 } | ForEach-Object {
     Stop-Process -Id $_.ProcessId -Force
     $killed += "shell PID $($_.ProcessId)"
