@@ -621,7 +621,11 @@ while ((Get-Date) -lt $loopDeadline) {
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
 	$targetResolution = Get-AutonomousAssistEngineTravelTarget -Readiness $ready -BannerlordRoot $bannerlordRoot -ExplicitTarget $TargetSettlement
 	$plannedBranchForTarget = if ($ready.recursiveBranchState) { [string]$ready.recursiveBranchState.nextPlannedBranch } else { $null }
-	if ($plannedBranchForTarget -eq 'travel' -and [string]::IsNullOrWhiteSpace([string]$targetResolution.target) -and -not $engineHandoffRefreshAttempted) {
+	$travelSafeNow = [bool]$ready.safeToExecuteTravel
+	# Break the cold-start handoff deadlock: the engine only plans the travel branch once a target exists,
+	# so a travel-safe surface with an empty target would otherwise never trigger a refresh. Refresh when
+	# travel is already planned OR the surface is travel-safe but the engine target is still missing.
+	if ((($plannedBranchForTarget -eq 'travel') -or $travelSafeNow) -and [string]::IsNullOrWhiteSpace([string]$targetResolution.target) -and -not $engineHandoffRefreshAttempted) {
 		$engineHandoffRefreshAttempted = $true
 		Write-SessionLog 'Travel branch requires engine target; refreshing Governor/RouteCouncil/Regent handoff before command.'
 		Invoke-AutonomousAssistEngineHandoffRefresh -BannerlordRoot $bannerlordRoot -TimeoutSec 30

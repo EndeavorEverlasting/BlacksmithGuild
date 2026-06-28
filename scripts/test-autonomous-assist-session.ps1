@@ -559,6 +559,14 @@ foreach ($needle in @(
         throw "autonomous assist runner missing operator-stop contract: $needle"
     }
 }
+# Engine handoff refresh must break the cold-start deadlock: refresh when travel is planned OR the
+# surface is travel-safe but the engine target is still missing, not only when travel is pre-planned.
+if ($runnerText -notmatch [regex]::Escape('$travelSafeNow = [bool]$ready.safeToExecuteTravel')) {
+    throw 'autonomous assist runner must read travel-safety for handoff refresh guard'
+}
+if ($runnerText -notmatch [regex]::Escape('($plannedBranchForTarget -eq ''travel'') -or $travelSafeNow')) {
+    throw 'autonomous assist runner handoff refresh must fire on travel-safe surface with missing target'
+}
 $stopText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'forge-stop.ps1') -Raw
 foreach ($needle in @("requestedBy = 'forge_stop'", 'BlacksmithGuild_AssistToggle.json')) {
     if ($stopText -notmatch [regex]::Escape($needle)) {
