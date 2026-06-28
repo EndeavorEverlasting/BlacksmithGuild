@@ -16,7 +16,11 @@ param(
     [int]$CertRetryAttempt = 0,
     [string]$ExternalStateTimelinePath = $null,
     [switch]$LaunchSetup,
-    [int]$LauncherSelectionMaxMs = 30000
+    [int]$LauncherSelectionMaxMs = 30000,
+    # Focus policy: by default the launcher respects the user's foreground window and never steals
+    # focus. Aggressive focus-steal escalation (real foreground clicks) only happens when the
+    # operator explicitly opts in with -AllowFocusSteal.
+    [switch]$AllowFocusSteal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,8 +34,23 @@ $lockMaxAgeMin = 10
 $script:navLockHeld = $false
 $script:operatorGuardedClickDeniedCount = 0
 
+function Get-NavLockOwnerPid {
+    if (-not (Test-Path -LiteralPath $lockPath)) { return 0 }
+    try {
+        $text = Get-Content -LiteralPath $lockPath -Raw -ErrorAction Stop
+        $match = [regex]::Match($text, '(?m)^pid=([0-9]+)\s*$')
+        if ($match.Success) { return [int]$match.Groups[1].Value }
+    } catch { }
+    return 0
+}
+
 function Test-NavLockActive {
     if (-not (Test-Path -LiteralPath $lockPath)) { return $false }
+    $ownerPid = Get-NavLockOwnerPid
+    if ($ownerPid -gt 0 -and -not (Get-Process -Id $ownerPid -ErrorAction SilentlyContinue)) {
+        Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+        return $false
+    }
     $age = (Get-Date) - (Get-Item -LiteralPath $lockPath).LastWriteTime
     if ($age.TotalMinutes -ge $lockMaxAgeMin) {
         Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
@@ -2740,7 +2759,9 @@ function Test-UserLaunchPathAdopted {
         return $false
     }
 
-    if ($script:launchPathAdopted -or $script:automationClickedPlayContinue) {
+    if ($script:launchPathAdopted -or $script:automationClickedPlayContinue `
+            -or $script:automationContinueIntentDeclared -or $script:launcherSelectionAttempts -gt 0 `
+            -or $clickedSafeMode) {
         return $false
     }
 
@@ -3030,8 +3051,18 @@ function Wait-PostHandoffWatchdog {
 }
 
 function Test-HandoffWhenGameStable {
-    if (-not (Test-GameProcessRunning)) {
+    $det = Get-LaunchNavProcessDetection
+    if (-not $det.gameProcessRunning) {
         $script:gameStablePolls = 0
+        return $false
+    }
+
+    if (-not (Test-TbgRealGameSpawnDetection -Detection $det)) {
+        $script:gameStablePolls = 0
+        if (-not $script:weakPostContinueSignalLogged) {
+            Write-LaunchLog "LAUNCH_STATE=weak_handoff_signal_ignored confidence=$([string]$det.gameAliveConfidence) method=$([string]$det.gameProcessDetectionMethod) — awaiting real game process or fresh TBG READY"
+            $script:weakPostContinueSignalLogged = $true
+        }
         return $false
     }
 
@@ -3265,26 +3296,34 @@ while ((Get-Date) -lt $deadline) {
     if ($LaunchIntent -eq 'play' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
         if ($sinceClick -ge 15 -and -not $script:playEscalated -and -not $script:launchPathAdopted) {
-            Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:playEscalated = $true
-            $clickedPlayContinue = $false
-            $script:playClickUtc = $null
-            $RespectUserForeground = $false
-            [UIAHelper]::RespectUserForeground = $false
-            [UIAHelper]::ResetLauncherClickRetryState()
+            if ($AllowFocusSteal) {
+                Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks (AllowFocusSteal)'
+                $clickedPlayContinue = $false
+                $script:playClickUtc = $null
+                $RespectUserForeground = $false
+                [UIAHelper]::RespectUserForeground = $false
+                [UIAHelper]::ResetLauncherClickRetryState()
+            } else {
+                Write-LaunchLog 'LAUNCH_STATE=play_escalate_suppressed — hwnd-only PLAY did not spawn Bannerlord.exe; focus-steal escalation suppressed by policy (pass -AllowFocusSteal to enable)'
+            }
         }
     }
 
     if ($LaunchIntent -eq 'continue' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
         if ($sinceClick -ge 15 -and -not $script:continueEscalated -and -not $script:launchPathAdopted) {
-            Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:continueEscalated = $true
-            $clickedPlayContinue = $false
-            $script:playClickUtc = $null
-            $RespectUserForeground = $false
-            [UIAHelper]::RespectUserForeground = $false
-            [UIAHelper]::ResetLauncherClickRetryState()
+            if ($AllowFocusSteal) {
+                Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks (AllowFocusSteal)'
+                $clickedPlayContinue = $false
+                $script:playClickUtc = $null
+                $RespectUserForeground = $false
+                [UIAHelper]::RespectUserForeground = $false
+                [UIAHelper]::ResetLauncherClickRetryState()
+            } else {
+                Write-LaunchLog 'LAUNCH_STATE=continue_escalate_suppressed — hwnd-only CONTINUE did not spawn Bannerlord.exe; focus-steal escalation suppressed by policy (pass -AllowFocusSteal to enable)'
+            }
         }
     }
 

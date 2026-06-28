@@ -106,6 +106,9 @@ namespace BlacksmithGuild.DevTools
         public static float CohesionMaxRallyDistance = 35f;
         public static float CohesionMinEscapeMarginHours = 0.25f;
         public static float CohesionScanRadius = 35f;
+        // Diagnostic-only status JSON posture scans can touch native party state during the
+        // fragile post-load attach window. Keep disabled unless explicitly debugging posture data.
+        public static bool FactionPowerPostureStatusScanEnabled = false;
         public static bool CohesionAllowLikelyWindows = true;
         public static bool CohesionAllowPlayerOnlyExecution = true;
         public static bool CohesionAllowClanPartyCommands = true;

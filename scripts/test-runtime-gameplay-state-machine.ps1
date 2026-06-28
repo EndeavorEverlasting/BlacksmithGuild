@@ -171,7 +171,8 @@ foreach ($needle in @('AppendStateMachineBlock', 'stateMachine', 'RuntimeLifecyc
 }
 
 $runtimeWriter = Get-Content -LiteralPath (Join-Path $repoRoot 'src\BlacksmithGuild\DevTools\RuntimeLifecycleWriter.cs') -Raw
-foreach ($needle in @('lastCommandStartedAtUtc', 'lastCommandFinishedAtUtc', 'gracefulShutdownObserved', 'BlacksmithGuild_RuntimeLifecycle.json')) {
+foreach ($needle in @('lastCommandStartedAtUtc', 'lastCommandFinishedAtUtc', 'gracefulShutdownObserved',
+        'BlacksmithGuild_RuntimeLifecycle.json', 'WriteAllTextAtomic', 'File.Replace')) {
     if ($runtimeWriter -notmatch [regex]::Escape($needle)) { throw "RuntimeLifecycleWriter missing: $needle" }
 }
 

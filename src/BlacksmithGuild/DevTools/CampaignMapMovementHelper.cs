@@ -20,6 +20,7 @@ namespace BlacksmithGuild.DevTools
             try
             {
                 party.SetMoveGoToSettlement(destination, MobileParty.NavigationType.Default, false);
+                CampaignClockResumeHelper.EnsureClockRunning("CampaignMapMovementHelper");
                 return true;
             }
             catch (Exception ex)
@@ -31,6 +32,7 @@ namespace BlacksmithGuild.DevTools
                 || TryInvokeOnTarget(party, destination, "SetMoveGoToSettlement")
                 || TryInvokeOnTarget(party, destination, "SetMoveGoToSettlementWithShorterPath"))
             {
+                CampaignClockResumeHelper.EnsureClockRunning("CampaignMapMovementHelper");
                 return true;
             }
 

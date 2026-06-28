@@ -44,6 +44,65 @@ The scripts use these final classifications:
   valid run.
 - `USER CANCELLED` - the operator selected cancel or pressed Forge Stop.
 
+## Proof modes
+
+Post-attach automation is graded in three separate proof modes. A weaker mode passing
+never implies a stronger one. The autonomous assist runner stamps the achieved mode on
+`assist-loop-summary.json` as `proofMode` plus the boolean `visibleMechanicsProven`.
+
+- `read_only_runtime_proof` - the Regent/Route/Horse/Ledger spine and governor cycle
+  produced valid decision/intelligence JSON. Proves where to go and why. No mutation and
+  no movement. Owned by the governor disposable smoke path.
+- `attach_readiness_proof` - the game launched, the campaign attached, the surface was
+  classified safe, and the assist loop started consuming runtime state. Proves the bridge
+  is wired. It is NOT a movement PASS.
+- `visible_mechanics_proof` - the party visibly moved on the campaign map after a command
+  ack with the campaign clock running. This is the only mode that proves mechanics. It
+  requires an observed real party-movement delta (`party_movement_observed` checkpoint /
+  `partyMovedDistance > 0`); route intent, a set destination, or a resumed clock alone do
+  not qualify.
+
+Offline enforcement of this separation lives in
+`scripts\verify-post-attach-actionability-contract.ps1`.
+
+## Shared clock-resume helper
+
+A travel command only becomes visible mechanics when the campaign clock is running, so
+every movement driver routes its `TimeControlMode` handling through one helper,
+`CampaignClockResumeHelper.EnsureClockRunning(caller)`
+(`src\BlacksmithGuild\DevTools\ClockResumeHelper.cs`). It only flips `Stop` to
+`StoppablePlay`, never overrides user pause/fast-forward, refuses to act while a map menu
+or mission surface is open, and logs the `caller` plus before/after state under
+`[TBG CLOCK]`.
+
+- Golden path: `AutoTravelService.ReassertRunningClock` delegates to the helper.
+- Map-trade and guild-loop: the shared low-level mover
+  `CampaignMapMovementHelper.TryMoveToSettlement` resumes the clock on every successful
+  travel command, covering `MapTradeVisibleMovementDriver`, `MapTradeAutonomousService`,
+  `AutonomousGuildLoopService`, and `CohesionExecutionDriver`.
+- `CampaignMapMovementHelper.TryHold` deliberately does not auto-resume; holding in place
+  is not a travel command.
+
+## Focus policy
+
+Launcher automation respects the user's foreground window by default so the operator can
+keep using the machine while a session runs. Aggressive focus-steal (real foreground
+clicks) is opt-in only.
+
+- `scripts\launcher-auto-nav.ps1` defaults `RespectUserForeground = $true`. Its
+  `play_escalate` / `continue_escalate` foreground-click fallback now only fires when
+  `-AllowFocusSteal` is passed; otherwise it logs `*_escalate_suppressed` and stays
+  hands-off.
+- `scripts\run-autonomous-assist-session.ps1` and
+  `scripts\run-pr11-town-travel-launch-attach-execute.ps1` default to respecting the
+  foreground and forward `-AllowFocusSteal` to the child only when the operator passes it.
+- `Invoke-TbgLauncherAutoNavChild` (in `scripts\autonomous-assist-session.ps1`) defaults
+  `RespectUserForeground = $true` and only appends `-AllowFocusSteal` when explicitly
+  requested.
+
+Use `-AllowFocusSteal` only when an unattended machine needs the launcher to force its
+window forward to complete PLAY/CONTINUE.
+
 ## Create a disposable dev save
 
 Approved disposable save names are:
@@ -103,6 +162,7 @@ Run:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-governor-operator-harness-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-regent-route-horse-contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-post-attach-actionability-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
 ```
 

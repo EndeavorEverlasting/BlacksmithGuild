@@ -5,6 +5,7 @@ function Get-DevCommandNames {
         'ShowForgeStatus',
         'AdvanceOneDay',
         'ToggleFastForward',
+        'ResumeCampaignClock',
         'RichPlayerEconomyTest',
         'RichSmithingProgressionTest',
         'AddSmithingXp',

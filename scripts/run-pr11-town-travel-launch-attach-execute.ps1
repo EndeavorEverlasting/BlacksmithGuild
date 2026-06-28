@@ -11,7 +11,10 @@ param(
     [int]$ExecuteTimeoutSec = 120,
     [int]$MovementObserveSec = 90,
     [switch]$DryRun,
-    [switch]$WhatIf
+    [switch]$WhatIf,
+    # Focus policy: respects the user's foreground window by default; pass -AllowFocusSteal to permit
+    # aggressive foreground-click escalation during launcher navigation.
+    [switch]$AllowFocusSteal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -261,7 +264,8 @@ if (-not $SkipLaunch) {
         try {
             $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
                 -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
-                -RespectUserForeground:$false -ExternalStateTimelinePath $timelinePath
+                -RespectUserForeground:(-not $AllowFocusSteal) -AllowFocusSteal:$AllowFocusSteal `
+                -ExternalStateTimelinePath $timelinePath
             $navExit = $navResult.exitCode
             $navError = $navResult.text
         } catch {

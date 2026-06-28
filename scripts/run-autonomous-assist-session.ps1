@@ -6,7 +6,7 @@ param(
     [ValidateSet('default', 'economic_loop')]
     [string]$CertProfile = 'default',
     [int]$TradeIterationTarget = 10,
-    [string]$TargetSettlement = 'Ortysia',
+    [string]$TargetSettlement = $null,
     [int]$MaxRuntimeMinutes = 30,
     [switch]$StopOnUnsafeState,
     [switch]$StopOnUserToggle,
@@ -18,7 +18,10 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipLaunch,
     [switch]$DryRun,
-    [switch]$WhatIf
+    [switch]$WhatIf,
+    # Focus policy: by default this runner respects the user's foreground window so the operator can
+    # keep using the machine. Pass -AllowFocusSteal to permit aggressive foreground-click escalation.
+    [switch]$AllowFocusSteal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -38,6 +41,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
 . (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
+. (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\${sessionId}-autonomous-assist-session"
@@ -46,6 +50,7 @@ $transcriptStarted = $false
 $cancelled = $false
 $cyclePhase = 'loading'
 $routeAgent = 'Agent C - External State Classifier / Assistive Runner'
+Clear-GovernorStopSentinel -RepoRoot $repoRoot
 
 function Write-SessionLog {
     param([string]$Message)
@@ -57,6 +62,117 @@ function Write-SessionLog {
         Add-Content -LiteralPath $certLogPath -Value $line -Encoding UTF8
     }
     Write-Host $line
+}
+
+function Get-AssistTravelExecutionSnapshotForRunner {
+    param([string]$BannerlordRoot)
+    try {
+        if (-not (Get-Command Get-AssistiveTravelExecutionJsonPath -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
+        }
+        $execPath = Get-AssistiveTravelExecutionJsonPath -BannerlordRoot $BannerlordRoot
+        if ($execPath -and (Test-Path -LiteralPath $execPath)) {
+            return (Get-Content -LiteralPath $execPath -Raw | ConvertFrom-Json)
+        }
+    } catch { }
+    return $null
+}
+
+function Update-AssistTravelMovementCheckpoint {
+    param(
+        [hashtable]$Evidence,
+        [string]$BannerlordRoot,
+        [string]$SessionId,
+        [bool]$AlreadyEmitted
+    )
+    $execJson = Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $BannerlordRoot
+    $partyMovedDistance = 0.0
+    if ($execJson -and $null -ne $execJson.partyMovedDistance) {
+        [double]::TryParse([string]$execJson.partyMovedDistance, [ref]$partyMovedDistance) | Out-Null
+    }
+    $checkpointEmitted = [bool]$AlreadyEmitted
+    if ($partyMovedDistance -gt 0) {
+        if (-not $checkpointEmitted) {
+            Add-AutomationCheckpointEvent -List $Evidence.checkpointEvents -CheckpointName 'party_movement_observed' `
+                -SessionId $SessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
+                -Reason "partyMovedDistance=$partyMovedDistance" | Out-Null
+            $checkpointEmitted = $true
+        }
+    }
+    return [pscustomobject]@{
+        checkpointEmitted = $checkpointEmitted
+        partyMovedDistance = $partyMovedDistance
+        travelClockRunning = [bool]($execJson -and $execJson.travelClockRunning -eq $true)
+        movementIntentSet = [bool]($execJson -and $execJson.movementIntentSet -eq $true)
+        executionJson = $execJson
+    }
+}
+
+function Read-AutonomousAssistJsonArtifact {
+    param(
+        [string]$BannerlordRoot,
+        [string]$FileName
+    )
+    try {
+        $path = Find-NewestExistingPath -Candidates (Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot -FileName $FileName) `
+            -Preferred (Join-Path (Get-BannerlordDocsRoot) $FileName)
+        if ($path -and (Test-Path -LiteralPath $path)) {
+            return [pscustomobject]@{ path = $path; json = (Get-Content -LiteralPath $path -Raw | ConvertFrom-Json) }
+        }
+    } catch { }
+    return $null
+}
+
+function Get-AutonomousAssistEngineTravelTarget {
+    param(
+        [object]$Readiness,
+        [string]$BannerlordRoot,
+        [string]$ExplicitTarget = $null
+    )
+    if (-not [string]::IsNullOrWhiteSpace($ExplicitTarget)) {
+        return [pscustomobject]@{ target = $ExplicitTarget; source = 'explicit_parameter'; path = $null }
+    }
+
+    $recursiveTarget = Get-AutonomousAssistRecursiveTravelTarget -RecursiveBranchState $Readiness.recursiveBranchState
+    if (-not [string]::IsNullOrWhiteSpace($recursiveTarget)) {
+        return [pscustomobject]@{ target = $recursiveTarget; source = 'recursiveBranchState'; path = $Readiness.statusPath }
+    }
+
+    $governor = Read-AutonomousAssistJsonArtifact -BannerlordRoot $BannerlordRoot -FileName 'BlacksmithGuild_CampaignGovernorDecision.json'
+    if ($governor -and $governor.json) {
+        foreach ($candidate in @($governor.json.proposedActivity.targetTown, $governor.json.routeCouncilRecommendedDestination, $governor.json.destinationCandidate)) {
+            if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+                return [pscustomobject]@{ target = [string]$candidate; source = 'CampaignGovernorDecision'; path = $governor.path }
+            }
+        }
+    }
+
+    $council = Read-AutonomousAssistJsonArtifact -BannerlordRoot $BannerlordRoot -FileName 'BlacksmithGuild_RouteCouncil.json'
+    if ($council -and $council.json -and -not [string]::IsNullOrWhiteSpace([string]$council.json.recommendedDestination)) {
+        return [pscustomobject]@{ target = [string]$council.json.recommendedDestination; source = 'RouteCouncil'; path = $council.path }
+    }
+
+    $regent = Read-AutonomousAssistJsonArtifact -BannerlordRoot $BannerlordRoot -FileName 'BlacksmithGuild_RuntimeRegent.json'
+    if ($regent -and $regent.json -and -not [string]::IsNullOrWhiteSpace([string]$regent.json.routeCouncilRecommendedDestination)) {
+        return [pscustomobject]@{ target = [string]$regent.json.routeCouncilRecommendedDestination; source = 'RuntimeRegent'; path = $regent.path }
+    }
+
+    return [pscustomobject]@{ target = $null; source = 'missing_engine_handoff_target'; path = $null }
+}
+
+function Invoke-AutonomousAssistEngineHandoffRefresh {
+    param(
+        [string]$BannerlordRoot,
+        [int]$TimeoutSec = 30
+    )
+    foreach ($commandName in @('RunCampaignGovernorCycleNow', 'ConveneRouteCouncil', 'ShowRuntimeRegentState')) {
+        try {
+            Send-ForgeCommand -CommandName $commandName -BannerlordRoot $BannerlordRoot -Wait -TimeoutSec $TimeoutSec | Out-Null
+            Write-SessionLog "Engine handoff refresh command succeeded: $commandName"
+        } catch {
+            Write-SessionLog "Engine handoff refresh command failed: $commandName error=$($_.Exception.Message)"
+        }
+    }
 }
 
 function Complete-AssistAutomationFinalization {
@@ -94,6 +210,7 @@ function Complete-AssistAutomationFinalization {
     $finalReason = [string]$Summary.failureClass
     if ([string]::IsNullOrWhiteSpace($finalReason)) { $finalReason = [string]$Summary.stopReason }
     if ([string]::IsNullOrWhiteSpace($finalReason)) { $finalReason = $state }
+    $executionJson = if ($RequireExecuteMovement) { Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $bannerlordRoot } else { $null }
     $gameProcessAlive = $null
     if ($Summary.ContainsKey('gameProcessAlive') -and $null -ne $Summary.gameProcessAlive) {
         $gameProcessAlive = [bool]$Summary.gameProcessAlive
@@ -104,7 +221,7 @@ function Complete-AssistAutomationFinalization {
         -Runner 'run-autonomous-assist-session.ps1' -Reason $finalReason
     $requiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started', 'summary_written')
     $criteria = Get-AutomationProjectedTerminalCriteria -Events @($events.ToArray()) -State $state `
-        -Summary ([pscustomobject]$Summary) -RequireAssistLoopStarted `
+        -Summary ([pscustomobject]$Summary) -ExecutionJson $executionJson -RequireAssistLoopStarted `
         -RequiredCheckpoints $requiredCheckpoints -RequireExecuteMovement:$RequireExecuteMovement
     Complete-AutomationFinalization -List $events -State $state -SessionId $sessionId -Phase $cyclePhase `
         -Runner 'run-autonomous-assist-session.ps1' -Reason $finalReason `
@@ -131,8 +248,9 @@ function Exit-AssistSession {
         [switch]$RequireExecuteMovement
     )
     Complete-AssistAutomationFinalization -Evidence $Evidence -Summary $Summary -RequireExecuteMovement:$RequireExecuteMovement
+    $summaryTargetSettlement = if ($LastDecision -and $LastDecision.target) { [string]$LastDecision.target } else { $TargetSettlement }
     $Summary = Merge-AutonomousAssistCampaignLoopSummary -Summary $Summary -SessionId $sessionId `
-        -TargetSettlement $TargetSettlement -LastDecision $LastDecision `
+        -TargetSettlement $summaryTargetSettlement -LastDecision $LastDecision `
         -CycleId $(if ($Summary.iterationCount) { [int]$Summary.iterationCount } else { 0 }) `
         -RecursiveBranchState $RecursiveBranchState -RecursiveBranchFresh $RecursiveBranchFresh `
         -CurrentTown $(if ($RecursiveBranchState -and $RecursiveBranchState.currentTown) { [string]$RecursiveBranchState.currentTown } else { $null })
@@ -255,10 +373,10 @@ if (-not $SkipLaunch) {
         $navExit = 0
         $navError = $null
         try {
-            $navCertTarget = if ($LaunchIntent -eq 'continue') { 'continue' } else { 'any' }
             $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
                 -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
-                -RespectUserForeground:$false -CertTarget $navCertTarget -ExternalStateTimelinePath $timelinePath
+                -RespectUserForeground:(-not $AllowFocusSteal) -AllowFocusSteal:$AllowFocusSteal `
+                -ExternalStateTimelinePath $timelinePath
             $navExit = $navResult.exitCode
             $navError = $navResult.text
         } catch {
@@ -394,6 +512,7 @@ $iteration = 0
 $actionsLogged = 0
 $travelExecuted = $false
 $partyMovementCheckpointEmitted = $false
+$movementObservationDeadline = $null
 $nonTradeBranchDone = $false
 $provenTradeCount = 0
 $isEconomicLoop = ($CertProfile -eq 'economic_loop')
@@ -408,6 +527,12 @@ $nonTradeBranchMaxCycles = [Math]::Max(12, [int](180 / [Math]::Max(1, $PollInter
 $lastDecision = $null
 $lastRecursiveBranchState = $null
 $lastRecursiveBranchFresh = $false
+$engineHandoffRefreshAttempted = $false
+# Safe-idle / no-progress instrumentation: every cycle is classified so a safe-but-idle poll is never
+# silent, and a run of no-branch-progress cycles is visible instead of an opaque spin to timeout.
+$lastSafeIdleClass = $null
+$consecutiveSafeIdleCycles = 0
+$maxConsecutiveSafeIdleObserved = 0
 
 $null = Start-TbgWaitSegment -WaitReason 'autonomous_assist_loop' -TimeoutSec ($MaxRuntimeMinutes * 60) -PollIntervalMs ($PollIntervalSec * 1000)
 
@@ -419,14 +544,20 @@ while ((Get-Date) -lt $loopDeadline) {
         $stopReason = 'cancel_run'
         break
     }
-    if ($StopOnUserToggle -and (Test-TbgAssistToggleOff -BannerlordRoot $bannerlordRoot)) {
-        $toggle = Read-TbgAssistToggle -BannerlordRoot $bannerlordRoot
+    if (Test-GovernorStopRequested -RepoRoot $repoRoot) {
+        $stopReason = 'operator_stop_forge_stop'
+        Write-SessionLog 'ForgeStop sentinel detected — stopping autonomous assist loop cleanly'
+        break
+    }
+    $toggleState = Read-TbgAssistToggle -BannerlordRoot $bannerlordRoot
+    $operatorToggleOff = $toggleState.parseOk -and (-not $toggleState.enabled) -and ([string]$toggleState.requestedBy -eq 'forge_stop')
+    if (($StopOnUserToggle -or $operatorToggleOff) -and $toggleState.parseOk -and (-not $toggleState.enabled)) {
         Add-AssistSessionJsonl -List $evidence.toggleEvents -Event ([ordered]@{
             atUtc = (Get-Date).ToUniversalTime().ToString('o'); enabled = $false
-            requestedBy = $toggle.requestedBy; reason = $toggle.reason
+            requestedBy = $toggleState.requestedBy; reason = $toggleState.reason
         })
-        $stopReason = 'user_toggle_off'
-        Write-SessionLog 'Assist toggle OFF — stopping loop cleanly'
+        $stopReason = if ($operatorToggleOff) { 'operator_stop_forge_stop' } else { 'user_toggle_off' }
+        Write-SessionLog "Assist toggle OFF — stopping loop cleanly reason=$stopReason requestedBy=$($toggleState.requestedBy)"
         break
     }
 
@@ -459,13 +590,37 @@ while ((Get-Date) -lt $loopDeadline) {
     }
 
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
+	$targetResolution = Get-AutonomousAssistEngineTravelTarget -Readiness $ready -BannerlordRoot $bannerlordRoot -ExplicitTarget $TargetSettlement
+	$plannedBranchForTarget = if ($ready.recursiveBranchState) { [string]$ready.recursiveBranchState.nextPlannedBranch } else { $null }
+	if ($plannedBranchForTarget -eq 'travel' -and [string]::IsNullOrWhiteSpace([string]$targetResolution.target) -and -not $engineHandoffRefreshAttempted) {
+		$engineHandoffRefreshAttempted = $true
+		Write-SessionLog 'Travel branch requires engine target; refreshing Governor/RouteCouncil/Regent handoff before command.'
+		Invoke-AutonomousAssistEngineHandoffRefresh -BannerlordRoot $bannerlordRoot -TimeoutSec 30
+		Start-Sleep -Seconds 1
+		$ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
+		$targetResolution = Get-AutonomousAssistEngineTravelTarget -Readiness $ready -BannerlordRoot $bannerlordRoot -ExplicitTarget $TargetSettlement
+	}
     $lastRecursiveBranchState = $ready.recursiveBranchState
     $lastRecursiveBranchFresh = [bool]$ready.recursiveBranchFresh
     $decision = Get-AutonomousAssistIterationDecision -Readiness $ready -AssistProfile $AssistProfile `
-        -TargetSettlement $TargetSettlement -StopOnUnsafeState:$StopOnUnsafeState `
+		-TargetSettlement $targetResolution.target -StopOnUnsafeState:$StopOnUnsafeState `
         -LastTravelCommandUtc $lastTravelCommandUtc -TravelCommandCooldownSec $TravelCommandCooldownSec `
         -CertProfile $CertProfile -TradeTargetReached:$tradeTargetReached -NonTradeBranchDone:$nonTradeBranchDone
     $lastDecision = $decision
+
+    # Classify every cycle so no poll is ever silent/unclassified, and track consecutive safe-idle cycles
+    # so a no-branch-progress spin is observable instead of an opaque wait to timeout.
+    $safeIdleClass = Get-AutonomousAssistSafeIdleClass -Decision $decision
+    $lastSafeIdleClass = $safeIdleClass
+    if ($safeIdleClass -like 'safe_idle_*') {
+        $consecutiveSafeIdleCycles++
+        if ($consecutiveSafeIdleCycles -gt $maxConsecutiveSafeIdleObserved) {
+            $maxConsecutiveSafeIdleObserved = $consecutiveSafeIdleCycles
+        }
+    } else {
+        $consecutiveSafeIdleCycles = 0
+    }
+    Write-SessionLog "Iteration $iteration classified=$safeIdleClass decision=$($decision.decision) surface=$($decision.surface) consecutiveSafeIdle=$consecutiveSafeIdleCycles reason=$($decision.reason)"
 
     $iterEvent = [ordered]@{
         atUtc = $decision.atUtc
@@ -476,8 +631,12 @@ while ((Get-Date) -lt $loopDeadline) {
         decision = $decision.decision
         commandSent = $decision.commandSent
         target = $decision.target
+		targetSource = $decision.targetSource
+		engineTargetSource = $targetResolution.source
         result = $decision.result
         reason = $decision.reason
+        safeIdleClass = $safeIdleClass
+        consecutiveSafeIdleCycles = $consecutiveSafeIdleCycles
     }
     Add-AssistSessionJsonl -List $evidence.timeline -Event $iterEvent
     Add-AssistSessionJsonl -List $evidence.stateSnapshots -Event ([ordered]@{
@@ -486,6 +645,8 @@ while ((Get-Date) -lt $loopDeadline) {
         confidence = $ready.confidence
         recursiveBranchFresh = $ready.recursiveBranchFresh
         nextPlannedBranch = if ($ready.recursiveBranchState) { $ready.recursiveBranchState.nextPlannedBranch } else { $null }
+		resolvedTravelTarget = $targetResolution.target
+		resolvedTravelTargetSource = $targetResolution.source
     })
     $actionsLogged++
 
@@ -507,35 +668,34 @@ while ((Get-Date) -lt $loopDeadline) {
         $cmdResult = 'Skipped'
         try {
             if ($decision.commandSent -eq 'AssistiveLeaveTownAndTravel') {
-                Write-SessionLog "Iteration $iteration sending AssistiveTownToTownProbe then AssistiveLeaveTownAndTravel -> $TargetSettlement"
+				$commandTarget = [string]$decision.target
+				if ([string]::IsNullOrWhiteSpace($commandTarget)) { throw 'handoff_missing_travel_target' }
+				Write-SessionLog "Iteration $iteration sending AssistiveTownToTownProbe then AssistiveLeaveTownAndTravel -> $commandTarget source=$($decision.targetSource)"
                 Send-ForgeCommand -CommandName AssistiveTownToTownProbe -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ProbeTimeoutSec | Out-Null
                 Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'probe_ack' `
                     -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
-                    -Reason "probe:$TargetSettlement" | Out-Null
-                Send-ForgeCommand -CommandName AssistiveLeaveTownAndTravel -Execute -TargetSettlement $TargetSettlement `
+					-Reason "probe:$commandTarget" | Out-Null
+				Send-ForgeCommand -CommandName AssistiveLeaveTownAndTravel -Execute -TargetSettlement $commandTarget `
                     -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
                 Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'execute_ack' `
                     -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
-                    -Reason "execute:$TargetSettlement" | Out-Null
+					-Reason "execute:$commandTarget" | Out-Null
                 $travelExecuted = $true
                 $cmdResult = 'Success'
                 $lastTravelCommandUtc = (Get-Date).ToUniversalTime()
-                $execPath = Get-AssistiveTravelExecutionJsonPath -BannerlordRoot $bannerlordRoot
-                if ((Test-Path -LiteralPath $execPath) -and -not $partyMovementCheckpointEmitted) {
-                    try {
-                        $execJson = Get-Content -LiteralPath $execPath -Raw | ConvertFrom-Json
-                        $partyMovedDistance = 0.0
-                        if ($null -ne $execJson.partyMovedDistance) {
-                            [double]::TryParse([string]$execJson.partyMovedDistance, [ref]$partyMovedDistance) | Out-Null
-                        }
-                        if ($partyMovedDistance -gt 0) {
-                            Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'party_movement_observed' `
-                                -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
-                                -Reason "partyMovedDistance=$partyMovedDistance" | Out-Null
-                            $partyMovementCheckpointEmitted = $true
-                        }
-                    } catch { }
-                }
+				$movementObservationDeadline = (Get-Date).AddSeconds($ExecuteTimeoutSec)
+				$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence `
+					-BannerlordRoot $bannerlordRoot -SessionId $sessionId `
+					-AlreadyEmitted:$partyMovementCheckpointEmitted
+				$partyMovementCheckpointEmitted = [bool]$movementUpdate.checkpointEmitted
+				if ($partyMovementCheckpointEmitted) { $stopReason = 'movement_observed' }
+                } elseif ($decision.commandSent -eq 'ResumeCampaignClock') {
+                    Write-SessionLog "Iteration $iteration sending ResumeCampaignClock (paused campaign_map recovery)"
+                    Send-ForgeCommand -CommandName ResumeCampaignClock -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
+                    Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'campaign_clock_resume_ack' `
+                        -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
+                        -Reason 'ResumeCampaignClock' | Out-Null
+                    $cmdResult = 'Success'
             } elseif ($decision.commandSent -eq 'ProbeVanillaTradeExecutionNow') {
                 Write-SessionLog "Iteration $iteration sending ProbeVanillaTradeExecutionNow (economic_loop drive proven buy) at $TargetSettlement"
                 # Send-ForgeCommand returns the command sequence, not the trade verdict. Derive the real
@@ -582,6 +742,23 @@ while ((Get-Date) -lt $loopDeadline) {
         surface = $decision.surface; reason = $decision.reason
     })
 
+	if ($travelExecuted -and -not $partyMovementCheckpointEmitted) {
+		$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence `
+			-BannerlordRoot $bannerlordRoot -SessionId $sessionId `
+			-AlreadyEmitted:$partyMovementCheckpointEmitted
+		$partyMovementCheckpointEmitted = [bool]$movementUpdate.checkpointEmitted
+		if ($partyMovementCheckpointEmitted) {
+			$partyMovementCheckpointEmitted = $true
+			$stopReason = 'movement_observed'
+		} elseif ($movementObservationDeadline -and (Get-Date) -ge $movementObservationDeadline) {
+			$stopReason = if ($movementUpdate.travelClockRunning) { 'safe_idle_route_set_no_motion' } else { 'safe_idle_clock_stopped' }
+		}
+	}
+	if ($stopReason) {
+		Flush-AutonomousAssistInterimEvidence -Evidence $evidence
+		break
+	}
+
     # The economic-loop cert requires at least one non-trade branch to be executed/blocked before trades
     # count as a genuine multi-branch loop. Gate trade-driving on this observed (never synthesized) fact.
     if (-not $nonTradeBranchDone -and ($branchName -notin @('trade', 'observe_only', '')) -and ($branchStatus -in @('executed', 'blocked'))) {
@@ -594,12 +771,14 @@ while ((Get-Date) -lt $loopDeadline) {
         -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
         -Reason "iteration=$iteration decision=$($decision.decision)" | Out-Null
     if (-not $stopReason) {
+		$cycleTargetSettlement = if ($decision -and $decision.target) { [string]$decision.target } elseif ($targetResolution -and $targetResolution.target) { [string]$targetResolution.target } else { $TargetSettlement }
         Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'next_action_planned' `
             -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
             -Reason "branch=$plannedBranch" | Out-Null
         Write-AutonomousAssistCycleCampaignSummary -Evidence $evidence -LastDecision $decision `
-            -SessionId $sessionId -TargetSettlement $TargetSettlement -CycleId $iteration `
+			-SessionId $sessionId -TargetSettlement $cycleTargetSettlement -CycleId $iteration `
             -RecursiveBranchState $lastRecursiveBranchState -RecursiveBranchFresh $lastRecursiveBranchFresh | Out-Null
+        Flush-AutonomousAssistInterimEvidence -Evidence $evidence
     }
 
     Update-TbgWaitProgress -ProgressSignal "iter=$iteration decision=$($decision.decision) surface=$($decision.surface)"
@@ -621,15 +800,24 @@ Add-AssistSessionJsonl -List $evidence.toggleEvents -Event ([ordered]@{
 $endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
 $evidence.endedAtUtc = $endedAtUtc
 $requiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started', 'summary_written')
+$previewRequiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started')
+$executionJsonForCriteria = if ($travelExecuted) { Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $bannerlordRoot } else { $null }
 $criteriaPreview = Test-AutomationPassCriteria -Events @($evidence.checkpointEvents.ToArray()) `
     -Summary ([pscustomobject]@{
         assistLoopStarted = $evidence.assistLoopStarted
         stateMachineConsumed = $loopReadiness.stateMachineConsumed
         runtimeLifecycleConsumed = $loopReadiness.runtimeLifecycleConsumed
-    }) -RequiredCheckpoints $requiredCheckpoints `
+    }) -ExecutionJson $executionJsonForCriteria -RequiredCheckpoints $previewRequiredCheckpoints `
     -RequireAssistLoopStarted -RequireExecuteMovement:$travelExecuted
-$passFail = if ($stopReason -in @('user_toggle_off', 'timeout', 'trade_iteration_target_reached', $null) -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
+$passFail = if ($stopReason -in @('timeout', 'trade_iteration_target_reached', 'movement_observed', $null) -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
     else { 'FAIL' }
+
+# Explicit post-attach proof-mode separation. Attach-ready and read-only reasoning are NOT a visible
+# mechanics PASS; only a real observed party-movement delta promotes this run to visible_mechanics_proof.
+$visibleMechanicsProven = [bool]$partyMovementCheckpointEmitted
+$proofMode = if ($visibleMechanicsProven) { 'visible_mechanics_proof' } `
+    elseif ($attachReady) { 'attach_readiness_proof' } `
+    else { 'attach_readiness_proof' }
 
 $summary = [ordered]@{
     sessionId = $sessionId
@@ -650,6 +838,10 @@ $summary = [ordered]@{
     iterationCount = $evidence.iterationCount
     actionsLogged = $actionsLogged
     travelExecuted = $travelExecuted
+    proofMode = $proofMode
+    visibleMechanicsProven = $visibleMechanicsProven
+    lastSafeIdleClass = $lastSafeIdleClass
+    maxConsecutiveSafeIdleCycles = $maxConsecutiveSafeIdleObserved
     automationPassCriteria = $criteriaPreview
     gameProcessAlive = $(if ($stopReason -match 'game_process_gone|process_disappeared|game_gone|game_exited') { $false } else { $true })
     endedAtUtc = $endedAtUtc

@@ -103,14 +103,6 @@ function Test-AutonomousAssistLoopReadiness {
         $result.reason = 'missing_stateMachine'
         return [pscustomobject]$result
     }
-    if (-not $Readiness.runtimeLifecycle -or -not $Readiness.runtimeLifecycle.parseOk) {
-        $result.reason = 'missing_RuntimeLifecycle'
-        return [pscustomobject]$result
-    }
-    if (-not $Readiness.heartbeatFresh) {
-        $result.reason = 'runtime_heartbeat_stale'
-        return [pscustomobject]$result
-    }
     if ($Readiness.confidence -ne 'state_machine') {
         $result.reason = "confidence_not_state_machine:$($Readiness.confidence)"
         return [pscustomobject]$result
@@ -122,6 +114,20 @@ function Test-AutonomousAssistLoopReadiness {
     if (-not $Readiness.statusFresh) {
         $result.reason = 'status_stale'
         return [pscustomobject]$result
+    }
+
+    $runtimeHeartbeatPresent = [bool]($Readiness.runtimeLifecycle -and $Readiness.runtimeLifecycle.parseOk `
+            -and $Readiness.runtimeLifecycle.lastHeartbeatUtc)
+    if ($runtimeHeartbeatPresent -and -not $Readiness.heartbeatFresh) {
+        $result.reason = 'runtime_heartbeat_stale'
+        return [pscustomobject]$result
+    }
+    if (-not $runtimeHeartbeatPresent) {
+        if (-not $Readiness.stateMachine.heartbeatUtc) {
+            $result.reason = 'missing_RuntimeLifecycle'
+            return [pscustomobject]$result
+        }
+        $result.runtimeLifecycleConsumed = $true
     }
 
     $result.ready = $true
@@ -141,6 +147,27 @@ function Get-RecursiveBranchGate {
     }
     if ($branches.PSObject.Properties.Name -contains $BranchName) {
         return $branches.$BranchName
+    }
+    return $null
+}
+
+function Get-AutonomousAssistRecursiveTravelTarget {
+    param([object]$RecursiveBranchState)
+    if (-not $RecursiveBranchState) { return $null }
+    foreach ($name in @('targetSettlement', 'targetTown', 'destinationCandidate', 'recommendedDestination', 'routeTargetSettlement', 'nextPlannedTown')) {
+        if ($RecursiveBranchState.PSObject.Properties.Name -contains $name) {
+            $value = [string]$RecursiveBranchState.$name
+            if (-not [string]::IsNullOrWhiteSpace($value)) { return $value }
+        }
+    }
+    $travelGate = Get-RecursiveBranchGate -RecursiveBranchState $RecursiveBranchState -BranchName 'travel'
+    if ($travelGate) {
+        foreach ($name in @('targetSettlement', 'targetTown', 'destinationCandidate', 'recommendedDestination', 'routeTargetSettlement')) {
+            if ($travelGate.PSObject.Properties.Name -contains $name) {
+                $value = [string]$travelGate.$name
+                if (-not [string]::IsNullOrWhiteSpace($value)) { return $value }
+            }
+        }
     }
     return $null
 }
@@ -166,6 +193,31 @@ function Get-AutonomousAssistPlannedBranch {
             }
         }
     }
+}
+
+function Get-AutonomousAssistSafeIdleClass {
+    # Classifies every assist-loop cycle so a safe-but-idle poll is never silent. A weak idle reason must
+    # be visible so the operator can tell "attached and safe, waiting for a command" apart from "stuck with
+    # no forward branch progress." Action/block/unsafe cycles are explicitly NOT idle.
+    param([object]$Decision)
+    if (-not $Decision) { return 'safe_idle_unknown' }
+    switch ([string]$Decision.decision) {
+        'allowed' {
+            if ($Decision.commandSent) { return 'action_executed' }
+            return 'safe_idle_execute_not_requested'
+        }
+        'block' { return 'blocked_not_idle' }
+        'stop_unsafe_surface' { return 'unsafe_surface_not_idle' }
+    }
+    $reason = [string]$Decision.reason
+    if ($reason -match 'cooldown') { return 'safe_idle_execute_not_requested' }
+    if ($reason -match 'not_available|not_executable|not_actionable|branch_not|surface_not_actionable') {
+        return 'safe_idle_no_branch_progress'
+    }
+    if ([string]$Decision.actionConsidered -eq 'observe_route' -or $reason -match 'observe') {
+        return 'safe_idle_observe_route'
+    }
+    return 'safe_idle_waiting'
 }
 
 function Merge-AutonomousAssistCampaignLoopSummary {
@@ -308,7 +360,9 @@ function Invoke-TbgLauncherAutoNavChild {
         [Parameter(Mandatory = $true)][string]$ExternalStateTimelinePath,
         [int]$TimeoutSec = 300,
         [int]$LauncherSelectionMaxMs = 30000,
-        [bool]$RespectUserForeground = $false,
+        # Default respects the user's foreground window; aggressive focus-steal is opt-in only.
+        [bool]$RespectUserForeground = $true,
+        [bool]$AllowFocusSteal = $false,
         [ValidateSet('continue', 'play', 'any')]
         [string]$CertTarget = 'any'
     )
@@ -319,7 +373,7 @@ function Invoke-TbgLauncherAutoNavChild {
     }
 
     $respectLiteral = if ($RespectUserForeground) { '$true' } else { '$false' }
-    $command = @(
+    $commandParts = @(
         '&',
         (ConvertTo-TbgPowerShellLiteral $ScriptPath),
         '-LaunchIntent', (ConvertTo-TbgPowerShellLiteral $LaunchIntent),
@@ -330,7 +384,11 @@ function Invoke-TbgLauncherAutoNavChild {
         "-RespectUserForeground:$respectLiteral",
         '-CertTarget', (ConvertTo-TbgPowerShellLiteral $CertTarget),
         '-ExternalStateTimelinePath', (ConvertTo-TbgPowerShellLiteral $ExternalStateTimelinePath)
-    ) -join ' '
+    )
+    if ($AllowFocusSteal) {
+        $commandParts += '-AllowFocusSteal'
+    }
+    $command = $commandParts -join ' '
 
     $output = @(& powershell -NoProfile -ExecutionPolicy Bypass -Command $command 2>&1)
     $exitCode = if ($null -ne $LASTEXITCODE) { [int]$LASTEXITCODE } else { 0 }
@@ -347,7 +405,7 @@ function Get-AutonomousAssistIterationDecision {
     param(
         [object]$Readiness,
         [string]$AssistProfile = 'training-map',
-        [string]$TargetSettlement = 'Ortysia',
+        [string]$TargetSettlement = $null,
         [bool]$StopOnUnsafeState = $true,
         [nullable[datetime]]$LastTravelCommandUtc = $null,
         [int]$TravelCommandCooldownSec = 45,
@@ -368,6 +426,7 @@ function Get-AutonomousAssistIterationDecision {
         decision = 'wait'
         commandSent = $null
         target = $null
+        targetSource = $null
         result = $null
         reason = $null
     }
@@ -390,6 +449,17 @@ function Get-AutonomousAssistIterationDecision {
     }
 
     $travelGate = Test-Pr11TravelExecuteAllowed -Readiness $Readiness
+    $recursiveTravelTarget = Get-AutonomousAssistRecursiveTravelTarget -RecursiveBranchState $Readiness.recursiveBranchState
+    $resolvedTravelTarget = if (-not [string]::IsNullOrWhiteSpace($recursiveTravelTarget)) { $recursiveTravelTarget } elseif (-not [string]::IsNullOrWhiteSpace($TargetSettlement)) { $TargetSettlement } else { $null }
+    $resolvedTravelTargetSource = if (-not [string]::IsNullOrWhiteSpace($recursiveTravelTarget)) { 'recursiveBranchState' } elseif (-not [string]::IsNullOrWhiteSpace($TargetSettlement)) { 'explicit_parameter_or_engine_artifact' } else { $null }
+
+    if ($surface -eq 'campaign_map' -and $Readiness.sessionTimePaused -eq $true -and $Readiness.canAcceptAssistiveCommand) {
+        $base.actionConsidered = 'resume_campaign_clock'
+        $base.decision = 'allowed'
+        $base.commandSent = 'ResumeCampaignClock'
+        $base.reason = 'campaign_clock_paused_resume_safe_surface'
+        return [pscustomobject]$base
+    }
 
     # Economic-loop cert profile: drive real proven buys. Once a non-trade branch (the travel leg) has
     # executed/blocked, request ProbeVanillaTradeExecutionNow on trade-capable surfaces until the
@@ -424,6 +494,14 @@ function Get-AutonomousAssistIterationDecision {
             switch ($planned) {
                 'travel' {
                     if ($gate -and ($gate.state -eq 'available') -and $travelGate.allowed -and ($surface -eq 'settlement_menu')) {
+						if ([string]::IsNullOrWhiteSpace($resolvedTravelTarget)) {
+							$base.actionConsidered = 'travel_to_training_target'
+							$base.decision = 'block'
+							$base.reason = 'handoff_missing_travel_target'
+							$base.plannedBranch = 'travel'
+							$base.recursiveBranchConsumed = $true
+							return [pscustomobject]$base
+						}
                         $cooldownOk = $true
                         if ($LastTravelCommandUtc) {
                             $elapsed = ($nowUtc - $LastTravelCommandUtc).TotalSeconds
@@ -433,7 +511,8 @@ function Get-AutonomousAssistIterationDecision {
                             $base.actionConsidered = 'travel_to_training_target'
                             $base.decision = 'allowed'
                             $base.commandSent = 'AssistiveLeaveTownAndTravel'
-                            $base.target = $TargetSettlement
+							$base.target = $resolvedTravelTarget
+							$base.targetSource = $resolvedTravelTargetSource
                             $base.reason = $branchReason
                             $base.plannedBranch = 'travel'
                             $base.recursiveBranchConsumed = $true
@@ -446,14 +525,51 @@ function Get-AutonomousAssistIterationDecision {
                         $base.recursiveBranchConsumed = $true
                         return [pscustomobject]$base
                     }
-                    if ($surface -eq 'campaign_map') {
-                        $base.actionConsidered = 'observe_route'
-                        $base.decision = if ($travelGate.allowed) { 'observe' } else { 'wait' }
-                        $base.reason = if ($branchReason) { $branchReason } elseif ($travelGate.reason) { $travelGate.reason } else { 'travel_planned_map_observe' }
+					if ($gate -and ($gate.state -eq 'available') -and $travelGate.allowed -and ($surface -eq 'campaign_map')) {
+						if ([string]::IsNullOrWhiteSpace($resolvedTravelTarget)) {
+							$base.actionConsidered = 'travel_to_training_target'
+							$base.decision = 'block'
+							$base.reason = 'handoff_missing_travel_target'
+							$base.plannedBranch = 'travel'
+							$base.recursiveBranchConsumed = $true
+							return [pscustomobject]$base
+						}
+						$cooldownOk = $true
+						if ($LastTravelCommandUtc) {
+							$elapsed = ($nowUtc - $LastTravelCommandUtc).TotalSeconds
+							$cooldownOk = ($elapsed -ge $TravelCommandCooldownSec)
+						}
+						$base.actionConsidered = 'travel_to_training_target'
+						$base.plannedBranch = 'travel'
+						$base.recursiveBranchConsumed = $true
+						if ($LastTravelCommandUtc -and $cooldownOk) {
+							$base.actionConsidered = 'observe_route'
+							$base.decision = 'observe'
+							$base.reason = 'travel_command_sent_observe_movement'
+							return [pscustomobject]$base
+						}
+						if ($cooldownOk) {
+							$base.decision = 'allowed'
+							$base.commandSent = 'AssistiveLeaveTownAndTravel'
+							$base.target = $resolvedTravelTarget
+							$base.targetSource = $resolvedTravelTargetSource
+							$base.reason = if ($branchReason) { $branchReason } elseif ($travelGate.reason) { $travelGate.reason } else { 'travel_planned_map_execute_no_route_proof' }
+							return [pscustomobject]$base
+						}
+						$base.decision = 'wait'
+						$base.reason = 'travel_command_cooldown'
                         $base.plannedBranch = 'travel'
                         $base.recursiveBranchConsumed = $true
                         return [pscustomobject]$base
                     }
+					if ($surface -eq 'campaign_map') {
+						$base.actionConsidered = 'observe_route'
+						$base.decision = if ($travelGate.allowed) { 'observe' } else { 'wait' }
+						$base.reason = if ($branchReason) { $branchReason } elseif ($travelGate.reason) { $travelGate.reason } else { 'travel_planned_map_observe' }
+						$base.plannedBranch = 'travel'
+						$base.recursiveBranchConsumed = $true
+						return [pscustomobject]$base
+					}
                     $base.actionConsidered = 'travel_to_training_target'
                     $base.decision = 'wait'
                     $base.reason = if ($gate -and $gate.reason) { $gate.reason } elseif ($travelGate.reason) { $travelGate.reason } else { 'travel_branch_not_available' }
@@ -537,6 +653,12 @@ function Get-AutonomousAssistIterationDecision {
     switch ($AssistProfile) {
         'training-map' {
             if ($surface -eq 'settlement_menu' -and $travelGate.allowed) {
+	                if ([string]::IsNullOrWhiteSpace($resolvedTravelTarget)) {
+	                    $base.actionConsidered = 'travel_to_training_target'
+	                    $base.decision = 'block'
+	                    $base.reason = 'handoff_missing_travel_target'
+	                    return [pscustomobject]$base
+	                }
                 $cooldownOk = $true
                 if ($LastTravelCommandUtc) {
                     $elapsed = ($nowUtc - $LastTravelCommandUtc).TotalSeconds
@@ -546,7 +668,8 @@ function Get-AutonomousAssistIterationDecision {
                     $base.actionConsidered = 'travel_to_training_target'
                     $base.decision = 'allowed'
                     $base.commandSent = 'AssistiveLeaveTownAndTravel'
-                    $base.target = $TargetSettlement
+	                    $base.target = $resolvedTravelTarget
+	                    $base.targetSource = $resolvedTravelTargetSource
                     return [pscustomobject]$base
                 }
                 $base.actionConsidered = 'travel_to_training_target'
@@ -646,6 +769,20 @@ function Write-AssistSessionJsonlFile {
         Set-Content -LiteralPath $Path -Value $lines -Encoding UTF8
     }
     return $Path
+}
+
+function Flush-AutonomousAssistInterimEvidence {
+    param([hashtable]$Evidence)
+    if (-not $Evidence -or -not $Evidence.checkpointDir) { return }
+    $dir = $Evidence.checkpointDir
+    if (-not (Test-Path -LiteralPath $dir)) {
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    }
+    Write-AssistSessionJsonlFile -List $Evidence.stateSnapshots -Path (Join-Path $dir 'state-snapshots.jsonl') | Out-Null
+    Write-AssistSessionJsonlFile -List $Evidence.commandTimeline -Path (Join-Path $dir 'command-timeline.jsonl') | Out-Null
+    Write-AssistSessionJsonlFile -List $Evidence.travelDecisions -Path (Join-Path $dir 'travel-decisions.jsonl') | Out-Null
+    Write-AssistSessionJsonlFile -List $Evidence.trainingDecisions -Path (Join-Path $dir 'training-decisions.jsonl') | Out-Null
+    Write-AssistSessionJsonlFile -List $Evidence.branchConsiderationLog -Path (Join-Path $dir 'branch-consideration-log.jsonl') | Out-Null
 }
 
 function Get-AutomationModEventPaths {
@@ -863,6 +1000,7 @@ function Save-AutonomousAssistSessionEvidence {
     Write-AssistSessionJsonlFile -List $Evidence.safetyDecisions -Path (Join-Path $dir 'safety-decisions.jsonl') | Out-Null
     Write-AssistSessionJsonlFile -List $Evidence.travelDecisions -Path (Join-Path $dir 'travel-decisions.jsonl') | Out-Null
     Write-AssistSessionJsonlFile -List $Evidence.trainingDecisions -Path (Join-Path $dir 'training-decisions.jsonl') | Out-Null
+    Write-AssistSessionJsonlFile -List $Evidence.branchConsiderationLog -Path (Join-Path $dir 'branch-consideration-log.jsonl') | Out-Null
     if (Get-Command Write-AutomationCheckpointEventsFile -ErrorAction SilentlyContinue) {
         $events = @($Evidence.checkpointEvents.ToArray())
         if (Get-Command Merge-AutomationCheckpointEvents -ErrorAction SilentlyContinue) {

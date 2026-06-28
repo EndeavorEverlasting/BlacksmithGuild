@@ -517,6 +517,8 @@ namespace BlacksmithGuild.DevTools
                     return TimeDevTools.AdvanceOneDay() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case DevCommandRegistry.ToggleFastForwardCommand:
                     return TimeDevTools.ToggleFastForward() ? DevCommandResult.Success : DevCommandResult.Failed;
+                case DevCommandRegistry.ResumeCampaignClockCommand:
+                    return TimeDevTools.ResumeCampaignClock() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     return EconomyTestScenarios.RunRichPlayerEconomyTest();
                 case CharacterProgressionTestScenarios.RichSmithingProgressionTestName:

@@ -41,19 +41,30 @@ function Read-Pr11RuntimeLifecycle {
         return [pscustomobject]$result
     }
 
-    try {
-        $lc = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
-        $result.parseOk = $true
-        if ($lc.lastHeartbeatUtc) {
-            $result.lastHeartbeatUtc = ConvertTo-Pr11Utc -Value $lc.lastHeartbeatUtc
+    for ($attempt = 1; $attempt -le 5; $attempt++) {
+        try {
+            $raw = Get-Content -LiteralPath $Path -Raw
+            if ([string]::IsNullOrWhiteSpace($raw)) { throw 'empty RuntimeLifecycle read' }
+            $lc = $raw | ConvertFrom-Json
+            $result.parseOk = $true
+            if ($lc.lastHeartbeatUtc) {
+                $result.lastHeartbeatUtc = ConvertTo-Pr11Utc -Value $lc.lastHeartbeatUtc
+            }
+            if (-not $result.lastHeartbeatUtc -and $attempt -lt 5) {
+                Start-Sleep -Milliseconds 100
+                continue
+            }
+            $result.lastCommandName = if ($lc.lastCommandName) { [string]$lc.lastCommandName } else { $null }
+            $result.lastCommandStartedAtUtc = if ($lc.lastCommandStartedAtUtc) { [string]$lc.lastCommandStartedAtUtc } else { $null }
+            $result.lastCommandFinishedAtUtc = if ($lc.lastCommandFinishedAtUtc) { [string]$lc.lastCommandFinishedAtUtc } else { $null }
+            $result.lastCommandResult = if ($lc.lastCommandResult) { [string]$lc.lastCommandResult } else { $null }
+            $result.gracefulShutdownObserved = ($lc.gracefulShutdownObserved -eq $true)
+            $result.shutdownObservedAtUtc = if ($lc.shutdownObservedAtUtc) { [string]$lc.shutdownObservedAtUtc } else { $null }
+            break
+        } catch {
+            if ($attempt -lt 5) { Start-Sleep -Milliseconds 100 }
         }
-        $result.lastCommandName = if ($lc.lastCommandName) { [string]$lc.lastCommandName } else { $null }
-        $result.lastCommandStartedAtUtc = if ($lc.lastCommandStartedAtUtc) { [string]$lc.lastCommandStartedAtUtc } else { $null }
-        $result.lastCommandFinishedAtUtc = if ($lc.lastCommandFinishedAtUtc) { [string]$lc.lastCommandFinishedAtUtc } else { $null }
-        $result.lastCommandResult = if ($lc.lastCommandResult) { [string]$lc.lastCommandResult } else { $null }
-        $result.gracefulShutdownObserved = ($lc.gracefulShutdownObserved -eq $true)
-        $result.shutdownObservedAtUtc = if ($lc.shutdownObservedAtUtc) { [string]$lc.shutdownObservedAtUtc } else { $null }
-    } catch { }
+    }
 
     return [pscustomobject]$result
 }
@@ -72,6 +83,7 @@ function Read-Pr11StateMachineFromStatus {
         blockReason = $null
         updatedAtUtc = $null
         heartbeatUtc = $null
+        sessionTimePaused = $false
     }
 
     if (-not $StatusPath -or -not (Test-Path -LiteralPath $StatusPath)) {
@@ -91,6 +103,9 @@ function Read-Pr11StateMachineFromStatus {
             $result.updatedAtUtc = [datetime]::Parse([string]$st.updatedAt, $null, `
                 [Globalization.DateTimeStyles]::RoundtripKind).ToUniversalTime()
         } catch { }
+    }
+    if ($st.session -and $null -ne $st.session.timePaused) {
+        $result.sessionTimePaused = ($st.session.timePaused -eq $true)
     }
 
     $sm = $st.stateMachine
@@ -119,10 +134,17 @@ function Read-Pr11RecursiveBranchGate {
     if (-not $BranchObj) {
         return [pscustomobject]@{ state = 'blocked'; reason = 'missing_branch_gate' }
     }
-    return [pscustomobject]@{
+    $result = [ordered]@{
         state = if ($BranchObj.state) { [string]$BranchObj.state } else { 'blocked' }
         reason = if ($BranchObj.reason) { [string]$BranchObj.reason } else { $null }
     }
+    foreach ($name in @('targetSettlement', 'targetTown', 'destinationCandidate', 'recommendedDestination', 'routeTargetSettlement')) {
+        if ($BranchObj.PSObject.Properties.Name -contains $name) {
+            $value = [string]$BranchObj.$name
+            if (-not [string]::IsNullOrWhiteSpace($value)) { $result[$name] = $value }
+        }
+    }
+    return [pscustomobject]$result
 }
 
 function Read-Pr11RecursiveBranchStateFromStatus {
@@ -148,6 +170,11 @@ function Read-Pr11RecursiveBranchStateFromStatus {
         nextActionRequired = $false
         nextPlannedBranch = $null
         nextActionReason = $null
+        targetSettlement = $null
+        targetTown = $null
+        destinationCandidate = $null
+        recommendedDestination = $null
+        routeTargetSettlement = $null
         branches = $emptyBranches
     }
 
@@ -175,6 +202,12 @@ function Read-Pr11RecursiveBranchStateFromStatus {
     $result.nextActionRequired = ($rbs.nextActionRequired -eq $true)
     $result.nextPlannedBranch = if ($rbs.nextPlannedBranch) { [string]$rbs.nextPlannedBranch } else { $null }
     $result.nextActionReason = if ($rbs.nextActionReason) { [string]$rbs.nextActionReason } else { $null }
+    foreach ($name in @('targetSettlement', 'targetTown', 'destinationCandidate', 'recommendedDestination', 'routeTargetSettlement')) {
+        if ($rbs.PSObject.Properties.Name -contains $name) {
+            $value = [string]$rbs.$name
+            if (-not [string]::IsNullOrWhiteSpace($value)) { $result[$name] = $value }
+        }
+    }
     if ($rbs.updatedAtUtc) {
         $result.updatedAtUtc = ConvertTo-Pr11Utc -Value $rbs.updatedAtUtc
         $result.fresh = Test-Pr11UtcFresh -Utc $result.updatedAtUtc -MaxAgeSec $FreshSec
@@ -342,6 +375,7 @@ function Get-Pr11AssistiveReadiness {
         confidence = $confidence
         statusFresh = [bool]$statusFresh
         heartbeatFresh = [bool]$heartbeatFresh
+        sessionTimePaused = [bool]$stateMachine.sessionTimePaused
         safeToExecuteTravel = [bool]$stateMachine.safeToExecuteTravel
         blockReason = $stateMachine.blockReason
         recursiveBranchState = $recursiveBranchState

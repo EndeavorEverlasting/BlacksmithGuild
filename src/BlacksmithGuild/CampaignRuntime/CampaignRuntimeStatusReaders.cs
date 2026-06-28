@@ -221,11 +221,10 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             try
             {
-                if (!MarketIntelligenceService.HasCachedScan)
-                {
-                    return null;
-                }
-
+                // SelectBestMission already calls RunScanNow when HasCachedScan is false, so
+                // we do NOT short-circuit here.  The early guard was preventing on-demand scan
+                // and causing DestinationCandidate to stay null on every cold session, which
+                // ultimately blocked the runner with handoff_missing_travel_target.
                 var mission = MapTradeMissionSelector.SelectBestMission();
                 if (mission == null || mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
                 {

@@ -49,11 +49,48 @@ function Test-TbgRealGameSpawnDetection {
     if (-not $Detection -or -not $Detection.gameProcessRunning) { return $false }
 
     $confidence = [string]$Detection.gameAliveConfidence
-    if ($confidence -in @('launcher_hosted', 'process_detection_uncertain', 'none')) {
+    if ($confidence -in @('process_detection_uncertain', 'none')) {
         return $false
     }
 
-    return $confidence -in @('definite', 'phase1_active')
+    if ($confidence -in @('definite', 'phase1_active')) { return $true }
+
+    foreach ($c in @($Detection.gameProcessCandidates)) {
+        if ($c.method -in @('process_name_bannerlord', 'process_name_taleworlds')) { return $true }
+        if ($c.method -eq 'launcher_child_executable') {
+            if ((Get-Command Test-BannerlordGameExecutableLeaf -ErrorAction SilentlyContinue) `
+                    -and (Test-BannerlordGameExecutableLeaf -Path $c.path)) {
+                return $true
+            }
+            if (-not (Get-Command Test-BannerlordGameExecutableLeaf -ErrorAction SilentlyContinue)) {
+                return $true
+            }
+        }
+        if ($c.method -eq 'launcher_hosted_window' -and $c.isLauncherHosted) {
+            if ((Get-Command Test-LauncherSingleplayerHostedTitle -ErrorAction SilentlyContinue) `
+                    -and (Test-LauncherSingleplayerHostedTitle -Title $c.windowTitle)) {
+                return $true
+            }
+        }
+    }
+
+    if ($Detection.gameProcessDetectionMethod -in @(
+            'process_name_bannerlord', 'process_name_taleworlds', 'launcher_child_executable', 'executable_path'
+        )) {
+        return $true
+    }
+
+    if ($Detection.gameProcessDetectionMethod -eq 'launcher_hosted_window') {
+        foreach ($c in @($Detection.gameProcessCandidates)) {
+            if ($c.method -eq 'launcher_hosted_window' `
+                    -and (Get-Command Test-LauncherSingleplayerHostedTitle -ErrorAction SilentlyContinue) `
+                    -and (Test-LauncherSingleplayerHostedTitle -Title $c.windowTitle)) {
+                return $true
+            }
+        }
+    }
+
+    return $false
 }
 
 function Test-F7StrongPreIntentGameSignal {

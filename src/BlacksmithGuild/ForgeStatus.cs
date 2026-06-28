@@ -851,6 +851,16 @@ namespace BlacksmithGuild
 
         private static void AppendFactionPowerPosture(StringBuilder builder)
         {
+            if (!DevToolsConfig.FactionPowerPostureStatusScanEnabled)
+            {
+                RuntimeTrace.LogDeferOnce(
+                    "faction-posture-status-scan-disabled",
+                    "ForgeStatus",
+                    "FactionPowerPostureScan",
+                    "diagnostic disabled");
+                return;
+            }
+
             // The posture block is diagnostic. Scanning every ~0.5s status flush across all nearby
             // parties while the campaign clock runs is what exposed the native crash during travel.
             // Skip entirely during active assistive travel, and otherwise rate-limit the scan,

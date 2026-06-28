@@ -14,6 +14,18 @@ try {
     . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
     . (Join-Path $PSScriptRoot 'forge-status.ps1')
     $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
+    $assistToggle = [ordered]@{
+        enabled = $false
+        requestedBy = 'forge_stop'
+        reason = 'operator invoked ForgeStop'
+        updatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Depth 4
+    foreach ($togglePath in @(
+            (Join-Path $bannerlordRoot 'BlacksmithGuild_AssistToggle.json'),
+            (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_AssistToggle.json')
+        )) {
+        Set-Content -LiteralPath $togglePath -Value $assistToggle -Encoding UTF8
+    }
     foreach ($cmd in @('PauseCampaignGovernorAutomation', 'AbortCohesionMoveNow', 'AbortMapTradeRouteNow', 'AbortAutonomousGuildLoopNow')) {
         try { Send-ForgeCommand -CommandName $cmd -BannerlordRoot $bannerlordRoot | Out-Null } catch { }
     }

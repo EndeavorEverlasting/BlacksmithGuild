@@ -258,7 +258,7 @@ $tradeReady = [pscustomobject]@{
     recursiveBranchFresh = $false
     recursiveBranchState = $null
     runtimeLifecycle = [pscustomobject]@{ parseOk = $true }
-    stateMachine = [pscustomobject]@{ hasStateMachine = $true; gameplaySurface = 'trading'; gameLifecycle = 'campaign'; safeToExecuteTravel = $true }
+    stateMachine = [pscustomobject]@{ hasStateMachine = $true; gameplaySurface = 'trading'; gameLifecycle = 'campaign'; safeToExecuteTravel = $true; heartbeatUtc = (Get-Date).ToUniversalTime().ToString('o') }
 }
 
 $ecoDrive = Get-AutonomousAssistIterationDecision -Readiness $tradeReady -CertProfile 'economic_loop' `

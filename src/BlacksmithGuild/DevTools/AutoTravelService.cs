@@ -317,37 +317,12 @@ namespace BlacksmithGuild.DevTools
 
         private static bool IsClockRunning()
         {
-            try
-            {
-                return Campaign.Current != null
-                    && Campaign.Current.TimeControlMode != CampaignTimeControlMode.Stop;
-            }
-            catch
-            {
-                return false;
-            }
+            return CampaignClockResumeHelper.IsClockRunning();
         }
 
         private static void ReassertRunningClock()
         {
-            try
-            {
-                if (Campaign.Current == null
-                    || GameSessionState.IsMapMenuOpen
-                    || GameSessionState.IsMissionActiveForTrace())
-                {
-                    return;
-                }
-
-                if (Campaign.Current.TimeControlMode == CampaignTimeControlMode.Stop)
-                {
-                    Campaign.Current.TimeControlMode = CampaignTimeControlMode.StoppablePlay;
-                }
-            }
-            catch (Exception ex)
-            {
-                DebugLogger.Test($"[TBG TRAVEL] resume clock failed: {ex.Message}", showInGame: false);
-            }
+            CampaignClockResumeHelper.EnsureClockRunning("AutoTravelService");
         }
 
         public static DevCommandResult TravelByName(string name)
