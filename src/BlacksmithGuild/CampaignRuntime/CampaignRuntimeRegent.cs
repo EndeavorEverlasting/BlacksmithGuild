@@ -12,6 +12,8 @@ namespace BlacksmithGuild.CampaignRuntime
     public static class RegentStagnationClass
     {
         public const string None = "none";
+        public const string CampaignMapPaused = "campaign_map_paused";
+        public const string EscapeMenuInterrupted = "escape_menu_interrupted";
         public const string LauncherMenuStagnant = "launcher_menu_stagnant";
         public const string MainMenuStagnant = "main_menu_stagnant";
         public const string LoadingStagnant = "loading_stagnant";
@@ -31,6 +33,7 @@ namespace BlacksmithGuild.CampaignRuntime
     public static class RegentRecoveryAction
     {
         public const string ObserveOnly = "observe_only";
+        public const string ResumeCampaignClock = "resume_campaign_clock";
         public const string RunGovernorCycle = "run_governor_cycle";
         public const string RefreshMarketScan = "refresh_market_scan";
         public const string SurfaceAdvisory = "surface_advisory";
@@ -60,6 +63,10 @@ namespace BlacksmithGuild.CampaignRuntime
         public string LastActivityStatus;
         public string LastActivityFailureClass;
         public string LastActivityDetail;
+        public string MenuId;
+        public bool SessionTimePaused;
+        public bool OperatorInterruptionObserved;
+        public string OperatorInterruptionReason;
         public string RecommendedRecovery;
         public bool CanRunGovernorCycle;
         public bool RequiresLauncherRecovery;
@@ -78,8 +85,12 @@ namespace BlacksmithGuild.CampaignRuntime
     // ── Regent policy ────────────────────────────────────────────────────────
     public static class CampaignRuntimeRegentPolicy
     {
-        public static string ClassifyStagnation(string surface, string phase, int sameSurfaceSeconds, string lastBranch, int sameDecisionCount)
+        public static string ClassifyStagnation(string surface, string phase, int sameSurfaceSeconds, string lastBranch, int sameDecisionCount, bool sessionTimePaused)
         {
+            if (string.Equals(surface, GameplaySurfaceKinds.EscapeMenu, StringComparison.Ordinal))
+                return RegentStagnationClass.EscapeMenuInterrupted;
+            if (string.Equals(surface, GameplaySurfaceKinds.CampaignMap, StringComparison.Ordinal) && sessionTimePaused)
+                return RegentStagnationClass.CampaignMapPaused;
             if (surface != null && surface.Contains("launcher"))
                 return sameSurfaceSeconds > 60 ? RegentStagnationClass.LauncherMenuStagnant : RegentStagnationClass.None;
             if (surface != null && surface.Contains("main_menu"))
@@ -101,6 +112,10 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             switch (stagnationClass)
             {
+                case RegentStagnationClass.CampaignMapPaused:
+                    return RegentRecoveryAction.ResumeCampaignClock;
+                case RegentStagnationClass.EscapeMenuInterrupted:
+                    return RegentRecoveryAction.OperatorInterventionRequired;
                 case RegentStagnationClass.LauncherMenuStagnant:
                     return RegentRecoveryAction.RequestLauncherRebind;
                 case RegentStagnationClass.MainMenuStagnant:
@@ -141,11 +156,16 @@ namespace BlacksmithGuild.CampaignRuntime
         private static string _lastFailureClass;
         private static int _sameBlockedClassCount;
 
-        public static CampaignRuntimeRegentSnapshot BuildSnapshot()
+        public static CampaignRuntimeRegentSnapshot BuildSnapshot(GameplaySurfaceSnapshot gameplaySnapshot = null)
         {
-            var surface = GameSessionState.ReadinessSurface ?? GameSessionState.Phase.ToString();
+            gameplaySnapshot = gameplaySnapshot ?? GameSessionState.LatestGameplaySurface;
+            var surface = gameplaySnapshot?.GameplaySurface ?? GameSessionState.ReadinessSurface ?? GameSessionState.Phase.ToString();
             var phase = GameSessionState.Phase.ToString();
             var health = CampaignRuntimeStatusReaders.ReadGameHealth();
+            var menuId = gameplaySnapshot?.MenuId;
+            var sessionTimePaused = GameSessionState.IsTimePaused;
+            var operatorInterruptionObserved = string.Equals(surface, GameplaySurfaceKinds.EscapeMenu, StringComparison.Ordinal);
+            var operatorInterruptionReason = operatorInterruptionObserved ? "escape_menu_open" : null;
 
             // Surface stagnation timer
             var now = DateTime.UtcNow;
@@ -182,7 +202,7 @@ namespace BlacksmithGuild.CampaignRuntime
             }
 
             var canRunGovernor = GameSessionState.IsCampaignSessionReady && !CampaignRuntimeGovernor.IsPaused;
-            var stagnationClass = CampaignRuntimeRegentPolicy.ClassifyStagnation(surface, phase, sameSurfaceSeconds, lastBranch, _sameDecisionCount);
+            var stagnationClass = CampaignRuntimeRegentPolicy.ClassifyStagnation(surface, phase, sameSurfaceSeconds, lastBranch, _sameDecisionCount, sessionTimePaused);
             var recovery = CampaignRuntimeRegentPolicy.RecommendRecovery(stagnationClass, surface, canRunGovernor);
 
             var snapshot = new CampaignRuntimeRegentSnapshot
@@ -200,10 +220,16 @@ namespace BlacksmithGuild.CampaignRuntime
                 LastActivityStatus = lastActivityStatus,
                 LastActivityFailureClass = lastActivityFailureClass,
                 LastActivityDetail = lastActivityDetail,
+                MenuId = menuId,
+                SessionTimePaused = sessionTimePaused,
+                OperatorInterruptionObserved = operatorInterruptionObserved,
+                OperatorInterruptionReason = operatorInterruptionReason,
                 RecommendedRecovery = recovery,
                 CanRunGovernorCycle = canRunGovernor,
                 RequiresLauncherRecovery = stagnationClass == RegentStagnationClass.LauncherMenuStagnant,
-                RequiresOperatorApproval = stagnationClass == RegentStagnationClass.GovernorBlockLoop || stagnationClass == RegentStagnationClass.EnvironmentBlocked,
+                RequiresOperatorApproval = operatorInterruptionObserved
+                    || stagnationClass == RegentStagnationClass.GovernorBlockLoop
+                    || stagnationClass == RegentStagnationClass.EnvironmentBlocked,
                 MutationAllowed = false, // Regent never enables mutation; only bounded execution gate does
                 BoundedExecutionEnabled = DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution,
                 GovernorAutonomousEnabled = DevToolsConfig.CampaignRuntimeGovernorAutonomousMode
@@ -225,7 +251,7 @@ namespace BlacksmithGuild.CampaignRuntime
 
         public static bool ShowNow()
         {
-            var snapshot = BuildSnapshot();
+            var snapshot = BuildSnapshot(GameSessionState.LatestGameplaySurface);
             Write(snapshot);
             InGameNotice.Info(ModDisplay.CompactLine("Regent",
                 $"{snapshot.StagnationClass} recovery={snapshot.RecommendedRecovery}"));
@@ -255,6 +281,10 @@ namespace BlacksmithGuild.CampaignRuntime
             Str(sb, "lastActivityStatus", s.LastActivityStatus, true);
             Str(sb, "lastActivityFailureClass", s.LastActivityFailureClass, true);
             Str(sb, "lastActivityDetail", s.LastActivityDetail, true);
+            Str(sb, "menuId", s.MenuId, true);
+            sb.AppendLine($"  \"sessionTimePaused\": {B(s.SessionTimePaused)},");
+            sb.AppendLine($"  \"operatorInterruptionObserved\": {B(s.OperatorInterruptionObserved)},");
+            Str(sb, "operatorInterruptionReason", s.OperatorInterruptionReason, true);
             Str(sb, "recommendedRecovery", s.RecommendedRecovery, true);
             sb.AppendLine($"  \"canRunGovernorCycle\": {B(s.CanRunGovernorCycle)},");
             sb.AppendLine($"  \"requiresLauncherRecovery\": {B(s.RequiresLauncherRecovery)},");

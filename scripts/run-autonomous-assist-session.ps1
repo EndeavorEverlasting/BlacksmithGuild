@@ -15,6 +15,7 @@ param(
     [int]$TravelCommandCooldownSec = 45,
     [int]$ProbeTimeoutSec = 45,
     [int]$ExecuteTimeoutSec = 120,
+    [int]$ForegroundLossStopSec = 8,
     [switch]$SkipBuild,
     [switch]$SkipLaunch,
     [switch]$DryRun,
@@ -121,6 +122,33 @@ function Read-AutonomousAssistJsonArtifact {
         }
     } catch { }
     return $null
+}
+
+function Get-AutonomousAssistForegroundStatus {
+    param($Detection)
+
+    $foreground = Get-F7ForegroundWindowInfo
+    $gamePids = @()
+    if ($Detection) {
+        if ($Detection.gameProcessPid) {
+            $gamePids += [int]$Detection.gameProcessPid
+        }
+        if ($Detection.gameProcessCandidates) {
+            $gamePids += @($Detection.gameProcessCandidates | ForEach-Object {
+                    if ($_.pid) { [int]$_.pid }
+                })
+        }
+    }
+    $gamePids = @($gamePids | Where-Object { $_ -gt 0 } | Select-Object -Unique)
+    $foregroundPid = if ($foreground -and $foreground.processId) { [int]$foreground.processId } else { 0 }
+    $matchesGame = ($foregroundPid -gt 0 -and $gamePids -contains $foregroundPid)
+    $lossObserved = ($gamePids.Count -gt 0 -and $foregroundPid -gt 0 -and -not $matchesGame)
+    return [pscustomobject]@{
+        foreground = $foreground
+        gamePids = @($gamePids)
+        matchesGameProcess = [bool]$matchesGame
+        lossObserved = [bool]$lossObserved
+    }
 }
 
 function Get-AutonomousAssistEngineTravelTarget {
@@ -533,6 +561,7 @@ $engineHandoffRefreshAttempted = $false
 $lastSafeIdleClass = $null
 $consecutiveSafeIdleCycles = 0
 $maxConsecutiveSafeIdleObserved = 0
+$foregroundLossSinceUtc = $null
 
 $null = Start-TbgWaitSegment -WaitReason 'autonomous_assist_loop' -TimeoutSec ($MaxRuntimeMinutes * 60) -PollIntervalMs ($PollIntervalSec * 1000)
 
@@ -602,6 +631,30 @@ while ((Get-Date) -lt $loopDeadline) {
 	}
     $lastRecursiveBranchState = $ready.recursiveBranchState
     $lastRecursiveBranchFresh = [bool]$ready.recursiveBranchFresh
+	$foregroundStatus = Get-AutonomousAssistForegroundStatus -Detection $det
+	$foregroundLossSeconds = 0
+	if ($foregroundStatus.lossObserved) {
+		if (-not $foregroundLossSinceUtc) {
+			$foregroundLossSinceUtc = (Get-Date).ToUniversalTime()
+		}
+		$foregroundLossSeconds = [int][Math]::Floor(((Get-Date).ToUniversalTime() - $foregroundLossSinceUtc).TotalSeconds)
+		if ($foregroundLossSeconds -ge $ForegroundLossStopSec) {
+			$stopReason = 'operator_interruption_foreground_lost'
+			Write-SessionLog "Foreground lost to process=$($foregroundStatus.foreground.processName) title=$($foregroundStatus.foreground.title) for ${foregroundLossSeconds}s — stopping assist loop cleanly"
+			Add-AssistSessionJsonl -List $evidence.safetyDecisions -Event ([ordered]@{
+				atUtc = (Get-Date).ToUniversalTime().ToString('o')
+				iteration = $iteration
+				reason = $stopReason
+				foregroundProcessName = $foregroundStatus.foreground.processName
+				foregroundTitle = $foregroundStatus.foreground.title
+				foregroundLossSeconds = $foregroundLossSeconds
+			})
+			Flush-AutonomousAssistInterimEvidence -Evidence $evidence
+			break
+		}
+	} else {
+		$foregroundLossSinceUtc = $null
+	}
     $decision = Get-AutonomousAssistIterationDecision -Readiness $ready -AssistProfile $AssistProfile `
 		-TargetSettlement $targetResolution.target -StopOnUnsafeState:$StopOnUnsafeState `
         -LastTravelCommandUtc $lastTravelCommandUtc -TravelCommandCooldownSec $TravelCommandCooldownSec `
@@ -645,6 +698,12 @@ while ((Get-Date) -lt $loopDeadline) {
         confidence = $ready.confidence
         recursiveBranchFresh = $ready.recursiveBranchFresh
         nextPlannedBranch = if ($ready.recursiveBranchState) { $ready.recursiveBranchState.nextPlannedBranch } else { $null }
+		operatorInterruptionObserved = [bool]$ready.operatorInterruptionObserved
+		operatorInterruptionReason = $ready.operatorInterruptionReason
+		foregroundProcessName = $foregroundStatus.foreground.processName
+		foregroundWindowTitle = $foregroundStatus.foreground.title
+		foregroundWindowMatch = [bool]$foregroundStatus.matchesGameProcess
+		foregroundLossSeconds = $foregroundLossSeconds
 		resolvedTravelTarget = $targetResolution.target
 		resolvedTravelTargetSource = $targetResolution.source
     })

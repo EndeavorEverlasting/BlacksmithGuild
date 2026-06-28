@@ -18,6 +18,16 @@ function Get-RuntimeLifecycleJsonPath {
         -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_RuntimeLifecycle.json')
 }
 
+function Get-RuntimeRegentJsonPath {
+    param([string]$BannerlordRoot)
+    if (-not (Get-Command Get-AssistiveArtifactCandidates -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+    }
+    return Find-NewestExistingPath -Candidates (Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot `
+        -FileName 'BlacksmithGuild_RuntimeRegent.json') `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_RuntimeRegent.json')
+}
+
 function Read-Pr11RuntimeLifecycle {
     param([string]$BannerlordRoot, [string]$Path = $null)
 
@@ -64,6 +74,53 @@ function Read-Pr11RuntimeLifecycle {
         } catch {
             if ($attempt -lt 5) { Start-Sleep -Milliseconds 100 }
         }
+    }
+
+    return [pscustomobject]$result
+}
+
+function Read-Pr11RuntimeRegent {
+    param([string]$BannerlordRoot, [string]$Path = $null)
+
+    $result = [ordered]@{
+        path = $Path
+        parseOk = $false
+        generatedUtc = $null
+        surface = $null
+        menuId = $null
+        stagnationClass = $null
+        recommendedRecovery = $null
+        requiresOperatorApproval = $false
+        sessionTimePaused = $false
+        operatorInterruptionObserved = $false
+        operatorInterruptionReason = $null
+        routeCouncilRecommendedDestination = $null
+    }
+
+    if (-not $Path) {
+        $Path = Get-RuntimeRegentJsonPath -BannerlordRoot $BannerlordRoot
+    }
+    $result.path = $Path
+    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) {
+        return [pscustomobject]$result
+    }
+
+    try {
+        $raw = Get-Content -LiteralPath $Path -Raw
+        if ([string]::IsNullOrWhiteSpace($raw)) { return [pscustomobject]$result }
+        $rg = $raw | ConvertFrom-Json
+        $result.parseOk = $true
+        if ($rg.generatedUtc) { $result.generatedUtc = ConvertTo-Pr11Utc -Value $rg.generatedUtc }
+        $result.surface = if ($rg.surface) { [string]$rg.surface } else { $null }
+        $result.menuId = if ($rg.menuId) { [string]$rg.menuId } else { $null }
+        $result.stagnationClass = if ($rg.stagnationClass) { [string]$rg.stagnationClass } else { $null }
+        $result.recommendedRecovery = if ($rg.recommendedRecovery) { [string]$rg.recommendedRecovery } else { $null }
+        $result.requiresOperatorApproval = ($rg.requiresOperatorApproval -eq $true)
+        $result.sessionTimePaused = ($rg.sessionTimePaused -eq $true)
+        $result.operatorInterruptionObserved = ($rg.operatorInterruptionObserved -eq $true)
+        $result.operatorInterruptionReason = if ($rg.operatorInterruptionReason) { [string]$rg.operatorInterruptionReason } else { $null }
+        $result.routeCouncilRecommendedDestination = if ($rg.routeCouncilRecommendedDestination) { [string]$rg.routeCouncilRecommendedDestination } else { $null }
+    } catch {
     }
 
     return [pscustomobject]$result
@@ -329,8 +386,10 @@ function Get-Pr11AssistiveReadiness {
     $stateMachine = Read-Pr11StateMachineFromStatus -StatusPath $StatusPath
     $recursiveBranchState = Read-Pr11RecursiveBranchStateFromStatus -StatusPath $StatusPath -FreshSec $StatusFreshSec
     $runtime = $null
+    $runtimeRegent = $null
     if ($BannerlordRoot) {
         $runtime = Read-Pr11RuntimeLifecycle -BannerlordRoot $BannerlordRoot
+        $runtimeRegent = Read-Pr11RuntimeRegent -BannerlordRoot $BannerlordRoot
     }
 
     $confidence = if ($stateMachine.hasStateMachine) { 'state_machine' } else { 'legacy_low' }
@@ -357,6 +416,18 @@ function Get-Pr11AssistiveReadiness {
         $legacy.canAcceptAssistiveCommand
     }
 
+    $operatorInterruptionObserved = [bool](
+        ($runtimeRegent -and $runtimeRegent.parseOk -and $runtimeRegent.operatorInterruptionObserved) `
+        -or ($stateMachine.hasStateMachine -and [string]$stateMachine.gameplaySurface -eq 'escape_menu')
+    )
+    $operatorInterruptionReason = if ($runtimeRegent -and $runtimeRegent.parseOk -and $runtimeRegent.operatorInterruptionReason) {
+        [string]$runtimeRegent.operatorInterruptionReason
+    } elseif ($stateMachine.hasStateMachine -and [string]$stateMachine.gameplaySurface -eq 'escape_menu') {
+        'escape_menu_open'
+    } else {
+        $null
+    }
+
     return [pscustomobject][ordered]@{
         readinessSurface = $readinessSurface
         settlementMenuOpen = [bool]$legacy.settlementMenuOpen
@@ -372,10 +443,13 @@ function Get-Pr11AssistiveReadiness {
         parseOk = [bool]$legacy.parseOk
         stateMachine = $stateMachine
         runtimeLifecycle = $runtime
+        runtimeRegent = $runtimeRegent
         confidence = $confidence
         statusFresh = [bool]$statusFresh
         heartbeatFresh = [bool]$heartbeatFresh
         sessionTimePaused = [bool]$stateMachine.sessionTimePaused
+        operatorInterruptionObserved = $operatorInterruptionObserved
+        operatorInterruptionReason = $operatorInterruptionReason
         safeToExecuteTravel = [bool]$stateMachine.safeToExecuteTravel
         blockReason = $stateMachine.blockReason
         recursiveBranchState = $recursiveBranchState

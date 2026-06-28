@@ -81,6 +81,10 @@ foreach ($idle in @('safe_idle_no_branch_progress', 'safe_idle_execute_not_reque
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Get-AutonomousAssistSafeIdleClass -Decision $decision' 'loop must classify each cycle'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'safeIdleClass = $safeIdleClass' 'iteration event must record safe-idle class'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'consecutiveSafeIdle=' 'loop must log consecutive safe-idle diagnostic'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'operator_interruption_foreground_lost' 'runner must stop on sustained user foreground loss/interruption'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Get-F7ForegroundWindowInfo' 'runner must inspect foreground window during assist loop'
+Assert-Contains 'scripts\autonomous-assist-session.ps1' 'operatorInterruptionObserved' 'decision policy must consume regent/runtime interruption truth'
+Assert-Contains 'scripts\pr11-runtime-state-consumer.ps1' 'Read-Pr11RuntimeRegent' 'runtime consumer must read runtime regent sidecar'
 
 # Lane D: a single shared clock-resume helper must own TimeControlMode and be reused by every movement
 # driver so no driver can issue a travel command while leaving the campaign clock stopped.
@@ -88,6 +92,8 @@ Assert-Contains 'src\BlacksmithGuild\DevTools\ClockResumeHelper.cs' 'class Campa
 Assert-Contains 'src\BlacksmithGuild\DevTools\ClockResumeHelper.cs' 'public static bool EnsureClockRunning(string caller)' 'helper must expose EnsureClockRunning(caller)'
 Assert-Contains 'src\BlacksmithGuild\DevTools\AutoTravelService.cs' 'CampaignClockResumeHelper.EnsureClockRunning("AutoTravelService")' 'golden path must route clock resume through shared helper'
 Assert-Contains 'src\BlacksmithGuild\DevTools\CampaignMapMovementHelper.cs' 'CampaignClockResumeHelper.EnsureClockRunning("CampaignMapMovementHelper")' 'shared low-level mover must resume clock on successful travel'
+Assert-Contains 'scripts\automation-checkpoint-contract.ps1' 'campaign_clock_resume_ack' 'clock-resume ACK must be a valid checkpoint, not a runner failure'
+Assert-Contains 'src\BlacksmithGuild\ForgeStatus.cs' 'CampaignRuntimeRegent.Write(CampaignRuntimeRegent.BuildSnapshot(snapshot))' 'status flush must emit runtime regent sidecar for governance consumption'
 
 # Lane E: focus policy must default to respecting the user foreground; aggressive focus-steal must be
 # an explicit opt-in (-AllowFocusSteal) rather than an automatic escalation.

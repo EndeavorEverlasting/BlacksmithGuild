@@ -438,6 +438,17 @@ function Get-AutonomousAssistIterationDecision {
         return [pscustomobject]$base
     }
 
+    if ($Readiness.operatorInterruptionObserved) {
+        $base.actionConsidered = 'operator_interruption'
+        $base.decision = 'stop_unsafe_surface'
+        $base.reason = if ($Readiness.operatorInterruptionReason) {
+            [string]$Readiness.operatorInterruptionReason
+        } else {
+            'operator_interruption_detected'
+        }
+        return [pscustomobject]$base
+    }
+
     if ($surface -in $script:AssistUnsafeSurfaces) {
         $base.reason = "surface_blocks_assist:$surface"
         if ($StopOnUnsafeState) {
@@ -453,7 +464,7 @@ function Get-AutonomousAssistIterationDecision {
     $resolvedTravelTarget = if (-not [string]::IsNullOrWhiteSpace($recursiveTravelTarget)) { $recursiveTravelTarget } elseif (-not [string]::IsNullOrWhiteSpace($TargetSettlement)) { $TargetSettlement } else { $null }
     $resolvedTravelTargetSource = if (-not [string]::IsNullOrWhiteSpace($recursiveTravelTarget)) { 'recursiveBranchState' } elseif (-not [string]::IsNullOrWhiteSpace($TargetSettlement)) { 'explicit_parameter_or_engine_artifact' } else { $null }
 
-    if ($surface -eq 'campaign_map' -and $Readiness.sessionTimePaused -eq $true -and $Readiness.canAcceptAssistiveCommand) {
+    if ($surface -eq 'campaign_map' -and $Readiness.sessionTimePaused -eq $true -and -not $Readiness.operatorInterruptionObserved -and $Readiness.canAcceptAssistiveCommand) {
         $base.actionConsidered = 'resume_campaign_clock'
         $base.decision = 'allowed'
         $base.commandSent = 'ResumeCampaignClock'

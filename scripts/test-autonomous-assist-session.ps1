@@ -92,7 +92,8 @@ function Build-Readiness {
         [bool]$StaleHeartbeat = $false,
         [hashtable]$RecursiveBranchState = $null,
         [bool]$StaleRecursiveBranch = $false,
-        [bool]$TimePaused = $false
+        [bool]$TimePaused = $false,
+        [hashtable]$RuntimeRegent = $null
     )
     $statusPath = Join-Path $tmpRoot "status-$Surface.json"
     $session = [ordered]@{
@@ -128,6 +129,12 @@ function Build-Readiness {
     $hb = if ($StaleHeartbeat) { (Get-Date).ToUniversalTime().AddMinutes(-10).ToString('o') } else { (Get-Date).ToUniversalTime().ToString('o') }
     $runtimePath = Join-Path $tmpRoot "runtime-$Surface.json"
     New-RuntimeFixture @{ lastHeartbeatUtc = $hb } | Set-Content -LiteralPath $runtimePath -Encoding UTF8
+    $regentPath = Join-Path $tmpRoot 'BlacksmithGuild_RuntimeRegent.json'
+    if ($RuntimeRegent) {
+        ($RuntimeRegent | ConvertTo-Json -Depth 6) | Set-Content -LiteralPath $regentPath -Encoding UTF8
+    } else {
+        Remove-Item -LiteralPath $regentPath -Force -ErrorAction SilentlyContinue
+    }
 
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $tmpRoot
     $ready.runtimeLifecycle = Read-Pr11RuntimeLifecycle -BannerlordRoot $tmpRoot -Path $runtimePath
@@ -152,6 +159,24 @@ $decisionPausedMap = Get-AutonomousAssistIterationDecision -Readiness $readyPaus
 if ($decisionPausedMap.decision -ne 'allowed') { throw "paused campaign_map must allow resume got $($decisionPausedMap.decision)" }
 if ($decisionPausedMap.commandSent -ne 'ResumeCampaignClock') { throw "paused campaign_map must send ResumeCampaignClock got $($decisionPausedMap.commandSent)" }
 if ($decisionPausedMap.reason -ne 'campaign_clock_paused_resume_safe_surface') { throw "paused campaign_map reason mismatch got $($decisionPausedMap.reason)" }
+
+# escape menu / operator interruption must stop instead of auto-resume
+$escapeRegent = [ordered]@{
+    generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    surface = 'escape_menu'
+    menuId = 'escape'
+    stagnationClass = 'escape_menu_interrupted'
+    recommendedRecovery = 'operator_intervention_required'
+    requiresOperatorApproval = $true
+    sessionTimePaused = $true
+    operatorInterruptionObserved = $true
+    operatorInterruptionReason = 'escape_menu_open'
+}
+$readyEscapeInterrupted = Build-Readiness -Surface 'escape_menu' -RecursiveBranchState $restWaitPausedRbs -TimePaused $true -RuntimeRegent $escapeRegent
+if (-not $readyEscapeInterrupted.operatorInterruptionObserved) { throw 'runtime regent interruption must flow into readiness' }
+$decisionEscapeInterrupted = Get-AutonomousAssistIterationDecision -Readiness $readyEscapeInterrupted -AssistProfile 'training-map' -StopOnUnsafeState:$true
+if ($decisionEscapeInterrupted.decision -ne 'stop_unsafe_surface') { throw "escape-menu interruption must stop got $($decisionEscapeInterrupted.decision)" }
+if ($decisionEscapeInterrupted.reason -ne 'escape_menu_open') { throw "escape-menu interruption reason mismatch got $($decisionEscapeInterrupted.reason)" }
 
 # fresh recursiveBranchState.travel on settlement_menu allows travel when gate open
 $travelRbs = New-RecursiveBranchFixture -NextPlannedBranch 'travel' `
@@ -493,7 +518,8 @@ if ($runnerText -notmatch 'Test-AutonomousAssistLoopReadiness') {
 foreach ($needle in @(
     'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
     'Test-TbgPostHandoffFastFail', 'Get-AutonomousAssistIterationDecision', 'AssistToggle',
-    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff'
+    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff',
+    'Get-F7ForegroundWindowInfo', 'operator_interruption_foreground_lost', 'ForegroundLossStopSec'
 )) {
     if ($runnerText -notmatch [regex]::Escape($needle)) {
         throw "run-autonomous-assist-session.ps1 missing: $needle"
@@ -537,6 +563,12 @@ $stopText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'forge-stop.ps1') 
 foreach ($needle in @("requestedBy = 'forge_stop'", 'BlacksmithGuild_AssistToggle.json')) {
     if ($stopText -notmatch [regex]::Escape($needle)) {
         throw "forge-stop missing assist-toggle stop contract: $needle"
+    }
+}
+$consumerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1') -Raw
+foreach ($needle in @('function Read-Pr11RuntimeRegent', 'operatorInterruptionObserved', 'BlacksmithGuild_RuntimeRegent.json')) {
+    if ($consumerText -notmatch [regex]::Escape($needle)) {
+        throw "runtime-state consumer missing regent interruption contract: $needle"
     }
 }
 if ($runnerText -match [regex]::Escape("@('user_toggle_off', 'timeout'")) {
