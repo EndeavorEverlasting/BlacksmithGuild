@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using BlacksmithGuild.CampaignRuntime;
+using BlacksmithGuild.DevTools.Assistive;
 
 namespace BlacksmithGuild.DevTools
 {
@@ -14,7 +15,7 @@ namespace BlacksmithGuild.DevTools
         public static string BuildJsonBlock(GameplaySurfaceSnapshot snapshot)
         {
             snapshot = snapshot ?? new GameplaySurfaceSnapshot();
-            var travelTarget = ResolveTravelTarget();
+            var travelTarget = ResolveTravelTarget(snapshot);
             var next = SelectNextBranch(snapshot, travelTarget);
             var reason = ExplainNextBranch(snapshot, next, travelTarget);
             var updatedAt = snapshot.UpdatedAtUtc.ToString("o");
@@ -77,7 +78,7 @@ namespace BlacksmithGuild.DevTools
             var settlementLike = IsSettlementLike(snapshot);
             return string.Join("|", new[]
             {
-                "next=" + SelectNextBranch(snapshot, ResolveTravelTarget()),
+                "next=" + SelectNextBranch(snapshot, ResolveTravelTarget(snapshot)),
                 "surface=" + (snapshot.GameplaySurface ?? "null"),
                 "travel=" + (snapshot.SafeToExecuteTravel ? "1" : "0"),
                 "trade=" + (snapshot.SafeToExecuteTrade ? "1" : "0"),
@@ -126,15 +127,41 @@ namespace BlacksmithGuild.DevTools
             }
         }
 
-        private static string ResolveTravelTarget()
+        private static string ResolveTravelTarget(GameplaySurfaceSnapshot snapshot)
         {
             var decision = CampaignRuntimeGovernor.LastDecision;
-            return FirstNonEmpty(
+            var handoff = FirstNonEmpty(
                 decision?.ProposedActivity?.TargetTown,
                 decision?.RouteCouncilRecommendedDestination,
                 decision?.DestinationCandidate,
                 CampaignRouteCouncil.LastResult?.RecommendedDestination,
                 CampaignRuntimeRegent.LastSnapshot?.RouteCouncilRecommendedDestination);
+            if (!string.IsNullOrWhiteSpace(handoff))
+            {
+                return handoff;
+            }
+
+            // Cold-session seed: when no upstream selector has produced a destination yet, a travel-safe
+            // surface would otherwise starve the handoff and block the travel branch. Fall back to the
+            // assistive nearest-town resolver instead of inventing a parallel heuristic here.
+            if (snapshot != null && snapshot.SafeToExecuteTravel)
+            {
+                return ResolveNearestSettlementFallback();
+            }
+
+            return null;
+        }
+
+        private static string ResolveNearestSettlementFallback()
+        {
+            try
+            {
+                return AssistiveLeaveTownTravelService.ResolveRecommendedTarget();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private static string FirstNonEmpty(params string[] values)
