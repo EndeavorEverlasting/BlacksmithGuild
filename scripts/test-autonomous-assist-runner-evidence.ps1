@@ -27,6 +27,38 @@ $evidence.assistLoopStarted = $true
 $evidence.assistLoopStartedWithoutHotkey = $true
 $evidence.iterationCount = 2
 
+$movementExecPath = Join-Path $bannerlordRoot 'BlacksmithGuild_AssistiveTravelExecution.json'
+$movementProofPath = Join-Path $bannerlordRoot 'BlacksmithGuild_MovementProof.json'
+@{
+    travelClockRunning = $true
+    movementIntentSet = $true
+    partyMovedDistance = 0
+    movementProofClassification = 'MovementMetricDisagreement'
+    movementMetricDisagreement = $true
+    movementCheckpointObserved = $true
+    movementProof = @{
+        classification = 'MovementMetricDisagreement'
+        partyMovedDistance = 0
+        samples = @(@{ campaignClockRunning = $true; movementIntentSet = $true })
+        deltas = @{ positionChanged = $true; distanceToTargetChanged = $true; mapTimeAdvanced = $false; currentSettlementChanged = $false; nearestSettlementChanged = $false }
+    }
+} | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $movementExecPath -Encoding UTF8
+@{
+    schemaVersion = 1
+    classification = 'MovementMetricDisagreement'
+    partyMovedDistance = 0
+    deltas = @{ positionChanged = $true; distanceToTargetChanged = $true; mapTimeAdvanced = $false; currentSettlementChanged = $false; nearestSettlementChanged = $false }
+    samples = @(@{ campaignClockRunning = $true; movementIntentSet = $true })
+} | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $movementProofPath -Encoding UTF8
+
+$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence -BannerlordRoot $bannerlordRoot `
+    -SessionId $sessionId -AlreadyEmitted:$false
+if (-not $movementUpdate.checkpointEmitted) { throw 'runner movement checkpoint must emit for durable movement proof even when partyMovedDistance==0' }
+if (-not $movementUpdate.movementMetricDisagreement) { throw 'runner movement checkpoint must preserve movementMetricDisagreement=true' }
+if (-not $movementUpdate.movementCheckpointObserved) { throw 'runner movement checkpoint must preserve movementCheckpointObserved=true' }
+$movementCheckpointCount = @($evidence.checkpointEvents.ToArray() | Where-Object { $_.checkpointName -eq 'party_movement_observed' }).Count
+if ($movementCheckpointCount -ne 1) { throw "expected one movement checkpoint from durable movement proof fixture; got $movementCheckpointCount" }
+
 $lastDecision = [pscustomobject]@{
     atUtc = (Get-Date).ToUniversalTime().ToString('o')
     actionConsidered = 'observe_route'

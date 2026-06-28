@@ -65,50 +65,6 @@ function Write-SessionLog {
     Write-Host $line
 }
 
-function Get-AssistTravelExecutionSnapshotForRunner {
-    param([string]$BannerlordRoot)
-    try {
-        if (-not (Get-Command Get-AssistiveTravelExecutionJsonPath -ErrorAction SilentlyContinue)) {
-            . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
-        }
-        $execPath = Get-AssistiveTravelExecutionJsonPath -BannerlordRoot $BannerlordRoot
-        if ($execPath -and (Test-Path -LiteralPath $execPath)) {
-            return (Get-Content -LiteralPath $execPath -Raw | ConvertFrom-Json)
-        }
-    } catch { }
-    return $null
-}
-
-function Update-AssistTravelMovementCheckpoint {
-    param(
-        [hashtable]$Evidence,
-        [string]$BannerlordRoot,
-        [string]$SessionId,
-        [bool]$AlreadyEmitted
-    )
-    $execJson = Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $BannerlordRoot
-    $partyMovedDistance = 0.0
-    if ($execJson -and $null -ne $execJson.partyMovedDistance) {
-        [double]::TryParse([string]$execJson.partyMovedDistance, [ref]$partyMovedDistance) | Out-Null
-    }
-    $checkpointEmitted = [bool]$AlreadyEmitted
-    if ($partyMovedDistance -gt 0) {
-        if (-not $checkpointEmitted) {
-            Add-AutomationCheckpointEvent -List $Evidence.checkpointEvents -CheckpointName 'party_movement_observed' `
-                -SessionId $SessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
-                -Reason "partyMovedDistance=$partyMovedDistance" | Out-Null
-            $checkpointEmitted = $true
-        }
-    }
-    return [pscustomobject]@{
-        checkpointEmitted = $checkpointEmitted
-        partyMovedDistance = $partyMovedDistance
-        travelClockRunning = [bool]($execJson -and $execJson.travelClockRunning -eq $true)
-        movementIntentSet = [bool]($execJson -and $execJson.movementIntentSet -eq $true)
-        executionJson = $execJson
-    }
-}
-
 function Read-AutonomousAssistJsonArtifact {
     param(
         [string]$BannerlordRoot,
@@ -238,7 +194,7 @@ function Complete-AssistAutomationFinalization {
     $finalReason = [string]$Summary.failureClass
     if ([string]::IsNullOrWhiteSpace($finalReason)) { $finalReason = [string]$Summary.stopReason }
     if ([string]::IsNullOrWhiteSpace($finalReason)) { $finalReason = $state }
-    $executionJson = if ($RequireExecuteMovement) { Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $bannerlordRoot } else { $null }
+    $executionJson = if ($RequireExecuteMovement) { (Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $bannerlordRoot).json } else { $null }
     $gameProcessAlive = $null
     if ($Summary.ContainsKey('gameProcessAlive') -and $null -ne $Summary.gameProcessAlive) {
         $gameProcessAlive = [bool]$Summary.gameProcessAlive
@@ -541,6 +497,18 @@ $actionsLogged = 0
 $travelExecuted = $false
 $partyMovementCheckpointEmitted = $false
 $movementObservationDeadline = $null
+$latestMovementUpdate = [pscustomobject]@{
+    checkpointEmitted = $false
+    partyMovedDistance = 0.0
+    travelClockRunning = $false
+    movementIntentSet = $false
+    movementProofClassification = $null
+    movementMetricDisagreement = $false
+    movementCheckpointObserved = $false
+    movementProofPath = $null
+    movementProof = $null
+    executionJson = $null
+}
 $nonTradeBranchDone = $false
 $provenTradeCount = 0
 $isEconomicLoop = ($CertProfile -eq 'economic_loop')
@@ -747,9 +715,10 @@ while ((Get-Date) -lt $loopDeadline) {
                 $cmdResult = 'Success'
                 $lastTravelCommandUtc = (Get-Date).ToUniversalTime()
 				$movementObservationDeadline = (Get-Date).AddSeconds($ExecuteTimeoutSec)
-				$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence `
+					$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence `
 					-BannerlordRoot $bannerlordRoot -SessionId $sessionId `
 					-AlreadyEmitted:$partyMovementCheckpointEmitted
+					$latestMovementUpdate = $movementUpdate
 				$partyMovementCheckpointEmitted = [bool]$movementUpdate.checkpointEmitted
 				if ($partyMovementCheckpointEmitted) { $stopReason = 'movement_observed' }
                 } elseif ($decision.commandSent -eq 'ResumeCampaignClock') {
@@ -809,6 +778,7 @@ while ((Get-Date) -lt $loopDeadline) {
 		$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence `
 			-BannerlordRoot $bannerlordRoot -SessionId $sessionId `
 			-AlreadyEmitted:$partyMovementCheckpointEmitted
+		$latestMovementUpdate = $movementUpdate
 		$partyMovementCheckpointEmitted = [bool]$movementUpdate.checkpointEmitted
 		if ($partyMovementCheckpointEmitted) {
 			$partyMovementCheckpointEmitted = $true
@@ -864,7 +834,7 @@ $endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
 $evidence.endedAtUtc = $endedAtUtc
 $requiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started', 'summary_written')
 $previewRequiredCheckpoints = @('attach_ready', 'state_machine_consumed', 'runtime_lifecycle_consumed', 'assist_loop_started')
-$executionJsonForCriteria = if ($travelExecuted) { Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $bannerlordRoot } else { $null }
+$executionJsonForCriteria = if ($travelExecuted) { $latestMovementUpdate.executionJson } else { $null }
 $criteriaPreview = Test-AutomationPassCriteria -Events @($evidence.checkpointEvents.ToArray()) `
     -Summary ([pscustomobject]@{
         assistLoopStarted = $evidence.assistLoopStarted
@@ -903,6 +873,10 @@ $summary = [ordered]@{
     travelExecuted = $travelExecuted
     proofMode = $proofMode
     visibleMechanicsProven = $visibleMechanicsProven
+    movementProofClassification = $latestMovementUpdate.movementProofClassification
+    movementMetricDisagreement = [bool]$latestMovementUpdate.movementMetricDisagreement
+    movementCheckpointObserved = [bool]$latestMovementUpdate.movementCheckpointObserved
+    movementProofPath = $latestMovementUpdate.movementProofPath
     lastSafeIdleClass = $lastSafeIdleClass
     maxConsecutiveSafeIdleCycles = $maxConsecutiveSafeIdleObserved
     automationPassCriteria = $criteriaPreview

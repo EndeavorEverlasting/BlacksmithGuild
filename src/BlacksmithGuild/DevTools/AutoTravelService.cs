@@ -38,6 +38,8 @@ namespace BlacksmithGuild.DevTools
         private static DateTime _assistStartUtc;
         private static double _assistMaxDistance;
         private static bool _assistMovementObserved;
+        private static string _assistLastMovementSampleSignature;
+        private static string _assistLastMovementClassification;
 
         public static string LastFailReason => _lastFailReason;
 
@@ -191,6 +193,8 @@ namespace BlacksmithGuild.DevTools
             _assistStartPos = MobileParty.MainParty != null ? MobileParty.MainParty.GetPosition2D : default(Vec2);
             _assistMaxDistance = 0;
             _assistMovementObserved = false;
+            _assistLastMovementSampleSignature = null;
+            _assistLastMovementClassification = null;
 
             if (result != null)
             {
@@ -202,12 +206,15 @@ namespace BlacksmithGuild.DevTools
                 result.MovementObservationPassed = false;
                 result.Arrived = false;
                 result.PartyMovedDistance = 0;
+                result.MovementProof = MovementProofLedgerService.Begin(result, _activeDestination, "AutoTravelService.BeginAssistTravel");
             }
 
             ReassertRunningClock();
             if (result != null)
             {
                 result.TravelClockRunning = IsClockRunning();
+                MovementProofLedgerService.CaptureSample(result.MovementProof, "begin_observation", "assist_travel_started");
+                RefreshMovementProof(result, fairWindowElapsed: false, forceWrite: true);
             }
         }
 
@@ -234,6 +241,7 @@ namespace BlacksmithGuild.DevTools
             result.MovementObservationMs = (int)Math.Max(0, (now - _assistStartUtc).TotalMilliseconds);
             result.MovementObservationAttempts++;
             result.TravelClockRunning = IsClockRunning();
+            MovementProofLedgerService.CaptureSample(result.MovementProof, "realtime_tick", "travel_tick");
 
             var changed = false;
 
@@ -266,6 +274,8 @@ namespace BlacksmithGuild.DevTools
                 ReassertRunningClock();
             }
 
+            changed |= RefreshMovementProof(result, fairWindowElapsed: false, forceWrite: false);
+
             if (changed)
             {
                 AssistiveTravelEvidenceWriter.Write(result);
@@ -295,13 +305,10 @@ namespace BlacksmithGuild.DevTools
 
             result.Arrived = true;
             result.PartyMovedDistance = _assistMaxDistance;
-            if (_assistMaxDistance >= AssistMovementThreshold)
-            {
-                result.MovementIntentSet = true;
-                result.ActualExecutionObserved = true;
-                result.MovementObservationPassed = true;
-                result.MovementObservationFailureReason = null;
-            }
+            result.MovementIntentSet = true;
+
+            MovementProofLedgerService.CaptureSample(result.MovementProof, "arrival", "arrival_observed");
+            RefreshMovementProof(result, fairWindowElapsed: true, forceWrite: true);
 
             AutomationRuntimeEventEmitter.Emit(
                 AutomationRuntimeEventEmitter.TravelCompleted,
@@ -310,6 +317,80 @@ namespace BlacksmithGuild.DevTools
 
             AssistiveTravelEvidenceWriter.Write(result);
             _assistResult = null;
+        }
+
+        private static bool RefreshMovementProof(
+            AssistiveTravelExecutionResult result,
+            bool fairWindowElapsed,
+            bool forceWrite)
+        {
+            if (result == null || result.MovementProof == null)
+            {
+                return false;
+            }
+
+            result.MovementProof.PartyMovedDistance = result.PartyMovedDistance;
+            var deltas = MovementProofLedgerService.ComputeDeltas(result.MovementProof);
+            var classification = MovementProofLedgerService.Classify(result.MovementProof, fairWindowElapsed: fairWindowElapsed);
+            var durableMovementObserved = classification == MovementProofClassification.MovementDistanceObserved
+                || classification == MovementProofClassification.MovementCheckpointObserved
+                || classification == MovementProofClassification.MovementMetricDisagreement;
+            var checkpointObserved = classification == MovementProofClassification.MovementCheckpointObserved
+                || classification == MovementProofClassification.MovementMetricDisagreement;
+
+            result.MovementProofClassification = classification.ToString();
+            result.MovementProofReason = result.MovementProof.ClassificationReason;
+            result.MovementMetricDisagreement = (classification == MovementProofClassification.MovementMetricDisagreement);
+            result.MovementCheckpointObserved = checkpointObserved;
+            result.ActualExecutionObserved = durableMovementObserved;
+            result.MovementObservationPassed = durableMovementObserved;
+            if (durableMovementObserved)
+            {
+                result.MovementObservationFailureReason = null;
+                result.MovementIntentSet = true;
+            }
+            else if (fairWindowElapsed)
+            {
+                result.MovementObservationFailureReason = result.MovementProof.ClassificationReason;
+            }
+
+            var lastSample = result.MovementProof.Samples.Count > 0
+                ? result.MovementProof.Samples[result.MovementProof.Samples.Count - 1]
+                : null;
+            var sampleSignature = BuildMovementSampleSignature(lastSample, deltas);
+            var classificationText = classification.ToString();
+            var sampleChanged = !string.Equals(_assistLastMovementSampleSignature, sampleSignature, StringComparison.Ordinal);
+            var classificationChanged = !string.Equals(_assistLastMovementClassification, classificationText, StringComparison.Ordinal);
+            if (forceWrite || sampleChanged || classificationChanged)
+            {
+                MovementProofLedgerService.Write(result.MovementProof);
+                _assistLastMovementSampleSignature = sampleSignature;
+                _assistLastMovementClassification = classificationText;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string BuildMovementSampleSignature(MovementProofSample sample, MovementProofDeltas deltas)
+        {
+            if (sample == null)
+            {
+                return "none";
+            }
+
+            return string.Join("|",
+                sample.Phase ?? string.Empty,
+                sample.CurrentSettlementId ?? string.Empty,
+                sample.NearestSettlementId ?? string.Empty,
+                sample.TargetSettlementId ?? string.Empty,
+                sample.DistanceToTarget?.ToString("0.###", CultureInfo.InvariantCulture) ?? "null",
+                sample.DistanceFromStart?.ToString("0.###", CultureInfo.InvariantCulture) ?? "null",
+                sample.MapTimeText ?? string.Empty,
+                sample.CampaignClockRunning ? "1" : "0",
+                sample.MovementIntentSet ? "1" : "0",
+                deltas.PositionChanged ? "1" : "0",
+                deltas.DistanceToTargetChanged ? "1" : "0");
         }
 
         private static string EscapeJson(string value) =>

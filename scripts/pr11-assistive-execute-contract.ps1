@@ -10,6 +10,57 @@ function Get-AssistiveTravelExecutionJsonPath {
         -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_AssistiveTravelExecution.json')
 }
 
+function Get-AssistiveMovementProofJsonPath {
+    param([string]$BannerlordRoot)
+    if (-not (Get-Command Get-AssistiveArtifactCandidates -ErrorAction SilentlyContinue)) {
+        . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+    }
+    return Find-NewestExistingPath -Candidates (Get-AssistiveArtifactCandidates -BannerlordRoot $BannerlordRoot `
+        -FileName 'BlacksmithGuild_MovementProof.json') `
+        -Preferred (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_MovementProof.json')
+}
+
+function Get-Pr11MovementProofClassification {
+    param([object]$ExecutionJson)
+
+    foreach ($candidate in @(
+        $ExecutionJson.movementProofClassification,
+        $ExecutionJson.movementProof.classification,
+        $ExecutionJson.movementProof.result
+    )) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+            return [string]$candidate
+        }
+    }
+
+    return $null
+}
+
+function Test-Pr11DurableMovementObserved {
+    param([object]$ExecutionJson)
+
+    $distance = 0.0
+    if ($ExecutionJson -and $null -ne $ExecutionJson.partyMovedDistance) {
+        [double]::TryParse([string]$ExecutionJson.partyMovedDistance, [ref]$distance) | Out-Null
+    }
+
+    $classification = Get-Pr11MovementProofClassification -ExecutionJson $ExecutionJson
+
+    return [bool](
+        ($distance -gt 0) -or
+        ($ExecutionJson.movementCheckpointObserved -eq $true) -or
+        ($ExecutionJson.movementMetricDisagreement -eq $true) -or
+        ($classification -in @(
+            'MovementDistanceObserved',
+            'MovementCheckpointObserved',
+            'MovementMetricDisagreement',
+            'movement_distance_observed',
+            'movement_checkpoint_observed',
+            'movement_metric_disagreement'
+        ))
+    )
+}
+
 function Test-Pr11AssistiveTravelExecutePass {
     param(
         [object]$ExecutionJson,
@@ -21,18 +72,13 @@ function Test-Pr11AssistiveTravelExecutePass {
         return [ordered]@{ pass = $false; failureClass = 'evidence_missing'; routeAgent = 'Agent C' }
     }
 
-    $partyMovedDistance = 0.0
-    if ($null -ne $ExecutionJson.partyMovedDistance) {
-        [double]::TryParse([string]$ExecutionJson.partyMovedDistance, [ref]$partyMovedDistance) | Out-Null
-    }
-
     $checks = @{
         executeRequested = ($ExecutionJson.executeRequested -eq $true)
         executeAllowed = ($ExecutionJson.executeAllowed -eq $true)
         travelCommandMode = ([string]$ExecutionJson.travelCommandMode -eq 'execute')
         movementIntentSet = ($ExecutionJson.movementIntentSet -eq $true)
         actualExecutionObserved = ($ExecutionJson.actualExecutionObserved -eq $true)
-        partyMoved = ($partyMovedDistance -gt 0)
+        partyMoved = (Test-Pr11DurableMovementObserved -ExecutionJson $ExecutionJson)
         fakeGameplayDelta = ($ExecutionJson.fakeGameplayDelta -eq $false)
     }
 

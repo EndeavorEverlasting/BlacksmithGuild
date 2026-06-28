@@ -33,7 +33,7 @@ The classifier removes noisy fields such as timestamps, raw session IDs, volatil
 - gameplay surface and planned branch
 - target and target source
 - command and acknowledgement state
-- movement intent and `partyMovedDistance` bucket
+- movement intent, movement proof classification, and movement deltas
 - operator interruption and foreground-loss state
 - safe-idle class and checkpoint progress
 
@@ -46,7 +46,7 @@ If two consecutive normalized contexts match at the repeat threshold, the harnes
 ## Proof doctrine
 
 - Live game proof still requires real visible mechanics.
-- `partyMovedDistance > 0` remains the movement proof line.
+- Movement proof is checkpoint-based; `partyMovedDistance` is supporting evidence, not the verdict.
 - Attach readiness or route intent alone is not visible mechanics proof.
 
 ## Evidence doctrine

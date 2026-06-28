@@ -58,9 +58,9 @@ never implies a stronger one. The autonomous assist runner stamps the achieved m
   is wired. It is NOT a movement PASS.
 - `visible_mechanics_proof` - the party visibly moved on the campaign map after a command
   ack with the campaign clock running. This is the only mode that proves mechanics. It
-  requires an observed real party-movement delta (`party_movement_observed` checkpoint /
-  `partyMovedDistance > 0`); route intent, a set destination, or a resumed clock alone do
-  not qualify.
+  requires durable movement evidence (`party_movement_observed` checkpoint / movement
+  proof ledger classification). `partyMovedDistance` is supporting evidence, not the sole
+  verdict; route intent, a set destination, or a resumed clock alone do not qualify.
 
 Offline enforcement of this separation lives in
 `scripts\verify-post-attach-actionability-contract.ps1`.

@@ -80,6 +80,150 @@ function Test-TbgAssistToggleOff {
     return (-not $toggle.enabled)
 }
 
+function Get-AssistTravelExecutionSnapshotForRunner {
+    param([string]$BannerlordRoot)
+    try {
+        if (-not (Get-Command Get-AssistiveTravelExecutionJsonPath -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
+        }
+        $execPath = Get-AssistiveTravelExecutionJsonPath -BannerlordRoot $BannerlordRoot
+        if ($execPath -and (Test-Path -LiteralPath $execPath)) {
+            return [pscustomobject]@{ path = $execPath; json = (Get-Content -LiteralPath $execPath -Raw | ConvertFrom-Json) }
+        }
+    } catch { }
+    return [pscustomobject]@{ path = $null; json = $null }
+}
+
+function Get-AssistTravelMovementProofSnapshotForRunner {
+    param([string]$BannerlordRoot)
+    try {
+        if (-not (Get-Command Get-AssistiveMovementProofJsonPath -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'pr11-assistive-execute-contract.ps1')
+        }
+        $proofPath = Get-AssistiveMovementProofJsonPath -BannerlordRoot $BannerlordRoot
+        if ($proofPath -and (Test-Path -LiteralPath $proofPath)) {
+            return [pscustomobject]@{ path = $proofPath; json = (Get-Content -LiteralPath $proofPath -Raw | ConvertFrom-Json) }
+        }
+    } catch { }
+    return [pscustomobject]@{ path = $null; json = $null }
+}
+
+function Get-AutonomousAssistMovementProofClassification {
+    param(
+        [object]$ExecutionJson,
+        [object]$MovementProof = $null
+    )
+    foreach ($candidate in @(
+        $MovementProof.classification,
+        $ExecutionJson.movementProofClassification,
+        $ExecutionJson.movementProof.classification,
+        $ExecutionJson.movementProof.result
+    )) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$candidate)) {
+            return [string]$candidate
+        }
+    }
+    return $null
+}
+
+function Test-AutonomousAssistDurableMovementObserved {
+    param(
+        [object]$ExecutionJson,
+        [object]$MovementProof = $null
+    )
+    $distance = 0.0
+    foreach ($candidate in @($ExecutionJson.partyMovedDistance, $MovementProof.partyMovedDistance)) {
+        if ($null -eq $candidate) { continue }
+        if ([double]::TryParse([string]$candidate, [ref]$distance)) { break }
+    }
+    $classification = Get-AutonomousAssistMovementProofClassification -ExecutionJson $ExecutionJson -MovementProof $MovementProof
+    $movementCheckpointObserved = [bool](
+        ($ExecutionJson.movementCheckpointObserved -eq $true) -or
+        ($MovementProof.classification -eq 'MovementCheckpointObserved') -or
+        ($ExecutionJson.movementProof.classification -eq 'MovementCheckpointObserved')
+    )
+    $movementMetricDisagreement = [bool](
+        ($ExecutionJson.movementMetricDisagreement -eq $true) -or
+        ($MovementProof.classification -eq 'MovementMetricDisagreement') -or
+        ($ExecutionJson.movementProof.classification -eq 'MovementMetricDisagreement')
+    )
+    return [bool](
+        ($distance -gt 0) -or
+        $movementCheckpointObserved -or
+        $movementMetricDisagreement -or
+        ($classification -in @(
+            'MovementDistanceObserved',
+            'MovementCheckpointObserved',
+            'MovementMetricDisagreement',
+            'movement_distance_observed',
+            'movement_checkpoint_observed',
+            'movement_metric_disagreement'
+        ))
+    )
+}
+
+function Update-AssistTravelMovementCheckpoint {
+    param(
+        [hashtable]$Evidence,
+        [string]$BannerlordRoot,
+        [string]$SessionId,
+        [bool]$AlreadyEmitted
+    )
+
+    $execArtifact = Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $BannerlordRoot
+    $execJson = $execArtifact.json
+    $movementArtifact = Get-AssistTravelMovementProofSnapshotForRunner -BannerlordRoot $BannerlordRoot
+    $movementProof = if ($movementArtifact.json) { $movementArtifact.json } elseif ($execJson -and $execJson.movementProof) { $execJson.movementProof } else { $null }
+
+    $partyMovedDistance = 0.0
+    foreach ($candidate in @($execJson.partyMovedDistance, $movementProof.partyMovedDistance)) {
+        if ($null -eq $candidate) { continue }
+        if ([double]::TryParse([string]$candidate, [ref]$partyMovedDistance)) { break }
+    }
+
+    $movementProofClassification = Get-AutonomousAssistMovementProofClassification -ExecutionJson $execJson -MovementProof $movementProof
+    $movementMetricDisagreement = [bool](
+        ($execJson -and $execJson.movementMetricDisagreement -eq $true) -or
+        ($movementProofClassification -in @('MovementMetricDisagreement', 'movement_metric_disagreement'))
+    )
+    $movementCheckpointObserved = [bool](
+        ($execJson -and $execJson.movementCheckpointObserved -eq $true) -or
+        ($movementProofClassification -in @('MovementCheckpointObserved', 'movement_checkpoint_observed', 'MovementMetricDisagreement', 'movement_metric_disagreement'))
+    )
+    $durableMovementObserved = Test-AutonomousAssistDurableMovementObserved -ExecutionJson $execJson -MovementProof $movementProof
+
+    $checkpointEmitted = [bool]$AlreadyEmitted
+    if ($durableMovementObserved -and -not $checkpointEmitted) {
+        $reasonParts = @("classification=$movementProofClassification", "partyMovedDistance=$partyMovedDistance")
+        if ($movementMetricDisagreement) { $reasonParts += 'metricDisagreement=true' }
+        if ($movementCheckpointObserved) { $reasonParts += 'checkpointObserved=true' }
+        Add-AutomationCheckpointEvent -List $Evidence.checkpointEvents -CheckpointName 'party_movement_observed' `
+            -SessionId $SessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
+            -Reason ($reasonParts -join ' ') | Out-Null
+        $checkpointEmitted = $true
+    }
+
+    $lastSample = if ($movementProof -and $movementProof.samples -and @($movementProof.samples).Count -gt 0) { @($movementProof.samples)[-1] } else { $null }
+    return [pscustomobject]@{
+        checkpointEmitted = $checkpointEmitted
+        partyMovedDistance = $partyMovedDistance
+        travelClockRunning = [bool](
+            ($execJson -and $execJson.travelClockRunning -eq $true) -or
+            ($lastSample -and $lastSample.campaignClockRunning -eq $true)
+        )
+        movementIntentSet = [bool](
+            ($execJson -and $execJson.movementIntentSet -eq $true) -or
+            ($lastSample -and $lastSample.movementIntentSet -eq $true)
+        )
+        movementProofClassification = $movementProofClassification
+        movementMetricDisagreement = $movementMetricDisagreement
+        movementCheckpointObserved = $movementCheckpointObserved
+        movementProofPath = if ($movementArtifact.path) { $movementArtifact.path } elseif ($execJson -and $execJson.movementProof) { 'BlacksmithGuild_AssistiveTravelExecution.json.movementProof' } else { $null }
+        movementProof = $movementProof
+        executionJson = $execJson
+    }
+}
+
 function Test-AutonomousAssistLoopReadiness {
     param(
         [object]$Readiness
@@ -1057,6 +1201,18 @@ function Save-AutonomousAssistSessionEvidence {
                 } else {
                     Copy-Item -LiteralPath $execSrc `
                         -Destination (Join-Path $dir 'BlacksmithGuild_AssistiveTravelExecution.json') -Force
+                }
+            }
+        }
+        if (Get-Command Get-AssistiveMovementProofJsonPath -ErrorAction SilentlyContinue) {
+            $movementSrc = Get-AssistiveMovementProofJsonPath -BannerlordRoot $BannerlordRoot
+            if ($movementSrc -and (Test-Path -LiteralPath $movementSrc)) {
+                if (Get-Command Copy-Pr11EvidenceArtifact -ErrorAction SilentlyContinue) {
+                    Copy-Pr11EvidenceArtifact -SourcePath $movementSrc -CheckpointDir $dir `
+                        -DestName 'BlacksmithGuild_MovementProof.json' | Out-Null
+                } else {
+                    Copy-Item -LiteralPath $movementSrc `
+                        -Destination (Join-Path $dir 'BlacksmithGuild_MovementProof.json') -Force
                 }
             }
         }

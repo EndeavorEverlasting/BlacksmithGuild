@@ -22,7 +22,7 @@ Assert-ContainsText 'scripts\reboot-context-classifier.ps1' 'function New-Reboot
 Assert-ContainsText 'scripts\reboot-context-classifier.ps1' 'function Test-RebootContextRepeat'
 Assert-ContainsText 'scripts\reboot-context-classifier.ps1' 'function Write-RebootStableGapHandoff'
 Assert-ContainsText 'docs\operator\reboot-iteration-doctrine.md' 'AI tokens are for designing patches'
-Assert-ContainsText 'docs\operator\reboot-iteration-doctrine.md' 'partyMovedDistance > 0'
+Assert-ContainsText 'docs\operator\reboot-iteration-doctrine.md' 'checkpoint-based'
 Assert-ContainsText '.gitignore' 'docs/evidence/reboot*-reboot-session/'
 
 if ((Get-RebootActionTimeoutSec -ActionClass normal) -ne 30) { throw 'normal action timeout must default to 30 seconds' }

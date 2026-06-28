@@ -33,7 +33,7 @@ if ($manifest) {
         'assistive_travel.command_ack', 'assistive_travel.movement_proof', 'runner.foreground_loss', 'reboot.repeat_context'
     )) { if ($ids -notcontains $id) { $failures.Add("manifest missing contractId $id") | Out-Null } }
     $movement = @($manifest.contracts | Where-Object { $_.contractId -eq 'assistive_travel.movement_proof' } | Select-Object -First 1)
-    if (-not $movement -or [string]$movement.proofRequired -ne 'partyMovedDistance > 0') { $failures.Add('movement proof contract must require partyMovedDistance > 0') | Out-Null }
+    if (-not $movement -or [string]$movement.proofRequired -notmatch 'durable checkpoint evidence') { $failures.Add('movement proof contract must require checkpoint-based durable evidence') | Out-Null }
 }
 
 foreach ($needle in @('long-distance travel', 'smithing with a large party', 'massive trade operations', 'Normal action timeout: 30 seconds')) {
@@ -63,8 +63,12 @@ Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Get-AutonomousAssis
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "source = 'missing_engine_handoff_target'"
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'resolvedTravelTargetSource = $targetResolution.source'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'operator_interruption_foreground_lost'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'if ($partyMovedDistance -gt 0) {'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "-CheckpointName 'party_movement_observed'"
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'movementProofClassification = $latestMovementUpdate.movementProofClassification'
+Assert-Contains 'scripts\autonomous-assist-session.ps1' 'function Test-AutonomousAssistDurableMovementObserved'
+Assert-Contains 'scripts\autonomous-assist-session.ps1' "-CheckpointName 'party_movement_observed'"
+Assert-Contains 'src\BlacksmithGuild\DevTools\Assistive\MovementProofLedger.cs' 'enum MovementProofClassification'
+Assert-Contains 'src\BlacksmithGuild\DevTools\Assistive\MovementProofLedgerService.cs' 'class MovementProofLedgerService'
+Assert-Contains 'src\BlacksmithGuild\DevTools\Assistive\MovementProofLedgerService.cs' 'BlacksmithGuild_MovementProof.json'
 Assert-Contains 'scripts\pr11-runtime-state-consumer.ps1' 'Read-Pr11RuntimeRegent'
 Assert-Contains 'scripts\pr11-runtime-state-consumer.ps1' 'operatorInterruptionObserved'
 Assert-Contains 'src\BlacksmithGuild\DevTools\RecursiveCampaignBranchState.cs' 'targetSettlement'
@@ -73,6 +77,7 @@ Assert-NotContains 'scripts\run-autonomous-assist-session.ps1' "TargetSettlement
 Assert-NotContains 'scripts\run-autonomous-assist-session.ps1' 'TargetSettlement = "Ortysia"'
 
 Assert-Contains 'scripts\reboot-context-classifier.ps1' 'function Test-RebootContextRepeat'
+Assert-Contains 'scripts\reboot-context-classifier.ps1' 'function Test-RebootDurableMovementObserved'
 Assert-Contains 'scripts\reboot-context-classifier.ps1' 'stable_gap'
 
 if ($failures.Count -gt 0) {

@@ -65,13 +65,13 @@ Assert-Contains 'scripts\run-autonomous-assist-session.ps1' '$visibleMechanicsPr
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "if (`$visibleMechanicsProven) { 'visible_mechanics_proof' }" 'visible mode requires movement-proven flag'
 
 # Lane F: the party_movement_observed checkpoint that promotes a run to visible_mechanics_proof must be
-# emitted only from a real, positive partyMovedDistance read off the assistive travel execution evidence
-# (after command ack + clock resume), never from route intent or a destination assignment alone.
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Get-AssistiveTravelExecutionJsonPath' 'visible proof must read assistive travel execution evidence'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' '$execJson.partyMovedDistance' 'visible proof must read partyMovedDistance from execution evidence'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'if ($partyMovedDistance -gt 0) {' 'movement checkpoint must require a positive party-movement delta'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "-CheckpointName 'party_movement_observed'" 'positive delta must emit the party_movement_observed checkpoint'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' '$partyMovementCheckpointEmitted = $true' 'positive delta must set the movement-proven flag'
+# emitted only from durable movement evidence read off the assistive travel execution evidence / movement
+# proof ledger (after command ack + clock resume), never from route intent or a destination assignment alone.
+Assert-Contains 'scripts\autonomous-assist-session.ps1' 'Get-AssistiveTravelExecutionJsonPath' 'visible proof must read assistive travel execution evidence'
+Assert-Contains 'scripts\autonomous-assist-session.ps1' 'Get-AssistiveMovementProofJsonPath' 'visible proof must read movement proof evidence when available'
+Assert-Contains 'scripts\autonomous-assist-session.ps1' 'function Test-AutonomousAssistDurableMovementObserved' 'movement checkpoint must require durable movement evidence'
+Assert-Contains 'scripts\autonomous-assist-session.ps1' "-CheckpointName 'party_movement_observed'" 'durable movement evidence must emit the party_movement_observed checkpoint'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'movementProofClassification = $latestMovementUpdate.movementProofClassification' 'summary must include movement proof classification'
 
 # Lane C: every poll cycle must be classified (no silent/unclassified polling) with safe-idle vocabulary.
 Assert-Contains 'scripts\autonomous-assist-session.ps1' 'function Get-AutonomousAssistSafeIdleClass' 'safe-idle classifier must exist'

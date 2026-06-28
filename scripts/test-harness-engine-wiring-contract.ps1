@@ -15,7 +15,7 @@ if ([int]$manifest.normalActionTimeoutSec -gt 30) { throw 'normal timeout cap mu
 if (-not (@($manifest.contracts | Where-Object { $_.longTimeoutReason -eq 'long-distance travel' }).Count -gt 0)) { throw 'long-distance travel exception missing' }
 
 $movement = $manifest.contracts | Where-Object { $_.contractId -eq 'assistive_travel.movement_proof' } | Select-Object -First 1
-if ([string]$movement.proofRequired -ne 'partyMovedDistance > 0') { throw 'movement proof must require partyMovedDistance > 0' }
+if ([string]$movement.proofRequired -notmatch 'durable checkpoint evidence') { throw 'movement proof must require checkpoint-based durable evidence' }
 
 $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\run-autonomous-assist-session.ps1') -Raw
 if ($runner -match 'TargetSettlement\s*=\s*[''"]Ortysia[''"]') { throw 'TargetSettlement must not default to Ortysia' }

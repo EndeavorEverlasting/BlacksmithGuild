@@ -21,7 +21,7 @@ invent engine conclusions.
 | `run-autonomous-assist-session.ps1` | assist loop evidence and summary | Reboot harness, operator | decision, target source, proof mode, failure class | current session | `assist_session_evidence_missing` |
 | `autonomous-assist-session.ps1` | readiness/toggle/evidence helper functions | runner | toggle state, safe-idle class, summary writers | current session | `assist_helper_missing` |
 | `pr11-runtime-state-consumer.ps1` | normalized readiness | assist runner | stateMachine, lifecycle, regent, recursive branch freshness | 30s | `readiness_missing_or_stale` |
-| `AssistiveLeaveTownAndTravel` | command ack and travel execution evidence | runner, Reboot classifier | command ack, clock running, movement intent, `partyMovedDistance` | current command | `assistive_travel_no_proof` |
+| `AssistiveLeaveTownAndTravel` | command ack, execution evidence, and movement proof ledger | runner, Reboot classifier | command ack, clock running, movement intent, movement proof classification/deltas, supporting `partyMovedDistance` | current command | `assistive_travel_no_proof` |
 | `run-reboot-iteration.ps1` | normalized contexts, repeat classification | operator, next patch author | stable-gap JSON/MD, evidence paths, owner lane | local session | `reboot_context_missing` |
 
 ## Key path
@@ -42,6 +42,7 @@ Governor / RouteCouncil / Regent / RecursiveBranchState
 - Escape menu is engine truth from `RuntimeRegent` / `stateMachine`, not a runner guess.
 - `ForgeStop.cmd` writes the shared operator stop sentinel and can also force-kill in emergencies.
 - Ctrl+C in a Reboot terminal is classified as `operator_stop_ctrl_c`; it writes a local summary instead of requiring AI supervision.
+- Movement proof is checkpoint-based. `partyMovedDistance` supports the verdict but does not solely decide it.
 
 ## Timeout doctrine
 
