@@ -21,6 +21,103 @@ function Read-RebootJsonlFile {
     return @($items.ToArray())
 }
 
+function Get-RebootSurfaceOwnershipManifest {
+    $repoRoot = Split-Path -Parent $PSScriptRoot
+    $manifestPath = Join-Path $repoRoot 'docs\handoff\surface-ownership.manifest.json'
+    if (-not (Test-Path -LiteralPath $manifestPath)) { return $null }
+    try {
+        return Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+    } catch { return $null }
+}
+
+function ConvertTo-RebootSurfaceKey {
+    param([string]$Surface)
+
+    if ([string]::IsNullOrWhiteSpace($Surface)) { return $null }
+
+    $key = $Surface.Trim().ToLowerInvariant()
+    $key = $key -replace '[\s\-]+', '_'
+
+    switch -Regex ($key) {
+        'paused_campaign_map|map_paused' { return 'map_paused' }
+        'campaign_map|map' { return 'campaign_map' }
+        'outside_settlement' { return 'outside_settlement' }
+        'approaching_settlement' { return 'approaching_settlement' }
+        'traveling|route_intent' { return 'traveling' }
+        'settlement_menu|town_menu' { return 'settlement_menu' }
+        'smithy|smithing' { return 'smithy' }
+        'market|trade' { return 'market' }
+        'tavern' { return 'tavern' }
+        'arena' { return 'arena' }
+        'settlement_interior' { return 'settlement_interior' }
+        'escape_menu' { return 'escape_menu' }
+        'foreground_lost|operator_interruption_foreground_lost' { return 'foreground_lost' }
+        'attach|launcher|loading|safe_mode|module_mismatch|crash_reporter' { return 'launcher_open' }
+        default { return $key }
+    }
+}
+
+function Resolve-RebootSurfaceOwnership {
+    param(
+        [string]$Surface,
+        [object]$Context
+    )
+
+    $surfaceKey = ConvertTo-RebootSurfaceKey -Surface $Surface
+    $manifest = Get-RebootSurfaceOwnershipManifest
+
+    if ($Context) {
+        if ($Context.staleEvidence -eq $true) {
+            return [pscustomobject]@{
+                surfaceGroup = 'evidence_staleness'
+                surfaceOwner = 'HarnessVerifier'
+                stableGapOwner = 'evidence_staleness'
+                nextPatchLane = 'Agent D - Evidence / docs / verifier lane'
+            }
+        }
+
+        if ($Context.operatorInterruptionObserved -eq $true -or $Context.foregroundLoss -eq $true) {
+            return [pscustomobject]@{
+                surfaceGroup = 'interruption_recovery'
+                surfaceOwner = 'RuntimeRegentAndRunner'
+                stableGapOwner = 'interruption_recovery'
+                nextPatchLane = 'Agent C - Runner foreground/operator policy with Agent B regent truth support'
+            }
+        }
+
+        if ([string]$Context.failureClass -match 'build|deploy|launcher|continue|attach|process_disappeared|game_exited') {
+            return [pscustomobject]@{
+                surfaceGroup = 'launcher_attach'
+                surfaceOwner = 'ForgeLauncherHarness'
+                stableGapOwner = 'launcher_attach'
+                nextPatchLane = 'Agent C - External runner / launcher / lifecycle'
+            }
+        }
+    }
+
+    if ($manifest -and $manifest.surfaceGroups) {
+        foreach ($group in @($manifest.surfaceGroups)) {
+            foreach ($knownSurface in @($group.surfaces)) {
+                if ((ConvertTo-RebootSurfaceKey -Surface $knownSurface) -eq $surfaceKey) {
+                    return [pscustomobject]@{
+                        surfaceGroup = [string]$group.surfaceGroup
+                        surfaceOwner = [string]$group.owner
+                        stableGapOwner = [string]$group.stableGapOwner
+                        nextPatchLane = [string]$group.nextPatchLane
+                    }
+                }
+            }
+        }
+    }
+
+    return [pscustomobject]@{
+        surfaceGroup = 'unknown'
+        surfaceOwner = 'unknown'
+        stableGapOwner = 'unknown'
+        nextPatchLane = 'Agent D - Docs / routing board'
+    }
+}
+
 function Get-RebootLastItem {
     param([object[]]$Items)
     if (-not $Items -or $Items.Count -eq 0) { return $null }
@@ -194,13 +291,18 @@ function Get-RebootLikelyOwner {
 function Get-RebootLikelyFiles {
     param([string]$Owner)
     switch ($Owner) {
+        'outside_town_movement' { return @('src/BlacksmithGuild/DevTools/Assistive/AssistiveLeaveTownTravelService.cs','src/BlacksmithGuild/DevTools/CampaignMapMovementHelper.cs','src/BlacksmithGuild/DevTools/Assistive/MovementProofLedgerService.cs','scripts/run-autonomous-assist-session.ps1','scripts/reboot-context-classifier.ps1','docs/handoff/surface-ownership.manifest.json') }
+        'inside_town_settlement_work' { return @('src/BlacksmithGuild/DevTools/SmithingAuditService.cs','src/BlacksmithGuild/DevTools/SmithingAdvisoryService.cs','src/BlacksmithGuild/DevTools/MarketIntelService.cs','src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs','scripts/reboot-context-classifier.ps1') }
+        'interruption_recovery' { return @('src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeRegent.cs','scripts/pr11-runtime-state-consumer.ps1','scripts/run-autonomous-assist-session.ps1','scripts/run-reboot-iteration.ps1') }
+        'launcher_attach' { return @('Forge.cmd','ForgeContinue.cmd','ForgeReboot.cmd','forge.ps1','scripts/launcher-auto-nav.ps1','scripts/run-autonomous-assist-session.ps1') }
+        'evidence_staleness' { return @('scripts/run-autonomous-assist-session.ps1','scripts/reboot-context-classifier.ps1','scripts/automation-checkpoint-contract.ps1','scripts/process-lifecycle-authority.ps1') }
         'engine destination handoff' { return @('scripts/run-autonomous-assist-session.ps1','src/BlacksmithGuild/DevTools/RecursiveCampaignBranchState.cs','src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeRegent.cs') }
         'runtime movement' { return @('src/BlacksmithGuild/DevTools/Assistive/AssistiveLeaveTownTravelService.cs','src/BlacksmithGuild/DevTools/CampaignMapMovementHelper.cs','scripts/pr11-assistive-execute-contract.ps1') }
         'movement evidence/classification' { return @('src/BlacksmithGuild/DevTools/Assistive/MovementProofLedgerService.cs','src/BlacksmithGuild/DevTools/Assistive/AssistiveTravelEvidenceWriter.cs','scripts/run-autonomous-assist-session.ps1','scripts/reboot-context-classifier.ps1') }
         'operator interruption' { return @('src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeRegent.cs','scripts/pr11-runtime-state-consumer.ps1','scripts/run-autonomous-assist-session.ps1') }
         'launcher/deploy' { return @('forge.ps1','scripts/install-mod.ps1','scripts/launcher-auto-nav.ps1','scripts/run-autonomous-assist-session.ps1') }
         'evidence/staleness' { return @('scripts/run-autonomous-assist-session.ps1','scripts/automation-checkpoint-contract.ps1','scripts/process-lifecycle-authority.ps1') }
-        default { return @('scripts/run-autonomous-assist-session.ps1','scripts/autonomous-assist-session.ps1') }
+        default { return @('scripts/run-autonomous-assist-session.ps1','scripts/autonomous-assist-session.ps1','scripts/reboot-context-classifier.ps1') }
     }
 }
 
@@ -251,9 +353,10 @@ function New-RebootNormalizedContext {
     $operatorInterruptionObserved = [bool]((ConvertTo-RebootBool $lastState.operatorInterruptionObserved) -or ([string]$stopReason -like 'operator_interruption*'))
     $foregroundLoss = [bool](([string]$stopReason -eq 'operator_interruption_foreground_lost') -or ($lastState.foregroundLossSeconds -gt 0))
     $fairWindowElapsed = [bool]([string]$stopReason -in @('safe_idle_route_set_no_motion','safe_idle_clock_stopped'))
+    $commandAcknowledged = [bool]((-not [string]::IsNullOrWhiteSpace($commandSent)) -and ($lastCommand.result -eq 'Success' -or ($checkpoints -contains 'execute_ack') -or ($checkpoints -contains 'campaign_clock_resume_ack')))
     $movementObservationClass = Get-RebootMovementObservationClass -MovementProofClassification $movementProofClassification `
         -DurableMovementObserved:$durableMovementObserved -PartyMovedDistance $partyMovedDistance `
-        -CommandAcknowledged:$([bool]((-not [string]::IsNullOrWhiteSpace($commandSent)) -and ($lastCommand.result -eq 'Success' -or ($checkpoints -contains 'execute_ack') -or ($checkpoints -contains 'campaign_clock_resume_ack')))) `
+        -CommandAcknowledged:$commandAcknowledged `
         -MovementIntentSet:$movementIntentSet -TravelClockRunning:$travelClockRunning `
         -OperatorInterruptionObserved:$operatorInterruptionObserved -ForegroundLoss:$foregroundLoss `
         -FairWindowElapsed:$fairWindowElapsed -MovementProofPresent:$movementProofPresent
@@ -268,7 +371,7 @@ function New-RebootNormalizedContext {
         target = Get-RebootFirstValue @($campaign.targetSettlement, $manifest.targetSettlement, $lastState.resolvedTravelTarget, $lastCommand.target)
         targetSource = Get-RebootFirstValue @($lastCommand.targetSource, $lastState.resolvedTravelTargetSource, $lastCommand.engineTargetSource)
         commandSent = $commandSent
-        commandAcknowledged = [bool]((-not [string]::IsNullOrWhiteSpace($commandSent)) -and ($lastCommand.result -eq 'Success' -or ($checkpoints -contains 'execute_ack') -or ($checkpoints -contains 'campaign_clock_resume_ack')))
+        commandAcknowledged = $commandAcknowledged
         travelClockRunning = $travelClockRunning
         movementIntentSet = $movementIntentSet
         partyMovedDistance = $partyMovedDistance
@@ -289,9 +392,15 @@ function New-RebootNormalizedContext {
         consecutiveSafeIdleCycles = Get-RebootCountBucket $(Get-RebootFirstValue @($summary.maxConsecutiveSafeIdleCycles, $lastState.consecutiveSafeIdleCycles, $lastCommand.consecutiveSafeIdleCycles))
         lastMeaningfulCheckpoint = Get-RebootLastMeaningfulCheckpoint -Events $events
     }
-    $owner = Get-RebootLikelyOwner -Context ([pscustomobject]$ctx)
-    $ctx['likelyOwner'] = $owner
-    $ctx['likelyFiles'] = @(Get-RebootLikelyFiles -Owner $owner)
+    $legacyOwner = Get-RebootLikelyOwner -Context ([pscustomobject]$ctx)
+    $surfaceOwnership = Resolve-RebootSurfaceOwnership -Surface $ctx.surface -Context ([pscustomobject]$ctx)
+    $ctx['surfaceGroup'] = $surfaceOwnership.surfaceGroup
+    $ctx['surfaceOwner'] = $surfaceOwnership.surfaceOwner
+    $ctx['stableGapOwner'] = $surfaceOwnership.stableGapOwner
+    $ctx['nextPatchLane'] = $surfaceOwnership.nextPatchLane
+    $ctx['legacyLikelyOwner'] = $legacyOwner
+    $ctx['likelyOwner'] = $surfaceOwnership.stableGapOwner
+    $ctx['likelyFiles'] = @(Get-RebootLikelyFiles -Owner $surfaceOwnership.stableGapOwner)
     return [pscustomobject]$ctx
 }
 
@@ -325,6 +434,10 @@ function Write-RebootSummaryMarkdown {
         "- final classification: $($Summary.finalClassification)",
         "- repeated context: $($Summary.repeatedContext)",
         "- latest evidence path: $($Summary.latestEvidencePath)",
+        "- surface group: $($Summary.latestNormalizedContext.surfaceGroup)",
+        "- surface owner: $($Summary.latestNormalizedContext.surfaceOwner)",
+        "- stable gap owner: $($Summary.latestNormalizedContext.stableGapOwner)",
+        "- next patch lane: $($Summary.latestNormalizedContext.nextPatchLane)",
         "- next local action: $($Summary.nextLocalAction)",
         "- next patch owner: $($Summary.nextPatchOwner)",
         "- user action needed: $($Summary.userActionNeeded)", '',
@@ -363,6 +476,11 @@ function Write-RebootStableGapHandoff {
     $lines = @('# STABLE GAP HANDOFF', '',
         '- classification: stable_gap',
         "- likely owner: $owner",
+        "- legacy likely owner: $($Context.legacyLikelyOwner)",
+        "- surface group: $($Context.surfaceGroup)",
+        "- surface owner: $($Context.surfaceOwner)",
+        "- stable gap owner: $($Context.stableGapOwner)",
+        "- next patch lane: $($Context.nextPatchLane)",
         "- likely files to inspect: $files",
         "- evidence A: $EvidenceA",
         "- evidence B: $EvidenceB",
