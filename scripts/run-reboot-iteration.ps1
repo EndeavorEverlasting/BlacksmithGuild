@@ -20,6 +20,9 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'reboot-context-classifier.ps1')
 . (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
+$stubSurfaceContractPath = Join-Path $PSScriptRoot 'stub-surface-contract.ps1'
+$stubSurfaceContractAvailable = Test-Path -LiteralPath $stubSurfaceContractPath
+if ($stubSurfaceContractAvailable) { . $stubSurfaceContractPath }
 
 if ($MaxIterations -lt 1) { throw 'MaxIterations must be >= 1' }
 if ($RepeatThreshold -lt 2) { throw 'RepeatThreshold must be >= 2' }
@@ -37,6 +40,27 @@ $script:RebootRepoRoot = $repoRoot
 $executeTimeout = Get-RebootActionTimeoutSec -ActionClass $ActionTimeoutClass `
     -NormalActionTimeoutSec $NormalActionTimeoutSec -LongTravelTimeoutSec $LongTravelTimeoutSec `
     -LargeSmithingTimeoutSec $LargeSmithingTimeoutSec -MassTradeTimeoutSec $MassTradeTimeoutSec
+
+$stubSurfaceStatusPath = Join-Path $rebootDir 'stub-surface-status.json'
+$stubSurfaceStatus = if ($stubSurfaceContractAvailable -and (Get-Command Write-TbgStubSurfaceStatusSummary -ErrorAction SilentlyContinue)) {
+    Write-TbgStubSurfaceStatusSummary -RepoRoot $repoRoot -Path $stubSurfaceStatusPath
+} else {
+    [pscustomobject]@{
+        schemaVersion = 1
+        contract = 'tbg_stub_surface_status'
+        generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
+        hasIntentionalStubs = $false
+        stubCount = 0
+        missingStubSurfaceCount = 0
+        blockingProductProofStubCount = 0
+        status = 'stub_surface_contract_not_loaded'
+        note = 'stub-surface-contract.ps1 was not available to this Reboot run'
+        entries = @()
+    }
+}
+if (-not (Test-Path -LiteralPath $stubSurfaceStatusPath)) {
+    Write-RebootJson -Object $stubSurfaceStatus -Path $stubSurfaceStatusPath | Out-Null
+}
 
 function Get-LatestAutonomousAssistEvidenceDir {
     param([datetime]$SinceUtc)
@@ -85,6 +109,9 @@ try {
 Write-Host 'The Blacksmith Guild - Forge Reboot' -ForegroundColor Cyan
 Write-Host "Evidence: $rebootDir"
 Write-Host "Normal action timeout: ${NormalActionTimeoutSec}s; action class=$ActionTimeoutClass execute timeout=${executeTimeout}s"
+if ($stubSurfaceStatus.hasIntentionalStubs) {
+    Write-Host "Stub surfaces: $($stubSurfaceStatus.stubCount) intentional stubs; product-proof blockers=$($stubSurfaceStatus.blockingProductProofStubCount)" -ForegroundColor Yellow
+}
 
 $previous = $null
 $previousEvidence = $null
@@ -120,7 +147,7 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $latestEvidence = $evidencePath
     $matchesPrevious = Test-RebootContextRepeat -A $previous -B $context
     $repeatCount = if ($matchesPrevious) { $repeatCount + 1 } else { 1 }
-    $iterationRecords.Add([ordered]@{ iteration = $i; runnerExit = $runnerExit; evidencePath = $evidencePath; outputPath = $outputPath; repeatCount = $repeatCount; normalizedContext = $context }) | Out-Null
+    $iterationRecords.Add([ordered]@{ iteration = $i; runnerExit = $runnerExit; evidencePath = $evidencePath; outputPath = $outputPath; repeatCount = $repeatCount; normalizedContext = $context; stubSurfaceStatus = $stubSurfaceStatus }) | Out-Null
     Write-RebootJson -Object @($iterationRecords.ToArray()) -Path (Join-Path $rebootDir 'reboot-iterations.json') | Out-Null
     if ($script:RebootOperatorStopRequested -or (Test-GovernorStopRequested -RepoRoot $repoRoot) -or $context.stopReason -eq 'operator_stop_forge_stop') {
         $operatorStopRequested = $true
@@ -150,6 +177,10 @@ $summary = [ordered]@{
     operatorStopReason = $operatorStopReason
     latestEvidencePath = $latestEvidence
     latestNormalizedContext = $latestContext
+    stubSurfaceStatus = $stubSurfaceStatus
+    stubSurfaceStatusPath = $stubSurfaceStatusPath
+    hasIntentionalStubs = [bool]$stubSurfaceStatus.hasIntentionalStubs
+    productProofBlockedByStubs = [bool]($stubSurfaceStatus.blockingProductProofStubCount -gt 0)
     nextLocalAction = if ($stableGap) { 'open stable-gap-handoff.md and patch the named owner seam' } else { 'rerun ForgeReboot.cmd or inspect latest evidence if user-visible behavior surprised you' }
     nextPatchOwner = if ($latestContext) { $latestContext.likelyOwner } else { 'unknown' }
     userActionNeeded = $false
