@@ -8,6 +8,7 @@ Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'gap-coverage-contract.ps1')
 . (Join-Path $PSScriptRoot 'product-gap-contract.ps1')
 . (Join-Path $PSScriptRoot 'doctrine-contract.ps1')
+. (Join-Path $PSScriptRoot 'stub-surface-contract.ps1')
 . (Join-Path $PSScriptRoot 'command-surface-contract.ps1')
 . (Join-Path $PSScriptRoot 'mutation-proof-contract.ps1')
 . (Join-Path $PSScriptRoot 'save-safety-contract.ps1')
@@ -43,6 +44,11 @@ $requiredFunctions = @(
     'New-TbgDoctrineContractMatrix',
     'Assert-TbgDoctrineContractMatrix',
     'Write-TbgDoctrineContractReport',
+    'Get-TbgStubSurfaceCatalog',
+    'Test-TbgStubSurfaceCatalogEntry',
+    'New-TbgStubSurfaceStatusSummary',
+    'Write-TbgStubSurfaceStatusSummary',
+    'Assert-TbgStubSurfaceStatusSummary',
     'Get-TbgCommandSurfaceCatalog',
     'Test-TbgCommandSurfaceEntry',
     'Assert-TbgCommandSurfaceGovernance',
@@ -117,6 +123,14 @@ Assert-TbgProductGapImpactNotes -Notes $productNotes | Out-Null
 $doctrineMatrix = New-TbgDoctrineContractMatrix
 Assert-TbgDoctrineContractMatrix -Matrix $doctrineMatrix | Out-Null
 
+$stubStatusPath = Join-Path $repoRoot 'docs\evidence\latest-stub-contracts.json'
+$stubStatus = Write-TbgStubSurfaceStatusSummary -RepoRoot $repoRoot -Path $stubStatusPath
+Assert-TbgStubSurfaceStatusSummary -Summary $stubStatus | Out-Null
+if (-not $stubStatus.hasIntentionalStubs) { throw 'stub status should report intentional stubs' }
+if ($stubStatus.stubCount -lt 1) { throw 'stub status should include stubCount' }
+if ($stubStatus.missingStubSurfaceCount -ne 0) { throw 'stub status should not report missing declared stub surfaces' }
+if (-not (Test-Path -LiteralPath $stubStatusPath)) { throw 'stub status JSON was not written' }
+
 Assert-TbgCommandSurfaceGovernance -Catalog (Get-TbgCommandSurfaceCatalog) | Out-Null
 
 $mutation = New-TbgMutationProofRecord -ActionName 'smoke' -MutationType 'inventory' `
@@ -149,5 +163,5 @@ $companionAudit = New-TbgCompanionStaminaAudit -MainHero (New-TbgCompanionStamin
     -Companions @((New-TbgCompanionStaminaEntry -HeroName 'Companion' -InParty:$true -EligibleForSmithing:$false -VisibleInSmithy:$false -BlockedReason 'not visible in smithy'))
 Assert-TbgCompanionStaminaAuditExplainsAvailability -Audit $companionAudit | Out-Null
 
-Write-Host 'PASS local iteration contract stub smoke test'
+Write-Host "PASS local iteration contract stub smoke test; stub status JSON: $stubStatusPath"
 exit 0
