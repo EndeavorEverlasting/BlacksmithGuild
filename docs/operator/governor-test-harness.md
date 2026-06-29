@@ -103,6 +103,45 @@ clicks) is opt-in only.
 Use `-AllowFocusSteal` only when an unattended machine needs the launcher to force its
 window forward to complete PLAY/CONTINUE.
 
+## Launcher Window Context doctrine
+
+Launcher PID/window selection is a shared-context problem, not a local script preference.
+The authoritative plan lives in:
+
+- `docs/handoff/launcher-window-context-factoring.md`
+- `scripts/verify-launcher-window-context-contract.ps1`
+
+The intended spine is:
+
+```text
+S1 baseline process/window snapshot
+-> S2 post-launch/request snapshot
+-> compare S1/S2
+-> confidence-score one candidate
+-> bind preferred hwnd/pid
+-> use that bound context for launcher UIA and coordinate fallback
+```
+
+Existing launcher reuse is allowed, but it must still refresh or write launcher context.
+The bad pattern is skipping `open-bannerlord-launcher.ps1` merely because a launcher
+process already exists and then calling `launcher-auto-nav.ps1` without a fresh or
+intentionally reused context. That can leave `launcher-auto-nav.ps1` with a stale S1
+artifact or a fallback baseline captured after the launcher was already present.
+
+Future launch-adjacent scripts must obey these rules:
+
+- no `launcher-auto-nav.ps1` call without a fresh or intentionally reused
+  `LauncherWindowContext`
+- no title/size heuristic coordinate selection while a valid context exists
+- no PID-global UIA before trying the bound hwnd/pid context
+- no `Get-Process ... | Select-Object -First 1` as launcher authority
+- no silent fallback
+- dialog exceptions must log why they are outside the bound launcher context
+- focus helpers must not bypass context silently
+
+This is currently a documented factoring plan, not a completed implementation refactor.
+Agents should update the plan and verifier before changing launcher PID/window behavior.
+
 ## Create a disposable dev save
 
 Approved disposable save names are:
@@ -163,9 +202,11 @@ Run:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-governor-operator-harness-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-regent-route-horse-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-post-attach-actionability-contract.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-launcher-window-context-contract.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
 ```
 
 The verifiers check that smoke outputs use `.local/`, stop/focus safety is wired,
 decision JSON fields are validated, the Regent/Route/Horse commands stay
-registered, and local-only runtime JSON remains ignored.
+registered, local-only runtime JSON remains ignored, and launcher PID/window context
+principles stay visible before implementation agents touch launcher selection.
