@@ -4,7 +4,7 @@
 
 This doctrine exists because the local harness must serve the operator, not seize the operator's workstation.
 
-AI agents must not issue long-running local tests by default. A 5-minute or 10-minute wait is not normal validation. It is an exceptional operation and must be explicitly justified before it runs.
+AI agents must not issue long-running local tests by default. A 5-minute or 10-minute wait is not normal validation. A longer wait is allowed only for a small set of expected gameplay-long operations.
 
 The default local testing posture is short, bounded, classifying, and interruptible.
 
@@ -28,28 +28,68 @@ This applies to:
 
 If a normal path cannot produce success within 30 seconds, it must stop and classify the state. It must not keep waiting in hope.
 
-## Allowed long-wait exceptions
+## Long-wait allowlist
 
-Only these operation classes may exceed 30 seconds:
+There are only two timing classes:
 
-1. long-distance travel
-2. smithing with a large party
-3. massive trade operation
-4. explicit user-requested full validation
-5. explicit user-requested manual certification
+1. normal operation: 30 seconds maximum
+2. expected gameplay-long operation: longer than 30 seconds, never more than 5 minutes
 
-A long wait must be explicit in the command, script parameter, output, and evidence.
+The expected gameplay-long allowlist is intentionally small:
+
+1. travel between settlements
+2. blacksmithing batch work
+3. trading batch work
+
+No other task gets a long timeout by default.
+
+A long-wait operation must be explicitly declared in the command, script parameter, output, and evidence. It must say which allowlisted class it belongs to and why it needs more than 30 seconds.
 
 Acceptable evidence fields include:
 
 ```text
 longWaitException=true
-actionClass=long_distance_travel
+actionClass=travel_between_settlements
 timeBudgetSec=180
+maxTimeBudgetSec=300
 reason=party is travelling across the campaign map
 ```
 
 Silent long waits are forbidden.
+
+## Long-wait ceilings
+
+The hard ceiling for any expected gameplay-long operation is 5 minutes.
+
+Recommended budgets:
+
+| Action class | Default budget | Hard ceiling | Notes |
+| --- | ---: | ---: | --- |
+| `travel_between_settlements` | 180 seconds | 300 seconds | Use only after travel command ACK and active movement/route evidence. |
+| `blacksmithing_batch_work` | 180 seconds | 300 seconds | Use only for actual batch smithing/refine/smelt/forge actions, not for menu discovery. |
+| `trading_batch_work` | 180 seconds | 300 seconds | Use only for actual multi-item buy/sell batch execution, not for price reading or menu discovery. |
+
+The five-minute ceiling is not a default. It is an upper bound for the allowlisted gameplay-long classes.
+
+## Not long-wait operations
+
+These are not long-wait operations and remain capped at 30 seconds:
+
+- launching the game
+- launcher navigation
+- Continue / Play selection
+- attach readiness
+- detecting a process
+- waiting for a command ACK
+- reading JSON evidence
+- classifying foreground loss
+- checking whether movement proof exists
+- menu discovery
+- offline validation
+- build verification unless the user explicitly asks for full validation
+- cleanup / stop commands
+
+If one of these cannot finish in 30 seconds, classify the failure and stop.
 
 ## Forbidden defaults
 
@@ -61,8 +101,9 @@ The following are forbidden as normal-path defaults:
 - unbounded polling loops
 - full validation bundles as the default double-click behavior
 - live cert rituals unless the user explicitly requested certification
+- treating the five-minute ceiling as a generic timeout for all tasks
 
-These values may exist only behind an explicit long-wait action class or explicit user-requested full validation/certification mode.
+Long timeout values may exist only behind one of the three allowlisted gameplay action classes.
 
 ## Harness behavior
 
@@ -94,6 +135,7 @@ Required behavior:
 - operator interruption stops cleanly
 - launcher/deploy/process problems are classified
 - movement proof is checkpoint-based and does not rely only on `partyMovedDistance`
+- long waits are allowed only when the current action is one of the three allowlisted gameplay-long classes
 
 If Reboot proves visible mechanics, it should not continue merely to exhaust `MaxIterations`.
 
@@ -133,6 +175,16 @@ Remove-Item Env:\FORGE_NO_PAUSE -ErrorAction SilentlyContinue
 .\ForgeReboot.cmd -MaxIterations 2 -NormalActionTimeoutSec 30
 ```
 
+### Allowed only for expected gameplay-long operations
+
+```powershell
+.\ForgeReboot.cmd -ActionClass travel_between_settlements -LongActionTimeoutSec 180
+.\ForgeReboot.cmd -ActionClass blacksmithing_batch_work -LongActionTimeoutSec 180
+.\ForgeReboot.cmd -ActionClass trading_batch_work -LongActionTimeoutSec 180
+```
+
+The timeout must never exceed 300 seconds.
+
 ### Forbidden unless explicitly authorized by the user
 
 ```powershell
@@ -141,6 +193,7 @@ Remove-Item Env:\FORGE_NO_PAUSE -ErrorAction SilentlyContinue
 scripts\run-autonomous-assist-session.ps1 -AttachWaitSec 600
 scripts\launcher-auto-nav.ps1 -TimeoutSec 300
 any manual cert command expected to run longer than 30 seconds
+any generic 5-minute timeout not tied to travel, blacksmithing, or trading batch work
 ```
 
 ## Design principle
@@ -148,5 +201,7 @@ any manual cert command expected to run longer than 30 seconds
 Do not make the operator wait for ambiguity.
 
 After 30 seconds, classify the ambiguity, write the handoff, and stop.
+
+For travel, blacksmithing, and trading batch work, a longer window is allowed only because the gameplay action itself can legitimately take longer. Even then, the five-minute limit is a ceiling, not a habit.
 
 The product is not a patient spinner. The product is a disciplined local judge.
