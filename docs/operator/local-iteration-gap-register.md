@@ -21,6 +21,42 @@ A gap is an observed or inferable failure mode with:
 
 When a gap repeats, the harness should classify it and write a handoff instead of asking the operator to rediscover it.
 
+## Patch coverage rule
+
+No local-iteration patch may exclude any of the ten gaps in this register.
+
+A patch may focus implementation on one or two owner seams, but its plan, summary, and validation notes must explicitly account for all ten gaps.
+
+For every sprint touching Reboot, validation, evidence, launcher/attach, foreground, command execution, movement proof, smithing, trading, or local harness behavior, the final report must include a gap coverage matrix with all ten rows.
+
+Each row must be marked as one of:
+
+- `patched` - code/docs/tests changed for this gap
+- `covered_by_existing_contract` - no code change needed because an existing verifier/test already covers it
+- `not_touched_with_reason` - deliberately out of this patch's code scope, with a reason and owner seam
+- `new_follow_up_required` - gap remains open and needs a named follow-up
+
+It is not acceptable to silently omit a gap because the patch title is narrower.
+
+Future agents must not collapse the register into only the highest-value next patch list. The next patch list is a priority order. The ten-gap register is the coverage contract.
+
+Required coverage matrix shape:
+
+```text
+| Gap | Status | Evidence / test / reason |
+| --- | --- | --- |
+| 1. Command ACK treated as gameplay proof | ... | ... |
+| 2. Single weak metric treated as final verdict | ... | ... |
+| 3. Ambiguity handled by waiting instead of classification | ... | ... |
+| 4. Machine-readable evidence missing or incomplete | ... | ... |
+| 5. Long-wait permission too broad | ... | ... |
+| 6. Foreground/operator interruption conflated with runtime failure | ... | ... |
+| 7. Success semantics are too negative | ... | ... |
+| 8. Validation UX still allows command necklaces | ... | ... |
+| 9. Local evidence exists but is not discoverable enough | ... | ... |
+| 10. Docs not converted into enforceable contracts | ... | ... |
+```
+
 ## Gap 1: command acknowledgement treated as gameplay proof
 
 ### Symptom
@@ -385,11 +421,16 @@ It must:
 3. patch the smallest responsible surface
 4. add or update a regression test
 5. update this register if the gap changes shape
+6. report all ten gaps in the coverage matrix, even if only one gap changed
 
 ## Current highest-value next patches
+
+The following list is a priority order, not permission to ignore the other gaps.
 
 1. enforce the 30-second / 5-minute allowlist in code, not only docs
 2. make Reboot stop with `visible_mechanics_observed` when movement proof exists
 3. make ForgeVerify fast/full mode real and write validation summaries
 4. add latest evidence pointer files
 5. add doctrine-to-contract verifier coverage
+
+Each of these patches must still account for all ten register gaps in its plan, final report, and validation notes.
