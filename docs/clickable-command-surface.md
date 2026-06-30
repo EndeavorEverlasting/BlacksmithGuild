@@ -8,6 +8,8 @@ The rule is simple:
 
 `forge.ps1` remains the implementation path. Root `.cmd` files are the human surface.
 
+Implementation roadmap: [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md)
+
 ---
 
 ## Required posture for future agents
