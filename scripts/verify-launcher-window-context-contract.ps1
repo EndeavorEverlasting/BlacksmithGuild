@@ -1,6 +1,6 @@
-﻿# Offline documentation contract for launcher PID/window context factoring.
-# This verifies that the factoring plan exists and is visible to future agents.
-# It does not claim the implementation refactor is complete.
+﻿# Offline documentation and first implementation-slice contract for launcher PID/window context factoring.
+# This verifies that the factoring plan exists and that the shared context helper is present.
+# It does not claim the full launch-adjacent migration or live runtime proof is complete.
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -31,6 +31,7 @@ function Assert-Contains {
 
 $handoffDoc = 'docs\handoff\launcher-window-context-factoring.md'
 $operatorDoc = 'docs\operator\governor-test-harness.md'
+$contextHelper = 'scripts\launcher-window-context.ps1'
 
 Assert-Contains $handoffDoc '# Launcher Window Context Factoring' 'canonical handoff doc must exist'
 Assert-Contains $operatorDoc '## Launcher Window Context doctrine' 'operator doc must surface doctrine'
@@ -53,7 +54,7 @@ foreach ($needle in @(
     'It does not claim the full refactor is complete.',
     'Runtime proof is not part of this documentation sprint.'
 )) {
-    Assert-Contains $handoffDoc $needle "required doctrine text"
+    Assert-Contains $handoffDoc $needle 'required doctrine text'
 }
 
 foreach ($entryPoint in @(
@@ -70,7 +71,12 @@ foreach ($entryPoint in @(
 }
 
 foreach ($sourceCheck in @(
-    @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'S1_pre_launch' },
+    @{ file = $contextHelper; text = 'Ensure-TbgLauncherWindowContext' },
+    @{ file = $contextHelper; text = 'TbgLauncherWindowContext.v1' },
+    @{ file = $contextHelper; text = 'window-snapshot-S1-pre-launch.json' },
+    @{ file = $contextHelper; text = 'launcher-window-context.json' },
+    @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'Ensure-TbgLauncherWindowContext' },
+    @{ file = 'scripts\install-mod.ps1'; text = '-LaunchIntent $LaunchIntent' },
     @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'SetPreferredLauncherWindow' },
     @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'GetBestLauncherWindowForCoords' },
     @{ file = 'scripts\run-autonomous-assist-session.ps1'; text = 'launcher-auto-nav.ps1' },
@@ -87,5 +93,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: launcher window context documentation contract verified.' -ForegroundColor Green
+Write-Host 'PASS: launcher window context doctrine and first implementation slice verified.' -ForegroundColor Green
 exit 0
