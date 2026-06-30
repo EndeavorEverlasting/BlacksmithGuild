@@ -1,11 +1,14 @@
-﻿# Opens the Bannerlord launcher (shared by LaunchForge.cmd and ForgeAndLaunch.cmd).
+﻿# Opens the Bannerlord launcher through the shared launcher-window context helper.
+# This wrapper intentionally writes the S1 baseline/context even when an existing launcher is reused.
 param(
     [string]$BannerlordRoot,
-    [switch]$AllowExistingProcess
+    [switch]$AllowExistingProcess,
+    [ValidateSet('play', 'continue')]
+    [string]$LaunchIntent = 'play'
 )
 
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
+. (Join-Path $PSScriptRoot 'launcher-window-context.ps1')
 
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot)
@@ -24,41 +27,17 @@ if (-not $BannerlordRoot) {
     $BannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
 }
 
-$LauncherExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe'
-$GameExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\Bannerlord.exe'
+$result = Ensure-TbgLauncherWindowContext -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent `
+    -Mode LaunchSetup -AllowExistingProcess:$AllowExistingProcess -CreatedBy 'open-bannerlord-launcher.ps1'
 
-if (-not (Test-Path -LiteralPath $LauncherExe)) {
-    throw "Launcher not found: $LauncherExe"
+$ctx = $result.context
+if ($ctx.isExistingLauncherReuse) {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: existing launcher context refreshed path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: existing launcher context refreshed pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
+} elseif ($ctx.isFreshLaunch) {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: fresh launcher context created path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: fresh launcher context created pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
+} else {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: launcher context created path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: launcher context created pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
 }
-
-# Distinguish the actual game process (Bannerlord.exe) from the launcher
-# (TaleWorlds.MountAndBlade.Launcher.exe). An already-running launcher is the target, not a blocker;
-# only a running game process needs Forge Stop approval before we open the launcher.
-$gameRunning = [bool](Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
-$launcherRunning = [bool](Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)
-$preflightOk = $false
-if (Get-Command Test-TbgPreflightCompleted -ErrorAction SilentlyContinue) { $preflightOk = Test-TbgPreflightCompleted }
-
-# Case 2: the actual game is running. Reuse is unsafe without Forge Stop approval.
-# -AllowExistingProcess signals that approval (save/cancel) has already been granted upstream.
-if ($gameRunning -and -not $AllowExistingProcess -and -not $preflightOk) {
-    throw "Bannerlord game is already running (Bannerlord.exe). Forge Stop approval (save then stop, or stop without saving) is required before opening the launcher."
-}
-
-# Case 1: only the launcher is running (no game). Reuse the existing launcher instead of starting a
-# second one; launcher-auto-nav.ps1 -LaunchSetup binds it via the baseline PID/window selection.
-if ($launcherRunning -and -not $gameRunning) {
-    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message 'open-launcher: existing launcher detected; reusing'
-    Write-Host 'open-launcher: existing launcher detected; reusing' -ForegroundColor Cyan
-    $s1Snapshot = Get-Pr11ProcessSnapshot -Label 'S1_pre_launch' -BannerlordRoot $BannerlordRoot
-    Save-Pr11ProcessSnapshot -Snapshot $s1Snapshot -OutputPath (Join-Path $BannerlordRoot 'window-snapshot-S1-pre-launch.json') | Out-Null
-    return
-}
-
-Write-Host 'Opening Bannerlord launcher...' -ForegroundColor Cyan
-$s1Snapshot = Get-Pr11ProcessSnapshot -Label 'S1_pre_launch' -BannerlordRoot $BannerlordRoot
-Save-Pr11ProcessSnapshot -Snapshot $s1Snapshot -OutputPath (Join-Path $BannerlordRoot 'window-snapshot-S1-pre-launch.json') | Out-Null
-& (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: Start-Process $LauncherExe"
-Start-Process -FilePath $LauncherExe -WorkingDirectory (Split-Path -Parent $LauncherExe)
-Start-Sleep -Seconds 2
-& (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message 'open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)'
