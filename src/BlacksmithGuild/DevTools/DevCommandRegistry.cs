@@ -5,6 +5,7 @@ using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.Food;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
@@ -70,6 +71,7 @@ namespace BlacksmithGuild.DevTools
                 CharacterBuildVariantService.SelectCharacterBuildBestNowCommand,
                 CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand,
                 CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand,
+                FoodAdvisoryService.AnalyzeFoodCommand,
                 CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand,
                 CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand,
                 CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand,
