@@ -44,10 +44,23 @@ foreach ($needle in @(
     'Travel must resume after manual intervention.',
     'Arrival must be detected.',
     'Town mechanics must run before leaving.',
-    'Food must be checked before route commitment.',
-    'Horses and capacity must be checked before trade commitment.',
-    'Trade should run only when the logistics circuit supports it.',
-    'Route selection should optimize after the loop is reliable.',
+    'Market trade must run before logistics checks.',
+    'Food must be checked after the market pass and before departure.',
+    'Horses and capacity must be checked after food and before route commitment.',
+    'Tavern companion recruitment must run before smithing when useful, legal, and affordable.',
+    'Smithing should use available companion stamina before the town is considered exhausted.',
+    'Route selection should choose the next town that maximizes profit after town utility is exhausted.',
+    'Town utility must run in this order:',
+    '1. Trade sell',
+    '2. Trade buy',
+    '3. Food check',
+    '4. Horse and capacity check',
+    '5. Tavern visit',
+    '6. Companion recruitment',
+    '7. Smithing stamina refresh',
+    '8. Use companion stamina for smithing',
+    '9. Smith, refine, and smelt',
+    '10. Select the next town that maximizes profit',
     'manual_intervention_pending',
     'partyMovedDistance == 0',
     'Local harnesses should iterate and generate context'
@@ -58,10 +71,10 @@ foreach ($needle in @(
 }
 
 if ($manifest) {
-    if ([int]$manifest.schemaVersion -lt 1) { $failures.Add('manifest schemaVersion must be >= 1') | Out-Null }
+    if ([int]$manifest.schemaVersion -lt 2) { $failures.Add('manifest schemaVersion must be >= 2') | Out-Null }
     if ([string]$manifest.circuitName -ne 'Travel Logistics Circuit') { $failures.Add('manifest circuitName must be Travel Logistics Circuit') | Out-Null }
     if ([string]$manifest.doctrinePath -ne 'docs/operator/travel-logistics-circuit.md') { $failures.Add('manifest doctrinePath must point to travel-logistics-circuit.md') | Out-Null }
-    if ([string]$manifest.coreRule -notmatch 'Do not optimize trade before travel') { $failures.Add('manifest coreRule must keep trade downstream of travel') | Out-Null }
+    if ([string]$manifest.coreRule -notmatch 'current town has been exhausted') { $failures.Add('manifest coreRule must keep next destination downstream of ordered town utility') | Out-Null }
 
     $orders = @($manifest.developmentOrder | Sort-Object order | ForEach-Object { [string]$_.rule })
     $expectedOrder = @(
@@ -69,10 +82,12 @@ if ($manifest) {
         'Travel must resume after manual intervention.',
         'Arrival must be detected.',
         'Town mechanics must run before leaving.',
-        'Food must be checked before route commitment.',
-        'Horses and capacity must be checked before trade commitment.',
-        'Trade should run only when the logistics circuit supports it.',
-        'Route selection should optimize after the loop is reliable.'
+        'Market trade must run before logistics checks.',
+        'Food must be checked after the market pass and before departure.',
+        'Horses and capacity must be checked after food and before route commitment.',
+        'Tavern companion recruitment must run before smithing when useful, legal, and affordable.',
+        'Smithing should use available companion stamina before the town is considered exhausted.',
+        'Route selection should choose the next town that maximizes profit after town utility is exhausted.'
     )
     for ($i = 0; $i -lt $expectedOrder.Count; $i++) {
         if ($orders.Count -le $i -or $orders[$i] -ne $expectedOrder[$i]) {
@@ -80,31 +95,33 @@ if ($manifest) {
         }
     }
 
-    foreach ($currency in @('time','food','gold','cargoCapacity','horses','partySpeed','risk','inventoryPressure','townUtility','stamina','materials')) {
+    foreach ($currency in @('time','food','gold','cargoCapacity','horses','partySpeed','risk','inventoryPressure','townUtility','companions','smithingStamina','materials')) {
         Assert-ManifestArrayContains $manifest.currencies $currency 'currencies'
     }
-    foreach ($branch in @('manual_intervention_pending','travel','arrival_detection','town_food','town_horses_capacity','town_trade_sell','town_trade_buy','town_smithing','town_rest','next_route_selection')) {
+    foreach ($branch in @('manual_intervention_pending','travel','arrival_detection','town_trade_sell','town_trade_buy','town_food','town_horses_capacity','town_tavern_visit','town_companion_recruitment','town_smithing_stamina_refresh','town_smithing_use_companion_stamina','town_smith_refine_smelt','next_profit_route_selection')) {
         Assert-ManifestArrayContains $manifest.branchOrder $branch 'branchOrder'
     }
     foreach ($signal in @('commandAcknowledged','campaignClockRunning','movementIntentSet','partyPositionDelta','distanceToTargetDelta','settlementDeparture','settlementArrival','routeTargetChange','movementCheckpointObserved','movementMetricDisagreement')) {
         Assert-ManifestArrayContains $manifest.travelProofSignals $signal 'travelProofSignals'
     }
-    foreach ($utility in @('food_check','horse_capacity_check','sell_or_reduce_inventory_pressure','buy_trade_goods_when_supported','smith_refine_smelt_or_rest_when_legal','select_next_route_after_town_exhausted')) {
+    foreach ($utility in @('trade_sell','trade_buy','food_check','horse_capacity_check','tavern_visit','companion_recruitment','smithing_stamina_refresh','use_companion_stamina_for_smithing','smith_refine_smelt','select_next_profit_route')) {
         Assert-ManifestArrayContains $manifest.townUtilityOrder $utility 'townUtilityOrder'
     }
     foreach ($field in @('reason','currentSurface','lastPlannedBranch','targetSettlement','userActionNeeded','resumeAllowedWhen','resumeCommand','evidencePath','nextOwner')) {
         Assert-ManifestArrayContains $manifest.manualInterventionPending.requiredFields $field 'manualInterventionPending.requiredFields'
     }
-    foreach ($gap in @('manual_intervention_resume','arrival_to_town_mechanics_transition','movement_proof_breadth')) {
+    foreach ($signal in @('tavernVisited','recruitableHeroDetected','recruitmentCostKnown','goldBefore','goldAfter','joinedPartyVerified','smithingStaminaRefreshed')) {
+        Assert-ManifestArrayContains $manifest.companionRecruitment.requiredSignals $signal 'companionRecruitment.requiredSignals'
+    }
+    foreach ($gap in @('manual_intervention_resume','arrival_to_town_mechanics_transition','movement_proof_breadth','tavern_companion_recruitment_before_smithing','next_profit_route_selection')) {
         Assert-ManifestKnownGap $manifest $gap
     }
 }
 
-# Code snippets that must stay aligned with the doctrine until the downstream implementations land.
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "[ValidateSet('default', 'economic_loop')]" 'trade/town mechanics remain profile-gated, not accidental default behavior'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' '$isEconomicLoop = ($CertProfile -eq ''economic_loop'')' 'economic loop must be explicit until profile toggle is shared'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'ProbeVanillaTradeExecutionNow' 'trade driving surface must remain identifiable for downstream town mechanics work'
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Non-trade branch satisfied for economic-loop' 'economic loop must prove non-trade travel branch before trade counts'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Non-trade branch satisfied for economic-loop' 'economic loop must prove travel branch before trade counts'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Get-AutonomousAssistEngineTravelTarget' 'travel target handoff remains the spine before downstream logistics'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'movementProofClassification = $latestMovementUpdate.movementProofClassification' 'movement proof classification must remain visible to Reboot/handoff logic'
 Assert-Contains 'scripts\autonomous-assist-session.ps1' 'function Test-AutonomousAssistDurableMovementObserved' 'movement proof must be durable and not one raw distance field'
