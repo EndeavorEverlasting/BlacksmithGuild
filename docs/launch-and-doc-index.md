@@ -53,6 +53,7 @@ Common wrappers:
 
 ```powershell
 .\Run-MarketIntel.cmd
+.\Run-FoodGovernorCheck.cmd
 .\Run-HorseMarketIntel.cmd
 .\Run-GuildLoopAdvisory.cmd
 .\Run-AutonomousGuildLoop.cmd
@@ -82,12 +83,26 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md), [player-
 
 ---
 
+## Food check
+
+Food currently runs through the campaign governor, not a direct standalone `AnalyzeFood` command:
+
+```powershell
+.\Run-FoodGovernorCheck.cmd
+.\Run-ExportEvidence.cmd
+```
+
+Inspect `BlacksmithGuild_CampaignGovernorDecision.json` for `foodStatus`, `foodDiversityStatus`, `foodForecastStatus`, `proposedActivity`, and `latestActivityResult.narrativeDetails[]`. Food buy/provisioning is not active yet.
+
+---
+
 ## Documentation index (self-serve)
 
 | Question | Read this file |
 |----------|----------------|
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
 | Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
+| Food status / runway / provisioning gap? | [clickable-command-surface.md](clickable-command-surface.md) § Food-specific note |
 | `Forge.cmd` vs `ForgeContinue.cmd` | [dev-disposable-save.md](dev-disposable-save.md) |
 | Zero-click pipeline internals | [forge-zero-click-contract.md](forge-zero-click-contract.md) |
 | Desktop shortcut / Launch Control | [../tools/LaunchControl/README.md](../tools/LaunchControl/README.md) |
@@ -121,7 +136,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md), [player-
 ```text
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
-Click:    Run-MarketIntel.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd | Run-AutonomousGuildLoop.cmd
+Click:    Run-MarketIntel.cmd | Run-FoodGovernorCheck.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd
 Evidence: Run-ExportEvidence.cmd → docs/evidence/latest/
 Docs:     docs/clickable-command-surface.md | docs/automation-playbook.md | docs/launch-and-doc-index.md
 ```
