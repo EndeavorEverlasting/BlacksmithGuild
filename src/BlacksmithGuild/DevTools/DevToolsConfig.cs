@@ -132,6 +132,12 @@ namespace BlacksmithGuild.DevTools
         public static int CampaignRuntimeGovernorDecisionIntervalMs = 4000;
         public static bool CampaignRuntimeGovernorAllowBoundedExecution = false;
 
+        // Low-noise campaign tick profiler. Writes JSON only after slow segments or optional periodic snapshots.
+        public static bool TickCostProfilerEnabled = true;
+        public static double TickCostProfilerSlowThresholdMs = 8.0;
+        public static int TickCostProfilerMinWriteIntervalMs = 1000;
+        public static bool TickCostProfilerWritePeriodicSnapshots = false;
+
         // Horse Atlas read-only intelligence: lay-of-land scan defaults.
         public static BlacksmithGuild.HorseMarket.HorseMarketAtlasMode HorseMarketAtlasMode =
             BlacksmithGuild.HorseMarket.HorseMarketAtlasMode.LayOfLandScan;
