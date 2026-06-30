@@ -179,6 +179,7 @@ try {
                 }
             }
             & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot `
+                -LaunchIntent $LaunchIntent `
                 -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
                 & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -TimeoutSec 300 -PollMs 180 -LaunchSetup
