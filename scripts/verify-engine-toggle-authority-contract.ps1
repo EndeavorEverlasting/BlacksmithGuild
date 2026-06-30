@@ -59,6 +59,8 @@ Assert-Contains $doc 'Higher-order engines must not flip raw booleans directly.'
 Assert-Contains $doc 'DevToolsConfig.MapTradeAutonomousMode = true;' 'bad raw-config example must remain visible'
 Assert-Contains $doc 'Visible mechanics PASS' 'docs must distinguish mode from runtime proof'
 Assert-Contains $doc 'The next implementation sprint should migrate direct readers to authority calls' 'remaining migration boundary must be explicit'
+Assert-Contains $doc 'docs/handoff/test-timeout-contract.md' 'engine sprint must link short-timeout doctrine'
+Assert-Contains $doc 'scripts/verify-test-timeout-contract.ps1' 'engine sprint must link timeout verifier'
 
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: engine toggle authority contract has $($failures.Count) issue(s)." -ForegroundColor Red
