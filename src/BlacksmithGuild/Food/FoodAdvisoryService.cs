@@ -78,7 +78,7 @@ namespace BlacksmithGuild.Food
                 false,
                 null,
                 null);
-            request.Source = source;
+            request.Inputs.Add("source=" + (source ?? AnalyzeFoodCommand));
             request.RequiresFreshMarketScan = true;
             request.RequiresVisibleSurface = true;
             request.RequiresInventoryDelta = true;
