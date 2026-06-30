@@ -53,7 +53,7 @@ Common wrappers:
 
 ```powershell
 .\Run-MarketIntel.cmd
-.\Run-FoodGovernorCheck.cmd
+.\Run-FoodAdvisory.cmd
 .\Run-HorseMarketIntel.cmd
 .\Run-GuildLoopAdvisory.cmd
 .\Run-AutonomousGuildLoop.cmd
@@ -85,14 +85,20 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md), [player-
 
 ## Food check
 
-Food currently runs through the campaign governor, not a direct standalone `AnalyzeFood` command:
+Food now has a direct read-only command:
 
 ```powershell
-.\Run-FoodGovernorCheck.cmd
+.\Run-FoodAdvisory.cmd
 .\Run-ExportEvidence.cmd
 ```
 
-Inspect `BlacksmithGuild_CampaignGovernorDecision.json` for `foodStatus`, `foodDiversityStatus`, `foodForecastStatus`, `proposedActivity`, and `latestActivityResult.narrativeDetails[]`. Food buy/provisioning is not active yet.
+Underlying inbox command:
+
+```powershell
+.\forge.ps1 -Command AnalyzeFood -Wait
+```
+
+Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast, candidate planning, read-only market stock, market matches, execution gate, and `buyFoodSupported`. Automated food acquisition is not active yet.
 
 ---
 
@@ -136,7 +142,7 @@ Inspect `BlacksmithGuild_CampaignGovernorDecision.json` for `foodStatus`, `foodD
 ```text
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
-Click:    Run-MarketIntel.cmd | Run-FoodGovernorCheck.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd
+Click:    Run-MarketIntel.cmd | Run-FoodAdvisory.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd
 Evidence: Run-ExportEvidence.cmd → docs/evidence/latest/
 Docs:     docs/clickable-command-surface.md | docs/automation-playbook.md | docs/launch-and-doc-index.md
 ```
