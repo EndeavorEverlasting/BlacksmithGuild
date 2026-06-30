@@ -30,6 +30,7 @@ function Get-DevCommandNames {
         'RunGuildLoopNow',
         'ShowCharacterDoctrine',
         'MarketSnapshotNow',
+        'AnalyzeFood',
         'AnalyzeHorseMarket',
         'ShowHorseMarketIntel',
         'RankHorseMarketActions',
