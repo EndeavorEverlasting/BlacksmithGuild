@@ -1,42 +1,20 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "circuitName": "Travel Logistics Circuit",
   "doctrinePath": "docs/operator/travel-logistics-circuit.md",
-  "purpose": "Codify travel as the spine for food, horses, cargo, trade, smithing, town utility, and route optimization.",
-  "coreRule": "Do not optimize trade before travel, manual intervention resume, arrival detection, and town transition behavior are reliable.",
+  "purpose": "Codify travel as the spine for trade, food, horses, tavern companion recruitment, smithing, town utility, and route optimization.",
+  "coreRule": "Do not select the next destination before travel is reliable and the current town has been exhausted in the ordered town utility hierarchy.",
   "developmentOrder": [
-    {
-      "order": 1,
-      "rule": "Travel must work."
-    },
-    {
-      "order": 2,
-      "rule": "Travel must resume after manual intervention."
-    },
-    {
-      "order": 3,
-      "rule": "Arrival must be detected."
-    },
-    {
-      "order": 4,
-      "rule": "Town mechanics must run before leaving."
-    },
-    {
-      "order": 5,
-      "rule": "Food must be checked before route commitment."
-    },
-    {
-      "order": 6,
-      "rule": "Horses and capacity must be checked before trade commitment."
-    },
-    {
-      "order": 7,
-      "rule": "Trade should run only when the logistics circuit supports it."
-    },
-    {
-      "order": 8,
-      "rule": "Route selection should optimize after the loop is reliable."
-    }
+    { "order": 1, "rule": "Travel must work." },
+    { "order": 2, "rule": "Travel must resume after manual intervention." },
+    { "order": 3, "rule": "Arrival must be detected." },
+    { "order": 4, "rule": "Town mechanics must run before leaving." },
+    { "order": 5, "rule": "Market trade must run before logistics checks." },
+    { "order": 6, "rule": "Food must be checked after the market pass and before departure." },
+    { "order": 7, "rule": "Horses and capacity must be checked after food and before route commitment." },
+    { "order": 8, "rule": "Tavern companion recruitment must run before smithing when useful, legal, and affordable." },
+    { "order": 9, "rule": "Smithing should use available companion stamina before the town is considered exhausted." },
+    { "order": 10, "rule": "Route selection should choose the next town that maximizes profit after town utility is exhausted." }
   ],
   "currencies": [
     "time",
@@ -48,7 +26,8 @@
     "risk",
     "inventoryPressure",
     "townUtility",
-    "stamina",
+    "companions",
+    "smithingStamina",
     "materials"
   ],
   "branchOrder": [
@@ -56,13 +35,16 @@
     "manual_intervention_pending",
     "travel",
     "arrival_detection",
-    "town_food",
-    "town_horses_capacity",
     "town_trade_sell",
     "town_trade_buy",
-    "town_smithing",
-    "town_rest",
-    "next_route_selection"
+    "town_food",
+    "town_horses_capacity",
+    "town_tavern_visit",
+    "town_companion_recruitment",
+    "town_smithing_stamina_refresh",
+    "town_smithing_use_companion_stamina",
+    "town_smith_refine_smelt",
+    "next_profit_route_selection"
   ],
   "manualInterventionPending": {
     "recoverable": true,
@@ -97,17 +79,42 @@
     "movementMetricDisagreement"
   ],
   "townUtilityOrder": [
+    "trade_sell",
+    "trade_buy",
     "food_check",
     "horse_capacity_check",
-    "sell_or_reduce_inventory_pressure",
-    "buy_trade_goods_when_supported",
-    "smith_refine_smelt_or_rest_when_legal",
-    "select_next_route_after_town_exhausted"
+    "tavern_visit",
+    "companion_recruitment",
+    "smithing_stamina_refresh",
+    "use_companion_stamina_for_smithing",
+    "smith_refine_smelt",
+    "select_next_profit_route"
   ],
+  "companionRecruitment": {
+    "beforeSmithing": true,
+    "legalMechanicsOnly": true,
+    "requiredSignals": [
+      "tavernVisited",
+      "recruitableHeroDetected",
+      "recruitmentCostKnown",
+      "goldBefore",
+      "goldAfter",
+      "joinedPartyVerified",
+      "smithingStaminaRefreshed"
+    ],
+    "integrityRules": [
+      "companionMustExistInGame",
+      "recruitmentCostMustBePaid",
+      "staminaMustComeFromVerifiedPartyHero",
+      "partyChangesMustUseGameMechanics"
+    ]
+  },
   "downstreamUntilTravelReliable": [
-    "food automation",
-    "horse buying and pack capacity decisions",
-    "trade buying and selling loops",
+    "food automation beyond the post-trade check",
+    "horse buying and pack capacity decisions beyond the post-food check",
+    "tavern companion recruitment execution",
+    "companion stamina allocation",
+    "trade buying and selling loops beyond first safe market pass",
     "route profit optimization",
     "town exhaustion optimization",
     "multi-town economic loops"
@@ -119,19 +126,29 @@
     },
     {
       "gap": "arrival_to_town_mechanics_transition",
-      "reason": "Travel proof must transition into town utility before selecting new travel."
+      "reason": "Travel proof must transition into ordered town utility before selecting new travel."
     },
     {
       "gap": "movement_proof_breadth",
       "reason": "partyMovedDistance == 0 alone is not enough to prove no movement occurred."
+    },
+    {
+      "gap": "tavern_companion_recruitment_before_smithing",
+      "reason": "Town utility must visit the tavern and recruit useful companions before spending smithing stamina."
+    },
+    {
+      "gap": "next_profit_route_selection",
+      "reason": "After town utility is exhausted, the next town should be selected by profit-maximizing route logic."
     }
   ],
-  "agentInstruction": "Do not start trade optimization before travel, manual intervention resume, arrival detection, and town mechanics transition are reliable.",
+  "agentInstruction": "Do not select the next town before the current town has completed trade sell, trade buy, food check, horse/capacity check, tavern companion recruitment, companion stamina use, and smith/refine/smelt in order.",
   "nextRecommendedSprints": [
     "manual intervention resume",
     "arrival detection",
-    "town exhaustion loop",
+    "ordered town utility loop",
+    "tavern companion recruitment",
+    "companion stamina smithing allocation",
     "food, horse, and capacity logistics",
-    "trade loop"
+    "next profit route selection"
   ]
 }
