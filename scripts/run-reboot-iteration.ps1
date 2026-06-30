@@ -10,6 +10,7 @@ param(
     [switch]$SkipBuild,
     [ValidateSet('play','continue')]
     [string]$LaunchIntent = 'continue',
+    [string]$CertProfile = $null,
     [switch]$DryRun,
     [ValidateSet('normal','long_distance_travel','large_smithing','mass_trade')]
     [string]$ActionTimeoutClass = 'normal'
@@ -20,6 +21,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'reboot-context-classifier.ps1')
 . (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
+. (Join-Path $PSScriptRoot 'automation-profile.ps1')
 $stubSurfaceContractPath = Join-Path $PSScriptRoot 'stub-surface-contract.ps1'
 $stubSurfaceContractAvailable = Test-Path -LiteralPath $stubSurfaceContractPath
 if ($stubSurfaceContractAvailable) { . $stubSurfaceContractPath }
@@ -27,6 +29,8 @@ if ($stubSurfaceContractAvailable) { . $stubSurfaceContractPath }
 if ($MaxIterations -lt 1) { throw 'MaxIterations must be >= 1' }
 if ($RepeatThreshold -lt 2) { throw 'RepeatThreshold must be >= 2' }
 if ($NormalActionTimeoutSec -gt 30) { throw 'NormalActionTimeoutSec must not exceed 30 seconds' }
+$certProfileResolution = Resolve-TbgAutomationProfile -ExplicitProfile $CertProfile -RequestedBy 'run-reboot-iteration.ps1'
+$CertProfile = [string]$certProfileResolution.profile
 
 $sessionId = 'reboot' + (Get-Date).ToString('yyyyMMdd-HHmmss') + '-reboot-session'
 $rebootDir = Join-Path $repoRoot (Join-Path 'docs\evidence' $sessionId)
@@ -108,6 +112,7 @@ try {
 
 Write-Host 'The Blacksmith Guild - Forge Reboot' -ForegroundColor Cyan
 Write-Host "Evidence: $rebootDir"
+Write-Host "Automation profile: $CertProfile source=$($certProfileResolution.source) path=$($certProfileResolution.path)"
 Write-Host "Normal action timeout: ${NormalActionTimeoutSec}s; action class=$ActionTimeoutClass execute timeout=${executeTimeout}s"
 if ($stubSurfaceStatus.hasIntentionalStubs) {
     Write-Host "Stub surfaces: $($stubSurfaceStatus.stubCount) intentional stubs; product-proof blockers=$($stubSurfaceStatus.blockingProductProofStubCount)" -ForegroundColor Yellow
@@ -129,7 +134,7 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     }
     $runStartedUtc = (Get-Date).ToUniversalTime()
     $runnerArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1'),
-        '-LaunchIntent',$LaunchIntent,'-ProbeTimeoutSec',$NormalActionTimeoutSec,'-ExecuteTimeoutSec',$executeTimeout)
+        '-LaunchIntent',$LaunchIntent,'-CertProfile',$CertProfile,'-ProbeTimeoutSec',$NormalActionTimeoutSec,'-ExecuteTimeoutSec',$executeTimeout)
     if ($AllowFocusSteal) { $runnerArgs += '-AllowFocusSteal' }
     if ($SkipBuild -or $DryRun) { $runnerArgs += '-SkipBuild' }
     if ($DryRun) { $runnerArgs += '-DryRun' }
@@ -147,7 +152,7 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $latestEvidence = $evidencePath
     $matchesPrevious = Test-RebootContextRepeat -A $previous -B $context
     $repeatCount = if ($matchesPrevious) { $repeatCount + 1 } else { 1 }
-    $iterationRecords.Add([ordered]@{ iteration = $i; runnerExit = $runnerExit; evidencePath = $evidencePath; outputPath = $outputPath; repeatCount = $repeatCount; normalizedContext = $context; stubSurfaceStatus = $stubSurfaceStatus }) | Out-Null
+    $iterationRecords.Add([ordered]@{ iteration = $i; runnerExit = $runnerExit; evidencePath = $evidencePath; outputPath = $outputPath; repeatCount = $repeatCount; normalizedContext = $context; stubSurfaceStatus = $stubSurfaceStatus; automationProfile = $CertProfile; automationProfileSource = $certProfileResolution.source }) | Out-Null
     Write-RebootJson -Object @($iterationRecords.ToArray()) -Path (Join-Path $rebootDir 'reboot-iterations.json') | Out-Null
     if ($script:RebootOperatorStopRequested -or (Test-GovernorStopRequested -RepoRoot $repoRoot) -or $context.stopReason -eq 'operator_stop_forge_stop') {
         $operatorStopRequested = $true
@@ -175,6 +180,9 @@ $summary = [ordered]@{
     repeatedContext = [bool]$stableGap
     operatorStopRequested = [bool]$operatorStopRequested
     operatorStopReason = $operatorStopReason
+    automationProfile = $CertProfile
+    automationProfileSource = $certProfileResolution.source
+    automationProfilePath = $certProfileResolution.path
     latestEvidencePath = $latestEvidence
     latestNormalizedContext = $latestContext
     stubSurfaceStatus = $stubSurfaceStatus
