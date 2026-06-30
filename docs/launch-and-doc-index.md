@@ -66,6 +66,8 @@ Common wrappers:
 
 Full matrix and agent rules: [clickable-command-surface.md](clickable-command-surface.md)
 
+Implementation roadmap: [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md)
+
 ---
 
 ## After launch — autonomous guild loop (006B)
@@ -108,6 +110,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 |----------|----------------|
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
 | Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
+| What is the plan to finish the root CMD / click wrapper surface? | [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md) |
 | Food status / runway / provisioning gap? | [clickable-command-surface.md](clickable-command-surface.md) § Food-specific note |
 | `Forge.cmd` vs `ForgeContinue.cmd` | [dev-disposable-save.md](dev-disposable-save.md) |
 | Zero-click pipeline internals | [forge-zero-click-contract.md](forge-zero-click-contract.md) |
@@ -133,7 +136,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 
 ### AI agent “start here”
 
-[clickable-command-surface.md](clickable-command-surface.md), then [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)
+[clickable-command-surface.md](clickable-command-surface.md), [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md), then [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)
 
 ---
 
@@ -143,6 +146,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
 Click:    Run-MarketIntel.cmd | Run-FoodAdvisory.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd
+Plan:     docs/plans/click-first-command-surface.plan.md
 Evidence: Run-ExportEvidence.cmd → docs/evidence/latest/
 Docs:     docs/clickable-command-surface.md | docs/automation-playbook.md | docs/launch-and-doc-index.md
 ```
