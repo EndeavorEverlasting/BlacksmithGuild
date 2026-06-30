@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "branchName": "food_provisioning",
+  "doctrinePath": "docs/operator/food-provisioning-doctrine.md",
+  "purpose": "Make food provisioning an actionable town branch that buys food when needed or blocks departure with a classified reason.",
+  "coreRule": "Food provisioning must either buy food and prove the result, or block departure with a useful reason.",
+  "positionInTownUtility": {
+    "after": [
+      "town_trade_sell",
+      "town_trade_buy"
+    ],
+    "before": [
+      "town_horses_capacity",
+      "town_tavern_visit",
+      "town_companion_recruitment",
+      "town_smithing_stamina_refresh",
+      "town_smith_refine_smelt",
+      "next_profit_route_selection"
+    ]
+  },
+  "requiredInputs": [
+    "town",
+    "partySize",
+    "currentFoodItems",
+    "currentFoodUnits",
+    "currentFoodDays",
+    "gold",
+    "inventoryWeight",
+    "capacity",
+    "availableCapacity",
+    "routeTarget",
+    "routeEstimatedDays",
+    "routeFoodBufferDays",
+    "minimumDepartureFoodDays",
+    "targetFoodDays",
+    "emergencyFoodDays",
+    "townMarketFoodCandidates"
+  ],
+  "decisionNames": [
+    "hold_food_target_met",
+    "buy_food",
+    "emergency_buy_food",
+    "block_departure_no_food",
+    "block_departure_insufficient_gold",
+    "block_departure_insufficient_capacity",
+    "block_departure_market_unavailable",
+    "manual_intervention_required"
+  ],
+  "executionOutcomes": [
+    "food_target_met",
+    "food_bought_and_verified",
+    "food_unavailable_in_market",
+    "insufficient_gold_for_food",
+    "insufficient_capacity_for_food",
+    "market_read_failed",
+    "execution_failed",
+    "manual_intervention_required"
+  ],
+  "evidenceFiles": [
+    "BlacksmithGuild_FoodProvisioningStatus.json",
+    "BlacksmithGuild_FoodProvisioningDecision.json",
+    "BlacksmithGuild_FoodProvisioningExecution.json"
+  ],
+  "statusFields": [
+    "town",
+    "partySize",
+    "currentFoodItems",
+    "currentFoodUnits",
+    "currentFoodDays",
+    "gold",
+    "inventoryWeight",
+    "capacity",
+    "availableCapacity",
+    "routeTarget",
+    "routeEstimatedDays",
+    "routeFoodBufferDays",
+    "minimumDepartureFoodDays",
+    "targetFoodDays",
+    "emergencyFoodDays",
+    "status",
+    "updatedAtUtc"
+  ],
+  "decisionFields": [
+    "town",
+    "decision",
+    "reason",
+    "foodTargetMet",
+    "departureAllowed",
+    "recommendedPurchases",
+    "estimatedCost",
+    "estimatedWeight",
+    "goldReserveAfterPurchase",
+    "capacityAfterPurchase",
+    "blockedReason",
+    "nextBranch",
+    "updatedAtUtc"
+  ],
+  "executionFields": [
+    "town",
+    "decision",
+    "attempted",
+    "success",
+    "goldBefore",
+    "goldAfter",
+    "foodDaysBefore",
+    "foodDaysAfter",
+    "itemsBought",
+    "totalCost",
+    "totalWeight",
+    "departureAllowedAfter",
+    "failureClass",
+    "updatedAtUtc"
+  ],
+  "foodSelectionRanking": [
+    "affordableFoodThatReachesTargetDays",
+    "foodDaysPerGold",
+    "foodDaysPerWeightWhenCapacityIsTight",
+    "varietyWhenMechanicallyUseful",
+    "emergencyMinimumFoodBeforeTradeOptimization"
+  ],
+  "thresholdFields": [
+    "currentFoodDays",
+    "minimumDepartureFoodDays",
+    "targetFoodDays",
+    "emergencyFoodDays",
+    "routeEstimatedDays",
+    "routeFoodBufferDays"
+  ],
+  "departureRule": "currentFoodDays >= max(minimumDepartureFoodDays, routeEstimatedDays + routeFoodBufferDays)",
+  "downstreamConsumers": [
+    "town_horses_capacity",
+    "town_tavern_visit",
+    "town_companion_recruitment",
+    "town_smithing_stamina_refresh",
+    "town_smith_refine_smelt",
+    "next_profit_route_selection"
+  ],
+  "routeSelectionInvalidWhen": [
+    "foodBelowRouteSafeThreshold",
+    "foodProvisioningFailedWithoutSafeOverride",
+    "routeTravelDaysExceedSafeFoodBuffer",
+    "tradeGoodsConsumedFoodBudget",
+    "horseCapacityDecisionWouldReduceDepartureSafety"
+  ],
+  "tradeIntegration": {
+    "tradeRunsBeforeFood": true,
+    "foodUsesPostTradeState": true,
+    "tradeProfitCannotOverrideFoodSafety": true,
+    "conflictClassifications": [
+      "trade_consumed_food_budget",
+      "trade_consumed_food_capacity",
+      "post_trade_food_deficit"
+    ]
+  },
+  "horseCapacityIntegration": {
+    "runsAfterFood": true,
+    "consumesPostFoodGold": true,
+    "consumesPostFoodCapacity": true,
+    "horsesDoNotReplaceFood": true
+  },
+  "integrityRules": [
+    "useLegalMarketMechanics",
+    "verifyGoldDelta",
+    "verifyFoodInventoryDelta",
+    "recomputeFoodDaysAfterExecution",
+    "doNotAllowDepartureWithoutVerifiedFoodStateOrClassifiedBlocker"
+  ],
+  "recommendedTests": [
+    "scripts/verify-food-provisioning-contract.ps1",
+    "scripts/test-food-provisioning-contract.ps1"
+  ],
+  "knownGaps": [
+    {
+      "gap": "action_advisor_not_built",
+      "reason": "Food provisioning must produce decisions, not only status diagnostics."
+    },
+    {
+      "gap": "buy_path_not_built",
+      "reason": "Food provisioning must buy food through legal market mechanics and verify the result."
+    },
+    {
+      "gap": "route_selection_not_consuming_food_state",
+      "reason": "Next profit route must be blocked when food is below route-safe threshold."
+    }
+  ]
+}
