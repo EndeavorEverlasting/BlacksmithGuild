@@ -1,0 +1,91 @@
+﻿# Offline documentation contract for launcher PID/window context factoring.
+# This verifies that the factoring plan exists and is visible to future agents.
+# It does not claim the implementation refactor is complete.
+$ErrorActionPreference = 'Stop'
+
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$failures = New-Object System.Collections.Generic.List[string]
+
+function Read-RepoText {
+    param([Parameter(Mandatory = $true)][string]$RelativePath)
+    $path = Join-Path $repoRoot $RelativePath
+    if (-not (Test-Path -LiteralPath $path)) {
+        $failures.Add("missing file: $RelativePath") | Out-Null
+        return ''
+    }
+    return Get-Content -LiteralPath $path -Raw
+}
+
+function Assert-Contains {
+    param(
+        [Parameter(Mandatory = $true)][string]$RelativePath,
+        [Parameter(Mandatory = $true)][string]$Needle,
+        [string]$Why = ''
+    )
+    $text = Read-RepoText -RelativePath $RelativePath
+    if ($text.IndexOf($Needle, [System.StringComparison]::Ordinal) -lt 0) {
+        $suffix = if ($Why) { " ($Why)" } else { '' }
+        $failures.Add("$RelativePath missing '$Needle'$suffix") | Out-Null
+    }
+}
+
+$handoffDoc = 'docs\handoff\launcher-window-context-factoring.md'
+$operatorDoc = 'docs\operator\governor-test-harness.md'
+
+Assert-Contains $handoffDoc '# Launcher Window Context Factoring' 'canonical handoff doc must exist'
+Assert-Contains $operatorDoc '## Launcher Window Context doctrine' 'operator doc must surface doctrine'
+Assert-Contains $operatorDoc 'docs/handoff/launcher-window-context-factoring.md' 'operator doc must link detailed plan'
+Assert-Contains $operatorDoc 'verify-launcher-window-context-contract.ps1' 'operator doc must list verifier'
+
+foreach ($needle in @(
+    'S1 baseline process/window snapshot',
+    'S2 post-launch/request snapshot',
+    'compare S1/S2',
+    'bind preferred hwnd/pid',
+    'TbgLauncherWindowContext',
+    'Ensure-TbgLauncherWindowContext',
+    'Existing launcher reuse is valid, but it must still refresh/write context.',
+    'No launch-adjacent script may call launcher-auto-nav.ps1 without a fresh or intentionally reused LauncherWindowContext.',
+    'No fallback may be silent.',
+    'PID-global UIA is a fallback only after bound hwnd/pid context fails or is unavailable',
+    'Coordinate fallback is a fallback only after bound hwnd/pid context fails or is unavailable',
+    'Focus helpers must not bypass context silently.',
+    'It does not claim the full refactor is complete.',
+    'Runtime proof is not part of this documentation sprint.'
+)) {
+    Assert-Contains $handoffDoc $needle "required doctrine text"
+}
+
+foreach ($entryPoint in @(
+    'scripts/open-bannerlord-launcher.ps1',
+    'scripts/install-mod.ps1',
+    'scripts/run-autonomous-assist-session.ps1',
+    'scripts/run-pr11-town-travel-launch-attach-execute.ps1',
+    'scripts/run-governor-disposable-smoke.ps1',
+    'scripts/ensure-dev-save.ps1',
+    'scripts/launcher-auto-nav.ps1',
+    'scripts/autonomous-assist-session.ps1'
+)) {
+    Assert-Contains $handoffDoc $entryPoint 'entry point must be listed for migration'
+}
+
+foreach ($sourceCheck in @(
+    @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'S1_pre_launch' },
+    @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'SetPreferredLauncherWindow' },
+    @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'GetBestLauncherWindowForCoords' },
+    @{ file = 'scripts\run-autonomous-assist-session.ps1'; text = 'launcher-auto-nav.ps1' },
+    @{ file = 'scripts\run-pr11-town-travel-launch-attach-execute.ps1'; text = 'launcher-auto-nav.ps1' }
+)) {
+    Assert-Contains $sourceCheck.file $sourceCheck.text 'current source fact must remain discoverable'
+}
+
+Assert-Contains $operatorDoc 'This is currently a documented factoring plan, not a completed implementation refactor.' 'operator doc must not overclaim'
+
+if ($failures.Count -gt 0) {
+    Write-Host "FAIL: launcher window context contract has $($failures.Count) issue(s)." -ForegroundColor Red
+    foreach ($failure in $failures) { Write-Host "  - $failure" -ForegroundColor Red }
+    exit 1
+}
+
+Write-Host 'PASS: launcher window context documentation contract verified.' -ForegroundColor Green
+exit 0
