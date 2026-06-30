@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches:
+      - main
       - feat/campaign-runtime-governor
   workflow_dispatch:
 
@@ -35,6 +36,10 @@ jobs:
       - name: Verify campaign activity handoff contract
         shell: pwsh
         run: ./scripts/verify-campaign-activity-handoff-contract.ps1
+
+      - name: Verify tick cost profiler contract
+        shell: pwsh
+        run: ./scripts/verify-tick-cost-profiler-contract.ps1
 
       - name: Verify command-bus patch contract
         shell: pwsh
