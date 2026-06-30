@@ -65,7 +65,10 @@ namespace BlacksmithGuild.GuildLoop
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
                 Source = source,
-                Capabilities = ProbeCapabilities()
+                Capabilities = ProbeCapabilities(),
+                MaxCycles = Math.Max(1, DevToolsConfig.GuildLoopMaxCyclesPerCommand),
+                CycleIndex = 0,
+                CyclesCompleted = 0
             };
 
             AddStep("Preflight", "Success", "campaign map ready");
@@ -214,27 +217,57 @@ namespace BlacksmithGuild.GuildLoop
 
             _activeReport.Capabilities.HeadlessCraft = false;
 
-            if (MapTradeVanillaTradeDriver.TryExecuteBuy(_mission, out var buyDetail))
+            if (_mission.MissionType != MapTradeMissionType.TravelOnlySafetyCert)
             {
-                _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
-                var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
-                    ? "TryPackAnimalBuy"
-                    : "TryVanillaBuy";
-                AddStep(step, "Success", buyDetail);
+                if (MapTradeVanillaTradeDriver.TryExecuteBuy(_mission, out var buyDetail))
+                {
+                    _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
+                    var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                        ? "TryPackAnimalBuy"
+                        : "TryVanillaBuy";
+                    AddStep(step, "Success", buyDetail);
+                }
+                else
+                {
+                    var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                        ? "TryPackAnimalBuy"
+                        : "TryVanillaBuy";
+                    AddStep(step, "Blocked", buyDetail ?? probeDetail ?? "VisibleTradeDriverUnavailable");
+                    if (!DevToolsConfig.GuildLoopAllowTravelOnlyIfTradeBlocked)
+                    {
+                        Complete("Blocked", buyDetail ?? "trade driver unavailable");
+                        return;
+                    }
+
+                    AddStep("TravelOnlyCert", "Success", "trade blocked; travel-only cert path");
+                }
+            }
+
+            RunSellStep(source);
+        }
+
+        private static void RunSellStep(string source)
+        {
+            _activeReport.Phase = GuildLoopPhase.TryVanillaSell;
+
+            if (!MapTradeMissionSelector.ShouldAttemptSell(_mission, out var sellMission))
+            {
+                RunForgeHandoff(source);
+                return;
+            }
+
+            MapTradeVanillaTradeDriver.ProbeTradeApi(out var sellProbeDetail);
+            _activeReport.Capabilities.TradeSell = MapTradeVanillaTradeDriver.LastProbeAvailable;
+            _activeReport.Capabilities.TradeSellDetail = sellProbeDetail;
+
+            if (MapTradeVanillaTradeDriver.TryExecuteSell(sellMission, out var sellDetail))
+            {
+                _activeReport.SellExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
+                AddStep("TryVanillaSell", "Success", sellDetail);
             }
             else
             {
-                var step = _mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
-                    ? "TryPackAnimalBuy"
-                    : "TryVanillaBuy";
-                AddStep(step, "Blocked", buyDetail ?? probeDetail ?? "VisibleTradeDriverUnavailable");
-                if (!DevToolsConfig.GuildLoopAllowTravelOnlyIfTradeBlocked)
-                {
-                    Complete("Blocked", buyDetail ?? "trade driver unavailable");
-                    return;
-                }
-
-                AddStep("TravelOnlyCert", "Success", "trade blocked; travel-only cert path");
+                AddStep("TryVanillaSell", "Blocked", sellDetail ?? sellProbeDetail ?? "sell driver unavailable");
             }
 
             RunForgeHandoff(source);
@@ -279,6 +312,32 @@ namespace BlacksmithGuild.GuildLoop
             {
                 _activeReport.ForgeHandoff.Result = BlacksmithAutomationService.LastBlockedReason ?? "skipped";
                 AddStep("ForgeHandoff", "Blocked", _activeReport.ForgeHandoff.Result);
+            }
+
+            TryContinueMultiCycle(source);
+        }
+
+        private static void TryContinueMultiCycle(string source)
+        {
+            _activeReport.CyclesCompleted++;
+
+            if (_activeReport.CyclesCompleted < _activeReport.MaxCycles)
+            {
+                _activeReport.CycleIndex++;
+                AddStep(
+                    "CycleBoundary",
+                    "Success",
+                    $"cycle {_activeReport.CyclesCompleted} of {_activeReport.MaxCycles} complete — starting next");
+                _activeReport.Phase = GuildLoopPhase.MarketScan;
+                _activeReport.TradeExecution = null;
+                _activeReport.SellExecution = null;
+                _activeReport.ForgeHandoff = null;
+                _activeReport.CohesionSummary = null;
+                _mission = null;
+                WriteReport();
+                InGameNotice.Info($"TBG GUILD LOOP: starting cycle {_activeReport.CycleIndex + 1} of {_activeReport.MaxCycles}.");
+                ContinueFromMarketScan(source);
+                return;
             }
 
             Complete("Complete", null);
@@ -362,9 +421,14 @@ namespace BlacksmithGuild.GuildLoop
             sb.AppendLine($"  \"verdict\": {NullableString(report.Verdict)},");
             sb.AppendLine($"  \"blockedReason\": {NullableString(report.BlockedReason)},");
             sb.AppendLine($"  \"nextRecommendedCommand\": {NullableString(report.NextRecommendedCommand)},");
+            sb.AppendLine($"  \"cycleIndex\": {report.CycleIndex},");
+            sb.AppendLine($"  \"cyclesCompleted\": {report.CyclesCompleted},");
+            sb.AppendLine($"  \"maxCycles\": {report.MaxCycles},");
             sb.AppendLine("  \"capabilities\": {");
             sb.AppendLine($"    \"tradeDriver\": {(report.Capabilities.TradeDriver ? "true" : "false")},");
             sb.AppendLine($"    \"tradeDriverMethod\": {NullableString(report.Capabilities.TradeDriverMethod)},");
+            sb.AppendLine($"    \"tradeSell\": {(report.Capabilities.TradeSell ? "true" : "false")},");
+            sb.AppendLine($"    \"tradeSellDetail\": {NullableString(report.Capabilities.TradeSellDetail)},");
             sb.AppendLine($"    \"weaponSmelt\": {(report.Capabilities.WeaponSmelt ? "true" : "false")},");
             sb.AppendLine($"    \"weaponSmeltDetail\": {NullableString(report.Capabilities.WeaponSmeltDetail)},");
             sb.AppendLine($"    \"packAnimalBuy\": {(report.Capabilities.PackAnimalBuy ? "true" : "false")},");
@@ -385,6 +449,9 @@ namespace BlacksmithGuild.GuildLoop
             sb.AppendLine("  },");
             sb.AppendLine("  \"tradeExecution\": ");
             AppendTradeExecution(sb, report.TradeExecution, "  ");
+            sb.AppendLine(",");
+            sb.AppendLine("  \"sellExecution\": ");
+            AppendTradeExecution(sb, report.SellExecution, "  ");
             sb.AppendLine(",");
             sb.AppendLine("  \"cycleSteps\": [");
             for (var i = 0; i < report.CycleSteps.Count; i++)
@@ -450,6 +517,7 @@ namespace BlacksmithGuild.GuildLoop
             sb.AppendLine($"{indent}  \"itemId\": {NullableString(execution.ItemId)},");
             sb.AppendLine($"{indent}  \"itemName\": {NullableString(execution.ItemName)},");
             sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
+            sb.AppendLine($"{indent}  \"quantitySold\": {execution.QuantitySold},");
             sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
             sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
             sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)}");
@@ -469,6 +537,7 @@ namespace BlacksmithGuild.GuildLoop
         TravelToTown,
         EnterTown,
         TryVanillaBuy,
+        TryVanillaSell,
         TravelOnlyCert,
         ForgeHandoff,
         Complete
@@ -486,6 +555,10 @@ namespace BlacksmithGuild.GuildLoop
         public GuildLoopForgeHandoffBlock ForgeHandoff { get; set; }
         public GuildLoopCohesionSummary CohesionSummary { get; set; }
         public MapTradeExecutionResult TradeExecution { get; set; }
+        public MapTradeExecutionResult SellExecution { get; set; }
+        public int CycleIndex { get; set; }
+        public int CyclesCompleted { get; set; }
+        public int MaxCycles { get; set; } = 1;
         public List<GuildLoopCycleStep> CycleSteps { get; set; } = new List<GuildLoopCycleStep>();
     }
 
@@ -504,6 +577,8 @@ namespace BlacksmithGuild.GuildLoop
         public string WeaponSmeltDetail { get; set; }
         public bool PackAnimalBuy { get; set; }
         public string PackAnimalBuyDetail { get; set; }
+        public bool TradeSell { get; set; }
+        public string TradeSellDetail { get; set; }
         public bool HeadlessCraft { get; set; }
     }
 

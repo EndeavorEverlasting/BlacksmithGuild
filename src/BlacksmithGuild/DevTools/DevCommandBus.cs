@@ -233,6 +233,7 @@ namespace BlacksmithGuild.DevTools
                 commandName == HerdLedgerService.AnalyzeHerdLedgerCommand ||
                 commandName == HerdLedgerService.ShowHerdLedgerCommand ||
                 commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand ||
+                commandName == MapTradeVanillaTradeDriver.ProbeVanillaSellExecutionNowCommand ||
                 commandName == ClanContextService.AnalyzeClanContextCommand ||
                 commandName == ClanContextService.ShowClanContextCommand ||
                 commandName == NobleNetworkService.AnalyzeNobleNetworkCommand ||
@@ -474,6 +475,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
                 || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeVanillaSellExecutionNowCommand
                 || commandName == SmithingSmeltService.RunWeaponSmeltNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
@@ -499,6 +501,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
                 || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeVanillaSellExecutionNowCommand
                 || commandName == SmithingSmeltService.RunWeaponSmeltNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
@@ -832,6 +835,10 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand:
                     return MapTradeVanillaTradeDriver.RunProbePackAnimalBuyNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeVanillaTradeDriver.ProbeVanillaSellExecutionNowCommand:
+                    return MapTradeVanillaTradeDriver.RunProbeSellExecutionNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case SmithingSmeltService.ProbeWeaponSmeltNowCommand:

@@ -118,6 +118,7 @@ namespace BlacksmithGuild.DevTools
                 MapTradeForgeHandoffService.RunForgeHandoffAfterTradeNowCommand,
                 MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand,
                 MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand,
+                MapTradeVanillaTradeDriver.ProbeVanillaSellExecutionNowCommand,
                 SmithingSmeltService.ProbeWeaponSmeltNowCommand,
                 SmithingSmeltService.RunWeaponSmeltNowCommand,
                 AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand,

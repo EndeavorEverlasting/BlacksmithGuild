@@ -17,6 +17,7 @@ namespace BlacksmithGuild.MapTrade
     {
         public const string ProbeVanillaTradeExecutionNowCommand = "ProbeVanillaTradeExecutionNow";
         public const string ProbePackAnimalBuyNowCommand = "ProbePackAnimalBuyNow";
+        public const string ProbeVanillaSellExecutionNowCommand = "ProbeVanillaSellExecutionNow";
 
         public static string LastProbeMethod { get; private set; }
         public static bool LastProbeAvailable { get; private set; }
@@ -155,7 +156,70 @@ namespace BlacksmithGuild.MapTrade
 
         public static bool TryExecuteSell(MapTradeMission mission, out string detail)
         {
-            detail = "sell execution not implemented in 006C-1";
+            detail = null;
+            LastExecutionResult = null;
+
+            if (mission == null)
+            {
+                detail = "no mission";
+                return false;
+            }
+
+            if (DevToolsConfig.MapTradeAllowDirectInventoryMutation || DevToolsConfig.MapTradeAllowDirectGoldMutation)
+            {
+                detail = "direct mutation forbidden by config";
+                return false;
+            }
+
+            if (!ProbeTradeApi(out detail))
+            {
+                return false;
+            }
+
+            var settlement = mission.TargetSettlement
+                ?? mission.SellSettlement
+                ?? MobileParty.MainParty?.CurrentSettlement
+                ?? GameSessionState.ResolveCurrentSettlement();
+            if (settlement == null)
+            {
+                detail = "settlement not resolved for sell";
+                return false;
+            }
+
+            if (!SettlementNavigationHelper.TryEnsureSettlementInterior(out var navDetail))
+            {
+                detail = navDetail ?? "settlement interior not ready";
+                return false;
+            }
+
+            SettlementNavigationHelper.TryOpenMarketMenu(out _);
+
+            var item = MapTradeTradeActionReflection.ResolveItem(mission.ItemId);
+            if (item == null)
+            {
+                detail = $"item not found: {mission.ItemId}";
+                return false;
+            }
+
+            var party = MobileParty.MainParty;
+            var held = party?.ItemRoster?.GetItemNumber(item) ?? 0;
+            if (held <= 0)
+            {
+                detail = $"no {mission.ItemName ?? mission.ItemId} in party inventory to sell";
+                return false;
+            }
+
+            if (MapTradeTradeActionReflection.TryExecuteSell(settlement, item, 1, out var result, out detail))
+            {
+                LastExecutionResult = result;
+                LastProbeMethod = result.ExecutionMethod;
+                LastProbeAvailable = true;
+                LastProbeDetail = detail;
+                return true;
+            }
+
+            detail = detail ?? $"trade driver probed ({LastProbeMethod}) but sell execution not proven";
+            LastProbeDetail = detail;
             return false;
         }
 
@@ -207,6 +271,65 @@ namespace BlacksmithGuild.MapTrade
             var path = Path.Combine(BasePath.Name, "BlacksmithGuild_MapTradeProbe.json");
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             InGameNotice.Info($"TBG MAP TRADE PROBE: {(success ? "buy delta proven" : attemptDetail ?? "blocked")}");
+            return success;
+        }
+
+        public static bool RunProbeSellExecutionNow(string source = ProbeVanillaSellExecutionNowCommand)
+        {
+            GameSessionState.Refresh();
+            var signatures = MapTradeTradeActionReflection.ProbeApplySignatures();
+            var settlement = MobileParty.MainParty?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+            MapTradeExecutionResult execution = null;
+            string attemptDetail = null;
+            var success = false;
+            MapTradeMission mission = null;
+
+            if (settlement != null)
+            {
+                SettlementNavigationHelper.TryEnsureSettlementInterior(out _);
+                mission = MapTradeMissionSelector.TryBuildSellProbeMission(settlement);
+                if (mission?.ItemId != null)
+                {
+                    success = TryExecuteSell(mission, out attemptDetail);
+                    execution = LastExecutionResult;
+                }
+                else
+                {
+                    attemptDetail = "no sellable trade goods in party at current settlement";
+                }
+            }
+            else
+            {
+                attemptDetail = "party not at settlement — travel required before sell probe";
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            sb.AppendLine($"  \"generatedUtc\": \"{DateTime.UtcNow:o}\",");
+            sb.AppendLine($"  \"source\": \"{Escape(source)}\",");
+            sb.AppendLine($"  \"readOnly\": false,");
+            sb.AppendLine($"  \"settlement\": {NullableString(settlement?.Name?.ToString() ?? settlement?.StringId)},");
+            sb.AppendLine($"  \"itemId\": {NullableString(mission?.ItemId)},");
+            sb.AppendLine($"  \"itemName\": {NullableString(mission?.ItemName)},");
+            sb.AppendLine("  \"signatures\": [");
+            for (var i = 0; i < signatures.Count; i++)
+            {
+                sb.Append($"    \"{Escape(signatures[i])}\"");
+                sb.AppendLine(i < signatures.Count - 1 ? "," : string.Empty);
+            }
+
+            sb.AppendLine("  ],");
+            sb.AppendLine($"  \"attemptSuccess\": {(success ? "true" : "false")},");
+            sb.AppendLine($"  \"attemptDetail\": {NullableString(attemptDetail)},");
+            sb.AppendLine("  \"tradeExecution\": ");
+            AppendExecution(sb, execution, "  ");
+            sb.AppendLine(",");
+            sb.AppendLine($"  \"verdict\": \"{(success ? "ProbeSellSuccess" : "ProbeSellBlocked")}\"");
+            sb.AppendLine("}");
+
+            var path = Path.Combine(BasePath.Name, "BlacksmithGuild_MapTradeSellProbe.json");
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+            InGameNotice.Info($"TBG MAP TRADE SELL PROBE: {(success ? "sell delta proven" : attemptDetail ?? "blocked")}");
             return success;
         }
 
@@ -411,6 +534,7 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"{indent}  \"itemId\": {NullableString(execution.ItemId)},");
             sb.AppendLine($"{indent}  \"itemName\": {NullableString(execution.ItemName)},");
             sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
+            sb.AppendLine($"{indent}  \"quantitySold\": {execution.QuantitySold},");
             sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
             sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
             sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)},");
