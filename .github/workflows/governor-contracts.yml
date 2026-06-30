@@ -41,6 +41,10 @@ jobs:
         shell: pwsh
         run: ./scripts/verify-tick-cost-profiler-contract.ps1
 
+      - name: Verify clickable command surface
+        shell: pwsh
+        run: ./scripts/verify-clickable-command-surface.ps1
+
       - name: Verify command-bus patch contract
         shell: pwsh
         run: ./scripts/verify-campaign-governor-commandbus-patch-contract.ps1
