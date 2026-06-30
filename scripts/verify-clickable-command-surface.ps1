@@ -29,6 +29,7 @@ function Assert-Contains {
 
 $wrappers = @(
     'Run-MarketIntel.cmd',
+    'Run-FoodGovernorCheck.cmd',
     'Run-HorseMarketIntel.cmd',
     'Run-GuildLoopAdvisory.cmd',
     'Run-AutonomousGuildLoop.cmd',
@@ -47,6 +48,9 @@ foreach ($wrapper in $wrappers) {
 }
 
 Assert-Contains -Path 'Run-MarketIntel.cmd' -Pattern 'MarketSnapshotNow'
+Assert-Contains -Path 'Run-FoodGovernorCheck.cmd' -Pattern 'RunCampaignGovernorCycleNow'
+Assert-Contains -Path 'Run-FoodGovernorCheck.cmd' -Pattern 'This does NOT buy food'
+Assert-Contains -Path 'Run-FoodGovernorCheck.cmd' -Pattern 'BlacksmithGuild_CampaignGovernorDecision.json'
 Assert-Contains -Path 'Run-HorseMarketIntel.cmd' -Pattern 'AnalyzeHorseMarket'
 Assert-Contains -Path 'Run-GuildLoopAdvisory.cmd' -Pattern 'RunGuildLoopNow'
 Assert-Contains -Path 'Run-AutonomousGuildLoop.cmd' -Pattern 'RunAutonomousGuildLoopNow'
@@ -62,10 +66,16 @@ Assert-Contains -Path 'Run-ExportEvidence.cmd' -Pattern 'ExportTbgEvidence.cmd'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Clickable Command Surface'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'prefer a root-level `.cmd` wrapper'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Run-MarketIntel.cmd'
+Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Run-FoodGovernorCheck.cmd'
+Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Food-specific note'
+Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'no direct `AnalyzeFood` inbox command'
+Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Do not promise food provisioning'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Run-AutonomousGuildLoop.cmd'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Still not click-clean enough'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Agent checklist'
 Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'clickable-command-surface.md'
+Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Run-FoodGovernorCheck.cmd'
+Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Food check'
 Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Click:'
 
 Write-Host 'Clickable command surface contract: PASS'
