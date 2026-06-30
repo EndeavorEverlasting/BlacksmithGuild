@@ -135,6 +135,17 @@ Bad:
 DevToolsConfig.MapTradeAutonomousMode = true;
 ```
 
+## Test timeout doctrine
+
+This sprint also introduces a short-timeout test doctrine:
+
+```text
+docs/handoff/test-timeout-contract.md
+scripts/verify-test-timeout-contract.ps1
+```
+
+Future agents should keep offline verifiers and contract tests centered around 30 seconds. Longer waits are allowed only for live runtime proof such as launcher startup, disposable save bootstrap, or visible mechanics proof, and they must emit named classifications instead of hanging silently.
+
 ## Current boundary
 
 This first slice adds the authority and the user hotkey. Existing engine services still use some low-level `DevToolsConfig` booleans, but those booleans are now mutated by the authority when the global mode changes.
@@ -150,13 +161,14 @@ AutonomousGuildLoopService.StartNow -> EngineToggleAuthority.IsEngineEnabled(Gui
 
 ## Verification
 
-The documentation/contract verifier is:
+The documentation/contract verifiers are:
 
 ```text
 scripts/verify-engine-toggle-authority-contract.ps1
+scripts/verify-test-timeout-contract.ps1
 ```
 
-It checks that the authority exists, the modes exist, the hotkey exists, and the doctrine stays visible.
+They check that the authority exists, the modes exist, the hotkey exists, the timeout doctrine exists, and the boundaries stay visible.
 
 ## Safety boundary
 
