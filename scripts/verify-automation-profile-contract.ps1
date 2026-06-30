@@ -21,9 +21,11 @@ $helper = 'scripts\automation-profile.ps1'
 $cmd = 'ForgeProfile.cmd'
 $reboot = 'scripts\run-reboot-iteration.ps1'
 $assist = 'scripts\run-autonomous-assist-session.ps1'
+$common = 'scripts\governor-operator-common.ps1'
 
 Read-Text $helper | Out-Null
 Read-Text $cmd | Out-Null
+Read-Text $common | Out-Null
 
 foreach ($needle in @(
     'function Get-TbgAutomationProfileJsonPath',
@@ -55,6 +57,14 @@ foreach ($needle in @(
 )) { Assert-Contains $cmd $needle }
 
 Assert-Contains $assist "[ValidateSet('default', 'economic_loop')]" 'existing direct -CertProfile calls must remain valid'
+Assert-Contains $assist "governor-operator-common.ps1" 'direct runner must load the shared operator/profile seam before evidence setup'
+Assert-Contains $common 'function Resolve-GovernorAutomationProfileForDirectAssistRunner' 'direct runner profile resolver must live in the dot-sourced operator seam'
+Assert-Contains $common 'Test-GovernorExplicitCertProfileArgument' 'direct runner must detect explicit -CertProfile'
+Assert-Contains $common 'Resolve-TbgAutomationProfile -ExplicitProfile $explicitProfile' 'direct runner must use explicit -> shared JSON -> safe default resolver'
+Assert-Contains $common 'Set-Variable -Name CertProfile -Value ([string]$resolution.profile) -Scope 1' 'direct runner CertProfile variable must be corrected before evidence/session setup'
+Assert-Contains $common 'Set-Variable -Name TbgAutomationProfileResolution -Value $resolution -Scope 1' 'direct runner must expose resolved profile metadata'
+Assert-Contains $common 'run-autonomous-assist-session\.ps1' 'resolver must only trigger for direct assist runner command line'
+
 Assert-Contains $reboot "automation-profile.ps1" 'Reboot must load shared automation profile state'
 Assert-Contains $reboot 'Resolve-TbgAutomationProfile' 'Reboot must resolve explicit -> shared JSON -> safe default'
 Assert-Contains $reboot "'-CertProfile',$CertProfile" 'Reboot must forward resolved profile to assist runner'
