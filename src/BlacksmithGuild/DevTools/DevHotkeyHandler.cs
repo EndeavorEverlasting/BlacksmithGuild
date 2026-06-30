@@ -29,6 +29,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _legacyRWasDown;
         private static bool _legacyGWasDown;
         private static bool _legacyBWasDown;
+        private static bool _legacyTWasDown;
 
         public static void Poll()
         {
@@ -125,6 +126,11 @@ namespace BlacksmithGuild.DevTools
                     return;
                 }
 
+                if (TryEngineToggleHotkey(InputKey.T, "Ctrl+Alt+T", ref _legacyTWasDown))
+                {
+                    return;
+                }
+
                 if (TryHelpHotkey(InputKey.D7, "Ctrl+Alt+7", DevCommandRegistry.ShowForgeStatusCommand, ref _fallback7WasDown))
                 {
                     return;
@@ -217,6 +223,7 @@ namespace BlacksmithGuild.DevTools
             _legacyRWasDown = Input.IsKeyDown(InputKey.R);
             _legacyGWasDown = Input.IsKeyDown(InputKey.G);
             _legacyBWasDown = Input.IsKeyDown(InputKey.B);
+            _legacyTWasDown = Input.IsKeyDown(InputKey.T);
         }
 
         private static bool TryHelpHotkey(InputKey key, string label, string commandName, ref bool wasDown)
@@ -248,6 +255,27 @@ namespace BlacksmithGuild.DevTools
             }
 
             RunCommand(label, AutonomousGuildLoopService.AbortAutonomousGuildLoopNowCommand, label);
+            return true;
+        }
+
+        private static bool TryEngineToggleHotkey(InputKey key, string label, ref bool wasDown)
+        {
+            if (!GameSessionState.CanPollHelpHotkeys)
+            {
+                return false;
+            }
+
+            if (!TryFireEdge(key, ref wasDown))
+            {
+                return false;
+            }
+
+            HotkeyTraceService.OnKeyDetected(label);
+            var ok = EngineToggleAuthority.RunCommand(EngineToggleAuthority.CycleEngineToggleModeCommand, label);
+            HotkeyTraceService.OnCommandResult(
+                label,
+                EngineToggleAuthority.CycleEngineToggleModeCommand,
+                ok ? DevCommandResult.Success : DevCommandResult.Failed);
             return true;
         }
 
