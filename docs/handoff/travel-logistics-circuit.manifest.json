@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "circuitName": "Travel Logistics Circuit",
+  "doctrinePath": "docs/operator/travel-logistics-circuit.md",
+  "purpose": "Codify travel as the spine for food, horses, cargo, trade, smithing, town utility, and route optimization.",
+  "coreRule": "Do not optimize trade before travel, manual intervention resume, arrival detection, and town transition behavior are reliable.",
+  "developmentOrder": [
+    {
+      "order": 1,
+      "rule": "Travel must work."
+    },
+    {
+      "order": 2,
+      "rule": "Travel must resume after manual intervention."
+    },
+    {
+      "order": 3,
+      "rule": "Arrival must be detected."
+    },
+    {
+      "order": 4,
+      "rule": "Town mechanics must run before leaving."
+    },
+    {
+      "order": 5,
+      "rule": "Food must be checked before route commitment."
+    },
+    {
+      "order": 6,
+      "rule": "Horses and capacity must be checked before trade commitment."
+    },
+    {
+      "order": 7,
+      "rule": "Trade should run only when the logistics circuit supports it."
+    },
+    {
+      "order": 8,
+      "rule": "Route selection should optimize after the loop is reliable."
+    }
+  ],
+  "currencies": [
+    "time",
+    "food",
+    "gold",
+    "cargoCapacity",
+    "horses",
+    "partySpeed",
+    "risk",
+    "inventoryPressure",
+    "townUtility",
+    "stamina",
+    "materials"
+  ],
+  "branchOrder": [
+    "classify_state",
+    "manual_intervention_pending",
+    "travel",
+    "arrival_detection",
+    "town_food",
+    "town_horses_capacity",
+    "town_trade_sell",
+    "town_trade_buy",
+    "town_smithing",
+    "town_rest",
+    "next_route_selection"
+  ],
+  "manualInterventionPending": {
+    "recoverable": true,
+    "requiredFields": [
+      "reason",
+      "currentSurface",
+      "lastPlannedBranch",
+      "targetSettlement",
+      "userActionNeeded",
+      "resumeAllowedWhen",
+      "resumeCommand",
+      "evidencePath",
+      "nextOwner"
+    ],
+    "resumeAllowedWhen": [
+      "campaign_map",
+      "town_menu",
+      "safeToExecuteTravel=true",
+      "canAcceptAssistiveCommand=true"
+    ]
+  },
+  "travelProofSignals": [
+    "commandAcknowledged",
+    "campaignClockRunning",
+    "movementIntentSet",
+    "partyPositionDelta",
+    "distanceToTargetDelta",
+    "settlementDeparture",
+    "settlementArrival",
+    "routeTargetChange",
+    "movementCheckpointObserved",
+    "movementMetricDisagreement"
+  ],
+  "townUtilityOrder": [
+    "food_check",
+    "horse_capacity_check",
+    "sell_or_reduce_inventory_pressure",
+    "buy_trade_goods_when_supported",
+    "smith_refine_smelt_or_rest_when_legal",
+    "select_next_route_after_town_exhausted"
+  ],
+  "downstreamUntilTravelReliable": [
+    "food automation",
+    "horse buying and pack capacity decisions",
+    "trade buying and selling loops",
+    "route profit optimization",
+    "town exhaustion optimization",
+    "multi-town economic loops"
+  ],
+  "knownGaps": [
+    {
+      "gap": "manual_intervention_resume",
+      "reason": "Live run reached auto-travel, encountered looters, required user movement, and did not provide a clean handoff back to automation."
+    },
+    {
+      "gap": "arrival_to_town_mechanics_transition",
+      "reason": "Travel proof must transition into town utility before selecting new travel."
+    },
+    {
+      "gap": "movement_proof_breadth",
+      "reason": "partyMovedDistance == 0 alone is not enough to prove no movement occurred."
+    }
+  ],
+  "agentInstruction": "Do not start trade optimization before travel, manual intervention resume, arrival detection, and town mechanics transition are reliable.",
+  "nextRecommendedSprints": [
+    "manual intervention resume",
+    "arrival detection",
+    "town exhaustion loop",
+    "food, horse, and capacity logistics",
+    "trade loop"
+  ]
+}
