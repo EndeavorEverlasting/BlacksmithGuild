@@ -1,6 +1,7 @@
-﻿using BlacksmithGuild.CampaignRuntime;
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
+using BlacksmithGuild.Food;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
@@ -205,6 +206,7 @@ namespace BlacksmithGuild.DevTools
                 commandName == ForgeRecommendationService.ProbeForgeRecipesCommand ||
                 commandName == SmithingAuditService.ProbeSmithingAuditCommand ||
                 commandName == SmithingAuditService.ProbeSmithingRefineApiCommand ||
+                commandName == FoodAdvisoryService.AnalyzeFoodCommand ||
                 commandName == MarketIntelligenceService.MarketSnapshotNowCommand ||
                 commandName == HorseMarketRecommendationService.AnalyzeHorseMarketCommand ||
                 commandName == HorseMarketRecommendationService.ShowHorseMarketIntelCommand ||
@@ -396,6 +398,11 @@ namespace BlacksmithGuild.DevTools
                 commandName == AutoTravelService.AutoTravelChoice5Command)
             {
                 return AutoTravelService.LastFailReason ?? "auto-travel failed";
+            }
+
+            if (commandName == FoodAdvisoryService.AnalyzeFoodCommand)
+            {
+                return FoodAdvisoryService.LastFailReason ?? "food advisory failed";
             }
 
             if (commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand)
@@ -603,6 +610,10 @@ namespace BlacksmithGuild.DevTools
                     return AutoCharacterBuildService.SetSelectedProfileById("ShadowTrader");
                 case MarketIntelligenceService.MarketSnapshotNowCommand:
                     return MarketIntelligenceService.RunScanNow(MarketIntelligenceService.MarketSnapshotNowCommand)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case FoodAdvisoryService.AnalyzeFoodCommand:
+                    return FoodAdvisoryService.RunAnalyzeNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case HorseMarketRecommendationService.AnalyzeHorseMarketCommand:
@@ -914,7 +925,7 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
             InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop");
-            InGameNotice.Info("Inbox: RunSmithingRestPlanNow | RunBlacksmithAutomationNow | ShowCharacterDoctrine");
+            InGameNotice.Info("Inbox: AnalyzeFood | RunSmithingRestPlanNow | RunBlacksmithAutomationNow | ShowCharacterDoctrine");
             InGameNotice.Info("Travel: ShowAutoTravelChoices, AutoTravelChoice1-5, AutoTravel:<town>");
             InGameNotice.Info("Tavern: AnalyzeTavernHeroes, NavigateToSettlementTavernNow, RecruitTavernHeroVisibleNow");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");
