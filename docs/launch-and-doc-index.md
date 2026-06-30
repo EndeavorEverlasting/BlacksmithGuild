@@ -45,18 +45,40 @@ Menu wraps **New** → `Forge.cmd`, **Continue** → `ForgeContinue.cmd`. Detail
 
 ---
 
+## After launch — click-first command wrappers
+
+Prefer root `.cmd` files for repeat human/operator tests. Do not ask the user to type `forge.ps1 -Command ...` when an equivalent root wrapper exists.
+
+Common wrappers:
+
+```powershell
+.\Run-MarketIntel.cmd
+.\Run-HorseMarketIntel.cmd
+.\Run-GuildLoopAdvisory.cmd
+.\Run-AutonomousGuildLoop.cmd
+.\Run-CohesionAnalyze.cmd
+.\Run-CohesionMove.cmd
+.\Run-AutoTravelChoices.cmd
+.\Run-TickCostProfilerSmoke.cmd
+.\Run-ExportEvidence.cmd
+```
+
+Full matrix and agent rules: [clickable-command-surface.md](clickable-command-surface.md)
+
+---
+
 ## After launch — autonomous guild loop (006B)
 
 Only when **campaign map is ready** (`F7` → `campaignReady: true`):
 
 ```powershell
-.\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
-.\ExportTbgEvidence.cmd
+.\Run-AutonomousGuildLoop.cmd
+.\Run-ExportEvidence.cmd
 ```
 
 Primary JSON: `docs/evidence/latest/BlacksmithGuild_AutonomousGuildLoop.json`
 
-Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [player-command-guide.md](player-command-guide.md).
+Commands and hotkeys: [automation-playbook.md](automation-playbook.md), [player-command-guide.md](player-command-guide.md), and [clickable-command-surface.md](clickable-command-surface.md).
 
 ---
 
@@ -65,6 +87,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 | Question | Read this file |
 |----------|----------------|
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
+| Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
 | `Forge.cmd` vs `ForgeContinue.cmd` | [dev-disposable-save.md](dev-disposable-save.md) |
 | Zero-click pipeline internals | [forge-zero-click-contract.md](forge-zero-click-contract.md) |
 | Desktop shortcut / Launch Control | [../tools/LaunchControl/README.md](../tools/LaunchControl/README.md) |
@@ -80,7 +103,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 | F7 control index (open/successful) | [control/indexes/f7-recovery-index.md](control/indexes/f7-recovery-index.md) |
 | F7 launch commands / Layer A vs B | [handoff/agent-launch-and-load-playbook.md](handoff/agent-launch-and-load-playbook.md) |
 | Build / install mod | [../README.md](../README.md) § Two environments |
-| Export JSON evidence | `.\ExportTbgEvidence.cmd` → [evidence/latest/README.md](evidence/latest/README.md) |
+| Export JSON evidence | `.\Run-ExportEvidence.cmd` → [evidence/latest/README.md](evidence/latest/README.md) |
 | Sprint history | [../README.md](../README.md) sprint table |
 
 ### Human “start here”
@@ -89,7 +112,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 
 ### AI agent “start here”
 
-[handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)
+[clickable-command-surface.md](clickable-command-surface.md), then [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)
 
 ---
 
@@ -98,7 +121,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 ```text
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
-Loop:     forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
-Evidence: ExportTbgEvidence.cmd → docs/evidence/latest/
-Docs:     docs/automation-playbook.md | docs/launch-and-doc-index.md | docs/handoff/006b-map-trade-cohesion-agent-handoff.md (AI)
+Click:    Run-MarketIntel.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd | Run-AutonomousGuildLoop.cmd
+Evidence: Run-ExportEvidence.cmd → docs/evidence/latest/
+Docs:     docs/clickable-command-surface.md | docs/automation-playbook.md | docs/launch-and-doc-index.md
 ```
