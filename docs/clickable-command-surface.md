@@ -17,7 +17,7 @@ Before telling a user to run a PowerShell inbox command directly:
 1. Check whether a root `.cmd` wrapper already exists.
 2. If a wrapper exists, tell the user to double-click or run that wrapper.
 3. If a wrapper does not exist and the command is useful to humans, add a thin wrapper and document it here.
-4. Do not hide save-impacting behavior. Label movement, recruitment, buy/sell, time, inventory, and gold changes clearly.
+4. Label save-impacting behavior clearly: movement, recruitment, trading, time, inventory, and gold changes.
 5. Do not claim a wrapper certifies a feature. A wrapper is only a click surface unless its cert status says otherwise.
 
 ---
@@ -30,7 +30,8 @@ Before telling a user to run a PowerShell inbox command directly:
 | `Forge.cmd` | launch New/Play path | Creates/loads test path | launch + character/build JSON | Fresh bootstrap / visible character creation |
 | `ForgeStop.cmd` | stop game process | Unsaved progress risk | process state | Emergency/cleanup stop |
 | `Run-MarketIntel.cmd` | `MarketSnapshotNow` | No | `BlacksmithGuild_MarketIntel.json` | Read-only market action plan |
-| `Run-FoodGovernorCheck.cmd` | `RunCampaignGovernorCycleNow` | No | `BlacksmithGuild_CampaignGovernorDecision.json` | Food runway/diversity forecast and Food proposal/defer/block details through the governor |
+| `Run-FoodAdvisory.cmd` | `AnalyzeFood` | No | `BlacksmithGuild_FoodAdvisory.json` | Direct read-only Food runway/diversity/candidate advisory |
+| `Run-FoodGovernorCheck.cmd` | compatibility alias to `Run-FoodAdvisory.cmd` | No | `BlacksmithGuild_FoodAdvisory.json` | Backward-compatible old Food wrapper name |
 | `Run-HorseMarketIntel.cmd` | `AnalyzeHorseMarket` | No | `BlacksmithGuild_HorseMarketIntel.json` | Read-only pack/horse/capacity intel |
 | `Run-GuildLoopAdvisory.cmd` | `RunGuildLoopNow` | No | `BlacksmithGuild_GuildLoopReport.json` | Advisory market + forge + crew plan |
 | `Run-AutonomousGuildLoop.cmd` | `RunAutonomousGuildLoopNow` | Yes / possible movement and supported vanilla actions | `BlacksmithGuild_AutonomousGuildLoop.json` | One bounded autonomous loop cycle; use disposable save unless accepted |
@@ -48,25 +49,40 @@ Before telling a user to run a PowerShell inbox command directly:
 
 ## Food-specific note
 
-Food is currently exposed through the campaign governor, not a standalone `AnalyzeFood` inbox command.
+Food now has a direct read-only inbox command and root wrapper.
 
 Use:
 
 ```powershell
-.\Run-FoodGovernorCheck.cmd
+.\Run-FoodAdvisory.cmd
 .\Run-ExportEvidence.cmd
+```
+
+Underlying command:
+
+```powershell
+.\forge.ps1 -Command AnalyzeFood -Wait
 ```
 
 Inspect:
 
-- `BlacksmithGuild_CampaignGovernorDecision.json`
-- `foodStatus`
-- `foodDiversityStatus`
-- `foodForecastStatus`
-- `proposedActivity` when branch is Food
-- `latestActivityResult.narrativeDetails[]` when the Food adapter is selected
+- `BlacksmithGuild_FoodAdvisory.json`
+- `verdict`
+- `food.quantityStatus`
+- `food.diversityStatus`
+- `food.forecastStatus`
+- `plan.procurementNeeded`
+- `plan.foodShortfall`
+- `plan.uniqueFoodTypeShortfall`
+- `candidates.items[]`
+- `marketStock.status`
+- `marketMatches.status`
+- `executionGate.status`
+- `buyFoodSupported`
 
-Current limit: Food can analyze runway, diversity, procurement candidates, market stock, market matches, and proof gates through the governor/adapter path. It still does **not** buy food. Do not promise food provisioning until a vanilla food purchase driver is wired and proven.
+Current limit: Food can analyze runway, diversity, candidates, read-only market stock, matches, and proof gates. It still does not perform automated food acquisition. Do not promise food provisioning until a proven vanilla food action path exists.
+
+`Run-FoodGovernorCheck.cmd` remains only as a compatibility alias. New work should prefer `Run-FoodAdvisory.cmd` and `AnalyzeFood`.
 
 ---
 
@@ -76,12 +92,11 @@ These areas either need more wrappers or should be made clearer before normal us
 
 | Area | Current state | Next wrapper/doc action |
 |---|---|---|
-| Food standalone command | Food has governor/adapter coverage, but no direct `AnalyzeFood` inbox command | Keep `Run-FoodGovernorCheck.cmd`; add direct `Run-FoodAdvisor.cmd` only after a real command exists |
+| Food provisioning | Direct Food advisory exists; automated food action is not built | No action wrapper until a real vanilla food action path exists |
 | Auto-travel movement choices | `Run-AutoTravelChoices.cmd` is read-only, but movement choices still require inbox commands like `AutoTravelChoice1-5` | Add separate `Run-AutoTravelChoice1.cmd` etc. only after save-impact warning is explicit |
 | Clan intel | `Run-ClanIntelCert.cmd` exists for cert, but everyday read-only wrappers for each clan-intel command are not root-level | Add `Run-ClanContext.cmd`, `Run-NobleNetwork.cmd`, etc. if the feature becomes user-facing |
 | Tavern hero commands | Cert wrappers exist; everyday wrappers are incomplete | Keep recruit wrapper disposable-save labeled; add read-only shortcuts if used often |
 | Character build catalog/matrix | Cert/matrix wrappers exist, but these are agent/test-save surfaces | Do not present as normal personal-save click paths |
-| Food provisioning | Food advisor/proposal exists through governor; buy/provision action is not built | No buy wrapper until a real vanilla food purchase driver exists |
 | Stage D rest/time mutation | Read-only rest plan exists; no wait/rest mutation | Do not add mutation wrapper until proof gate exists |
 | Headless safe craft mutation | Blocks with `CraftManual` until API proven | No craft wrapper until safe craft mutation is proven |
 | Multi-cycle guild loop | One cycle only | Do not imply continuous autonomous loop support |
