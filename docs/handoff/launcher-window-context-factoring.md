@@ -28,10 +28,10 @@ open-bannerlord-launcher.ps1
 
 launcher-auto-nav.ps1
   loads S1 baseline
-  captures/derives S2 after launcher request
-  compares S1/S2
+  captures/derives S2 post-launch/request snapshot
+  compare S1/S2
   scores candidates
-  chooses one winner
+  bind preferred hwnd/pid
   calls UIAHelper.SetPreferredLauncherWindow(hwnd, pid, score, reason)
 
 UIA/coord click path
