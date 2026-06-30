@@ -5,6 +5,37 @@ $script:GovernorClassificationBlocked = 'BLOCKED'
 $script:GovernorClassificationEnvironmentBlocked = 'ENVIRONMENT BLOCKED'
 $script:GovernorClassificationUserCancelled = 'USER CANCELLED'
 
+function Test-GovernorDirectAssistRunnerCommandLine {
+    $commandLine = [Environment]::CommandLine
+    return ($commandLine -match '(?i)run-autonomous-assist-session\.ps1')
+}
+
+function Test-GovernorExplicitCertProfileArgument {
+    $commandLine = [Environment]::CommandLine
+    return ($commandLine -match '(?i)(^|\s)-CertProfile(:|\s|$)')
+}
+
+function Resolve-GovernorAutomationProfileForDirectAssistRunner {
+    param([string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path)
+
+    if (-not (Test-GovernorDirectAssistRunnerCommandLine)) { return $null }
+    $certProfileVariable = Get-Variable -Name CertProfile -Scope 1 -ErrorAction SilentlyContinue
+    if (-not $certProfileVariable) { return $null }
+
+    $helperPath = Join-Path $PSScriptRoot 'automation-profile.ps1'
+    if (-not (Test-Path -LiteralPath $helperPath)) { return $null }
+    if (-not (Get-Command Resolve-TbgAutomationProfile -ErrorAction SilentlyContinue)) { . $helperPath }
+
+    $explicitProfile = if (Test-GovernorExplicitCertProfileArgument) { [string]$certProfileVariable.Value } else { $null }
+    $resolution = Resolve-TbgAutomationProfile -ExplicitProfile $explicitProfile -RequestedBy 'run-autonomous-assist-session.ps1'
+
+    Set-Variable -Name CertProfile -Value ([string]$resolution.profile) -Scope 1
+    Set-Variable -Name TbgAutomationProfileResolution -Value $resolution -Scope 1
+    return $resolution
+}
+
+Resolve-GovernorAutomationProfileForDirectAssistRunner | Out-Null
+
 function Get-GovernorOperatorLocalRoot {
     param([string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path)
     return Join-Path $RepoRoot '.local'
@@ -159,8 +190,8 @@ function Invoke-GovernorForgeStopApproval {
     )
     Write-Host ''
     Write-Host 'Bannerlord appears to be running and this operation may need to deploy DLLs.' -ForegroundColor Yellow
-    Write-Host '[1] Save-then-stop (soft stop request)'
-    Write-Host '[2] Stop without save (soft stop request)'
+    Write-Host '[1] Save then request soft stop'
+    Write-Host '[2] Request soft stop without save prompt'
     Write-Host '[3] Cancel (default)'
     $choice = Read-GovernorOperatorChoice -Prompt 'Choose 1, 2, or 3' -Allowed @('1','2','3') -Default '3'
     if ($choice -eq '3') { throw "${script:GovernorClassificationUserCancelled}: operator cancelled deploy stop" }
