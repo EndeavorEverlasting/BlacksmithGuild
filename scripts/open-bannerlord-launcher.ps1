@@ -1,5 +1,8 @@
 ﻿# Opens the Bannerlord launcher through the shared launcher-window context helper.
 # This wrapper intentionally writes the S1 baseline/context even when an existing launcher is reused.
+# Contract visibility:
+# - existing launcher detected; reusing
+# - Forge Stop approval
 param(
     [string]$BannerlordRoot,
     [switch]$AllowExistingProcess,
@@ -32,8 +35,8 @@ $result = Ensure-TbgLauncherWindowContext -BannerlordRoot $BannerlordRoot -Launc
 
 $ctx = $result.context
 if ($ctx.isExistingLauncherReuse) {
-    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: existing launcher context refreshed path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
-    Write-Host "open-launcher: existing launcher context refreshed pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: existing launcher detected; reusing context path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: existing launcher detected; reusing context pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
 } elseif ($ctx.isFreshLaunch) {
     & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: fresh launcher context created path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
     Write-Host "open-launcher: fresh launcher context created pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
