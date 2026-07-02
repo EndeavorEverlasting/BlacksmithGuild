@@ -74,13 +74,13 @@ function New-TbgLauncherWindowContextObject {
         [string]$FallbackReason = $null
     )
 
-    $pid = 0
+    $launcherProcessId = 0
     $hwnd = 0
     $title = ''
     $processName = $null
     $rect = $null
     if ($LauncherProcess) {
-        try { $pid = [int]$LauncherProcess.Id } catch { }
+        try { $launcherProcessId = [int]$LauncherProcess.Id } catch { }
         try { $hwnd = [int64]$LauncherProcess.MainWindowHandle } catch { }
         try { $title = [string]$LauncherProcess.MainWindowTitle } catch { }
         try { $processName = [string]$LauncherProcess.ProcessName } catch { }
@@ -97,12 +97,12 @@ function New-TbgLauncherWindowContextObject {
         baselineSnapshotPath = [string]$BaselineSnapshotPath
         baselineCapturedUtc = [string]$BaselineSnapshot.capturedAtUtc
         baselineSource = [string]$BaselineSource
-        processId = $pid
+        processId = $launcherProcessId
         hwnd = $hwnd
         processName = $processName
         windowTitle = $title
         rect = $rect
-        score = if ($hwnd -ne 0) { 70 } elseif ($pid -ne 0) { 45 } else { 0 }
+        score = if ($hwnd -ne 0) { 70 } elseif ($launcherProcessId -ne 0) { 45 } else { 0 }
         reason = if ($IsExistingLauncherReuse) { 'existing_launcher_reuse_context' } elseif ($IsFreshLaunch) { 'fresh_launcher_context' } else { 'launcher_context' }
         contextSource = [string]$ContextSource
         isExistingLauncherReuse = [bool]$IsExistingLauncherReuse
