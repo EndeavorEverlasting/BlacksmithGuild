@@ -104,7 +104,101 @@ GuildLoop explicit route command: allowed
 Assistive mode: on
 ```
 
-Automation mode is for disposable-save testing only. It is not proof of runtime PASS by itself.
+Automation mode allows higher-order engines to drive enabled runtime engines and allows governor-scoped bounded execution when separately enabled by authority. It is appropriate only when the operator has accepted the risk profile for the current save or session. It is not proof of runtime PASS by itself.
+
+## Runtime control semantics
+
+Mode changes are runtime control decisions, not cosmetic labels.
+
+### Manual is an active stop/hold request
+
+Manual mode must request hold or abort for already-active autonomous routes.
+
+```text
+Manual mode:
+- disables future autonomous startup
+- disables bounded execution
+- disables assistive command acceptance for movement/action commands
+- requests hold/abort for already-active autonomous routes
+- preserves read-only/intel surfaces where safe
+```
+
+Manual is not merely a config preference. Manual is an operator control state.
+
+### Hybrid is explicit-command mode
+
+```text
+Hybrid mode:
+- read-only and intel commands are allowed
+- explicit user/file-inbox visible-mechanism commands may run
+- autonomous governor takeover remains off
+- bounded execution remains off
+- active autonomous loops must not continue unless explicitly commanded
+```
+
+Hybrid is not partial Automation. Hybrid is explicit-command mode.
+
+### Automation is permission, not proof
+
+```text
+Automation mode:
+- allows higher-order engines to drive enabled runtime engines
+- allows governor-scoped bounded execution when separately enabled by authority
+- may use route, trade, guild-loop, and assistive surfaces that have been enabled through authority
+- does not prove that any live runtime mechanism succeeded
+```
+
+Automation is not runtime proof. Automation is permission for higher-order engines under bounded doctrine.
+
+### Aggregate mode inference
+
+Aggregate mode inference must obey this rule:
+
+```text
+Manual only when every known engine is Manual
+Automation only when every known engine is Automation
+Hybrid for every mixed state
+```
+
+Any per-engine mode change must recompute the aggregate global mode before BuildSummary, hotkey cycling, or operator display.
+
+Mixed engine state is Hybrid.
+
+### Bounded execution scope
+
+Bounded execution is a Governor capability, not a general Automation capability.
+
+```text
+IsBoundedExecutionAllowed(engine) may return true only when:
+- engine == Governor
+- Governor mode == Automation
+- CampaignRuntimeGovernorAllowBoundedExecution is true
+```
+
+Bounded execution belongs to Governor only.
+
+### Assistive readiness
+
+Assistive readiness must read EngineToggleAuthority.
+
+```text
+Assistive readiness doctrine:
+- Manual mode must reject assistive movement/action commands.
+- Hybrid and Automation may accept assistive commands only when the Assistive engine is enabled.
+- Assistive readiness must read EngineToggleAuthority or an authority-owned config path.
+- DevToolsConfig.AssistiveMode is not enough unless the command readiness path consumes it.
+```
+
+### Runtime surface obedience matrix
+
+| Surface | Manual | Hybrid | Automation |
+|---|---|---|---|
+| Governor autonomous tick | off | off | on |
+| Governor bounded execution | off | off | governor-only |
+| MapTrade autonomous route | hold/abort active, no new autonomous start | explicit only | allowed if enabled |
+| GuildLoop autonomous route | hold/abort active, no new autonomous start | explicit only | allowed if enabled |
+| Assistive movement/action commands | reject | allow if Assistive enabled | allow if Assistive enabled |
+| Read-only/intel commands | allow | allow | allow |
 
 ## Public API
 
@@ -157,6 +251,7 @@ CampaignRuntimeGovernor.OnCampaignTick -> EngineToggleAuthority.IsAutomationEnab
 CampaignRuntimeGovernor.AttachProposedActivity -> EngineToggleAuthority.IsBoundedExecutionAllowed(Governor)
 MapTradeAutonomousService.StartRouteNow -> EngineToggleAuthority.IsEngineEnabled(MapTrade)
 AutonomousGuildLoopService.StartNow -> EngineToggleAuthority.IsEngineEnabled(GuildLoop)
+AssistReadinessEvaluator.CanAcceptAssistiveCommand -> EngineToggleAuthority.IsEngineEnabled(Assistive)
 ```
 
 ## Verification
