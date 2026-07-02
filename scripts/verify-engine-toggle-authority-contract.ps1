@@ -44,6 +44,10 @@ function Assert-TextMatches {
 $authority = 'src\BlacksmithGuild\DevTools\EngineToggleAuthority.cs'
 $hotkeys = 'src\BlacksmithGuild\DevTools\DevHotkeyHandler.cs'
 $doc = 'docs\handoff\engine-toggle-authority.md'
+$durationDoc = 'docs\operator\test-duration-doctrine.md'
+$durationManifest = 'docs\handoff\test-duration-policy.manifest.json'
+$durationAgentNote = 'docs\handoff\test-duration-policy-agent-note.md'
+$durationRefactorPlan = 'docs\handoff\test-duration-policy.refactor-plan.md'
 
 Assert-TextMatches $authority '(?m)^\s*public\s+enum\s+EngineToggleMode\s*\{' 'public enum EngineToggleMode' 'mode enum must be a declaration'
 Assert-TextMatches $authority '(?s)public\s+enum\s+EngineToggleMode\s*\{[^}]*\bManual\b[^}]*\bHybrid\b[^}]*\bAutomation\b[^}]*\}' 'EngineToggleMode members Manual/Hybrid/Automation' 'mode members must be enum members'
@@ -72,8 +76,10 @@ Assert-TextContains $doc 'Higher-order engines must not flip raw booleans direct
 Assert-TextContains $doc 'DevToolsConfig.MapTradeAutonomousMode = true;' 'bad raw-config example must remain visible'
 Assert-TextContains $doc 'Visible mechanics PASS' 'docs must distinguish mode from runtime proof'
 Assert-TextContains $doc 'The next implementation sprint should migrate direct readers to authority calls' 'remaining migration boundary must be explicit'
-Assert-TextContains $doc 'docs/handoff/test-timeout-contract.md' 'engine sprint must link short-timeout doctrine'
-Assert-TextContains $doc 'scripts/verify-test-timeout-contract.ps1' 'engine sprint must link timeout verifier'
+Assert-TextContains $doc 'docs/operator/test-duration-doctrine.md' 'engine sprint must link PR26 duration doctrine'
+Assert-TextContains $doc 'docs/handoff/test-duration-policy.manifest.json' 'engine sprint must link PR26 duration manifest'
+Assert-TextContains $doc 'docs/handoff/test-duration-policy-agent-note.md' 'engine sprint must link PR26 agent note'
+Assert-TextContains $doc 'docs/handoff/test-duration-policy.refactor-plan.md' 'engine sprint must link PR26 duration refactor plan'
 Assert-TextContains $doc 'Manual mode must request hold or abort for already-active autonomous routes' 'manual mode must be active runtime control'
 Assert-TextContains $doc 'Manual only when every known engine is Manual' 'aggregate manual inference rule must be documented'
 Assert-TextContains $doc 'Automation only when every known engine is Automation' 'aggregate automation inference rule must be documented'
@@ -82,6 +88,14 @@ Assert-TextContains $doc 'Any per-engine mode change must recompute the aggregat
 Assert-TextContains $doc 'Bounded execution is a Governor capability' 'bounded execution must be governor-only doctrine'
 Assert-TextContains $doc 'Assistive readiness must read EngineToggleAuthority' 'assistive readiness must obey authority'
 Assert-TextContains $doc 'Automation is not runtime proof' 'automation permission must not overclaim runtime proof'
+
+Assert-TextContains $durationDoc '# Test Duration Doctrine' 'PR26 duration doctrine must be present after rebase onto main'
+Assert-TextContains $durationDoc 'Thirty seconds is the default test-duration budget' 'PR26 30-second rule must be authoritative'
+Assert-TextContains $durationDoc 'The doctrine is not aspirational. It is a merge expectation.' 'PR26 merge expectation must be preserved'
+Assert-TextContains $durationManifest '"policyId": "test-duration-doctrine"' 'PR26 manifest must name the duration policy'
+Assert-TextContains $durationManifest '"defaultBudgetSec": 30' 'PR26 manifest must preserve 30-second default'
+Assert-TextContains $durationAgentNote 'Default rule:' 'PR26 agent note must be present'
+Assert-TextContains $durationRefactorPlan '# Test Duration Policy Refactor Plan' 'PR26 refactor plan must be present'
 
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: engine toggle authority contract has $($failures.Count) issue(s)." -ForegroundColor Red
