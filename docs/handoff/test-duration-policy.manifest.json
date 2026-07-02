@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "policyId": "test-duration-doctrine",
+  "operatorDoc": "docs/operator/test-duration-doctrine.md",
+  "defaultBudgetSec": 30,
+  "principle": "Tests should operate the game only long enough to gather bounded evidence, classify the next repair target, and stop.",
+  "defaultAppliesTo": [
+    "static_contract_verifier",
+    "smoke_test",
+    "cmd_wrapper_test",
+    "launcher_ui_observation",
+    "runtime_evidence_probe",
+    "bounded_harness"
+  ],
+  "explicitLongRunClasses": [
+    "live_certificate",
+    "operator_approved_long_cert",
+    "full_runtime_soak",
+    "manual_debug_session"
+  ],
+  "requiredLongRunFields": [
+    "explicit_parameter_or_profile",
+    "budget_logged",
+    "reason_logged",
+    "stop_condition",
+    "contract_pass_distinct_from_runtime_pass"
+  ],
+  "preferredParameters": [
+    "TimeoutSec",
+    "MaxRuntimeSec",
+    "BudgetSec",
+    "CertProfile",
+    "LiveCert"
+  ],
+  "discouragedDefaultPatterns": [
+    "Start-Sleep -Seconds 60",
+    "Start-Sleep -Seconds 120",
+    "AttachWaitSec = 600",
+    "MaxRuntimeMinutes = 30",
+    "unbounded polling loop",
+    "CMD wrapper hiding long wait"
+  ],
+  "classificationOutputs": [
+    "pass",
+    "fail",
+    "blocked",
+    "needs_long_cert"
+  ],
+  "mergeExpectation": "Any sprint touching a test, verifier, CMD wrapper, or runner must preserve or add a 30-second default path, or record the exact long-duration gap by file and parameter name."
+}
