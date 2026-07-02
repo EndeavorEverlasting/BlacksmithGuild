@@ -229,14 +229,20 @@ Bad:
 DevToolsConfig.MapTradeAutonomousMode = true;
 ```
 
-## Test timeout doctrine
+## Test duration doctrine
 
-This sprint also introduces a short-timeout test doctrine:
+PR #26 owns the repo-wide bounded test-duration doctrine. This PR must not carry a competing timeout doctrine.
+
+The authority and its verifiers follow:
 
 ```text
-docs/handoff/test-timeout-contract.md
-scripts/verify-test-timeout-contract.ps1
+docs/operator/test-duration-doctrine.md
+docs/handoff/test-duration-policy.manifest.json
+docs/handoff/test-duration-policy-agent-note.md
+docs/handoff/test-duration-policy.refactor-plan.md
 ```
+
+The default test posture is fast, bounded, and interruptible. Thirty seconds is the default budget for static verifiers, smoke tests, CMD wrapper tests, launcher/UI observations, runtime evidence probes, and bounded harnesses unless a named live-cert or explicit long-run profile is selected.
 
 Future agents should keep offline verifiers and contract tests centered around 30 seconds. Longer waits are allowed only for live runtime proof such as launcher startup, disposable save bootstrap, or visible mechanics proof, and they must emit named classifications instead of hanging silently.
 
@@ -260,10 +266,9 @@ The documentation/contract verifiers are:
 
 ```text
 scripts/verify-engine-toggle-authority-contract.ps1
-scripts/verify-test-timeout-contract.ps1
 ```
 
-They check that the authority exists, the modes exist, the hotkey exists, the timeout doctrine exists, and the boundaries stay visible.
+They check that the authority exists, the modes exist, the hotkey exists, the PR #26 duration doctrine is referenced, and the runtime-control boundaries stay visible.
 
 ## Safety boundary
 
