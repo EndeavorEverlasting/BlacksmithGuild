@@ -29,6 +29,19 @@ function Assert-Contains {
     }
 }
 
+function Assert-NotContains {
+    param(
+        [Parameter(Mandatory = $true)][string]$RelativePath,
+        [Parameter(Mandatory = $true)][string]$Needle,
+        [string]$Why = ''
+    )
+    $text = Read-RepoText -RelativePath $RelativePath
+    if ($text.IndexOf($Needle, [System.StringComparison]::Ordinal) -ge 0) {
+        $suffix = if ($Why) { " ($Why)" } else { '' }
+        $failures.Add("$RelativePath must not contain '$Needle'$suffix") | Out-Null
+    }
+}
+
 $handoffDoc = 'docs\handoff\launcher-window-context-factoring.md'
 $operatorDoc = 'docs\operator\governor-test-harness.md'
 $contextHelper = 'scripts\launcher-window-context.ps1'
@@ -47,6 +60,7 @@ foreach ($needle in @(
     'Ensure-TbgLauncherWindowContext',
     'Existing launcher reuse is valid, but it must still refresh/write context.',
     'No launch-adjacent script may call launcher-auto-nav.ps1 without a fresh or intentionally reused LauncherWindowContext.',
+    'No click path may use heuristic title/size window selection while a valid LauncherWindowContext exists.',
     'No fallback may be silent.',
     'PID-global UIA is a fallback only after bound hwnd/pid context fails or is unavailable',
     'Coordinate fallback is a fallback only after bound hwnd/pid context fails or is unavailable',
@@ -75,6 +89,7 @@ foreach ($sourceCheck in @(
     @{ file = $contextHelper; text = 'TbgLauncherWindowContext.v1' },
     @{ file = $contextHelper; text = 'window-snapshot-S1-pre-launch.json' },
     @{ file = $contextHelper; text = 'launcher-window-context.json' },
+    @{ file = $contextHelper; text = 'launcherProcessId' },
     @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'Ensure-TbgLauncherWindowContext' },
     @{ file = 'scripts\install-mod.ps1'; text = '-LaunchIntent $LaunchIntent' },
     @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'SetPreferredLauncherWindow' },
@@ -84,6 +99,10 @@ foreach ($sourceCheck in @(
 )) {
     Assert-Contains $sourceCheck.file $sourceCheck.text 'current source fact must remain discoverable'
 }
+
+Assert-NotContains $contextHelper '$pid =' 'PowerShell $PID is an automatic read-only variable; local launcher process id must use a non-colliding name'
+Assert-NotContains $contextHelper 'processId = $pid' 'context must not read from a PID-colliding local variable'
+Assert-NotContains $contextHelper 'elseif ($pid -ne 0)' 'score logic must not read from a PID-colliding local variable'
 
 Assert-Contains $operatorDoc 'This is currently a documented factoring plan, not a completed implementation refactor.' 'operator doc must not overclaim'
 
