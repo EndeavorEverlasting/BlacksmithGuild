@@ -7,6 +7,7 @@ $manifestPath = Join-Path $repoRoot 'docs\handoff\test-duration-policy.manifest.
 $agentNotePath = Join-Path $repoRoot 'docs\handoff\test-duration-policy-agent-note.md'
 $refactorPlanPath = Join-Path $repoRoot 'docs\handoff\test-duration-policy.refactor-plan.md'
 $inventoryGuardPath = Join-Path $repoRoot 'scripts\verify-test-duration-inventory-guard.ps1'
+$inventoryBaselinePath = Join-Path $repoRoot 'docs\handoff\test-duration-inventory-baseline.tsv'
 
 $errors = New-Object System.Collections.Generic.List[string]
 
@@ -31,12 +32,14 @@ Need-File -Path $manifestPath -Label 'manifest'
 Need-File -Path $agentNotePath -Label 'agent note'
 Need-File -Path $refactorPlanPath -Label 'refactor plan'
 Need-File -Path $inventoryGuardPath -Label 'inventory guard'
+Need-File -Path $inventoryBaselinePath -Label 'inventory baseline'
 
 if ($errors.Count -eq 0) {
     $helper = Get-Content -LiteralPath $helperPath -Raw -Encoding UTF8
     $doc = Get-Content -LiteralPath $docPath -Raw -Encoding UTF8
     $manifestText = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
     $inventoryGuard = Get-Content -LiteralPath $inventoryGuardPath -Raw -Encoding UTF8
+    $inventoryBaseline = Get-Content -LiteralPath $inventoryBaselinePath -Raw -Encoding UTF8
     $manifest = $manifestText | ConvertFrom-Json
 
     Need-Text -Text $helper -Needle 'function Resolve-TbgTestDurationBudget' -Label 'resolver'
@@ -52,6 +55,9 @@ if ($errors.Count -eq 0) {
     Need-Text -Text $inventoryGuard -Needle 'MaxRuntimeMinutes' -Label 'inventory minute scan'
     Need-Text -Text $inventoryGuard -Needle 'AllowLongRun' -Label 'inventory explicit allow marker'
     Need-Text -Text $inventoryGuard -Needle 'LongRunReason' -Label 'inventory reason allow marker'
+    Need-Text -Text $inventoryGuard -Needle 'test-duration-inventory-baseline.tsv' -Label 'inventory baseline wiring'
+    Need-Text -Text $inventoryBaseline -Needle 'Baseline existing long-duration defaults' -Label 'inventory baseline purpose'
+    Need-Text -Text $inventoryBaseline -Needle 'run-live-assistive-cert.ps1' -Label 'inventory baseline cert sample'
 
     if ([int]$manifest.defaultBudgetSec -ne 30) { Note-Error 'manifest default is not 30' }
 
