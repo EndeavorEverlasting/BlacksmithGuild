@@ -6,8 +6,9 @@
 param(
     [string]$BannerlordRoot,
     [switch]$AllowExistingProcess,
+    [Parameter(Mandatory = $true)]
     [ValidateSet('play', 'continue')]
-    [string]$LaunchIntent = 'play'
+    [string]$LaunchIntent
 )
 
 $ErrorActionPreference = 'Stop'
