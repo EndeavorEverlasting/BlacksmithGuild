@@ -99,22 +99,22 @@ function Read-TbgInventoryBaseline {
 
         $parts = $line -split "`t", 6
         if ($parts.Count -ne 6) {
-            throw "Malformed inventory baseline line $lineNo. Expected 6 tab-separated fields."
+            throw "Malformed inventory baseline line ${lineNo}. Expected 6 tab-separated fields."
         }
 
         $key = New-TbgInventoryKey -Path $parts[0] -Pattern $parts[1] -Value $parts[2] -Text $parts[3]
-        if ($table.ContainsKey($key)) {
-            throw "Duplicate inventory baseline entry at line $lineNo: $($parts[0])"
+        if (-not $table.ContainsKey($key)) {
+            $table[$key] = New-Object 'System.Collections.Generic.Queue[object]'
         }
 
-        $table[$key] = [pscustomobject]@{
+        $table[$key].Enqueue([pscustomobject]@{
             Path = $parts[0]
             Pattern = $parts[1]
             Value = $parts[2]
             Text = $parts[3]
             Class = $parts[4]
             Reason = $parts[5]
-        }
+        })
     }
 
     return $table
@@ -214,8 +214,8 @@ foreach ($file in $files) {
                 }
 
                 $key = New-TbgInventoryKey -Path $record.Path -Pattern $record.Pattern -Value $record.Value -Text $record.Text
-                if ($baseline.ContainsKey($key)) {
-                    $base = $baseline[$key]
+                if ($baseline.ContainsKey($key) -and $baseline[$key].Count -gt 0) {
+                    $base = $baseline[$key].Dequeue()
                     $record.Class = $base.Class
                     $record.Reason = $base.Reason
                     $baselineAllowed.Add($record) | Out-Null
