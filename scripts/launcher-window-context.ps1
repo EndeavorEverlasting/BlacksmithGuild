@@ -34,7 +34,7 @@ function Read-TbgLauncherWindowContext {
     param([Parameter(Mandatory = $true)][string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) { return $null }
     try {
-        return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+        return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     } catch {
         return $null
     }
