@@ -129,6 +129,10 @@ foreach ($sourceCheck in @(
     @{ file = $frozenNav; text = 'Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = 'Emit-PostHandoffReadiness -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = 'BUDGET budgetSec={0} defaultBudgetSec={1} isLongRun={2} source={3}' },
+    @{ file = $frozenNav; text = '$useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)' },
+    @{ file = $frozenNav; text = 'if ($useRealInput)' },
+    @{ file = $frozenNav; text = 'method=real-input dispatched' },
+    @{ file = $frozenNav; text = 'method=hwnd SendMessage dispatched hwnd={1} reason=real_input_not_viable' },
     @{ file = 'forge.ps1'; text = 'LaunchIntent is required when -Launch is used.' },
     @{ file = 'Forge.cmd'; text = '-LaunchIntent play' },
     @{ file = 'Forge.cmd'; text = 'launcher-frozen-context-nav.ps1' },
@@ -159,6 +163,7 @@ Assert-NotContains $frozenNav '[int]$TimeoutSec = 120' 'frozen nav must default 
 Assert-NotContains $frozenNav '[int]$WaitSec = 20' 'click verification must use shared overall deadline'
 Assert-NotContains $frozenNav 'param([int]$WaitSec = 90)' 'post-handoff readiness must use shared overall deadline'
 Assert-NotContains $frozenNav '.AddSeconds($WaitSec)' 'frozen nav waits must not create independent fixed deadlines'
+Assert-NotContains $frozenNav 'frozen real-input skipped reason=RespectUserForeground target_not_foreground' 'frozen click methods must be mutually exclusive, not layered after SendMessage'
 Assert-NotContains 'scripts\install-mod.ps1' '-TimeoutSec 120' 'install-mod must not hardcode a long frozen-nav budget'
 Assert-NotContains 'forge.ps1' "[string]`$LaunchIntent = 'play'" 'root forge launch intent must be explicit'
 Assert-NotContains 'scripts\install-mod.ps1' "[string]`$LaunchIntent = 'play'" 'installer launch intent must be explicit'
