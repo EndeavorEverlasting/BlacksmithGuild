@@ -43,7 +43,7 @@ function Read-FrozenLauncherContext {
     if (-not (Test-Path -LiteralPath $LauncherContextPath)) {
         throw "launcher context missing: $LauncherContextPath"
     }
-    $ctx = Get-Content -LiteralPath $LauncherContextPath -Raw | ConvertFrom-Json
+    $ctx = Get-Content -LiteralPath $LauncherContextPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if (-not $ctx) { throw "launcher context unreadable: $LauncherContextPath" }
     if ([string]$ctx.schema -ne 'TbgLauncherWindowContext.v1') {
         throw "launcher context schema mismatch: $($ctx.schema)"
