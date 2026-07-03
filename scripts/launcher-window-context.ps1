@@ -8,6 +8,10 @@ if (-not (Get-Command Get-Pr11ProcessSnapshot -ErrorAction SilentlyContinue)) {
     . (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 }
 
+if (-not (Get-Command Resolve-TbgTestDurationBudget -ErrorAction SilentlyContinue)) {
+    . (Join-Path $PSScriptRoot 'test-duration-policy.ps1')
+}
+
 function Get-TbgLauncherWindowContextPath {
     param([Parameter(Mandatory = $true)][string]$BannerlordRoot)
     return (Join-Path $BannerlordRoot 'launcher-window-context.json')
@@ -149,10 +153,21 @@ function Ensure-TbgLauncherWindowContext {
 
     $freshLaunch = $false
     if (-not $launcher -and $Mode -eq 'LaunchSetup') {
-        Start-Process -FilePath $launcherExe -WorkingDirectory (Split-Path -Parent $launcherExe) | Out-Null
-        Start-Sleep -Seconds 2
+        $durationBudget = Resolve-TbgTestDurationBudget -Caller 'launcher-window-context.ps1'
+        Write-TbgTestDurationBudget -Budget $durationBudget
+        $deadline = New-TbgTestDurationDeadline -Budget $durationBudget
+        $startedLauncher = Start-Process -FilePath $launcherExe -WorkingDirectory (Split-Path -Parent $launcherExe) -PassThru
         $freshLaunch = $true
-        $launcher = Get-TbgLauncherProcessCandidate -PreferVisibleWindow
+        do {
+            Start-Sleep -Milliseconds 250
+            $launcher = Get-TbgLauncherProcessCandidate -PreferVisibleWindow
+            if (-not $launcher -and $startedLauncher) {
+                $launcher = Get-Process -Id $startedLauncher.Id -ErrorAction SilentlyContinue
+            }
+        } while (-not $launcher -and -not (Test-TbgTestDurationExpired -Deadline $deadline))
+        if (-not $launcher) {
+            throw 'Launcher was started, but no launcher process could be bound for context.'
+        }
     }
 
     $context = New-TbgLauncherWindowContextObject -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent `
