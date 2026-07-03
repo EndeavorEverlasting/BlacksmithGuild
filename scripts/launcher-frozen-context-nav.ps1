@@ -13,16 +13,19 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$BannerlordRoot,
 
-    [int]$TimeoutSec = 120,
+    [int]$TimeoutSec = 0,
     [int]$PollMs = 250,
     [string]$LauncherContextPath = $null,
     [bool]$RespectUserForeground = $true,
     [switch]$AllowFocusSteal,
-    [switch]$LaunchSetup
+    [switch]$LaunchSetup,
+    [switch]$AllowLongRun,
+    [string]$LongRunReason
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'test-duration-policy.ps1')
 if (-not (Get-Command Test-Phase1TbgReady -ErrorAction SilentlyContinue)) {
     . (Join-Path $PSScriptRoot 'dev-command-names.ps1')
 }
@@ -32,11 +35,30 @@ if (-not $LauncherContextPath) {
     $LauncherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
 }
 
+$durationArgs = @{ Caller = 'launcher-frozen-context-nav.ps1' }
+if ($PSBoundParameters.ContainsKey('TimeoutSec') -and $TimeoutSec -gt 0) {
+    $durationArgs.RequestedBudgetSec = $TimeoutSec
+}
+if ($AllowLongRun) {
+    $durationArgs.AllowLongRun = $true
+}
+if ($LongRunReason) {
+    $durationArgs.LongRunReason = $LongRunReason
+}
+$durationBudget = Resolve-TbgTestDurationBudget @durationArgs
+$overallDeadline = New-TbgTestDurationDeadline -Budget $durationBudget
+
 function Write-FrozenLaunchLog {
     param([Parameter(Mandatory = $true)][string]$Message)
     $line = '[{0}] launcher-frozen: {1}' -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
     Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
     Write-Host $line -ForegroundColor DarkGray
+}
+
+Write-TbgTestDurationBudget -Budget $durationBudget
+Write-FrozenLaunchLog ('BUDGET budgetSec={0} defaultBudgetSec={1} isLongRun={2} source={3}' -f $durationBudget.budgetSec, $durationBudget.defaultBudgetSec, $durationBudget.isLongRun, $durationBudget.source)
+if ($LaunchSetup) {
+    Write-FrozenLaunchLog 'MODE LaunchSetup=true'
 }
 
 function Read-FrozenLauncherContext {
@@ -199,10 +221,9 @@ function Wait-FrozenGameSpawnOrInvalidation {
     param(
         [Parameter(Mandatory = $true)][IntPtr]$Hwnd,
         [Parameter(Mandatory = $true)][int]$ExpectedPid,
-        [int]$WaitSec = 20
+        [Parameter(Mandatory = $true)][datetime]$Deadline
     )
-    $deadline = (Get-Date).AddSeconds($WaitSec)
-    while ((Get-Date) -lt $deadline) {
+    while (-not (Test-TbgTestDurationExpired -Deadline $Deadline)) {
         if (Test-GameSpawned) { return 'game_spawned' }
         if (-not (Test-FrozenHwndValid -Hwnd $Hwnd -ExpectedPid $ExpectedPid)) { return 'frozen_target_invalidated' }
         Start-Sleep -Milliseconds $PollMs
@@ -211,10 +232,9 @@ function Wait-FrozenGameSpawnOrInvalidation {
 }
 
 function Emit-PostHandoffReadiness {
-    param([int]$WaitSec = 90)
-    $deadline = (Get-Date).AddSeconds($WaitSec)
+    param([Parameter(Mandatory = $true)][datetime]$Deadline)
     $lastProgress = [datetime]::MinValue
-    while ((Get-Date) -lt $deadline) {
+    while (-not (Test-TbgTestDurationExpired -Deadline $Deadline)) {
         if (Test-Phase1TbgReady -BannerlordRoot $BannerlordRoot) {
             Write-FrozenLaunchLog 'LAUNCH_STATE=hotkeys_ready classification=hotkeys_ready source=Phase1Log'
             Write-Host 'TBG ready: Ctrl+Alt+T cycles engine mode.' -ForegroundColor Cyan
@@ -246,7 +266,7 @@ try {
 
     if (Test-GameSpawned) {
         Write-FrozenLaunchLog 'LAUNCH_STATE=game_spawned classification=game_spawned before_click=true'
-        $classification = Emit-PostHandoffReadiness
+        $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
         if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
         exit 0
     }
@@ -254,13 +274,14 @@ try {
     Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_click_phase selectionFrozen=true rescoring=disabled'
     $maxAttempts = 2
     for ($attempt = 0; $attempt -lt $maxAttempts; $attempt++) {
+        if (Test-TbgTestDurationExpired -Deadline $overallDeadline) { break }
         Invoke-FrozenLauncherClick -Hwnd $targetHwnd -ExpectedPid $targetPid -Intent $LaunchIntent -Attempt $attempt
-        $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -WaitSec 20
+        $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline
         if ($result -eq 'game_spawned') {
             Write-FrozenLaunchLog ('LAUNCH_STATE={0}_clicked selectedBy=frozen_context attempts={1}' -f $LaunchIntent, ($attempt + 1))
             Write-FrozenLaunchLog 'LAUNCH_STATE=game_spawned classification=game_spawned'
             Write-FrozenLaunchLog 'LAUNCH_STATE=post_handoff_watch'
-            $classification = Emit-PostHandoffReadiness
+            $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
             if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
             exit 0
         }
@@ -268,7 +289,7 @@ try {
             Write-FrozenLaunchLog 'LAUNCH_STATE=frozen_target_invalidated classification=frozen_target_invalidated rescoring=disabled'
             if (Test-GameSpawned) {
                 Write-FrozenLaunchLog 'LAUNCH_STATE=game_spawned classification=game_spawned after_invalidation=true'
-                $classification = Emit-PostHandoffReadiness
+                $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
                 if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
                 exit 0
             }
