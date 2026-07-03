@@ -186,7 +186,7 @@ try {
                 -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
                 $launcherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
-                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -LauncherContextPath $launcherContextPath -TimeoutSec 120 -PollMs 250 -LaunchSetup
+                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -LauncherContextPath $launcherContextPath -PollMs 250 -LaunchSetup
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
@@ -258,11 +258,15 @@ try {
             }
         }
     }
-
-    $statusPath = Complete-ForgeStatusRun -Overall $overall
-    Write-ForgeStatusSummary -StatusJsonPath $statusPath
+    Complete-ForgeStatusRun -Overall $overall
+    Write-Host ''
+    if ($overall -eq 'PASS') {
+        Write-Host 'Install workflow complete.' -ForegroundColor Green
+    } else {
+        Write-Host 'Install workflow completed with warnings. See ForgeStatus.json.' -ForegroundColor Yellow
+    }
 } catch {
-    $statusPath = Complete-ForgeStatusRun -Overall 'FAIL'
-    Write-ForgeStatusSummary -StatusJsonPath $statusPath
+    Add-ForgeError $_.Exception.Message
+    Complete-ForgeStatusRun -Overall 'FAIL'
     throw
 }
