@@ -155,10 +155,10 @@ try {
 
     Write-Host ''
     Write-Host 'Daily play (006E zero-click):' -ForegroundColor Cyan
-    Write-Host '  Forge.cmd               -> auto PLAY -> New Campaign -> SandBox -> map'
-    Write-Host '  ForgeContinue.cmd       -> auto CONTINUE -> dev save -> map'
+    Write-Host '  Forge.cmd               -> frozen-context PLAY -> readiness classification'
+    Write-Host '  ForgeContinue.cmd       -> frozen-context CONTINUE -> readiness classification'
     Write-Host '  LaunchForgeContinue.cmd -> build + launcher + CONTINUE intent (006I-5)'
-    Write-Host '  -LaunchManual on forge.ps1 skips launcher UI automation (legacy).'
+    Write-Host '  -LaunchManual on forge.ps1 skips launcher UI automation.'
     Write-Host 'After code changes: close Bannerlord, then Forge.cmd / dotnet build / Ctrl+Shift+B to install.'
 
     & (Join-Path $PSScriptRoot 'pin-dev-save.ps1')
@@ -182,22 +182,24 @@ try {
                 -LaunchIntent $LaunchIntent `
                 -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
-                & (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -TimeoutSec 300 -PollMs 180 -LaunchSetup
+                $launcherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
+                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -LauncherContextPath $launcherContextPath -TimeoutSec 120 -PollMs 250 -LaunchSetup
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
                 $continueVerified = $false
                 if (Test-Path -LiteralPath $launchLogPath) {
-                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 80 -ErrorAction SilentlyContinue
+                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 120 -ErrorAction SilentlyContinue
                     $launchText = ($launchTail -join [Environment]::NewLine)
-                    $continueVerified = ($launchText -match 'clicked CONTINUE') -or
-                        ($launchText -match 'handoff:') -or
-                        ($launchText -match 'post-handoff: TBG READY')
+                    $continueVerified = ($launchText -match 'LAUNCH_STATE=continue_clicked') -or
+                        ($launchText -match 'LAUNCH_STATE=game_spawned') -or
+                        ($launchText -match 'LAUNCH_STATE=hotkeys_ready') -or
+                        ($launchText -match 'classification=hotkeys_ready')
                 }
                 if (-not $continueVerified) {
-                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'continue intent exited without CONTINUE click or handoff in Launch.log'
+                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'continue intent exited without CONTINUE click, game spawn, or readiness in Launch.log'
                     Write-Host ''
-                    Write-Host 'WARN - launcher-auto-nav returned but Launch.log shows no CONTINUE click or handoff.' -ForegroundColor Yellow
+                    Write-Host 'WARN - frozen launcher nav returned but Launch.log shows no CONTINUE click, game spawn, or readiness.' -ForegroundColor Yellow
                 } else {
                     Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
                 }
@@ -205,16 +207,17 @@ try {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
                 $playVerified = $false
                 if (Test-Path -LiteralPath $launchLogPath) {
-                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 80 -ErrorAction SilentlyContinue
+                    $launchTail = Get-Content -LiteralPath $launchLogPath -Tail 120 -ErrorAction SilentlyContinue
                     $launchText = ($launchTail -join [Environment]::NewLine)
                     $playVerified = ($launchText -match 'LAUNCH_STATE=play_clicked') -or
                         ($launchText -match 'LAUNCH_STATE=game_spawned') -or
-                        ($launchText -match 'handoff:')
+                        ($launchText -match 'LAUNCH_STATE=hotkeys_ready') -or
+                        ($launchText -match 'classification=hotkeys_ready')
                 }
                 if (-not $playVerified) {
-                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'play intent exited without PLAY click or game_spawned in Launch.log'
+                    Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message 'play intent exited without PLAY click, game_spawned, or readiness in Launch.log'
                     Write-Host ''
-                    Write-Host 'WARN - launcher-auto-nav returned but Launch.log shows no PLAY click or game spawn.' -ForegroundColor Yellow
+                    Write-Host 'WARN - frozen launcher nav returned but Launch.log shows no PLAY click, game spawn, or readiness.' -ForegroundColor Yellow
                 } else {
                     Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
                 }
@@ -225,7 +228,7 @@ try {
             if (Test-Phase1TbgReady -BannerlordRoot $BannerlordRoot) {
                 Set-ForgeStep -Name 'open_launcher' -Status 'WARN' -Message $_.Exception.Message
                 Write-Host ''
-                Write-Host 'WARN - launcher-auto-nav timed out but TBG READY found in Phase1.log (map loaded).' -ForegroundColor Yellow
+                Write-Host 'WARN - frozen launcher nav failed but TBG READY found in Phase1.log (map loaded).' -ForegroundColor Yellow
             } else {
                 Set-ForgeStep -Name 'open_launcher' -Status 'FAIL' -Message $_.Exception.Message
                 Add-ForgeError $_.Exception.Message
