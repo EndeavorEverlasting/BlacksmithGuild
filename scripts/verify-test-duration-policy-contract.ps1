@@ -6,6 +6,7 @@ $docPath = Join-Path $repoRoot 'docs\operator\test-duration-doctrine.md'
 $manifestPath = Join-Path $repoRoot 'docs\handoff\test-duration-policy.manifest.json'
 $agentNotePath = Join-Path $repoRoot 'docs\handoff\test-duration-policy-agent-note.md'
 $refactorPlanPath = Join-Path $repoRoot 'docs\handoff\test-duration-policy.refactor-plan.md'
+$inventoryGuardPath = Join-Path $repoRoot 'scripts\verify-test-duration-inventory-guard.ps1'
 
 $errors = New-Object System.Collections.Generic.List[string]
 
@@ -29,11 +30,13 @@ Need-File -Path $docPath -Label 'doctrine doc'
 Need-File -Path $manifestPath -Label 'manifest'
 Need-File -Path $agentNotePath -Label 'agent note'
 Need-File -Path $refactorPlanPath -Label 'refactor plan'
+Need-File -Path $inventoryGuardPath -Label 'inventory guard'
 
 if ($errors.Count -eq 0) {
     $helper = Get-Content -LiteralPath $helperPath -Raw -Encoding UTF8
     $doc = Get-Content -LiteralPath $docPath -Raw -Encoding UTF8
     $manifestText = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
+    $inventoryGuard = Get-Content -LiteralPath $inventoryGuardPath -Raw -Encoding UTF8
     $manifest = $manifestText | ConvertFrom-Json
 
     Need-Text -Text $helper -Needle 'function Resolve-TbgTestDurationBudget' -Label 'resolver'
@@ -44,6 +47,11 @@ if ($errors.Count -eq 0) {
     Need-Text -Text $helper -Needle 'Write-TbgTestDurationBudget' -Label 'logger'
     Need-Text -Text $doc -Needle 'Thirty seconds is the default test-duration budget' -Label 'core doctrine text'
     Need-Text -Text $manifestText -Needle '"defaultBudgetSec": 30' -Label 'manifest default'
+    Need-Text -Text $inventoryGuard -Needle 'Start-Sleep' -Label 'inventory sleep scan'
+    Need-Text -Text $inventoryGuard -Needle 'TimeoutSec' -Label 'inventory timeout scan'
+    Need-Text -Text $inventoryGuard -Needle 'MaxRuntimeMinutes' -Label 'inventory minute scan'
+    Need-Text -Text $inventoryGuard -Needle 'AllowLongRun' -Label 'inventory explicit allow marker'
+    Need-Text -Text $inventoryGuard -Needle 'LongRunReason' -Label 'inventory reason allow marker'
 
     if ([int]$manifest.defaultBudgetSec -ne 30) { Note-Error 'manifest default is not 30' }
 
