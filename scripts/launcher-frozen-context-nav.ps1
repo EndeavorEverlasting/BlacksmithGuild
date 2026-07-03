@@ -192,17 +192,12 @@ function Invoke-FrozenLauncherClick {
     $label = if ($Intent -eq 'continue') { 'launcher CONTINUE' } else { 'launcher PLAY' }
     $foreground = [FrozenLauncherNative]::GetForegroundWindow()
     $foregroundMatches = $foreground -eq $Hwnd
+    $useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)
 
     Write-FrozenLaunchLog ('CLICK "{0}" frozen attempt={1} hwnd={2} pid={3} title="{4}" client=({5},{6}) screen=({7},{8}) fractions=({9:F2},{10:F2}) foregroundMatches={11}' -f `
         $label, ($Attempt + 1), $Hwnd.ToInt64(), $ExpectedPid, $title, $point.clientX, $point.clientY, $point.screenX, $point.screenY, $point.xFraction, $point.yFraction, $foregroundMatches)
 
-    $lParam = [FrozenLauncherNative]::MakeLParam($point.clientX, $point.clientY)
-    [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONDOWN, [IntPtr][FrozenLauncherNative]::MK_LBUTTON, $lParam)
-    Start-Sleep -Milliseconds 40
-    [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONUP, [IntPtr]::Zero, $lParam)
-    Write-FrozenLaunchLog ('CLICK "{0}" frozen method=hwnd SendMessage dispatched hwnd={1}' -f $label, $Hwnd.ToInt64())
-
-    if ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground) {
+    if ($useRealInput) {
         if (-not $foregroundMatches) {
             [void][FrozenLauncherNative]::SetForegroundWindow($Hwnd)
             Start-Sleep -Milliseconds 120
@@ -213,7 +208,11 @@ function Invoke-FrozenLauncherClick {
         [FrozenLauncherNative]::mouse_event([FrozenLauncherNative]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
         Write-FrozenLaunchLog ('CLICK "{0}" frozen method=real-input dispatched reason={1}' -f $label, $(if ($foregroundMatches) { 'target_already_foreground' } elseif ($AllowFocusSteal) { 'AllowFocusSteal' } else { 'RespectUserForeground_false' }))
     } else {
-        Write-FrozenLaunchLog ('CLICK "{0}" frozen real-input skipped reason=RespectUserForeground target_not_foreground' -f $label)
+        $lParam = [FrozenLauncherNative]::MakeLParam($point.clientX, $point.clientY)
+        [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONDOWN, [IntPtr][FrozenLauncherNative]::MK_LBUTTON, $lParam)
+        Start-Sleep -Milliseconds 40
+        [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONUP, [IntPtr]::Zero, $lParam)
+        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=hwnd SendMessage dispatched hwnd={1} reason=real_input_not_viable' -f $label, $Hwnd.ToInt64())
     }
 }
 
