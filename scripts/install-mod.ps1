@@ -1,14 +1,14 @@
 ﻿# Build, install, and verify The Blacksmith Guild mod (one-click dev workflow).
 #
 # Usage:
-#   .\scripts\install-mod.ps1           # build + copy to Bannerlord/Modules
-#   .\scripts\install-mod.ps1 -Launch   # also open the Bannerlord launcher
-#   .\scripts\install-mod.ps1 -CheckLog # also scan for acceptance log / PASS line
+#   .\scripts\install-mod.ps1                               # build + copy to Bannerlord/Modules
+#   .\scripts\install-mod.ps1 -Launch -LaunchIntent play    # also open/navigate the Bannerlord launcher
+#   .\scripts\install-mod.ps1 -CheckLog                     # also scan for acceptance log / PASS line
 
 param(
     [switch]$Launch,
     [ValidateSet('play', 'continue')]
-    [string]$LaunchIntent = 'play',
+    [string]$LaunchIntent,
     [switch]$LaunchManual,
     [switch]$CheckLog,
     [switch]$SkipInstall,
@@ -17,6 +17,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Launch -and -not $LaunchIntent) {
+    throw 'LaunchIntent is required when -Launch is used. Pass -LaunchIntent play or -LaunchIntent continue.'
+}
 . (Join-Path $PSScriptRoot 'forge-status.ps1')
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'copy-client-dll.ps1')
