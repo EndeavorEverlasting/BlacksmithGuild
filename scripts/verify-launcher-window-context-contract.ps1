@@ -113,6 +113,8 @@ foreach ($sourceCheck in @(
     @{ file = 'Forge.cmd'; text = '-LaunchManual' },
     @{ file = 'ForgeContinue.cmd'; text = 'launcher-frozen-context-nav.ps1' },
     @{ file = 'ForgeContinue.cmd'; text = '-LaunchManual' },
+    @{ file = 'scripts\install-mod.ps1'; text = 'launcher-frozen-context-nav.ps1' },
+    @{ file = 'scripts\install-mod.ps1'; text = 'classification=hotkeys_ready' },
     @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'Ensure-TbgLauncherWindowContext' },
     @{ file = 'scripts\install-mod.ps1'; text = '-LaunchIntent $LaunchIntent' },
     @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'SetPreferredLauncherWindow' },
@@ -128,6 +130,7 @@ Assert-NotContains $contextHelper 'processId = $pid' 'context must not read from
 Assert-NotContains $contextHelper 'elseif ($pid -ne 0)' 'score logic must not read from a PID-colliding local variable'
 Assert-NotContains 'Forge.cmd' 'launcher-auto-nav.ps1' 'Forge front door must not call the legacy rescoring loop'
 Assert-NotContains 'ForgeContinue.cmd' 'launcher-auto-nav.ps1' 'ForgeContinue front door must not call the legacy rescoring loop'
+Assert-NotContains 'scripts\install-mod.ps1' 'launcher-auto-nav.ps1' 'raw forge.ps1 -Launch must not reach the legacy rescoring loop through install-mod.ps1'
 
 Assert-Contains $operatorDoc 'This is currently a documented factoring plan, not a completed implementation refactor.' 'operator doc must not overclaim'
 
