@@ -1,6 +1,7 @@
 ﻿$ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$baselinePath = Join-Path $repoRoot 'docs\handoff\test-duration-inventory-baseline.tsv'
 $longThresholdSec = 60
 $excludeDirNames = @('.git', 'node_modules', '__pycache__', 'Output', 'Archive', 'dist', 'bin', 'obj', 'artifacts', 'logs', 'runtime')
 $extensions = @('*.ps1', '*.cmd', '*.bat')
@@ -54,11 +55,69 @@ $patternSpecs = @(
 
 $failures = New-Object System.Collections.Generic.List[object]
 $allowed = New-Object System.Collections.Generic.List[object]
+$baselineAllowed = New-Object System.Collections.Generic.List[object]
+$baseline = @{}
 
 function Get-TbgRelativePath {
     param([Parameter(Mandatory = $true)][string]$Path)
 
     return $Path.Substring($repoRoot.Length).TrimStart('\', '/')
+}
+
+function Normalize-TbgText {
+    param([AllowEmptyString()][string]$Text)
+
+    return (($Text.Trim() -replace '\s+', ' ')).ToLowerInvariant()
+}
+
+function New-TbgInventoryKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Pattern,
+        [Parameter(Mandatory = $true)][string]$Value,
+        [AllowEmptyString()][string]$Text
+    )
+
+    $normalizedPath = $Path.Replace('/', '\').ToLowerInvariant()
+    $normalizedPattern = $Pattern.ToLowerInvariant()
+    $normalizedValue = $Value.ToLowerInvariant()
+    $normalizedText = Normalize-TbgText -Text $Text
+    return "$normalizedPath|$normalizedPattern|$normalizedValue|$normalizedText"
+}
+
+function Read-TbgInventoryBaseline {
+    if (-not (Test-Path -LiteralPath $baselinePath)) {
+        throw "Inventory baseline missing: $baselinePath"
+    }
+
+    $table = @{}
+    $lineNo = 0
+    foreach ($line in Get-Content -LiteralPath $baselinePath -Encoding UTF8) {
+        $lineNo++
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        if ($line.TrimStart().StartsWith('#')) { continue }
+
+        $parts = $line -split "`t", 6
+        if ($parts.Count -ne 6) {
+            throw "Malformed inventory baseline line $lineNo. Expected 6 tab-separated fields."
+        }
+
+        $key = New-TbgInventoryKey -Path $parts[0] -Pattern $parts[1] -Value $parts[2] -Text $parts[3]
+        if ($table.ContainsKey($key)) {
+            throw "Duplicate inventory baseline entry at line $lineNo: $($parts[0])"
+        }
+
+        $table[$key] = [pscustomobject]@{
+            Path = $parts[0]
+            Pattern = $parts[1]
+            Value = $parts[2]
+            Text = $parts[3]
+            Class = $parts[4]
+            Reason = $parts[5]
+        }
+    }
+
+    return $table
 }
 
 function Test-TbgExcludedPath {
@@ -112,6 +171,8 @@ function Test-TbgLongDurationMatch {
     return ($Value -ge $Spec.Threshold)
 }
 
+$baseline = Read-TbgInventoryBaseline
+
 $files = foreach ($extension in $extensions) {
     Get-ChildItem -LiteralPath $repoRoot -Recurse -Filter $extension -File -ErrorAction SilentlyContinue
 }
@@ -143,10 +204,21 @@ foreach ($file in $files) {
                     Pattern = $spec.Name
                     Value = "$value $($spec.Unit)"
                     Text = $line.Trim()
+                    Class = ''
+                    Reason = ''
                 }
 
                 if (Test-TbgAllowedLongRunContext -Lines $lines -Index $i) {
                     $allowed.Add($record) | Out-Null
+                    continue
+                }
+
+                $key = New-TbgInventoryKey -Path $record.Path -Pattern $record.Pattern -Value $record.Value -Text $record.Text
+                if ($baseline.ContainsKey($key)) {
+                    $base = $baseline[$key]
+                    $record.Class = $base.Class
+                    $record.Reason = $base.Reason
+                    $baselineAllowed.Add($record) | Out-Null
                 } else {
                     $failures.Add($record) | Out-Null
                 }
@@ -156,21 +228,28 @@ foreach ($file in $files) {
 }
 
 if ($allowed.Count -gt 0) {
-    Write-Host "INFO: inventory guard allowed $($allowed.Count) explicit long-run match(es)."
+    Write-Host "INFO: inventory guard allowed $($allowed.Count) explicit long-run marker match(es)."
     foreach ($item in $allowed) {
         Write-Host ("  ALLOW {0}:{1} [{2}] value={3}" -f $item.Path, $item.Line, $item.Pattern, $item.Value)
     }
 }
 
+if ($baselineAllowed.Count -gt 0) {
+    Write-Host "INFO: inventory guard matched $($baselineAllowed.Count) documented baseline long-duration default(s)."
+    foreach ($item in $baselineAllowed) {
+        Write-Host ("  BASELINE {0}:{1} [{2}] value={3} class={4}" -f $item.Path, $item.Line, $item.Pattern, $item.Value, $item.Class)
+    }
+}
+
 if ($failures.Count -gt 0) {
-    Write-Host "FAIL: test duration inventory guard found $($failures.Count) casual long-duration default(s)." -ForegroundColor Red
+    Write-Host "FAIL: test duration inventory guard found $($failures.Count) new or undocumented casual long-duration default(s)." -ForegroundColor Red
     foreach ($item in $failures) {
         Write-Host ("  {0}:{1} [{2}] value={3} :: {4}" -f $item.Path, $item.Line, $item.Pattern, $item.Value, $item.Text) -ForegroundColor Red
     }
     Write-Host ''
-    Write-Host 'Fix: keep defaults at 30 seconds, or mark the nearby code as explicit long-run behavior with AllowLongRun/LongRunReason and an operator-facing reason.' -ForegroundColor Yellow
+    Write-Host 'Fix: keep defaults at 30 seconds, add explicit long-run markers nearby, or document existing debt in docs\handoff\test-duration-inventory-baseline.tsv with a reason.' -ForegroundColor Yellow
     exit 1
 }
 
-Write-Host "PASS: test duration inventory guard scanned $($files.Count) executable wrapper/script file(s); $($allowed.Count) explicit long-run match(es) allowed." -ForegroundColor Green
+Write-Host "PASS: test duration inventory guard scanned $($files.Count) executable wrapper/script file(s); $($baselineAllowed.Count) baseline and $($allowed.Count) explicit long-run match(es) allowed." -ForegroundColor Green
 exit 0
