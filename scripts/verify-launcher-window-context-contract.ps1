@@ -104,6 +104,13 @@ foreach ($sourceCheck in @(
     @{ file = $contextHelper; text = 'window-snapshot-S1-pre-launch.json' },
     @{ file = $contextHelper; text = 'launcher-window-context.json' },
     @{ file = $contextHelper; text = 'launcherProcessId' },
+    @{ file = $contextHelper; text = 'Resolve-TbgTestDurationBudget' },
+    @{ file = $contextHelper; text = 'Write-TbgTestDurationBudget' },
+    @{ file = $contextHelper; text = 'New-TbgTestDurationDeadline' },
+    @{ file = $contextHelper; text = 'Test-TbgTestDurationExpired' },
+    @{ file = $contextHelper; text = 'Start-Process -FilePath $launcherExe -WorkingDirectory (Split-Path -Parent $launcherExe) -PassThru' },
+    @{ file = $contextHelper; text = 'Get-Process -Id $startedLauncher.Id -ErrorAction SilentlyContinue' },
+    @{ file = $contextHelper; text = 'Launcher was started, but no launcher process could be bound for context.' },
     @{ file = $frozenNav; text = 'selectionFrozen=true' },
     @{ file = $frozenNav; text = 'rescoring=disabled' },
     @{ file = $frozenNav; text = 'post_handoff_idle_unactionable' },
@@ -128,6 +135,7 @@ foreach ($sourceCheck in @(
 Assert-NotContains $contextHelper '$pid =' 'PowerShell $PID is an automatic read-only variable; local launcher process id must use a non-colliding name'
 Assert-NotContains $contextHelper 'processId = $pid' 'context must not read from a PID-colliding local variable'
 Assert-NotContains $contextHelper 'elseif ($pid -ne 0)' 'score logic must not read from a PID-colliding local variable'
+Assert-NotContains $contextHelper 'Start-Sleep -Seconds 2' 'fresh launcher binding must use bounded polling, not a fixed sleep'
 Assert-NotContains 'Forge.cmd' 'launcher-auto-nav.ps1' 'Forge front door must not call the legacy rescoring loop'
 Assert-NotContains 'ForgeContinue.cmd' 'launcher-auto-nav.ps1' 'ForgeContinue front door must not call the legacy rescoring loop'
 Assert-NotContains 'scripts\install-mod.ps1' 'launcher-auto-nav.ps1' 'raw forge.ps1 -Launch must not reach the legacy rescoring loop through install-mod.ps1'
