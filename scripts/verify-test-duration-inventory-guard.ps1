@@ -72,7 +72,7 @@ function Test-TbgExcludedPath {
 
 function Test-TbgCommentLine {
     param(
-        [Parameter(Mandatory = $true)][string]$Line,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Line,
         [Parameter(Mandatory = $true)][string]$Extension
     )
 
