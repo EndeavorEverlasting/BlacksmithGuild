@@ -86,9 +86,11 @@ function Test-TbgCommentLine {
 
 function Test-TbgAllowedLongRunContext {
     param(
-        [Parameter(Mandatory = $true)][string[]]$Lines,
+        [AllowEmptyCollection()][AllowEmptyString()][string[]]$Lines = @(),
         [Parameter(Mandatory = $true)][int]$Index
     )
+
+    if ($Lines.Count -eq 0) { return $false }
 
     $start = [Math]::Max(0, $Index - 2)
     $end = [Math]::Min($Lines.Count - 1, $Index + 2)
@@ -122,7 +124,7 @@ $files = $files | Where-Object {
 foreach ($file in $files) {
     $relativePath = Get-TbgRelativePath -Path $file.FullName
     $extension = $file.Extension.ToLowerInvariant()
-    $lines = [System.IO.File]::ReadAllLines($file.FullName)
+    $lines = [string[]][System.IO.File]::ReadAllLines($file.FullName)
 
     for ($i = 0; $i -lt $lines.Count; $i++) {
         $line = $lines[$i]
