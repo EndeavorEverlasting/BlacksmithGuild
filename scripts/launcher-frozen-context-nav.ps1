@@ -35,7 +35,10 @@ if (-not $LauncherContextPath) {
     $LauncherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
 }
 
-$durationArgs = @{ Caller = 'launcher-frozen-context-nav.ps1' }
+$operationMode = if ($LaunchSetup) { 'launcher_setup' } else { 'frozen_navigation' }
+$runtimeProofClaim = $false
+
+$durationArgs = @{ Caller = "launcher-frozen-context-nav.ps1:$operationMode" }
 if ($PSBoundParameters.ContainsKey('TimeoutSec') -and $TimeoutSec -gt 0) {
     $durationArgs.RequestedBudgetSec = $TimeoutSec
 }
@@ -56,10 +59,8 @@ function Write-FrozenLaunchLog {
 }
 
 Write-TbgTestDurationBudget -Budget $durationBudget
-Write-FrozenLaunchLog ('BUDGET budgetSec={0} defaultBudgetSec={1} isLongRun={2} source={3}' -f $durationBudget.budgetSec, $durationBudget.defaultBudgetSec, $durationBudget.isLongRun, $durationBudget.source)
-if ($LaunchSetup) {
-    Write-FrozenLaunchLog 'MODE LaunchSetup=true'
-}
+Write-FrozenLaunchLog ('MODE operationMode={0} launchSetup={1} runtimeProofClaim={2} behavior=launcher_context_navigation_only' -f $operationMode, [bool]$LaunchSetup, $runtimeProofClaim)
+Write-FrozenLaunchLog ('BUDGET operationMode={0} budgetSec={1} defaultBudgetSec={2} isLongRun={3} source={4}' -f $operationMode, $durationBudget.budgetSec, $durationBudget.defaultBudgetSec, $durationBudget.isLongRun, $durationBudget.source)
 
 function Read-FrozenLauncherContext {
     if (-not (Test-Path -LiteralPath $LauncherContextPath)) {
@@ -73,6 +74,17 @@ function Read-FrozenLauncherContext {
     if ([int64]$ctx.hwnd -eq 0) { throw 'launcher context has no hwnd to freeze' }
     if ([int]$ctx.processId -eq 0) { throw 'launcher context has no processId to freeze' }
     return $ctx
+}
+
+function Assert-FrozenLauncherContextIntent {
+    param([Parameter(Mandatory = $true)]$Context)
+    $contextIntent = [string]$Context.launchIntent
+    if ([string]::IsNullOrWhiteSpace($contextIntent)) {
+        throw 'LaunchSetup context missing launchIntent; refusing launcher setup navigation without explicit intent.'
+    }
+    if ($contextIntent -ne $LaunchIntent) {
+        throw "LaunchSetup context intent mismatch: context=$contextIntent requested=$LaunchIntent"
+    }
 }
 
 $native = @'
@@ -194,8 +206,8 @@ function Invoke-FrozenLauncherClick {
     $foregroundMatches = $foreground -eq $Hwnd
     $useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)
 
-    Write-FrozenLaunchLog ('CLICK "{0}" frozen attempt={1} hwnd={2} pid={3} title="{4}" client=({5},{6}) screen=({7},{8}) fractions=({9:F2},{10:F2}) foregroundMatches={11}' -f `
-        $label, ($Attempt + 1), $Hwnd.ToInt64(), $ExpectedPid, $title, $point.clientX, $point.clientY, $point.screenX, $point.screenY, $point.xFraction, $point.yFraction, $foregroundMatches)
+    Write-FrozenLaunchLog ('CLICK "{0}" frozen attempt={1} hwnd={2} pid={3} title="{4}" client=({5},{6}) screen=({7},{8}) fractions=({9:F2},{10:F2}) foregroundMatches={11} operationMode={12}' -f `
+        $label, ($Attempt + 1), $Hwnd.ToInt64(), $ExpectedPid, $title, $point.clientX, $point.clientY, $point.screenX, $point.screenY, $point.xFraction, $point.yFraction, $foregroundMatches, $operationMode)
 
     if ($useRealInput) {
         if (-not $foregroundMatches) {
@@ -206,13 +218,13 @@ function Invoke-FrozenLauncherClick {
         Start-Sleep -Milliseconds 40
         [FrozenLauncherNative]::mouse_event([FrozenLauncherNative]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
         [FrozenLauncherNative]::mouse_event([FrozenLauncherNative]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
-        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=real-input dispatched reason={1}' -f $label, $(if ($foregroundMatches) { 'target_already_foreground' } elseif ($AllowFocusSteal) { 'AllowFocusSteal' } else { 'RespectUserForeground_false' }))
+        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=real-input dispatched reason={1} operationMode={2}' -f $label, $(if ($foregroundMatches) { 'target_already_foreground' } elseif ($AllowFocusSteal) { 'AllowFocusSteal' } else { 'RespectUserForeground_false' }), $operationMode)
     } else {
         $lParam = [FrozenLauncherNative]::MakeLParam($point.clientX, $point.clientY)
         [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONDOWN, [IntPtr][FrozenLauncherNative]::MK_LBUTTON, $lParam)
         Start-Sleep -Milliseconds 40
         [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONUP, [IntPtr]::Zero, $lParam)
-        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=hwnd SendMessage dispatched hwnd={1} reason=real_input_not_viable' -f $label, $Hwnd.ToInt64())
+        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=hwnd SendMessage dispatched hwnd={1} reason=real_input_not_viable operationMode={2}' -f $label, $Hwnd.ToInt64(), $operationMode)
     }
 }
 
@@ -235,7 +247,7 @@ function Emit-PostHandoffReadiness {
     $lastProgress = [datetime]::MinValue
     while (-not (Test-TbgTestDurationExpired -Deadline $Deadline)) {
         if (Test-Phase1TbgReady -BannerlordRoot $BannerlordRoot) {
-            Write-FrozenLaunchLog 'LAUNCH_STATE=hotkeys_ready classification=hotkeys_ready source=Phase1Log'
+            Write-FrozenLaunchLog ('LAUNCH_STATE=hotkeys_ready classification=hotkeys_ready source=Phase1Log operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
             Write-Host 'TBG ready: Ctrl+Alt+T cycles engine mode.' -ForegroundColor Cyan
             Write-Host 'TBG ready: Ctrl+Alt+G runs GuildLoop.' -ForegroundColor Cyan
             Write-Host 'TBG ready: Ctrl+Alt+M writes Market Intel.' -ForegroundColor Cyan
@@ -244,61 +256,73 @@ function Emit-PostHandoffReadiness {
         }
         if (((Get-Date) - $lastProgress).TotalSeconds -ge 10) {
             $lastProgress = Get-Date
-            Write-FrozenLaunchLog 'LAUNCH_STATE=loading_still_in_progress classification=loading_still_in_progress waiting_for=Phase1TbgReady'
+            Write-FrozenLaunchLog ('LAUNCH_STATE=loading_still_in_progress classification=loading_still_in_progress waiting_for=Phase1TbgReady operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
         }
         Start-Sleep -Milliseconds 1000
     }
-    Write-FrozenLaunchLog 'LAUNCH_STATE=post_handoff_idle_unactionable classification=post_handoff_idle_unactionable reason=no Phase1 ready signal or operator guidance after game spawn'
+    Write-FrozenLaunchLog ('LAUNCH_STATE=post_handoff_idle_unactionable classification=post_handoff_idle_unactionable reason=no Phase1 ready signal or operator guidance after game spawn operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
     return 'post_handoff_idle_unactionable'
 }
 
 try {
     $context = Read-FrozenLauncherContext
+    if ($LaunchSetup) {
+        Assert-FrozenLauncherContextIntent -Context $context
+    }
     $targetHwnd = [IntPtr]([int64]$context.hwnd)
     $targetPid = [int]$context.processId
     $targetTitle = [string]$context.windowTitle
-    Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_target_selected selectionFrozen=true hwnd={0} pid={1} title="{2}" context={3}' -f $targetHwnd.ToInt64(), $targetPid, $targetTitle, $LauncherContextPath)
+    Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_target_selected selectionFrozen=true hwnd={0} pid={1} title="{2}" context={3} operationMode={4} runtimeProofClaim={5}' -f $targetHwnd.ToInt64(), $targetPid, $targetTitle, $LauncherContextPath, $operationMode, $runtimeProofClaim)
 
     if (-not (Test-FrozenHwndValid -Hwnd $targetHwnd -ExpectedPid $targetPid)) {
         throw 'frozen launcher context target is invalid before click phase'
     }
 
     if (Test-GameSpawned) {
-        Write-FrozenLaunchLog 'LAUNCH_STATE=game_spawned classification=game_spawned before_click=true'
+        Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned before_click=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+        if ($LaunchSetup) {
+            Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+        }
         $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
         if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
         exit 0
     }
 
-    Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_click_phase selectionFrozen=true rescoring=disabled'
+    Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_click_phase selectionFrozen=true rescoring=disabled operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
     $maxAttempts = 2
     for ($attempt = 0; $attempt -lt $maxAttempts; $attempt++) {
         if (Test-TbgTestDurationExpired -Deadline $overallDeadline) { break }
         Invoke-FrozenLauncherClick -Hwnd $targetHwnd -ExpectedPid $targetPid -Intent $LaunchIntent -Attempt $attempt
         $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline
         if ($result -eq 'game_spawned') {
-            Write-FrozenLaunchLog ('LAUNCH_STATE={0}_clicked selectedBy=frozen_context attempts={1}' -f $LaunchIntent, ($attempt + 1))
-            Write-FrozenLaunchLog 'LAUNCH_STATE=game_spawned classification=game_spawned'
-            Write-FrozenLaunchLog 'LAUNCH_STATE=post_handoff_watch'
+            Write-FrozenLaunchLog ('LAUNCH_STATE={0}_clicked selectedBy=frozen_context attempts={1} operationMode={2} runtimeProofClaim={3}' -f $LaunchIntent, ($attempt + 1), $operationMode, $runtimeProofClaim)
+            Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+            if ($LaunchSetup) {
+                Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+            }
+            Write-FrozenLaunchLog ('LAUNCH_STATE=post_handoff_watch operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
             $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
             if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
             exit 0
         }
         if ($result -eq 'frozen_target_invalidated') {
-            Write-FrozenLaunchLog 'LAUNCH_STATE=frozen_target_invalidated classification=frozen_target_invalidated rescoring=disabled'
+            Write-FrozenLaunchLog ('LAUNCH_STATE=frozen_target_invalidated classification=frozen_target_invalidated rescoring=disabled operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
             if (Test-GameSpawned) {
-                Write-FrozenLaunchLog 'LAUNCH_STATE=game_spawned classification=game_spawned after_invalidation=true'
+                Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned after_invalidation=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+                if ($LaunchSetup) {
+                    Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+                }
                 $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
                 if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
                 exit 0
             }
             throw 'frozen launcher target invalidated before game spawned'
         }
-        Write-FrozenLaunchLog ('LAUNCH_STATE=click_unverified_timeout attempt={0} selectionFrozen=true rescoring=disabled' -f ($attempt + 1))
+        Write-FrozenLaunchLog ('LAUNCH_STATE=click_unverified_timeout attempt={0} selectionFrozen=true rescoring=disabled operationMode={1} runtimeProofClaim={2}' -f ($attempt + 1), $operationMode, $runtimeProofClaim)
     }
 
-    Write-FrozenLaunchLog 'LAUNCH_STATE=operator_action_required classification=operator_action_required reason=frozen CONTINUE/PLAY click did not spawn game; target was not replaced by heuristic search'
+    Write-FrozenLaunchLog ('LAUNCH_STATE=operator_action_required classification=operator_action_required reason=frozen CONTINUE/PLAY click did not spawn game; target was not replaced by heuristic search operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
     throw 'operator_action_required: frozen launcher click did not spawn game; no heuristic reselection performed'
 } finally {
-    Write-FrozenLaunchLog 'LAUNCH_STATE=frozen_nav_complete'
+    Write-FrozenLaunchLog ('LAUNCH_STATE=frozen_nav_complete operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
 }
