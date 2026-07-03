@@ -123,6 +123,12 @@ foreach ($sourceCheck in @(
     @{ file = $frozenNav; text = 'operator_action_required' },
     @{ file = $frozenNav; text = 'launcher context has no hwnd to freeze' },
     @{ file = $frozenNav; text = 'Get-Content -LiteralPath $LauncherContextPath -Raw -Encoding UTF8' },
+    @{ file = $frozenNav; text = 'Resolve-TbgTestDurationBudget @durationArgs' },
+    @{ file = $frozenNav; text = 'New-TbgTestDurationDeadline -Budget $durationBudget' },
+    @{ file = $frozenNav; text = 'Test-TbgTestDurationExpired -Deadline $overallDeadline' },
+    @{ file = $frozenNav; text = 'Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline' },
+    @{ file = $frozenNav; text = 'Emit-PostHandoffReadiness -Deadline $overallDeadline' },
+    @{ file = $frozenNav; text = 'BUDGET budgetSec={0} defaultBudgetSec={1} isLongRun={2} source={3}' },
     @{ file = 'forge.ps1'; text = 'LaunchIntent is required when -Launch is used.' },
     @{ file = 'Forge.cmd'; text = '-LaunchIntent play' },
     @{ file = 'Forge.cmd'; text = 'launcher-frozen-context-nav.ps1' },
@@ -149,6 +155,11 @@ Assert-NotContains $contextHelper '$pid =' 'PowerShell $PID is an automatic read
 Assert-NotContains $contextHelper 'processId = $pid' 'context must not read from a PID-colliding local variable'
 Assert-NotContains $contextHelper 'elseif ($pid -ne 0)' 'score logic must not read from a PID-colliding local variable'
 Assert-NotContains $contextHelper 'Start-Sleep -Seconds 2' 'fresh launcher binding must use bounded polling, not a fixed sleep'
+Assert-NotContains $frozenNav '[int]$TimeoutSec = 120' 'frozen nav must default to shared bounded policy, not 120 seconds'
+Assert-NotContains $frozenNav '[int]$WaitSec = 20' 'click verification must use shared overall deadline'
+Assert-NotContains $frozenNav 'param([int]$WaitSec = 90)' 'post-handoff readiness must use shared overall deadline'
+Assert-NotContains $frozenNav '.AddSeconds($WaitSec)' 'frozen nav waits must not create independent fixed deadlines'
+Assert-NotContains 'scripts\install-mod.ps1' '-TimeoutSec 120' 'install-mod must not hardcode a long frozen-nav budget'
 Assert-NotContains 'forge.ps1' "[string]`$LaunchIntent = 'play'" 'root forge launch intent must be explicit'
 Assert-NotContains 'scripts\install-mod.ps1' "[string]`$LaunchIntent = 'play'" 'installer launch intent must be explicit'
 Assert-NotContains 'scripts\open-bannerlord-launcher.ps1' "[string]`$LaunchIntent = 'play'" 'launcher context wrapper launch intent must be explicit'
