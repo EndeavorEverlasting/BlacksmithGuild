@@ -46,6 +46,7 @@ $handoffDoc = 'docs\handoff\launcher-window-context-factoring.md'
 $operatorDoc = 'docs\operator\governor-test-harness.md'
 $contextHelper = 'scripts\launcher-window-context.ps1'
 $frozenNav = 'scripts\launcher-frozen-context-nav.ps1'
+$durationPolicy = 'scripts\test-duration-policy.ps1'
 
 Assert-Contains $handoffDoc '# Launcher Window Context Factoring' 'canonical handoff doc must exist'
 Assert-Contains $operatorDoc '## Launcher Window Context doctrine' 'operator doc must surface doctrine'
@@ -99,11 +100,16 @@ foreach ($entryPoint in @(
 }
 
 foreach ($sourceCheck in @(
+    @{ file = $durationPolicy; text = 'Resolve-TbgTestDurationBudget' },
+    @{ file = $durationPolicy; text = '$Script:TbgTestDurationDefaultBudgetSec = 30' },
+    @{ file = $durationPolicy; text = 'Get-Content -LiteralPath $PolicyPath -Raw -Encoding UTF8' },
     @{ file = $contextHelper; text = 'Ensure-TbgLauncherWindowContext' },
     @{ file = $contextHelper; text = 'TbgLauncherWindowContext.v1' },
     @{ file = $contextHelper; text = 'window-snapshot-S1-pre-launch.json' },
     @{ file = $contextHelper; text = 'launcher-window-context.json' },
     @{ file = $contextHelper; text = 'launcherProcessId' },
+    @{ file = $contextHelper; text = 'Get-Content -LiteralPath $Path -Raw -Encoding UTF8' },
+    @{ file = $contextHelper; text = 'Set-Content -LiteralPath $Path -Encoding UTF8' },
     @{ file = $contextHelper; text = 'Resolve-TbgTestDurationBudget' },
     @{ file = $contextHelper; text = 'Write-TbgTestDurationBudget' },
     @{ file = $contextHelper; text = 'New-TbgTestDurationDeadline' },
@@ -116,12 +122,19 @@ foreach ($sourceCheck in @(
     @{ file = $frozenNav; text = 'post_handoff_idle_unactionable' },
     @{ file = $frozenNav; text = 'operator_action_required' },
     @{ file = $frozenNav; text = 'launcher context has no hwnd to freeze' },
+    @{ file = $frozenNav; text = 'Get-Content -LiteralPath $LauncherContextPath -Raw -Encoding UTF8' },
+    @{ file = 'forge.ps1'; text = 'LaunchIntent is required when -Launch is used.' },
+    @{ file = 'Forge.cmd'; text = '-LaunchIntent play' },
     @{ file = 'Forge.cmd'; text = 'launcher-frozen-context-nav.ps1' },
     @{ file = 'Forge.cmd'; text = '-LaunchManual' },
+    @{ file = 'ForgeContinue.cmd'; text = '-LaunchIntent continue' },
     @{ file = 'ForgeContinue.cmd'; text = 'launcher-frozen-context-nav.ps1' },
     @{ file = 'ForgeContinue.cmd'; text = '-LaunchManual' },
+    @{ file = 'LaunchForgeContinue.cmd'; text = '-LaunchIntent continue' },
+    @{ file = 'scripts\install-mod.ps1'; text = 'LaunchIntent is required when -Launch is used.' },
     @{ file = 'scripts\install-mod.ps1'; text = 'launcher-frozen-context-nav.ps1' },
     @{ file = 'scripts\install-mod.ps1'; text = 'classification=hotkeys_ready' },
+    @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = '[Parameter(Mandatory = $true)]' },
     @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'Ensure-TbgLauncherWindowContext' },
     @{ file = 'scripts\install-mod.ps1'; text = '-LaunchIntent $LaunchIntent' },
     @{ file = 'scripts\launcher-auto-nav.ps1'; text = 'SetPreferredLauncherWindow' },
@@ -136,6 +149,9 @@ Assert-NotContains $contextHelper '$pid =' 'PowerShell $PID is an automatic read
 Assert-NotContains $contextHelper 'processId = $pid' 'context must not read from a PID-colliding local variable'
 Assert-NotContains $contextHelper 'elseif ($pid -ne 0)' 'score logic must not read from a PID-colliding local variable'
 Assert-NotContains $contextHelper 'Start-Sleep -Seconds 2' 'fresh launcher binding must use bounded polling, not a fixed sleep'
+Assert-NotContains 'forge.ps1' "[string]`$LaunchIntent = 'play'" 'root forge launch intent must be explicit'
+Assert-NotContains 'scripts\install-mod.ps1' "[string]`$LaunchIntent = 'play'" 'installer launch intent must be explicit'
+Assert-NotContains 'scripts\open-bannerlord-launcher.ps1' "[string]`$LaunchIntent = 'play'" 'launcher context wrapper launch intent must be explicit'
 Assert-NotContains 'Forge.cmd' 'launcher-auto-nav.ps1' 'Forge front door must not call the legacy rescoring loop'
 Assert-NotContains 'ForgeContinue.cmd' 'launcher-auto-nav.ps1' 'ForgeContinue front door must not call the legacy rescoring loop'
 Assert-NotContains 'scripts\install-mod.ps1' 'launcher-auto-nav.ps1' 'raw forge.ps1 -Launch must not reach the legacy rescoring loop through install-mod.ps1'
