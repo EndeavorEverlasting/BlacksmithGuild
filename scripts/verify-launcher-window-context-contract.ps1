@@ -117,6 +117,14 @@ foreach ($sourceCheck in @(
     @{ file = $contextHelper; text = 'Start-Process -FilePath $launcherExe -WorkingDirectory (Split-Path -Parent $launcherExe) -PassThru' },
     @{ file = $contextHelper; text = 'Get-Process -Id $startedLauncher.Id -ErrorAction SilentlyContinue' },
     @{ file = $contextHelper; text = 'Launcher was started, but no launcher process could be bound for context.' },
+    @{ file = $frozenNav; text = '$operationMode = if ($LaunchSetup) { ''launcher_setup'' } else { ''frozen_navigation'' }' },
+    @{ file = $frozenNav; text = 'launcher-frozen-context-nav.ps1:$operationMode' },
+    @{ file = $frozenNav; text = 'MODE operationMode={0} launchSetup={1} runtimeProofClaim={2} behavior=launcher_context_navigation_only' },
+    @{ file = $frozenNav; text = 'Assert-FrozenLauncherContextIntent' },
+    @{ file = $frozenNav; text = 'LaunchSetup context missing launchIntent; refusing launcher setup navigation without explicit intent.' },
+    @{ file = $frozenNav; text = 'LaunchSetup context intent mismatch' },
+    @{ file = $frozenNav; text = 'launcher_setup_handoff_observed' },
+    @{ file = $frozenNav; text = 'runtimeProofClaim=false' },
     @{ file = $frozenNav; text = 'selectionFrozen=true' },
     @{ file = $frozenNav; text = 'rescoring=disabled' },
     @{ file = $frozenNav; text = 'post_handoff_idle_unactionable' },
@@ -128,7 +136,6 @@ foreach ($sourceCheck in @(
     @{ file = $frozenNav; text = 'Test-TbgTestDurationExpired -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = 'Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = 'Emit-PostHandoffReadiness -Deadline $overallDeadline' },
-    @{ file = $frozenNav; text = 'BUDGET budgetSec={0} defaultBudgetSec={1} isLongRun={2} source={3}' },
     @{ file = $frozenNav; text = '$useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)' },
     @{ file = $frozenNav; text = 'if ($useRealInput)' },
     @{ file = $frozenNav; text = 'method=real-input dispatched' },
@@ -163,6 +170,7 @@ Assert-NotContains $frozenNav '[int]$TimeoutSec = 120' 'frozen nav must default 
 Assert-NotContains $frozenNav '[int]$WaitSec = 20' 'click verification must use shared overall deadline'
 Assert-NotContains $frozenNav 'param([int]$WaitSec = 90)' 'post-handoff readiness must use shared overall deadline'
 Assert-NotContains $frozenNav '.AddSeconds($WaitSec)' 'frozen nav waits must not create independent fixed deadlines'
+Assert-NotContains $frozenNav 'MODE LaunchSetup=true' 'LaunchSetup must be a real operation mode, not a bare log marker'
 Assert-NotContains $frozenNav 'frozen real-input skipped reason=RespectUserForeground target_not_foreground' 'frozen click methods must be mutually exclusive, not layered after SendMessage'
 Assert-NotContains 'scripts\install-mod.ps1' '-TimeoutSec 120' 'install-mod must not hardcode a long frozen-nav budget'
 Assert-NotContains 'forge.ps1' "[string]`$LaunchIntent = 'play'" 'root forge launch intent must be explicit'
