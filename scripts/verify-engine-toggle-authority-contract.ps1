@@ -44,7 +44,9 @@ function Assert-TextMatches {
 $authority = 'src\BlacksmithGuild\DevTools\EngineToggleAuthority.cs'
 $assistive = 'src\BlacksmithGuild\DevTools\Assistive\AssistReadinessEvaluator.cs'
 $config = 'src\BlacksmithGuild\DevTools\DevToolsConfig.cs'
+$guildLoop = 'src\BlacksmithGuild\GuildLoop\AutonomousGuildLoopService.cs'
 $hotkeys = 'src\BlacksmithGuild\DevTools\DevHotkeyHandler.cs'
+$mapTrade = 'src\BlacksmithGuild\MapTrade\MapTradeAutonomousService.cs'
 $doc = 'docs\handoff\engine-toggle-authority.md'
 $durationDoc = 'docs\operator\test-duration-doctrine.md'
 $durationManifest = 'docs\handoff\test-duration-policy.manifest.json'
@@ -79,6 +81,8 @@ Assert-TextMatches -RelativePath $hotkeys -Pattern '(?m)^\s*private\s+static\s+b
 Assert-TextMatches -RelativePath $hotkeys -Pattern '(?s)TryEngineToggleHotkey\s*\([^)]*\)\s*\{.*?EngineToggleAuthority\.RunCommand\(EngineToggleAuthority\.CycleEngineToggleModeCommand,\s*label\)' -Label 'TryEngineToggleHotkey authority dispatch' -Why 'hotkey must use authority rather than editing raw config'
 
 Assert-TextMatches -RelativePath $assistive -Pattern '(?s)private\s+static\s+bool\s+IsAssistCommandBlocked\s*\(out\s+string\s+reason\)\s*\{.*?EngineToggleAuthority\.IsEngineEnabled\(EngineToggleKey\.Assistive\).*?engine_toggle_manual:Assistive' -Label 'assistive readiness authority gate' -Why 'Manual mode must reject assistive movement/action commands'
+Assert-TextMatches -RelativePath $mapTrade -Pattern '(?s)public\s+static\s+bool\s+StartRouteNow\s*\([^)]*\)\s*\{.*?EngineToggleAuthority\.IsEngineEnabled\(EngineToggleKey\.MapTrade\).*?MapTrade engine disabled by authority' -Label 'MapTrade start gate authority check' -Why 'MapTrade autonomous start must not read raw config directly'
+Assert-TextMatches -RelativePath $guildLoop -Pattern '(?s)public\s+static\s+bool\s+StartNow\s*\([^)]*\)\s*\{.*?EngineToggleAuthority\.IsEngineEnabled\(EngineToggleKey\.GuildLoop\).*?GuildLoop engine disabled by authority' -Label 'GuildLoop start gate authority check' -Why 'GuildLoop autonomous start must not read raw config directly'
 
 Assert-TextContains -RelativePath $doc -Needle '# Engine Toggle Authority' -Why 'handoff doc must exist'
 Assert-TextContains -RelativePath $doc -Needle 'Manual -> Hybrid -> Automation -> Manual' -Why 'cycle order must be documented'
