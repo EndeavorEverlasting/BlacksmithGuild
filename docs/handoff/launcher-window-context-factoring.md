@@ -419,6 +419,11 @@ forces foreground without context or explicit focus policy
 treats operator click as failure when process/log/status evidence proves handoff
 ```
 
+## Verifier anchors
+
+operator guidance shown yes/no
+Runtime proof is not part of this documentation sprint.
+
 ## Contract verifier
 
 The current documentation contract is enforced by:
@@ -463,3 +468,4 @@ Read-TbgLauncherWindowContext
 Write-TbgLauncherWindowContext
 Test-TbgLauncherWindowContextFresh
 ```
+

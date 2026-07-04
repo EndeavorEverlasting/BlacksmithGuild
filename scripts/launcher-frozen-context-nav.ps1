@@ -37,6 +37,7 @@ if (-not $LauncherContextPath) {
 
 $operationMode = if ($LaunchSetup) { 'launcher_setup' } else { 'frozen_navigation' }
 $runtimeProofClaim = $false
+$clickVerifyBudgetMs = 3000
 
 $durationArgs = @{ Caller = "launcher-frozen-context-nav.ps1:$operationMode" }
 if ($PSBoundParameters.ContainsKey('TimeoutSec') -and $TimeoutSec -gt 0) {
@@ -144,6 +145,21 @@ function Test-FrozenHwndValid {
 
 function Test-GameSpawned {
     return [bool](Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
+}
+
+function New-FrozenClickDeadline {
+    param(
+        [Parameter(Mandatory = $true)][datetime]$OverallDeadline,
+        [int]$BudgetMs = 3000
+    )
+
+    $now = Get-Date
+    $clickDeadline = $now.AddMilliseconds($BudgetMs)
+    if ($clickDeadline -gt $OverallDeadline) {
+        return $OverallDeadline
+    }
+
+    return $clickDeadline
 }
 
 function Get-FrozenClickPoint {
@@ -293,7 +309,10 @@ try {
     for ($attempt = 0; $attempt -lt $maxAttempts; $attempt++) {
         if (Test-TbgTestDurationExpired -Deadline $overallDeadline) { break }
         Invoke-FrozenLauncherClick -Hwnd $targetHwnd -ExpectedPid $targetPid -Intent $LaunchIntent -Attempt $attempt
-        $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline
+        $clickDeadline = New-FrozenClickDeadline -OverallDeadline $overallDeadline -BudgetMs $clickVerifyBudgetMs
+        Write-FrozenLaunchLog ('CLICK_VERIFY_STARTED attempt={0} budgetMs={1} operationMode={2} runtimeProofClaim={3}' -f ($attempt + 1), $clickVerifyBudgetMs, $operationMode, $runtimeProofClaim)
+        $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $clickDeadline
+        Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} result={1} operationMode={2} runtimeProofClaim={3}' -f ($attempt + 1), $result, $operationMode, $runtimeProofClaim)
         if ($result -eq 'game_spawned') {
             Write-FrozenLaunchLog ('LAUNCH_STATE={0}_clicked selectedBy=frozen_context attempts={1} operationMode={2} runtimeProofClaim={3}' -f $LaunchIntent, ($attempt + 1), $operationMode, $runtimeProofClaim)
             Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
