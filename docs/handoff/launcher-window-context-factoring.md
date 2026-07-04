@@ -4,6 +4,15 @@ This document is the authoritative plan for factoring launcher PID/window select
 
 It exists because the repo now has a strong baseline-selection spine, but not every entry point is forced to use it. Future agents should start here before touching launcher navigation, focus policy, Continue/Play automation, PR11 attach/execute, governor smoke bootstrap, or dev-save bootstrap.
 
+Related doctrine:
+
+```text
+docs/handoff/launcher-duration-and-log-evidence-doctrine.md
+docs/handoff/duration-entrypoint-sweep.md
+```
+
+These companion docs own the policy that launcher logs are live state, operator activity is valid evidence, and front-door callers may not hide long duration overrides while the callee appears policy-compliant.
+
 ## Why this exists
 
 The old failure pattern was not simply "wrong window selected." The deeper issue was that different scripts made their own launcher/process/window decisions:
@@ -76,6 +85,32 @@ This prevents the bad loop:
 6. repeat analysis until timeout or accidental success
 ```
 
+## Operator action principle
+
+The user may click Play or Continue manually during launcher automation.
+
+A manual click that advances the workflow is evidence, not interference. If the game process spawns, the launcher target invalidates in a way consistent with handoff, `Launch.log` reports `game_spawned`, or the Phase1/status artifacts appear, automation must consume that state transition and proceed to post-handoff classification.
+
+Required classification language:
+
+```text
+operator_click_allowed
+operator_or_external_handoff_detected
+game_spawned_before_script_click
+game_spawned_during_click_phase
+launcher_target_invalidated_after_operator_click
+post_handoff_watch
+```
+
+Forbidden behavior:
+
+```text
+treating user click as automation failure
+waiting for script-click proof after external handoff is already proven
+continuing to click launcher controls after game_spawned
+claiming product PASS from game_spawned alone
+```
+
 ## Fallback ordering principle
 
 Bound PID/window context first. Global PID search second. Coordinate/title/size fallback last, logged, and only with a reason.
@@ -101,6 +136,7 @@ s2_delta_captured
 launcher_target_selected
 launcher_click_phase
 continue_clicked_or_play_clicked
+operator_or_external_handoff_detected
 post_click_spawn_wait
 game_spawned
 post_handoff_watch
@@ -116,6 +152,9 @@ launcher_target_selected -> launcher_click_phase:
 
 continue_clicked_or_play_clicked -> post_click_spawn_wait:
   do not re-enter launcher candidate scoring unless click failure is proven and game has not spawned
+
+operator_or_external_handoff_detected -> post_handoff_watch:
+  accept user/manual/external Play or Continue if logs/process/status prove forward progress
 
 game_spawned -> post_handoff_watch:
   stop clicking launcher controls
@@ -215,6 +254,8 @@ No fallback may be silent.
 PID-global UIA is a fallback only after bound hwnd/pid context fails or is unavailable, and it must log why.
 
 Coordinate fallback is a fallback only after bound hwnd/pid context fails or is unavailable, and it must log why.
+
+Operator activity is valid workflow evidence when logs/process/status prove forward progress.
 
 Dialog handling may use specialized discovery only with an explicit reason because dialogs may not share the launcher hwnd.
 
@@ -375,6 +416,7 @@ rescans all top-level windows after a launcher target has already been selected 
 promotes a spawned game window or Singleplayer window back into launcher click selection
 keeps retrying launcher CONTINUE after game_spawned or handoff state is observed
 forces foreground without context or explicit focus policy
+treats operator click as failure when process/log/status evidence proves handoff
 ```
 
 ## Contract verifier
@@ -393,12 +435,14 @@ A later implementation verifier should fail if any launch-adjacent script calls 
 
 ### Stage 1: Documentation and contract
 
-Status: this document.
+Status: this document plus companion duration/operator evidence doctrine.
 
 Deliverables:
 
 ```text
 docs/handoff/launcher-window-context-factoring.md
+docs/handoff/launcher-duration-and-log-evidence-doctrine.md
+docs/handoff/duration-entrypoint-sweep.md
 docs/operator/governor-test-harness.md section
 scripts/verify-launcher-window-context-contract.ps1
 ```
@@ -418,123 +462,4 @@ Ensure-TbgLauncherWindowContext
 Read-TbgLauncherWindowContext
 Write-TbgLauncherWindowContext
 Test-TbgLauncherWindowContextFresh
-```
-
-### Stage 3: Entry-point migration
-
-Migrate:
-
-```text
-install-mod.ps1
-run-autonomous-assist-session.ps1
-run-pr11-town-travel-launch-attach-execute.ps1
-run-governor-disposable-smoke.ps1
-ensure-dev-save.ps1
-```
-
-### Stage 4: Launcher auto-nav consumption
-
-Add `-LauncherContextPath` to `launcher-auto-nav.ps1` and make it prefer the context over fallback artifact discovery.
-
-The click phase must freeze the selected launcher hwnd/pid and stop rescoring after a valid target is chosen. Re-entry into candidate scoring requires a named invalidation reason.
-
-### Stage 5: Fallback contract hardening
-
-Make verifier fail for normal-path heuristics. Keep dialog exceptions explicit and logged.
-
-### Stage 6: Post-handoff readiness
-
-After game_spawned or handoff, stop launcher clicking and start readiness classification.
-
-Required classifications:
-
-```text
-map_ready
-main_menu_ready
-loading_still_in_progress
-attach_ready
-attach_blocked
-hotkeys_ready
-assistive_commands_ready
-operator_action_required
-post_handoff_idle_unactionable
-```
-
-Required operator guidance:
-
-```text
-message-log or console guidance showing the next available hotkeys/commands once readiness is reached
-```
-
-### Stage 7: Runtime proof
-
-Only after Stage 2-6, run visible mechanics proof on an approved disposable save. Runtime proof is not part of this documentation sprint.
-
-## Final handoff format
-
-Future agents working this lane should use:
-
-```text
-SPRINT HANDOFF - Launcher Window Context Factoring
-
-START:
-- branch:
-- starting SHA:
-- working tree clean:
-
-ANALYSIS:
-- launcher entry points inspected:
-- context gaps found:
-- fallback paths found:
-- repeated S1/S2 reselection found:
-- game window promoted as launcher target found:
-- post-handoff readiness gap found:
-
-IMPLEMENTATION:
-- context file:
-- functions added:
-- entry points migrated:
-- launcher-auto-nav context consumption:
-- target freezing added:
-- fallback logging added:
-- post-handoff readiness classification added:
-- operator guidance added:
-
-VERIFICATION:
-- launcher context verifier:
-- post-attach verifier:
-- governor verifier:
-- BOM:
-- build if source changed:
-
-RUNTIME:
-- live proof run yes/no:
-- if yes, summary path:
-- movement proof classification:
-- post-handoff classification:
-- operator guidance shown yes/no:
-
-EVIDENCE HYGIENE:
-- runtime evidence committed yes/no:
-
-FINAL HYGIENE:
-- git status --short:
-- git diff --check:
-- git log --branches --not --remotes --oneline:
-- git ls-files --others --exclude-standard:
-
-NEXT ACTION:
-- exact next command or blocker:
-```
-
-## Core ruling
-
-```text
-Launcher PID/window selection must become one shared context.
-Every launch-adjacent entry point must use it.
-Existing launcher reuse still needs context.
-S1/S2 delta selection must happen before opening and after opening, then freeze one launcher hwnd/pid for click phase.
-Fallbacks are allowed only when logged and classified.
-Post-handoff readiness must produce a classification and operator guidance.
-The full refactor is a later implementation sprint.
 ```
