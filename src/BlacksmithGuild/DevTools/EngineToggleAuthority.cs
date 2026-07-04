@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using BlacksmithGuild.GuildLoop;
+using BlacksmithGuild.MapTrade;
 
 namespace BlacksmithGuild.DevTools
 {
@@ -117,6 +119,11 @@ namespace BlacksmithGuild.DevTools
                 ApplyModeToConfig(engine, mode);
             }
 
+            if (mode == EngineToggleMode.Manual)
+            {
+                RequestManualHold(source ?? "SetGlobalMode");
+            }
+
             var detail = BuildSummary(source ?? "SetGlobalMode");
             DebugLogger.Test(detail, showInGame: false);
             InGameNotice.Success($"Engines: {ModeLabel(mode)}");
@@ -133,6 +140,12 @@ namespace BlacksmithGuild.DevTools
             EnsureInitialized();
             EngineModes[engine] = mode;
             ApplyModeToConfig(engine, mode);
+            _globalMode = InferGlobalMode();
+            if (mode == EngineToggleMode.Manual)
+            {
+                RequestManualHold(engine, requestedBy ?? "SetEngineMode");
+            }
+
             DebugLogger.Test(
                 $"[TBG ENGINES] {requestedBy ?? "unknown"} set {engine}={mode} reason={reason ?? "none"}",
                 showInGame: false);
@@ -208,10 +221,10 @@ namespace BlacksmithGuild.DevTools
             EngineModes[EngineToggleKey.GuildLoop] = DevToolsConfig.GuildLoopAutonomousMode
                 ? EngineToggleMode.Hybrid
                 : EngineToggleMode.Manual;
-            EngineModes[EngineToggleKey.Cohesion] = EngineToggleMode.Hybrid;
-            EngineModes[EngineToggleKey.HorseMarket] = EngineToggleMode.Hybrid;
-            EngineModes[EngineToggleKey.Smithing] = EngineToggleMode.Hybrid;
-            EngineModes[EngineToggleKey.Companion] = EngineToggleMode.Hybrid;
+            EngineModes[EngineToggleKey.Cohesion] = EngineToggleMode.Manual;
+            EngineModes[EngineToggleKey.HorseMarket] = EngineToggleMode.Manual;
+            EngineModes[EngineToggleKey.Smithing] = EngineToggleMode.Manual;
+            EngineModes[EngineToggleKey.Companion] = EngineToggleMode.Manual;
             EngineModes[EngineToggleKey.Assistive] = DevToolsConfig.AssistiveMode
                 ? EngineToggleMode.Hybrid
                 : EngineToggleMode.Manual;
@@ -221,9 +234,8 @@ namespace BlacksmithGuild.DevTools
 
         private static EngineToggleMode InferGlobalMode()
         {
-            var anyAutomation = false;
-            var anyHybrid = false;
             var allManual = true;
+            var allAutomation = true;
             foreach (var engine in KnownEngines)
             {
                 var mode = EngineModes.ContainsKey(engine) ? EngineModes[engine] : EngineToggleMode.Manual;
@@ -232,14 +244,9 @@ namespace BlacksmithGuild.DevTools
                     allManual = false;
                 }
 
-                if (mode == EngineToggleMode.Automation)
+                if (mode != EngineToggleMode.Automation)
                 {
-                    anyAutomation = true;
-                }
-
-                if (mode == EngineToggleMode.Hybrid)
-                {
-                    anyHybrid = true;
+                    allAutomation = false;
                 }
             }
 
@@ -248,7 +255,7 @@ namespace BlacksmithGuild.DevTools
                 return EngineToggleMode.Manual;
             }
 
-            return anyAutomation && !anyHybrid ? EngineToggleMode.Automation : EngineToggleMode.Hybrid;
+            return allAutomation ? EngineToggleMode.Automation : EngineToggleMode.Hybrid;
         }
 
         private static EngineToggleMode NextMode(EngineToggleMode mode)
@@ -286,6 +293,41 @@ namespace BlacksmithGuild.DevTools
                 case EngineToggleKey.Smithing:
                 case EngineToggleKey.Companion:
                 default:
+                    break;
+            }
+        }
+
+        private static void RequestManualHold(string source)
+        {
+            foreach (var engine in KnownEngines)
+            {
+                RequestManualHold(engine, source);
+            }
+        }
+
+        private static void RequestManualHold(EngineToggleKey engine, string source)
+        {
+            switch (engine)
+            {
+                case EngineToggleKey.MapTrade:
+                    if (MapTradeAutonomousService.IsRunning)
+                    {
+                        DebugLogger.Test(
+                            $"[TBG ENGINES] {source ?? "unknown"} manual hold aborting MapTrade route",
+                            showInGame: false);
+                        MapTradeAutonomousService.AbortNow();
+                    }
+
+                    break;
+                case EngineToggleKey.GuildLoop:
+                    if (AutonomousGuildLoopService.IsRunning)
+                    {
+                        DebugLogger.Test(
+                            $"[TBG ENGINES] {source ?? "unknown"} manual hold aborting GuildLoop route",
+                            showInGame: false);
+                        AutonomousGuildLoopService.AbortNow();
+                    }
+
                     break;
             }
         }
