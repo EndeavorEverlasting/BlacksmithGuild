@@ -43,12 +43,14 @@ function Assert-NotContains {
 }
 
 $handoffDoc = 'docs\handoff\launcher-window-context-factoring.md'
+$durationLogDoc = 'docs\handoff\launcher-duration-and-log-evidence-doctrine.md'
 $operatorDoc = 'docs\operator\governor-test-harness.md'
 $contextHelper = 'scripts\launcher-window-context.ps1'
 $frozenNav = 'scripts\launcher-frozen-context-nav.ps1'
 $durationPolicy = 'scripts\test-duration-policy.ps1'
 
 Assert-Contains $handoffDoc '# Launcher Window Context Factoring' 'canonical handoff doc must exist'
+Assert-Contains $durationLogDoc '# Launcher Duration and Log Evidence Doctrine' 'launcher duration/log doctrine must exist'
 Assert-Contains $operatorDoc '## Launcher Window Context doctrine' 'operator doc must surface doctrine'
 Assert-Contains $operatorDoc 'docs/handoff/launcher-window-context-factoring.md' 'operator doc must link detailed plan'
 Assert-Contains $operatorDoc 'verify-launcher-window-context-contract.ps1' 'operator doc must list verifier'
@@ -84,6 +86,32 @@ foreach ($needle in @(
     'Runtime proof is not part of this documentation sprint.'
 )) {
     Assert-Contains $handoffDoc $needle 'required doctrine text'
+}
+
+foreach ($needle in @(
+    'Launcher logs are live state. They are not decoration.',
+    'Thirty seconds is the default launcher/test budget.',
+    'Front-door wrappers must not pass a long timeout to launcher navigation',
+    'AllowLongRun is present',
+    'LongRunReason is present',
+    'Forge.cmd',
+    'ForgeContinue.cmd',
+    '-TimeoutSec 120',
+    '-TimeoutSec 300',
+    '-TimeoutSec 600',
+    'The overall launch budget is not a per-click budget.',
+    'A PLAY/CONTINUE click gets a short verification window.',
+    'CLICK_VERIFY_POLICY',
+    'CLICK_VERIFY_STARTED',
+    'CLICK_VERIFY_RESULT',
+    'Launch.log',
+    'BlacksmithGuild_Phase1.log',
+    'ForgeStatus.json',
+    'game_spawned != hotkeys_ready',
+    'loaded_game != controlled_runtime',
+    'The verifier must also check that `Forge.cmd` and `ForgeContinue.cmd` do not override the default with a long timeout.'
+)) {
+    Assert-Contains $durationLogDoc $needle 'launcher duration/log doctrine text'
 }
 
 foreach ($entryPoint in @(
@@ -134,7 +162,6 @@ foreach ($sourceCheck in @(
     @{ file = $frozenNav; text = 'Resolve-TbgTestDurationBudget @durationArgs' },
     @{ file = $frozenNav; text = 'New-TbgTestDurationDeadline -Budget $durationBudget' },
     @{ file = $frozenNav; text = 'Test-TbgTestDurationExpired -Deadline $overallDeadline' },
-    @{ file = $frozenNav; text = 'Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = 'Emit-PostHandoffReadiness -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = '$useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)' },
     @{ file = $frozenNav; text = 'if ($useRealInput)' },
@@ -167,12 +194,19 @@ Assert-NotContains $contextHelper 'processId = $pid' 'context must not read from
 Assert-NotContains $contextHelper 'elseif ($pid -ne 0)' 'score logic must not read from a PID-colliding local variable'
 Assert-NotContains $contextHelper 'Start-Sleep -Seconds 2' 'fresh launcher binding must use bounded polling, not a fixed sleep'
 Assert-NotContains $frozenNav '[int]$TimeoutSec = 120' 'frozen nav must default to shared bounded policy, not 120 seconds'
-Assert-NotContains $frozenNav '[int]$WaitSec = 20' 'click verification must use shared overall deadline'
+Assert-NotContains $frozenNav '[int]$WaitSec = 20' 'click verification must use shared/bounded policy, not legacy fixed wait'
 Assert-NotContains $frozenNav 'param([int]$WaitSec = 90)' 'post-handoff readiness must use shared overall deadline'
 Assert-NotContains $frozenNav '.AddSeconds($WaitSec)' 'frozen nav waits must not create independent fixed deadlines'
 Assert-NotContains $frozenNav 'MODE LaunchSetup=true' 'LaunchSetup must be a real operation mode, not a bare log marker'
 Assert-NotContains $frozenNav 'frozen real-input skipped reason=RespectUserForeground target_not_foreground' 'frozen click methods must be mutually exclusive, not layered after SendMessage'
+Assert-NotContains $frozenNav 'Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $overallDeadline' 'one click verification must not be allowed to consume the whole launcher budget'
 Assert-NotContains 'scripts\install-mod.ps1' '-TimeoutSec 120' 'install-mod must not hardcode a long frozen-nav budget'
+Assert-NotContains 'Forge.cmd' '-TimeoutSec 120' 'Forge front door must not bypass the shared 30-second launcher policy'
+Assert-NotContains 'ForgeContinue.cmd' '-TimeoutSec 120' 'ForgeContinue front door must not bypass the shared 30-second launcher policy'
+Assert-NotContains 'Forge.cmd' '-TimeoutSec 300' 'Forge front door must not hide a long launcher wait'
+Assert-NotContains 'ForgeContinue.cmd' '-TimeoutSec 300' 'ForgeContinue front door must not hide a long launcher wait'
+Assert-NotContains 'Forge.cmd' '-TimeoutSec 600' 'Forge front door must not hide a long launcher wait'
+Assert-NotContains 'ForgeContinue.cmd' '-TimeoutSec 600' 'ForgeContinue front door must not hide a long launcher wait'
 Assert-NotContains 'forge.ps1' "[string]`$LaunchIntent = 'play'" 'root forge launch intent must be explicit'
 Assert-NotContains 'scripts\install-mod.ps1' "[string]`$LaunchIntent = 'play'" 'installer launch intent must be explicit'
 Assert-NotContains 'scripts\open-bannerlord-launcher.ps1' "[string]`$LaunchIntent = 'play'" 'launcher context wrapper launch intent must be explicit'
