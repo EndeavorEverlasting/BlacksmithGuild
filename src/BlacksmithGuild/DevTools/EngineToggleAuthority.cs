@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -73,7 +73,7 @@ namespace BlacksmithGuild.DevTools
             EnsureInitialized();
             var summary = BuildSummary(source);
             DebugLogger.Test(summary, showInGame: false);
-            InGameNotice.Info(ModDisplay.CompactLine("Engines", ModeLabel(_globalMode)));
+            InGameNotice.Info($"Engines: {ModeLabel(_globalMode)}");
             return true;
         }
 
@@ -119,7 +119,7 @@ namespace BlacksmithGuild.DevTools
 
             var detail = BuildSummary(source ?? "SetGlobalMode");
             DebugLogger.Test(detail, showInGame: false);
-            InGameNotice.Success(ModDisplay.CompactLine("Engines", ModeLabel(mode)));
+            InGameNotice.Success($"Engines: {ModeLabel(mode)}");
             return true;
         }
 
@@ -138,7 +138,7 @@ namespace BlacksmithGuild.DevTools
                 showInGame: false);
             if (showNotice)
             {
-                InGameNotice.Info(ModDisplay.CompactLine("Engines", $"{engine} {ModeLabel(mode)}"));
+                InGameNotice.Info($"Engines: {engine} {ModeLabel(mode)}");
             }
 
             return true;
@@ -163,7 +163,8 @@ namespace BlacksmithGuild.DevTools
 
         public static bool IsBoundedExecutionAllowed(EngineToggleKey engine)
         {
-            return GetMode(engine) == EngineToggleMode.Automation
+            return engine == EngineToggleKey.Governor
+                   && GetMode(EngineToggleKey.Governor) == EngineToggleMode.Automation
                    && DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution;
         }
 
