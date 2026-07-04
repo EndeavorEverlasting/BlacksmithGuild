@@ -56,6 +56,7 @@ $patternSpecs = @(
 $failures = New-Object System.Collections.Generic.List[object]
 $allowed = New-Object System.Collections.Generic.List[object]
 $baselineAllowed = New-Object System.Collections.Generic.List[object]
+$staleBaseline = New-Object System.Collections.Generic.List[object]
 $baseline = @{}
 
 function Get-TbgRelativePath {
@@ -227,6 +228,12 @@ foreach ($file in $files) {
     }
 }
 
+foreach ($entry in $baseline.GetEnumerator() | Sort-Object Name) {
+    while ($entry.Value.Count -gt 0) {
+        $staleBaseline.Add($entry.Value.Dequeue()) | Out-Null
+    }
+}
+
 if ($allowed.Count -gt 0) {
     Write-Host "INFO: inventory guard allowed $($allowed.Count) explicit long-run marker match(es)."
     foreach ($item in $allowed) {
@@ -241,6 +248,15 @@ if ($baselineAllowed.Count -gt 0) {
     }
 }
 
+if ($staleBaseline.Count -gt 0) {
+    Write-Host "FAIL: test duration inventory baseline contains $($staleBaseline.Count) stale unmatched entr(y/ies)." -ForegroundColor Red
+    foreach ($item in $staleBaseline) {
+        Write-Host ("  STALE {0} [{1}] value={2} class={3} :: {4}" -f $item.Path, $item.Pattern, $item.Value, $item.Class, $item.Text) -ForegroundColor Red
+    }
+    Write-Host ''
+    Write-Host 'Fix: remove stale baseline rows or rerun the inventory after intentional debt changes. Stale baseline debt can bless reintroduced long waits.' -ForegroundColor Yellow
+}
+
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: test duration inventory guard found $($failures.Count) new or undocumented casual long-duration default(s)." -ForegroundColor Red
     foreach ($item in $failures) {
@@ -248,6 +264,9 @@ if ($failures.Count -gt 0) {
     }
     Write-Host ''
     Write-Host 'Fix: keep defaults at 30 seconds, add explicit long-run markers nearby, or document existing debt in docs\handoff\test-duration-inventory-baseline.tsv with a reason.' -ForegroundColor Yellow
+}
+
+if (($staleBaseline.Count -gt 0) -or ($failures.Count -gt 0)) {
     exit 1
 }
 
