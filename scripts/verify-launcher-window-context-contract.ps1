@@ -44,6 +44,7 @@ function Assert-NotContains {
 
 $handoffDoc = 'docs\handoff\launcher-window-context-factoring.md'
 $durationLogDoc = 'docs\handoff\launcher-duration-and-log-evidence-doctrine.md'
+$durationSweepDoc = 'docs\handoff\duration-entrypoint-sweep.md'
 $operatorDoc = 'docs\operator\governor-test-harness.md'
 $contextHelper = 'scripts\launcher-window-context.ps1'
 $frozenNav = 'scripts\launcher-frozen-context-nav.ps1'
@@ -51,6 +52,7 @@ $durationPolicy = 'scripts\test-duration-policy.ps1'
 
 Assert-Contains $handoffDoc '# Launcher Window Context Factoring' 'canonical handoff doc must exist'
 Assert-Contains $durationLogDoc '# Launcher Duration and Log Evidence Doctrine' 'launcher duration/log doctrine must exist'
+Assert-Contains $durationSweepDoc '# Duration Entrypoint Sweep' 'duration entrypoint sweep doctrine must exist'
 Assert-Contains $operatorDoc '## Launcher Window Context doctrine' 'operator doc must surface doctrine'
 Assert-Contains $operatorDoc 'docs/handoff/launcher-window-context-factoring.md' 'operator doc must link detailed plan'
 Assert-Contains $operatorDoc 'verify-launcher-window-context-contract.ps1' 'operator doc must list verifier'
@@ -90,28 +92,81 @@ foreach ($needle in @(
 
 foreach ($needle in @(
     'Launcher logs are live state. They are not decoration.',
+    'Operator action is evidence.',
+    'If the user clicks Play or Continue and the game transitions forward, that is a valid handoff signal, not automation failure.',
     'Thirty seconds is the default launcher/test budget.',
+    'This rule applies everywhere unless a specific path is explicitly declared as a long-run path with a reason.',
     'Front-door wrappers must not pass a long timeout to launcher navigation',
     'AllowLongRun is present',
     'LongRunReason is present',
     'Forge.cmd',
     'ForgeContinue.cmd',
+    'Run-LauncherNavNow.cmd',
+    'Run-LauncherNavPlay.cmd',
     '-TimeoutSec 120',
     '-TimeoutSec 300',
     '-TimeoutSec 600',
+    '-AttachWaitSec 600',
+    '-MaxRuntimeMinutes 30',
     'The overall launch budget is not a per-click budget.',
     'A PLAY/CONTINUE click gets a short verification window.',
+    'operator_or_external_handoff_detected',
+    'game_spawned_before_script_click',
+    'game_spawned_during_click_phase',
     'CLICK_VERIFY_POLICY',
     'CLICK_VERIFY_STARTED',
     'CLICK_VERIFY_RESULT',
     'Launch.log',
     'BlacksmithGuild_Phase1.log',
+    'BlacksmithGuild_Status.json',
+    'RuntimeLifecycle.json',
     'ForgeStatus.json',
+    'BlacksmithGuild_CommandAck.json',
+    'ExternalStateTimeline.json',
     'game_spawned != hotkeys_ready',
     'loaded_game != controlled_runtime',
-    'The verifier must also check that `Forge.cmd` and `ForgeContinue.cmd` do not override the default with a long timeout.'
+    'The verifier must also check that `Forge.cmd`, `ForgeContinue.cmd`, and other launcher-adjacent entry points do not override the default with a long timeout.',
+    'The verifier must require doctrine for operator activity as valid workflow evidence.'
 )) {
     Assert-Contains $durationLogDoc $needle 'launcher duration/log doctrine text'
+}
+
+foreach ($needle in @(
+    'Check the callee.',
+    'Check the caller.',
+    'Check the wrapper.',
+    'Check the runner.',
+    'Thirty seconds is the default budget for tests, verifiers, smoke runs, CMD wrappers, launch wrappers, and observation harnesses.',
+    'Forge.cmd',
+    'ForgeContinue.cmd',
+    'LaunchForgeContinue.cmd',
+    'Run-LauncherNavNow.cmd',
+    'Run-LauncherNavPlay.cmd',
+    'forge.ps1',
+    'scripts/install-mod.ps1',
+    'scripts/open-bannerlord-launcher.ps1',
+    'scripts/launcher-window-context.ps1',
+    'scripts/launcher-frozen-context-nav.ps1',
+    'scripts/launcher-auto-nav.ps1',
+    'scripts/invoke-forge-launch-operator.ps1',
+    'scripts/run-autonomous-assist-session.ps1',
+    'scripts/autonomous-assist-session.ps1',
+    'scripts/run-pr11-town-travel-launch-attach-execute.ps1',
+    'scripts/ensure-dev-save.ps1',
+    'scripts/run-live-assistive-cert.ps1',
+    'scripts/run-stage-b-smithing-advisory-cert.ps1',
+    'scripts/run-stage-c-charcoal-cert.ps1',
+    'scripts/run-town-to-town-trade-assist-cert.ps1',
+    'scripts/run-tavern-hero-intel-cert.ps1',
+    'scripts/run-weapon-smelt-cert.ps1',
+    'scripts/run-character-build-catalog.ps1',
+    'scripts/test-local-iteration-contract-stubs.ps1',
+    '-BootstrapAttachWaitSec 1200',
+    'Evidence-first replacement candidates',
+    'Operator activity is not interference by default.',
+    'Does the verifier cover this caller, not just the callee?'
+)) {
+    Assert-Contains $durationSweepDoc $needle 'duration entrypoint sweep doctrine text'
 }
 
 foreach ($entryPoint in @(
