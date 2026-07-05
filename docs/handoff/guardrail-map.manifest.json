@@ -1,0 +1,37 @@
+{
+  "schema": "TbgDefaultGuardrailMap.v1",
+  "policyId": "default-guardrails",
+  "purpose": "Define the whole-app default guardrail map across repo hygiene, evidence claims, agent workflow, runtime safety, domain automation, and architecture.",
+  "primaryDoc": "docs/handoff/default-guardrails.md",
+  "layers": [
+    "repo hygiene",
+    "evidence and claims",
+    "agent workflow",
+    "runtime and game state",
+    "domain automation",
+    "architecture and orchestration"
+  ],
+  "requiredDistinctions": [
+    "Build PASS does not imply Runtime PASS",
+    "Verifier PASS does not imply Runtime PASS",
+    "Runtime ACK does not imply product completion",
+    "Launcher handoff does not imply automation success",
+    "checkpoint is not completion",
+    "automation allowed is not runtime proof"
+  ],
+  "highestPriorityMissingGuardrails": [
+    "scripts/invoke-agent-stop-hook.ps1",
+    "proof claim discipline verifier",
+    "byte-safe text replacement helper",
+    "runtime contamination classifier",
+    "campaign action evidence schema implementation",
+    "campaign engine boundary verifier"
+  ],
+  "defaultOutputs": [
+    "BlacksmithGuild_AgentFeedback.json",
+    "BlacksmithGuild_AgentRemediationPlan.json",
+    "AgentStopHookSummary.json",
+    "BlacksmithGuild_CampaignActionEvidence.json"
+  ],
+  "contractVerifier": "scripts/verify-default-guardrails-contract.ps1"
+}
