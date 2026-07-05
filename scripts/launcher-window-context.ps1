@@ -58,7 +58,18 @@ function Get-TbgLauncherProcessCandidate {
     param([switch]$PreferVisibleWindow)
     $launchers = @(Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue)
     if ($launchers.Count -eq 0) { return $null }
+
+    foreach ($candidate in $launchers) {
+        try { $candidate.Refresh() } catch { }
+    }
+
     $ordered = @($launchers | Sort-Object @{ Expression = { if ($_.MainWindowHandle -ne [IntPtr]::Zero) { 1 } else { 0 } }; Descending = $true }, StartTime -Descending)
+
+    if ($PreferVisibleWindow) {
+        $visible = @($ordered | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero })
+        if ($visible.Count -gt 0) { return $visible[0] }
+    }
+
     return $ordered[0]
 }
 
@@ -161,12 +172,24 @@ function Ensure-TbgLauncherWindowContext {
         do {
             Start-Sleep -Milliseconds 250
             $launcher = Get-TbgLauncherProcessCandidate -PreferVisibleWindow
+
             if (-not $launcher -and $startedLauncher) {
                 $launcher = Get-Process -Id $startedLauncher.Id -ErrorAction SilentlyContinue
             }
-        } while (-not $launcher -and -not (Test-TbgTestDurationExpired -Deadline $deadline))
+
+            if ($launcher) {
+                try { $launcher.Refresh() } catch { }
+            }
+
+            $hasUsableLauncherHwnd = [bool]($launcher -and $launcher.MainWindowHandle -ne [IntPtr]::Zero)
+        } while (-not $hasUsableLauncherHwnd -and -not (Test-TbgTestDurationExpired -Deadline $deadline))
+
         if (-not $launcher) {
             throw 'Launcher was started, but no launcher process could be bound for context.'
+        }
+
+        if ($launcher.MainWindowHandle -eq [IntPtr]::Zero) {
+            throw 'Launcher was started, but no launcher hwnd could be bound for frozen context.'
         }
     }
 

@@ -144,9 +144,69 @@ function Test-FrozenHwndValid {
 }
 
 function Test-GameSpawned {
-    return [bool](Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue)
+    if (Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue) {
+        return $true
+    }
+
+    $singleplayerHost = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.MainWindowTitle -like 'Mount and Blade II Bannerlord - Singleplayer*'
+        } |
+        Select-Object -First 1
+
+    return [bool]$singleplayerHost
 }
 
+function Get-FrozenLauncherProcessWindow {
+    param(
+        [Parameter(Mandatory = $true)][int]$ExpectedPid,
+        [string]$TitleLike = $null
+    )
+
+    $proc = Get-Process -Id $ExpectedPid -ErrorAction SilentlyContinue
+    if (-not $proc) { return $null }
+
+    try { $proc.Refresh() } catch { }
+
+    $hwnd = [IntPtr]$proc.MainWindowHandle
+    if ($hwnd -eq [IntPtr]::Zero) { return $null }
+
+    $title = [string]$proc.MainWindowTitle
+    if ($TitleLike -and $title -notlike $TitleLike) { return $null }
+
+    return [pscustomobject][ordered]@{
+        processId = [int]$proc.Id
+        hwnd = $hwnd
+        title = $title
+        processName = [string]$proc.ProcessName
+    }
+}
+
+function Test-FrozenSafeModeWindow {
+    param([Parameter(Mandatory = $true)][int]$ExpectedPid)
+
+    return [bool](Get-FrozenLauncherProcessWindow -ExpectedPid $ExpectedPid -TitleLike '*Safe Mode*')
+}
+function Invoke-FrozenSafeModeDecline {
+    param(
+        [Parameter(Mandatory = $true)][IntPtr]$Hwnd,
+        [Parameter(Mandatory = $true)][int]$ExpectedPid
+    )
+
+    if ($Hwnd -eq [IntPtr]::Zero) {
+        throw 'safe mode decline requested without a usable hwnd'
+    }
+
+    [void][FrozenLauncherNative]::SetForegroundWindow($Hwnd)
+    Start-Sleep -Milliseconds 200
+
+    $shell = New-Object -ComObject WScript.Shell
+    [void]$shell.AppActivate($ExpectedPid)
+    Start-Sleep -Milliseconds 150
+
+    $shell.SendKeys('%n')
+    Start-Sleep -Milliseconds 500
+}
 function New-FrozenClickDeadline {
     param(
         [Parameter(Mandatory = $true)][datetime]$OverallDeadline,
@@ -294,6 +354,16 @@ try {
         throw 'frozen launcher context target is invalid before click phase'
     }
 
+    $alreadyRunningProcess = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
+    if ($alreadyRunningProcess) { try { $alreadyRunningProcess.Refresh() } catch { } }
+    $alreadyRunningTitle = if ($alreadyRunningProcess) { [string]$alreadyRunningProcess.MainWindowTitle } else { '' }
+    if ($alreadyRunningTitle -like 'Mount and Blade II Bannerlord - Singleplayer*') {
+        $alreadyRunningHwnd = if ($alreadyRunningProcess) { [IntPtr]$alreadyRunningProcess.MainWindowHandle } else { [IntPtr]::Zero }
+        $safeAlreadyRunningTitle = $alreadyRunningTitle -replace '"', ''''
+        Write-FrozenLaunchLog ('LAUNCH_STATE=already_running_game classification=already_running_game hwnd={0} pid={1} title="{2}" reason=continue_target_is_live_singleplayer_host operationMode={3} runtimeProofClaim={4}' -f $alreadyRunningHwnd.ToInt64(), $targetPid, $safeAlreadyRunningTitle, $operationMode, $runtimeProofClaim)
+        throw 'operator_action_required: Bannerlord Singleplayer is already running; close it before ForgeContinue.'
+    }
+
     if (Test-GameSpawned) {
         Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned before_click=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
         if ($LaunchSetup) {
@@ -335,6 +405,77 @@ try {
                 if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
                 exit 0
             }
+            $postInvalidationHandoffBudgetMs = 5000
+            Write-FrozenLaunchLog ('LAUNCH_STATE=post_invalidation_handoff_watch classification=frozen_target_invalidated waiting_for=game_spawned_or_safe_mode budgetMs={0} operationMode={1} runtimeProofClaim={2}' -f $postInvalidationHandoffBudgetMs, $operationMode, $runtimeProofClaim)
+            $safeModeWindow = $null
+            $postInvalidationResult = $null
+            $handoffStop = (Get-Date).AddMilliseconds($postInvalidationHandoffBudgetMs)
+            do {
+                if (Test-GameSpawned) {
+                    $postInvalidationResult = 'game_spawned'
+                    break
+                }
+
+                $safeModeWindow = Get-FrozenLauncherProcessWindow -ExpectedPid $targetPid -TitleLike '*Safe Mode*'
+                if ($safeModeWindow) {
+                    $postInvalidationResult = 'safe_mode_detected'
+                    break
+                }
+
+                Start-Sleep -Milliseconds 250
+            } while ((Get-Date) -lt $handoffStop)
+
+            if ($postInvalidationResult) {
+                Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} postInvalidationResult={1} operationMode={2} runtimeProofClaim={3}' -f ($attempt + 1), $postInvalidationResult, $operationMode, $runtimeProofClaim)
+            } else {
+                Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} postInvalidationResult=handoff_not_observed_after_invalidation operationMode={1} runtimeProofClaim={2}' -f ($attempt + 1), $operationMode, $runtimeProofClaim)
+            }
+
+            if ($postInvalidationResult -eq 'game_spawned') {
+                Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned evidence=frozen_target_invalidated_then_game_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+                $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
+                if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
+                exit 0
+            }
+            if ($safeModeWindow) {
+                $safeModeHwnd = [IntPtr]$safeModeWindow.hwnd
+                Write-FrozenLaunchLog ('LAUNCH_STATE=safe_mode_detected classification=safe_mode_modal hwnd={0} pid={1} title="{2}" action=decline_safe_mode_required operationMode={3} runtimeProofClaim={4}' -f `
+                    $safeModeHwnd.ToInt64(), $targetPid, $safeModeWindow.title, $operationMode, $runtimeProofClaim)
+
+                Invoke-FrozenSafeModeDecline -Hwnd $safeModeHwnd -ExpectedPid $targetPid
+                Write-FrozenLaunchLog ('CLICK_SAFE_MODE_RESULT attempt={0} result=decline_dispatched method=alt_n hwnd={1} pid={2} operationMode={3} runtimeProofClaim={4}' -f ($attempt + 1), $safeModeHwnd.ToInt64(), $targetPid, $operationMode, $runtimeProofClaim)
+
+                $safeModeDeclineHandoffBudgetMs = 60000
+                Write-FrozenLaunchLog ('LAUNCH_STATE=post_safe_mode_decline_handoff_watch classification=safe_mode_declined waiting_for=game_spawned budgetMs={0} operationMode={1} runtimeProofClaim={2}' -f $safeModeDeclineHandoffBudgetMs, $operationMode, $runtimeProofClaim)
+
+                $safeModeDeclineStop = (Get-Date).AddMilliseconds($safeModeDeclineHandoffBudgetMs)
+                do {
+                    if (Test-GameSpawned) {
+                        Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} postSafeModeDeclineResult=game_spawned operationMode={1} runtimeProofClaim={2}' -f ($attempt + 1), $operationMode, $runtimeProofClaim)
+                        Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned evidence=safe_mode_declined_then_game_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+                        if ($LaunchSetup) {
+                            Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+                        }
+                        $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
+                        if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
+                        exit 0
+                    }
+
+                    Start-Sleep -Milliseconds 250
+                } while (((Get-Date) -lt $safeModeDeclineStop) -and (-not (Test-TbgTestDurationExpired -Deadline $overallDeadline)))
+
+                $postDeclineSafeModeWindow = Get-FrozenLauncherProcessWindow -ExpectedPid $targetPid -TitleLike '*Safe Mode*'
+                if ($postDeclineSafeModeWindow) {
+                    Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} postSafeModeDeclineResult=safe_mode_still_present operationMode={1} runtimeProofClaim={2}' -f ($attempt + 1), $operationMode, $runtimeProofClaim)
+                    Write-FrozenLaunchLog ('LAUNCH_STATE=operator_action_required classification=operator_action_required reason=safe_mode_still_present_after_alt_n operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+                    throw 'operator_action_required: Safe Mode still present after Alt+N decline'
+                }
+
+                Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} postSafeModeDeclineResult=game_not_spawned operationMode={1} runtimeProofClaim={2}' -f ($attempt + 1), $operationMode, $runtimeProofClaim)
+                Write-FrozenLaunchLog ('LAUNCH_STATE=operator_action_required classification=operator_action_required reason=safe_mode_declined_but_game_not_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+                throw 'operator_action_required: Safe Mode declined but game did not spawn'
+            }
+
             throw 'frozen launcher target invalidated before game spawned'
         }
         Write-FrozenLaunchLog ('LAUNCH_STATE=click_unverified_timeout attempt={0} selectionFrozen=true rescoring=disabled operationMode={1} runtimeProofClaim={2}' -f ($attempt + 1), $operationMode, $runtimeProofClaim)
