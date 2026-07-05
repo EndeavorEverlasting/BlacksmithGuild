@@ -12,7 +12,16 @@ param(
     [string]$LaunchIntent = 'continue',
     [switch]$DryRun,
     [ValidateSet('normal','long_distance_travel','large_smithing','mass_trade')]
-    [string]$ActionTimeoutClass = 'normal'
+    [string]$ActionTimeoutClass = 'normal',
+    [ValidateSet('None','Observe','SyntheticFocusPulse','ForegroundLease')]
+    [string]$FocusKeeperMode = 'None',
+    [int]$FocusKeeperDurationSeconds = 180,
+    [int]$FocusKeeperPulseMilliseconds = 500,
+    [int]$FocusKeeperWaitForWindowSeconds = 720,
+    [switch]$SendUnpausePulse,
+    [ValidateSet('Space','D1','D2','D3')]
+    [string]$UnpauseKey = 'D3',
+    [switch]$StopBeforeLaunch
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,6 +36,9 @@ if ($stubSurfaceContractAvailable) { . $stubSurfaceContractPath }
 if ($MaxIterations -lt 1) { throw 'MaxIterations must be >= 1' }
 if ($RepeatThreshold -lt 2) { throw 'RepeatThreshold must be >= 2' }
 if ($NormalActionTimeoutSec -gt 30) { throw 'NormalActionTimeoutSec must not exceed 30 seconds' }
+if ($FocusKeeperDurationSeconds -lt 1) { throw 'FocusKeeperDurationSeconds must be >= 1' }
+if ($FocusKeeperPulseMilliseconds -lt 100) { throw 'FocusKeeperPulseMilliseconds must be >= 100' }
+if ($FocusKeeperWaitForWindowSeconds -lt 0) { throw 'FocusKeeperWaitForWindowSeconds must be >= 0' }
 
 $sessionId = 'reboot' + (Get-Date).ToString('yyyyMMdd-HHmmss') + '-reboot-session'
 $rebootDir = Join-Path $repoRoot (Join-Path 'docs\evidence' $sessionId)
@@ -72,6 +84,16 @@ function Get-LatestAutonomousAssistEvidenceDir {
         Select-Object -First 1
 }
 
+function Get-LatestFocusedRouteProofDir {
+    param([datetime]$SinceUtc)
+    $root = Join-Path $repoRoot 'docs\evidence\focused-route-proof'
+    if (-not (Test-Path -LiteralPath $root)) { return $null }
+    return Get-ChildItem -LiteralPath $root -Directory -Filter 'focused-route-proof-*' |
+        Where-Object { $_.LastWriteTimeUtc -ge $SinceUtc.AddMinutes(-2) } |
+        Sort-Object LastWriteTimeUtc -Descending |
+        Select-Object -First 1
+}
+
 function New-RebootMissingEvidenceContext {
     param([string]$Reason)
     $ctx = [ordered]@{
@@ -109,6 +131,7 @@ try {
 Write-Host 'The Blacksmith Guild - Forge Reboot' -ForegroundColor Cyan
 Write-Host "Evidence: $rebootDir"
 Write-Host "Normal action timeout: ${NormalActionTimeoutSec}s; action class=$ActionTimeoutClass execute timeout=${executeTimeout}s"
+Write-Host "Focus keeper mode: $FocusKeeperMode"
 if ($stubSurfaceStatus.hasIntentionalStubs) {
     Write-Host "Stub surfaces: $($stubSurfaceStatus.stubCount) intentional stubs; product-proof blockers=$($stubSurfaceStatus.blockingProductProofStubCount)" -ForegroundColor Yellow
 }
@@ -119,6 +142,7 @@ $repeatCount = 1
 $stableGap = $false
 $latestContext = $null
 $latestEvidence = $null
+$latestFocusedRouteProofPath = $null
 
 for ($i = 1; $i -le $MaxIterations; $i++) {
     if ($script:RebootOperatorStopRequested -or (Test-GovernorStopRequested -RepoRoot $repoRoot)) {
@@ -128,11 +152,20 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
         break
     }
     $runStartedUtc = (Get-Date).ToUniversalTime()
-    $runnerArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1'),
+    $runnerScript = if ($FocusKeeperMode -eq 'None') { 'run-autonomous-assist-session.ps1' } else { 'run-focused-route-proof-session.ps1' }
+    $runnerArgs = @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $PSScriptRoot $runnerScript),
         '-LaunchIntent',$LaunchIntent,'-ProbeTimeoutSec',$NormalActionTimeoutSec,'-ExecuteTimeoutSec',$executeTimeout)
     if ($AllowFocusSteal) { $runnerArgs += '-AllowFocusSteal' }
     if ($SkipBuild -or $DryRun) { $runnerArgs += '-SkipBuild' }
     if ($DryRun) { $runnerArgs += '-DryRun' }
+    if ($FocusKeeperMode -ne 'None') {
+        $runnerArgs += @('-FocusKeeperMode', $FocusKeeperMode,
+            '-FocusKeeperDurationSeconds', $FocusKeeperDurationSeconds,
+            '-FocusKeeperPulseMilliseconds', $FocusKeeperPulseMilliseconds,
+            '-FocusKeeperWaitForWindowSeconds', $FocusKeeperWaitForWindowSeconds)
+        if ($SendUnpausePulse) { $runnerArgs += @('-SendUnpausePulse', '-UnpauseKey', $UnpauseKey) }
+        if ($StopBeforeLaunch) { $runnerArgs += '-StopBeforeLaunch' }
+    }
     $commandLine = 'powershell ' + ($runnerArgs -join ' ')
     $commandsRun.Add($commandLine) | Out-Null
     Write-Host "Iteration ${i}/${MaxIterations}: $commandLine" -ForegroundColor DarkCyan
@@ -141,13 +174,25 @@ for ($i = 1; $i -le $MaxIterations; $i++) {
     $outputPath = Join-Path $rebootDir ("iteration-{0}-runner-output.txt" -f $i)
     Set-Content -LiteralPath $outputPath -Value @($output) -Encoding UTF8
     $evidenceDirInfo = Get-LatestAutonomousAssistEvidenceDir -SinceUtc $runStartedUtc
+    $focusedDirInfo = if ($FocusKeeperMode -ne 'None') { Get-LatestFocusedRouteProofDir -SinceUtc $runStartedUtc } else { $null }
+    $latestFocusedRouteProofPath = if ($focusedDirInfo) { $focusedDirInfo.FullName } else { $latestFocusedRouteProofPath }
     $evidencePath = if ($evidenceDirInfo) { $evidenceDirInfo.FullName } else { $null }
     $context = if ($evidencePath) { New-RebootNormalizedContext -EvidencePath $evidencePath } else { New-RebootMissingEvidenceContext -Reason 'runner_evidence_missing' }
     $latestContext = $context
     $latestEvidence = $evidencePath
     $matchesPrevious = Test-RebootContextRepeat -A $previous -B $context
     $repeatCount = if ($matchesPrevious) { $repeatCount + 1 } else { 1 }
-    $iterationRecords.Add([ordered]@{ iteration = $i; runnerExit = $runnerExit; evidencePath = $evidencePath; outputPath = $outputPath; repeatCount = $repeatCount; normalizedContext = $context; stubSurfaceStatus = $stubSurfaceStatus }) | Out-Null
+    $iterationRecords.Add([ordered]@{
+        iteration = $i
+        runnerScript = $runnerScript
+        runnerExit = $runnerExit
+        evidencePath = $evidencePath
+        focusedRouteProofPath = if ($focusedDirInfo) { $focusedDirInfo.FullName } else { $null }
+        outputPath = $outputPath
+        repeatCount = $repeatCount
+        normalizedContext = $context
+        stubSurfaceStatus = $stubSurfaceStatus
+    }) | Out-Null
     Write-RebootJson -Object @($iterationRecords.ToArray()) -Path (Join-Path $rebootDir 'reboot-iterations.json') | Out-Null
     if ($script:RebootOperatorStopRequested -or (Test-GovernorStopRequested -RepoRoot $repoRoot) -or $context.stopReason -eq 'operator_stop_forge_stop') {
         $operatorStopRequested = $true
@@ -175,6 +220,9 @@ $summary = [ordered]@{
     repeatedContext = [bool]$stableGap
     operatorStopRequested = [bool]$operatorStopRequested
     operatorStopReason = $operatorStopReason
+    focusKeeperMode = $FocusKeeperMode
+    focusKeeperDurationSeconds = if ($FocusKeeperMode -ne 'None') { $FocusKeeperDurationSeconds } else { $null }
+    latestFocusedRouteProofPath = $latestFocusedRouteProofPath
     latestEvidencePath = $latestEvidence
     latestNormalizedContext = $latestContext
     stubSurfaceStatus = $stubSurfaceStatus
