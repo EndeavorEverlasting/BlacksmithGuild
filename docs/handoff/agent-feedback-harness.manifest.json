@@ -1,0 +1,48 @@
+{
+  "schema": "TbgAgentFeedbackHarnessManifest.v1",
+  "policyId": "agent-feedback-harness",
+  "purpose": "Translate repo logs, JSON artifacts, verifier output, and worktree state into sprint-ready LLM feedback.",
+  "plannedOutput": "BlacksmithGuild_AgentFeedback.json",
+  "doctrineFiles": [
+    "docs/handoff/agent-feedback-harness.md",
+    "docs/handoff/agent-feedback-schema.md"
+  ],
+  "requiredClassificationStates": [
+    "checkpoint_reached",
+    "checkpoint_blocked",
+    "contract_pass",
+    "contract_fail",
+    "runtime_ready",
+    "runtime_blocked",
+    "operator_action_required",
+    "unsafe_surface",
+    "stale_evidence",
+    "unclassified"
+  ],
+  "requiredFeedbackFields": [
+    "schema",
+    "generatedUtc",
+    "repoState",
+    "classification",
+    "evidence",
+    "allowedClaims",
+    "forbiddenClaims",
+    "blockers",
+    "nextSprint",
+    "validation"
+  ],
+  "firstImplementationSlice": [
+    "Codify doctrine",
+    "Add schema",
+    "Add verifier",
+    "Plan write-agent-feedback-summary.ps1"
+  ],
+  "nonGoals": [
+    "merge PRs automatically",
+    "mutate saves",
+    "run live certs by default",
+    "claim gameplay automation completion",
+    "replace raw logs"
+  ],
+  "futureVerifier": "scripts/verify-agent-feedback-harness-contract.ps1"
+}
