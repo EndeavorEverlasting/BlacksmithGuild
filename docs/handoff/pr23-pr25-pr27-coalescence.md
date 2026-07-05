@@ -185,6 +185,42 @@ If a future change needs more than 30 seconds by default, it must either:
 
 The second option should be rare. Adding debt is not progress. It is a confession with a line number.
 
+## Unified handoff doctrine attached to PR #27
+
+PR #27 now carries the doctrine for the next sprint seam:
+
+```text
+docs/handoff/unified-activity-handoff-doctrine.md
+```
+
+Purpose:
+
+```text
+standardize handoff records across launcher, runtime readiness, engine authority, domain engines, checkpoints, tests, operator actions, and finalization
+```
+
+The doctrine defines a valid handoff as a transfer of:
+
+```text
+authority
+state
+evidence
+next responsibility
+duration budget
+blocked fallback
+```
+
+It introduces the future implementation target:
+
+```text
+handoff.recorded
+BlacksmithGuild_HandoffEvents.jsonl
+```
+
+The handoff doctrine belongs in PR #27 because the duration guard prevents fake handoffs from hiding behind longer waits. If a handoff cannot classify state inside the default budget, it must emit pending, blocked, or operator-action-required state rather than silently stretching timeout defaults.
+
+PR #27 does not implement the handoff event stream. It attaches the doctrine so the next implementation sprint has a concrete contract instead of theory vapor.
+
 ## Next implementation lanes after coalescence
 
 ### Lane A: post-handoff readiness bridge
@@ -208,6 +244,7 @@ ForgeStatus.json
 BlacksmithGuild_CommandAck.json
 BlacksmithGuild_CommandInbox.json
 ExternalStateTimeline.json
+BlacksmithGuild_HandoffEvents.jsonl
 ```
 
 ### Lane B: migrate runtime readers to EngineToggleAuthority
@@ -241,6 +278,7 @@ runtime ready
   -> observe visible mechanism or blocked reason
   -> refresh state
   -> write checkpoint
+  -> emit handoff to next branch or terminal finalization
 ```
 
 Do not jump from launch success to autonomous loop claims.
@@ -278,6 +316,42 @@ then reduce baseline debt
 ```
 
 Do not change gameplay behavior while doing the first duration migration.
+
+### Lane F: unified handoff event stream
+
+After PR #27 lands, implement the handoff contract from:
+
+```text
+docs/handoff/unified-activity-handoff-doctrine.md
+```
+
+First implementation target:
+
+```text
+BlacksmithGuild_HandoffEvents.jsonl
+```
+
+Minimum event set:
+
+```text
+handoff.recorded
+handoff.blocked
+handoff.terminal
+```
+
+First required seams:
+
+```text
+launcher_to_runtime
+runtime_to_readiness
+readiness_to_authority
+authority_to_engine
+engine_to_checkpoint
+checkpoint_to_next_branch
+system_to_terminal
+```
+
+The verifier should reject missing `toOwner`, missing evidence files, checkpoint-as-terminal collapse, raw config booleans as authority, and undocumented long handoff waits.
 
 ## Required validation commands
 
