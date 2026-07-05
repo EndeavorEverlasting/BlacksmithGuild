@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This file maps active or recently active lanes so agents can pick a safe concurrent sprint without confusing branches, proof types, or validation gates.
+This file maps active or recently active lanes so agents can pick a safe concurrent sprint without confusing branches, proof types, validation gates, or local checkout paths.
 
 ## Lane A: Agent feedback and guardrail stack
 
@@ -43,6 +43,7 @@ Avoid:
 runtime gameplay mutation
 live cert claims
 merge-ready claims before local validation
+branch switching inside the protected local main checkout
 ```
 
 ## Lane B: Launcher / route-owned clock / runtime proof
@@ -61,7 +62,7 @@ Safe concurrent work:
 proof classification
 runtime contamination detection
 launcher handoff evidence capture
-byte-safe patch helpers
+byte-safe replacement helpers
 ```
 
 Avoid:
@@ -70,6 +71,7 @@ Avoid:
 route logic changes while fixing launcher handoff seams
 movement proof claims from launcher-only evidence
 manual input contamination during zero-click proof
+branch switching inside the protected local main checkout
 ```
 
 ## Lane C: Governor / campaign handoff
@@ -97,6 +99,7 @@ Avoid:
 direct engine-to-engine chaining
 authority bypass
 silent irreversible gameplay choices
+branch switching inside the protected local main checkout
 ```
 
 ## Lane D: Route/profile command contracts
@@ -119,6 +122,7 @@ Avoid:
 
 ```text
 mixing route/profile config success with runtime route proof
+branch switching inside the protected local main checkout
 ```
 
 ## Lane E: Economic loop / sell loop legacy branches
@@ -146,6 +150,7 @@ Avoid:
 ```text
 pulling old stale proof into current guardrail claims
 reviving legacy runtime claims without fresh branch/head validation
+branch switching inside the protected local main checkout
 ```
 
 ## Default concurrent sprint rule
@@ -167,4 +172,16 @@ live runtime mutation
 save mutation
 automation claims
 cross-engine behavioral changes
+branch switching inside the protected local main checkout
 ```
+
+## Local worktree rule
+
+Every lane must be executed from a lane-specific worktree unless the operator explicitly says otherwise.
+
+```text
+BlacksmithGuild = protected local main checkout
+BlacksmithGuild-prNN-short-description = PR/lane worktree
+```
+
+Validation commands and generated helper runs belong in the PR/lane worktree.
