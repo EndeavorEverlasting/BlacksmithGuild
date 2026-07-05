@@ -271,6 +271,15 @@ Assert-NotContains 'scripts\install-mod.ps1' 'launcher-auto-nav.ps1' 'raw forge.
 
 Assert-Contains $operatorDoc 'This is currently a documented factoring plan, not a completed implementation refactor.' 'operator doc must not overclaim'
 
+$safeModeDoctrineVerifier = Join-Path $PSScriptRoot 'verify-launcher-safe-mode-doctrine.ps1'
+if (-not (Test-Path -LiteralPath $safeModeDoctrineVerifier)) {
+    $failures.Add('missing Safe Mode doctrine verifier: scripts\verify-launcher-safe-mode-doctrine.ps1') | Out-Null
+} else {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $safeModeDoctrineVerifier
+    if ($LASTEXITCODE -ne 0) {
+        $failures.Add('launcher Safe Mode doctrine verifier failed') | Out-Null
+    }
+}
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: launcher window context contract has $($failures.Count) issue(s)." -ForegroundColor Red
     foreach ($failure in $failures) { Write-Host "  - $failure" -ForegroundColor Red }
