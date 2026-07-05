@@ -29,6 +29,7 @@ function Assert-TextContains {
 
 $harnessDoc = 'docs\handoff\agent-feedback-harness.md'
 $schemaDoc = 'docs\handoff\agent-feedback-schema.md'
+$reviewDoc = 'docs\handoff\agentic-review-bottleneck-doctrine.md'
 $manifest = 'docs\handoff\agent-feedback-harness.manifest.json'
 
 Assert-TextContains -RelativePath $harnessDoc -Needle '# Agent Feedback Harness Doctrine' -Why 'main doctrine must exist'
@@ -61,12 +62,28 @@ Assert-TextContains -RelativePath $schemaDoc -Needle 'proof_bundle' -Why 'proof 
 Assert-TextContains -RelativePath $schemaDoc -Needle 'Freshness doctrine' -Why 'freshness rules must be documented'
 Assert-TextContains -RelativePath $schemaDoc -Needle 'Do not emit validation that belongs to another PR' -Why 'validation must be branch-specific'
 
+Assert-TextContains -RelativePath $reviewDoc -Needle '# Agentic Review Bottleneck Doctrine' -Why 'review bottleneck doctrine must exist'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'The primary bottleneck is interpretation and review' -Why 'review bottleneck must be named'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Harness over model' -Why 'harness-over-model principle must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Engineer the environment' -Why 'environment engineering principle must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Static analysis rules' -Why 'static guardrail family must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Architectural unit tests' -Why 'architecture guardrail family must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Stop hooks' -Why 'stop hook feedback loop must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Behavioral specifications' -Why 'TDD-style behavioral specs must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'Data mining sessions' -Why 'operator corrections must become guardrails'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'cognitive surrender' -Why 'human responsibility boundary must be documented'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'scripts/write-agent-feedback-summary.ps1' -Why 'first implementation writer must be named'
+Assert-TextContains -RelativePath $reviewDoc -Needle 'scripts/invoke-agent-stop-hook.ps1' -Why 'future stop hook script must be named'
+
 Assert-TextContains -RelativePath $manifest -Needle '"policyId": "agent-feedback-harness"' -Why 'manifest must name policy id'
 Assert-TextContains -RelativePath $manifest -Needle '"plannedOutput": "BlacksmithGuild_AgentFeedback.json"' -Why 'manifest must name output file'
+Assert-TextContains -RelativePath $manifest -Needle '"docs/handoff/agentic-review-bottleneck-doctrine.md"' -Why 'manifest must register review bottleneck doctrine'
 Assert-TextContains -RelativePath $manifest -Needle '"checkpoint_reached"' -Why 'manifest must list checkpoint state'
 Assert-TextContains -RelativePath $manifest -Needle '"stale_evidence"' -Why 'manifest must list stale evidence state'
 Assert-TextContains -RelativePath $manifest -Needle '"allowedClaims"' -Why 'manifest must require allowed claims'
 Assert-TextContains -RelativePath $manifest -Needle '"forbiddenClaims"' -Why 'manifest must require forbidden claims'
+Assert-TextContains -RelativePath $manifest -Needle '"stop hooks"' -Why 'manifest must register stop hooks as a guardrail family'
+Assert-TextContains -RelativePath $manifest -Needle '"data-mined operator corrections"' -Why 'manifest must register correction mining as a guardrail family'
 Assert-TextContains -RelativePath $manifest -Needle '"futureVerifier": "scripts/verify-agent-feedback-harness-contract.ps1"' -Why 'manifest must point to this verifier'
 
 if ($failures.Count -gt 0) {
