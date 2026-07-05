@@ -5,7 +5,8 @@
   "plannedOutput": "BlacksmithGuild_AgentFeedback.json",
   "doctrineFiles": [
     "docs/handoff/agent-feedback-harness.md",
-    "docs/handoff/agent-feedback-schema.md"
+    "docs/handoff/agent-feedback-schema.md",
+    "docs/handoff/agentic-review-bottleneck-doctrine.md"
   ],
   "requiredClassificationStates": [
     "checkpoint_reached",
@@ -31,18 +32,27 @@
     "nextSprint",
     "validation"
   ],
+  "guardrailFamilies": [
+    "static-analysis rules",
+    "architectural unit tests",
+    "stop hooks",
+    "behavioral specifications",
+    "data-mined operator corrections"
+  ],
   "firstImplementationSlice": [
     "Codify doctrine",
     "Add schema",
     "Add verifier",
-    "Plan write-agent-feedback-summary.ps1"
+    "Plan write-agent-feedback-summary.ps1",
+    "Plan invoke-agent-stop-hook.ps1"
   ],
   "nonGoals": [
     "merge PRs automatically",
     "mutate saves",
     "run live certs by default",
     "claim gameplay automation completion",
-    "replace raw logs"
+    "replace raw logs",
+    "remove human architecture responsibility"
   ],
   "futureVerifier": "scripts/verify-agent-feedback-harness-contract.ps1"
 }
