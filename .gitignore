@@ -82,3 +82,6 @@ Mount & Blade II Bannerlord/
 *.pdb
 *.mdb
 *.rsuser
+
+# Local proof/evidence artifacts
+artifacts/
