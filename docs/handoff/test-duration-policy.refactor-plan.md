@@ -1,4 +1,4 @@
-# Test duration refactor plan
+﻿# Test Duration Policy Refactor Plan
 
 ## Objective
 

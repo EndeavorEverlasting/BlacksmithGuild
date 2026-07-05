@@ -41,9 +41,9 @@ namespace BlacksmithGuild.GuildLoop
             _abortRequested = false;
             GameSessionState.Refresh();
 
-            if (!DevToolsConfig.GuildLoopAutonomousMode)
+            if (!EngineToggleAuthority.IsEngineEnabled(EngineToggleKey.GuildLoop))
             {
-                LastFailReason = "GuildLoopAutonomousMode disabled";
+                LastFailReason = "GuildLoop engine disabled by authority";
                 return false;
             }
 

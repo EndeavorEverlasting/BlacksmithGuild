@@ -69,9 +69,9 @@ namespace BlacksmithGuild.MapTrade
             _abortRequested = false;
             GameSessionState.Refresh();
 
-            if (!DevToolsConfig.MapTradeAutonomousMode)
+            if (!EngineToggleAuthority.IsEngineEnabled(EngineToggleKey.MapTrade))
             {
-                LastFailReason = "MapTradeAutonomousMode disabled";
+                LastFailReason = "MapTrade engine disabled by authority";
                 return false;
             }
 
