@@ -76,8 +76,8 @@ $errors = $null
 ) | Out-Null
 
 if ($errors.Count -gt 0) {
-    foreach ($error in $errors) {
-        $failures.Add("parse error: $($error.Message)") | Out-Null
+    foreach ($parseError in $errors) {
+        $failures.Add("parse error: $($parseError.Message)") | Out-Null
     }
 }
 
