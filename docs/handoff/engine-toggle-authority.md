@@ -250,6 +250,8 @@ Future agents should keep offline verifiers and contract tests centered around 3
 
 This first slice adds the authority and the user hotkey. Existing engine services still use some low-level `DevToolsConfig` booleans, but those booleans are now mutated by the authority when the global mode changes.
 
+The next implementation sprint should migrate direct readers to authority calls.
+
 The next implementation sprint should migrate remaining direct readers to authority calls, especially:
 
 ```text
