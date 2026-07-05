@@ -101,6 +101,105 @@ Boundary:
 This is more honest for runtime proof, but it can interrupt the operator because Windows only has one real foreground window.
 ```
 
+## PID and window ownership rule
+
+The focus keeper must not invent a parallel Bannerlord PID protocol.
+
+It must first use existing repo runtime detection:
+
+```text
+Get-BannerlordRootFromRepo
+Get-BannerlordProcessDetection
+Get-Phase1LogPath
+Get-StatusJsonPath
+Get-CrashContextJsonPath
+```
+
+Only after that may it use window fallback logic for the selected PID.
+
+Hints are allowed only as overrides:
+
+```text
+-ProcessIdHint
+-WindowHandleHint
+```
+
+## Handoff surfaces
+
+### Direct focus keeper
+
+```text
+scripts/start-bannerlord-focus-keeper.ps1
+```
+
+Writes:
+
+```text
+BlacksmithGuild_FocusLease.json
+```
+
+### Focus-owned session wrapper
+
+```text
+scripts/run-focused-route-proof-session.ps1
+```
+
+Responsibilities:
+
+```text
+start focus keeper
+run scripts/run-autonomous-assist-session.ps1
+capture runner output
+write focused-route-proof-summary.json
+stop focus keeper after runner completion if still running
+```
+
+### ForgeReboot hook
+
+```text
+scripts/run-reboot-iteration.ps1 -FocusKeeperMode SyntheticFocusPulse
+```
+
+When `FocusKeeperMode` is not `None`, ForgeReboot routes each iteration through:
+
+```text
+scripts/run-focused-route-proof-session.ps1
+```
+
+instead of directly calling:
+
+```text
+scripts/run-autonomous-assist-session.ps1
+```
+
+### CMD entrypoint
+
+```text
+ForgeRouteProof.cmd
+```
+
+This is the operator-facing entrypoint for the focused route proof lane. It calls:
+
+```text
+ForgeReboot.cmd -FocusKeeperMode SyntheticFocusPulse -ActionTimeoutClass long_distance_travel
+```
+
+### Stop-before-launch hook
+
+If a run needs to stop the game first, use:
+
+```text
+ForgeRouteProof.cmd -StopBeforeLaunch
+```
+
+The wrapper must route this through:
+
+```text
+ForgeStop.cmd soft
+```
+
+No ad hoc process killing belongs in the focused route proof hook.
+
 ## Required proof artifact
 
 The focus keeper writes:
@@ -118,12 +217,32 @@ pulseMilliseconds
 processId
 windowHandle
 windowTitle
+targetSource
 foregroundSamples
 lostForegroundSamples
 focusPulseSamples
 unpausePulseSamples
 proofBoundary
 classification
+```
+
+The session wrapper writes:
+
+```text
+focused-route-proof-summary.json
+```
+
+with:
+
+```text
+focusKeeperMode
+focusLeasePath
+focusLeaseClassification
+runnerOutputPath
+runnerExitCode
+focusKeeperExitCode
+forgeStopUsed
+proofBoundary
 ```
 
 ## Classification rules
