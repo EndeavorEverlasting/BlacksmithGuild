@@ -1,5 +1,6 @@
 ﻿# Route proof focus keeper for Bannerlord.
 # This script is a harness tool, not gameplay proof by itself.
+# PID/window ownership must flow through repo runtime detection before falling back to title scans.
 $ErrorActionPreference = 'Stop'
 
 param(
@@ -10,7 +11,13 @@ param(
 
     [int]$PulseMilliseconds = 500,
 
-    [string]$ProcessNamePattern = 'Bannerlord',
+    [int]$WaitForWindowSeconds = 0,
+
+    [string]$BannerlordRoot = $null,
+
+    [int]$ProcessIdHint = 0,
+
+    [Int64]$WindowHandleHint = 0,
 
     [switch]$SendUnpausePulse,
 
@@ -25,19 +32,29 @@ param(
 )
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -LiteralPath $repoRoot
+
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
+
+if (-not $BannerlordRoot) {
+    $BannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
+}
+
 if (-not $OutputPath) {
     $OutputPath = Join-Path $repoRoot 'BlacksmithGuild_FocusLease.json'
 }
 
 if ($DurationSeconds -lt 1) { throw 'DurationSeconds must be at least 1.' }
 if ($PulseMilliseconds -lt 100) { throw 'PulseMilliseconds must be at least 100.' }
+if ($WaitForWindowSeconds -lt 0) { throw 'WaitForWindowSeconds must be >= 0.' }
 
 $signature = @'
 using System;
 using System.Text;
 using System.Runtime.InteropServices;
 
-public static class TbgUser32 {
+public static class TbgFocusKeeperUser32 {
     public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     [DllImport("user32.dll")]
@@ -63,13 +80,10 @@ public static class TbgUser32 {
 
     [DllImport("user32.dll")]
     public static extern bool PostMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
 }
 '@
 
-if (-not ('TbgUser32' -as [type])) {
+if (-not ('TbgFocusKeeperUser32' -as [type])) {
     Add-Type -TypeDefinition $signature -Language CSharp
 }
 
@@ -89,56 +103,125 @@ $keyMap = @{
     D3 = 0x33
 }
 
-function Get-WindowTitle {
+function Get-TbgFocusKeeperWindowTitle {
     param([IntPtr]$Handle)
     $buffer = New-Object System.Text.StringBuilder 1024
-    [void][TbgUser32]::GetWindowText($Handle, $buffer, $buffer.Capacity)
+    [void][TbgFocusKeeperUser32]::GetWindowText($Handle, $buffer, $buffer.Capacity)
     return $buffer.ToString()
 }
 
-function Get-BannerlordWindow {
-    $candidates = New-Object System.Collections.Generic.List[object]
-    $callback = [TbgUser32+EnumWindowsProc]{
+function Find-TbgTopLevelWindowForPid {
+    param([int]$TargetPid)
+
+    if ($TargetPid -le 0) { return $null }
+
+    $matches = New-Object System.Collections.Generic.List[object]
+    $callback = [TbgFocusKeeperUser32+EnumWindowsProc]{
         param([IntPtr]$hWnd, [IntPtr]$lParam)
 
-        if (-not [TbgUser32]::IsWindowVisible($hWnd)) { return $true }
-
+        if (-not [TbgFocusKeeperUser32]::IsWindowVisible($hWnd)) { return $true }
         $pid = 0
-        [void][TbgUser32]::GetWindowThreadProcessId($hWnd, [ref]$pid)
-        if ($pid -le 0) { return $true }
+        [void][TbgFocusKeeperUser32]::GetWindowThreadProcessId($hWnd, [ref]$pid)
+        if ($pid -ne $TargetPid) { return $true }
 
-        $process = $null
-        try { $process = Get-Process -Id $pid -ErrorAction Stop } catch { return $true }
-        $title = Get-WindowTitle -Handle $hWnd
-
-        $matchesProcess = $process.ProcessName -like "*$ProcessNamePattern*"
-        $matchesTitle = $title -like '*Bannerlord*' -or $title -like '*Mount & Blade*'
-
-        if ($matchesProcess -or $matchesTitle) {
-            $candidates.Add([pscustomobject]@{
-                Hwnd = $hWnd
-                HwndInt64 = $hWnd.ToInt64()
-                ProcessId = $pid
-                ProcessName = $process.ProcessName
-                Title = $title
-            }) | Out-Null
-        }
-
+        $title = Get-TbgFocusKeeperWindowTitle -Handle $hWnd
+        $matches.Add([pscustomobject]@{
+            hwnd = $hWnd
+            hwndInt64 = $hWnd.ToInt64()
+            processId = $pid
+            title = $title
+        }) | Out-Null
         return $true
     }
 
-    [void][TbgUser32]::EnumWindows($callback, [IntPtr]::Zero)
-    return $candidates | Sort-Object @{ Expression = { if ($_.Title) { 0 } else { 1 } } }, ProcessName | Select-Object -First 1
+    [void][TbgFocusKeeperUser32]::EnumWindows($callback, [IntPtr]::Zero)
+    return $matches | Sort-Object @{ Expression = { if ($_.title) { 0 } else { 1 } } } | Select-Object -First 1
+}
+
+function Get-TbgFocusKeeperTargetWindow {
+    param(
+        [int]$PidHint,
+        [Int64]$HwndHint
+    )
+
+    $detection = Get-BannerlordProcessDetection -BannerlordRoot $BannerlordRoot `
+        -Phase1Path (Get-Phase1LogPath -BannerlordRoot $BannerlordRoot) `
+        -StatusPath (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) `
+        -CrashContextPath (Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot) `
+        -CacheSec 0
+
+    $pid = if ($PidHint -gt 0) { $PidHint } elseif ($detection.gameProcessPid) { [int]$detection.gameProcessPid } else { 0 }
+    $source = if ($PidHint -gt 0) { 'ProcessIdHint' } elseif ($detection.gameProcessPid) { 'Get-BannerlordProcessDetection' } else { 'none' }
+
+    if ($HwndHint -gt 0) {
+        return [pscustomobject]@{
+            hwnd = [IntPtr]$HwndHint
+            hwndInt64 = $HwndHint
+            processId = $pid
+            processName = $detection.gameProcessName
+            title = Get-TbgFocusKeeperWindowTitle -Handle ([IntPtr]$HwndHint)
+            detection = $detection
+            source = 'WindowHandleHint'
+        }
+    }
+
+    if ($pid -le 0) {
+        return [pscustomobject]@{
+            hwnd = [IntPtr]::Zero
+            hwndInt64 = 0
+            processId = 0
+            processName = $detection.gameProcessName
+            title = $null
+            detection = $detection
+            source = $source
+        }
+    }
+
+    $proc = Get-Process -Id $pid -ErrorAction SilentlyContinue
+    if ($proc -and $proc.MainWindowHandle -and $proc.MainWindowHandle -ne [IntPtr]::Zero) {
+        return [pscustomobject]@{
+            hwnd = $proc.MainWindowHandle
+            hwndInt64 = $proc.MainWindowHandle.ToInt64()
+            processId = $pid
+            processName = $proc.ProcessName
+            title = [string]$proc.MainWindowTitle
+            detection = $detection
+            source = $source + '+MainWindowHandle'
+        }
+    }
+
+    $topLevel = Find-TbgTopLevelWindowForPid -TargetPid $pid
+    if ($topLevel) {
+        return [pscustomobject]@{
+            hwnd = $topLevel.hwnd
+            hwndInt64 = $topLevel.hwndInt64
+            processId = $pid
+            processName = if ($proc) { $proc.ProcessName } else { $detection.gameProcessName }
+            title = $topLevel.title
+            detection = $detection
+            source = $source + '+EnumWindowsForPid'
+        }
+    }
+
+    return [pscustomobject]@{
+        hwnd = [IntPtr]::Zero
+        hwndInt64 = 0
+        processId = $pid
+        processName = if ($proc) { $proc.ProcessName } else { $detection.gameProcessName }
+        title = $null
+        detection = $detection
+        source = $source + '+no_visible_window'
+    }
 }
 
 function Invoke-SyntheticFocusPulse {
     param([IntPtr]$Handle)
 
     $results = New-Object System.Collections.Generic.List[object]
-    $results.Add([pscustomobject]@{ message = 'WM_ACTIVATEAPP'; ok = [TbgUser32]::PostMessage($Handle, $WM_ACTIVATEAPP, [IntPtr]1, [IntPtr]::Zero) }) | Out-Null
-    $results.Add([pscustomobject]@{ message = 'WM_NCACTIVATE'; ok = [TbgUser32]::PostMessage($Handle, $WM_NCACTIVATE, [IntPtr]1, [IntPtr]::Zero) }) | Out-Null
-    $results.Add([pscustomobject]@{ message = 'WM_ACTIVATE'; ok = [TbgUser32]::PostMessage($Handle, $WM_ACTIVATE, [IntPtr]$WA_ACTIVE, [IntPtr]::Zero) }) | Out-Null
-    $results.Add([pscustomobject]@{ message = 'WM_SETFOCUS'; ok = [TbgUser32]::PostMessage($Handle, $WM_SETFOCUS, [IntPtr]::Zero, [IntPtr]::Zero) }) | Out-Null
+    $results.Add([pscustomobject]@{ message = 'WM_ACTIVATEAPP'; ok = [TbgFocusKeeperUser32]::PostMessage($Handle, $WM_ACTIVATEAPP, [IntPtr]1, [IntPtr]::Zero) }) | Out-Null
+    $results.Add([pscustomobject]@{ message = 'WM_NCACTIVATE'; ok = [TbgFocusKeeperUser32]::PostMessage($Handle, $WM_NCACTIVATE, [IntPtr]1, [IntPtr]::Zero) }) | Out-Null
+    $results.Add([pscustomobject]@{ message = 'WM_ACTIVATE'; ok = [TbgFocusKeeperUser32]::PostMessage($Handle, $WM_ACTIVATE, [IntPtr]$WA_ACTIVE, [IntPtr]::Zero) }) | Out-Null
+    $results.Add([pscustomobject]@{ message = 'WM_SETFOCUS'; ok = [TbgFocusKeeperUser32]::PostMessage($Handle, $WM_SETFOCUS, [IntPtr]::Zero, [IntPtr]::Zero) }) | Out-Null
     return @($results)
 }
 
@@ -149,9 +232,9 @@ function Invoke-UnpausePulse {
     )
 
     $vk = [int]$keyMap[$Key]
-    $down = [TbgUser32]::PostMessage($Handle, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]::Zero)
+    $down = [TbgFocusKeeperUser32]::PostMessage($Handle, $WM_KEYDOWN, [IntPtr]$vk, [IntPtr]::Zero)
     Start-Sleep -Milliseconds 25
-    $up = [TbgUser32]::PostMessage($Handle, $WM_KEYUP, [IntPtr]$vk, [IntPtr]::Zero)
+    $up = [TbgFocusKeeperUser32]::PostMessage($Handle, $WM_KEYUP, [IntPtr]$vk, [IntPtr]::Zero)
 
     return [pscustomobject]@{
         key = $Key
@@ -161,34 +244,54 @@ function Invoke-UnpausePulse {
     }
 }
 
-$startedUtc = (Get-Date).ToUniversalTime()
-$window = Get-BannerlordWindow
+function Write-FocusKeeperNoWindowResult {
+    param(
+        [datetime]$StartedUtc,
+        [object]$Target
+    )
 
-if (-not $window) {
     $result = [pscustomobject]@{
         schema = 'TbgBannerlordFocusLease.v1'
-        generatedUtc = $startedUtc.ToString('o')
+        generatedUtc = $StartedUtc.ToString('o')
         mode = $Mode
         durationSeconds = $DurationSeconds
         pulseMilliseconds = $PulseMilliseconds
-        processNamePattern = $ProcessNamePattern
+        waitForWindowSeconds = $WaitForWindowSeconds
+        bannerlordRoot = $BannerlordRoot
+        processIdHint = $ProcessIdHint
+        windowHandleHint = $WindowHandleHint
+        detection = if ($Target) { $Target.detection } else { $null }
         classification = 'bannerlord_window_not_found'
         blocking = $true
         proofBoundary = @(
-            'No Bannerlord window was found.',
+            'No Bannerlord window was found through repo process detection.',
             'No focus lease was acquired.',
             'No route proof can be inferred from this artifact.'
         )
         samples = @()
     }
 
-    $result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
+    $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
     Write-Host "FAIL: Bannerlord window not found. Wrote $OutputPath" -ForegroundColor Red
+}
+
+$startedUtc = (Get-Date).ToUniversalTime()
+$target = $null
+$waitDeadline = (Get-Date).AddSeconds($WaitForWindowSeconds)
+do {
+    $target = Get-TbgFocusKeeperTargetWindow -PidHint $ProcessIdHint -HwndHint $WindowHandleHint
+    if ($target -and $target.hwndInt64 -gt 0) { break }
+    if ($WaitForWindowSeconds -le 0) { break }
+    Start-Sleep -Seconds 1
+} while ((Get-Date) -lt $waitDeadline)
+
+if (-not $target -or $target.hwndInt64 -le 0) {
+    Write-FocusKeeperNoWindowResult -StartedUtc $startedUtc -Target $target
     if ($FailOnNoWindow) { exit 2 }
     exit 0
 }
 
-$hwnd = [IntPtr]$window.HwndInt64
+$hwnd = [IntPtr]$target.hwndInt64
 $samples = New-Object System.Collections.Generic.List[object]
 $focusPulses = New-Object System.Collections.Generic.List[object]
 $unpausePulses = New-Object System.Collections.Generic.List[object]
@@ -197,22 +300,22 @@ $iteration = 0
 
 Write-Host "Bannerlord focus keeper started." -ForegroundColor Cyan
 Write-Host "  mode: $Mode" -ForegroundColor Cyan
-Write-Host "  window: $($window.Title) [$($window.HwndInt64)] pid=$($window.ProcessId)" -ForegroundColor Cyan
+Write-Host "  pid/window source: $($target.source)" -ForegroundColor Cyan
+Write-Host "  window: $($target.title) [$($target.hwndInt64)] pid=$($target.processId)" -ForegroundColor Cyan
 Write-Host "  duration: $DurationSeconds second(s)" -ForegroundColor Cyan
 
 while ($stopwatch.Elapsed.TotalSeconds -lt $DurationSeconds) {
     $iteration++
-    $beforeForeground = [TbgUser32]::GetForegroundWindow()
+    $beforeForeground = [TbgFocusKeeperUser32]::GetForegroundWindow()
     $wasForeground = ($beforeForeground -eq $hwnd)
     $pulseResult = @()
     $unpauseResult = $null
     $foregroundResult = $null
 
     if ($Mode -eq 'ForegroundLease') {
-        [void][TbgUser32]::ShowWindowAsync($hwnd, $SW_RESTORE)
-        $foregroundResult = [TbgUser32]::SetForegroundWindow($hwnd)
-    }
-    elseif ($Mode -eq 'SyntheticFocusPulse') {
+        [void][TbgFocusKeeperUser32]::ShowWindowAsync($hwnd, $SW_RESTORE)
+        $foregroundResult = [TbgFocusKeeperUser32]::SetForegroundWindow($hwnd)
+    } elseif ($Mode -eq 'SyntheticFocusPulse') {
         $pulseResult = Invoke-SyntheticFocusPulse -Handle $hwnd
         $focusPulses.Add([pscustomobject]@{
             utc = (Get-Date).ToUniversalTime().ToString('o')
@@ -231,7 +334,7 @@ while ($stopwatch.Elapsed.TotalSeconds -lt $DurationSeconds) {
     }
 
     Start-Sleep -Milliseconds ([Math]::Max(1, [Math]::Min($PulseMilliseconds, 250)))
-    $afterForeground = [TbgUser32]::GetForegroundWindow()
+    $afterForeground = [TbgFocusKeeperUser32]::GetForegroundWindow()
     $isForeground = ($afterForeground -eq $hwnd)
 
     $samples.Add([pscustomobject]@{
@@ -267,11 +370,16 @@ $result = [pscustomobject]@{
     mode = $Mode
     durationSeconds = $DurationSeconds
     pulseMilliseconds = $PulseMilliseconds
-    processNamePattern = $ProcessNamePattern
-    processId = $window.ProcessId
-    processName = $window.ProcessName
-    windowHandle = $window.HwndInt64
-    windowTitle = $window.Title
+    waitForWindowSeconds = $WaitForWindowSeconds
+    bannerlordRoot = $BannerlordRoot
+    processIdHint = $ProcessIdHint
+    windowHandleHint = $WindowHandleHint
+    processId = $target.processId
+    processName = $target.processName
+    windowHandle = $target.hwndInt64
+    windowTitle = $target.title
+    targetSource = $target.source
+    detection = $target.detection
     sendUnpausePulse = [bool]$SendUnpausePulse
     unpauseKey = if ($SendUnpausePulse) { $UnpauseKey } else { $null }
     classification = $classification
@@ -285,6 +393,7 @@ $result = [pscustomobject]@{
     unpausePulses = @($unpausePulses)
     proofBoundary = @(
         'This artifact proves only the focus keeper attempt and observed foreground samples.',
+        'PID/window selection reuses Get-BannerlordProcessDetection before any window fallback.',
         'SyntheticFocusPulse is experimental and does not prove Bannerlord engine focus acceptance.',
         'ForegroundLease may steal user focus because Windows has one real foreground window.',
         'Movement proof still requires fresh route cert, position/checkpoint, and time evidence after the route execution window.'
