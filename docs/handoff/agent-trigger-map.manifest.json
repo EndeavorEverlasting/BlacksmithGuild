@@ -1,0 +1,35 @@
+{
+  "schema": "TbgAgentTriggerMap.v1",
+  "policyId": "agent-stop-hook-trigger",
+  "primaryTrigger": "scripts/invoke-agent-stop-hook.ps1",
+  "triggerMoment": "end_of_bounded_agent_task",
+  "evidenceArchiveRoot": "artifacts/agent-stop-hook",
+  "generatedFeedback": "BlacksmithGuild_AgentFeedback.json",
+  "generatedRemediationPlan": "BlacksmithGuild_AgentRemediationPlan.json",
+  "requiredReports": [
+    "branch",
+    "head SHA",
+    "classification",
+    "allowed claims",
+    "forbidden claims",
+    "blockers",
+    "remediation plan path",
+    "next action",
+    "validation commands"
+  ],
+  "triggerDuties": [
+    "run cheap guardrails",
+    "capture evidence logs",
+    "write feedback JSON",
+    "write remediation plan JSON",
+    "archive stop-hook summary",
+    "return blocking status when strict mode is requested"
+  ],
+  "followThroughRule": "When patch candidates exist, an agent should use the generated plan or explain why it does not apply before inventing a separate repair.",
+  "blockingClassifications": [
+    "runtime_blocked",
+    "unsafe_surface",
+    "contract_fail"
+  ],
+  "contractVerifier": "scripts/verify-agent-stop-hook-contract.ps1"
+}
