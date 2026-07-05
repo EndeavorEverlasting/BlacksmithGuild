@@ -30,6 +30,7 @@ function Assert-TextContains {
 $harnessDoc = 'docs\handoff\agent-feedback-harness.md'
 $schemaDoc = 'docs\handoff\agent-feedback-schema.md'
 $reviewDoc = 'docs\handoff\agentic-review-bottleneck-doctrine.md'
+$gapRegister = 'docs\handoff\agent-feedback-gap-register.md'
 $manifest = 'docs\handoff\agent-feedback-harness.manifest.json'
 
 Assert-TextContains -RelativePath $harnessDoc -Needle '# Agent Feedback Harness Doctrine' -Why 'main doctrine must exist'
@@ -75,15 +76,29 @@ Assert-TextContains -RelativePath $reviewDoc -Needle 'cognitive surrender' -Why 
 Assert-TextContains -RelativePath $reviewDoc -Needle 'scripts/write-agent-feedback-summary.ps1' -Why 'first implementation writer must be named'
 Assert-TextContains -RelativePath $reviewDoc -Needle 'scripts/invoke-agent-stop-hook.ps1' -Why 'future stop hook script must be named'
 
+Assert-TextContains -RelativePath $gapRegister -Needle '# Agent Feedback Harness Gap Register' -Why 'gap register must exist'
+Assert-TextContains -RelativePath $gapRegister -Needle 'G1. No feedback writer yet' -Why 'writer gap must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'G2. No stop hook yet' -Why 'stop hook gap must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'G3. No artifact interpretation table' -Why 'artifact classification gap must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'G4. No automated claim discipline enforcement' -Why 'claim discipline gap must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'G5. No branch/worktree awareness beyond planned schema' -Why 'branch awareness gap must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'R1. Framework bloat' -Why 'framework bloat risk must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'R2. False confidence' -Why 'false confidence risk must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'R3. Overclaiming' -Why 'overclaiming risk must be tracked'
+Assert-TextContains -RelativePath $gapRegister -Needle 'Build Step 2 now.' -Why 'immediate execution order must be explicit'
+
 Assert-TextContains -RelativePath $manifest -Needle '"policyId": "agent-feedback-harness"' -Why 'manifest must name policy id'
 Assert-TextContains -RelativePath $manifest -Needle '"plannedOutput": "BlacksmithGuild_AgentFeedback.json"' -Why 'manifest must name output file'
 Assert-TextContains -RelativePath $manifest -Needle '"docs/handoff/agentic-review-bottleneck-doctrine.md"' -Why 'manifest must register review bottleneck doctrine'
+Assert-TextContains -RelativePath $manifest -Needle '"docs/handoff/agent-feedback-gap-register.md"' -Why 'manifest must register gap register'
 Assert-TextContains -RelativePath $manifest -Needle '"checkpoint_reached"' -Why 'manifest must list checkpoint state'
 Assert-TextContains -RelativePath $manifest -Needle '"stale_evidence"' -Why 'manifest must list stale evidence state'
 Assert-TextContains -RelativePath $manifest -Needle '"allowedClaims"' -Why 'manifest must require allowed claims'
 Assert-TextContains -RelativePath $manifest -Needle '"forbiddenClaims"' -Why 'manifest must require forbidden claims'
 Assert-TextContains -RelativePath $manifest -Needle '"stop hooks"' -Why 'manifest must register stop hooks as a guardrail family'
 Assert-TextContains -RelativePath $manifest -Needle '"data-mined operator corrections"' -Why 'manifest must register correction mining as a guardrail family'
+Assert-TextContains -RelativePath $manifest -Needle '"No feedback writer yet"' -Why 'manifest must track writer gap'
+Assert-TextContains -RelativePath $manifest -Needle '"No stop hook yet"' -Why 'manifest must track stop hook gap'
 Assert-TextContains -RelativePath $manifest -Needle '"futureVerifier": "scripts/verify-agent-feedback-harness-contract.ps1"' -Why 'manifest must point to this verifier'
 
 if ($failures.Count -gt 0) {
