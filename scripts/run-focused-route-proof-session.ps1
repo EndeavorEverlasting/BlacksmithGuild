@@ -27,7 +27,7 @@ param(
 
     [int]$ExecuteTimeoutSec = 120,
 
-    [int]$ForegroundLossStopSec = 8,
+    [int]$ForegroundLossStopSec = 7200,
 
     [switch]$SkipBuild,
 
@@ -86,6 +86,7 @@ Write-Host 'The Blacksmith Guild - Focused Route Proof Session' -ForegroundColor
 Write-Host "Artifact dir: $artifactDir"
 Write-Host "Focus keeper mode: $FocusKeeperMode"
 Write-Host "LaunchIntent: $LaunchIntent"
+Write-Host "Runner foreground-loss stop threshold: ${ForegroundLossStopSec}s"
 
 if ($StopBeforeLaunch) {
     Write-Host 'StopBeforeLaunch requested. Calling ForgeStop.cmd soft before launch.' -ForegroundColor Yellow
@@ -168,6 +169,7 @@ $summary = [ordered]@{
     assistProfile = $AssistProfile
     certProfile = $CertProfile
     targetSettlement = $TargetSettlement
+    foregroundLossStopSec = $ForegroundLossStopSec
     focusKeeperMode = $FocusKeeperMode
     focusKeeperDurationSeconds = $FocusKeeperDurationSeconds
     focusKeeperWaitForWindowSeconds = $FocusKeeperWaitForWindowSeconds
@@ -181,6 +183,7 @@ $summary = [ordered]@{
     forgeStopUsed = [bool]$StopBeforeLaunch
     proofBoundary = @(
         'This wrapper wires focus keeping into the existing autonomous assist runner.',
+        'Focused proof mode raises the runner foreground-loss threshold so human window focus does not immediately abort the route window.',
         'It does not claim route movement by itself.',
         'Movement proof still requires fresh route cert, position/checkpoint, and time evidence.'
     )
