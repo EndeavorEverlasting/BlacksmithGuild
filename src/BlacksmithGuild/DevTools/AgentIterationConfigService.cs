@@ -37,6 +37,7 @@ namespace BlacksmithGuild.DevTools
             }
 
             DevToolsConfig.AgentAutoLoop = ReadBool(json, "autoLoop", DevToolsConfig.AgentAutoLoop);
+            DevToolsConfig.AgentAutoMapTradeRoute = ReadBool(json, "autoMapTradeRoute", DevToolsConfig.AgentAutoMapTradeRoute);
             DevToolsConfig.TavernHeroVisibleMode = ReadBool(json, "visibleMode", DevToolsConfig.TavernHeroVisibleMode);
             DevToolsConfig.TavernHeroDecisionPauseMs = ReadInt(json, "decisionPauseMs", DevToolsConfig.TavernHeroDecisionPauseMs);
             DevToolsConfig.TavernHeroSafeGoldReserve = ReadInt(json, "tavernHeroSafeGoldReserve", DevToolsConfig.TavernHeroSafeGoldReserve);

@@ -37,6 +37,9 @@ $durationDoctrine = 'docs\operator\test-duration-doctrine.md'
 $mapTradeModels = 'src\BlacksmithGuild\MapTrade\MapTradeModels.cs'
 $mapTradeService = 'src\BlacksmithGuild\MapTrade\MapTradeAutonomousService.cs'
 $mapTradeEvidenceWriter = 'src\BlacksmithGuild\MapTrade\MapTradeEvidenceWriter.cs'
+$devToolsConfig = 'src\BlacksmithGuild\DevTools\DevToolsConfig.cs'
+$agentIterationConfig = 'src\BlacksmithGuild\DevTools\AgentIterationConfigService.cs'
+$campaignMapReadyOrchestrator = 'src\BlacksmithGuild\DevTools\CampaignMapReadyOrchestrator.cs'
 
 Assert-TextContains -RelativePath $routeDoctrine -Needle 'route assigned is an intent checkpoint' -Why 'route assignment must not be movement proof'
 Assert-TextContains -RelativePath $routeDoctrine -Needle 'Movement proof requires clock ownership' -Why 'movement proof requires clock ownership'
@@ -60,6 +63,12 @@ Assert-TextContains -RelativePath $mapTradeService -Needle 'RouteClockEvidence =
 Assert-TextContains -RelativePath $mapTradeService -Needle 'RuntimeProofClaim = false' -Why 'route ACK must not claim movement proof'
 Assert-TextContains -RelativePath $mapTradeEvidenceWriter -Needle 'routeClockEvidence' -Why 'route-clock evidence must be serialized into cert JSON'
 Assert-TextContains -RelativePath $mapTradeEvidenceWriter -Needle 'AppendRouteClockEvidence' -Why 'route-clock evidence serializer must exist'
+
+Assert-TextContains -RelativePath $devToolsConfig -Needle 'public static bool AgentAutoMapTradeRoute = false' -Why 'agent config must expose explicit one-shot map-trade trigger'
+Assert-TextContains -RelativePath $agentIterationConfig -Needle 'autoMapTradeRoute' -Why 'AgentIterationConfig must read explicit map-trade route trigger'
+Assert-TextContains -RelativePath $campaignMapReadyOrchestrator -Needle 'TryRunAgentAutoMapTradeRouteOnce' -Why 'map-ready orchestrator must own the one-shot map-trade trigger'
+Assert-TextContains -RelativePath $campaignMapReadyOrchestrator -Needle 'CampaignSetupStateTracker.UsedDisposableQuickStartPath' -Why 'agent map-trade trigger must preserve disposable bootstrap guard'
+Assert-TextContains -RelativePath $campaignMapReadyOrchestrator -Needle 'MapTradeAutonomousService.StartRouteNow("AgentAutoMapTradeRoute")' -Why 'agent map-trade trigger must start the route owner explicitly'
 
 $requiredEvidenceFields = @(
     'commandAck',

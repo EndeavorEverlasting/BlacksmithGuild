@@ -3,6 +3,7 @@ using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.GuildLoop;
+using BlacksmithGuild.MapTrade;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.CampaignSystem;
 
@@ -25,6 +26,7 @@ namespace BlacksmithGuild.DevTools
         private static float _stabilizationSecRemaining;
         private static int _postStabilizationGraceTicksRemaining;
         private static bool _hasRunAgentAutoLoop;
+        private static bool _hasRunAgentAutoMapTradeRoute;
         private static string _lastOrchestratorDeferKey;
 
         /// <summary>True after immediate map-ready hooks finish (deferred may still be pending).</summary>
@@ -90,6 +92,7 @@ namespace BlacksmithGuild.DevTools
             _stabilizationSecRemaining = 0f;
             _postStabilizationGraceTicksRemaining = 0;
             _hasRunAgentAutoLoop = false;
+            _hasRunAgentAutoMapTradeRoute = false;
             _lastOrchestratorDeferKey = null;
         }
 
@@ -409,6 +412,7 @@ namespace BlacksmithGuild.DevTools
                 CommandSurfaceService.WriteCommandSurface("MapReady");
             });
             RunHook(MapReadyHookFlags.AgentAutoLoop, "AgentAutoLoop", TryRunAgentAutoLoopOnce);
+            RunHook(MapReadyHookFlags.AgentAutoLoop, "AgentAutoMapTradeRoute", TryRunAgentAutoMapTradeRouteOnce);
 
             RuntimeTrace.RunSafe("MapReady", "SyncForgeStatusDeferred", () => GameSessionState.SyncForgeStatus());
             DebugLogger.Test("[TBG MAPREADY] deferred hooks complete", showInGame: false);
@@ -444,6 +448,35 @@ namespace BlacksmithGuild.DevTools
         private static bool HasAnyEnabled(MapReadyHookFlags flags)
         {
             return (DevToolsConfig.MapReadyHookMask & flags) != 0;
+        }
+
+        private static void TryRunAgentAutoMapTradeRouteOnce()
+        {
+            if (_hasRunAgentAutoMapTradeRoute || !DevToolsConfig.AgentAutoMapTradeRoute)
+            {
+                return;
+            }
+
+            _hasRunAgentAutoMapTradeRoute = true;
+
+            if (!CampaignSetupStateTracker.UsedDisposableQuickStartPath)
+            {
+                DebugLogger.Test(
+                    "[TBG AGENT] AgentAutoMapTradeRoute skipped: requires disposable Forge.cmd bootstrap path.",
+                    showInGame: false);
+                return;
+            }
+
+            DebugLogger.Test("[TBG AGENT] AgentAutoMapTradeRoute starting RunAutonomousVisibleTradeRouteNow.", showInGame: false);
+            if (MapTradeAutonomousService.StartRouteNow("AgentAutoMapTradeRoute"))
+            {
+                InGameNotice.Info($"{ModDisplay.Name} — Agent map-trade route started (one bounded route start).");
+                return;
+            }
+
+            var reason = MapTradeAutonomousService.LastFailReason ?? "unknown";
+            DebugLogger.Test($"[TBG AGENT] AgentAutoMapTradeRoute blocked: {reason}", showInGame: false);
+            InGameNotice.Blocked($"{ModDisplay.Name} — Agent map-trade route blocked: {reason}.");
         }
 
         private static void TryRunAgentAutoLoopOnce()
