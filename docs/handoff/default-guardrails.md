@@ -165,6 +165,47 @@ Manual input contamination rule:
 Any interactive prompt during a zero-click proof contaminates the proof and must classify as a harness blocker or operator-action-required state.
 ```
 
+Focused route proof precondition:
+
+```text
+campaignReady and mapStateActive do not imply route execution.
+safeToExecuteTravel does not imply movement proof.
+targetSettlement and nextPlannedBranch do not imply travel started.
+timePaused=true blocks route proof unless the harness owns unpause and focus recovery.
+```
+
+A route proof harness must own the gameplay conditions required for travel execution:
+
+```text
+launch Continue through the fast known path
+wait for campaign map
+bring Bannerlord to foreground
+dismiss or avoid pause overlay
+ensure campaign time is unpaused
+keep Bannerlord focused during the route execution window
+only then collect route cert and movement evidence
+```
+
+Invalid route proof workflow:
+
+```text
+launch game
+switch to terminal
+write command JSON
+wait in terminal
+collect logs
+expect the party to move
+```
+
+Correct classification when focus or pause ownership is missing:
+
+```text
+runtime_blocked
+focus_lifecycle_unowned
+proof_contaminated
+no_autonomous_movement_proof
+```
+
 Disposable save rule:
 
 ```text
@@ -181,7 +222,7 @@ Required domain defaults:
 |---|---|
 | Market | Snapshot before action, append journal, prove gold/inventory delta after action. |
 | Smithing | Prove stamina/material delta and cap each bounded action. |
-| Travel | Prove start, destination, position or checkpoint, and time evidence. |
+| Travel | Prove start, destination, position or checkpoint, time evidence, foreground focus, and unpaused campaign time. |
 | Progression | Recommend first; no silent irreversible choices. |
 | Companion | No recruitment without policy, cost, and consequence evidence. |
 | Horses | No purchase without policy, price, inventory, and gold delta. |
@@ -218,36 +259,7 @@ Required future guardrails:
 ```text
 EngineToggleAuthority enforcement
 CampaignEngineOutcome requirement
-no direct engine-to-engine chaining
-orchestrator-owned dispatch
-mode-aware assistive readiness
-bounded one-action windows
-```
-
-## Highest-priority missing guardrails
-
-The most important missing guardrails are:
-
-```text
-scripts/invoke-agent-stop-hook.ps1
-proof claim discipline verifier
-byte-safe text replacement helper
-runtime contamination classifier
-campaign action evidence schema implementation
-campaign engine boundary verifier
-```
-
-## Completion rule
-
-The guardrail map is not complete because this document exists.
-
-It becomes useful only when the repo can answer:
-
-```text
-Which guardrail applies?
-What did it observe?
-What did it prove?
-What did it not prove?
-What should happen next?
-What must stop?
+Fast Continue launch selection verifier
+Focused route proof lifecycle verifier
+CampaignActionEvidence completeness checks
 ```
