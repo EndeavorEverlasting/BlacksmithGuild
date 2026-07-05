@@ -8,6 +8,8 @@ $agentNotePath = Join-Path $repoRoot 'docs\handoff\test-duration-policy-agent-no
 $refactorPlanPath = Join-Path $repoRoot 'docs\handoff\test-duration-policy.refactor-plan.md'
 $inventoryGuardPath = Join-Path $repoRoot 'scripts\verify-test-duration-inventory-guard.ps1'
 $inventoryBaselinePath = Join-Path $repoRoot 'docs\handoff\test-duration-inventory-baseline.tsv'
+$coalescencePath = Join-Path $repoRoot 'docs\handoff\pr23-pr25-pr27-coalescence.md'
+$handoffDoctrinePath = Join-Path $repoRoot 'docs\handoff\unified-activity-handoff-doctrine.md'
 
 $errors = New-Object System.Collections.Generic.List[string]
 
@@ -33,6 +35,8 @@ Need-File -Path $agentNotePath -Label 'agent note'
 Need-File -Path $refactorPlanPath -Label 'refactor plan'
 Need-File -Path $inventoryGuardPath -Label 'inventory guard'
 Need-File -Path $inventoryBaselinePath -Label 'inventory baseline'
+Need-File -Path $coalescencePath -Label 'PR coalescence note'
+Need-File -Path $handoffDoctrinePath -Label 'unified handoff doctrine'
 
 if ($errors.Count -eq 0) {
     $helper = Get-Content -LiteralPath $helperPath -Raw -Encoding UTF8
@@ -40,6 +44,8 @@ if ($errors.Count -eq 0) {
     $manifestText = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8
     $inventoryGuard = Get-Content -LiteralPath $inventoryGuardPath -Raw -Encoding UTF8
     $inventoryBaseline = Get-Content -LiteralPath $inventoryBaselinePath -Raw -Encoding UTF8
+    $coalescence = Get-Content -LiteralPath $coalescencePath -Raw -Encoding UTF8
+    $handoffDoctrine = Get-Content -LiteralPath $handoffDoctrinePath -Raw -Encoding UTF8
     $manifest = $manifestText | ConvertFrom-Json
 
     Need-Text -Text $helper -Needle 'function Resolve-TbgTestDurationBudget' -Label 'resolver'
@@ -58,6 +64,18 @@ if ($errors.Count -eq 0) {
     Need-Text -Text $inventoryGuard -Needle 'test-duration-inventory-baseline.tsv' -Label 'inventory baseline wiring'
     Need-Text -Text $inventoryBaseline -Needle 'Baseline existing long-duration defaults' -Label 'inventory baseline purpose'
     Need-Text -Text $inventoryBaseline -Needle 'run-live-assistive-cert.ps1' -Label 'inventory baseline cert sample'
+    Need-Text -Text $coalescence -Needle 'Merge order recommendation' -Label 'coalescence merge order'
+    Need-Text -Text $coalescence -Needle 'PR #25 - launcher window context helper' -Label 'coalescence PR25 role'
+    Need-Text -Text $coalescence -Needle 'PR #23 - engine toggle authority' -Label 'coalescence PR23 role'
+    Need-Text -Text $coalescence -Needle 'PR #27 - duration inventory guard' -Label 'coalescence PR27 role'
+    Need-Text -Text $coalescence -Needle 'The baseline is not a permission slip' -Label 'coalescence baseline debt rule'
+    Need-Text -Text $handoffDoctrine -Needle 'A handoff is a controlled transfer of authority, state, evidence, and next responsibility' -Label 'handoff core rule'
+    Need-Text -Text $handoffDoctrine -Needle 'BlacksmithGuild_HandoffEvents.jsonl' -Label 'handoff event stream target'
+    Need-Text -Text $handoffDoctrine -Needle 'handoff.recorded' -Label 'handoff recorded event'
+    Need-Text -Text $handoffDoctrine -Needle 'handoff.blocked' -Label 'handoff blocked event'
+    Need-Text -Text $handoffDoctrine -Needle 'handoff.terminal' -Label 'handoff terminal event'
+    Need-Text -Text $handoffDoctrine -Needle 'checkpoint != completion' -Label 'handoff checkpoint boundary'
+    Need-Text -Text $handoffDoctrine -Needle 'baseline debt means approval for new debt' -Label 'handoff forbidden baseline claim'
 
     if ([int]$manifest.defaultBudgetSec -ne 30) { Note-Error 'manifest default is not 30' }
 
