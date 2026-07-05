@@ -4,6 +4,8 @@
 
 Concurrent sprints need predictable local directory names so the operator and agents can tell which branch and PR they are touching.
 
+The plain `BlacksmithGuild` folder is the protected local main checkout. It is not a generic place to switch branches for PR work.
+
 ## Default naming pattern
 
 Use:
@@ -27,6 +29,16 @@ BlacksmithGuild-pr25-launcher-evidence
 C:\Users\Cheex\Desktop\dev\Mods\Bannerlord
 ```
 
+## Protected checkout
+
+This path is treated as local main unless the operator explicitly says otherwise:
+
+```text
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+```
+
+Agents must not use that folder as the execution target for stacked PR work, side-lane validation, generated apply scripts, or branch switching.
+
 ## PR34 local worktree
 
 ```text
@@ -38,7 +50,7 @@ C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr34-concurrent-sprin
 ```powershell
 Set-Location "C:\Users\Cheex\Desktop\dev\Mods\Bannerlord"
 git -C ".\BlacksmithGuild" fetch origin
-git worktree add ".\BlacksmithGuild-pr34-concurrent-sprint-map" origin/docs-concurrent-sprint-map
+git -C ".\BlacksmithGuild" worktree add ".\BlacksmithGuild-pr34-concurrent-sprint-map" origin/docs-concurrent-sprint-map
 Set-Location ".\BlacksmithGuild-pr34-concurrent-sprint-map"
 git switch docs-concurrent-sprint-map
 ```
@@ -51,7 +63,7 @@ git switch -c docs-concurrent-sprint-map --track origin/docs-concurrent-sprint-m
 
 ## Before making changes
 
-Always run:
+Always run inside the PR worktree, not inside the protected local main checkout:
 
 ```powershell
 git status --short
@@ -70,3 +82,20 @@ what kind of work
 ```
 
 If the name cannot answer those questions, the worktree is too vague.
+
+## Agent command rule
+
+When giving copy-paste commands for PR work, agents must name the intended worktree path before validation commands.
+
+Required report fields:
+
+```text
+local path role
+intended worktree path
+branch
+base branch
+PR number
+protected local main checkout untouched: yes/no
+```
+
+If an agent cannot identify the intended worktree path, it should not provide destructive or branch-mutating commands.
