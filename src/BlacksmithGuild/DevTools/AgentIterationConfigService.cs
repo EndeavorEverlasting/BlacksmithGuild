@@ -11,24 +11,38 @@ namespace BlacksmithGuild.DevTools
 
         public static void TryLoadAtStartup()
         {
+            TryLoad("startup");
+        }
+
+        public static bool TryLoadNow(string source)
+        {
+            return TryLoad(string.IsNullOrWhiteSpace(source) ? "unspecified" : source);
+        }
+
+        private static bool TryLoad(string source)
+        {
             var path = Path.Combine(BasePath.Name, ConfigFileName);
+            DebugLogger.Test($"[TBG AGENT] AgentIterationConfig load begin source={source} path={path}", showInGame: false);
+
             if (!File.Exists(path))
             {
-                return;
+                DebugLogger.Test($"[TBG AGENT] AgentIterationConfig missing source={source} path={path}", showInGame: false);
+                return false;
             }
 
             try
             {
                 var json = File.ReadAllText(path);
                 ApplyFromJson(json);
-                DebugLogger.Test("[TBG AGENT] loaded AgentIterationConfig.", showInGame: false);
+                DebugLogger.Test($"[TBG AGENT] loaded AgentIterationConfig source={source} autoMapTradeRoute={DevToolsConfig.AgentAutoMapTradeRoute}", showInGame: false);
+                return true;
             }
             catch (Exception ex)
             {
-                DebugLogger.Test($"[TBG AGENT] failed to load AgentIterationConfig: {ex.Message}", showInGame: false);
+                DebugLogger.Test($"[TBG AGENT] failed to load AgentIterationConfig source={source}: {ex.Message}", showInGame: false);
+                return false;
             }
         }
-
         public static void ApplyFromJson(string json)
         {
             if (string.IsNullOrWhiteSpace(json))

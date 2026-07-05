@@ -452,8 +452,25 @@ namespace BlacksmithGuild.DevTools
 
         private static void TryRunAgentAutoMapTradeRouteOnce()
         {
-            if (_hasRunAgentAutoMapTradeRoute || !DevToolsConfig.AgentAutoMapTradeRoute)
+            DebugLogger.Test(
+                $"[TBG AGENT] AgentAutoMapTradeRoute gate reached hasRun={_hasRunAgentAutoMapTradeRoute} autoMapTradeRouteBeforeReload={DevToolsConfig.AgentAutoMapTradeRoute}",
+                showInGame: false);
+
+            if (_hasRunAgentAutoMapTradeRoute)
             {
+                DebugLogger.Test("[TBG AGENT] AgentAutoMapTradeRoute skipped: already ran.", showInGame: false);
+                return;
+            }
+
+            AgentIterationConfigService.TryLoadNow("CampaignMapReadyOrchestrator");
+
+            DebugLogger.Test(
+                $"[TBG AGENT] AgentAutoMapTradeRoute gate evaluated autoMapTradeRoute={DevToolsConfig.AgentAutoMapTradeRoute}",
+                showInGame: false);
+
+            if (!DevToolsConfig.AgentAutoMapTradeRoute)
+            {
+                DebugLogger.Test("[TBG AGENT] AgentAutoMapTradeRoute skipped: autoMapTradeRoute=false.", showInGame: false);
                 return;
             }
 
@@ -467,7 +484,7 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            DebugLogger.Test("[TBG AGENT] AgentAutoMapTradeRoute starting RunAutonomousVisibleTradeRouteNow.", showInGame: false);
+            DebugLogger.Test("[TBG AGENT] AgentAutoMapTradeRoute starting StartRouteNow source=AgentAutoMapTradeRoute.", showInGame: false);
             if (MapTradeAutonomousService.StartRouteNow("AgentAutoMapTradeRoute"))
             {
                 InGameNotice.Info($"{ModDisplay.Name} — Agent map-trade route started (one bounded route start).");
@@ -478,7 +495,6 @@ namespace BlacksmithGuild.DevTools
             DebugLogger.Test($"[TBG AGENT] AgentAutoMapTradeRoute blocked: {reason}", showInGame: false);
             InGameNotice.Blocked($"{ModDisplay.Name} — Agent map-trade route blocked: {reason}.");
         }
-
         private static void TryRunAgentAutoLoopOnce()
         {
             if (_hasRunAgentAutoLoop || !DevToolsConfig.AgentAutoLoop)
