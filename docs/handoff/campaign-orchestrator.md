@@ -295,3 +295,9 @@ PR #23 defines shared engine authority.
 This doctrine defines the future orchestration layer that must obey that authority.
 
 It belongs with PR #23 as planning doctrine, but implementation should happen in a later branch after PR #23 and PR #25 are stable.
+
+## Canonical campaign loop
+
+observe -> decide -> act once -> record evidence -> write outcome -> choose next engine -> stop or hand off
+
+This loop is intentionally one-action-at-a-time. A route owner may not treat command ACK or route assignment as completion. It must write an outcome before the next engine acts.

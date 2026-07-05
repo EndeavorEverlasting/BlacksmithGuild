@@ -362,3 +362,27 @@ When a route is accepted, who owns the campaign clock, and what evidence proves 
 ```
 
 That question is the next sprint seam.
+## Required route-owned clock evidence fields
+
+Future route-clock implementation must emit an evidence record that distinguishes command acknowledgement from route assignment and movement proof.
+
+Required fields:
+
+commandAck
+routeTarget
+routeIntent
+routeOwner
+clockStateBefore
+clockResumeAttempted
+clockResumeResult
+authorityMode
+movementObservation
+arrivalBlockedIndeterminate
+nextOwner
+runtimeProofClaim
+
+Default proof posture:
+
+runtimeProofClaim=false unless movement is actually observed
+
+A route command may ACK success and assign a route without claiming runtime movement proof. The route owner must then attempt clock resume, classify the clock result, observe movement under the bounded duration doctrine, and emit the next owner.
