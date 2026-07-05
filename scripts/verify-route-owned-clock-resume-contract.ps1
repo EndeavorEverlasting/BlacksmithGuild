@@ -34,6 +34,9 @@ $outcomeDoctrine = 'docs\handoff\campaign-engine-outcome-schema.md'
 $orchestratorDoctrine = 'docs\handoff\campaign-orchestrator.md'
 $authorityDoctrine = 'docs\handoff\engine-toggle-authority.md'
 $durationDoctrine = 'docs\operator\test-duration-doctrine.md'
+$mapTradeModels = 'src\BlacksmithGuild\MapTrade\MapTradeModels.cs'
+$mapTradeService = 'src\BlacksmithGuild\MapTrade\MapTradeAutonomousService.cs'
+$mapTradeEvidenceWriter = 'src\BlacksmithGuild\MapTrade\MapTradeEvidenceWriter.cs'
 
 Assert-TextContains -RelativePath $routeDoctrine -Needle 'route assigned is an intent checkpoint' -Why 'route assignment must not be movement proof'
 Assert-TextContains -RelativePath $routeDoctrine -Needle 'Movement proof requires clock ownership' -Why 'movement proof requires clock ownership'
@@ -50,6 +53,13 @@ Assert-TextContains -RelativePath $orchestratorDoctrine -Needle 'observe -> deci
 
 Assert-TextContains -RelativePath $authorityDoctrine -Needle 'Automation is not runtime proof' -Why 'authority permission must not be confused with route proof'
 Assert-TextContains -RelativePath $durationDoctrine -Needle '30 seconds' -Why 'route observation must stay bounded unless explicitly marked long-run'
+
+Assert-TextContains -RelativePath $mapTradeModels -Needle 'public sealed class MapTradeRouteClockEvidence' -Why 'route-clock evidence model must exist'
+Assert-TextContains -RelativePath $mapTradeModels -Needle 'public MapTradeRouteClockEvidence RouteClockEvidence { get; set; }' -Why 'map trade cert must carry route-clock evidence'
+Assert-TextContains -RelativePath $mapTradeService -Needle 'RouteClockEvidence = new MapTradeRouteClockEvidence' -Why 'BeginTravel must populate route-clock evidence'
+Assert-TextContains -RelativePath $mapTradeService -Needle 'RuntimeProofClaim = false' -Why 'route ACK must not claim movement proof'
+Assert-TextContains -RelativePath $mapTradeEvidenceWriter -Needle 'routeClockEvidence' -Why 'route-clock evidence must be serialized into cert JSON'
+Assert-TextContains -RelativePath $mapTradeEvidenceWriter -Needle 'AppendRouteClockEvidence' -Why 'route-clock evidence serializer must exist'
 
 $requiredEvidenceFields = @(
     'commandAck',

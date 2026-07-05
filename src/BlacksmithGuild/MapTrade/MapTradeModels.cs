@@ -81,6 +81,21 @@ namespace BlacksmithGuild.MapTrade
         public string ItemClassification { get; set; }
     }
 
+    public sealed class MapTradeRouteClockEvidence
+    {
+        public string CommandAck { get; set; }
+        public string RouteTarget { get; set; }
+        public string RouteIntent { get; set; }
+        public string RouteOwner { get; set; }
+        public string ClockStateBefore { get; set; }
+        public bool ClockResumeAttempted { get; set; }
+        public string ClockResumeResult { get; set; }
+        public string AuthorityMode { get; set; }
+        public string MovementObservation { get; set; }
+        public string ArrivalBlockedIndeterminate { get; set; }
+        public string NextOwner { get; set; }
+        public bool RuntimeProofClaim { get; set; }
+    }
     public sealed class MapTradeCertReport
     {
         public string GeneratedUtc { get; set; }
@@ -100,6 +115,7 @@ namespace BlacksmithGuild.MapTrade
         public bool MutationApplied { get; set; }
         public MapTradeRouteState State { get; set; }
         public MapTradeMission Mission { get; set; }
+        public MapTradeRouteClockEvidence RouteClockEvidence { get; set; }
         public List<MapTradeCohesionDecision> CohesionDecisions { get; set; } = new List<MapTradeCohesionDecision>();
         public List<string> Steps { get; set; } = new List<string>();
         public string TradeDriverMethod { get; set; }

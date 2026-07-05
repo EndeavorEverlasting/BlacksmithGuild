@@ -503,6 +503,24 @@ namespace BlacksmithGuild.MapTrade
             _activeReport.TravelCommandIssued = true;
             _activeReport.RouteStarted = true;
             _activeReport.RuntimeProofClaim = "main_party_move_to_settlement_order_issued";
+
+            _activeReport.RouteClockEvidence = new MapTradeRouteClockEvidence
+            {
+                CommandAck = "Success",
+                RouteTarget = _activeReport.Mission?.TargetSettlementName,
+                RouteIntent = "assigned",
+                RouteOwner = "MapTrade",
+                ClockStateBefore = "unknown_before_route_assignment",
+                ClockResumeAttempted = true,
+                ClockResumeResult = "attempted_by_CampaignMapMovementHelper",
+                AuthorityMode = EngineToggleAuthority.GetMode(EngineToggleKey.MapTrade).ToString(),
+                MovementObservation = "not_observed_yet",
+                ArrivalBlockedIndeterminate = "route_started_checkpoint",
+                NextOwner = "MapTradeAutonomousService.OnCampaignTick",
+                RuntimeProofClaim = false
+            };
+
+            _activeReport.Steps.Add("RouteClockEvidence:runtimeProofClaim=false");
             _activeReport.State = MapTradeRouteState.TravelToTarget;
             _activeReport.Steps.Add("RouteLifeCert:travelCommandIssued=true");
             _activeReport.Steps.Add($"TravelToTarget:{_activeReport.Mission.TargetSettlementName}");

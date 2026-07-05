@@ -102,6 +102,9 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"  \"tradeDriverAvailable\": {(report.TradeDriverAvailable ? "true" : "false")},");
             sb.AppendLine($"  \"tradeDriverMethod\": {NullableString(report.TradeDriverMethod)},");
             sb.AppendLine($"  \"mutationApplied\": {(report.MutationApplied ? "true" : "false")},");
+            sb.AppendLine("  \"routeClockEvidence\": ");
+            AppendRouteClockEvidence(sb, report.RouteClockEvidence, "  ");
+            sb.AppendLine(",");
             sb.AppendLine("  \"tradeExecution\": ");
             AppendTradeExecution(sb, report.TradeExecution, "  ");
             sb.AppendLine(",");
@@ -138,6 +141,29 @@ namespace BlacksmithGuild.MapTrade
             return sb.ToString();
         }
 
+        private static void AppendRouteClockEvidence(StringBuilder sb, MapTradeRouteClockEvidence evidence, string indent)
+        {
+            if (evidence == null)
+            {
+                sb.Append($"{indent}null");
+                return;
+            }
+
+            sb.AppendLine($"{indent}{{");
+            sb.AppendLine($"{indent}  \"commandAck\": {NullableString(evidence.CommandAck)},");
+            sb.AppendLine($"{indent}  \"routeTarget\": {NullableString(evidence.RouteTarget)},");
+            sb.AppendLine($"{indent}  \"routeIntent\": {NullableString(evidence.RouteIntent)},");
+            sb.AppendLine($"{indent}  \"routeOwner\": {NullableString(evidence.RouteOwner)},");
+            sb.AppendLine($"{indent}  \"clockStateBefore\": {NullableString(evidence.ClockStateBefore)},");
+            sb.AppendLine($"{indent}  \"clockResumeAttempted\": {(evidence.ClockResumeAttempted ? "true" : "false")},");
+            sb.AppendLine($"{indent}  \"clockResumeResult\": {NullableString(evidence.ClockResumeResult)},");
+            sb.AppendLine($"{indent}  \"authorityMode\": {NullableString(evidence.AuthorityMode)},");
+            sb.AppendLine($"{indent}  \"movementObservation\": {NullableString(evidence.MovementObservation)},");
+            sb.AppendLine($"{indent}  \"arrivalBlockedIndeterminate\": {NullableString(evidence.ArrivalBlockedIndeterminate)},");
+            sb.AppendLine($"{indent}  \"nextOwner\": {NullableString(evidence.NextOwner)},");
+            sb.AppendLine($"{indent}  \"runtimeProofClaim\": {(evidence.RuntimeProofClaim ? "true" : "false")}");
+            sb.Append($"{indent}}}");
+        }
         private static string SerializeForgeHandoff(MapTradeForgeHandoffReport report)
         {
             return "{"
