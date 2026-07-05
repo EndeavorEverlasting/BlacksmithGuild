@@ -39,6 +39,8 @@ Need $readme 'local path role'
 Need $readme 'intended worktree path'
 Need $readme 'protected local main checkout status'
 Need $readme 'BlacksmithGuild-prNN-short-description'
+Need $readme 'local-path-contract.md'
+Need $readme 'protected local main checkout is not a branch-work scratchpad'
 
 Need $laneMap 'Lane A: Agent feedback and guardrail stack'
 Need $laneMap 'Lane B: Launcher / route-owned clock / runtime proof'
