@@ -40,6 +40,24 @@ This file gives agents a quick way to understand which PRs are stacked, parallel
 
 A stacked branch may validate its own files, but it cannot be considered independently merge-ready until its base stack is resolved or rebased.
 
+## Local checkout collision rule
+
+A stacked branch must not be validated by switching the protected local main checkout to that branch.
+
+Use PR-specific worktrees under the same parent instead:
+
+```text
+BlacksmithGuild-pr31-agent-stop-hook
+BlacksmithGuild-pr33-default-guardrail-implementation
+BlacksmithGuild-pr34-concurrent-sprint-map
+```
+
+The protected local main checkout remains:
+
+```text
+BlacksmithGuild
+```
+
 ## Older open lanes observed
 
 The repo also has older open PRs and branches that represent real concurrent history:
@@ -72,6 +90,12 @@ Draft PRs should not be interpreted as abandoned. They often represent lanes wai
 
 Older proof artifacts and PR bodies can guide history, but they should not close new guardrail or runtime claims without fresh branch/head evidence.
 
+### Wrong checkout can contaminate concurrent work
+
+Commands that mutate branches, files, generated artifacts, or validation output must be aimed at the intended PR worktree.
+
+Do not assume that a folder named only `BlacksmithGuild` is safe for side work.
+
 ## Agent instruction
 
 Before starting side work, an agent should identify:
@@ -82,4 +106,6 @@ which PR it is stacked on
 which files are safe to touch
 which validation belongs to this lane
 which claims are forbidden from this lane
+which local worktree owns the commands
+whether the protected local main checkout is untouched
 ```
