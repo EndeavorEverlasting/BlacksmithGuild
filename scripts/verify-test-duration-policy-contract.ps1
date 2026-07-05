@@ -10,6 +10,7 @@ $inventoryGuardPath = Join-Path $repoRoot 'scripts\verify-test-duration-inventor
 $inventoryBaselinePath = Join-Path $repoRoot 'docs\handoff\test-duration-inventory-baseline.tsv'
 $coalescencePath = Join-Path $repoRoot 'docs\handoff\pr23-pr25-pr27-coalescence.md'
 $handoffDoctrinePath = Join-Path $repoRoot 'docs\handoff\unified-activity-handoff-doctrine.md'
+$routeClockDoctrinePath = Join-Path $repoRoot 'docs\handoff\route-owned-clock-resume-doctrine.md'
 
 $errors = New-Object System.Collections.Generic.List[string]
 
@@ -37,6 +38,7 @@ Need-File -Path $inventoryGuardPath -Label 'inventory guard'
 Need-File -Path $inventoryBaselinePath -Label 'inventory baseline'
 Need-File -Path $coalescencePath -Label 'PR coalescence note'
 Need-File -Path $handoffDoctrinePath -Label 'unified handoff doctrine'
+Need-File -Path $routeClockDoctrinePath -Label 'route-owned clock resume doctrine'
 
 if ($errors.Count -eq 0) {
     $helper = Get-Content -LiteralPath $helperPath -Raw -Encoding UTF8
@@ -46,6 +48,7 @@ if ($errors.Count -eq 0) {
     $inventoryBaseline = Get-Content -LiteralPath $inventoryBaselinePath -Raw -Encoding UTF8
     $coalescence = Get-Content -LiteralPath $coalescencePath -Raw -Encoding UTF8
     $handoffDoctrine = Get-Content -LiteralPath $handoffDoctrinePath -Raw -Encoding UTF8
+    $routeClockDoctrine = Get-Content -LiteralPath $routeClockDoctrinePath -Raw -Encoding UTF8
     $manifest = $manifestText | ConvertFrom-Json
 
     Need-Text -Text $helper -Needle 'function Resolve-TbgTestDurationBudget' -Label 'resolver'
@@ -76,6 +79,13 @@ if ($errors.Count -eq 0) {
     Need-Text -Text $handoffDoctrine -Needle 'handoff.terminal' -Label 'handoff terminal event'
     Need-Text -Text $handoffDoctrine -Needle 'checkpoint != completion' -Label 'handoff checkpoint boundary'
     Need-Text -Text $handoffDoctrine -Needle 'baseline debt means approval for new debt' -Label 'handoff forbidden baseline claim'
+    Need-Text -Text $routeClockDoctrine -Needle '# Route-Owned Clock Resume Doctrine' -Label 'route clock doctrine title'
+    Need-Text -Text $routeClockDoctrine -Needle 'AutoTravelToRecommended can ACK Success and assign a route while campaign time remains stopped' -Label 'route clock ACK gap'
+    Need-Text -Text $routeClockDoctrine -Needle 'route assigned is an intent checkpoint' -Label 'route assignment checkpoint rule'
+    Need-Text -Text $routeClockDoctrine -Needle 'clock_resume_not_attempted' -Label 'route clock missing decision failure'
+    Need-Text -Text $routeClockDoctrine -Needle 'Default route observation should stay inside the 30-second doctrine' -Label 'route duration rule'
+    Need-Text -Text $routeClockDoctrine -Needle 'partyMovedDistance == 0 alone is not proof that movement did not occur' -Label 'movement observation correction'
+    Need-Text -Text $routeClockDoctrine -Needle 'scripts/verify-route-owned-clock-resume-contract.ps1' -Label 'future route verifier target'
 
     if ([int]$manifest.defaultBudgetSec -ne 30) { Note-Error 'manifest default is not 30' }
 
