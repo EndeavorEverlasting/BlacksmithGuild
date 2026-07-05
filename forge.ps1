@@ -1,6 +1,7 @@
 ﻿# One-click entry point from repo root.
 #   .\forge.ps1                  build + install (+ auto save backup)
-#   .\forge.ps1 -Launch          build + install + open launcher
+#   .\forge.ps1 -Launch -LaunchIntent play       build + install + open/navigate launcher
+#   .\forge.ps1 -Launch -LaunchIntent continue   build + install + open/navigate launcher
 #   .\forge.ps1 -Check           build + install + scan status JSON + log
 #   .\forge.ps1 -Check -SkipInstall   scan only (game may stay open)
 #   .\forge.ps1 -Command AdvanceOneDay -Wait
@@ -11,7 +12,7 @@
 param(
     [switch]$Launch,
     [ValidateSet('play', 'continue')]
-    [string]$LaunchIntent = 'play',
+    [string]$LaunchIntent,
     [switch]$LaunchManual,
     [switch]$Watch,
     [switch]$Check,
@@ -31,6 +32,10 @@ param(
     [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
     [string]$SessionAuthorityMode
 )
+
+if ($Launch -and -not $LaunchIntent) {
+    throw 'LaunchIntent is required when -Launch is used. Pass -LaunchIntent play or -LaunchIntent continue.'
+}
 
 function Invoke-SaveBackupIfNeeded {
     if ($SkipSaveBackup) {

@@ -4,6 +4,15 @@ This document is the authoritative plan for factoring launcher PID/window select
 
 It exists because the repo now has a strong baseline-selection spine, but not every entry point is forced to use it. Future agents should start here before touching launcher navigation, focus policy, Continue/Play automation, PR11 attach/execute, governor smoke bootstrap, or dev-save bootstrap.
 
+Related doctrine:
+
+```text
+docs/handoff/launcher-duration-and-log-evidence-doctrine.md
+docs/handoff/duration-entrypoint-sweep.md
+```
+
+These companion docs own the policy that launcher logs are live state, operator activity is valid evidence, and front-door callers may not hide long duration overrides while the callee appears policy-compliant.
+
 ## Why this exists
 
 The old failure pattern was not simply "wrong window selected." The deeper issue was that different scripts made their own launcher/process/window decisions:
@@ -28,10 +37,10 @@ open-bannerlord-launcher.ps1
 
 launcher-auto-nav.ps1
   loads S1 baseline
-  captures/derives S2 after launcher request
-  compares S1/S2
+  captures/derives S2 post-launch/request snapshot
+  compare S1/S2
   scores candidates
-  chooses one winner
+  bind preferred hwnd/pid
   calls UIAHelper.SetPreferredLauncherWindow(hwnd, pid, score, reason)
 
 UIA/coord click path
@@ -40,6 +49,160 @@ UIA/coord click path
 ```
 
 This is the right spine. It should become the only normal route.
+
+## Non-negotiable PID selection principle
+
+Forge and ForgeContinue must take a snapshot of the relevant launcher/game-family PIDs just before opening any game component, then take a second snapshot after the launch request, and then choose only from the difference.
+
+```text
+S1 = before opening launcher/game component
+S2 = after opening launcher/game component
+candidate set = S2 - S1
+chosen launcher target = one selected hwnd/pid from candidate set
+```
+
+The selected hwnd/pid is then the launch target for the PLAY/CONTINUE phase. The script must not repeatedly rescan all top-level windows and reconsider unrelated windows as equal candidates.
+
+Once a launcher hwnd/pid is selected for the click phase, that selection is frozen until one of these happens:
+
+```text
+- the selected process exits
+- the selected hwnd becomes invalid
+- the selected window is explicitly classified as not launcher-capable
+- the script transitions out of launcher-click phase into post-handoff/game-spawn phase
+```
+
+After the PLAY/CONTINUE click is accepted or the game process spawns, launcher selection must stop. New game windows, loading windows, or Singleplayer windows must not be promoted back into launcher click selection.
+
+This prevents the bad loop:
+
+```text
+1. choose actual launcher window
+2. click CONTINUE
+3. see launcher/game transitional windows
+4. rescore the same PID or a new game-ish hwnd
+5. click CONTINUE again against the wrong phase
+6. repeat analysis until timeout or accidental success
+```
+
+## Operator action principle
+
+The user may click Play or Continue manually during launcher automation.
+
+A manual click that advances the workflow is evidence, not interference. If the game process spawns, the launcher target invalidates in a way consistent with handoff, `Launch.log` reports `game_spawned`, or the Phase1/status artifacts appear, automation must consume that state transition and proceed to post-handoff classification.
+
+Required classification language:
+
+```text
+operator_click_allowed
+operator_or_external_handoff_detected
+game_spawned_before_script_click
+game_spawned_during_click_phase
+launcher_target_invalidated_after_operator_click
+post_handoff_watch
+```
+
+Forbidden behavior:
+
+```text
+treating user click as automation failure
+waiting for script-click proof after external handoff is already proven
+continuing to click launcher controls after game_spawned
+claiming product PASS from game_spawned alone
+```
+
+## Fallback ordering principle
+
+Bound PID/window context first. Global PID search second. Coordinate/title/size fallback last, logged, and only with a reason.
+
+```text
+1. Bound LauncherWindowContext hwnd/pid
+2. S1/S2 delta-selected hwnd/pid
+3. PID-global UIA fallback, only after bound context fails or is unavailable
+4. Coordinate fallback, only after bound context and PID-global UIA fail or are unavailable
+5. Operator focus prompt, only when automation cannot act safely
+```
+
+No fallback may erase or replace the fact that a bound hwnd/pid existed. Fallbacks must explain why that bound target could not be used.
+
+## Launch phase state machine
+
+Launcher automation must use explicit phases. A phase transition is more important than another window scan.
+
+```text
+pre_launch_snapshot
+launcher_opened_or_reused
+s2_delta_captured
+launcher_target_selected
+launcher_click_phase
+continue_clicked_or_play_clicked
+operator_or_external_handoff_detected
+post_click_spawn_wait
+game_spawned
+post_handoff_watch
+map_or_menu_readiness_probe
+attach_ready_or_blocked
+```
+
+Rules:
+
+```text
+launcher_target_selected -> launcher_click_phase:
+  use frozen hwnd/pid unless invalidated by a named reason
+
+continue_clicked_or_play_clicked -> post_click_spawn_wait:
+  do not re-enter launcher candidate scoring unless click failure is proven and game has not spawned
+
+operator_or_external_handoff_detected -> post_handoff_watch:
+  accept user/manual/external Play or Continue if logs/process/status prove forward progress
+
+game_spawned -> post_handoff_watch:
+  stop clicking launcher controls
+  stop classifying game windows as launcher controls
+
+post_handoff_watch -> map_or_menu_readiness_probe:
+  report readiness or blocked state, not silence
+```
+
+The logs must make these phases visible. Seeing repetitive top-level-window analysis after a frozen launcher target exists is a bug unless the log also contains an explicit invalidation reason.
+
+## Post-handoff product readiness doctrine
+
+A successful launcher click is not a finished product.
+
+```text
+continue_clicked != map_ready
+Bannerlord.exe spawned != attach_ready
+loading complete != assistive_ready
+assistive_ready != user_guided
+```
+
+After game spawn, the product must produce one of these outcomes:
+
+```text
+map_ready
+main_menu_ready
+loading_still_in_progress
+attach_ready
+attach_blocked
+hotkeys_ready
+assistive_commands_ready
+operator_action_required
+post_handoff_idle_unactionable
+```
+
+If the game loads slowly, the post-handoff watcher must emit progress classifications instead of appearing dead. If the game reaches a usable state but no handoff, no activity, and no message-log guidance is emitted, that is `post_handoff_idle_unactionable`, not PASS.
+
+The in-game message log should guide the operator after readiness, for example:
+
+```text
+TBG ready: Ctrl+Alt+T cycles engine mode.
+TBG ready: Ctrl+Alt+G runs GuildLoop.
+TBG ready: Ctrl+Alt+M writes Market Intel.
+TBG ready: Ctrl+Alt+B aborts active autonomous movement.
+```
+
+The exact wording can change, but the product must not leave the operator staring at a loaded game with no handoff, no activity, and no suggested next command.
 
 ## Known inconsistent entry points
 
@@ -82,15 +245,25 @@ No caller may decide "launcher already running, skip open launcher" without also
 
 No click path may use heuristic title/size window selection while a valid LauncherWindowContext exists.
 
+No repeated S1/S2 reselection is allowed after launcher target selection unless the selected hwnd/pid is explicitly invalidated.
+
+No spawned game window may be promoted back into launcher click selection after continue_clicked_or_play_clicked.
+
 No fallback may be silent.
 
 PID-global UIA is a fallback only after bound hwnd/pid context fails or is unavailable, and it must log why.
 
 Coordinate fallback is a fallback only after bound hwnd/pid context fails or is unavailable, and it must log why.
 
+Operator activity is valid workflow evidence when logs/process/status prove forward progress.
+
 Dialog handling may use specialized discovery only with an explicit reason because dialogs may not share the launcher hwnd.
 
 Focus helpers must not bypass context silently.
+
+Post-handoff watch must emit readiness, blocked, or post_handoff_idle_unactionable classification.
+
+A loaded game with no handoff, no activity, and no message-log command guidance is unfinished product behavior, not PASS.
 ```
 
 ## Canonical abstraction
@@ -122,6 +295,10 @@ contextSource
 isExistingLauncherReuse
 isFreshLaunch
 createdBy
+phase
+selectionFrozen
+invalidationReason
+postHandoffClassification
 ```
 
 Preferred function or script:
@@ -194,6 +371,8 @@ Any bootstrap path that opens or reuses the launcher must call the same context 
 
 Should consume a context path when provided. If no context is provided, it may create a fallback context only with a logged `context_missing` or `context_recaptured_fallback` classification.
 
+It must also freeze the selected launcher hwnd/pid for the click phase. It must not keep rescoring top-level windows after the selection is already good enough to click. Re-selection is allowed only after a named invalidation reason.
+
 ## Allowed fallbacks and required logging
 
 Fallbacks are not banned. Silent fallbacks are banned.
@@ -210,6 +389,7 @@ dialog_outside_launcher_context
 pid_global_uia_fallback
 coordinate_fallback
 operator_focus_required
+post_handoff_idle_unactionable
 ```
 
 Each fallback must log:
@@ -232,8 +412,17 @@ uses Get-Process -Name TaleWorlds.MountAndBlade.Launcher | Select-Object -First 
 uses FindProcessMainWindowRoot as authority for launch navigation
 uses GetBestLauncherWindowForCoords as normal path instead of fallback path
 uses PID-global UIA before bound hwnd/pid UIA
+rescans all top-level windows after a launcher target has already been selected without invalidating the selected hwnd/pid
+promotes a spawned game window or Singleplayer window back into launcher click selection
+keeps retrying launcher CONTINUE after game_spawned or handoff state is observed
 forces foreground without context or explicit focus policy
+treats operator click as failure when process/log/status evidence proves handoff
 ```
+
+## Verifier anchors
+
+operator guidance shown yes/no
+Runtime proof is not part of this documentation sprint.
 
 ## Contract verifier
 
@@ -251,12 +440,14 @@ A later implementation verifier should fail if any launch-adjacent script calls 
 
 ### Stage 1: Documentation and contract
 
-Status: this document.
+Status: this document plus companion duration/operator evidence doctrine.
 
 Deliverables:
 
 ```text
 docs/handoff/launcher-window-context-factoring.md
+docs/handoff/launcher-duration-and-log-evidence-doctrine.md
+docs/handoff/duration-entrypoint-sweep.md
 docs/operator/governor-test-harness.md section
 scripts/verify-launcher-window-context-contract.ps1
 ```
@@ -276,87 +467,4 @@ Ensure-TbgLauncherWindowContext
 Read-TbgLauncherWindowContext
 Write-TbgLauncherWindowContext
 Test-TbgLauncherWindowContextFresh
-```
-
-### Stage 3: Entry-point migration
-
-Migrate:
-
-```text
-install-mod.ps1
-run-autonomous-assist-session.ps1
-run-pr11-town-travel-launch-attach-execute.ps1
-run-governor-disposable-smoke.ps1
-ensure-dev-save.ps1
-```
-
-### Stage 4: Launcher auto-nav consumption
-
-Add `-LauncherContextPath` to `launcher-auto-nav.ps1` and make it prefer the context over fallback artifact discovery.
-
-### Stage 5: Fallback contract hardening
-
-Make verifier fail for normal-path heuristics. Keep dialog exceptions explicit and logged.
-
-### Stage 6: Runtime proof
-
-Only after Stage 2-5, run visible mechanics proof on an approved disposable save. Runtime proof is not part of this documentation sprint.
-
-## Final handoff format
-
-Future agents working this lane should use:
-
-```text
-SPRINT HANDOFF - Launcher Window Context Factoring
-
-START:
-- branch:
-- starting SHA:
-- working tree clean:
-
-ANALYSIS:
-- launcher entry points inspected:
-- context gaps found:
-- fallback paths found:
-
-IMPLEMENTATION:
-- context file:
-- functions added:
-- entry points migrated:
-- launcher-auto-nav context consumption:
-- fallback logging added:
-
-VERIFICATION:
-- launcher context verifier:
-- post-attach verifier:
-- governor verifier:
-- BOM:
-- build if source changed:
-
-RUNTIME:
-- live proof run yes/no:
-- if yes, summary path:
-- movement proof classification:
-
-EVIDENCE HYGIENE:
-- runtime evidence committed yes/no:
-
-FINAL HYGIENE:
-- git status --short:
-- git diff --check:
-- git log --branches --not --remotes --oneline:
-- git ls-files --others --exclude-standard:
-
-NEXT ACTION:
-- exact next command or blocker:
-```
-
-## Core ruling
-
-```text
-Launcher PID/window selection must become one shared context.
-Every launch-adjacent entry point must use it.
-Existing launcher reuse still needs context.
-Fallbacks are allowed only when logged and classified.
-The full refactor is a later implementation sprint.
 ```
