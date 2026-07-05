@@ -6,7 +6,8 @@
   "doctrineFiles": [
     "docs/handoff/agent-feedback-harness.md",
     "docs/handoff/agent-feedback-schema.md",
-    "docs/handoff/agentic-review-bottleneck-doctrine.md"
+    "docs/handoff/agentic-review-bottleneck-doctrine.md",
+    "docs/handoff/agent-feedback-gap-register.md"
   ],
   "requiredClassificationStates": [
     "checkpoint_reached",
@@ -43,8 +44,20 @@
     "Codify doctrine",
     "Add schema",
     "Add verifier",
+    "Add gap register",
     "Plan write-agent-feedback-summary.ps1",
     "Plan invoke-agent-stop-hook.ps1"
+  ],
+  "knownGaps": [
+    "No feedback writer yet",
+    "No stop hook yet",
+    "No artifact interpretation table yet",
+    "No automated claim discipline enforcement yet",
+    "No branch/worktree capture yet",
+    "No correction-mining loop yet",
+    "No architectural boundary tests yet",
+    "No Semgrep integration yet",
+    "No latest local validation evidence yet"
   ],
   "nonGoals": [
     "merge PRs automatically",
