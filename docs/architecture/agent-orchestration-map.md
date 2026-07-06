@@ -14,6 +14,46 @@ docs/assets/agent-orchestration-map.svg
 
 The Mermaid file is the canonical editable diagram. The MIR JSON is the machine-readable representation. The SVG is a repo-renderable visual recreation of the uploaded screenshot.
 
+## Natural presentation hooks
+
+The diagram is not only a doc asset. It is available through repo scripts.
+
+Show the default summary:
+
+```powershell
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1
+```
+
+Show specific layers:
+
+```powershell
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1 -Format mermaid
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1 -Format mir
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1 -Format svg
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1 -Format markdown
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1 -Format paths
+```
+
+Write a compact result artifact:
+
+```powershell
+.\scripts\tbg\Show-TbgOrchestrationMap.ps1 -WriteResult
+```
+
+The workflow runner also exposes the map directly:
+
+```powershell
+.\scripts\tbg\Invoke-TbgWorkflow.ps1 -Workflow agent-orchestration-map
+.\scripts\tbg\Invoke-TbgWorkflow.ps1 -Workflow agent-orchestration-map -OrchestrationMapFormat mermaid
+.\scripts\tbg\Invoke-TbgWorkflow.ps1 -Workflow route-visible-start -SummarizeOnly -ShowOrchestrationMap
+```
+
+When `-WriteResult` or the workflow route is used, the presentation script writes:
+
+```text
+artifacts/latest/agent-orchestration-map.result.json
+```
+
 ## Map flow
 
 ```text
