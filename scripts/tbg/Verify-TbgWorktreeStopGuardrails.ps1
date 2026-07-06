@@ -1,4 +1,4 @@
-﻿# Offline verifier for worktree isolation, runtime stop guardrails, and activity ledger doctrine.
+﻿# Offline verifier for worktree isolation, runtime stop guardrails, activity ledger doctrine, and orchestration map assets.
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -29,6 +29,8 @@ $worktreeDoc = 'docs\architecture\local-worktree-sprint-contract.md'
 $stopDoc = 'docs\handoff\runtime-stop-guardrails.md'
 $workflowDoc = 'docs\architecture\agent-workflow-contracts.md'
 $activityDoc = 'docs\architecture\campaign-activity-ledger.md'
+$mapDoc = 'docs\architecture\agent-orchestration-map.md'
+$mapSvg = 'docs\assets\agent-orchestration-map.svg'
 $agents = 'AGENTS.md'
 $worktreeJson = '.tbg\worktrees\local-sprint-worktrees.contract.json'
 $stopJson = '.tbg\workflows\runtime-stop-policy.contract.json'
@@ -114,6 +116,18 @@ Need $activityPlan 'Do not scan full `ActivityJournal.jsonl` during normal plann
 Need $activityPlan 'English report requirement'
 Need $activityPlan 'artifacts/latest/campaign-activity-ledger.result.json'
 
+Need $mapDoc '# Agent Orchestration Map'
+Need $mapDoc 'docs/assets/agent-orchestration-map.svg'
+Need $mapDoc 'The SVG is a faithful repo-native recreation of the map from the uploaded screenshot'
+Need $mapDoc 'Exploration = inspect repo state, runtime artifacts, and prior PRs without patching blindly.'
+Need $mapDoc 'The repo owns the loop.'
+Need $mapSvg '<title id="title">Orchestrating coding agent sessions</title>'
+Need $mapSvg 'Explore agent 1'
+Need $mapSvg 'Writes plan.md'
+Need $mapSvg 'writes report.md'
+Need $mapSvg 'agent 2 - correctness'
+Need $mapSvg 'Open PR'
+
 try {
     Get-Content -LiteralPath (Join-Path $repoRoot $worktreeJson) -Raw | ConvertFrom-Json | Out-Null
 } catch {
@@ -151,10 +165,10 @@ try {
 }
 
 if ($failures.Count -gt 0) {
-    Write-Host "FAIL: worktree/stop/activity guardrail contract has $($failures.Count) issue(s)." -ForegroundColor Red
+    Write-Host "FAIL: worktree/stop/activity/map guardrail contract has $($failures.Count) issue(s)." -ForegroundColor Red
     foreach ($failure in $failures) { Write-Host "  - $failure" -ForegroundColor Red }
     exit 1
 }
 
-Write-Host 'PASS: worktree, runtime stop, and activity ledger guardrails verified.' -ForegroundColor Green
+Write-Host 'PASS: worktree, runtime stop, activity ledger, and orchestration map guardrails verified.' -ForegroundColor Green
 exit 0
