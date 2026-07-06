@@ -1,0 +1,44 @@
+{
+  "schema": "tbg.workflow-contract.v1",
+  "id": "local-mcp-code-intelligence",
+  "sprint": "037A",
+  "contextBanner": "[TBG | Sprint 037A | Local Agent Harness Foundation | branch: sprint/037a-local-agent-harness]",
+  "purpose": "Create repo-local harness scaffolding for contracts, policy gates, MCP/LSP readiness, hooks, and reusable agent infrastructure.",
+  "scope": {
+    "allowed": [
+      "harness contracts and policies",
+      "readiness scripts",
+      "command and file safety scripts",
+      "done gate script",
+      "MCP and API stubs",
+      "example config files",
+      "architecture and handoff docs"
+    ],
+    "forbidden": [
+      "launch Bannerlord",
+      "run ForgeReboot",
+      "click launcher",
+      "write command inbox",
+      "mutate saves",
+      "modify gameplay behavior",
+      "commit real local secrets or personal config",
+      "push directly to main without explicit merge task"
+    ]
+  },
+  "requiredArtifacts": [
+    "artifacts/latest/harness-readiness.result.json"
+  ],
+  "validationCommands": [
+    "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgHarnessReadiness.ps1",
+    "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgCommandSafety.ps1 -CommandText \"ForgeReboot.cmd\"",
+    "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgDoneGate.ps1 -ContractId \"local-mcp-code-intelligence\"",
+    "git diff --check",
+    "git status --short"
+  ],
+  "terminalStates": [
+    "ready",
+    "missing_prereqs",
+    "blocked_by_policy",
+    "repo_invalid"
+  ]
+}
