@@ -27,10 +27,12 @@ function Need {
 }
 
 $doc = 'docs\handoff\focused-route-proof-lifecycle.md'
+$entrypointMap = 'docs\handoff\harness-entrypoint-focus-map.md'
 $focusKeeper = 'scripts\start-bannerlord-focus-keeper.ps1'
 $sessionWrapper = 'scripts\run-focused-route-proof-session.ps1'
 $rebootRunner = 'scripts\run-reboot-iteration.ps1'
 $cmd = 'ForgeRouteProof.cmd'
+$entrypointVerifier = 'scripts\verify-harness-entrypoint-focus-map.ps1'
 
 Need $doc '# Focused Route Proof Lifecycle'
 Need $doc 'Bannerlord is not a normal background process for this proof.'
@@ -51,6 +53,11 @@ Need $doc 'scripts/run-focused-route-proof-session.ps1'
 Need $doc 'ForgeRouteProof.cmd'
 Need $doc 'ForgeStop.cmd soft'
 Need $doc 'Movement proof still requires fresh route cert, position/checkpoint, and time evidence after the route execution window.'
+
+Need $entrypointMap '# Harness Entrypoint Focus Map'
+Need $entrypointMap 'Runtime automation should keep Bannerlord focus-owned by default.'
+Need $entrypointMap 'ForgeReboot.cmd -FocusKeeperMode None'
+Need $entrypointMap 'Not an operator route-proof entrypoint by itself'
 
 Need $focusKeeper 'TbgBannerlordFocusLease.v1'
 Need $focusKeeper "[ValidateSet('Observe', 'SyntheticFocusPulse', 'ForegroundLease')]"
@@ -90,7 +97,7 @@ Need $sessionWrapper 'Focused proof mode raises the runner foreground-loss thres
 Need $sessionWrapper 'BlacksmithGuild_FocusLease.json'
 Need $sessionWrapper 'focused-route-proof-summary.json'
 
-Need $rebootRunner 'FocusKeeperMode'
+Need $rebootRunner "[string]$`FocusKeeperMode = 'SyntheticFocusPulse'"
 Need $rebootRunner 'run-focused-route-proof-session.ps1'
 Need $rebootRunner 'Get-LatestFocusedRouteProofDir'
 Need $rebootRunner 'latestFocusedRouteProofPath'
@@ -100,6 +107,9 @@ Need $cmd 'ForgeReboot.cmd'
 Need $cmd 'FocusKeeperMode SyntheticFocusPulse'
 Need $cmd 'ActionTimeoutClass long_distance_travel'
 Need $cmd 'StopBeforeLaunch'
+
+Need $entrypointVerifier '# Offline verifier for harness entrypoint focus ownership.'
+Need $entrypointVerifier 'PASS: harness entrypoint focus map verified.'
 
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: focused route proof lifecycle contract has $($failures.Count) issue(s)." -ForegroundColor Red
