@@ -1,0 +1,37 @@
+{
+  "schema": "tbg.diagram.mir.v1",
+  "title": "Orchestrating coding agent sessions",
+  "subtitle": "Orchestrating many focused coding agents together to accomplish a larger task",
+  "presentationFiles": {
+    "mermaid": "docs/assets/agent-orchestration-map.mmd",
+    "svg": "docs/assets/agent-orchestration-map.svg",
+    "markdown": "docs/architecture/agent-orchestration-map.md"
+  },
+  "groups": [
+    "Exploration agents",
+    "code-review agents"
+  ],
+  "nodes": [
+    "Explore agent 1",
+    "Explore agent 2",
+    "Explore agent 3",
+    "Plan - writes plan.md",
+    "Implement - writes report.md",
+    "Review agent 1 - security",
+    "Review agent 2 - correctness",
+    "Review agent 3 - simplify",
+    "Done - Open PR"
+  ],
+  "edges": [
+    ["Explore agent 1", "Plan - writes plan.md"],
+    ["Explore agent 2", "Plan - writes plan.md"],
+    ["Explore agent 3", "Plan - writes plan.md"],
+    ["Plan - writes plan.md", "Implement - writes report.md", "plan.md"],
+    ["Implement - writes report.md", "Review agent 1 - security", "report.md"],
+    ["Implement - writes report.md", "Review agent 2 - correctness", "report.md"],
+    ["Implement - writes report.md", "Review agent 3 - simplify", "report.md"],
+    ["Review agent 1 - security", "Done - Open PR"],
+    ["Review agent 2 - correctness", "Done - Open PR"],
+    ["Review agent 3 - simplify", "Done - Open PR"]
+  ]
+}
