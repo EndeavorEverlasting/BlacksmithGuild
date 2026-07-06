@@ -40,6 +40,7 @@ BlacksmithGuild_LaunchControlInstall.json
 BlacksmithGuild_LaunchControlStatus.json
 BlacksmithGuild_LaunchControlLastRun.json
 tools/LaunchControl/Launch-Control.generated.local.json
+tools/LaunchControl/TASKBAR-PINNING.txt
 BlacksmithGuild_MarketIntel.json
 BlacksmithGuild_SmithingAudit.json
 BlacksmithGuild_SmithingAdvisory.json
