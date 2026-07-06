@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "workflow": "route-visible-start",
+  "objective": "Issue a real in-game campaign-map travel command toward the selected settlement and emit a compact result artifact.",
+  "defaultTargetSettlement": "Quyaz",
+  "entrypoint": "scripts/tbg/Invoke-TbgWorkflow.ps1 -Workflow route-visible-start -TargetSettlement Quyaz",
+  "resultPath": "artifacts/latest/route-visible-start.result.json",
+  "requiresForgeStopFirst": true,
+  "mustNotDependOnTerminalFocus": true,
+  "productPassCriteria": {
+    "runtime.campaignReady": true,
+    "runtime.mapStateActive": true,
+    "runtime.safeToExecuteTravel": true,
+    "runtime.nextPlannedBranch": "travel",
+    "route.certFound": true,
+    "route.travelCommandIssued": true,
+    "route.routeStarted": true
+  },
+  "validVerdicts": [
+    "PASS",
+    "BLOCKED",
+    "FAIL"
+  ],
+  "phases": [
+    "stop",
+    "build",
+    "install",
+    "launch",
+    "map-ready",
+    "runtime-action",
+    "summarize",
+    "done"
+  ],
+  "blockers": {
+    "status file missing": "Launch/map-ready workflow did not produce BlacksmithGuild_Status.json. Fix launch or wait phase before route logic.",
+    "campaignReady is false": "Inspect campaign lifecycle and map-ready gating.",
+    "mapStateActive is false": "Game reached a non-map surface. Fix surface transition or launch target.",
+    "safeToExecuteTravel is false": "Inspect GameSessionState and travel safety classifier.",
+    "nextPlannedBranch is not travel": "Inspect recursive branch selector and route council target emission.",
+    "targetSettlement missing": "Inspect route council or branch state target emission.",
+    "route cert missing after map-ready": "In-mod route executor did not start or did not write a route cert. Inspect MapTradeAutonomousService.OnCampaignTick.",
+    "travelCommandIssued is false": "Movement driver did not accept the command. Inspect CampaignMapMovementHelper.TryMoveToSettlement.",
+    "routeStarted is false": "Cert exists, but route service did not claim start. Inspect route cert model and writer."
+  },
+  "handoffPrompt": "Read artifacts/latest/route-visible-start.result.json. Patch only the exact blocker named by blockedReason or nextPatchHint. Do not ask for a full collector run. If commands assume Bannerlord should not be running, include ForgeStop first."
+}
