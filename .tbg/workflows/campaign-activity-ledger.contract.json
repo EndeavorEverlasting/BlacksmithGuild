@@ -1,0 +1,85 @@
+{
+  "schema": "tbg.campaignActivityLedgerContract.v1",
+  "workflow": "campaign-activity-ledger",
+  "purpose": "Capture meaningful player and automation activity, compare proposed plans against observed behavior, and emit English reports plus feature signals without forcing runtime to scan large history files.",
+  "storage": {
+    "appendOnly": [
+      "BlacksmithGuild_ActivityJournal.jsonl",
+      "BlacksmithGuild_PlanLedger.jsonl",
+      "BlacksmithGuild_PlanComparisons.jsonl",
+      "BlacksmithGuild_FeatureSignals.jsonl"
+    ],
+    "boundedRuntimeRead": [
+      "BlacksmithGuild_ActivityState.json",
+      "BlacksmithGuild_RecentActivity.json"
+    ],
+    "englishReport": "BlacksmithGuild_ActivityReport.md"
+  },
+  "runtimeReadPolicy": {
+    "mayRead": [
+      "BlacksmithGuild_ActivityState.json",
+      "BlacksmithGuild_RecentActivity.json",
+      "last N JSONL entries only when explicitly requested"
+    ],
+    "mustNotReadDuringCampaignTick": [
+      "full week of ActivityJournal history",
+      "unbounded JSON arrays",
+      "entire PlanLedger history",
+      "entire PlanComparisons history"
+    ]
+  },
+  "eventDomains": [
+    "travel",
+    "trade",
+    "settlement",
+    "companions",
+    "recruits",
+    "smithing",
+    "inventory",
+    "gold",
+    "planning",
+    "feature_signals"
+  ],
+  "meaningfulEventsOnly": true,
+  "forbiddenDefaultBehavior": [
+    "write every tick",
+    "rewrite full history on every event",
+    "scan full journal in campaign tick",
+    "emit raw logs without English interpretation"
+  ],
+  "planFeedback": {
+    "eventTypes": [
+      "plan_proposed",
+      "plan_accepted",
+      "plan_rejected",
+      "plan_rejected_implicit",
+      "plan_ignored",
+      "manual_override",
+      "plan_behavior_comparison",
+      "feature_signal"
+    ],
+    "comparativeWindows": [
+      "next N meaningful events",
+      "next in-game day",
+      "next session",
+      "next real-world day",
+      "next several in-game days for longer plans"
+    ],
+    "repeatedDivergenceBecomesFeatureSignal": true
+  },
+  "englishReportRequirements": [
+    "State what the app proposed.",
+    "State what the user did afterward.",
+    "State whether the plan was accepted, rejected, ignored, or overridden.",
+    "State the likely planner weakness.",
+    "State the recommended next patch or feature rule."
+  ],
+  "implementationAcceptance": {
+    "journalAppendOnly": true,
+    "recentWindowBounded": true,
+    "runtimeReadsBoundedState": true,
+    "planComparisonsWritten": true,
+    "englishReportWritten": true,
+    "featureSignalsWritten": true
+  }
+}
