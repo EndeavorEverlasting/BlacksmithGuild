@@ -1,20 +1,20 @@
-<#
-.SYNOPSIS
-    Repo-owned workflow runner for Blacksmith Guild product proofs.
-
-.DESCRIPTION
-    Runs a named workflow and emits artifacts/latest/<workflow>.result.json.
-    The first supported workflow is route-visible-start.
-#>
+﻿# Repo-owned workflow runner for Blacksmith Guild product proofs and guardrail surfaces.
 param(
-    [ValidateSet('route-visible-start')]
+    [ValidateSet('route-visible-start','agent-orchestration-map')]
     [string]$Workflow = 'route-visible-start',
 
     [string]$TargetSettlement = 'Quyaz',
 
     [string]$BannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord',
 
-    [switch]$SummarizeOnly
+    [switch]$SummarizeOnly,
+
+    [switch]$ShowOrchestrationMap,
+
+    [ValidateSet('summary','paths','markdown','mermaid','mir','svg')]
+    [string]$OrchestrationMapFormat = 'summary',
+
+    [switch]$OpenOrchestrationMap
 )
 
 $ErrorActionPreference = 'Stop'
@@ -94,6 +94,31 @@ function Find-InstalledDll {
 function Get-BranchName { try { return (git branch --show-current).Trim() } catch { return $null } }
 function Get-CommitSha { try { return (git rev-parse --short HEAD).Trim() } catch { return $null } }
 
+function Invoke-OrchestrationMapSurface {
+    param(
+        [string]$Format,
+        [switch]$Open
+    )
+
+    $script = Join-Path $PSScriptRoot 'Show-TbgOrchestrationMap.ps1'
+    if (-not (Test-Path -LiteralPath $script)) { throw "Missing orchestration map presenter: $script" }
+
+    $args = @('-NoProfile','-ExecutionPolicy','Bypass','-File',$script,'-Format',$Format,'-WriteResult')
+    if ($Open) { $args += '-Open' }
+    & powershell @args
+    return $LASTEXITCODE
+}
+
+if ($Workflow -eq 'agent-orchestration-map') {
+    $exitCode = Invoke-OrchestrationMapSurface -Format $OrchestrationMapFormat -Open:$OpenOrchestrationMap
+    exit $exitCode
+}
+
+if ($ShowOrchestrationMap) {
+    $mapExit = Invoke-OrchestrationMapSurface -Format $OrchestrationMapFormat -Open:$OpenOrchestrationMap
+    if ($mapExit -ne 0) { exit $mapExit }
+}
+
 function New-BaseResult {
     param([string]$Phase = 'stop')
 
@@ -129,6 +154,11 @@ function New-BaseResult {
             runtimeProofClaim = $null
             blockedReason = $null
             state = $null
+        }
+        orchestrationMap = [ordered]@{
+            requested = [bool]$ShowOrchestrationMap
+            format = if ($ShowOrchestrationMap) { $OrchestrationMapFormat } else { $null }
+            resultPath = if ($ShowOrchestrationMap) { Join-Path $latestDir 'agent-orchestration-map.result.json' } else { $null }
         }
         files = [ordered]@{
             status = Join-Path $BannerlordRoot 'BlacksmithGuild_Status.json'
