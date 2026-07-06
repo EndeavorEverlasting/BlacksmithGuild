@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.harness-manifest.schema.json",
+  "title": "TBG Harness Manifest",
+  "type": "object",
+  "required": ["schema", "appId", "displayName", "defaultContractId", "contextBanner", "paths"],
+  "properties": {
+    "schema": { "const": "tbg.harness.manifest.v1" },
+    "appId": { "type": "string", "minLength": 1 },
+    "displayName": { "type": "string", "minLength": 1 },
+    "defaultContractId": { "type": "string", "minLength": 1 },
+    "contextBanner": { "type": "string", "minLength": 1 },
+    "repo": { "type": "object" },
+    "paths": { "type": "object" },
+    "runtime": { "type": "object" },
+    "doctrine": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}
