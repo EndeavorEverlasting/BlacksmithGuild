@@ -59,19 +59,59 @@ Blacksmith Guild should copy that structure while keeping Windows and Bannerlord
 
 ## Hard constraints for this repo
 
-### 1. Game stop is not optional
+### 1. Game stop is not optional when runtime state matters
 
-Any workflow that modifies source, builds, installs, launches, or assumes Bannerlord should not be running must stop the game first.
+Any workflow that builds, installs, launches, runs a live cert, mutates Bannerlord runtime files, or assumes Bannerlord should not be running must stop the game first unless the workflow itself owns and documents a stop phase.
 
-Required first step:
+Required default stop step from repo root:
 
 ```powershell
 $env:FORGE_NO_PAUSE = '1'
-$env:FORGE_STOP_CHOICE = 'F'
-cmd /c .\ForgeStop.cmd force
+.\ForgeStop.cmd soft
 ```
 
-### 2. Runtime proof must not depend on terminal focus
+Use force only when explicitly requested or when a prior soft stop is proven insufficient.
+
+Full stop doctrine:
+
+```text
+docs/handoff/runtime-stop-guardrails.md
+.tbg/workflows/runtime-stop-policy.contract.json
+scripts/tbg/Assert-TbgRuntimeStopPolicy.ps1
+```
+
+### 2. Local sibling worktrees are part of the harness
+
+Concurrent PRs and runtime sprints must not share a checkout by accident.
+
+Protected local runtime checkout:
+
+```text
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+```
+
+Known sibling lanes:
+
+```text
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr23
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr25-launcher-evidence
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr27-duration-guard
+```
+
+A PR-specific sprint should use a sibling checkout, usually:
+
+```text
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-prNN-short-name
+```
+
+Full worktree doctrine:
+
+```text
+docs/architecture/local-worktree-sprint-contract.md
+.tbg/worktrees/local-sprint-worktrees.contract.json
+```
+
+### 3. Runtime proof must not depend on terminal focus
 
 Bannerlord can pause or stall when focus changes. A route proof that expects movement while the user is typing in PowerShell is invalid.
 
@@ -81,7 +121,7 @@ Runtime movement must be issued from inside the mod lifecycle, usually one of:
 - map-ready lifecycle
 - in-game command driver that polls independently of focus
 
-### 3. In-game certs beat collector packages
+### 4. In-game certs beat collector packages
 
 Collectors are allowed, but they are not the product result.
 
@@ -97,7 +137,7 @@ For route visible start:
 artifacts/latest/route-visible-start.result.json
 ```
 
-### 4. One blocker only
+### 5. One blocker only
 
 When blocked, the result must name one exact blocker.
 
@@ -118,7 +158,7 @@ Good:
 }
 ```
 
-### 5. Product-shaped gates only
+### 6. Product-shaped gates only
 
 A workflow passes only when the product behavior is represented in the result contract.
 
@@ -136,6 +176,24 @@ For route visible start, minimum pass:
 ```
 
 A harness file existing is not enough.
+
+## Required agent preflight declaration
+
+Before giving commands that touch git state, source files, build/install/runtime artifacts, or live validation, an agent must declare:
+
+```text
+Target PR:
+Target branch:
+Base branch:
+Intended local path:
+Local path role:
+Protected BlacksmithGuild checkout untouched: yes/no
+Concurrent route branch untouched: yes/no
+Runtime/game stop needed: yes/no
+Reason:
+Stop command if needed:
+Workflow owns stop internally: yes/no
+```
 
 ## Separation of responsibilities
 
@@ -196,6 +254,7 @@ A PR that adds or changes an automation workflow must answer:
 5. Does the workflow stop the game before modifying/building/installing?
 6. Does it avoid relying on foreground focus?
 7. Does it avoid dumping giant logs by default?
+8. Does it declare the intended local checkout/worktree?
 
 If any answer is vague, the PR is not ready.
 
@@ -225,6 +284,10 @@ Do not make the user paste full logs when the workflow can summarize:
 Do not rely on `partyMovedDistance == 0` as proof of no movement. Bannerlord movement can be checkpoint-like or discrete. Route intent, active target, position snapshots, settlement identity, and arrival state are better evidence.
 
 Do not make the assistant remember operational rules that the repo can encode.
+
+Do not branch-switch the protected runtime checkout for unrelated PR work.
+
+Do not run build/install/live-cert validation without either a stop step or a verified workflow-owned stop phase.
 
 ## Working principle
 
