@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "tbg-domain": {
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts\\mcp\\Start-TbgDomainMcpServer.ps1"
+      ],
+      "env": {
+        "TBG_HARNESS_MODE": "readonly"
+      }
+    },
+    "tbg-lsp": {
+      "command": "mcp-language-server",
+      "args": [
+        "--workspace",
+        ".",
+        "--lsp",
+        "csharp-ls"
+      ]
+    }
+  }
+}
