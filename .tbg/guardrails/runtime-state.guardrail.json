@@ -1,0 +1,59 @@
+{
+  "guardrail": "runtime-state-preflight",
+  "version": 1,
+  "purpose": "Make agents declare whether a task needs Bannerlord inactive before they patch, build, install, launch, or validate a live cert.",
+  "requiredPreflightCommand": [
+    "$env:FORGE_NO_PAUSE = '1'",
+    "$env:FORGE_STOP_CHOICE = 'F'",
+    "$env:FORGE_STOP_DEFAULT = 'F'",
+    "$env:FORGE_STOP_TIMEOUT_SECONDS = '0'",
+    "cmd /c .\\ForgeStop.cmd force"
+  ],
+  "intents": {
+    "docs": {
+      "requiresInactiveGame": false,
+      "examples": ["editing markdown", "reviewing PR text", "static planning"]
+    },
+    "static-review": {
+      "requiresInactiveGame": false,
+      "examples": ["git diff", "reading source", "searching files"]
+    },
+    "patch": {
+      "requiresInactiveGame": true,
+      "reason": "Patch snippets may be followed by build or install work. The snippet must establish safe runtime state unless it is documentation-only."
+    },
+    "build": {
+      "requiresInactiveGame": true,
+      "reason": "Build and install lanes must start from known runtime state."
+    },
+    "install": {
+      "requiresInactiveGame": true,
+      "reason": "Runtime module files must not be replaced while the game is active."
+    },
+    "launch": {
+      "requiresInactiveGame": true,
+      "reason": "Launch workflows must start from a known game state."
+    },
+    "live-cert": {
+      "requiresInactiveGame": true,
+      "reason": "A live cert must prove the current build from a clean runtime start, not leftover state."
+    },
+    "route-visible-start": {
+      "requiresInactiveGame": true,
+      "resultArtifact": "artifacts/latest/route-visible-start.result.json",
+      "runtimeCert": "BlacksmithGuild_MapTradeRouteCert.json"
+    }
+  },
+  "blockedResultShape": {
+    "verdict": "BLOCKED",
+    "blockedReason": "runtime-state guardrail requires ForgeStop before this intent",
+    "nextPatchHint": "Run scripts/tbg/Assert-TbgRuntimeGuardrail.ps1 -Intent <intent> -StopGame, then retry the workflow."
+  },
+  "agentRules": [
+    "If the command assumes Bannerlord is inactive, include the preflight step in the same snippet.",
+    "Do not ask the user to remember the runtime-state preflight.",
+    "Do not rely on terminal focus for movement proof.",
+    "Do not replace compact live certs with collector rituals.",
+    "Patch only the named blockedReason or nextPatchHint after a workflow blocks."
+  ]
+}
