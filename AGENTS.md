@@ -21,6 +21,72 @@ This file is the root coordination contract for Codex, Cursor, ChatGPT handoffs,
 - Do not ask the user to harvest logs manually.
 - Runner owns evidence capture.
 
+## Local worktree rule
+
+Before giving commands that touch git state, source files, build/install/runtime artifacts, or live validation, the agent must declare:
+
+```text
+Target PR:
+Target branch:
+Base branch:
+Intended local path:
+Local path role:
+Protected BlacksmithGuild checkout untouched: yes/no
+Concurrent route branch untouched: yes/no
+Runtime/game stop needed: yes/no
+Stop command if needed:
+```
+
+The protected local runtime checkout is:
+
+```text
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
+```
+
+Known sibling worktrees include:
+
+```text
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr23
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr25-launcher-evidence
+C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr27-duration-guard
+```
+
+Do not branch-switch the protected checkout for unrelated PR work. Use a sibling `BlacksmithGuild-prNN-short-name` worktree instead.
+
+Full doctrine:
+
+```text
+docs/architecture/local-worktree-sprint-contract.md
+.tbg/worktrees/local-sprint-worktrees.contract.json
+```
+
+## Runtime stop rule
+
+If commands assume Bannerlord should not be running, stop the game first.
+
+Default stop step from repo root:
+
+```powershell
+$env:FORGE_NO_PAUSE = '1'
+.\ForgeStop.cmd soft
+```
+
+This is required before build/install/launch/live-cert/full runtime validation unless the workflow itself owns and documents the stop phase.
+
+When uncertain, run:
+
+```powershell
+.\scripts\tbg\Assert-TbgRuntimeStopPolicy.ps1 -Operation live-cert
+```
+
+Full doctrine:
+
+```text
+docs/handoff/runtime-stop-guardrails.md
+.tbg/workflows/runtime-stop-policy.contract.json
+scripts/tbg/Assert-TbgRuntimeStopPolicy.ps1
+```
+
 ## Current strategic target
 
 One command should:
@@ -50,4 +116,6 @@ One command should:
 - Runtime truth and runner consumption must follow `docs/handoff/runtime-state-routing.md`.
 - Window selection must follow `docs/control/logs/open/window-delta-doctrine.md`.
 - The current user-facing product target is `docs/control/logs/open/autonomous-assist-session-target.md`.
+- Local worktree isolation must follow `docs/architecture/local-worktree-sprint-contract.md`.
+- Runtime stop decisions must follow `docs/handoff/runtime-stop-guardrails.md`.
 - Synthesize parallel reports by preserving each agent's factual findings, resolving ownership conflicts through the routing matrix, and escalating only true contradictions to the user.
