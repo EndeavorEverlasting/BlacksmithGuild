@@ -57,6 +57,59 @@ The relevant pattern is:
 
 Blacksmith Guild should copy that structure while keeping Windows and Bannerlord runtime constraints native.
 
+## Local lane discipline
+
+Concurrent work must be separated by local worktree lane.
+
+The current lane map is documented here:
+
+```text
+docs/architecture/local-worktree-lanes.md
+```
+
+Agents must identify the lane root, branch, and objective before editing or validating.
+
+Known local lanes:
+
+| Local path | Lane role |
+|---|---|
+| `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild` | Active integration lane for the current route sprint |
+| `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr23` | Isolated PR #23 lane |
+| `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr25-launcher-evidence` | Launcher evidence lane |
+| `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr27-duration-guard` | Duration guard lane |
+
+Do not copy patches between lanes by memory. Use Git merge, cherry-pick, or a named diff.
+
+## Runtime-state guardrail
+
+The machine-readable guardrail lives here:
+
+```text
+.tbg/guardrails/runtime-state.guardrail.json
+```
+
+The checker lives here:
+
+```text
+scripts/tbg/Test-TbgRuntimeGuardrail.ps1
+```
+
+Before patching, building, installing, launching, or validating a live cert, an agent must satisfy the guardrail.
+
+Example for route live-cert work:
+
+```powershell
+.\scripts\tbg\Test-TbgRuntimeGuardrail.ps1 -Intent route-visible-start
+```
+
+If it returns `BLOCKED`, the same result tells the agent the required preflight. After running the preflight, rerun with:
+
+```powershell
+.\scripts\tbg\Test-TbgRuntimeGuardrail.ps1 -Intent route-visible-start -StoppedGameConfirmed
+```
+
+A workflow such as `Invoke-TbgWorkflow.ps1 -Workflow route-visible-start` may perform its own stop/start lifecycle internally. In that case, the workflow itself is responsible for satisfying this guardrail.
+
 ## Hard constraints for this repo
 
 ### 1. Game stop is not optional
@@ -196,6 +249,8 @@ A PR that adds or changes an automation workflow must answer:
 5. Does the workflow stop the game before modifying/building/installing?
 6. Does it avoid relying on foreground focus?
 7. Does it avoid dumping giant logs by default?
+8. Does it identify the correct local lane before patching or validation?
+9. Does it satisfy `.tbg/guardrails/runtime-state.guardrail.json` for live cert work?
 
 If any answer is vague, the PR is not ready.
 
@@ -218,18 +273,3 @@ Do not make the user paste full logs when the workflow can summarize:
 
 - status file
 - route cert
-- command ack
-- lifecycle file
-- selected log hits
-
-Do not rely on `partyMovedDistance == 0` as proof of no movement. Bannerlord movement can be checkpoint-like or discrete. Route intent, active target, position snapshots, settlement identity, and arrival state are better evidence.
-
-Do not make the assistant remember operational rules that the repo can encode.
-
-## Working principle
-
-The repo owns the loop.
-
-The AI handles the uncertainty.
-
-The user should see behavior.
