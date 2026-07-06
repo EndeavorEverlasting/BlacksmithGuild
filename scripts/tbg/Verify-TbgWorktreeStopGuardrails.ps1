@@ -30,6 +30,8 @@ $stopDoc = 'docs\handoff\runtime-stop-guardrails.md'
 $workflowDoc = 'docs\architecture\agent-workflow-contracts.md'
 $activityDoc = 'docs\architecture\campaign-activity-ledger.md'
 $mapDoc = 'docs\architecture\agent-orchestration-map.md'
+$mapMmd = 'docs\assets\agent-orchestration-map.mmd'
+$mapMir = 'docs\assets\agent-orchestration-map.mir.json'
 $mapSvg = 'docs\assets\agent-orchestration-map.svg'
 $agents = 'AGENTS.md'
 $worktreeJson = '.tbg\worktrees\local-sprint-worktrees.contract.json'
@@ -117,10 +119,21 @@ Need $activityPlan 'English report requirement'
 Need $activityPlan 'artifacts/latest/campaign-activity-ledger.result.json'
 
 Need $mapDoc '# Agent Orchestration Map'
+Need $mapDoc 'docs/assets/agent-orchestration-map.mmd'
+Need $mapDoc 'docs/assets/agent-orchestration-map.mir.json'
 Need $mapDoc 'docs/assets/agent-orchestration-map.svg'
-Need $mapDoc 'The SVG is a faithful repo-native recreation of the map from the uploaded screenshot'
-Need $mapDoc 'Exploration = inspect repo state, runtime artifacts, and prior PRs without patching blindly.'
+Need $mapDoc 'The Mermaid file is the canonical editable diagram.'
 Need $mapDoc 'The repo owns the loop.'
+Need $mapMmd 'flowchart LR'
+Need $mapMmd 'Explore agent 1'
+Need $mapMmd 'Plan - writes plan.md'
+Need $mapMmd 'Implement - writes report.md'
+Need $mapMmd 'Review agent 2 - correctness'
+Need $mapMmd 'Done - Open PR'
+Need $mapMir 'tbg.diagram.mir.v1'
+Need $mapMir 'docs/assets/agent-orchestration-map.mmd'
+Need $mapMir 'Review agent 3 - simplify'
+Need $mapMir 'Done - Open PR'
 Need $mapSvg '<title id="title">Orchestrating coding agent sessions</title>'
 Need $mapSvg 'Explore agent 1'
 Need $mapSvg 'Writes plan.md'
@@ -162,6 +175,12 @@ try {
     }
 } catch {
     $failures.Add("$activityJson is not valid JSON: $($_.Exception.Message)") | Out-Null
+}
+
+try {
+    Get-Content -LiteralPath (Join-Path $repoRoot $mapMir) -Raw | ConvertFrom-Json | Out-Null
+} catch {
+    $failures.Add("$mapMir is not valid JSON: $($_.Exception.Message)") | Out-Null
 }
 
 if ($failures.Count -gt 0) {
