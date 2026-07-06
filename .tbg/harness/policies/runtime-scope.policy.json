@@ -1,0 +1,22 @@
+{
+  "schema": "tbg.runtime-scope.policy.v1",
+  "defaultRuntimeAllowed": false,
+  "runtimeSurfaces": [
+    "Bannerlord process",
+    "TaleWorlds launcher",
+    "ForgeReboot",
+    "ForgeContinue",
+    "command inbox",
+    "status JSON writes",
+    "save games",
+    "module install copy"
+  ],
+  "allowedRuntimeByContract": {
+    "local-mcp-code-intelligence": []
+  },
+  "notes": [
+    "Sprint 037A is repo infrastructure only.",
+    "Readiness evidence is not runtime proof.",
+    "Future runtime workflows must require ForgeStop before build/install/launch commands."
+  ]
+}
