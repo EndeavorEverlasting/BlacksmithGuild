@@ -1,0 +1,28 @@
+{
+  "schema": "tbg.file-safety.policy.v1",
+  "defaultDecision": "ask",
+  "protectedPaths": [
+    "(?i)Game Saves",
+    "(?i)SaveGames",
+    "(?i)\\.env$",
+    "(?i)\\.secret\\.json$",
+    "(?i)\\.mcp\\.json$",
+    "(?i)\\.claude/settings\\.local\\.json$",
+    "(?i)Steam/steamapps/common/Mount & Blade II Bannerlord/Modules",
+    "(?i)Steam\\\\steamapps\\\\common\\\\Mount & Blade II Bannerlord\\\\Modules"
+  ],
+  "allowedPathPatternsByContract": {
+    "local-mcp-code-intelligence": [
+      "^\\.tbg/",
+      "^scripts/harness/",
+      "^scripts/mcp/",
+      "^scripts/api/",
+      "^docs/architecture/",
+      "^docs/handoff/",
+      "^\\.mcp\\.example\\.json$",
+      "^\\.cursor/mcp\\.example\\.json$",
+      "^\\.claude/settings\\.example\\.json$",
+      "^\\.claude/hooks/"
+    ]
+  }
+}
