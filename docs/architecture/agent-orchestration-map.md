@@ -4,13 +4,15 @@
 
 This page preserves the orchestration diagram that prompted the Blacksmith Guild workflow-contract work.
 
-Repo-renderable SVG version:
+Canonical presentation files:
 
 ```text
+docs/assets/agent-orchestration-map.mmd
+docs/assets/agent-orchestration-map.mir.json
 docs/assets/agent-orchestration-map.svg
 ```
 
-The SVG is a faithful repo-native recreation of the map from the uploaded screenshot, with the same flow and labels.
+The Mermaid file is the canonical editable diagram. The MIR JSON is the machine-readable representation. The SVG is a repo-renderable visual recreation of the uploaded screenshot.
 
 ## Map flow
 
@@ -83,7 +85,7 @@ The user should see behavior.
 
 ## Binary screenshot note
 
-The uploaded screenshot itself was available in chat as a binary PNG. The GitHub connector path used for this PR supports UTF-8 file creation, so this PR commits a repo-native SVG recreation rather than the original binary PNG.
+The uploaded screenshot itself was available in chat as a binary PNG. The GitHub connector path used for this PR supports UTF-8 file creation, so this PR commits a canonical Mermaid diagram, machine-readable MIR JSON, and repo-native SVG recreation rather than the original binary PNG.
 
 A future local commit from a normal git worktree can add the exact PNG asset directly if desired:
 
