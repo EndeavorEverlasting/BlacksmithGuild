@@ -1,0 +1,38 @@
+flowchart LR
+    %% Orchestrating coding agent sessions
+    %% Orchestrating many focused coding agents together to accomplish a larger task
+    %% The AI Layer shapes every session - rules, skills, hooks, sub-agents apply throughout
+
+    subgraph AI_LAYER["The AI Layer shapes every session - rules, skills, hooks, sub-agents apply throughout"]
+        direction LR
+
+        subgraph EXPLORATION["Exploration agents"]
+            direction TB
+            EXPLORE_1["Explore agent 1"]
+            EXPLORE_2["Explore agent 2"]
+            EXPLORE_3["Explore agent 3"]
+        end
+
+        PLAN["Plan - writes plan.md"]
+        IMPLEMENT["Implement - writes report.md"]
+
+        subgraph CODE_REVIEW["code-review agents"]
+            direction TB
+            REVIEW_SECURITY["Review agent 1 - security"]
+            REVIEW_CORRECTNESS["Review agent 2 - correctness"]
+            REVIEW_SIMPLIFY["Review agent 3 - simplify"]
+        end
+
+        DONE(["Done - Open PR"])
+
+        EXPLORE_1 --> PLAN
+        EXPLORE_2 --> PLAN
+        EXPLORE_3 --> PLAN
+        PLAN -- "plan.md" --> IMPLEMENT
+        IMPLEMENT -- "report.md" --> REVIEW_SECURITY
+        IMPLEMENT -- "report.md" --> REVIEW_CORRECTNESS
+        IMPLEMENT -- "report.md" --> REVIEW_SIMPLIFY
+        REVIEW_SECURITY --> DONE
+        REVIEW_CORRECTNESS --> DONE
+        REVIEW_SIMPLIFY --> DONE
+    end
