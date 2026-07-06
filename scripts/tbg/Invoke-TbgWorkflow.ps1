@@ -3,12 +3,8 @@
     Repo-owned workflow runner for Blacksmith Guild product proofs.
 
 .DESCRIPTION
-    This script is intentionally compact and artifact-driven. It runs a named workflow,
-    then emits artifacts/latest/<workflow>.result.json for AI handoff and PR review.
-
+    Runs a named workflow and emits artifacts/latest/<workflow>.result.json.
     The first supported workflow is route-visible-start.
-
-    This is not a generic collector. It summarizes product behavior.
 #>
 param(
     [ValidateSet('route-visible-start')]
@@ -18,9 +14,7 @@ param(
 
     [string]$BannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord',
 
-    [switch]$SummarizeOnly,
-
-    [switch]$VerboseLogs
+    [switch]$SummarizeOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,6 +50,13 @@ function Get-Value {
     $current = $Object
     foreach ($part in $Path) {
         if ($null -eq $current) { return $Default }
+
+        if ($current -is [System.Collections.IDictionary]) {
+            if (-not $current.Contains($part)) { return $Default }
+            $current = $current[$part]
+            continue
+        }
+
         $property = $current.PSObject.Properties[$part]
         if ($null -eq $property) { return $Default }
         $current = $property.Value
@@ -83,24 +84,15 @@ function Find-InstalledDll {
     foreach ($candidate in $candidates) {
         if (Test-Path -LiteralPath $candidate) {
             $item = Get-Item -LiteralPath $candidate
-            return [ordered]@{
-                path = $item.FullName
-                lastWrite = $item.LastWriteTimeUtc.ToString('o')
-                size = $item.Length
-            }
+            return [ordered]@{ path = $item.FullName; lastWrite = $item.LastWriteTimeUtc.ToString('o'); size = $item.Length }
         }
     }
 
     return [ordered]@{ path = $null; lastWrite = $null; size = $null }
 }
 
-function Get-BranchName {
-    try { return (git branch --show-current).Trim() } catch { return $null }
-}
-
-function Get-CommitSha {
-    try { return (git rev-parse --short HEAD).Trim() } catch { return $null }
-}
+function Get-BranchName { try { return (git branch --show-current).Trim() } catch { return $null } }
+function Get-CommitSha { try { return (git rev-parse --short HEAD).Trim() } catch { return $null } }
 
 function New-BaseResult {
     param([string]$Phase = 'stop')
@@ -145,22 +137,19 @@ function New-BaseResult {
             commandAck = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandAck.json'
             phaseLog = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
         }
-        tool = [ordered]@{
-            forgeStopExitCode = $null
-            forgeRebootExitCode = $null
-            note = $null
-        }
+        tool = [ordered]@{ forgeStopExitCode = $null; forgeRebootExitCode = $null; note = $null }
     }
 }
 
 function Add-RuntimeSummary {
-    param([hashtable]$Result)
+    param([object]$Result)
 
     $status = Read-JsonOrNull -Path $Result.files.status
     if ($null -ne $status) {
         $Result.runtime.statusFound = $true
         $Result.runtime.campaignReady = Convert-ToBool (Get-Value $status @('campaignReady') $false)
-        $Result.runtime.mapStateActive = Convert-ToBool (Get-Value $status @('session','mapStateActive') (Get-Value $status @('stateMachine','isMapStateActive') $false))
+        $mapStateFallback = Get-Value $status @('stateMachine','isMapStateActive') $false
+        $Result.runtime.mapStateActive = Convert-ToBool (Get-Value $status @('session','mapStateActive') $mapStateFallback)
         $Result.runtime.safeToExecuteTravel = Convert-ToBool (Get-Value $status @('stateMachine','safeToExecuteTravel') $false)
         $Result.runtime.timePaused = Get-Value $status @('session','timePaused') $null
         $Result.runtime.targetSettlement = Get-Value $status @('recursiveBranchState','targetSettlement') $null
@@ -190,94 +179,23 @@ function Add-RuntimeSummary {
         $steps = @(Get-Value $cert @('steps') @())
         $hasTravelStep = @($steps | Where-Object { [string]$_ -like 'TravelToTarget:*' }).Count -gt 0
 
-        $Result.route.travelCommandIssued = if ($null -ne $explicitTravelCommandIssued) {
-            Convert-ToBool $explicitTravelCommandIssued
-        } else {
-            $state -in @('TravelToTarget','WaitForArrival','EnterSettlement','ExecuteTrade','ForgeHandoff','Complete') -or $hasTravelStep
-        }
-
-        $Result.route.routeStarted = if ($null -ne $explicitRouteStarted) {
-            Convert-ToBool $explicitRouteStarted
-        } else {
-            $Result.route.travelCommandIssued
-        }
+        $Result.route.travelCommandIssued = if ($null -ne $explicitTravelCommandIssued) { Convert-ToBool $explicitTravelCommandIssued } else { $state -in @('TravelToTarget','WaitForArrival','EnterSettlement','ExecuteTrade','ForgeHandoff','Complete') -or $hasTravelStep }
+        $Result.route.routeStarted = if ($null -ne $explicitRouteStarted) { Convert-ToBool $explicitRouteStarted } else { $Result.route.travelCommandIssued }
     }
 }
 
 function Set-ResultVerdict {
-    param([hashtable]$Result)
+    param([object]$Result)
 
-    if (-not $Result.runtime.statusFound) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'map-ready'
-        $Result.blockedReason = 'status file missing'
-        $Result.nextPatchHint = 'Launch/map-ready workflow did not produce BlacksmithGuild_Status.json. Fix launch or wait phase before route logic.'
-        return
-    }
-
-    if (-not $Result.runtime.campaignReady) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'map-ready'
-        $Result.blockedReason = 'campaignReady is false'
-        $Result.nextPatchHint = 'Inspect campaign lifecycle and map-ready gating.'
-        return
-    }
-
-    if (-not $Result.runtime.mapStateActive) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'map-ready'
-        $Result.blockedReason = 'mapStateActive is false'
-        $Result.nextPatchHint = 'Game reached a non-map surface. Fix surface transition or launch target.'
-        return
-    }
-
-    if (-not $Result.runtime.safeToExecuteTravel) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'runtime-action'
-        $Result.blockedReason = 'safeToExecuteTravel is false'
-        $Result.nextPatchHint = 'Inspect GameSessionState and travel safety classifier.'
-        return
-    }
-
-    if ($Result.runtime.nextPlannedBranch -ne 'travel') {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'runtime-action'
-        $Result.blockedReason = 'nextPlannedBranch is not travel'
-        $Result.nextPatchHint = 'Inspect recursive branch selector and route council target emission.'
-        return
-    }
-
-    if ([string]::IsNullOrWhiteSpace([string]$Result.runtime.targetSettlement)) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'runtime-action'
-        $Result.blockedReason = 'targetSettlement missing'
-        $Result.nextPatchHint = 'Inspect route council or branch state target emission.'
-        return
-    }
-
-    if (-not $Result.route.certFound) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'runtime-action'
-        $Result.blockedReason = 'route cert missing after map-ready'
-        $Result.nextPatchHint = 'In-mod route executor did not start or did not write a route cert. Inspect MapTradeAutonomousService.OnCampaignTick.'
-        return
-    }
-
-    if (-not $Result.route.travelCommandIssued) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'runtime-action'
-        $Result.blockedReason = 'travelCommandIssued is false'
-        $Result.nextPatchHint = 'Movement driver did not accept the command. Inspect CampaignMapMovementHelper.TryMoveToSettlement.'
-        return
-    }
-
-    if (-not $Result.route.routeStarted) {
-        $Result.verdict = 'BLOCKED'
-        $Result.phase = 'runtime-action'
-        $Result.blockedReason = 'routeStarted is false'
-        $Result.nextPatchHint = 'Cert exists, but route service did not claim start. Inspect route cert model and writer.'
-        return
-    }
+    if (-not $Result.runtime.statusFound) { $Result.verdict = 'BLOCKED'; $Result.phase = 'map-ready'; $Result.blockedReason = 'status file missing'; $Result.nextPatchHint = 'Launch/map-ready workflow did not produce BlacksmithGuild_Status.json. Fix launch or wait phase before route logic.'; return }
+    if (-not $Result.runtime.campaignReady) { $Result.verdict = 'BLOCKED'; $Result.phase = 'map-ready'; $Result.blockedReason = 'campaignReady is false'; $Result.nextPatchHint = 'Inspect campaign lifecycle and map-ready gating.'; return }
+    if (-not $Result.runtime.mapStateActive) { $Result.verdict = 'BLOCKED'; $Result.phase = 'map-ready'; $Result.blockedReason = 'mapStateActive is false'; $Result.nextPatchHint = 'Game reached a non-map surface. Fix surface transition or launch target.'; return }
+    if (-not $Result.runtime.safeToExecuteTravel) { $Result.verdict = 'BLOCKED'; $Result.phase = 'runtime-action'; $Result.blockedReason = 'safeToExecuteTravel is false'; $Result.nextPatchHint = 'Inspect GameSessionState and travel safety classifier.'; return }
+    if ($Result.runtime.nextPlannedBranch -ne 'travel') { $Result.verdict = 'BLOCKED'; $Result.phase = 'runtime-action'; $Result.blockedReason = 'nextPlannedBranch is not travel'; $Result.nextPatchHint = 'Inspect recursive branch selector and route council target emission.'; return }
+    if ([string]::IsNullOrWhiteSpace([string]$Result.runtime.targetSettlement)) { $Result.verdict = 'BLOCKED'; $Result.phase = 'runtime-action'; $Result.blockedReason = 'targetSettlement missing'; $Result.nextPatchHint = 'Inspect route council or branch state target emission.'; return }
+    if (-not $Result.route.certFound) { $Result.verdict = 'BLOCKED'; $Result.phase = 'runtime-action'; $Result.blockedReason = 'route cert missing after map-ready'; $Result.nextPatchHint = 'In-mod route executor did not start or did not write a route cert. Inspect MapTradeAutonomousService.OnCampaignTick.'; return }
+    if (-not $Result.route.travelCommandIssued) { $Result.verdict = 'BLOCKED'; $Result.phase = 'runtime-action'; $Result.blockedReason = 'travelCommandIssued is false'; $Result.nextPatchHint = 'Movement driver did not accept the command. Inspect CampaignMapMovementHelper.TryMoveToSettlement.'; return }
+    if (-not $Result.route.routeStarted) { $Result.verdict = 'BLOCKED'; $Result.phase = 'runtime-action'; $Result.blockedReason = 'routeStarted is false'; $Result.nextPatchHint = 'Cert exists, but route service did not claim start. Inspect route cert model and writer.'; return }
 
     $Result.verdict = 'PASS'
     $Result.phase = 'done'
