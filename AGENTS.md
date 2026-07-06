@@ -87,6 +87,22 @@ docs/handoff/runtime-stop-guardrails.md
 scripts/tbg/Assert-TbgRuntimeStopPolicy.ps1
 ```
 
+## Campaign activity ledger rule
+
+Agents must not leave behavioral planning concepts in chat only.
+
+The repo-owned doctrine is:
+
+```text
+docs/architecture/campaign-activity-ledger.md
+.tbg/workflows/campaign-activity-ledger.contract.json
+.tbg/plans/campaign-activity-ledger-sprint/README.md
+```
+
+The intended system records meaningful player and automation events, compares proposed plans against what the user does next, writes compact bounded runtime state, and produces English reports plus feature signals when repeated divergence shows the planner is annoying or wrong.
+
+Do not ask the user to translate raw activity logs if an English report can be produced.
+
 ## Current strategic target
 
 One command should:
@@ -118,4 +134,5 @@ One command should:
 - The current user-facing product target is `docs/control/logs/open/autonomous-assist-session-target.md`.
 - Local worktree isolation must follow `docs/architecture/local-worktree-sprint-contract.md`.
 - Runtime stop decisions must follow `docs/handoff/runtime-stop-guardrails.md`.
+- Campaign activity and plan feedback doctrine must follow `docs/architecture/campaign-activity-ledger.md`.
 - Synthesize parallel reports by preserving each agent's factual findings, resolving ownership conflicts through the routing matrix, and escalating only true contradictions to the user.
