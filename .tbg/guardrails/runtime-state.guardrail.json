@@ -47,7 +47,7 @@
   "blockedResultShape": {
     "verdict": "BLOCKED",
     "blockedReason": "runtime-state guardrail requires ForgeStop before this intent",
-    "nextPatchHint": "Run scripts/tbg/Assert-TbgRuntimeGuardrail.ps1 -Intent <intent> -StopGame, then retry the workflow."
+    "nextPatchHint": "Run scripts/tbg/Test-TbgRuntimeGuardrail.ps1 -Intent <intent>, then run the required preflight it prints before retrying the workflow."
   },
   "agentRules": [
     "If the command assumes Bannerlord is inactive, include the preflight step in the same snippet.",
