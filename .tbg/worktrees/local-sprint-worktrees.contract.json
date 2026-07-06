@@ -1,0 +1,45 @@
+{
+  "schema": "tbg.localSprintWorktrees.v1",
+  "purpose": "Document the expected sibling-checkout model so concurrent PR and runtime sprints do not share one mutable folder.",
+  "parentPath": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord",
+  "protectedRuntimeCheckout": {
+    "path": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild",
+    "role": "protected local runtime sprint checkout",
+    "defaultBranchRole": "current user-owned runtime sprint branch, not a generic PR scratchpad",
+    "forbiddenWithoutExplicitOwnership": [
+      "git switch to an unrelated PR branch",
+      "git checkout to an unrelated PR branch",
+      "git reset --hard for a PR review lane",
+      "PR-specific patch scripts that mutate source or artifacts",
+      "runtime validation for a different PR lane"
+    ]
+  },
+  "knownSiblingCheckouts": [
+    {
+      "path": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-pr23",
+      "role": "PR-specific or branch-specific sibling lane"
+    },
+    {
+      "path": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-pr25-launcher-evidence",
+      "role": "launcher evidence sibling lane"
+    },
+    {
+      "path": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-pr27-duration-guard",
+      "role": "duration guard sibling lane"
+    }
+  ],
+  "futureSiblingPattern": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-prNN-short-name",
+  "requiredAgentDeclaration": [
+    "Target PR",
+    "Target branch",
+    "Base branch",
+    "Intended local path",
+    "Local path role",
+    "Protected BlacksmithGuild checkout untouched",
+    "Concurrent route branch untouched",
+    "Runtime/game stop needed",
+    "Stop command if needed"
+  ],
+  "allowedAnchorPattern": "git -C .\\BlacksmithGuild fetch origin",
+  "forbiddenShortcut": "Do not treat BlacksmithGuild and BlacksmithGuild-prNN-short-name as interchangeable."
+}
