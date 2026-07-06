@@ -4,7 +4,15 @@
 
 This page preserves the orchestration diagram that prompted the Blacksmith Guild workflow-contract work.
 
-The map shows a multi-agent development flow:
+Repo-renderable SVG version:
+
+```text
+docs/assets/agent-orchestration-map.svg
+```
+
+The SVG is a faithful repo-native recreation of the map from the uploaded screenshot, with the same flow and labels.
+
+## Map flow
 
 ```text
 Exploration agents
@@ -73,19 +81,12 @@ The AI handles uncertainty.
 The user should see behavior.
 ```
 
-## Original image payload
+## Binary screenshot note
 
-The exact uploaded screenshot is stored as a base64 payload in:
+The uploaded screenshot itself was available in chat as a binary PNG. The GitHub connector path used for this PR supports UTF-8 file creation, so this PR commits a repo-native SVG recreation rather than the original binary PNG.
+
+A future local commit from a normal git worktree can add the exact PNG asset directly if desired:
 
 ```text
-docs/assets/agent-orchestration-map.png.base64
+docs/assets/agent-orchestration-map.png
 ```
-
-Decode it with:
-
-```powershell
-$bytes = [Convert]::FromBase64String((Get-Content -LiteralPath "docs\assets\agent-orchestration-map.png.base64" -Raw))
-[IO.File]::WriteAllBytes("docs\assets\agent-orchestration-map.png", $bytes)
-```
-
-A future local commit can replace the base64 payload with a normal binary PNG if the active toolchain supports binary file writes.
