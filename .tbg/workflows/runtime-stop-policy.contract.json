@@ -1,0 +1,71 @@
+{
+  "schema": "tbg.runtimeStopPolicy.v1",
+  "purpose": "Classify whether a workflow or command block must stop Bannerlord before running.",
+  "defaultStopCommand": [
+    "$env:FORGE_NO_PAUSE = '1'",
+    ".\\ForgeStop.cmd soft"
+  ],
+  "forceStopPolicy": "Use force only when explicitly requested or after a soft stop is proven insufficient.",
+  "operations": {
+    "git-inspect": {
+      "stopRequired": false,
+      "reason": "Git inspection does not mutate runtime state or claim live proof."
+    },
+    "source-patch-only": {
+      "stopRequired": false,
+      "reason": "Source edits alone do not assume Bannerlord is stopped."
+    },
+    "static-validation": {
+      "stopRequired": false,
+      "reason": "Static verifiers do not touch Bannerlord runtime."
+    },
+    "summarize-only": {
+      "stopRequired": false,
+      "reason": "SummarizeOnly reads existing compact artifacts."
+    },
+    "build": {
+      "stopRequired": true,
+      "reason": "Build workflows normally precede install/live proof and should not assume a running game has current code."
+    },
+    "install": {
+      "stopRequired": true,
+      "reason": "Install/copy operations can replace files consumed by Bannerlord."
+    },
+    "launch": {
+      "stopRequired": true,
+      "reason": "Launch automation should start from a known clean process state unless the workflow owns stop internally."
+    },
+    "live-cert": {
+      "stopRequired": true,
+      "reason": "Live certs claim Bannerlord runtime behavior and require a known starting state."
+    },
+    "full-workflow": {
+      "stopRequired": true,
+      "reason": "Full workflows that build/install/launch/validate runtime must own or perform a stop phase."
+    },
+    "route-visible-start": {
+      "stopRequired": true,
+      "reason": "Route visible start validates live map and travel behavior."
+    }
+  },
+  "liveCertSignals": [
+    "launcher selected Continue",
+    "Bannerlord process attached",
+    "campaignReady true",
+    "mapStateActive true",
+    "safeToExecuteTravel true",
+    "command inbox acknowledged",
+    "campaign clock resumed",
+    "route command issued",
+    "route started",
+    "movement observed",
+    "MapTradeRouteCert produced"
+  ],
+  "requiredAgentDeclaration": [
+    "Runtime/game stop needed",
+    "Reason",
+    "Stop command if needed",
+    "Workflow owns stop internally"
+  ],
+  "guardrailFailureClass": "runtime_stop_guardrail_missing"
+}
