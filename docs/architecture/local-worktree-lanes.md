@@ -43,11 +43,13 @@ git branch --show-current
 git status --short --ignored
 ```
 
-For runtime-affecting work, run the guardrail script before the operation:
+For runtime-affecting work, run the guardrail checker before the operation:
 
 ```powershell
-.\scripts\tbg\Assert-TbgRuntimeGuardrail.ps1 -Intent patch -StopGame
+.\scripts\tbg\Test-TbgRuntimeGuardrail.ps1 -Intent patch
 ```
+
+If it returns `BLOCKED`, run the required preflight it prints, then rerun the checker with `-StoppedGameConfirmed`.
 
 For pure documentation or static review, do not stop the game unless the next command builds, installs, launches, or validates live runtime behavior.
 
