@@ -40,7 +40,6 @@ BlacksmithGuild_LaunchControlInstall.json
 BlacksmithGuild_LaunchControlStatus.json
 BlacksmithGuild_LaunchControlLastRun.json
 tools/LaunchControl/Launch-Control.generated.local.json
-tools/LaunchControl/TASKBAR-PINNING.txt
 BlacksmithGuild_MarketIntel.json
 BlacksmithGuild_SmithingAudit.json
 BlacksmithGuild_SmithingAdvisory.json
@@ -53,6 +52,7 @@ BlacksmithGuild_CohesionOpportunities.json
 BlacksmithGuild_CohesionMove.json
 BlacksmithGuild_MapTradeRouteSafety.json
 BlacksmithGuild_MapTradeCert.json
+BlacksmithGuild_MapTradeRouteCert.json
 BlacksmithGuild_ArmyPressureWindows.json
 BlacksmithGuild_MapTradeForgeHandoff.json
 BlacksmithGuild_AutonomousGuildLoop.json
@@ -82,9 +82,6 @@ Mount & Blade II Bannerlord/
 *.pdb
 *.mdb
 *.rsuser
-
-# Local proof/evidence artifacts
-artifacts/
 
 # Local proof/evidence artifacts
 artifacts/
