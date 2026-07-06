@@ -14,7 +14,7 @@ param(
     [ValidateSet('normal','long_distance_travel','large_smithing','mass_trade')]
     [string]$ActionTimeoutClass = 'normal',
     [ValidateSet('None','Observe','SyntheticFocusPulse','ForegroundLease')]
-    [string]$FocusKeeperMode = 'None',
+    [string]$FocusKeeperMode = 'SyntheticFocusPulse',
     [int]$FocusKeeperDurationSeconds = 180,
     [int]$FocusKeeperPulseMilliseconds = 500,
     [int]$FocusKeeperWaitForWindowSeconds = 720,
