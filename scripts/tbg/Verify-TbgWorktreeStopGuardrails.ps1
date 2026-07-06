@@ -1,4 +1,4 @@
-﻿# Offline verifier for worktree isolation and runtime stop guardrails.
+﻿# Offline verifier for worktree isolation, runtime stop guardrails, and activity ledger doctrine.
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -28,9 +28,12 @@ function Need {
 $worktreeDoc = 'docs\architecture\local-worktree-sprint-contract.md'
 $stopDoc = 'docs\handoff\runtime-stop-guardrails.md'
 $workflowDoc = 'docs\architecture\agent-workflow-contracts.md'
+$activityDoc = 'docs\architecture\campaign-activity-ledger.md'
 $agents = 'AGENTS.md'
 $worktreeJson = '.tbg\worktrees\local-sprint-worktrees.contract.json'
 $stopJson = '.tbg\workflows\runtime-stop-policy.contract.json'
+$activityJson = '.tbg\workflows\campaign-activity-ledger.contract.json'
+$activityPlan = '.tbg\plans\campaign-activity-ledger-sprint\README.md'
 $stopScript = 'scripts\tbg\Assert-TbgRuntimeStopPolicy.ps1'
 
 Need $worktreeDoc 'C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild'
@@ -57,8 +60,10 @@ Need $workflowDoc 'Do not run build/install/live-cert validation without either 
 
 Need $agents 'Local worktree rule'
 Need $agents 'Runtime stop rule'
+Need $agents 'Campaign activity ledger rule'
 Need $agents 'Assert-TbgRuntimeStopPolicy.ps1'
 Need $agents 'BlacksmithGuild-pr25-launcher-evidence'
+Need $agents 'docs/architecture/campaign-activity-ledger.md'
 
 Need $worktreeJson 'tbg.localSprintWorktrees.v1'
 Need $worktreeJson 'BlacksmithGuild-pr27-duration-guard'
@@ -76,6 +81,38 @@ Need $stopScript 'runtime_stop_policy_satisfied'
 Need $stopScript 'runtime_stop_guardrail_missing'
 Need $stopScript 'StopStepIncluded'
 Need $stopScript 'WorkflowOwnsStop'
+
+Need $activityDoc '# Campaign Activity Ledger'
+Need $activityDoc 'Append meaningful events.'
+Need $activityDoc 'Compare proposed plans against what the user does next.'
+Need $activityDoc 'BlacksmithGuild_ActivityJournal.jsonl'
+Need $activityDoc 'BlacksmithGuild_ActivityState.json'
+Need $activityDoc 'BlacksmithGuild_RecentActivity.json'
+Need $activityDoc 'BlacksmithGuild_PlanLedger.jsonl'
+Need $activityDoc 'BlacksmithGuild_PlanComparisons.jsonl'
+Need $activityDoc 'BlacksmithGuild_FeatureSignals.jsonl'
+Need $activityDoc 'BlacksmithGuild_ActivityReport.md'
+Need $activityDoc 'Do not log every campaign tick.'
+Need $activityDoc 'Repeated rejection is a product signal.'
+Need $activityDoc 'English-first reporting doctrine'
+Need $activityDoc 'What did the user do instead, what does that teach the planner, and how do we make the next plan less annoying?'
+
+Need $activityJson 'tbg.campaignActivityLedgerContract.v1'
+Need $activityJson 'campaign-activity-ledger'
+Need $activityJson 'appendOnly'
+Need $activityJson 'boundedRuntimeRead'
+Need $activityJson 'englishReport'
+Need $activityJson 'repeatedDivergenceBecomesFeatureSignal'
+Need $activityJson 'englishReportRequirements'
+Need $activityJson 'runtimeReadsBoundedState'
+
+Need $activityPlan 'Campaign Activity Ledger Sprint Plan'
+Need $activityPlan 'The app suggested X.'
+Need $activityPlan 'The user did Y instead.'
+Need $activityPlan 'BlacksmithGuild_ActivityJournal.jsonl'
+Need $activityPlan 'Do not scan full `ActivityJournal.jsonl` during normal planning.'
+Need $activityPlan 'English report requirement'
+Need $activityPlan 'artifacts/latest/campaign-activity-ledger.result.json'
 
 try {
     Get-Content -LiteralPath (Join-Path $repoRoot $worktreeJson) -Raw | ConvertFrom-Json | Out-Null
@@ -98,11 +135,26 @@ try {
     $failures.Add("$stopJson is not valid JSON: $($_.Exception.Message)") | Out-Null
 }
 
+try {
+    $activity = Get-Content -LiteralPath (Join-Path $repoRoot $activityJson) -Raw | ConvertFrom-Json
+    if (-not $activity.meaningfulEventsOnly) {
+        $failures.Add('activity ledger contract must require meaningfulEventsOnly') | Out-Null
+    }
+    if (-not $activity.planFeedback.repeatedDivergenceBecomesFeatureSignal) {
+        $failures.Add('activity ledger contract must turn repeated divergence into feature signal') | Out-Null
+    }
+    if (-not $activity.implementationAcceptance.englishReportWritten) {
+        $failures.Add('activity ledger implementation acceptance must require English report') | Out-Null
+    }
+} catch {
+    $failures.Add("$activityJson is not valid JSON: $($_.Exception.Message)") | Out-Null
+}
+
 if ($failures.Count -gt 0) {
-    Write-Host "FAIL: worktree/stop guardrail contract has $($failures.Count) issue(s)." -ForegroundColor Red
+    Write-Host "FAIL: worktree/stop/activity guardrail contract has $($failures.Count) issue(s)." -ForegroundColor Red
     foreach ($failure in $failures) { Write-Host "  - $failure" -ForegroundColor Red }
     exit 1
 }
 
-Write-Host 'PASS: worktree and runtime stop guardrails verified.' -ForegroundColor Green
+Write-Host 'PASS: worktree, runtime stop, and activity ledger guardrails verified.' -ForegroundColor Green
 exit 0
