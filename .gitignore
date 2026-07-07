@@ -53,6 +53,7 @@ BlacksmithGuild_CohesionOpportunities.json
 BlacksmithGuild_CohesionMove.json
 BlacksmithGuild_MapTradeRouteSafety.json
 BlacksmithGuild_MapTradeCert.json
+BlacksmithGuild_MapTradeRouteCert.json
 BlacksmithGuild_ArmyPressureWindows.json
 BlacksmithGuild_MapTradeForgeHandoff.json
 BlacksmithGuild_AutonomousGuildLoop.json
@@ -82,9 +83,6 @@ Mount & Blade II Bannerlord/
 *.pdb
 *.mdb
 *.rsuser
-
-# Local proof/evidence artifacts
-artifacts/
 
 # Local proof/evidence artifacts
 artifacts/
