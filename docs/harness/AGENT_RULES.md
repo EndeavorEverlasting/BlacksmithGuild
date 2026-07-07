@@ -81,6 +81,12 @@ Orchestration map presenter:
 .\scripts\tbg\Show-TbgOrchestrationMap.ps1
 ```
 
+Sprint plan pack presenter:
+
+```powershell
+.\scripts\tbg\Show-TbgSprintPlanPack.ps1
+```
+
 Runtime proof summary validator:
 
 ```powershell
@@ -92,6 +98,32 @@ Workflow runner:
 ```powershell
 .\scripts\tbg\Invoke-TbgWorkflow.ps1 -Workflow route-visible-start
 ```
+
+## Sprint plan pack
+
+Use the sprint plan pack to launch bounded parallel TBG sprint chats without duplicating ownership or skipping dependency order.
+
+Canonical file:
+
+```text
+docs/harness/TBG_SPRINT_PLAN_PACK.md
+```
+
+Presenter:
+
+```powershell
+.\scripts\tbg\Show-TbgSprintPlanPack.ps1
+.\scripts\tbg\Show-TbgSprintPlanPack.ps1 -Format full
+.\scripts\tbg\Show-TbgSprintPlanPack.ps1 -WriteResult
+```
+
+Result artifact:
+
+```text
+artifacts/latest/tbg-sprint-plan-pack.result.json
+```
+
+Default launch order is Chat 00 first, then Chat 01, Chat 02, and Chat 08 only after safe bases are confirmed.
 
 ## Orchestration map
 
