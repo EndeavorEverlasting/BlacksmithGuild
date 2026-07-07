@@ -35,7 +35,10 @@ function Invoke-Capture {
     param([string]$FileName, [string[]]$Arguments)
     try {
         $output = & $FileName @Arguments 2>$null
-        if ($LASTEXITCODE -ne 0) { return $null }
+        $code = 0
+        $lastExit = Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+        if ($null -ne $lastExit) { $code = [int]$lastExit.Value }
+        if ($code -ne 0) { return $null }
         return ($output -join "`n").Trim()
     } catch { return $null }
 }
@@ -83,7 +86,7 @@ if (Test-Path -LiteralPath $projectPath) {
     $missing.Add("project-missing:src/BlacksmithGuild/BlacksmithGuild.csproj")
 }
 
-$solutionFiles = Get-ChildItem -LiteralPath $repoRoot -Filter "*.sln" -File -ErrorAction SilentlyContinue
+$solutionFiles = @(Get-ChildItem -LiteralPath $repoRoot -Filter "*.sln" -File -ErrorAction SilentlyContinue)
 if ($solutionFiles.Count -gt 0) {
     $findings.Add("solution-count:$($solutionFiles.Count)")
 } else {
