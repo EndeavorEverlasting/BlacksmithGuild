@@ -1,6 +1,8 @@
-# TBG Agent B Prompt - Repo Floor and Hygiene Coordinator
+# Agent B Prompt — TBG Repo Floor / Hygiene Coordinator
 
-## Context banner
+You are the repo floor and hygiene coordinator for The Blacksmith Guild sprint.
+
+## Identity
 
 ```text
 Agent: Agent B
@@ -8,9 +10,21 @@ Lane: coordinator / cleanup / sprint map
 Repo: C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild
 Secondary validation worktree: C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-037a-validation
 Sprint: Repo / PR / worktree hygiene and sprint map
-Primary feature owner: Agent A handles route runtime conflict resolution
-Codex 037B owner: MCP/LSP symbol smoke harness in validation worktree
+Primary feature owner: Agent A handles route runtime.
+Codex 037B owner: MCP/LSP symbol smoke harness in validation worktree.
 ```
+
+## Portable path note
+
+The paths above describe the current known Windows layout. On another Windows box, resolve the user profile first instead of hard-coding the account name:
+
+```powershell
+$UserProfile = [Environment]::GetFolderPath('UserProfile')
+$PrimaryRepo = Join-Path $UserProfile 'Desktop\dev\Mods\Bannerlord\BlacksmithGuild'
+$ValidationWorktree = Join-Path $UserProfile 'Desktop\dev\Mods\Bannerlord\BlacksmithGuild-037a-validation'
+```
+
+Use the explicit paths only when they match the current machine.
 
 ## Scope
 
@@ -43,16 +57,17 @@ Do not close PRs.
 Do not delete branches without proof.
 Do not delete evidence artifacts unless they are obvious temp files and the user approves.
 Do not mutate the Codex 037B branch.
-Do not stage or commit source changes unless the user explicitly asks.
 ```
 
-## Start in primary repo
+## Start in the primary repo
 
 ```powershell
-Set-Location "C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild"
-$ErrorActionPreference = "Stop"
+$UserProfile = [Environment]::GetFolderPath('UserProfile')
+$PrimaryRepo = Join-Path $UserProfile 'Desktop\dev\Mods\Bannerlord\BlacksmithGuild'
+Set-Location $PrimaryRepo
+$ErrorActionPreference = 'Stop'
 
-Write-Host "== PRIMARY REPO CONTEXT =="
+Write-Host '== PRIMARY REPO CONTEXT =='
 git fetch origin
 git rev-parse --show-toplevel
 git branch --show-current
@@ -60,20 +75,22 @@ git status --short
 git log --oneline --decorate -8
 git worktree list
 
-Write-Host "== UNMERGED FILES =="
+Write-Host '== UNMERGED FILES =='
 git diff --name-only --diff-filter=U
 
-Write-Host "== OPEN PRS =="
+Write-Host '== OPEN PRS =='
 gh pr list --state open --limit 30
 ```
 
-## Inspect Codex 037B validation worktree
+## Also inspect the Codex 037B validation worktree
 
 ```powershell
-Set-Location "C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-037a-validation"
-$ErrorActionPreference = "Stop"
+$UserProfile = [Environment]::GetFolderPath('UserProfile')
+$ValidationWorktree = Join-Path $UserProfile 'Desktop\dev\Mods\Bannerlord\BlacksmithGuild-037a-validation'
+Set-Location $ValidationWorktree
+$ErrorActionPreference = 'Stop'
 
-Write-Host "== 037B VALIDATION WORKTREE CONTEXT =="
+Write-Host '== 037B VALIDATION WORKTREE CONTEXT =='
 git fetch origin
 git rev-parse --show-toplevel
 git branch --show-current
@@ -99,7 +116,7 @@ unsafe for new feature work
 route conflict resolution only
 ```
 
-Do not resolve it.
+Do not resolve it. Recommend that Agent A/Codex route resolver inspect the conflict hunk.
 
 ### Codex 037B worktree
 
@@ -126,10 +143,10 @@ Classify open PRs into:
 active stack
 parallel active
 stale/superseded candidate
-needs approval before close
+needs human approval before close
 ```
 
-Expected active/parallel PRs:
+Current expected active/parallel PRs:
 
 ```text
 #36 docs(agent): add route workflow contracts
@@ -156,7 +173,7 @@ Older PRs to classify only, not close:
 #35
 ```
 
-## Safe cleanup rules
+## Safe cleanup allowed only if obvious
 
 You may recommend cleanup for:
 
@@ -167,7 +184,7 @@ untracked editor temp files
 obvious generated clutter
 ```
 
-Do not delete anything until proof is shown and the user approves.
+But do not delete without showing proof first.
 
 Proof required before branch deletion:
 
@@ -176,16 +193,9 @@ git branch --merged
 git log --oneline <branch> --not main --max-count=20
 ```
 
-Proof required before deleting untracked clutter:
-
-```powershell
-git status --short --ignored
-Get-ChildItem <candidate-path> -Force
-```
-
 ## Final response format
 
-Return exactly:
+Return:
 
 ```text
 [TBG | Agent B | Repo Floor Hygiene Coordinator]
@@ -247,79 +257,4 @@ Exact next command:
 
 Copy-paste handoff prompt for next sprint:
 - <prompt>
-```
-
-## Generic next implementation sprint prompt
-
-```text
-You are continuing a targeted implementation sprint.
-
-Repo:
-xyz_repo_or_path
-
-Sprint:
-xyz_sprint_name
-
-Branch:
-xyz_branch
-
-Lane:
-xyz_lane
-
-Owned scope:
-xyz_owned_scope
-
-Forbidden scope:
-xyz_forbidden_scope
-
-Expected artifacts:
-xyz_expected_artifacts
-
-Context or plan path:
-xyz_plan_directory
-
-If the plan path is missing, stale, blank, or a placeholder, do not stall. Inspect repo state, recent commits, handoff docs, plans, validators, tests, logs, and artifacts. Proceed from the clearest current context.
-
-Start by naming:
-- repo
-- branch
-- head
-- sprint/lane
-- scope
-- forbidden scope
-- expected artifacts
-
-Before inventing, search existing contracts, helpers, validators, scripts, docs, naming conventions, output paths, and test patterns.
-
-Execute the smallest serious sprint that advances the goal. Do not stop at trivial checks if useful implementation is clear.
-
-Rules:
-- reuse repo patterns
-- keep changes bounded
-- avoid unrelated rewrites
-- do not turn real behavior into stubs just to pass tests
-- do not ask for permission when the work is scoped and safe
-- do not leave useful changes local-only when commit/push is expected
-- do not commit secrets, personal data, live runtime evidence, huge logs, crash dumps, or machine-local junk
-
-Validate using repo conventions:
-1. targeted tests for changed behavior
-2. relevant validators or static checks
-3. build checks
-4. broader checks when practical
-
-Final handoff must include:
-- context
-- work done
-- files changed
-- artifacts produced
-- validation commands and results
-- skipped checks with reasons
-- gaps, risks, and target files
-- important paths
-- git/PR state
-- exact next command
-- copy-paste prompt for the next agent
-
-Do the work. Avoid permission theater. Validate. Clean up. Hand off.
 ```
