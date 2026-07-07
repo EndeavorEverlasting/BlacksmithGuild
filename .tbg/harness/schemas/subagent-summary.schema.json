@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.subagent-summary.schema.json",
+  "title": "TBG Subagent Summary",
+  "type": "object",
+  "required": ["schema", "agentId", "lane", "question", "filesInspected", "findings", "confidence", "unresolvedQuestions", "recommendedNextAction"],
+  "properties": {
+    "schema": { "const": "tbg.subagent-summary.v1" },
+    "agentId": { "type": "string", "minLength": 1 },
+    "lane": { "type": "string", "minLength": 1 },
+    "question": { "type": "string", "minLength": 1 },
+    "filesInspected": { "type": "array", "items": { "type": "string" } },
+    "findings": { "type": "array", "items": { "type": "string" } },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "unresolvedQuestions": { "type": "array", "items": { "type": "string" } },
+    "recommendedNextAction": { "type": "string" },
+    "forbiddenScopeTouched": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}
