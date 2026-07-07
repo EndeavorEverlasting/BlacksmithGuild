@@ -34,10 +34,12 @@ Because this workflow builds, installs, launches, and reads runtime files, it mu
 ```powershell
 $env:FORGE_NO_PAUSE = '1'
 $env:FORGE_STOP_CHOICE = 'F'
+$env:FORGE_STOP_DEFAULT = 'F'
+$env:FORGE_STOP_TIMEOUT_SECONDS = '0'
 cmd /c .\ForgeStop.cmd force
 ```
 
-This rule is not optional.
+This rule is not optional. The matching guardrail acknowledgement flag is `-StoppedGameConfirmed`.
 
 ## Runtime premise
 
@@ -222,6 +224,7 @@ We are in The Blacksmith Guild repo. Do not ask for a full collector run.
 Read artifacts/latest/route-visible-start.result.json.
 Patch only the exact blocker named by blockedReason or nextPatchHint.
 If you provide commands that assume Bannerlord should not be running, include ForgeStop first.
+Use -StoppedGameConfirmed as the guardrail acknowledgement flag.
 The goal is product behavior: issue an in-game route travel command and write BlacksmithGuild_MapTradeRouteCert.json.
 ```
 
