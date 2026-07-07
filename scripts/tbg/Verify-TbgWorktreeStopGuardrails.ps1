@@ -1,4 +1,4 @@
-﻿# Offline verifier for worktree isolation, runtime stop guardrails, activity ledger doctrine, and orchestration map assets.
+﻿# Offline verifier for worktree isolation, runtime stop guardrails, activity ledger doctrine, orchestration map assets, and lean harness docs.
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -31,6 +31,9 @@ $workflowDoc = 'docs\architecture\agent-workflow-contracts.md'
 $activityDoc = 'docs\architecture\campaign-activity-ledger.md'
 $mapDoc = 'docs\architecture\agent-orchestration-map.md'
 $mapGuardDoc = 'docs\handoff\orchestration-map-guardrails.md'
+$harnessAgentRules = 'docs\harness\AGENT_RULES.md'
+$harnessEvidenceContract = 'docs\harness\RUNTIME_EVIDENCE_CONTRACT.md'
+$harnessHandoffTemplate = 'docs\harness\HANDOFF_TEMPLATE.md'
 $mapMmd = 'docs\assets\agent-orchestration-map.mmd'
 $mapMir = 'docs\assets\agent-orchestration-map.mir.json'
 $mapSvg = 'docs\assets\agent-orchestration-map.svg'
@@ -42,6 +45,7 @@ $activityPlan = '.tbg\plans\campaign-activity-ledger-sprint\README.md'
 $stopScript = 'scripts\tbg\Assert-TbgRuntimeStopPolicy.ps1'
 $mapPresenterScript = 'scripts\tbg\Show-TbgOrchestrationMap.ps1'
 $workflowScript = 'scripts\tbg\Invoke-TbgWorkflow.ps1'
+$runtimeProofValidator = 'scripts\tbg\Validate-TbgRuntimeProof.ps1'
 
 Need $worktreeDoc 'C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild'
 Need $worktreeDoc 'C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-pr23'
@@ -165,6 +169,23 @@ Need $workflowScript 'Show-TbgOrchestrationMap.ps1'
 Need $workflowScript 'Invoke-OrchestrationMapSurface'
 Need $workflowScript 'agent-orchestration-map.result.json'
 
+Need $harnessAgentRules '# BlacksmithGuild Agent Rules'
+Need $harnessAgentRules 'Clone references elsewhere.'
+Need $harnessAgentRules 'Did the game behavior happen?'
+Need $harnessAgentRules 'Validate-TbgRuntimeProof.ps1'
+Need $harnessAgentRules 'Do not log every campaign tick.'
+Need $harnessEvidenceContract '# Runtime Evidence Contract'
+Need $harnessEvidenceContract 'A script finishing means only that the script ran.'
+Need $harnessEvidenceContract 'artifacts/latest/runtime-proof.validation.json'
+Need $harnessEvidenceContract 'BlacksmithGuild_ActivityJournal.jsonl'
+Need $harnessHandoffTemplate '# BlacksmithGuild Sprint Handoff Template'
+Need $harnessHandoffTemplate 'Copy-paste next-agent prompt'
+Need $runtimeProofValidator 'tbg.runtimeProofValidation.v1'
+Need $runtimeProofValidator 'runtime-proof.validation.json'
+Need $runtimeProofValidator 'RequireRouteStart'
+Need $runtimeProofValidator 'forbiddenClaims'
+Need $runtimeProofValidator 'activity ledger is listening in-game'
+
 try {
     Get-Content -LiteralPath (Join-Path $repoRoot $worktreeJson) -Raw | ConvertFrom-Json | Out-Null
 } catch {
@@ -208,10 +229,10 @@ try {
 }
 
 if ($failures.Count -gt 0) {
-    Write-Host "FAIL: worktree/stop/activity/map guardrail contract has $($failures.Count) issue(s)." -ForegroundColor Red
+    Write-Host "FAIL: worktree/stop/activity/map/harness guardrail contract has $($failures.Count) issue(s)." -ForegroundColor Red
     foreach ($failure in $failures) { Write-Host "  - $failure" -ForegroundColor Red }
     exit 1
 }
 
-Write-Host 'PASS: worktree, runtime stop, activity ledger, and orchestration map guardrails verified.' -ForegroundColor Green
+Write-Host 'PASS: worktree, runtime stop, activity ledger, orchestration map, and lean harness guardrails verified.' -ForegroundColor Green
 exit 0
