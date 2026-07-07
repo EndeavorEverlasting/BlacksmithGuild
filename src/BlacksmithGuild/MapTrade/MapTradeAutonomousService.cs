@@ -426,7 +426,7 @@ namespace BlacksmithGuild.MapTrade
             try
             {
                 var party = MobileParty.MainParty;
-                return party?.Position2D.ToString();
+                return party?.GetPosition2D.ToString();
             }
             catch
             {
