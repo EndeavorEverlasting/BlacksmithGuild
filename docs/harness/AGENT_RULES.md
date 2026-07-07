@@ -14,6 +14,19 @@ Extract patterns.
 Commit only repo-local harness contracts that prove BlacksmithGuild behavior.
 ```
 
+## AI harness reference shelf
+
+Shared external harness references are expected outside the app repo:
+
+```text
+C:\Users\Cheex\Desktop\dev\references\ai-harnesses\Archon
+C:\Users\Cheex\Desktop\dev\references\ai-harnesses\helpline
+```
+
+Agents may inspect those references when repo-local harness rules are insufficient, but BlacksmithGuild remains the source of truth for BlacksmithGuild behavior.
+
+If the reference shelf is missing, do not stall. Report the missing reference and continue from repo-local docs and contracts.
+
 ## Identity of this harness
 
 BlacksmithGuild does not need a corporate harness cathedral.
