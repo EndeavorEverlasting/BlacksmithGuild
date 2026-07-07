@@ -301,7 +301,6 @@ namespace BlacksmithGuild.MapTrade
 
             if (!StartBranchRouteNow(targetSettlement, BranchRouteSource))
             {
-                _lastBranchAutoStartKey = key;
                 return false;
             }
 
