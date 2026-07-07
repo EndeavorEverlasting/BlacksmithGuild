@@ -121,6 +121,8 @@ Required first step:
 ```powershell
 $env:FORGE_NO_PAUSE = '1'
 $env:FORGE_STOP_CHOICE = 'F'
+$env:FORGE_STOP_DEFAULT = 'F'
+$env:FORGE_STOP_TIMEOUT_SECONDS = '0'
 cmd /c .\ForgeStop.cmd force
 ```
 
