@@ -19,10 +19,30 @@
       "^scripts/api/",
       "^docs/architecture/",
       "^docs/handoff/",
+      "^docs/plans/",
       "^\\.mcp\\.example\\.json$",
       "^\\.cursor/mcp\\.example\\.json$",
       "^\\.claude/settings\\.example\\.json$",
       "^\\.claude/hooks/"
+    ],
+    "project-ai-layer": [
+      "^CLAUDE\\.md$",
+      "^src/CLAUDE\\.md$",
+      "^src/BlacksmithGuild/CLAUDE\\.md$",
+      "^scripts/CLAUDE\\.md$",
+      "^scripts/harness/CLAUDE\\.md$",
+      "^scripts/mcp/CLAUDE\\.md$",
+      "^docs/CLAUDE\\.md$",
+      "^\\.tbg/CLAUDE\\.md$",
+      "^\\.tbg/harness/skills/",
+      "^\\.tbg/harness/schemas/",
+      "^\\.tbg/harness/prompts/",
+      "^\\.tbg/workflows/",
+      "^scripts/harness/Write-TbgClaudeRulesProposal\\.ps1$",
+      "^\\.claude/hooks/Write-TbgClaudeRulesProposal\\.ps1$",
+      "^\\.claude/settings\\.example\\.json$",
+      "^docs/plans/",
+      "^docs/handoff/"
     ]
   }
 }
