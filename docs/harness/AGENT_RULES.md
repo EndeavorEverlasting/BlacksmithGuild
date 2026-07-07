@@ -16,11 +16,25 @@ Commit only repo-local harness contracts that prove BlacksmithGuild behavior.
 
 ## AI harness reference shelf
 
-Shared external harness references are expected outside the app repo:
+Shared external harness references are expected outside the app repo.
 
-```text
-C:\Users\Cheex\Desktop\dev\references\ai-harnesses\Archon
-C:\Users\Cheex\Desktop\dev\references\ai-harnesses\helpline
+Do not hard-code a specific Windows user name. Resolve the shelf from the current user profile:
+
+```powershell
+$root = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Desktop\dev\references\ai-harnesses'
+```
+
+Expected resolved folders:
+
+```powershell
+Join-Path $root 'Archon'
+Join-Path $root 'helpline'
+```
+
+Optional override for non-standard machines:
+
+```powershell
+$env:TBG_AI_HARNESS_REFERENCE_ROOT
 ```
 
 Agents may inspect those references when repo-local harness rules are insufficient, but BlacksmithGuild remains the source of truth for BlacksmithGuild behavior.
@@ -98,6 +112,12 @@ Sprint plan pack presenter:
 
 ```powershell
 .\scripts\tbg\Show-TbgSprintPlanPack.ps1
+```
+
+AI harness reference resolver:
+
+```powershell
+.\scripts\tbg\Resolve-TbgAiHarnessReferences.ps1
 ```
 
 Runtime proof summary validator:
