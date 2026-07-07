@@ -85,17 +85,35 @@ function Get-McpContentText {
     (@($Response.result.content) | ForEach-Object { if ($_.PSObject.Properties.Name -contains "text") { [string]$_.text } }) -join "`n"
 }
 
+function Get-McpErrorText {
+    param([object]$Response)
+    if ($null -eq $Response -or -not ($Response.PSObject.Properties.Name -contains "error")) { return "" }
+    $message = [string]$Response.error.message
+    $code = [string]$Response.error.code
+    $data = if ($Response.error.PSObject.Properties.Name -contains "data") { [string]$Response.error.data } else { "" }
+    $parts = @()
+    if (-not [string]::IsNullOrWhiteSpace($code)) { $parts += "code=$code" }
+    if (-not [string]::IsNullOrWhiteSpace($message)) { $parts += "message=$message" }
+    if (-not [string]::IsNullOrWhiteSpace($data)) { $parts += "data=$data" }
+    $parts -join "; "
+}
+
 function Convert-ToolResponseToState {
     param([object]$Response)
-    if ($Response.PSObject.Properties.Name -contains "error") { return "symbol_not_found" }
-    $text = Get-McpContentText -Response $Response
+    if ($null -eq $Response) { return "lsp_project_not_loaded" }
+    $text = (Get-McpContentText -Response $Response)
+    if ([string]::IsNullOrWhiteSpace($text)) { $text = Get-McpErrorText -Response $Response }
+    if ($Response.PSObject.Properties.Name -contains "error") {
+        if ($text -match "(?i)not found|no definition|no references|no symbols") { return "symbol_not_found" }
+        return "lsp_project_not_loaded"
+    }
     if ([string]::IsNullOrWhiteSpace($text)) { return "symbol_not_found" }
     if ($text -match "(?i)failed to start lsp|make sure csharp-ls is installed|project.*not.*load|workspace.*not.*set") { return "lsp_project_not_loaded" }
     if ($text -match "(?i)not found|no definition|no references|no symbols") { return "symbol_not_found" }
     return "symbol_navigation_ready"
 }
 
-function New-McpEvidence { param([string]$Tool, [object]$Response) $text = Get-McpContentText -Response $Response; if ($text.Length -gt 4000) { $text = $text.Substring(0, 4000) + "...[truncated]" }; [pscustomobject][ordered]@{ source = "mcp"; tool = $Tool; responseText = $text } }
+function New-McpEvidence { param([string]$Tool, [object]$Response) $text = Get-McpContentText -Response $Response; if ([string]::IsNullOrWhiteSpace($text)) { $text = Get-McpErrorText -Response $Response }; if ($text.Length -gt 4000) { $text = $text.Substring(0, 4000) + "...[truncated]" }; [pscustomobject][ordered]@{ source = "mcp"; tool = $Tool; responseText = $text } }
 function New-AnchorEvidence { param([object]$Anchor) [pscustomobject][ordered]@{ source = "repo-anchor"; file = $Anchor.filePath; line = $Anchor.displayLine; character = $Anchor.character; text = $Anchor.text } }
 
 function Invoke-SymbolQuery {
@@ -115,9 +133,17 @@ function Get-WorkspaceCandidates {
     param([string]$RepoRoot)
     $helper = Join-Path $RepoRoot "scripts/mcp/Get-TbgMcpWorkspaceCandidates.ps1"
     if (Test-Path -LiteralPath $helper) {
-        try { return @(& powershell -ExecutionPolicy Bypass -File $helper -RepoRoot $RepoRoot | ConvertFrom-Json) } catch { }
+        try {
+            $raw = & powershell -ExecutionPolicy Bypass -File $helper -RepoRoot $RepoRoot
+            $parsed = $raw | ConvertFrom-Json
+            foreach ($candidate in @($parsed)) { $candidate }
+            return
+        } catch { }
     }
-    @([pscustomobject][ordered]@{ role = "csharp_project_directory"; path = (Join-Path $RepoRoot "src/BlacksmithGuild"); preferred = $true }, [pscustomobject][ordered]@{ role = "repo_root_fallback"; path = $RepoRoot; preferred = $false })
+    foreach ($candidate in @(
+        [pscustomobject][ordered]@{ role = "csharp_project_directory"; path = (Join-Path $RepoRoot "src/BlacksmithGuild"); preferred = $true },
+        [pscustomobject][ordered]@{ role = "repo_root_fallback"; path = $RepoRoot; preferred = $false }
+    )) { $candidate }
 }
 
 function Write-SmokeResult { param([object]$Result) $artifactDir = Join-Path $Result.repoRoot "artifacts/latest"; New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null; $artifactPath = Join-Path $artifactDir "mcp-symbol-smoke.result.json"; $Result | ConvertTo-Json -Depth 50 | Set-Content -LiteralPath $artifactPath -Encoding UTF8; $Result | ConvertTo-Json -Depth 50 }
@@ -136,7 +162,7 @@ $csharpLs = Resolve-TbgTool -RepoRoot $repoRoot -Names @("csharp-ls", "csharp-ls
 if ([string]::IsNullOrWhiteSpace($mcpTool)) { $missing.Add("mcp_tool_missing:csharp-lsp-mcp") }
 if ([string]::IsNullOrWhiteSpace($csharpLs)) { $missing.Add("lsp-tool-missing:csharp-ls") } else { $findings.Add("lsp-tool-ok:csharp-ls") }
 
-$queries = @(); $mcpTools = @(); $workspaceResponseText = ""; $workspaceAttempts = @(); $selectedWorkspacePath = $null; $process = $null
+$queries = @(); $mcpTools = @(); $workspaceResponseText = ""; $workspaceAttempts = @(); $selectedWorkspacePath = $null; $process = $null; $directLspResult = $null
 if ($missing -contains "mcp_tool_missing:csharp-lsp-mcp") {
     $queries = New-BlockedQueries "mcp_tool_missing" "Missing MCP bridge command csharp-lsp-mcp."
 } else {
@@ -157,10 +183,20 @@ if ($missing -contains "mcp_tool_missing:csharp-lsp-mcp") {
             foreach ($workspace in @(Get-WorkspaceCandidates $repoRoot)) {
                 $workspacePath = [string]$workspace.path
                 if ([string]::IsNullOrWhiteSpace($workspacePath) -or -not (Test-Path -LiteralPath $workspacePath -PathType Container)) { continue }
-                $workspaceResponse = Invoke-McpTool -Process $process -NextId ([ref]$nextId) -Name "csharp_set_workspace" -Arguments @{ path = $workspacePath } -TimeoutMilliseconds $timeoutMs
-                $attemptText = Get-McpContentText $workspaceResponse
-                $workspaceAttempts += [pscustomobject][ordered]@{ path = $workspacePath; role = $workspace.role; hasError = ($workspaceResponse.PSObject.Properties.Name -contains "error"); responseText = $attemptText }
-                if ($workspaceResponse.PSObject.Properties.Name -notcontains "error") { $selectedWorkspacePath = $workspacePath; $workspaceResponseText = $attemptText; break }
+                $workspaceResponse = $null
+                $attemptText = ""
+                $workspaceHasError = $true
+                try {
+                    $workspaceResponse = Invoke-McpTool -Process $process -NextId ([ref]$nextId) -Name "csharp_set_workspace" -Arguments @{ path = $workspacePath } -TimeoutMilliseconds $timeoutMs
+                    $attemptText = Get-McpContentText $workspaceResponse
+                    if ([string]::IsNullOrWhiteSpace($attemptText)) { $attemptText = Get-McpErrorText $workspaceResponse }
+                    $workspaceHasError = ($workspaceResponse.PSObject.Properties.Name -contains "error") -or ($attemptText -match "(?i)^error:|failed|does not exist|project.*not.*load|workspace.*not.*set")
+                } catch {
+                    $attemptText = $_.Exception.Message
+                    $workspaceHasError = $true
+                }
+                $workspaceAttempts += [pscustomobject][ordered]@{ path = $workspacePath; role = $workspace.role; hasError = $workspaceHasError; responseText = $attemptText }
+                if (-not $workspaceHasError) { $selectedWorkspacePath = $workspacePath; $workspaceResponseText = $attemptText; break }
                 if ([string]::IsNullOrWhiteSpace($workspaceResponseText)) { $workspaceResponseText = $attemptText }
             }
             if ([string]::IsNullOrWhiteSpace($selectedWorkspacePath)) { $queries = New-BlockedQueries "lsp_project_not_loaded" "csharp_set_workspace failed for all workspace candidates." }
@@ -169,13 +205,30 @@ if ($missing -contains "mcp_tool_missing:csharp-lsp-mcp") {
                     @{ Question="Where is MapTradeAutonomousService defined?"; Target="MapTradeAutonomousService"; Tool="csharp_definition"; File=(Join-Path $repoRoot "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs"); Pattern="\bclass\s+MapTradeAutonomousService\b"; Symbol="MapTradeAutonomousService" },
                     @{ Question="Where is StartRouteNow defined?"; Target="StartRouteNow"; Tool="csharp_definition"; File=(Join-Path $repoRoot "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs"); Pattern="\bStartRouteNow\b"; Symbol="StartRouteNow" },
                     @{ Question="Who calls StartRouteNow?"; Target="StartRouteNow references"; Tool="csharp_references"; File=(Join-Path $repoRoot "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs"); Pattern="\bStartRouteNow\b"; Symbol="StartRouteNow" },
-                    @{ Question="Where is CampaignMapReadyOrchestrator defined?"; Target="CampaignMapReadyOrchestrator"; Tool="csharp_definition"; File=(Join-Path $repoRoot "src/BlacksmithGuild/DevTools/CampaignMapReadyOrchestrator.cs"); Pattern="\bclass\s+CampaignMapReadyOrchestrator\b"; Symbol="CampaignMapReadyOrchestrator" }
+                    @{ Question="Where is CampaignMapReadyOrchestrator defined?"; Target="CampaignMapReadyOrchestrator"; Tool="csharp_definition"; File=(Join-Path $repoRoot "src/BlacksmithGuild/DevTools/CampaignMapReadyOrchestrator.cs"); Pattern="\bclass\s+CampaignMapReadyOrchestrator\b"; Symbol="CampaignMapReadyOrchestrator" },
+                    @{ Question="Where is _activeReport assigned, read, and cleared?"; Target="MapTradeAutonomousService._activeReport references"; Tool="csharp_references"; File=(Join-Path $repoRoot "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs"); Pattern="MapTradeCertReport\s+_activeReport\b"; Symbol="_activeReport" },
+                    @{ Question="Where are hotkeys registered?"; Target="DevHotkeyHandler.PollHotkeys"; Tool="csharp_symbols"; File=(Join-Path $repoRoot "src/BlacksmithGuild/DevTools/DevHotkeyHandler.cs"); Pattern="PollHotkeys\(\)"; Symbol="PollHotkeys" },
+                    @{ Question="Where is command inbox parsing handled?"; Target="DevCommandFileInbox.TryParseInbox"; Tool="csharp_definition"; File=(Join-Path $repoRoot "src/BlacksmithGuild/DevTools/DevCommandFileInbox.cs"); Pattern="TryParseInbox\("; Symbol="TryParseInbox" }
                 )
                 foreach ($spec in $specs) { $queries += Invoke-SymbolQuery $process ([ref]$nextId) $spec $timeoutMs }
             }
         }
     } catch { $missing.Add("lsp_project_not_loaded:" + $_.Exception.Message); $queries = New-BlockedQueries "lsp_project_not_loaded" $_.Exception.Message }
     finally { if ($null -ne $process -and -not $process.HasExited) { try { $process.Kill() } catch { } } }
+}
+
+$directLspHelper = Join-Path $repoRoot "scripts/mcp/Invoke-TbgCsharpLsSymbolSmoke.js"
+$canTryDirectLsp = (-not [string]::IsNullOrWhiteSpace($mcpTool)) -and (-not [string]::IsNullOrWhiteSpace($csharpLs)) -and (Test-Path -LiteralPath $directLspHelper) -and ($null -ne (Get-Command node -ErrorAction SilentlyContinue))
+if ($canTryDirectLsp -and ([string]::IsNullOrWhiteSpace($selectedWorkspacePath)) -and -not ($queries | Where-Object { $_.state -eq "mcp_tool_missing" })) {
+    try {
+        $directRaw = & node $directLspHelper --repoRoot $repoRoot --timeoutSeconds $TimeoutSeconds --csharpLs $csharpLs
+        $directLspResult = $directRaw | ConvertFrom-Json
+        $findings.Add("lsp-direct-fallback:$($directLspResult.verdict)")
+        if ($directLspResult.workspacePath) { $selectedWorkspacePath = [string]$directLspResult.workspacePath }
+        if ($directLspResult.queries) { $queries = @($directLspResult.queries) }
+    } catch {
+        $missing.Add("lsp-direct-fallback-failed:" + $_.Exception.Message)
+    }
 }
 
 $states = @($queries | ForEach-Object { $_.state })
@@ -187,6 +240,6 @@ elseif ($states -contains "symbol_not_found") { $verdict = "symbol_not_found"; $
 Write-SmokeResult ([pscustomobject][ordered]@{
     schema = "tbg.harness.result.v1"; action = "TestMcpSymbolSmoke"; timestampUtc = (Get-Date).ToUniversalTime().ToString("o"); repoRoot = $repoRoot; branch = $branch; contractId = $ContractId; status = $status; verdict = $verdict; findings = @($findings); missingPrereqs = @($missing); forbiddenScopeTouched = $false; artifacts = @($artifactRelativePath);
     workspace = [pscustomobject][ordered]@{ selectedPath = $selectedWorkspacePath; attempts = @($workspaceAttempts) }
-    tools = [pscustomobject][ordered]@{ mcpCommand = $mcpTool; csharpLs = $csharpLs; mcpTools = @($mcpTools); workspaceResponse = $workspaceResponseText }
+    tools = [pscustomobject][ordered]@{ mcpCommand = $mcpTool; csharpLs = $csharpLs; mcpTools = @($mcpTools); workspaceResponse = $workspaceResponseText; directLsp = $directLspResult }
     queries = @($queries)
 })

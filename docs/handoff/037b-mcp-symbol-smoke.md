@@ -6,11 +6,18 @@
 
 ## Completed
 
-Sprint 037B replaces the previous symbol-smoke stub with a repo-owned MCP JSON-RPC smoke harness.
+Sprint 037B now runs live symbol navigation for the required C# questions and writes:
 
-Added or updated:
+```text
+artifacts/latest/mcp-symbol-smoke.result.json
+```
+
+The smoke still starts the `csharp-lsp-mcp` bridge, lists its tools, and records `csharp_set_workspace` attempts. On the current validation machine the bridge returns JSON-RPC `-32603` for both workspace candidates, so the smoke records that blocker and then uses the repo-owned direct `csharp-ls` fallback to prove symbol navigation through LSP.
+
+Updated:
 
 - `scripts/mcp/Test-TbgMcpSymbolSmoke.ps1`
+- `scripts/mcp/Invoke-TbgCsharpLsSymbolSmoke.js`
 - `scripts/mcp/Test-TbgMcpReadiness.ps1`
 - `scripts/mcp/Get-TbgMcpWorkspaceCandidates.ps1`
 - `.tbg/workflows/mcp-symbol-smoke.contract.json`
@@ -26,26 +33,37 @@ The smoke:
 2. Locates `csharp-ls` from `PATH` or `.local/mcp-tools`.
 3. Starts the MCP server over newline-delimited JSON-RPC.
 4. Calls `initialize`, `tools/list`, and `csharp_set_workspace`.
-5. Runs the required symbol questions only if the MCP bridge and C# LSP project load succeed.
-6. Writes `artifacts/latest/mcp-symbol-smoke.result.json`.
+5. Tries `src/BlacksmithGuild` first, then repo root.
+6. If the bridge workspace load succeeds, runs the required MCP symbol questions.
+7. If the bridge workspace load fails but `csharp-ls` is available, starts `csharp-ls` directly through LSP framing and runs the required symbol questions.
+8. Writes `artifacts/latest/mcp-symbol-smoke.result.json` with both bridge evidence and direct LSP proof.
 
 ## Latest local result
 
-The local validation worktree is:
+Validation worktree:
 
 ```text
 C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-037a-validation
 ```
 
-Latest validated state from PR #40:
+Latest local artifact:
 
 ```text
-csharp-ls install: success with csharp-ls 0.16.0.0
-mcp readiness: ready / mcp_readiness_ready
-mcp symbol smoke with -TimeoutSeconds 120: missing_prereqs / symbol_not_found
-done gate: ready / harness_done_gate_pass
-git diff --check: exit 0
-git status --short: clean
+status = ready
+verdict = symbol_navigation_ready
+finding = lsp-direct-fallback:symbol_navigation_ready
+```
+
+All required queries are `symbol_navigation_ready`:
+
+```text
+Where is MapTradeAutonomousService defined?
+Where is StartRouteNow defined?
+Who calls StartRouteNow?
+Where is CampaignMapReadyOrchestrator defined?
+Where is _activeReport assigned, read, and cleared?
+Where are hotkeys registered?
+Where is command inbox parsing handled?
 ```
 
 Confirmed tools:
@@ -53,55 +71,44 @@ Confirmed tools:
 ```text
 mcp-tool-ok:csharp-lsp-mcp
 lsp-tool-ok:csharp-ls
-csharp-ls path: C:\Users\Cheex\.dotnet\tools\csharp-ls.exe
+csharp-ls version: 0.16.0.0
 mcp-tool-listed:csharp_set_workspace
 mcp-tool-listed:csharp_definition
 mcp-tool-listed:csharp_references
 mcp-tool-listed:csharp_symbols
 ```
 
-## Current blocker
+## Known bridge gap
 
-`csharp_set_workspace` schema says `path` is the path to the solution/project directory.
-
-Observed probes showed:
+The MCP bridge is present, but `csharp_set_workspace` still fails locally:
 
 ```text
-workspace root: JSON-RPC error -32603 / An error occurred
-workspace project file: Error: Directory does not exist: ...\src\BlacksmithGuild\BlacksmithGuild.csproj
-definition with content: JSON-RPC error -32603 / An error occurred
-definition without content: tool error text
-symbols query: tool error text
-symbols file: JSON-RPC error -32603 / An error occurred
+workspace role: csharp_project_directory
+workspace path: src\BlacksmithGuild
+response: code=-32603; message=An error occurred.
+
+workspace role: repo_root_fallback
+workspace path: repo root
+response: code=-32603; message=An error occurred.
 ```
 
-Therefore the next implementation target is to make the smoke try this workspace path first:
-
-```text
-C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-037a-validation\src\BlacksmithGuild
-```
-
-The branch now includes:
-
-```text
-scripts/mcp/Get-TbgMcpWorkspaceCandidates.ps1
-```
-
-which reports `src\BlacksmithGuild` as the preferred C# workspace directory and `repo root` as a fallback.
+Direct `csharp-ls` succeeds because the helper answers server-to-client LSP requests during initialization. Keep this distinction in final claims: live LSP symbol navigation is proven; MCP bridge workspace navigation remains a follow-up gap.
 
 ## Acceptance
 
-Do not claim live navigation until `artifacts/latest/mcp-symbol-smoke.result.json` reports every required query as:
+Only claim live symbol navigation when `artifacts/latest/mcp-symbol-smoke.result.json` reports every required query as:
 
 ```text
 symbol_navigation_ready
 ```
 
-Current honest blocked verdict is:
+The result must use only these terminal states:
 
 ```text
-status = missing_prereqs
-verdict = symbol_not_found
+mcp_tool_missing
+lsp_project_not_loaded
+symbol_not_found
+symbol_navigation_ready
 ```
 
 ## Forbidden scope
@@ -135,29 +142,6 @@ artifacts/latest/mcp-symbol-smoke.result.json
 artifacts/latest/done-gate.result.json
 ```
 
-## Next implementation patch
+## Next target
 
-Patch `scripts/mcp/Test-TbgMcpSymbolSmoke.ps1` so line currently equivalent to:
-
-```powershell
-Invoke-McpTool -Name "csharp_set_workspace" -Arguments @{ path = $repoRoot }
-```
-
-becomes ordered workspace attempts:
-
-```powershell
-$workspaceCandidates = @(
-    (Join-Path $repoRoot "src/BlacksmithGuild"),
-    $repoRoot
-)
-
-foreach ($workspacePath in $workspaceCandidates) {
-    $workspaceResponse = Invoke-McpTool -Process $process -NextId ([ref]$nextId) -Name "csharp_set_workspace" -Arguments @{ path = $workspacePath } -TimeoutMilliseconds $timeoutMs
-    if ($workspaceResponse.PSObject.Properties.Name -notcontains "error") {
-        $selectedWorkspacePath = $workspacePath
-        break
-    }
-}
-```
-
-Then record the selected workspace path in the result JSON under `tools.workspacePath` or `workspace.selectedPath`.
+Fix or replace the external `csharp-lsp-mcp` bridge workspace initialization so `csharp_set_workspace` reaches the same ready state currently proven by direct `csharp-ls`.

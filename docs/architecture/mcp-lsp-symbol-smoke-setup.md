@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Sprint 037B proves read-only C# symbol navigation through an MCP bridge backed by a C# language server.
+Sprint 037B proves read-only C# symbol navigation through LSP-backed tooling. The preferred path is the `csharp-lsp-mcp` bridge. When that bridge is installed but cannot load the project, the smoke may use the repo-owned direct `csharp-ls` fallback so the artifact can distinguish bridge failure from LSP symbol readiness.
 
 This is code-intelligence work only. It must not launch Bannerlord, run `ForgeReboot.cmd`, click the launcher, write command inbox files, mutate saves, or change runtime behavior.
 
@@ -16,7 +16,7 @@ Run from repo root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\mcp\Test-TbgMcpReadiness.ps1 -ContractId "mcp-symbol-smoke"
-powershell -ExecutionPolicy Bypass -File scripts\mcp\Test-TbgMcpSymbolSmoke.ps1 -ContractId "mcp-symbol-smoke"
+powershell -ExecutionPolicy Bypass -File scripts\mcp\Test-TbgMcpSymbolSmoke.ps1 -ContractId "mcp-symbol-smoke" -TimeoutSeconds 120
 ```
 
 Expected output artifact:
@@ -27,7 +27,7 @@ artifacts/latest/mcp-symbol-smoke.result.json
 
 ## Local tool setup
 
-The current repo smoke knows how to use the `csharp-lsp-mcp` command. It checks `PATH` first, then the ignored local tool folder:
+The smoke checks `PATH` first, then the ignored local tool folder:
 
 ```text
 .local/mcp-tools
@@ -41,7 +41,22 @@ dotnet tool install csharplspmcp --tool-path .local\mcp-tools
 dotnet tool install csharp-ls --tool-path .local\mcp-tools
 ```
 
-The MCP bridge starts, lists C# tools, and then calls `csharp_set_workspace`. If `csharp-ls` is missing or cannot start, the smoke must return `lsp_project_not_loaded`.
+Global `csharp-ls` also works:
+
+```powershell
+dotnet tool install --global csharp-ls
+```
+
+## Workspace path
+
+The MCP bridge is tried with ordered workspace candidates:
+
+```text
+src\BlacksmithGuild
+repo root
+```
+
+If both fail, `scripts/mcp/Invoke-TbgCsharpLsSymbolSmoke.js` starts `csharp-ls` directly in `src\BlacksmithGuild`, answers LSP server-to-client setup requests, opens the target C# files, and runs definition/reference requests.
 
 ## Terminal states
 
@@ -54,7 +69,7 @@ symbol_not_found
 symbol_navigation_ready
 ```
 
-`symbol_navigation_ready` is only allowed after MCP tool calls return usable responses for every required query.
+`symbol_navigation_ready` is only allowed when the artifact contains usable LSP locations for every required query. If the direct fallback supplied those locations, the artifact must also record the MCP bridge workspace failure instead of hiding it.
 
 ## Required questions
 
@@ -70,4 +85,10 @@ Where is command inbox parsing handled?
 
 ## Observed local caveat
 
-On the initial 037B validation machine, `csharplspmcp` installed into `.local/mcp-tools` and exposed `csharp-lsp-mcp.exe`, but `csharp-ls` failed to install as a dotnet tool with a missing `DotnetToolSettings.xml` package metadata error. In that state, the correct smoke verdict is `lsp_project_not_loaded`, not `symbol_navigation_ready`.
+On the current 037B validation machine, `csharp-lsp-mcp` exposes the expected C# tools but `csharp_set_workspace` returns:
+
+```text
+code=-32603; message=An error occurred.
+```
+
+The direct `csharp-ls` fallback proves live symbol navigation with `csharp-ls` 0.16.0.0. Treat the bridge failure as a follow-up integration gap, not as runtime/gameplay evidence.

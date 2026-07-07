@@ -27,7 +27,7 @@
   ],
   "validationCommands": [
     "powershell -ExecutionPolicy Bypass -File scripts\\mcp\\Test-TbgMcpReadiness.ps1 -ContractId \"mcp-symbol-smoke\"",
-    "powershell -ExecutionPolicy Bypass -File scripts\\mcp\\Test-TbgMcpSymbolSmoke.ps1 -ContractId \"mcp-symbol-smoke\"",
+    "powershell -ExecutionPolicy Bypass -File scripts\\mcp\\Test-TbgMcpSymbolSmoke.ps1 -ContractId \"mcp-symbol-smoke\" -TimeoutSeconds 120",
     "git diff --check",
     "git status --short"
   ],
