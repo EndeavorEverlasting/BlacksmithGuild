@@ -38,6 +38,10 @@
           {
             "type": "command",
             "command": "powershell -ExecutionPolicy Bypass -File .claude\\hooks\\Test-TbgDoneGate.ps1"
+          },
+          {
+            "type": "command",
+            "command": "powershell -ExecutionPolicy Bypass -File .claude\\hooks\\Write-TbgClaudeRulesProposal.ps1"
           }
         ]
       }
