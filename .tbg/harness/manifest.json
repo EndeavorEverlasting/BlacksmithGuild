@@ -1,0 +1,31 @@
+{
+  "schema": "tbg.harness.manifest.v1",
+  "appId": "blacksmith-guild",
+  "displayName": "The Blacksmith Guild",
+  "defaultContractId": "local-mcp-code-intelligence",
+  "contextBanner": "[TBG | Sprint 037A | Local Agent Harness Foundation | branch: sprint/037a-local-agent-harness]",
+  "repo": {
+    "remote": "EndeavorEverlasting/BlacksmithGuild",
+    "protectedLocalPath": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild"
+  },
+  "paths": {
+    "contracts": ".tbg/workflows",
+    "policies": ".tbg/harness/policies",
+    "schemas": ".tbg/harness/schemas",
+    "artifactsLatest": "artifacts/latest"
+  },
+  "runtime": {
+    "bannerlordInstallPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord",
+    "phaseLog": "BlacksmithGuild_Phase1.log",
+    "launchLog": "BlacksmithGuild_Launch.log",
+    "statusJson": "BlacksmithGuild_Status.json",
+    "commandInbox": "BlacksmithGuild_CommandInbox.json"
+  },
+  "doctrine": [
+    "MCP is sight, not hands.",
+    "Runtime proof remains separate from code-intelligence proof.",
+    "No game launch unless the active contract explicitly allows it.",
+    "If a command assumes Bannerlord should not be running, run ForgeStop first.",
+    "Do not commit real local secrets, tokens, saves, or machine-specific config."
+  ]
+}

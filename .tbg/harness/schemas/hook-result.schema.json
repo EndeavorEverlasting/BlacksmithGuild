@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.hook-result.schema.json",
+  "title": "TBG Hook Result",
+  "type": "object",
+  "required": ["schema", "hook", "timestampUtc", "decision", "reason"],
+  "properties": {
+    "schema": { "const": "tbg.hook-result.v1" },
+    "hook": { "type": "string", "minLength": 1 },
+    "timestampUtc": { "type": "string" },
+    "decision": { "enum": ["allow", "deny", "ask"] },
+    "reason": { "type": "string" },
+    "contractId": { "type": "string" },
+    "findings": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

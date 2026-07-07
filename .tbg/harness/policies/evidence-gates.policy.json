@@ -1,0 +1,28 @@
+{
+  "schema": "tbg.evidence-gates.policy.v1",
+  "requiredChecks": [
+    "json_parse",
+    "powershell_parse",
+    "git_diff_check",
+    "git_status_short"
+  ],
+  "requiredArtifactsByContract": {
+    "local-mcp-code-intelligence": [
+      "artifacts/latest/harness-readiness.result.json"
+    ],
+    "mcp-symbol-smoke": [
+      "artifacts/latest/mcp-readiness.result.json",
+      "artifacts/latest/mcp-symbol-smoke.result.json"
+    ],
+    "tbg-domain-mcp-readonly": [
+      "artifacts/latest/tbg-domain-mcp-readiness.result.json"
+    ]
+  },
+  "terminalVerdicts": [
+    "harness_readiness_ready",
+    "harness_readiness_missing_prereqs",
+    "harness_readiness_repo_invalid",
+    "harness_done_gate_pass",
+    "harness_done_gate_blocked"
+  ]
+}

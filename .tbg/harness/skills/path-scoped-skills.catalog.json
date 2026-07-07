@@ -1,0 +1,53 @@
+{
+  "schema": "tbg.path-scoped-skills.catalog.v1",
+  "skills": [
+    {
+      "id": "add-dev-command",
+      "name": "Add Dev Command",
+      "triggerPaths": ["src/BlacksmithGuild/DevTools/", "src/BlacksmithGuild/Behaviors/"],
+      "allowedScope": ["command registration", "result logging", "status reporting", "docs and evidence updates"],
+      "forbiddenScope": ["uncontracted save mutation", "uncontracted resource grants", "launcher automation"],
+      "requiredEvidence": ["build result", "runtime or log evidence when behavior changes"]
+    },
+    {
+      "id": "add-harness-policy",
+      "name": "Add Harness Policy",
+      "triggerPaths": [".tbg/harness/policies/", "scripts/harness/"],
+      "allowedScope": ["policy JSON", "validator scripts", "schema/docs updates"],
+      "forbiddenScope": ["runtime side effects", "weakening protections without contract"],
+      "requiredEvidence": ["JSON parse", "validator output", "git diff --check"]
+    },
+    {
+      "id": "add-workflow-contract",
+      "name": "Add Workflow Contract",
+      "triggerPaths": [".tbg/workflows/"],
+      "allowedScope": ["contract JSON", "docs", "validation command list"],
+      "forbiddenScope": ["ambiguous runtime permission", "missing required artifacts"],
+      "requiredEvidence": ["contract JSON parse", "workflow gate result"]
+    },
+    {
+      "id": "add-mcp-tool",
+      "name": "Add MCP Tool",
+      "triggerPaths": ["scripts/mcp/", "src/Tbg.Harness.Mcp/"],
+      "allowedScope": ["read-only MCP tools", "bounded resources", "clear failure states"],
+      "forbiddenScope": ["game launch", "command inbox writes", "save mutation"],
+      "requiredEvidence": ["MCP readiness", "tool smoke output", "failure-state coverage"]
+    },
+    {
+      "id": "add-runtime-proof",
+      "name": "Add Runtime Proof",
+      "triggerPaths": ["docs/handoff/", "docs/plans/", "scripts/"],
+      "allowedScope": ["runtime validation scripts", "proof docs", "artifact collection"],
+      "forbiddenScope": ["running runtime commands without explicit workflow", "claiming proof from docs only"],
+      "requiredEvidence": ["ForgeStop when applicable", "build/install output", "runtime log/status artifact"]
+    },
+    {
+      "id": "add-handoff-doc",
+      "name": "Add Handoff Doc",
+      "triggerPaths": ["docs/handoff/"],
+      "allowedScope": ["context banner", "changed files", "validation commands", "gaps and risks"],
+      "forbiddenScope": ["vague completion claims", "missing branch/PR identity"],
+      "requiredEvidence": ["paths listed", "next command listed"]
+    }
+  ]
+}

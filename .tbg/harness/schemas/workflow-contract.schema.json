@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.workflow-contract.schema.json",
+  "title": "TBG Workflow Contract",
+  "type": "object",
+  "required": ["schema", "id", "sprint", "contextBanner", "scope", "requiredArtifacts", "validationCommands", "terminalStates"],
+  "properties": {
+    "schema": { "const": "tbg.workflow-contract.v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "sprint": { "type": "string", "minLength": 1 },
+    "contextBanner": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string" },
+    "scope": {
+      "type": "object",
+      "required": ["allowed", "forbidden"],
+      "properties": {
+        "allowed": { "type": "array", "items": { "type": "string" } },
+        "forbidden": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "requiredArtifacts": { "type": "array", "items": { "type": "string" } },
+    "validationCommands": { "type": "array", "items": { "type": "string" } },
+    "terminalStates": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

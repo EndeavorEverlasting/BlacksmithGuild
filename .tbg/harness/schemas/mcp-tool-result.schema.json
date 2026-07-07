@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.mcp-tool-result.schema.json",
+  "title": "TBG MCP Tool Result",
+  "type": "object",
+  "required": ["schema", "tool", "timestampUtc", "status"],
+  "properties": {
+    "schema": { "const": "tbg.mcp-tool-result.v1" },
+    "tool": { "type": "string", "minLength": 1 },
+    "timestampUtc": { "type": "string" },
+    "status": { "enum": ["ok", "missing", "blocked", "error"] },
+    "verdict": { "type": "string" },
+    "data": {},
+    "findings": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

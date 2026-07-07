@@ -1,0 +1,54 @@
+{
+  "schema": "tbg.command-safety.policy.v1",
+  "defaultDecision": "ask",
+  "denyPatterns": [
+    "(?i)ForgeReboot\\.cmd",
+    "(?i)ForgeAndLaunch\\.cmd",
+    "(?i)LaunchForge\\.cmd",
+    "(?i)TaleWorlds\\.MountAndBlade\\.Launcher",
+    "(?i)Bannerlord\\.exe",
+    "(?i)BlacksmithGuild_CommandInbox\\.json",
+    "(?i)CommandInbox",
+    "(?i)SaveGames",
+    "(?i)git\\s+push",
+    "(?i)git\\s+reset\\s+--hard",
+    "(?i)Remove-Item\\s+.*(?:Modules|Save|BlacksmithGuild)",
+    "(?i)Start-Process\\s+.*(?:Bannerlord|Launcher|TaleWorlds)"
+  ],
+  "requiresForgeStopFirst": [
+    "(?i)dotnet\\s+build",
+    "(?i)Copy-Item\\s+.*Modules",
+    "(?i)ForgeReboot\\.cmd",
+    "(?i)ForgeAndLaunch\\.cmd",
+    "(?i)LaunchForge\\.cmd",
+    "(?i)Start-Process\\s+.*(?:Bannerlord|Launcher|TaleWorlds)"
+  ],
+  "allowPatternsByContract": {
+    "local-mcp-code-intelligence": [
+      "^git\\s+status(?:\\s|$)",
+      "^git\\s+diff(?:\\s|$)",
+      "^git\\s+branch(?:\\s|$)",
+      "^git\\s+rev-parse(?:\\s|$)",
+      "^dotnet\\s+--info(?:\\s|$)",
+      "^dotnet\\s+tool\\s+list(?:\\s|$)",
+      "^node\\s+--version(?:\\s|$)",
+      "^go\\s+version(?:\\s|$)",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\mcp\\\\",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\mcp\\\\"
+    ],
+    "project-ai-layer": [
+      "^git\\s+status(?:\\s|$)",
+      "^git\\s+diff(?:\\s|$)",
+      "^git\\s+branch(?:\\s|$)",
+      "^git\\s+rev-parse(?:\\s|$)",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgHarnessReadiness\\.ps1",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgCommandSafety\\.ps1",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Write-TbgClaudeRulesProposal\\.ps1",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgHarnessReadiness\\.ps1",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgCommandSafety\\.ps1",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Write-TbgClaudeRulesProposal\\.ps1"
+    ]
+  }
+}

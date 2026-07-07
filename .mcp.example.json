@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "tbg-domain": {
+      "type": "stdio",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "scripts\\mcp\\Start-TbgDomainMcpServer.ps1"
+      ],
+      "env": {
+        "TBG_HARNESS_MODE": "readonly"
+      }
+    },
+    "tbg-lsp": {
+      "type": "stdio",
+      "command": "mcp-language-server",
+      "args": [
+        "--workspace",
+        "${CLAUDE_PROJECT_DIR}",
+        "--lsp",
+        "csharp-ls"
+      ]
+    }
+  }
+}
