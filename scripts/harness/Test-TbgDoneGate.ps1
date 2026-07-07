@@ -17,12 +17,16 @@ function Find-TbgRepoRoot {
 
 function Invoke-CaptureWithExitCode {
     param([string]$FileName, [string[]]$Arguments)
+    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        $ErrorActionPreference = "Continue"
         $output = & $FileName @Arguments 2>&1
         $code = $LASTEXITCODE
         return @{ ExitCode = $code; Output = ($output -join "`n").Trim() }
     } catch {
         return @{ ExitCode = 999; Output = $_.Exception.Message }
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
     }
 }
 
@@ -31,6 +35,17 @@ $contractPath = Join-Path $repoRoot (".tbg/workflows/" + $ContractId + ".contrac
 $findings = @()
 $missing = @()
 $blocked = $false
+$branch = "unknown"
+
+Push-Location $repoRoot
+try {
+    $branchRead = Invoke-CaptureWithExitCode -FileName "git" -Arguments @("rev-parse", "--abbrev-ref", "HEAD")
+    if ($branchRead.ExitCode -eq 0 -and -not [string]::IsNullOrWhiteSpace($branchRead.Output)) {
+        $branch = $branchRead.Output
+    }
+} finally {
+    Pop-Location
+}
 
 if (Test-Path -LiteralPath $contractPath) {
     $contract = Get-Content -LiteralPath $contractPath -Raw | ConvertFrom-Json
@@ -75,7 +90,7 @@ $result = New-Object psobject -Property @{
     action = "TestDoneGate"
     timestampUtc = (Get-Date).ToUniversalTime().ToString("o")
     repoRoot = $repoRoot
-    branch = "unknown"
+    branch = $branch
     contractId = $ContractId
     status = $state
     verdict = $verdict

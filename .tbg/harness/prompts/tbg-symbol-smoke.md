@@ -8,6 +8,14 @@
 
 Use MCP/LSP symbol-level navigation to answer targeted repo questions with definitions, references, and failure states.
 
+The repo-owned smoke command is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\mcp\Test-TbgMcpSymbolSmoke.ps1 -ContractId "mcp-symbol-smoke"
+```
+
+Do not replace the smoke with broad `rg` answers. Targeted source anchors may be used only to drive MCP/LSP requests. The artifact must show whether MCP tools were available, whether the C# LSP/project loaded, and what each symbol query returned.
+
 ## Required targets
 
 Answer:
@@ -40,6 +48,8 @@ symbol_navigation_ready
 ```
 
 Do not collapse these into vague failure.
+
+Only claim live symbol navigation when every required query is `symbol_navigation_ready` in `artifacts/latest/mcp-symbol-smoke.result.json`.
 
 ## Forbidden scope
 

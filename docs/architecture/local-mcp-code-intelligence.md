@@ -63,7 +63,7 @@ Failure states must be precise:
 mcp_tool_missing
 lsp_project_not_loaded
 symbol_not_found
-mcp_symbol_navigation_ready
+symbol_navigation_ready
 ```
 
 The difference matters. A missing tool is not a bad symbol. A bad symbol is not a failed project load. Mush loses.

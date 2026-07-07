@@ -83,7 +83,7 @@ if (Test-Path -LiteralPath $projectPath) {
     $missing.Add("project-missing:src/BlacksmithGuild/BlacksmithGuild.csproj")
 }
 
-$solutionFiles = Get-ChildItem -LiteralPath $repoRoot -Filter "*.sln" -File -ErrorAction SilentlyContinue
+$solutionFiles = @(Get-ChildItem -LiteralPath $repoRoot -Filter "*.sln" -File -ErrorAction SilentlyContinue)
 if ($solutionFiles.Count -gt 0) {
     $findings.Add("solution-count:$($solutionFiles.Count)")
 } else {
