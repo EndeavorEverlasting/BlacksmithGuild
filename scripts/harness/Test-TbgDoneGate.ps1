@@ -19,7 +19,9 @@ function Invoke-CaptureWithExitCode {
     param([string]$FileName, [string[]]$Arguments)
     try {
         $output = & $FileName @Arguments 2>&1
-        $code = $LASTEXITCODE
+        $lastExit = Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue
+        $code = 0
+        if ($null -ne $lastExit) { $code = [int]$lastExit.Value }
         return @{ ExitCode = $code; Output = ($output -join "`n").Trim() }
     } catch {
         return @{ ExitCode = 999; Output = $_.Exception.Message }
