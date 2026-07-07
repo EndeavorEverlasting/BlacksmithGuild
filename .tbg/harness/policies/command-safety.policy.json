@@ -37,6 +37,18 @@
       "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\",
       "^powershell(?:\\.exe)?\\s+.*scripts\\\\mcp\\\\",
       "^pwsh(?:\\.exe)?\\s+.*scripts\\\\mcp\\\\"
+    ],
+    "project-ai-layer": [
+      "^git\\s+status(?:\\s|$)",
+      "^git\\s+diff(?:\\s|$)",
+      "^git\\s+branch(?:\\s|$)",
+      "^git\\s+rev-parse(?:\\s|$)",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgHarnessReadiness\\.ps1",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgCommandSafety\\.ps1",
+      "^powershell(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Write-TbgClaudeRulesProposal\\.ps1",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgHarnessReadiness\\.ps1",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Test-TbgCommandSafety\\.ps1",
+      "^pwsh(?:\\.exe)?\\s+.*scripts\\\\harness\\\\Write-TbgClaudeRulesProposal\\.ps1"
     ]
   }
 }
