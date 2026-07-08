@@ -290,6 +290,7 @@ namespace BlacksmithGuild.MapTrade
             if (!TryReadStatusTravelTarget(out var targetSettlement, out var detail))
             {
                 LastFailReason = detail;
+                WriteBlockedBranchRouteCert(BranchRouteSource, targetSettlement, detail ?? "recursive branch route target not readable");
                 return false;
             }
 
