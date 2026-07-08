@@ -1,0 +1,178 @@
+{
+  "schema": "tbg.blacksmithRuntimeHarnessContract.v1",
+  "workflow_id": "blacksmith-runtime-harness",
+  "purpose": "Define proof levels, stop rules, expected artifacts, and forbidden claims for BlacksmithGuild runtime harness work.",
+  "runtime_stop_required": true,
+  "forge_stop_first": {
+    "required_for": [
+      "build-install-launch",
+      "launcher-proof",
+      "live-cert",
+      "route-visible-start",
+      "route-owned-clock-proof",
+      "full-runtime-validation"
+    ],
+    "default_command": ".\\ForgeStop.cmd soft",
+    "force_is_default": false,
+    "force_allowed_only_when": [
+      "user explicitly requests force",
+      "soft stop is proven insufficient and reported"
+    ]
+  },
+  "proof_levels": [
+    {
+      "id": "contract_proof",
+      "label": "contract proof",
+      "meaning": "Repo docs or JSON contracts state the expected behavior or rule.",
+      "does_not_prove": [
+        "script execution",
+        "build success",
+        "launcher state",
+        "command acknowledgement",
+        "runtime behavior"
+      ]
+    },
+    {
+      "id": "harness_proof",
+      "label": "harness proof",
+      "meaning": "A repo-owned script presents, validates, or summarizes a contract or existing artifact.",
+      "does_not_prove": [
+        "Bannerlord launched",
+        "gameplay behavior occurred",
+        "route movement occurred"
+      ]
+    },
+    {
+      "id": "static_test_proof",
+      "label": "static test proof",
+      "meaning": "Offline/static validation passed without launching Bannerlord.",
+      "does_not_prove": [
+        "build success",
+        "runtime behavior"
+      ]
+    },
+    {
+      "id": "build_proof",
+      "label": "build proof",
+      "meaning": "Project build or package step completed and produced expected build artifacts.",
+      "does_not_prove": [
+        "launcher automation",
+        "command acknowledgement",
+        "gameplay behavior"
+      ]
+    },
+    {
+      "id": "launcher_browser_proof",
+      "label": "launcher/browser proof",
+      "meaning": "Launcher or UI automation reached the claimed state with bounded evidence.",
+      "does_not_prove": [
+        "campaign ready",
+        "command acknowledged",
+        "runtime behavior occurred"
+      ]
+    },
+    {
+      "id": "command_ack_proof",
+      "label": "command ACK proof",
+      "meaning": "The mod acknowledged a command or wrote an ACK artifact.",
+      "does_not_prove": [
+        "route started",
+        "movement observed",
+        "trade completed"
+      ]
+    },
+    {
+      "id": "behavior_observed_proof",
+      "label": "behavior observed proof",
+      "meaning": "A bounded log or cert chain shows the requested behavior started or occurred.",
+      "does_not_prove": [
+        "completion of downstream behavior unless explicitly logged and verified"
+      ]
+    },
+    {
+      "id": "live_runtime_proof",
+      "label": "live runtime proof",
+      "meaning": "A complete bounded runtime evidence chain proves the requested behavior in Bannerlord.",
+      "requires": [
+        "known process state or workflow-owned stop phase",
+        "campaignReady true when applicable",
+        "mapStateActive true when applicable",
+        "safeToExecuteTravel true for route work",
+        "command ACK if a command path is used",
+        "behavior-specific log or cert artifact",
+        "generated proof summary"
+      ]
+    }
+  ],
+  "route_visible_start_requirements": {
+    "required_chain": [
+      "ForgeStop completed when game-off state is required",
+      "launcher path selected or skipped with evidence",
+      "attach succeeded",
+      "campaignReady true",
+      "mapStateActive true",
+      "safeToExecuteTravel true",
+      "AgentAutoMapTradeRoute trigger observed",
+      "MapTradeAutonomousService.StartRouteNow observed",
+      "route issued or started",
+      "movement observed or blocked with explicit reason",
+      "route cert or phase log collected"
+    ],
+    "ack_is_not_enough": true,
+    "route_assignment_is_not_movement_proof": true
+  },
+  "expected_artifacts": {
+    "local_generated": [
+      "artifacts/latest/runtime-proof.validation.json",
+      "artifacts/latest/route-owned-clock-live-proof.result.json",
+      "BlacksmithGuild_Status.json",
+      "BlacksmithGuild_CommandAck.json",
+      "BlacksmithGuild_MapTradeRouteCert.json",
+      "BlacksmithGuild_Phase1.log",
+      "BlacksmithGuild_Launch.log"
+    ],
+    "tracked_contracts": [
+      ".tbg/workflows/runtime-stop-policy.contract.json",
+      ".tbg/workflows/blacksmith-runtime-harness.contract.json",
+      "docs/harness/RUNTIME_EVIDENCE_CONTRACT.md",
+      "docs/harness/CODEBASE_MAP.md"
+    ]
+  },
+  "forbidden_claims_without_live_runtime_proof": [
+    "route completed",
+    "arrival completed",
+    "trade completed",
+    "activity ledger is listening in-game",
+    "campaign behavior verified",
+    "movement observed",
+    "runtime proof reached"
+  ],
+  "forbidden_actions_for_docs_guardrail_lanes": [
+    "editing src/BlacksmithGuild/MapTrade/*",
+    "launching Bannerlord",
+    "running ForgeReboot",
+    "mutating personal saves",
+    "committing runtime logs",
+    "committing generated evidence"
+  ],
+  "validation_commands": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\tbg\\Validate-TbgRuntimeProof.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\tbg\\Verify-TbgWorktreeStopGuardrails.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\tbg\\Verify-TbgSprintPlanPack.ps1"
+  ],
+  "acceptance": {
+    "docs_guardrail_lane_can_reach": [
+      "contract proof",
+      "harness proof",
+      "static test proof"
+    ],
+    "docs_guardrail_lane_cannot_reach": [
+      "build proof",
+      "launcher/browser proof",
+      "command ACK proof",
+      "behavior observed proof",
+      "live runtime proof"
+    ],
+    "runtime_lane_must_provide": "observed behavior/log artifact chain before claiming runtime behavior"
+  }
+}
