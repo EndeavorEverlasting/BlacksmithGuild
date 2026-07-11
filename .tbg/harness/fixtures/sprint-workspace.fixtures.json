@@ -1,0 +1,45 @@
+{
+  "schema": "tbg.harness.sprint-workspace.fixtures.v1",
+  "forbiddenPaths": [
+    "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs",
+    "src/BlacksmithGuild/MapTrade/MapTradeEvidenceWriter.cs",
+    "src/BlacksmithGuild/MapTrade/MapTradeModels.cs"
+  ],
+  "cases": [
+    {
+      "id": "clean-primary",
+      "input": { "statusShort": "", "currentBranch": "main", "defaultRemoteBase": "origin/main", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "use_primary", "chosenBaseRef": "origin/main", "primaryDirty": false, "primaryConflicted": false, "forbiddenScopeTouched": false }
+    },
+    {
+      "id": "dirty-primary",
+      "input": { "statusShort": " M docs/architecture/readme.md", "currentBranch": "main", "defaultRemoteBase": "origin/main", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "create_isolated_worktree", "chosenBaseRef": "origin/main", "primaryDirty": true, "primaryConflicted": false, "forbiddenScopeTouched": false }
+    },
+    {
+      "id": "conflicted-forbidden-primary",
+      "input": { "statusShort": "UU src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs", "conflictedPaths": ["src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs"], "currentBranch": "feat/route", "defaultRemoteBase": "origin/main", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "create_isolated_worktree", "chosenBaseRef": "origin/main", "primaryDirty": true, "primaryConflicted": true, "forbiddenScopeTouched": true }
+    },
+    {
+      "id": "merged-foundation-pr",
+      "input": { "statusShort": " M route.txt", "currentBranch": "feat/route", "defaultRemoteBase": "origin/main", "foundationPrState": "MERGED", "foundationHead": "sprint/037a-local-agent-harness", "foundationBase": "main", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "create_isolated_worktree", "chosenBaseRef": "origin/main", "baseReason": "foundation_pr_merged_use_remote_default", "primaryDirty": true, "primaryConflicted": false, "forbiddenScopeTouched": false }
+    },
+    {
+      "id": "open-foundation-pr",
+      "input": { "statusShort": " M harness.txt", "currentBranch": "main", "defaultRemoteBase": "origin/main", "foundationPrState": "OPEN", "foundationHead": "sprint/037a-local-agent-harness", "foundationBase": "main", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "create_isolated_worktree", "chosenBaseRef": "origin/sprint/037a-local-agent-harness", "baseReason": "open_foundation_pr_use_remote_head", "primaryDirty": true, "primaryConflicted": false, "forbiddenScopeTouched": false }
+    },
+    {
+      "id": "existing-isolated-worktree",
+      "input": { "statusShort": "UU route.txt", "conflictedPaths": ["route.txt"], "currentBranch": "feat/route", "defaultRemoteBase": "origin/main", "existingWorktreePath": "C:/repo-sprint", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "use_existing_worktree", "chosenBaseRef": "origin/main", "primaryDirty": true, "primaryConflicted": true, "forbiddenScopeTouched": false }
+    },
+    {
+      "id": "unknown-foundation-pr-state",
+      "input": { "statusShort": " M harness.txt", "currentBranch": "main", "defaultRemoteBase": "origin/main", "foundationPrState": "UNKNOWN", "primaryRepo": "C:/repo", "worktreePath": "C:/repo-sprint", "targetBranch": "sprint/test" },
+      "expected": { "disposition": "blocked", "chosenBaseRef": "origin/main", "baseReason": "foundation_pr_state_unknown", "primaryDirty": true, "primaryConflicted": false, "forbiddenScopeTouched": false }
+    }
+  ]
+}

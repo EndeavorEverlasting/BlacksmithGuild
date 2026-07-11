@@ -31,7 +31,7 @@ Forbidden:
 
 ## Model
 
-The harness is split into four layers.
+The harness is split into five layers.
 
 | Layer | Role |
 |---|---|
@@ -39,6 +39,7 @@ The harness is split into four layers.
 | Policies | Decide command, file, runtime, and evidence safety. |
 | Scripts | Enforce contracts and produce machine-readable evidence. |
 | Adapters | Let Claude Code hooks, MCP clients, Cursor, and future agents call the same repo-native checks. |
+| Reporting | Resolve one effective context and produce linked English and machine artifacts without duplicating policy claims. |
 
 The repo harness is intentionally not tied to one AI client. Claude Code hooks, Cursor MCP config, and a future domain MCP server should all call the same PowerShell scripts and read the same JSON contracts.
 
@@ -71,9 +72,13 @@ All result-producing scripts should write JSON with this shape:
   "findings": [],
   "missingPrereqs": [],
   "forbiddenScopeTouched": false,
-  "artifacts": []
+  "artifacts": [],
+  "effectivePolicy": {},
+  "englishSummary": "The readiness result is ready under the active effective policy."
 }
 ```
+
+`effectivePolicy` is resolved from executable contracts and policies; it is not a hand-written summary. Result scripts retain JSON on standard output for machine adapters and write an English-first Markdown companion. See `docs/architecture/effective-policy-english-reports.md` for the renderer, workspace decision, and handoff contracts.
 
 ## Readiness vs proof
 

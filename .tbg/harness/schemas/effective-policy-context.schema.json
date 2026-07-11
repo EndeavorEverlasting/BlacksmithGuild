@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.effective-policy-context.schema.json",
+  "title": "TBG Effective Policy Context",
+  "type": "object",
+  "required": [
+    "schema",
+    "profileId",
+    "workflowId",
+    "policyId",
+    "lane",
+    "requiresInactiveRuntime",
+    "requiresForgeStopFirst",
+    "allowedCommands",
+    "deniedCommands",
+    "resultPath",
+    "artifactPaths",
+    "proofLevel",
+    "validationMode",
+    "ciSurfacePaths",
+    "sourceFiles",
+    "consumerSurfaces",
+    "handoff"
+  ],
+  "properties": {
+    "schema": { "const": "tbg.harness.effective-policy-context.v1" },
+    "profileId": { "type": "string", "minLength": 1 },
+    "workflowId": { "type": "string", "minLength": 1 },
+    "policyId": { "const": "effective-policy-english" },
+    "lane": { "type": "string", "minLength": 1 },
+    "requiresInactiveRuntime": { "type": "boolean" },
+    "requiresForgeStopFirst": { "type": "boolean" },
+    "allowedCommands": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+    "deniedCommands": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string" }
+    },
+    "resultPath": { "type": "string", "minLength": 1 },
+    "artifactPaths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "proofLevel": { "type": "string", "minLength": 1 },
+    "validationMode": { "type": "string", "minLength": 1 },
+    "ciSurfacePaths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "sourceFiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "consumerSurfaces": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "handoff": {
+      "type": "object",
+      "required": ["machineResultPath", "englishReportPath", "carries", "sequence"],
+      "properties": {
+        "machineResultPath": { "type": "string", "minLength": 1 },
+        "englishReportPath": { "type": "string", "minLength": 1 },
+        "carries": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "sequence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "result": {
+      "type": ["object", "null"],
+      "additionalProperties": true
+    },
+    "review": {
+      "type": ["object", "null"],
+      "additionalProperties": true
+    },
+    "rowType": { "type": "string" },
+    "status": { "type": ["string", "null"] },
+    "verdict": { "type": ["string", "null"] },
+    "blockedReason": { "type": ["string", "null"] },
+    "nextPatchHint": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

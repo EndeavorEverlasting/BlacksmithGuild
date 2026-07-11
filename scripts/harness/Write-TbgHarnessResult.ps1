@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$Action,
     [Parameter(Mandatory=$true)][string]$Status,
     [Parameter(Mandatory=$true)][string]$Verdict,
@@ -45,6 +45,17 @@ if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $safeAction = ($Action -replace '[^A-Za-z0-9_.-]', '-').ToLowerInvariant()
     $OutputPath = Join-Path $artifactDir "$safeAction.result.json"
 }
+$reportPath = $OutputPath -replace '\.result\.json$', '.report.md'
+if ($reportPath -eq $OutputPath) { $reportPath = $OutputPath -replace '\.json$', '.report.md' }
+if ($reportPath -eq $OutputPath) { $reportPath = "$OutputPath.report.md" }
+$resultArtifacts = @($Artifacts)
+foreach ($path in @($OutputPath, $reportPath)) {
+    $fullPath = [System.IO.Path]::GetFullPath($path)
+    if ($fullPath.StartsWith($repoRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relativePath = $fullPath.Substring($repoRoot.Length).TrimStart([char[]]@('\', '/')).Replace('\', '/')
+        if ($resultArtifacts -notcontains $relativePath) { $resultArtifacts += $relativePath }
+    }
+}
 
 $result = [pscustomobject]@{
     schema = "tbg.harness.result.v1"
@@ -58,8 +69,9 @@ $result = [pscustomobject]@{
     findings = @($Findings)
     missingPrereqs = @($MissingPrereqs)
     forbiddenScopeTouched = $ForbiddenScopeTouched
-    artifacts = @($Artifacts)
+    artifacts = @($resultArtifacts)
 }
 
-$result | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
-$result | ConvertTo-Json -Depth 20
+Import-Module (Join-Path $PSScriptRoot "TbgEffectivePolicy.psm1") -Force
+$json = Write-TbgPolicyReport -ResultObject $result -JsonPath $OutputPath -MarkdownPath $reportPath -ProfileId $ContractId -RowType "result" -RepoRoot $repoRoot -Title $Action
+Write-Output $json

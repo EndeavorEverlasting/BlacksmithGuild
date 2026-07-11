@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$CommandText,
     [string]$ContractId = "local-mcp-code-intelligence",
     [switch]$FailOnDeny
@@ -65,11 +65,15 @@ $result = [pscustomobject]@{
     matchedPattern = $matchedPattern
     requiresForgeStopFirst = $requiresForgeStop
     findings = @()
+    artifacts = @("artifacts/latest/command-safety.result.json", "artifacts/latest/command-safety.report.md")
 }
 
 $artifactDir = Join-Path $repoRoot "artifacts/latest"
 New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-$result | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $artifactDir "command-safety.result.json") -Encoding UTF8
-$result | ConvertTo-Json -Depth 20
+$artifactPath = Join-Path $artifactDir "command-safety.result.json"
+$reportPath = Join-Path $artifactDir "command-safety.report.md"
+Import-Module (Join-Path $PSScriptRoot "TbgEffectivePolicy.psm1") -Force
+$json = Write-TbgPolicyReport -ResultObject $result -JsonPath $artifactPath -MarkdownPath $reportPath -ProfileId $ContractId -RowType "command-safety" -RepoRoot $repoRoot -Title "Command safety"
+Write-Output $json
 
 if ($FailOnDeny -and $decision -eq "deny") { exit 2 }

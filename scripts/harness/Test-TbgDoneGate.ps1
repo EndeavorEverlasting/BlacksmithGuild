@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$ContractId = "local-mcp-code-intelligence"
 )
 
@@ -56,8 +56,12 @@ if (Test-Path -LiteralPath $contractPath) {
         $artifactPath = Join-Path $repoRoot $artifact
         if (Test-Path -LiteralPath $artifactPath) {
             try {
-                Get-Content -LiteralPath $artifactPath -Raw | ConvertFrom-Json | Out-Null
+                $artifactObject = Get-Content -LiteralPath $artifactPath -Raw | ConvertFrom-Json
                 $findings += "artifact-json-ok:$artifact"
+                $artifactContract = $artifactObject.PSObject.Properties['contractId']
+                if ($null -ne $artifactContract -and [string]$artifactContract.Value -ne $ContractId) {
+                    $missing += "artifact-contract-mismatch:$artifact"
+                }
             } catch {
                 $missing += "artifact-invalid-json:$artifact"
             }
@@ -99,12 +103,15 @@ $result = New-Object psobject -Property @{
     findings = @($findings)
     missingPrereqs = @($missing)
     forbiddenScopeTouched = $false
-    artifacts = @("artifacts/latest/done-gate.result.json")
+    artifacts = @("artifacts/latest/done-gate.result.json", "artifacts/latest/done-gate.report.md")
 }
 
 $artifactDir = Join-Path $repoRoot "artifacts/latest"
 New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-$result | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $artifactDir "done-gate.result.json") -Encoding UTF8
-$result | ConvertTo-Json -Depth 20
+$artifactPath = Join-Path $artifactDir "done-gate.result.json"
+$reportPath = Join-Path $artifactDir "done-gate.report.md"
+Import-Module (Join-Path $PSScriptRoot "TbgEffectivePolicy.psm1") -Force
+$json = Write-TbgPolicyReport -ResultObject $result -JsonPath $artifactPath -MarkdownPath $reportPath -ProfileId $ContractId -RowType "result" -RepoRoot $repoRoot -Title "Harness done gate"
+Write-Output $json
 
 if ($verdict -eq "harness_done_gate_blocked") { exit 2 }

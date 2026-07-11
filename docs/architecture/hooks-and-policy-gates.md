@@ -8,6 +8,8 @@
 
 Hooks give each agent session a deterministic safety wrapper. Policy stays in `.tbg/harness/policies`; hook scripts call the shared harness scripts instead of carrying their own separate rules.
 
+The prose below is explanatory doctrine. Executable policy truth comes from the active workflow contract and `.tbg/harness/policies`, resolved through `scripts/harness/TbgEffectivePolicy.psm1`. Human-facing hook reports use that same context as described in `docs/architecture/effective-policy-english-reports.md`.
+
 ## Hook surfaces
 
 | Surface | Script | Job |
@@ -44,7 +46,11 @@ Hook scripts emit `tbg.hook-result.v1` objects with:
 - reason
 - matchedPattern
 - findings
+- effectivePolicy
+- englishSummary
+
+Hooks keep JSON on standard output for adapters. Their companion Markdown report presents `englishSummary` first and preserves the JSON as secondary debugging evidence.
 
 ## Done gate
 
-The done gate checks the active workflow contract, required artifacts, JSON validity, and cheap Git hygiene. It does not prove runtime behavior. Runtime proof remains separate.
+The done gate checks the active workflow contract, required artifacts, artifact/contract identity, JSON validity, and cheap Git hygiene. It does not prove runtime behavior. Runtime proof remains separate.

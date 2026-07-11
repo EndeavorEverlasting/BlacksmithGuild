@@ -1,4 +1,5 @@
-param(
+﻿param(
+    [string]$ContractId = "",
     [switch]$Json
 )
 
@@ -35,6 +36,9 @@ function Invoke-Capture {
 $repoRoot = Find-TbgRepoRoot
 $manifestPath = Join-Path $repoRoot ".tbg/harness/manifest.json"
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+if ([string]::IsNullOrWhiteSpace($ContractId)) { $ContractId = [string]$manifest.defaultContractId }
+Import-Module (Join-Path $PSScriptRoot "TbgEffectivePolicy.psm1") -Force
+$effectivePolicy = Get-TbgEffectivePolicyContext -ProfileId $ContractId -RepoRoot $repoRoot
 
 Push-Location $repoRoot
 try {
@@ -59,6 +63,7 @@ $result = [pscustomobject]@{
     manifest = $manifest
     defaultContractId = $manifest.defaultContractId
     contextBanner = $manifest.contextBanner
+    effectivePolicy = $effectivePolicy
 }
 
 if ($Json) {
