@@ -6,6 +6,7 @@
 **Hotkeys / inbox commands:** [player-command-guide.md](player-command-guide.md)  
 **Message feed / F7:** [in-game-surfaces.md](in-game-surfaces.md)  
 **VanillaLegit / Smithing 275:** [plans/008a-vanilla-legit-aserai-tradesmith.plan.md](plans/008a-vanilla-legit-aserai-tradesmith.plan.md)
+**Current load/toggle/visible-trade plan:** [operator/load-save-toggle-and-visible-trade-plan.md](operator/load-save-toggle-and-visible-trade-plan.md)
 
 ---
 
@@ -29,12 +30,14 @@
 |------|------|
 | Map ready (first tick) | `TBG READY` notice, command surface written, optional treasury snapshot |
 | Daily tick | Fake forge advisor lines (cosmetic); gold test **off** by default |
+| MapTrade is in **Automation** and fresh recursive branch state selects travel | Branch-selected route may start; Hybrid remains explicit-command-only |
 | After `RunAutonomousGuildLoopNow` started | Tick FSM continues travel / cohesion / trade probe until one cycle completes |
 
 ### Manual / one-shot (you or agent trigger)
 
 | Action | Command / hotkey |
 |--------|------------------|
+| Cycle engine authority | **Ctrl+Alt+T** (`Manual -> Hybrid -> Automation -> Manual`) |
 | Market action plan | **Ctrl+Alt+M** or `MarketSnapshotNow` |
 | Forge + crew advisory | **Ctrl+Alt+R** or `RunSmithingAdvisoryNow` |
 | Advisory guild loop (no travel) | **Ctrl+Alt+G** or `RunGuildLoopNow` |

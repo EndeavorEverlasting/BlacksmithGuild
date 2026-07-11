@@ -238,9 +238,14 @@ namespace BlacksmithGuild.MapTrade
         {
             GameSessionState.Refresh();
 
-            if ((_activeReport == null || !IsRunning) && !_abortRequested)
+            if ((_activeReport == null || !IsRunning)
+                && !_abortRequested
+                && EngineToggleAuthority.IsAutomationEnabled(EngineToggleKey.MapTrade)
+                && TryStartFromRecursiveBranchState())
             {
-                TryStartFromRecursiveBranchState();
+                // BeginTravel can change the live menu state. End this tick so the
+                // pre-start IsMapMenuOpen snapshot below cannot cancel the new order.
+                return;
             }
 
             if (_activeReport == null || !IsRunning || _abortRequested)

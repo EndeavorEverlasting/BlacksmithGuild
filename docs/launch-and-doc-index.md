@@ -14,9 +14,10 @@ Repo root: `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild`
 .\ForgeContinue.cmd
 ```
 
-- Auto-clicks launcher **CONTINUE**, loads dev save, lands on campaign map
+- Auto-clicks launcher **CONTINUE** and follows Bannerlord's native Continue path
+- Does **not** select or prove a named save; confirm the expected character and location before enabling Automation
 - Wait for **F7** → `campaignReady: true` (or `Blacksmith Guild — Ready:` / legacy `TBG READY` in Phase1)
-- See also: [dev-disposable-save.md](dev-disposable-save.md), [player-command-guide.md](player-command-guide.md) § Play now
+- See also: [operator/load-save-toggle-and-visible-trade-plan.md](operator/load-save-toggle-and-visible-trade-plan.md), [dev-disposable-save.md](dev-disposable-save.md), [player-command-guide.md](player-command-guide.md) § Play now
 
 ### Path B — Fresh bootstrap / cert
 
@@ -108,6 +109,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 
 | Question | Read this file |
 |----------|----------------|
+| **How do I load, toggle Automation, travel, stop, and judge visible trading honestly?** | [operator/load-save-toggle-and-visible-trade-plan.md](operator/load-save-toggle-and-visible-trade-plan.md) |
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
 | Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
 | What is the plan to finish the root CMD / click wrapper surface? | [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md) |
@@ -145,8 +147,10 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 ```text
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
+Mode:     Ctrl+Alt+T → Manual | Hybrid | Automation (read the in-game notice)
+Abort:    Ctrl+Alt+B (movement) | ForgeStop.cmd soft (external runner)
 Click:    Run-MarketIntel.cmd | Run-FoodAdvisory.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd
-Plan:     docs/plans/click-first-command-surface.plan.md
+Plan:     docs/operator/load-save-toggle-and-visible-trade-plan.md
 Evidence: Run-ExportEvidence.cmd → docs/evidence/latest/
 Docs:     docs/clickable-command-surface.md | docs/automation-playbook.md | docs/launch-and-doc-index.md
 ```

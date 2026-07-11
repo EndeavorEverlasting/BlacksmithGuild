@@ -1,0 +1,228 @@
+{
+  "schemaVersion": "TbgOperatorControlSurface.v1",
+  "updatedDate": "2026-07-11",
+  "purpose": "Canonical operator-facing launch, hotkey, engine, wrapper, capability, and proof-level catalog.",
+  "sourceFiles": [
+    "src/BlacksmithGuild/DevTools/DevHotkeyHandler.cs",
+    "src/BlacksmithGuild/DevTools/EngineToggleAuthority.cs",
+    "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs",
+    "scripts/run-autonomous-assist-session.ps1",
+    "scripts/forge-stop.ps1"
+  ],
+  "launchPaths": [
+    {
+      "id": "continue_native",
+      "command": ".\\ForgeContinue.cmd",
+      "intent": "continue",
+      "behavior": "Select Bannerlord's native Continue option and wait for campaign attach.",
+      "exactSaveIdentityVerified": false,
+      "warning": "This does not select or prove a named save. Confirm the loaded character in game before enabling Automation."
+    },
+    {
+      "id": "new_sandbox",
+      "command": ".\\Forge.cmd",
+      "intent": "play",
+      "behavior": "Start the configured new SandBox bootstrap path.",
+      "exactSaveIdentityVerified": false,
+      "warning": "Use only when a new/disposable campaign is intended."
+    }
+  ],
+  "hotkeys": [
+    {
+      "chord": "Ctrl+Alt+T",
+      "action": "Cycle global engine authority",
+      "cycle": [
+        "Manual",
+        "Hybrid",
+        "Automation"
+      ],
+      "feedback": "Lower-left notice: Engines: <mode>",
+      "surface": "campaign hotkey polling surface",
+      "stopsExternalRunner": false
+    },
+    {
+      "chord": "Ctrl+Alt+B",
+      "action": "Abort active TBG movement automation",
+      "cycle": [],
+      "feedback": "Lower-left abort/hold notices and feature JSON",
+      "surface": "safe campaign hotkey surface",
+      "stopsExternalRunner": false
+    },
+    {
+      "chord": "F7",
+      "action": "Show current Forge status",
+      "cycle": [],
+      "feedback": "Lower-left status and BlacksmithGuild_Status.json",
+      "surface": "campaign hotkey polling surface",
+      "stopsExternalRunner": false
+    },
+    {
+      "chord": "F8",
+      "action": "Show command list",
+      "cycle": [],
+      "feedback": "Lower-left command list and BlacksmithGuild_CommandSurface.json",
+      "surface": "campaign hotkey polling surface",
+      "stopsExternalRunner": false
+    },
+    {
+      "chord": "Ctrl+Alt+M",
+      "action": "Run read-only market action plan",
+      "cycle": [],
+      "feedback": "Market notice and BlacksmithGuild_MarketIntel.json",
+      "surface": "campaign map",
+      "stopsExternalRunner": false
+    },
+    {
+      "chord": "Ctrl+Alt+G",
+      "action": "Run read-only guild-loop advisory",
+      "cycle": [],
+      "feedback": "Guild-loop notice and BlacksmithGuild_GuildLoopReport.json",
+      "surface": "campaign map",
+      "stopsExternalRunner": false
+    },
+    {
+      "chord": "Ctrl+Alt+R",
+      "action": "Rank forge candidates",
+      "cycle": [],
+      "feedback": "Forge notice and BlacksmithGuild_ForgeRecommendations.json",
+      "surface": "campaign map",
+      "stopsExternalRunner": false
+    }
+  ],
+  "wrappers": [
+    {
+      "command": ".\\Run-AutonomousGuildLoop.cmd",
+      "kind": "async_start",
+      "terminalWait": false,
+      "result": "BlacksmithGuild_AutonomousGuildLoop.json",
+      "stop": "Ctrl+Alt+T until Manual, Ctrl+Alt+B, or .\\ForgeStop.cmd soft"
+    },
+    {
+      "command": ".\\Run-AutonomousAssistSession.cmd",
+      "kind": "runner",
+      "terminalWait": true,
+      "result": "assist-loop-summary.json",
+      "stop": ".\\ForgeStop.cmd soft"
+    },
+    {
+      "command": ".\\Run-ExportEvidence.cmd",
+      "kind": "evidence_export",
+      "terminalWait": true,
+      "result": "docs/evidence/latest/README.md",
+      "stop": null
+    }
+  ],
+  "engines": [
+    {
+      "engine": "Governor",
+      "startupMode": "Manual",
+      "authorityGateEffective": true,
+      "automationCapability": "Decision scheduling exists; worker adapters remain propose/defer for execution.",
+      "handoff": "Governor decision -> selected worker adapter -> evidence outcome",
+      "runtimeProof": "not certified as an end-to-end worker dispatcher"
+    },
+    {
+      "engine": "MapTrade",
+      "startupMode": "Hybrid",
+      "authorityGateEffective": true,
+      "automationCapability": "Visible map travel and one bounded buy attempt; automatic tick start requires Automation.",
+      "handoff": "recursiveBranchState travel target -> MapTrade route -> route/trade evidence",
+      "runtimeProof": "fresh town-menu movement and trade proof still required for this branch"
+    },
+    {
+      "engine": "GuildLoop",
+      "startupMode": "Hybrid",
+      "authorityGateEffective": true,
+      "automationCapability": "One bounded asynchronous cycle; explicit start is allowed in Hybrid.",
+      "handoff": "market plan -> route/cohesion -> bounded trade/forge step -> loop report",
+      "runtimeProof": "terminal wrapper wait is not implemented"
+    },
+    {
+      "engine": "Cohesion",
+      "startupMode": "Manual",
+      "authorityGateEffective": false,
+      "automationCapability": "Analyze and explicit movement surfaces exist.",
+      "handoff": "cohesion analysis -> explicit move -> cohesion evidence",
+      "runtimeProof": "global mode entry is not a complete service gate"
+    },
+    {
+      "engine": "HorseMarket",
+      "startupMode": "Manual",
+      "authorityGateEffective": false,
+      "automationCapability": "Read-only advice plus a pack-animal buy path through MapTrade.",
+      "handoff": "horse intel -> MapTrade pack mission -> item/gold delta evidence",
+      "runtimeProof": "no general horse-acquisition loop"
+    },
+    {
+      "engine": "Smithing",
+      "startupMode": "Manual",
+      "authorityGateEffective": false,
+      "automationCapability": "One bounded charcoal refine or eligible weapon smelt; crafting remains manual.",
+      "handoff": "forge advisory -> bounded refine/smelt -> smithing evidence",
+      "runtimeProof": "service is not yet gated by Smithing engine mode"
+    },
+    {
+      "engine": "Companion",
+      "startupMode": "Manual",
+      "authorityGateEffective": false,
+      "automationCapability": "Intel and visible recruitment test surfaces only.",
+      "handoff": "tavern intel -> explicit recruitment test -> recruitment evidence",
+      "runtimeProof": "not wired into the autonomous guild loop"
+    },
+    {
+      "engine": "Assistive",
+      "startupMode": "Hybrid",
+      "authorityGateEffective": true,
+      "automationCapability": "Explicit assistive movement/action commands and the external assist runner.",
+      "handoff": "runtime readiness -> assist command -> execution/evidence",
+      "runtimeProof": "external runner stop is separate from the in-game hotkey"
+    }
+  ],
+  "proofLevels": [
+    {
+      "level": "save_loaded",
+      "requires": [
+        "requested save identity",
+        "loaded save identity",
+        "identity match"
+      ]
+    },
+    {
+      "level": "route_started",
+      "requires": [
+        "fresh route cert",
+        "exact target match",
+        "travel command issued"
+      ]
+    },
+    {
+      "level": "movement_observed",
+      "requires": [
+        "positive party distance",
+        "travel clock running",
+        "no same-tick hold"
+      ]
+    },
+    {
+      "level": "arrival_observed",
+      "requires": [
+        "target settlement reached",
+        "fresh arrival state"
+      ]
+    },
+    {
+      "level": "trade_proven",
+      "requires": [
+        "real gold delta",
+        "real inventory delta",
+        "fakeGameplayDelta=false"
+      ]
+    },
+    {
+      "level": "trade_ui_visible",
+      "requires": [
+        "marketplace/trade screen visibly opened for the user"
+      ]
+    }
+  ]
+}

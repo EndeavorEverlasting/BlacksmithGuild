@@ -3,6 +3,7 @@
 **What do I press? What command do I run? What JSON should I look at?**
 
 **Launch paths and full doc index:** [launch-and-doc-index.md](launch-and-doc-index.md)
+**Current load/toggle/travel plan:** [operator/load-save-toggle-and-visible-trade-plan.md](operator/load-save-toggle-and-visible-trade-plan.md)
 
 Evidence export (no screenshots needed):
 
@@ -25,6 +26,14 @@ Then paste `docs/evidence/latest/README.md` to any AI agent.
 ```
 
 Wait for **campaign map** (not character creation). Press **F7** — confirm `campaignReady: true`.
+
+`ForgeContinue.cmd` selects Bannerlord's native Continue option. It does not select or prove a named save, so confirm the expected character and location before enabling Automation.
+
+**Engine control:**
+
+- **Ctrl+Alt+T** cycles `Manual -> Hybrid -> Automation -> Manual`; read the lower-left `Engines: <mode>` notice.
+- **Ctrl+Alt+B** aborts active TBG movement automation.
+- `.\ForgeStop.cmd soft` stops external Forge/assist runners; the hotkeys do not terminate those PowerShell processes.
 
 **Play loop (no cert CMD files):**
 
@@ -58,6 +67,7 @@ If `-Wait` times out, you are not on the map yet — use **hotkeys** (Ctrl+Alt+M
 
 | Goal | In-game input | PowerShell command | Output JSON | What it proves |
 |------|---------------|-------------------|-------------|----------------|
+| Engine authority | **Ctrl+Alt+T** | — | Phase1 `[TBG ENGINES]` line | Cycles Manual/Hybrid/Automation permission; not runtime PASS |
 | Status | **F7** | `.\forge.ps1 -Command ShowForgeStatus -Wait` | `BlacksmithGuild_Status.json` | Mod loaded, map phase, cert state, last command |
 | Command list | **F8** (`ListScenarios`) | — (F8 writes surface) | `BlacksmithGuild_CommandSurface.json` | All hotkeys + inbox commands + Stage D exposed |
 | Market intel | **Ctrl+Alt+M** | `.\forge.ps1 -Command MarketSnapshotNow -Wait` | `BlacksmithGuild_MarketIntel.json` | Nearest towns, spreads, buy/sell action plan |

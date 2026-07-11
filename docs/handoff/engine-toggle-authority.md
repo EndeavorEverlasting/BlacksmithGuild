@@ -69,6 +69,9 @@ It cycles:
 Manual -> Hybrid -> Automation -> Manual
 ```
 
+Operator instructions and current capability limits:
+[load-save-toggle-and-visible-trade-plan.md](../operator/load-save-toggle-and-visible-trade-plan.md).
+
 ## Current mode behavior
 
 ### Manual
@@ -264,9 +267,23 @@ Already migrated in this PR:
 
 ```text
 MapTradeAutonomousService.StartRouteNow -> EngineToggleAuthority.IsEngineEnabled(MapTrade)
+MapTradeAutonomousService.OnCampaignTick automatic branch start -> EngineToggleAuthority.IsAutomationEnabled(MapTrade)
 AutonomousGuildLoopService.StartNow -> EngineToggleAuthority.IsEngineEnabled(GuildLoop)
 AssistReadinessEvaluator.CanAcceptAssistiveCommand -> EngineToggleAuthority.IsEngineEnabled(Assistive)
 ```
+
+Current incomplete mode gates:
+
+```text
+Cohesion
+HorseMarket
+Smithing
+Companion
+```
+
+Those names are present in the authority and mode summary, but their service-level
+execution paths are not yet comprehensively gated by the corresponding mode. A
+mode label must not be presented as a completed worker integration.
 
 ## Verification
 

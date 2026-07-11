@@ -49,6 +49,22 @@ jobs:
         shell: pwsh
         run: ./scripts/verify-campaign-governor-commandbus-patch-contract.ps1
 
+      - name: Verify route branch autostart contract
+        shell: pwsh
+        run: ./scripts/verify-route-branch-autostart-contract.ps1
+
+      - name: Verify route-owned clock contract
+        shell: pwsh
+        run: ./scripts/verify-route-owned-clock-resume-contract.ps1
+
+      - name: Verify route-owned clock collector contract
+        shell: pwsh
+        run: ./scripts/verify-route-owned-clock-live-proof-collector-contract.ps1
+
+      - name: Verify operator control surface
+        shell: pwsh
+        run: ./scripts/verify-operator-control-surface.ps1
+
       - name: Document source wiring gate
         shell: pwsh
         run: |

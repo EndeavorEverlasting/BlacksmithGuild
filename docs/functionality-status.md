@@ -1,5 +1,12 @@
 # Functionality Status
 
+> **Current operator truth (2026-07-11):** use
+> [operator/load-save-toggle-and-visible-trade-plan.md](operator/load-save-toggle-and-visible-trade-plan.md)
+> and `.tbg/operator/control-surface.json`. The dated sections below preserve
+> certification history; they are not proof that native Continue selected a
+> named save, that route start reached a town, or that automated trading was
+> visible in the marketplace UI.
+
 **Last updated:** 2026-06-22 (F7 stability sprint — `fix/f7-gate-stability`; agent-shell F7 FAIL; USER verify required)  
 **Mod version:** `v0.0.11`  
 **Branch:** `fix/f7-gate-stability` → PR to `main` — live certs blocked until F7 PASS
