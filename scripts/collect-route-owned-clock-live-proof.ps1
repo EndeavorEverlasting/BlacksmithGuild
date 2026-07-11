@@ -1,4 +1,4 @@
-# Live-safe collector for route-owned clock proof artifacts.
+﻿# Live-safe collector for route-owned clock proof artifacts.
 # This script assumes Bannerlord may still be running.
 # It must not require ForgeStop unless explicitly added by a future operator command.
 

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)]
     [ValidateSet("SessionStart", "PreBash", "PreFileWrite", "Stop", "RulesProposal")]
     [string]$Hook

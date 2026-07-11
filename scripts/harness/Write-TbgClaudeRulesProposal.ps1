@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$ContractId = "local-mcp-code-intelligence",
     [string]$OutputPath = ""
 )

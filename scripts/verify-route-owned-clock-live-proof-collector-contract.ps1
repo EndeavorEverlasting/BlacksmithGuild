@@ -1,4 +1,4 @@
-# Offline contract verifier for route-owned clock live proof collector.
+﻿# Offline contract verifier for route-owned clock live proof collector.
 
 $ErrorActionPreference = "Stop"
 

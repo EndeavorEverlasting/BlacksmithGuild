@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Repo-owned workflow runner for Blacksmith Guild product proofs.
 
