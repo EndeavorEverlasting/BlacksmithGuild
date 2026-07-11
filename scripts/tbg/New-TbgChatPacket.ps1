@@ -199,7 +199,6 @@ $packetObject = [ordered]@{
     generatedAt = (Get-Date).ToUniversalTime().ToString('o')
     repoRoot = $repoRootResolved
     branch = $branchOutput
-    prNumber = if ($PrNumber -gt 0) { $PrNumber } else { $null }
     verdict = $verdict
     blockedReason = $blockedReason
     nextCommand = $nextCommand
@@ -214,6 +213,8 @@ $packetObject = [ordered]@{
         cleansWorktrees = $false
     }
 }
+if ($PrNumber -gt 0) { $packetObject.prNumber = $PrNumber }
+else { $packetObject.prNumber = $null }
 
 $packetObject | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $JsonOutPath -Encoding UTF8
 
