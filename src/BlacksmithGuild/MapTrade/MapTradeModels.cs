@@ -85,6 +85,16 @@ namespace BlacksmithGuild.MapTrade
     {
         public string GeneratedUtc { get; set; }
         public string Source { get; set; }
+        public string StartedAtUtc { get; set; }
+        public string DestinationSettlement { get; set; }
+        public string TargetSettlementId { get; set; }
+        public string StartPosition { get; set; }
+        public string LatestPosition { get; set; }
+        public bool InitialTimePaused { get; set; }
+        public bool AttemptedUnpause { get; set; }
+        public bool TravelCommandIssued { get; set; }
+        public bool RouteStarted { get; set; }
+        public string RuntimeProofClaim { get; set; }
         public bool VisibleModeEnabled { get; set; }
         public int DecisionPauseMs { get; set; }
         public bool MutationApplied { get; set; }

@@ -10,6 +10,7 @@ namespace BlacksmithGuild.MapTrade
     {
         public const string RouteSafetyFileName = "BlacksmithGuild_MapTradeRouteSafety.json";
         public const string CertFileName = "BlacksmithGuild_MapTradeCert.json";
+        public const string RouteCertFileName = "BlacksmithGuild_MapTradeRouteCert.json";
         public const string ProbeFileName = "BlacksmithGuild_MapTradeProbe.json";
         public const string ForgeHandoffFileName = "BlacksmithGuild_MapTradeForgeHandoff.json";
         public const string ArmyPressureFileName = "BlacksmithGuild_ArmyPressureWindows.json";
@@ -21,7 +22,9 @@ namespace BlacksmithGuild.MapTrade
 
         public static void WriteCert(MapTradeCertReport report)
         {
-            Write(CertFileName, SerializeCert(report));
+            var json = SerializeCert(report);
+            Write(CertFileName, json);
+            Write(RouteCertFileName, json);
         }
 
         public static void WriteForgeHandoff(MapTradeForgeHandoffReport report)
@@ -83,6 +86,16 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine("{");
             sb.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
             sb.AppendLine($"  \"source\": \"{Escape(report.Source)}\",");
+            sb.AppendLine($"  \"startedAtUtc\": {NullableString(report.StartedAtUtc)},");
+            sb.AppendLine($"  \"destinationSettlement\": {NullableString(report.DestinationSettlement)},");
+            sb.AppendLine($"  \"targetSettlementId\": {NullableString(report.TargetSettlementId)},");
+            sb.AppendLine($"  \"startPosition\": {NullableString(report.StartPosition)},");
+            sb.AppendLine($"  \"latestPosition\": {NullableString(report.LatestPosition)},");
+            sb.AppendLine($"  \"initialTimePaused\": {(report.InitialTimePaused ? "true" : "false")},");
+            sb.AppendLine($"  \"attemptedUnpause\": {(report.AttemptedUnpause ? "true" : "false")},");
+            sb.AppendLine($"  \"travelCommandIssued\": {(report.TravelCommandIssued ? "true" : "false")},");
+            sb.AppendLine($"  \"routeStarted\": {(report.RouteStarted ? "true" : "false")},");
+            sb.AppendLine($"  \"runtimeProofClaim\": {NullableString(report.RuntimeProofClaim)},");
             sb.AppendLine($"  \"state\": \"{report.State}\",");
             sb.AppendLine($"  \"verdict\": \"{Escape(report.Verdict)}\",");
             sb.AppendLine($"  \"blockedReason\": {NullableString(report.BlockedReason)},");
@@ -128,8 +141,8 @@ namespace BlacksmithGuild.MapTrade
         private static string SerializeForgeHandoff(MapTradeForgeHandoffReport report)
         {
             return "{"
-                + $"\"generatedUtc\":\"{Escape(report.GeneratedUtc)}\","
-                + $"\"source\":\"{Escape(report.Source)}\","
+                + $"\"generatedUtc\":\"{Escape(report.GeneratedUtc)}\"," 
+                + $"\"source\":\"{Escape(report.Source)}\"," 
                 + $"\"forgeHandoffRan\":{(report.ForgeHandoffRan ? "true" : "false")},"
                 + $"\"forgeHandoffResult\":{NullableString(report.ForgeHandoffResult)},"
                 + $"\"blockedReason\":{NullableString(report.BlockedReason)}"
@@ -139,8 +152,8 @@ namespace BlacksmithGuild.MapTrade
         private static string SerializeArmyPressure(MapTradeArmyPressureReport report)
         {
             return "{"
-                + $"\"generatedUtc\":\"{Escape(report.GeneratedUtc)}\","
-                + $"\"window\":\"{Escape(report.Window)}\","
+                + $"\"generatedUtc\":\"{Escape(report.GeneratedUtc)}\"," 
+                + $"\"window\":\"{Escape(report.Window)}\"," 
                 + $"\"hostilePartiesInRadius\":{report.HostilePartiesInRadius},"
                 + $"\"friendlyProtectorsInRadius\":{report.FriendlyProtectorsInRadius}"
                 + "}";

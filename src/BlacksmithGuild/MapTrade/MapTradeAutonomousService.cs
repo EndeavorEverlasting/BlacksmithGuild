@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.Market;
 using TaleWorlds.CampaignSystem.Party;
+using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Library;
 
 namespace BlacksmithGuild.MapTrade
 {
@@ -16,8 +20,14 @@ namespace BlacksmithGuild.MapTrade
         public const string AnalyzeTacticalConvergenceCommand = "AnalyzeTacticalConvergence";
         public const string ShowTacticalConvergenceCommand = "ShowTacticalConvergence";
 
+        private const string BranchRouteSource = "campaign_tick_recursive_branch_travel";
+        private const string StatusFileName = "BlacksmithGuild_Status.json";
+        private static readonly TimeSpan BranchAutoStartCooldown = TimeSpan.FromSeconds(2);
+
         private static MapTradeCertReport _activeReport;
         private static bool _abortRequested;
+        private static DateTime _nextBranchAutoStartUtc = DateTime.MinValue;
+        private static string _lastBranchAutoStartKey;
 
         public static string LastFailReason { get; private set; }
         public static MapTradeCertReport ActiveReport => _activeReport;
@@ -91,11 +101,19 @@ namespace BlacksmithGuild.MapTrade
             _activeReport = new MapTradeCertReport
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                StartedAtUtc = DateTime.UtcNow.ToString("o"),
                 Source = source,
                 VisibleModeEnabled = DevToolsConfig.MapTradeVisibleMode,
                 DecisionPauseMs = DevToolsConfig.MapTradeDecisionPauseMs,
                 MutationApplied = false,
-                State = MapTradeRouteState.Preflight
+                State = MapTradeRouteState.Preflight,
+                StartPosition = DescribePartyPosition(),
+                LatestPosition = DescribePartyPosition(),
+                InitialTimePaused = TryReadStatusBoolean("timePaused", out var paused) && paused,
+                AttemptedUnpause = false,
+                TravelCommandIssued = false,
+                RouteStarted = false,
+                RuntimeProofClaim = "market_selected_route_preflight"
             };
 
             if (!MarketIntelligenceService.RunScanNow(source))
@@ -122,6 +140,85 @@ namespace BlacksmithGuild.MapTrade
             return BeginTravel(source);
         }
 
+        public static bool StartBranchRouteNow(string targetSettlementName, string source = BranchRouteSource)
+        {
+            LastFailReason = null;
+            _abortRequested = false;
+            GameSessionState.Refresh();
+
+            if (!EngineToggleAuthority.IsEngineEnabled(EngineToggleKey.MapTrade))
+            {
+                LastFailReason = "MapTrade engine disabled by authority";
+                WriteBlockedBranchRouteCert(source, targetSettlementName, LastFailReason);
+                return false;
+            }
+
+            if (!GameSessionState.IsCampaignMapReady)
+            {
+                LastFailReason = GameSessionState.GetCampaignMapBlockDetail();
+                WriteBlockedBranchRouteCert(source, targetSettlementName, LastFailReason);
+                return false;
+            }
+
+            if (IsRunning)
+            {
+                LastFailReason = "map trade route already in progress";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(targetSettlementName))
+            {
+                LastFailReason = "target settlement missing from recursive branch state";
+                WriteBlockedBranchRouteCert(source, targetSettlementName, LastFailReason);
+                return false;
+            }
+
+            var destination = ResolveSettlementByName(targetSettlementName);
+            if (destination == null)
+            {
+                LastFailReason = "target settlement not found: " + targetSettlementName;
+                WriteBlockedBranchRouteCert(source, targetSettlementName, LastFailReason);
+                return false;
+            }
+
+            var now = DateTime.UtcNow.ToString("o");
+            var destinationName = destination.Name?.ToString() ?? destination.StringId;
+            var initiallyPaused = TryReadStatusBoolean("timePaused", out var paused) && paused;
+
+            _activeReport = new MapTradeCertReport
+            {
+                GeneratedUtc = now,
+                StartedAtUtc = now,
+                Source = source,
+                VisibleModeEnabled = DevToolsConfig.MapTradeVisibleMode,
+                DecisionPauseMs = DevToolsConfig.MapTradeDecisionPauseMs,
+                MutationApplied = false,
+                State = MapTradeRouteState.Preflight,
+                Mission = new MapTradeMission
+                {
+                    MissionType = MapTradeMissionType.TravelOnlySafetyCert,
+                    TargetSettlement = destination,
+                    TargetSettlementName = destinationName,
+                    Distance = 0f
+                },
+                DestinationSettlement = destinationName,
+                TargetSettlementId = destination.StringId,
+                StartPosition = DescribePartyPosition(),
+                LatestPosition = DescribePartyPosition(),
+                InitialTimePaused = initiallyPaused,
+                AttemptedUnpause = true,
+                TravelCommandIssued = false,
+                RouteStarted = false,
+                RuntimeProofClaim = "branch_route_preflight"
+            };
+
+            _activeReport.Steps.Add("RecursiveBranchState:travel");
+            _activeReport.Steps.Add("TargetSettlement:" + destinationName);
+            DebugLogger.Test($"[TBG MAP TRADE] branch route start requested target={destinationName} source={source}", showInGame: false);
+
+            return BeginTravel(source);
+        }
+
         public static bool AbortNow()
         {
             if (_activeReport == null)
@@ -139,12 +236,18 @@ namespace BlacksmithGuild.MapTrade
 
         public static void OnCampaignTick()
         {
+            GameSessionState.Refresh();
+
+            if ((_activeReport == null || !IsRunning) && !_abortRequested)
+            {
+                TryStartFromRecursiveBranchState();
+            }
+
             if (_activeReport == null || !IsRunning || _abortRequested)
             {
                 return;
             }
 
-            GameSessionState.Refresh();
             if (GameSessionState.IsMapMenuOpen)
             {
                 MapTradeVisibleMovementDriver.Hold();
@@ -172,6 +275,187 @@ namespace BlacksmithGuild.MapTrade
                     TickTravel();
                     break;
             }
+        }
+
+        private static bool TryStartFromRecursiveBranchState()
+        {
+            var now = DateTime.UtcNow;
+            if (now < _nextBranchAutoStartUtc)
+            {
+                return false;
+            }
+
+            _nextBranchAutoStartUtc = now.Add(BranchAutoStartCooldown);
+
+            if (!TryReadStatusTravelTarget(out var targetSettlement, out var detail))
+            {
+                LastFailReason = detail;
+                WriteBlockedBranchRouteCert(BranchRouteSource, targetSettlement, detail ?? "recursive branch route target not readable");
+                return false;
+            }
+
+            var key = "travel:" + targetSettlement;
+            if (string.Equals(_lastBranchAutoStartKey, key, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!StartBranchRouteNow(targetSettlement, BranchRouteSource))
+            {
+                return false;
+            }
+
+            _lastBranchAutoStartKey = key;
+            return true;
+        }
+
+        private static bool TryReadStatusTravelTarget(out string targetSettlement, out string detail)
+        {
+            targetSettlement = null;
+            detail = null;
+
+            try
+            {
+                var path = Path.Combine(BasePath.Name, StatusFileName);
+                if (!File.Exists(path))
+                {
+                    detail = "status file missing";
+                    return false;
+                }
+
+                var json = File.ReadAllText(path);
+                if (!Regex.IsMatch(json, "\"safeToExecuteTravel\"\\s*:\\s*true", RegexOptions.IgnoreCase))
+                {
+                    detail = "safeToExecuteTravel is not true";
+                    return false;
+                }
+
+                if (!Regex.IsMatch(json, "\"nextPlannedBranch\"\\s*:\\s*\"travel\"", RegexOptions.IgnoreCase))
+                {
+                    detail = "nextPlannedBranch is not travel";
+                    return false;
+                }
+
+                var match = Regex.Match(
+                    json,
+                    "\"targetSettlement\"\\s*:\\s*\"(?<target>[^\"]+)\"",
+                    RegexOptions.IgnoreCase);
+                if (!match.Success || string.IsNullOrWhiteSpace(match.Groups["target"].Value))
+                {
+                    detail = "targetSettlement missing";
+                    return false;
+                }
+
+                targetSettlement = match.Groups["target"].Value.Trim();
+                detail = "recursive branch route ready";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                detail = "status read failed: " + ex.Message;
+                return false;
+            }
+        }
+
+        private static bool TryReadStatusBoolean(string fieldName, out bool value)
+        {
+            value = false;
+
+            try
+            {
+                var path = Path.Combine(BasePath.Name, StatusFileName);
+                if (!File.Exists(path))
+                {
+                    return false;
+                }
+
+                var json = File.ReadAllText(path);
+                var pattern = "\"" + Regex.Escape(fieldName) + "\"\\s*:\\s*(true|false)";
+                var match = Regex.Match(json, pattern, RegexOptions.IgnoreCase);
+                if (!match.Success)
+                {
+                    return false;
+                }
+
+                value = string.Equals(match.Groups[1].Value, "true", StringComparison.OrdinalIgnoreCase);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static Settlement ResolveSettlementByName(string settlementName)
+        {
+            var wanted = NormalizeSettlementKey(settlementName);
+            if (string.IsNullOrWhiteSpace(wanted))
+            {
+                return null;
+            }
+
+            foreach (var settlement in Settlement.All)
+            {
+                if (settlement == null)
+                {
+                    continue;
+                }
+
+                var name = settlement.Name?.ToString();
+                if (NormalizeSettlementKey(name) == wanted || NormalizeSettlementKey(settlement.StringId) == wanted)
+                {
+                    return settlement;
+                }
+            }
+
+            return null;
+        }
+
+        private static string NormalizeSettlementKey(string value)
+        {
+            return (value ?? string.Empty)
+                .Trim()
+                .Replace(" ", string.Empty)
+                .Replace("-", string.Empty)
+                .Replace("_", string.Empty)
+                .ToLowerInvariant();
+        }
+
+        private static string DescribePartyPosition()
+        {
+            try
+            {
+                var party = MobileParty.MainParty;
+                return party?.GetPosition2D.ToString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static void WriteBlockedBranchRouteCert(string source, string targetSettlementName, string reason)
+        {
+            var now = DateTime.UtcNow.ToString("o");
+            var report = new MapTradeCertReport
+            {
+                GeneratedUtc = now,
+                StartedAtUtc = now,
+                Source = source,
+                State = MapTradeRouteState.Blocked,
+                Verdict = "Blocked",
+                BlockedReason = reason,
+                DestinationSettlement = targetSettlementName,
+                InitialTimePaused = TryReadStatusBoolean("timePaused", out var paused) && paused,
+                AttemptedUnpause = false,
+                TravelCommandIssued = false,
+                RouteStarted = false,
+                RuntimeProofClaim = "blocked_before_route_start",
+                LatestPosition = DescribePartyPosition()
+            };
+
+            report.Steps.Add("RecursiveBranchState:blocked:" + reason);
+            MapTradeEvidenceWriter.WriteCert(report);
         }
 
         private static bool RunCohesionCheck(string source)
@@ -206,7 +490,21 @@ namespace BlacksmithGuild.MapTrade
                 return false;
             }
 
+            _activeReport.GeneratedUtc = DateTime.UtcNow.ToString("o");
+            if (string.IsNullOrWhiteSpace(_activeReport.StartedAtUtc))
+            {
+                _activeReport.StartedAtUtc = _activeReport.GeneratedUtc;
+            }
+
+            _activeReport.DestinationSettlement = _activeReport.Mission?.TargetSettlementName;
+            _activeReport.TargetSettlementId = _activeReport.Mission?.TargetSettlement?.StringId;
+            _activeReport.LatestPosition = DescribePartyPosition();
+            _activeReport.AttemptedUnpause = true;
+            _activeReport.TravelCommandIssued = true;
+            _activeReport.RouteStarted = true;
+            _activeReport.RuntimeProofClaim = "main_party_move_to_settlement_order_issued";
             _activeReport.State = MapTradeRouteState.TravelToTarget;
+            _activeReport.Steps.Add("RouteLifeCert:travelCommandIssued=true");
             _activeReport.Steps.Add($"TravelToTarget:{_activeReport.Mission.TargetSettlementName}");
             InGameNotice.Info($"TBG MAP TRADE MOVE: riding toward {_activeReport.Mission.TargetSettlementName}.");
             MapTradeEvidenceWriter.WriteCert(_activeReport);
@@ -215,6 +513,7 @@ namespace BlacksmithGuild.MapTrade
 
         private static void TickTravel()
         {
+            _activeReport.LatestPosition = DescribePartyPosition();
             if (!MapTradeVisibleMovementDriver.HasArrived(_activeReport.Mission))
             {
                 _activeReport.State = MapTradeRouteState.WaitForArrival;
@@ -311,6 +610,7 @@ namespace BlacksmithGuild.MapTrade
             _activeReport.Verdict = verdict;
             _activeReport.BlockedReason = state == MapTradeRouteState.Complete ? reason : reason;
             _activeReport.GeneratedUtc = DateTime.UtcNow.ToString("o");
+            _activeReport.LatestPosition = DescribePartyPosition();
             MapTradeEvidenceWriter.WriteCert(_activeReport);
             MapTradeEvidenceWriter.WriteArmyPressure(MapTradeArmyPressureAnalyzer.AnalyzeNow());
 
