@@ -35,6 +35,7 @@ If these disagree, executable contracts and current source win. The doc or skill
 - proof/evidence discipline;
 - encoding rules;
 - where to find skills and executable contracts;
+- harness maturity boundary;
 - stale PR preservation policy.
 
 A skill owns conditional lane knowledge:
@@ -54,9 +55,24 @@ Agents should load `AGENTS.md`, then the narrowest matching skill. They should n
 |---|---|
 | `repo-floor-hygiene` | PR/worktree/branch/conflict/artifact/safe-base maps. |
 | `agent-skill-factoring` | Edits to root rules, Claude adapter rules, skill registry, and skill docs. |
+| `harness-maturity` | Decisions about harness plumbing versus narrow skill/domain behavior. |
 | `stale-pr-cherry-pick` | Selective replay from stale PRs without blind merge, blind squash, or blind deletion. |
 
 Future skills should be added only when a recurring lane needs a compact brush-up. Good candidates include route runtime proof, operator control surface, launcher lifecycle, visible trade cycle, effective-policy reporting, MCP/LSP code intelligence, and PowerShell BOM hygiene.
+
+## Harness maturity doctrine
+
+A harness-heavy architecture is useful for low-trust automation because the plumbing must own policy, evidence, permissions, rollback, reporting, adapters, retries, and validation. It is not useful when it moves game behavior into vague infrastructure just to make the harness look larger.
+
+Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before refactors that claim to make the app more harness-driven.
+
+Default decision:
+
+1. Move cross-cutting safety, evidence, routing, reporting, schema, and adapter concerns toward harness.
+2. Keep stateless calculations and game/economy/route/smithing behavior in skill or domain modules.
+3. Reject refactors whose only clear benefit is an improved harness percentage.
+
+The architecture note at `docs/architecture/harness-skill-maturity.md` records the full decision test and migration pattern.
 
 ## Stale PR doctrine
 
@@ -119,6 +135,7 @@ The agent/skill factoring sprint is done when:
 - `CLAUDE.md` defers to `AGENTS.md` and targeted skills;
 - `.tbg/harness/manifest.json` locates `.tbg/skills`;
 - `.tbg/skills/manifest.json` registers initial skills;
+- `.tbg/workflows/harness-skill-maturity.contract.json` defines harness versus skill/domain classification;
 - `.tbg/workflows/stale-pr-cherry-pick.contract.json` defines the stale PR replay workflow;
 - each initial skill has a `SKILL.md` with use/do-not-use/read-first/owned/forbidden/done-gate sections;
 - JSON files parse;
