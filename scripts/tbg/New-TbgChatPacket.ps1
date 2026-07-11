@@ -70,7 +70,7 @@ function Invoke-CapturedCommand {
         $exitCode = -1
     }
 
-    return [ordered]@{
+    return [pscustomobject]@{
         label = $Label
         command = $Command
         exitCode = $exitCode
@@ -146,7 +146,7 @@ if ($hasGh) {
     }
 }
 else {
-    $commands.Add([ordered]@{
+    $commands.Add([pscustomobject]@{
         label = 'openPRs'
         command = 'gh pr list --state open --limit 20'
         exitCode = $null
@@ -171,7 +171,7 @@ $artifacts = New-Object System.Collections.Generic.List[object]
 foreach ($candidate in $artifactCandidates) {
     $text = Read-ArtifactText -Path $candidate
     if ($null -ne $text) {
-        $artifacts.Add([ordered]@{ path = $candidate; content = $text }) | Out-Null
+        $artifacts.Add([pscustomobject]@{ path = $candidate; content = $text }) | Out-Null
     }
 }
 
@@ -180,7 +180,7 @@ $statusOutput = (($commands | Where-Object { $_.label -eq 'status' } | Select-Ob
 $branchOutput = (($commands | Where-Object { $_.label -eq 'branch' } | Select-Object -First 1).output).Trim()
 
 $verdict = 'INFO'
-$blockedReason = $null
+$blockedReason = ''
 $nextCommand = '.\ForgeAgentStatus.cmd'
 
 if (-not [string]::IsNullOrWhiteSpace($unmergedOutput)) {
@@ -194,17 +194,18 @@ elseif (-not [string]::IsNullOrWhiteSpace($statusOutput)) {
     $nextCommand = 'git status --short'
 }
 
-$packetObject = [ordered]@{
+$packetObject = [pscustomobject]@{
     schemaVersion = 1
     generatedAt = (Get-Date).ToUniversalTime().ToString('o')
-    repoRoot = $repoRootResolved
-    branch = $branchOutput
-    verdict = $verdict
-    blockedReason = $blockedReason
-    nextCommand = $nextCommand
-    commands = @($commands)
-    artifacts = @($artifacts)
-    boundaries = [ordered]@{
+    repoRoot = [string]$repoRootResolved
+    branch = [string]$branchOutput
+    prNumber = [int]$PrNumber
+    verdict = [string]$verdict
+    blockedReason = [string]$blockedReason
+    nextCommand = [string]$nextCommand
+    commands = @($commands.ToArray())
+    artifacts = @($artifacts.ToArray())
+    boundaries = [pscustomobject]@{
         launchesBannerlord = $false
         runsForgeReboot = $false
         writesCommandInbox = $false
@@ -213,8 +214,6 @@ $packetObject = [ordered]@{
         cleansWorktrees = $false
     }
 }
-if ($PrNumber -gt 0) { $packetObject.prNumber = $PrNumber }
-else { $packetObject.prNumber = $null }
 
 $packetObject | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $JsonOutPath -Encoding UTF8
 
@@ -226,7 +225,7 @@ $lines.Add("Repo: $repoRootResolved") | Out-Null
 $lines.Add("Branch: $branchOutput") | Out-Null
 if ($PrNumber -gt 0) { $lines.Add("PR: #$PrNumber") | Out-Null }
 $lines.Add("Verdict: $verdict") | Out-Null
-if ($blockedReason) { $lines.Add("Blocked reason: $blockedReason") | Out-Null }
+if (-not [string]::IsNullOrWhiteSpace($blockedReason)) { $lines.Add("Blocked reason: $blockedReason") | Out-Null }
 $lines.Add("Next command: $nextCommand") | Out-Null
 $lines.Add('') | Out-Null
 $lines.Add('Boundaries: no Bannerlord launch, no ForgeReboot, no command inbox write, no save mutation, no branch deletion, no worktree cleanup.') | Out-Null
@@ -271,5 +270,5 @@ if ($PostPrComment) {
 Write-Host "Packet written: $OutPath"
 Write-Host "JSON written:   $JsonOutPath"
 Write-Host "Verdict:        $verdict"
-if ($blockedReason) { Write-Host "Blocked reason: $blockedReason" }
+if (-not [string]::IsNullOrWhiteSpace($blockedReason)) { Write-Host "Blocked reason: $blockedReason" }
 Write-Host "Next command:   $nextCommand"
