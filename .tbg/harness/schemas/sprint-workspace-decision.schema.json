@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.sprint-workspace-decision.schema.json",
+  "title": "TBG Sprint Workspace Decision",
+  "type": "object",
+  "required": [
+    "schema",
+    "status",
+    "disposition",
+    "primaryRepo",
+    "currentBranch",
+    "primaryDirty",
+    "primaryConflicted",
+    "conflictedPaths",
+    "forbiddenScopeTouched",
+    "forbiddenPathsTouched",
+    "foundationPrState",
+    "chosenBaseRef",
+    "baseReason",
+    "worktreePath",
+    "targetBranch",
+    "worktreeCommand",
+    "evidence",
+    "handoff",
+    "englishSummary"
+  ],
+  "properties": {
+    "schema": { "const": "tbg.harness.sprint-workspace-decision.v1" },
+    "status": { "enum": ["ready", "needs_isolated_worktree", "blocked"] },
+    "disposition": { "enum": ["use_primary", "use_existing_worktree", "create_isolated_worktree", "blocked"] },
+    "primaryRepo": { "type": "string" },
+    "currentBranch": { "type": "string" },
+    "primaryDirty": { "type": "boolean" },
+    "primaryConflicted": { "type": "boolean" },
+    "conflictedPaths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "forbiddenScopeTouched": { "type": "boolean" },
+    "forbiddenPathsTouched": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "foundationPrState": { "enum": ["none", "OPEN", "MERGED", "CLOSED", "UNKNOWN"] },
+    "foundationHead": { "type": "string" },
+    "foundationBase": { "type": "string" },
+    "foundationPrUrl": { "type": "string" },
+    "chosenBaseRef": { "type": "string", "minLength": 1 },
+    "baseReason": { "type": "string", "minLength": 1 },
+    "worktreePath": { "type": "string" },
+    "targetBranch": { "type": "string" },
+    "worktreeCommand": { "type": "string" },
+    "evidence": { "type": "object" },
+    "handoff": {
+      "type": "object",
+      "required": ["workspacePath", "branch", "baseRef", "nextCommand"],
+      "properties": {
+        "workspacePath": { "type": "string" },
+        "branch": { "type": "string" },
+        "baseRef": { "type": "string", "minLength": 1 },
+        "nextCommand": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "englishSummary": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

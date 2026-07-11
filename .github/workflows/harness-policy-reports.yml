@@ -1,0 +1,77 @@
+name: Harness Policy Reports
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/harness/**'
+      - '.tbg/workflows/**'
+      - '.tbg/guardrails/**'
+      - '.claude/hooks/**'
+      - 'scripts/harness/**'
+      - 'scripts/mcp/**'
+      - 'scripts/tbg/**'
+      - '.claude/hooks/**'
+      - 'docs/architecture/**'
+      - 'docs/handoff/**'
+      - '.github/workflows/**'
+      - 'CLAUDE.md'
+  push:
+    paths:
+      - '.tbg/harness/**'
+      - '.tbg/workflows/**'
+      - '.tbg/guardrails/**'
+      - '.claude/hooks/**'
+      - 'scripts/harness/**'
+      - 'scripts/mcp/**'
+      - 'scripts/tbg/**'
+      - '.claude/hooks/**'
+      - 'docs/architecture/**'
+      - 'docs/handoff/**'
+      - '.github/workflows/**'
+      - 'CLAUDE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-policy-reports:
+    name: Static harness policy and report checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse TBG JSON
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jsonFiles = @(Get-ChildItem -LiteralPath '.tbg' -Recurse -File -Filter '*.json')
+          if ($jsonFiles.Count -eq 0) {
+            throw 'No JSON files were found under .tbg.'
+          }
+
+          foreach ($jsonFile in $jsonFiles) {
+            Get-Content -LiteralPath $jsonFile.FullName -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "JSON OK: $($jsonFile.FullName)"
+          }
+
+      - name: Verify effective-policy English reports
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgEnglishRenderer.ps1
+
+      - name: Verify safe sprint workspace resolution
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgSprintWorkspace.ps1
+
+      - name: Verify project AI layer readiness
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgHarnessReadiness.ps1 -ContractId 'project-ai-layer'
+
+      - name: Verify local MCP harness readiness
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgHarnessReadiness.ps1 -ContractId 'local-mcp-code-intelligence'
+
+      - name: Verify local MCP done gate
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgDoneGate.ps1 -ContractId 'local-mcp-code-intelligence'

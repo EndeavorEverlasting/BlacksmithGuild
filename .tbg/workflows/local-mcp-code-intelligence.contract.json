@@ -30,6 +30,8 @@
   ],
   "validationCommands": [
     "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgHarnessReadiness.ps1",
+    "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgEnglishRenderer.ps1",
+    "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgSprintWorkspace.ps1",
     "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgCommandSafety.ps1 -CommandText \"ForgeReboot.cmd\"",
     "powershell -ExecutionPolicy Bypass -File scripts\\harness\\Test-TbgDoneGate.ps1 -ContractId \"local-mcp-code-intelligence\"",
     "git diff --check",

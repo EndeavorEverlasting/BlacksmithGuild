@@ -3,6 +3,8 @@
   "requiredChecks": [
     "json_parse",
     "powershell_parse",
+    "english_renderer_fixtures",
+    "workspace_resolution_fixtures",
     "git_diff_check",
     "git_status_short"
   ],

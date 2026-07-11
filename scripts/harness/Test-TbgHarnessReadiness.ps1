@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$ContractId = "local-mcp-code-intelligence"
 )
 
@@ -53,7 +53,13 @@ $requiredFiles = @(
     ".tbg/harness/policies/command-safety.policy.json",
     ".tbg/harness/policies/file-safety.policy.json",
     ".tbg/harness/policies/runtime-scope.policy.json",
-    ".tbg/harness/policies/evidence-gates.policy.json"
+    ".tbg/harness/policies/evidence-gates.policy.json",
+    ".tbg/harness/policies/policy-reporting.policy.json",
+    ".tbg/harness/schemas/effective-policy-context.schema.json",
+    ".tbg/harness/schemas/policy-reporting.schema.json",
+    ".tbg/harness/schemas/sprint-workspace-decision.schema.json",
+    ".tbg/harness/fixtures/english-renderer.fixtures.json",
+    ".tbg/harness/fixtures/sprint-workspace.fixtures.json"
 )
 
 foreach ($relative in $requiredFiles) {
@@ -64,6 +70,32 @@ foreach ($relative in $requiredFiles) {
         $missing.Add("invalid-json:$relative")
     } else {
         $findings.Add("json-ok:$relative")
+    }
+}
+
+$requiredScripts = @(
+    "scripts/harness/TbgEffectivePolicy.psm1",
+    "scripts/harness/Get-TbgEffectivePolicyContext.ps1",
+    "scripts/harness/ConvertTo-TbgPolicyEnglish.ps1",
+    "scripts/harness/Test-TbgEnglishRenderer.ps1",
+    "scripts/harness/TbgSprintWorkspace.psm1",
+    "scripts/harness/Resolve-TbgSprintWorkspace.ps1",
+    "scripts/harness/Test-TbgSprintWorkspace.ps1"
+)
+foreach ($relative in $requiredScripts) {
+    $full = Join-Path $repoRoot $relative
+    if (-not (Test-Path -LiteralPath $full -PathType Leaf)) {
+        $missing.Add($relative)
+        continue
+    }
+
+    $tokens = $null
+    $parseErrors = $null
+    [System.Management.Automation.Language.Parser]::ParseFile($full, [ref]$tokens, [ref]$parseErrors) | Out-Null
+    if (@($parseErrors).Count -gt 0) {
+        $missing.Add("powershell-parse:$relative")
+    } else {
+        $findings.Add("powershell-parse-ok:$relative")
     }
 }
 
@@ -115,6 +147,7 @@ if ($missing -contains ".tbg/harness/manifest.json") {
 $artifactDir = Join-Path $repoRoot "artifacts/latest"
 New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
 $artifactPath = Join-Path $artifactDir "harness-readiness.result.json"
+$reportPath = Join-Path $artifactDir "harness-readiness.report.md"
 
 $result = [pscustomobject]@{
     schema = "tbg.harness.result.v1"
@@ -128,9 +161,10 @@ $result = [pscustomobject]@{
     findings = @($findings)
     missingPrereqs = @($missing)
     forbiddenScopeTouched = $false
-    artifacts = @("artifacts/latest/harness-readiness.result.json")
+    artifacts = @("artifacts/latest/harness-readiness.result.json", "artifacts/latest/harness-readiness.report.md")
     gitStatusShort = $statusShort
 }
 
-$result | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $artifactPath -Encoding UTF8
-$result | ConvertTo-Json -Depth 20
+Import-Module (Join-Path $PSScriptRoot "TbgEffectivePolicy.psm1") -Force
+$json = Write-TbgPolicyReport -ResultObject $result -JsonPath $artifactPath -MarkdownPath $reportPath -ProfileId $ContractId -RowType "result" -RepoRoot $repoRoot -Title "Harness readiness"
+Write-Output $json

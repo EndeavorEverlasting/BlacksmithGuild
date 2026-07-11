@@ -12,6 +12,8 @@
     "contracts": ".tbg/workflows",
     "policies": ".tbg/harness/policies",
     "schemas": ".tbg/harness/schemas",
+    "fixtures": ".tbg/harness/fixtures",
+    "reportingPolicy": ".tbg/harness/policies/policy-reporting.policy.json",
     "artifactsLatest": "artifacts/latest"
   },
   "runtime": {

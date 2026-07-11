@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$ContractId = "local-mcp-code-intelligence"
 )
 
@@ -54,10 +54,13 @@ $result = New-Object psobject -Property @{
     findings = @($findings)
     missingPrereqs = @($missing)
     forbiddenScopeTouched = $false
-    artifacts = @("artifacts/latest/workflow-gate.result.json")
+    artifacts = @("artifacts/latest/workflow-gate.result.json", "artifacts/latest/workflow-gate.report.md")
 }
 
 $artifactDir = Join-Path $repoRoot "artifacts/latest"
 New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-$result | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath (Join-Path $artifactDir "workflow-gate.result.json") -Encoding UTF8
-$result | ConvertTo-Json -Depth 20
+$artifactPath = Join-Path $artifactDir "workflow-gate.result.json"
+$reportPath = Join-Path $artifactDir "workflow-gate.report.md"
+Import-Module (Join-Path $PSScriptRoot "TbgEffectivePolicy.psm1") -Force
+$json = Write-TbgPolicyReport -ResultObject $result -JsonPath $artifactPath -MarkdownPath $reportPath -ProfileId $ContractId -RowType "result" -RepoRoot $repoRoot -Title "Workflow gate"
+Write-Output $json
