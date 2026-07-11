@@ -43,9 +43,18 @@ Before substantial repo work, choose the narrowest matching skill from `.tbg/ski
 Required default skills:
 - `repo-floor-hygiene` for branch, PR, worktree, conflict, stale artifact, and safe-base mapping.
 - `agent-skill-factoring` for changing agent rules, skill docs, manifests, or prompt surfaces.
+- `harness-maturity` for deciding whether logic belongs in harness plumbing, a workflow contract, a registry, or narrow skill/domain code.
 - `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
 
 Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
+
+## Harness maturity rule
+
+Harness maturity is not a raw line-count target. A thick harness is useful when it moves cross-cutting plumbing out of domain behavior: config loading, dependency injection, capability routing, permission gates, policy guards, evidence capture, retries, rollback, metrics, English/JSON reporting, UI shims, schemas, fixtures, and adapters.
+
+Keep domain behavior narrow. Route, smithing, economy, trade, save identity, launcher lifecycle, and gameplay decisions should not be moved into harness merely to make the harness percentage look higher.
+
+Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before any refactor that claims to make the app more harness-driven. The acceptable reason is a real safety, replay, audit, rollback, reporting, or agent-context-load problem. Reject percentage chasing.
 
 ## Stale PR policy
 
