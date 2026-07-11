@@ -32,6 +32,7 @@
     "If a command assumes Bannerlord should not be running, run ForgeStop first.",
     "Do not commit real local secrets, tokens, saves, or machine-specific config.",
     "AGENTS.md is the common denominator; targeted skills live under .tbg/skills.",
+    "Harness maturity means cross-cutting plumbing moves into contracts, policies, registries, guards, evidence, and reporting; domain behavior remains visible in skills or source modules.",
     "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases."
   ]
 }
