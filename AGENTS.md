@@ -21,6 +21,46 @@ This file is the root coordination contract for Codex, Cursor, ChatGPT handoffs,
 - Do not ask the user to harvest logs manually.
 - Runner owns evidence capture.
 
+## Common denominator vs skills
+
+`AGENTS.md` is the common denominator. It should stay small enough for every agent to read at entry.
+
+Put repo-wide facts here:
+- agent ownership and routing rules;
+- non-negotiable safety boundaries;
+- proof and evidence discipline;
+- encoding rules;
+- where to find executable contracts and targeted skills.
+
+Put conditional brush-up material in `.tbg/skills/<skill-id>/SKILL.md`, not in this file. A skill may explain a workflow, proof ladder, stale-PR recovery path, operator control surface, launcher lifecycle, or MCP/LSP search pattern, but it must point back to executable contracts, policies, manifests, scripts, or current docs as the authority.
+
+If a skill disagrees with a workflow contract, harness policy, operator catalog, or current source file, the executable source wins and the skill must be corrected.
+
+## Skill selection rule
+
+Before substantial repo work, choose the narrowest matching skill from `.tbg/skills/manifest.json`.
+
+Required default skills:
+- `repo-floor-hygiene` for branch, PR, worktree, conflict, stale artifact, and safe-base mapping.
+- `agent-skill-factoring` for changing agent rules, skill docs, manifests, or prompt surfaces.
+- `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
+
+Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
+
+## Stale PR policy
+
+A stale PR is not disposable merely because it is behind, conflicted, old, or superseded in part.
+
+Default posture:
+1. map it;
+2. classify unique value;
+3. preserve useful commits, hunks, tests, docs, and evidence references;
+4. replay only the selected delta onto a safe current base;
+5. validate under current contracts;
+6. close or supersede the old PR only after the replacement path is recorded.
+
+Do not use stale PR heads as general bases. Do not delete stale branches or worktrees without proof and explicit operator authorization.
+
 ## Current strategic target
 
 One command should:
