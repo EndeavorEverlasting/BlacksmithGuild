@@ -6,7 +6,8 @@
     "AGENTS.md defines root coordination rules.",
     "Skills explain executable contracts, policies, manifests, source files, and current docs; they do not override them.",
     "Load only the narrowest skill needed for the active lane.",
-    "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases."
+    "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases.",
+    "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage."
   ],
   "skills": [
     {
@@ -43,6 +44,26 @@
         "AGENTS.md",
         "CLAUDE.md",
         ".tbg/harness/manifest.json",
+        "docs/architecture/local-agent-harness.md",
+        "docs/architecture/effective-policy-english-reports.md"
+      ]
+    },
+    {
+      "id": "harness-maturity",
+      "path": ".tbg/skills/harness-maturity/SKILL.md",
+      "useWhen": [
+        "deciding whether logic belongs in harness plumbing, skill/domain code, workflow contracts, policy guards, registries, or evidence/reporting layers",
+        "reviewing a proposed refactor that claims to make the app more harness-driven"
+      ],
+      "doNotUseFor": [
+        "moving behavior solely to increase a harness percentage",
+        "runtime product patches",
+        "claiming runtime proof from static architecture changes"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/harness-skill-maturity.contract.json",
+        "docs/architecture/harness-skill-maturity.md",
         "docs/architecture/local-agent-harness.md",
         "docs/architecture/effective-policy-english-reports.md"
       ]
