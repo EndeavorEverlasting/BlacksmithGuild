@@ -13,6 +13,8 @@
     "policies": ".tbg/harness/policies",
     "schemas": ".tbg/harness/schemas",
     "fixtures": ".tbg/harness/fixtures",
+    "skills": ".tbg/skills",
+    "skillsManifest": ".tbg/skills/manifest.json",
     "reportingPolicy": ".tbg/harness/policies/policy-reporting.policy.json",
     "artifactsLatest": "artifacts/latest"
   },
@@ -28,6 +30,8 @@
     "Runtime proof remains separate from code-intelligence proof.",
     "No game launch unless the active contract explicitly allows it.",
     "If a command assumes Bannerlord should not be running, run ForgeStop first.",
-    "Do not commit real local secrets, tokens, saves, or machine-specific config."
+    "Do not commit real local secrets, tokens, saves, or machine-specific config.",
+    "AGENTS.md is the common denominator; targeted skills live under .tbg/skills.",
+    "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases."
   ]
 }
