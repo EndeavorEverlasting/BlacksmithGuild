@@ -111,7 +111,7 @@ Assert-Exists -Path 'scripts/run-launcher-validation-workhorse.ps1'
 Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern 'TbgSyntacticEnglishProgressEvent.v1'
 Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern 'TbgLauncherValidationWorkhorse.v1'
 Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern 'Write-EnglishEvent'
-Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern 'git merge --ff-only'
+Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern "@('merge', '--ff-only', `$remoteRef)"
 Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern 'ForgeContinue.cmd'
 Assert-Contains -Path 'scripts/run-launcher-validation-workhorse.ps1' -Pattern 'launcher_handoff_observed'
 Assert-Contains -Path 'docs/handoff/launcher-validation-workhorse.md' -Pattern 'Launcher Validation Workhorse'
