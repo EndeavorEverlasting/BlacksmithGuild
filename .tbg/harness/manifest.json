@@ -20,6 +20,10 @@
     "continuumCapabilitySchema": ".tbg/harness/schemas/continuum-capability-packet.schema.json",
     "stalePrRecoveryContract": ".tbg/workflows/stale-pr-recovery-automation.contract.json",
     "stalePrRecoveryPlan": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
+    "artifactEngineContract": ".tbg/workflows/local-artifact-engine.contract.json",
+    "artifactEngineRegistry": ".tbg/harness/artifact-engines.registry.json",
+    "artifactEngineState": ".local/tbg-artifact-engine/state.json",
+    "artifactEngineOutput": "artifacts/latest/artifact-engine",
     "artifactsLatest": "artifacts/latest"
   },
   "runtime": {
@@ -37,6 +41,10 @@
     "Do not commit real local secrets, tokens, saves, or machine-specific config.",
     "AGENTS.md is the common denominator; targeted skills live under .tbg/skills.",
     "Harness maturity means cross-cutting plumbing moves into contracts, policies, registries, guards, evidence, and reporting; domain behavior remains visible in skills or source modules.",
+    "Local artifacts are evidence-bearing events. They do not parse, route, validate, or trigger themselves.",
+    "The artifact engine registry owns parser identity and trigger edges, while the ignored local state file owns the operator's automatic-processing toggle.",
+    "Automatic artifact engines remain deterministic and read-only; they may produce packets and next decisions but may not execute commands found inside artifacts.",
+    "Producer wrappers may trigger the artifact router only after the producer succeeds, and parser success may not be promoted into build, behavior, or runtime proof.",
     "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases.",
     "Stale PR recovery instructions must pair structured JSON with complete syntactic-English sentences before an agent may act automatically.",
     "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency.",
