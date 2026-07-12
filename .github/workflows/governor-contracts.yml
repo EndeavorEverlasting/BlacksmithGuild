@@ -58,6 +58,7 @@ jobs:
             './scripts/launcher-fast-frontdoor.ps1',
             './scripts/run-launcher-validation-supervisor.ps1',
             './scripts/run-launcher-validation-workhorse.ps1',
+            './scripts/run-forge-continue-campaign.ps1',
             './scripts/invoke-collect-diagnostics.ps1'
           )) {
             $tokens = $null
@@ -119,6 +120,10 @@ jobs:
       - name: Verify clickable command surface
         shell: pwsh
         run: ./scripts/verify-clickable-command-surface.ps1
+
+      - name: Verify Forge Continue campaign pipeline
+        shell: pwsh
+        run: ./scripts/verify-forge-continue-campaign-contract.ps1
 
       - name: Verify command-bus patch contract
         shell: pwsh

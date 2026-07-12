@@ -1,4 +1,4 @@
-# Static contract for the root Forge launcher front door.
+﻿# Static contract for the root Forge launcher front door.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = New-Object System.Collections.Generic.List[string]
@@ -61,20 +61,39 @@ foreach ($needle in @(
     'SendKeys(''%n'')'
 )) { Forbid $frontdoor $needle }
 
-foreach ($cmd in @('Forge.cmd', 'ForgeContinue.cmd')) {
-    Need $cmd 'launcher-fast-frontdoor.ps1'
-    Need $cmd '-LaunchManual'
-    Need $cmd '-TotalBudgetSec 30'
-    Need $cmd '-PhaseBudgetSec 5'
-    Need $cmd '-MaxAttempts 2'
-    Need $cmd 'artifacts\latest\launcher-frontdoor'
-    Need $cmd 'if not defined TBG_NO_PAUSE pause'
-    Need $cmd 'resolves RepoRoot from its own tracked location'
-    Forbid $cmd 'launcher-frozen-context-nav.ps1'
-    Forbid $cmd 'launcher-modal-aware-context-nav.ps1'
-    Forbid $cmd '-RepoRoot "%~dp0"'
-    Forbid $cmd '-RepoRoot ''%~dp0'''
+foreach ($needle in @(
+    'launcher-fast-frontdoor.ps1',
+    '-LaunchManual',
+    '-TotalBudgetSec 30',
+    '-PhaseBudgetSec 5',
+    '-MaxAttempts 2',
+    'artifacts\latest\launcher-frontdoor',
+    'if not defined TBG_NO_PAUSE pause',
+    'resolves RepoRoot from its own tracked location'
+)) { Need 'Forge.cmd' $needle }
+Forbid 'Forge.cmd' 'launcher-frozen-context-nav.ps1'
+Forbid 'Forge.cmd' 'launcher-modal-aware-context-nav.ps1'
+Forbid 'Forge.cmd' '-RepoRoot "%~dp0"'
+Forbid 'Forge.cmd' '-RepoRoot ''%~dp0'''
+
+$continueCmd = 'ForgeContinue.cmd'
+$continueCoordinator = 'scripts\run-forge-continue-campaign.ps1'
+$visibleRunner = 'scripts\run-tbg-visible-trade-cycle.ps1'
+$launchOperator = 'scripts\invoke-forge-launch-operator.ps1'
+Need $continueCmd 'run-forge-continue-campaign.ps1'
+Need $continueCmd 'if not defined TBG_NO_PAUSE pause'
+Need $continueCoordinator 'run-tbg-visible-trade-cycle.ps1'
+Need $continueCoordinator '$repoRoot = (Resolve-Path'
+Need $visibleRunner 'invoke-forge-launch-operator.ps1'
+foreach ($needle in @('LaunchManual = $true', 'launcher-fast-frontdoor.ps1', '-TotalBudgetSec 30', '-PhaseBudgetSec 5', '-MaxAttempts 2')) {
+    Need $launchOperator $needle
 }
+Forbid $continueCmd 'launcher-frozen-context-nav.ps1'
+Forbid $continueCmd 'launcher-modal-aware-context-nav.ps1'
+Forbid $continueCmd '-RepoRoot "%~dp0"'
+Forbid $continueCmd '-RepoRoot ''%~dp0'''
+Forbid $launchOperator 'launcher-frozen-context-nav.ps1'
+Forbid $launchOperator 'launcher-modal-aware-context-nav.ps1'
 
 $workhorseCmd = 'Run-LauncherValidationWorkhorse.cmd'
 Need $workhorseCmd 'run-launcher-validation-supervisor.ps1'
