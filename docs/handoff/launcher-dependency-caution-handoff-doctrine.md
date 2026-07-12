@@ -151,6 +151,22 @@ runtimeProofClaim=false
 
 This artifact is local generated evidence. It is not committed to the repo and does not prove the game loaded successfully unless the state is `recovered`, and even `recovered` proves only launcher recovery. `CollectDiagnostics.cmd` copies the newest recovery artifact into the diagnostic bundle under `status/BlacksmithGuild_LauncherRecovery.json`.
 
+## Operator outcome
+
+The normal operator flow remains:
+
+```text
+ForgeContinue.cmd
+```
+
+No new command is required to enable the retry. On the first qualifying launcher exception, Forge Continue performs the bounded force-close and fresh-context retry automatically. On a second failure, the command stops instead of looping and points to:
+
+```text
+BlacksmithGuild_Launch.log
+BlacksmithGuild_LauncherRecovery.json
+CollectDiagnostics.cmd
+```
+
 ## Runtime proof boundary
 
 Confirming the caution dialog proves only this:
