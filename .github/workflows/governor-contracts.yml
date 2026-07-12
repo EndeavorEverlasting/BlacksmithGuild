@@ -25,8 +25,9 @@ jobs:
           Write-Host 'This workflow runs platform-neutral text, policy, and contract verifiers.'
           Write-Host 'Installed-game, launcher, live-runtime, and OS-specific game-backed runs are advisory and belong in separate workflows.'
           Write-Host 'Development must preserve modular platform adapters for Windows, Linux, and future supported systems.'
+          Write-Host 'Continuum interoperability is optional and must preserve standalone BlacksmithGuild build, validation, and runtime behavior.'
 
-      - name: Parse PR lifecycle controllers
+      - name: Parse PR lifecycle and interoperability controllers
         shell: pwsh
         run: |
           foreach ($path in @(
@@ -34,7 +35,9 @@ jobs:
             './scripts/tbg/Invoke-TbgPrLifecycleSweep.ps1',
             './scripts/tbg/Test-TbgPrLifecycleAutomation.ps1',
             './scripts/tbg/Test-TbgPrLifecycleSweep.ps1',
-            './scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1'
+            './scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1',
+            './scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1',
+            './scripts/tbg/Verify-TbgContinuumInteroperability.ps1'
           )) {
             $tokens = $null
             $errors = $null
@@ -46,7 +49,7 @@ jobs:
               throw (('{0}: {1}' -f $path, ($errors.Message -join '; ')))
             }
           }
-          Write-Host 'PR lifecycle controller parse: PASS'
+          Write-Host 'PR lifecycle and interoperability controller parse: PASS'
 
       - name: Test repository-wide PR lifecycle automation
         shell: pwsh
@@ -59,6 +62,24 @@ jobs:
       - name: Verify PR lifecycle automation boundaries
         shell: pwsh
         run: ./scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1
+
+      - name: Verify Continuum interoperability boundary
+        shell: pwsh
+        run: ./scripts/tbg/Verify-TbgContinuumInteroperability.ps1
+
+      - name: Exercise Continuum capability export
+        shell: pwsh
+        run: |
+          $packetPath = Join-Path $env:RUNNER_TEMP 'blacksmithguild-continuum-capabilities.json'
+          ./scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1 -OutputPath $packetPath
+          $packet = Get-Content -LiteralPath $packetPath -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($packet.schema -ne 'TbgContinuumCapabilityPacket.v1') {
+            throw 'Continuum capability export produced an unexpected schema.'
+          }
+          if (-not $packet.standalone.build -or -not $packet.standalone.runtime -or -not $packet.standalone.repositoryValidation) {
+            throw 'Continuum capability export weakened standalone BlacksmithGuild operation.'
+          }
+          Write-Host ("Continuum capability export: PASS ({0} capabilities)" -f @($packet.capabilities).Count)
 
       - name: Verify campaign governor contract
         shell: pwsh
