@@ -70,12 +70,95 @@ expectedNextStates
 
 The key point is that the launcher does not need a process replacement to be in a new state. A native modal can reuse the same process and top-level HWND while changing the actionable window content. The harness must record that delta explicitly instead of reporting only that the click was unverified.
 
+## Bounded full-close retry
+
+The ordinary modal, PLAY, CONTINUE, and launcher-context mechanisms remain the primary path. Recovery is only for the exception path after those mechanisms return a nonzero or blocked result.
+
+The default recovery budget is **one retry**, which means two total launch attempts:
+
+```text
+attempt 1 -> normal frozen/modal-aware launch
+failure   -> force-close launcher process family
+attempt 2 -> fresh launcher context and the same launch intent
+failure   -> explicit dead end
+```
+
+The force-close scope is deliberately bounded to the Bannerlord launch family:
+
+```text
+Bannerlord
+TaleWorlds.MountAndBlade.Launcher
+Watchdog
+```
+
+The retry controller must not recursively retry without a budget. `MaxRecoveryRetries = 1` is the default. A second failure exhausts the budget.
+
+Expected recovery log markers:
+
+```text
+LAUNCH_STATE=launcher_recovery_retry_scheduled
+LAUNCH_STATE=launcher_recovery_force_close_started
+LAUNCH_STATE=launcher_recovery_force_close_complete
+LAUNCH_STATE=launcher_recovery_retry_started
+LAUNCH_STATE=launcher_recovery_recovered
+```
+
+A failed final attempt must emit:
+
+```text
+LAUNCH_STATE=launcher_recovery_dead_end
+classification=launcher_recovery_dead_end
+sameFailureAsPrevious=true|false
+failureClass=<semantic failure class>
+failureSignature=<normalized signature>
+```
+
+If the second attempt fails in the same semantic way, `sameFailureAsPrevious=true` makes the dead end unambiguous. A different second failure still ends the run, but records the changed classification instead of hiding it.
+
+## Machine-readable recovery artifact
+
+Every scheduled retry, force-close completion, retry start, recovery, or dead end updates:
+
+```text
+BlacksmithGuild_LauncherRecovery.json
+```
+
+Schema:
+
+```text
+TbgLauncherRecovery.v1
+```
+
+The artifact includes:
+
+```text
+launchIntent
+state
+attempt
+maxAttempts
+retryCount
+failureClass
+failureSignature
+previousFailureSignature
+sameFailureAsPrevious
+innerExitCode
+reason
+terminatedProcesses
+launcherContextPath
+forceCloseScope
+runtimeProofClaim=false
+```
+
+This artifact is local generated evidence. It is not committed to the repo and does not prove the game loaded successfully unless the state is `recovered`, and even `recovered` proves only launcher recovery.
+
 ## Runtime proof boundary
 
-Confirming the caution dialog proves only this:
+Confirming the caution dialog or recovering the launcher proves only this:
 
 ```text
 native launcher dependency caution was handled
+or
+launcher setup recovered after one bounded retry
 ```
 
 It does **not** prove:
