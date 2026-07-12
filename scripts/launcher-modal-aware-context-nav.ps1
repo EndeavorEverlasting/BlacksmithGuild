@@ -247,7 +247,7 @@ $navArgs = @(
     '-BannerlordRoot', $BannerlordRoot,
     '-PollMs', ([string]$PollMs),
     '-LauncherContextPath', $LauncherContextPath,
-    ('-RespectUserForeground:{0}' -f ([bool]$RespectUserForeground).ToString().ToLowerInvariant())
+    '-RespectUserForeground', ([string]([bool]$RespectUserForeground))
 )
 if ($TimeoutSec -gt 0) { $navArgs += @('-TimeoutSec', ([string]$TimeoutSec)) }
 if ($AllowFocusSteal) { $navArgs += '-AllowFocusSteal' }
