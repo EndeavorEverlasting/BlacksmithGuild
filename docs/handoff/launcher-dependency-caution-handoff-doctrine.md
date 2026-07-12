@@ -115,6 +115,13 @@ failureSignature=<normalized signature>
 
 If the second attempt fails in the same semantic way, `sameFailureAsPrevious=true` makes the dead end unambiguous. A different second failure still ends the run, but records the changed classification instead of hiding it. The parent launcher process reads and preserves the child attempt's terminal recovery state instead of overwriting it with a generic child-exit failure.
 
+The dead end is considered actionable only when both surfaces agree:
+
+```text
+BlacksmithGuild_Launch.log contains LAUNCH_STATE=launcher_recovery_dead_end
+BlacksmithGuild_LauncherRecovery.json has state=dead_end
+```
+
 ## Machine-readable recovery artifact
 
 Every scheduled retry, force-close completion, retry start, recovery, or dead end updates:
