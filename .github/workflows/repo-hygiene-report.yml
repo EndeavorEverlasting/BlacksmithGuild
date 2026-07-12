@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run isolated repo hygiene integration test
         id: integration
@@ -73,5 +75,4 @@ jobs:
         shell: pwsh
         run: |
           $baseRef = '${{ github.base_ref }}'
-          git fetch origin "+refs/heads/$baseRef`:refs/remotes/origin/$baseRef" --depth=1
           git diff --check "origin/$baseRef...HEAD"
