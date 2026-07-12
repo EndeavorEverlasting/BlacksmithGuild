@@ -47,10 +47,13 @@ foreach ($file in @(
     'scripts\run-governor-disposable-smoke.ps1',
     'scripts\invoke-forge-launch-operator.ps1',
     'scripts\forge-stop.ps1',
+    'scripts\run-autonomous-guild-loop-operator.ps1',
     'docs\operator\governor-test-harness.md',
     'Run-Governor-Disposable-Smoke.cmd',
     'Run-Governor-Disposable-Smoke-SkipLaunch.cmd',
-    'Run-Governor-Ensure-DevSave.cmd'
+    'Run-Governor-Ensure-DevSave.cmd',
+    'Run-AutonomousGuildLoop.cmd',
+    'ForgeStop.cmd'
 )) {
     Read-RepoText -RelativePath $file | Out-Null
 }
@@ -98,18 +101,25 @@ Assert-NotContains 'scripts\invoke-forge-launch-operator.ps1' "@('-Launch', '-La
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'Invoke-OperatorInteractiveFocusPrompt' 'focus prompt hook'
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'guarded_click_denied' 'focus prompt trigger reason'
 
-# Launch-setup mode must reach launcher-auto-nav so guarded PLAY/CONTINUE clicks are permitted.
 Assert-Contains 'scripts\install-mod.ps1' '-LaunchSetup' 'install-mod must request launch-setup mode'
-# Existing-launcher reuse: an already-running launcher is the target, not a fatal blocker.
 Assert-Contains 'scripts\open-bannerlord-launcher.ps1' 'existing launcher detected; reusing' 'reuse existing launcher during launch setup'
 Assert-Contains 'scripts\open-bannerlord-launcher.ps1' 'Forge Stop approval' 'running game process still requires Forge Stop approval'
-# F7 guard must keep blocking launcher clicks in plain assistive mode.
 Assert-Contains 'scripts\f7-external-state-classifier.ps1' 'click_launcher_play' 'plain assistive must not permit PLAY click'
 
 Assert-Contains 'scripts\forge-stop.ps1' 'Write-GovernorStopSentinel' 'soft stop sentinel'
 Assert-Contains 'scripts\forge-stop.ps1' 'PauseCampaignGovernorAutomation' 'governor pause command'
 Assert-Contains 'scripts\forge-stop.ps1' 'ForceKill' 'explicit emergency mode'
-Assert-Contains 'ForgeStop.cmd' 'Soft stop, Force kill, or Cancel' 'operator choice required'
+Assert-Contains 'ForgeStop.cmd' 'Soft stop in 5 seconds' 'quit intent must have a five-second change-mind window'
+Assert-Contains 'ForgeStop.cmd' 'choice /C SFC /N /T 5 /D S' 'soft stop must be the timed default'
+Assert-Contains 'ForgeStop.cmd' 'Cancel' 'operator must retain a cancel path'
+
+Assert-Contains 'scripts\run-autonomous-guild-loop-operator.ps1' '[ValidateRange(3, 5)]' 'automation startup grace must remain between three and five seconds'
+Assert-Contains 'scripts\run-autonomous-guild-loop-operator.ps1' 'SetEngineToggleAutomation' 'automation intent must set engine authority'
+Assert-Contains 'scripts\run-autonomous-guild-loop-operator.ps1' 'ResumeCampaignClock' 'automation intent must resume campaign time'
+Assert-Contains 'scripts\run-autonomous-guild-loop-operator.ps1' 'Set-TbgRuntimeForeground' 'automation intent must own foreground context'
+Assert-Contains 'scripts\run-autonomous-guild-loop-operator.ps1' 'Test-GovernorStopRequested' 'quit intent must override automation watch'
+Assert-Contains 'scripts\run-autonomous-guild-loop-operator.ps1' 'USER_QUIT_HONORED' 'fresh stop context must be recorded'
+Assert-Contains 'Run-AutonomousGuildLoop.cmd' '-QuitGraceSec 5' 'root click path must expose the bounded grace window'
 
 Assert-Contains 'src\BlacksmithGuild\DevTools\QuickStart\DevSaveService.cs' 'IsCampaignSessionReady' 'dev save requires campaign readiness'
 Assert-Contains 'src\BlacksmithGuild\DevTools\QuickStart\DevSaveService.cs' 'DevSaveResolver.DevSavePrefix' 'fixed disposable prefix'
