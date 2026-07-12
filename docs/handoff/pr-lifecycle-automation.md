@@ -268,6 +268,35 @@ pwsh -NoProfile -File scripts/tbg/Invoke-TbgPrLifecycle.ps1 `
   -DryRun
 ```
 
+## Safe parallel work
+
+Parallel-safe lanes after this workflow lands:
+
+- advisory Windows game-backed validation workflow;
+- advisory Linux game-backed validation workflow;
+- branch-protection and ruleset alignment;
+- stale-PR classification and explicit legacy opt-ins;
+- PR closure disposition automation as a separate policy.
+
+Collision risks:
+
+- edits to `.github/workflows/pr-lifecycle-automation.yml`;
+- edits to `.tbg/workflows/pr-lifecycle-automation.contract.json`;
+- edits to `scripts/tbg/Invoke-TbgPrLifecycle.ps1`;
+- changing workflow names without updating the contract and regression fixtures.
+
+## Next inspection paths
+
+```text
+.github/workflows/pr-lifecycle-automation.yml
+.github/workflows/governor-contracts.yml
+.tbg/workflows/pr-lifecycle-automation.contract.json
+scripts/tbg/Invoke-TbgPrLifecycle.ps1
+scripts/tbg/Test-TbgPrLifecycleAutomation.ps1
+scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1
+docs/handoff/pr-lifecycle-automation.md
+```
+
 ## Proof boundary
 
 Automatic merge proves that the configured platform-neutral checks, mergeability, review state, review threads, exact-head guard, and GitHub repository rules accepted the merge.
