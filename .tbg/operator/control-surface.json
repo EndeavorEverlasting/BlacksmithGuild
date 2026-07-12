@@ -119,10 +119,17 @@
     },
     {
       "command": ".\\Run-AutonomousGuildLoop.cmd",
-      "kind": "operator_play_diagnostic",
+      "kind": "operator_context_controller",
       "terminalWait": true,
+      "quitGraceSec": 5,
+      "automationCommands": [
+        "SetEngineToggleAutomation",
+        "ResumeCampaignClock",
+        "RunAutonomousGuildLoopNow"
+      ],
+      "contextBehavior": "Automation intent foregrounds the live Bannerlord runtime, enters global Automation, resumes campaign time, watches one bounded loop, reacquires focus, and retries clock resume when status reports pause. A fresh ForgeStop sentinel is Quit intent and is honored unless the user cancels it during the five-second change-mind window.",
       "result": "BlacksmithGuild_AutonomousGuildLoop.json plus artifacts/latest/autonomous-guild-loop-operator.json",
-      "stop": "Ctrl+Alt+T until Manual, Ctrl+Alt+B, or .\\ForgeStop.cmd soft. If Bannerlord disappears during wait, wrapper records FAILED_game_disappeared_during_command."
+      "stop": "Click ForgeStop.cmd. It defaults to soft stop after five seconds; press C to cancel or F for emergency force kill. Ctrl+Alt+B remains the in-game movement abort."
     },
     {
       "command": ".\\Run-AutonomousAssistSession.cmd",
@@ -160,9 +167,9 @@
       "engine": "GuildLoop",
       "startupMode": "Hybrid",
       "authorityGateEffective": true,
-      "automationCapability": "One bounded asynchronous cycle; explicit start is allowed in Hybrid.",
-      "handoff": "market plan -> route/cohesion -> bounded trade/forge step -> loop report",
-      "runtimeProof": "operator wrapper records terminal ACK/status/crash outcomes; continuous background play still needs focus/pause watch mode"
+      "automationCapability": "One bounded asynchronous cycle; the context-aware operator wrapper promotes global mode to Automation, foregrounds Bannerlord, resumes time, and watches the cycle.",
+      "handoff": "operator context -> engine authority -> campaign clock -> market plan -> route/cohesion -> bounded trade/forge step -> loop report",
+      "runtimeProof": "context transitions, focus reacquisitions, pause corrections, ACK/status, crash state, and terminal loop report are written to the operator result"
     },
     {
       "engine": "Cohesion",
