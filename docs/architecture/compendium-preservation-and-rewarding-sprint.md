@@ -38,13 +38,14 @@ Success looks like:
 3. Stale PRs are classified and selectively replayed or closed with rationale.
 4. Evidence bundles are archived with manifests before old worktrees or ignored artifacts are removed.
 5. Worker engines share common cadence, proof, and handoff vocabulary so future route, trade, smithing, horse, companion, and caravan-escort work does not become engine-specific chaos.
+6. The operator shell is stable enough that long-running repo work, proof commands, and artifact relay happen in named terminal sessions rather than buried chat scrollback.
 
 ## Current PR interpretation
 
 | PR | Role | Current decision |
 |---|---|---|
 | #43 `agent/route-automation-operator-plan` | Active route/operator-control runtime lane. | Keep draft until exact-head runtime proof is collected by harness; do not leave human-only proof as the permanent gate. |
-| #45 `docs/agent-skills-stale-pr-cherry-pick` | Agent rules, skill factoring, harness maturity, stale PR replay, and this compendium layer. | Merge after static checks; this becomes the doctrine bridge for future agents. |
+| #45 `docs/agent-skills-stale-pr-cherry-pick` | Agent rules, skill factoring, harness maturity, stale PR replay, compendium preservation, and operator terminal environment. | Merge after static checks; this becomes the doctrine bridge for future agents. |
 | #46 `sprint/local-agent-status-relay` | Local evidence relay. | Already merged. Treat as the raw material for a future AXI-style TBG command. |
 | #5-#38 stale legacy PRs | Mixed stale work, proof fragments, old runtime ideas, and harness concepts. | Do not blindly delete or squash. Classify, replay useful value onto current base, then close with rationale. |
 
@@ -94,7 +95,34 @@ External tools should not be vendored into BlacksmithGuild. They belong above th
 | AXI | Agent-tool interface standard | Shapes future `ForgeAgentStatus` / `tbg-axi` output. | Keep output compact; do not dump giant artifacts by default. |
 | Lavish | Visual review surface | Sprint maps, proof ladders, worker graphs, stale PR maps, and operator control diagrams. | Review surface, not runtime proof. |
 | npx skills | Skill distribution | Compatibility target for `.tbg/skills`. | Internal repo skills must be marked if not public-installable. |
-| WezTerm / tmux / Neovim / voice input | Operator environment | Improves terminal/editor/session/prompt throughput. | Do not make these repo dependencies without an install sprint. |
+| WezTerm | Operator terminal shell and multiplexer candidate | Primary Windows-facing shell candidate for named panes, durable command sessions, GitHub CLI, PowerShell, `ForgeAgentStatus`, future `tbg-axi`, and proof-output review. | External operator tool. Do not vendor it, require it for validators, or commit personal terminal config. |
+| tmux | Persistent session backend | Useful where Firstmate or WSL/Linux workflows expect tmux-style sessions. | Optional backend; do not assume native Windows availability. |
+| Neovim | Terminal editor fallback | Keyboard-first editing and review when GUI editors get in the way. | Operator tool, not repo dependency. |
+| voice input | Prompt throughput aid | Dictation should feed structured sprint prompts and packet summaries. | Do not commit dictated private data or assume one OS-specific tool works everywhere. |
+
+## WezTerm operator environment doctrine
+
+WezTerm deserves first-class treatment because it can become the stable operator shell where local agents, GitHub CLI, PowerShell wrappers, and proof/status commands are visible at the same time.
+
+Repo-safe adoption means:
+
+1. BlacksmithGuild remains terminal-agnostic. All repo commands must still work in ordinary PowerShell or cmd.
+2. WezTerm is allowed to shape example workflows: named workspaces, panes, tabs, copyable packet output, and clear command grouping.
+3. `ForgeAgentStatus.cmd` and future `tbg-axi` commands should produce compact output that fits a terminal pane and write long details to artifacts or PR comments.
+4. Runtime proof cannot be inferred from a terminal layout. The terminal only hosts commands; proof still comes from exact-head artifacts, hashes, timestamps, state files, and validators.
+5. No personal WezTerm configuration, local shell history, fonts, screenshots, tokens, or machine-specific private paths should be committed.
+
+Suggested session topology:
+
+| Session | Purpose | Notes |
+|---|---|---|
+| `tbg-main` | repo fetch/status/checks | safe coordination surface |
+| `tbg-pr43-proof` | route/operator-control proof lane | isolated from docs-only panes |
+| `tbg-pr45-docs` | skills/doctrine/compendium lane | docs/contracts only |
+| `tbg-stale-replay` | selective stale PR inspection and replay | no blind branch deletion |
+| `tbg-artifacts` | artifact packet, archive, and evidence review | no generated logs committed by default |
+
+This is deliberately an operator-environment plan, not an installation sprint.
 
 ## Harness maturity principle
 
@@ -203,10 +231,11 @@ This prevents useful reference-assembly fixes, launcher seams, proof contracts, 
 
 1. Merge the skills/doctrine/compendium PR after static checks pass.
 2. Use the merged relay from PR #46 as the source for a future `tbg-axi` command.
-3. Finish PR #43 by replacing the human-only live gate with an agent-verifiable exact-head proof command.
-4. Use the compendium and stale-PR skills to select the first legacy PR stack to replay and close.
-5. Add evidence archive/retention commands before deleting retired worktrees or large ignored artifact lanes.
-6. Start external tool adoption by inspecting Firstmate and Treehouse outside the repo; BlacksmithGuild should expose contracts and packets to them, not vendor them.
+3. Treat WezTerm as the first operator-shell candidate for local TBG workspaces, while keeping every repo command terminal-agnostic.
+4. Finish PR #43 by replacing the human-only live gate with an agent-verifiable exact-head proof command.
+5. Use the compendium and stale-PR skills to select the first legacy PR stack to replay and close.
+6. Add evidence archive/retention commands before deleting retired worktrees or large ignored artifact lanes.
+7. Start external tool adoption by inspecting Firstmate and Treehouse outside the repo; BlacksmithGuild should expose contracts and packets to them, not vendor them.
 
 ## First stale PR area to pursue after current closeout
 
@@ -233,6 +262,7 @@ Done means:
 - runtime proof is framed as agent-verifiable;
 - performance/cadence concerns are generalized across engines;
 - evidence retention has an archive path rather than indefinite clutter;
+- WezTerm is incorporated as a first-class operator shell candidate without becoming a repo dependency;
 - external agentic tools are placed above the repo, not inside it.
 
 ## Exact next command
