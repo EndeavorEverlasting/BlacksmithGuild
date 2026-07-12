@@ -28,11 +28,16 @@
       "adoptionBoundary": "operator ergonomics; no dictated private data should be committed"
     }
   ],
+  "repoSafeOutputs": [
+    "docs/examples/wezterm/tbg-operator.wezterm.lua",
+    "docs/handoff/wezterm-operator-profile.md"
+  ],
   "allowedScope": [
     "documenting terminal/session topology for local repo operation",
     "documenting how ForgeAgentStatus and future tbg-axi output should behave in terminal panes",
     "classifying WezTerm as an operator shell candidate in the agentic operations layer",
     "recording pane/session names, command groups, and packet relay expectations as repo-safe examples",
+    "adding a repo-safe WezTerm profile template that uses environment variables instead of personal paths",
     "keeping terminal ergonomics separate from runtime proof and gameplay behavior"
   ],
   "forbiddenScope": [
@@ -40,7 +45,8 @@
     "committing user-specific terminal configuration, fonts, shell history, tokens, screenshots, or local logs",
     "making WezTerm a hard dependency for BlacksmithGuild validators or runtime proof",
     "claiming runtime proof from terminal/session organization",
-    "editing runtime gameplay, launcher, command inbox, or save files under terminal-environment scope"
+    "editing runtime gameplay, launcher, command inbox, or save files under terminal-environment scope",
+    "using terminal profile load or config reload to spawn automatic background repo tasks"
   ],
   "orderedSteps": [
     {
@@ -72,6 +78,15 @@
     },
     {
       "sequence": 4,
+      "name": "add_repo_safe_profile_template",
+      "requiredEvidence": [
+        "profile template path",
+        "no personal paths, fonts, secrets, screenshots, logs, or runtime artifacts committed",
+        "profile uses explicit operator action or environment variables rather than automatic side effects"
+      ]
+    },
+    {
+      "sequence": 5,
       "name": "validate_boundary",
       "requiredEvidence": [
         "no machine-local config committed",
@@ -85,6 +100,7 @@
       "WezTerm recorded as first-class operator shell candidate",
       "terminal tooling kept outside repo runtime dependencies",
       "ForgeAgentStatus or tbg-axi terminal ergonomics described",
+      "repo-safe WezTerm profile template added or exact blocker recorded",
       "no personal terminal config or generated logs committed",
       "JSON files parse",
       "git diff --check passes or exact local blocker is recorded"
@@ -92,6 +108,7 @@
   },
   "terminalStates": [
     "PASS_terminal_role_codified",
+    "PASS_profile_template_codified",
     "PASS_terminal_agnostic_repo_commands_preserved",
     "BLOCKED_install_sprint_required",
     "BLOCKED_machine_local_config_detected",
