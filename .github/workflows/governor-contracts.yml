@@ -151,7 +151,7 @@ jobs:
           Write-Host 'Run scripts/validate-campaign-governor-local.ps1 -ApplyCommandBusPatch on Windows developer box before marking PR ready.'
 
   windows-powershell-supervisor-regression:
-    name: Windows PowerShell 5.1 supervisor regression
+    name: Windows PowerShell 5.1 launcher harness regressions
     runs-on: windows-latest
     steps:
       - name: Checkout exact pull-request commit
@@ -165,3 +165,11 @@ jobs:
       - name: Exercise synchronized first-candidate selection
         shell: powershell
         run: .\scripts\test-launcher-validation-supervisor-workspace-selection.ps1
+
+      - name: Exercise real validation-only workhorse result
+        shell: powershell
+        run: .\scripts\test-launcher-validation-workhorse-validation-only.ps1
+
+      - name: Exercise isolated-remote fallback with informational Git stderr
+        shell: powershell
+        run: .\scripts\test-launcher-validation-supervisor-isolated-remote.ps1
