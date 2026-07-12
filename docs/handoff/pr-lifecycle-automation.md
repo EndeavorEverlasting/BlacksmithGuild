@@ -4,13 +4,15 @@
 
 Routine pull-request lifecycle work belongs to the repo and its agents, not to repeated operator terminal handoffs.
 
-The repository should automatically:
+The repository automatically:
 
-1. inspect the current pull-request state;
-2. inspect current checks for the exact head;
-3. distinguish always-required, conditional-required, and advisory validation;
-4. mark an eligible draft pull request ready for review;
-5. report what happened without merging or closing anything.
+1. inspects the current pull-request state;
+2. inspects checks for the exact head;
+3. distinguishes always-required, conditional-required, and advisory validation;
+4. inspects review decisions and unresolved review threads;
+5. promotes an eligible draft to ready for review;
+6. requests or performs an exact-head squash merge when the deterministic merge gate passes;
+7. writes machine-readable and English evidence for the decision.
 
 The executable policy is:
 
@@ -32,17 +34,23 @@ The GitHub workflow is:
 
 ## Default lifecycle rule
 
-Agents and workflows must not ask the operator to run routine read-only or reversible commands when the connected GitHub surface can perform them.
+Agents and workflows must not ask the operator to run routine PR queries, readiness transitions, or eligible merges when the connected GitHub surface can perform them safely.
 
-Examples that should be automated:
+Automated actions include:
 
 ```text
 check inspection
 workflow conclusion inspection
 PR metadata refresh
+review and review-thread inspection
 ready-for-review promotion
-review-state reporting
+exact-head squash merge
+lifecycle result artifacts and reports
 ```
+
+Human terminal interaction is not itself a safety gate. Concrete evidence failures are the gate.
+
+## Required validation model
 
 ### Always-required workflows
 
@@ -61,6 +69,10 @@ These platform-neutral workflows block when they run, but their absence must not
 Hostile Escape Contracts
 ```
 
+### Advisory workflows
+
+Unlisted external checks and platform/game-backed workflows are reported but do not block automatic readiness or merge by default.
+
 A draft PR is promoted when all always-required workflows pass and every conditional-required workflow that is present also passes.
 
 An intentionally unfinished PR can remain draft by adding:
@@ -69,13 +81,84 @@ An intentionally unfinished PR can remain draft by adding:
 pr-lifecycle:hold-draft
 ```
 
-The hold label is an explicit opt-out. Absence of the label means the repo may promote the PR automatically when the configured gate passes.
+## Deterministic automatic merge gate
+
+A ready PR may merge automatically without a separate operator command when all of the following are true:
+
+```text
+state = OPEN
+isDraft = false
+exact inspected head SHA is still current
+always-required workflows are present and successful
+present conditional-required workflows are successful
+no pr-lifecycle:hold-merge label
+mergeable = MERGEABLE
+merge state is not DIRTY, DRAFT, UNKNOWN, or BEHIND
+review decision is not REVIEW_REQUIRED or CHANGES_REQUESTED
+all inspected review threads are resolved
+review-thread pagination is complete
+base is main, unless stacked merge is explicitly opted in
+head is from the same repository, unless fork merge is explicitly opted in
+PR is newer than the policy effective date, unless legacy merge is explicitly opted in
+GitHub repository rules accept auto-merge or direct exact-head merge
+```
+
+The merge method is always:
+
+```text
+squash
+```
+
+The controller always supplies:
+
+```text
+--match-head-commit <inspected-head-sha>
+```
+
+This prevents a merge after a concurrent push changes the reviewed head.
+
+The controller first requests GitHub auto-merge so branch protection, rulesets, and merge queues remain authoritative. If repository auto-merge is unavailable and GitHub reports a clean eligible state, it attempts a direct exact-head squash merge. GitHub may still reject the merge; that becomes `merge_blocked_by_github`, not a request for the operator to repeat the same command.
+
+## Smart blockers and opt-ins
+
+### Explicit holds
+
+```text
+pr-lifecycle:hold-draft
+pr-lifecycle:hold-merge
+```
+
+### Legacy PR protection
+
+PRs created before the policy effective date are not silently swept into automatic merge. After current evidence is reviewed, an old PR may opt in with:
+
+```text
+pr-lifecycle:auto-merge-legacy
+```
+
+### Stacked PR protection
+
+A PR targeting a branch other than `main` is blocked by default. An intentional stacked merge may opt in with:
+
+```text
+pr-lifecycle:auto-merge-stacked
+```
+
+### Fork protection
+
+Cross-repository PRs are blocked from automatic merge by default. A deliberately trusted fork PR may opt in with:
+
+```text
+pr-lifecycle:auto-merge-fork
+```
+
+Labels are policy inputs, not substitutes for passing checks, clean mergeability, resolved reviews, or exact-head matching.
 
 ## Cross-platform development rule
 
 BlacksmithGuild development must stay modular across operating systems.
 
-Required readiness and merge-policy evidence should come from platform-neutral surfaces whenever practical:
+Required readiness and merge evidence should come from platform-neutral surfaces whenever practical:
 
 - contracts and schema validation;
 - static tests;
@@ -100,34 +183,65 @@ A Windows runner is not the product architecture. A Linux game host is not the p
 Therefore:
 
 ```text
-platform-neutral validation = required readiness evidence
+platform-neutral validation = required readiness and merge evidence
 installed-game or OS-specific validation = advisory evidence
 ```
 
-Game-backed validation must live in a separately named advisory workflow. Do not place it in an always-required workflow whose overall completion controls automatic readiness.
+Game-backed validation must live in a separately named advisory workflow. Do not place it in an always-required workflow whose overall completion controls automatic readiness or merge.
 
 A path-scoped platform-neutral verifier may be conditional-required. It must block when present, while its absence remains a valid state for unrelated changes.
 
+## Evidence and artifacts
+
+Every lifecycle run writes:
+
+```text
+pr-lifecycle-result.json
+```
+
+Schema:
+
+```text
+TbgPrLifecycleResult.v2
+```
+
+The GitHub workflow uploads it as:
+
+```text
+pr-lifecycle-<pr-number>-<workflow-run-id>
+```
+
+Retention is 14 days. The workflow step summary also records:
+
+- PR number;
+- exact head SHA;
+- selected lifecycle action;
+- required and advisory check counts;
+- advisory failures or pending checks;
+- unresolved review-thread count;
+- merge attempt mode and GitHub result;
+- English reason for the terminal state.
+
+These artifacts distinguish evidence from confidence and prevent terminal scrollback from becoming the only record.
+
 ## Actions this automation never performs
 
-The lifecycle workflow has read-only repository-content permission and pull-request write permission only.
+The lifecycle workflow uses the trusted default-branch controller. It does not checkout or execute untrusted PR-head code with its write-capable token.
 
 It never:
 
 ```text
-merges a PR
-closes a PR
+closes a PR without a separate closure disposition
 deletes a branch
 commits or pushes source changes
 force-pushes
 rewrites history
-runs untrusted PR code with a write-capable token
+merges a head other than the inspected exact head
+uses an administrative branch-protection bypass
 claims launcher, gameplay, or runtime proof
 ```
 
-Merges, closure, force operations, branch deletion, and unrelated repository mutation remain explicit terminal decisions.
-
-A scoped sprint that already authorizes code changes still owns its normal commit and push obligation. The lifecycle automation does not replace implementation work and does not invent unrelated write authority.
+A scoped sprint that authorizes code changes still owns its commit and push obligation. This lifecycle controller owns PR state and eligible merge, not implementation.
 
 ## Local dry-run validation
 
@@ -154,15 +268,12 @@ pwsh -NoProfile -File scripts/tbg/Invoke-TbgPrLifecycle.ps1 `
   -DryRun
 ```
 
-The controller writes `TbgPrLifecycleResult.v1` JSON and records always-required checks, present conditional-required checks, advisory checks, missing workflows, and the selected lifecycle action.
-
 ## Proof boundary
 
-Automatic promotion proves only that the configured platform-neutral workflows passed and that the PR state was updated.
+Automatic merge proves that the configured platform-neutral checks, mergeability, review state, review threads, exact-head guard, and GitHub repository rules accepted the merge.
 
 It does not prove:
 
-- every branch-protection requirement;
 - an installed-game run;
 - launcher handoff;
 - campaign readiness;
