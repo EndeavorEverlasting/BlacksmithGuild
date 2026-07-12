@@ -7,8 +7,18 @@ on:
       - reopened
       - synchronize
       - converted_to_draft
+      - ready_for_review
       - labeled
       - unlabeled
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+      - dismissed
+  pull_request_review_thread:
+    types:
+      - resolved
+      - unresolved
   workflow_run:
     workflows:
       - Governor Contracts
@@ -19,12 +29,12 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: Pull request number to inspect and promote when eligible
+        description: Pull request number to inspect, promote, and merge when eligible
         required: true
         type: number
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   checks: read
   pull-requests: write
@@ -34,8 +44,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  inspect-and-promote:
-    name: Inspect checks and promote eligible draft
+  inspect-promote-and-merge:
+    name: Inspect evidence, promote, and exact-head merge
     runs-on: ubuntu-latest
     steps:
       - name: Checkout trusted default-branch controller
@@ -55,7 +65,7 @@ jobs:
           $event = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
           $number = ''
 
-          if ($env:EVENT_NAME -eq 'pull_request_target') {
+          if ($env:EVENT_NAME -in @('pull_request_target', 'pull_request_review', 'pull_request_review_thread')) {
             $number = [string]$event.pull_request.number
           } elseif ($env:EVENT_NAME -eq 'workflow_run') {
             $pullRequests = @($event.workflow_run.pull_requests)
@@ -85,12 +95,23 @@ jobs:
             Write-Host "Resolved pull request #$number."
           }
 
-      - name: Inspect checks and promote when eligible
+      - name: Inspect evidence, promote, and merge when eligible
         if: steps.resolve.outputs.pr_number != ''
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $outputPath = Join-Path $env:RUNNER_TEMP 'pr-lifecycle-result.json'
           ./scripts/tbg/Invoke-TbgPrLifecycle.ps1 `
             -PrNumber ([int]'${{ steps.resolve.outputs.pr_number }}') `
-            -Repository '${{ github.repository }}'
+            -Repository '${{ github.repository }}' `
+            -OutputPath $outputPath
+
+      - name: Upload lifecycle result
+        if: always() && steps.resolve.outputs.pr_number != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-lifecycle-${{ steps.resolve.outputs.pr_number }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/pr-lifecycle-result.json
+          if-no-files-found: warn
+          retention-days: 14
