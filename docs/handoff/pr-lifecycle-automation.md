@@ -8,7 +8,7 @@ The repository should automatically:
 
 1. inspect the current pull-request state;
 2. inspect current checks for the exact head;
-3. distinguish required platform-neutral validation from advisory platform/game validation;
+3. distinguish always-required, conditional-required, and advisory validation;
 4. mark an eligible draft pull request ready for review;
 5. report what happened without merging or closing anything.
 
@@ -44,15 +44,24 @@ ready-for-review promotion
 review-state reporting
 ```
 
-The automatic ready gate uses these repo-owned platform-neutral workflows:
+### Always-required workflows
+
+These repo-owned platform-neutral workflows must be present and successful:
 
 ```text
 Governor Contracts
 Harness Policy Reports
+```
+
+### Conditional-required workflows
+
+These platform-neutral workflows block when they run, but their absence must not deadlock a PR that does not match their path or scope filters:
+
+```text
 Hostile Escape Contracts
 ```
 
-A draft PR is promoted when all three workflows have reported successful or skipped checks for the current head.
+A draft PR is promoted when all always-required workflows pass and every conditional-required workflow that is present also passes.
 
 An intentionally unfinished PR can remain draft by adding:
 
@@ -60,7 +69,7 @@ An intentionally unfinished PR can remain draft by adding:
 pr-lifecycle:hold-draft
 ```
 
-The hold label is an explicit opt-out. Absence of the label means the repo may promote the PR automatically when the required workflows pass.
+The hold label is an explicit opt-out. Absence of the label means the repo may promote the PR automatically when the configured gate passes.
 
 ## Cross-platform development rule
 
@@ -95,7 +104,9 @@ platform-neutral validation = required readiness evidence
 installed-game or OS-specific validation = advisory evidence
 ```
 
-Game-backed validation must live in a separately named advisory workflow. Do not place it in a required workflow whose overall completion controls automatic readiness.
+Game-backed validation must live in a separately named advisory workflow. Do not place it in an always-required workflow whose overall completion controls automatic readiness.
+
+A path-scoped platform-neutral verifier may be conditional-required. It must block when present, while its absence remains a valid state for unrelated changes.
 
 ## Actions this automation never performs
 
@@ -120,21 +131,30 @@ A scoped sprint that already authorizes code changes still owns its normal commi
 
 ## Local dry-run validation
 
+Cross-platform PowerShell 7 validation:
+
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgPrLifecycleAutomation.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Verify-TbgPrLifecycleAutomation.ps1
+pwsh -NoProfile -File scripts/tbg/Test-TbgPrLifecycleAutomation.ps1
+pwsh -NoProfile -File scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1
+```
+
+Optional Windows PowerShell 5.1 compatibility validation:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgPrLifecycleAutomation.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Verify-TbgPrLifecycleAutomation.ps1
 ```
 
 Inspect a real PR without changing its state:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Invoke-TbgPrLifecycle.ps1 `
-  -PrNumber 52 `
+pwsh -NoProfile -File scripts/tbg/Invoke-TbgPrLifecycle.ps1 `
+  -PrNumber 53 `
   -Repository EndeavorEverlasting/BlacksmithGuild `
   -DryRun
 ```
 
-The controller writes `TbgPrLifecycleResult.v1` JSON and records required checks, advisory checks, missing workflows, and the selected lifecycle action.
+The controller writes `TbgPrLifecycleResult.v1` JSON and records always-required checks, present conditional-required checks, advisory checks, missing workflows, and the selected lifecycle action.
 
 ## Proof boundary
 
