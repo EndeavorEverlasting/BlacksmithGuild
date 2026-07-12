@@ -1,0 +1,100 @@
+{
+  "id": "operator-terminal-environment",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "agentic-operations-adoption",
+  "contextBanner": "[TBG | Operator Terminal Environment | coordinator/toolchain architecture | branch: docs/agent-skills-stale-pr-cherry-pick]",
+  "status": "contract_defined",
+  "purpose": "Define how WezTerm and adjacent terminal/editor/session tools support BlacksmithGuild operator and agent workflows without becoming repo runtime dependencies.",
+  "sourceTools": [
+    {
+      "name": "WezTerm",
+      "repo": "wezterm/wezterm",
+      "role": "GPU-accelerated cross-platform terminal emulator and multiplexer candidate for the Windows operator shell",
+      "adoptionBoundary": "external operator environment; not vendored, not required for runtime proof, not committed as machine-local config"
+    },
+    {
+      "name": "tmux",
+      "role": "persistent session backend candidate for Unix/WSL or Firstmate-style session management",
+      "adoptionBoundary": "optional backend; do not assume native Windows availability"
+    },
+    {
+      "name": "Neovim",
+      "role": "terminal editor fallback for keyboard-first code review and small edits",
+      "adoptionBoundary": "operator tool, not repo dependency"
+    },
+    {
+      "name": "voice input",
+      "role": "prompt throughput aid that should feed structured sprint packets",
+      "adoptionBoundary": "operator ergonomics; no dictated private data should be committed"
+    }
+  ],
+  "allowedScope": [
+    "documenting terminal/session topology for local repo operation",
+    "documenting how ForgeAgentStatus and future tbg-axi output should behave in terminal panes",
+    "classifying WezTerm as an operator shell candidate in the agentic operations layer",
+    "recording pane/session names, command groups, and packet relay expectations as repo-safe examples",
+    "keeping terminal ergonomics separate from runtime proof and gameplay behavior"
+  ],
+  "forbiddenScope": [
+    "installing WezTerm, tmux, Neovim, or voice tools during a documentation sprint",
+    "committing user-specific terminal configuration, fonts, shell history, tokens, screenshots, or local logs",
+    "making WezTerm a hard dependency for BlacksmithGuild validators or runtime proof",
+    "claiming runtime proof from terminal/session organization",
+    "editing runtime gameplay, launcher, command inbox, or save files under terminal-environment scope"
+  ],
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "classify_terminal_role",
+      "requiredEvidence": [
+        "tool name and source repo or docs",
+        "operator-environment role",
+        "explicit statement that the tool is external to BlacksmithGuild"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "map_repo_commands",
+      "requiredEvidence": [
+        "ForgeAgentStatus or future tbg-axi commands expected to run well in the terminal",
+        "compact output expectations",
+        "artifact or PR relay path for long output"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "define_session_topology",
+      "requiredEvidence": [
+        "suggested pane/session names",
+        "which lanes may share a terminal workspace",
+        "which runtime or evidence lanes require isolation"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "validate_boundary",
+      "requiredEvidence": [
+        "no machine-local config committed",
+        "no runtime proof claimed",
+        "no external tool installation performed unless explicitly owned"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "WezTerm recorded as first-class operator shell candidate",
+      "terminal tooling kept outside repo runtime dependencies",
+      "ForgeAgentStatus or tbg-axi terminal ergonomics described",
+      "no personal terminal config or generated logs committed",
+      "JSON files parse",
+      "git diff --check passes or exact local blocker is recorded"
+    ]
+  },
+  "terminalStates": [
+    "PASS_terminal_role_codified",
+    "PASS_terminal_agnostic_repo_commands_preserved",
+    "BLOCKED_install_sprint_required",
+    "BLOCKED_machine_local_config_detected",
+    "REJECTED_terminal_layout_as_runtime_proof"
+  ]
+}
