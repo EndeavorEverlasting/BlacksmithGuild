@@ -37,6 +37,7 @@ permissions:
   contents: write
   actions: read
   checks: read
+  issues: write
   pull-requests: write
 
 concurrency:
@@ -52,6 +53,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
+
+      - name: Ensure lifecycle control labels
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          $labels = @(
+            @{ Name = 'pr-lifecycle:hold-draft'; Color = 'D93F0B'; Description = 'Keep this pull request in draft despite passing readiness checks.' },
+            @{ Name = 'pr-lifecycle:hold-merge'; Color = 'B60205'; Description = 'Block automatic merge while preserving normal validation and reporting.' },
+            @{ Name = 'pr-lifecycle:auto-merge-legacy'; Color = '0E8A16'; Description = 'Allow deterministic automatic merge for a pre-policy pull request.' },
+            @{ Name = 'pr-lifecycle:auto-merge-stacked'; Color = '0366D6'; Description = 'Allow deterministic automatic merge into a non-default base branch.' },
+            @{ Name = 'pr-lifecycle:auto-merge-fork'; Color = '5319E7'; Description = 'Allow deterministic automatic merge for a deliberately trusted fork pull request.' }
+          )
+
+          foreach ($label in $labels) {
+            gh label create $label.Name `
+              --repo $env:REPOSITORY `
+              --color $label.Color `
+              --description $label.Description `
+              --force
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not ensure lifecycle label $($label.Name)."
+            }
+          }
 
       - name: Resolve pull request number
         id: resolve
