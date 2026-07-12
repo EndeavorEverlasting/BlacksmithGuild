@@ -113,7 +113,7 @@ failureClass=<semantic failure class>
 failureSignature=<normalized signature>
 ```
 
-If the second attempt fails in the same semantic way, `sameFailureAsPrevious=true` makes the dead end unambiguous. A different second failure still ends the run, but records the changed classification instead of hiding it.
+If the second attempt fails in the same semantic way, `sameFailureAsPrevious=true` makes the dead end unambiguous. A different second failure still ends the run, but records the changed classification instead of hiding it. The parent launcher process reads and preserves the child attempt's terminal recovery state instead of overwriting it with a generic child-exit failure.
 
 ## Machine-readable recovery artifact
 
@@ -149,7 +149,7 @@ forceCloseScope
 runtimeProofClaim=false
 ```
 
-This artifact is local generated evidence. It is not committed to the repo and does not prove the game loaded successfully unless the state is `recovered`, and even `recovered` proves only launcher recovery.
+This artifact is local generated evidence. It is not committed to the repo and does not prove the game loaded successfully unless the state is `recovered`, and even `recovered` proves only launcher recovery. `CollectDiagnostics.cmd` copies the newest recovery artifact into the diagnostic bundle under `status/BlacksmithGuild_LauncherRecovery.json`.
 
 ## Runtime proof boundary
 
