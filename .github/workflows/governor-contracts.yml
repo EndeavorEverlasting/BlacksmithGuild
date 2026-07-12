@@ -97,7 +97,7 @@ jobs:
         shell: pwsh
         run: ./scripts/verify-bannerlord-save-layout-contract.ps1
 
-      - name: Verify launcher dependency caution doctrine
+      - name: Verify launcher dependency caution and bounded recovery doctrine
         shell: pwsh
         run: ./scripts/verify-launcher-dependency-caution-doctrine.ps1
 
