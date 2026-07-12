@@ -4,7 +4,9 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $contractPath = Join-Path $repoRoot '.tbg\workflows\pr-lifecycle-automation.contract.json'
 $controllerPath = Join-Path $PSScriptRoot 'Invoke-TbgPrLifecycle.ps1'
+$sweepPath = Join-Path $PSScriptRoot 'Invoke-TbgPrLifecycleSweep.ps1'
 $testPath = Join-Path $PSScriptRoot 'Test-TbgPrLifecycleAutomation.ps1'
+$sweepTestPath = Join-Path $PSScriptRoot 'Test-TbgPrLifecycleSweep.ps1'
 $workflowPath = Join-Path $repoRoot '.github\workflows\pr-lifecycle-automation.yml'
 $docPath = Join-Path $repoRoot 'docs\handoff\pr-lifecycle-automation.md'
 
@@ -14,13 +16,15 @@ function Assert-Condition {
 }
 
 try {
-    foreach ($path in @($contractPath, $controllerPath, $testPath, $workflowPath, $docPath)) {
+    foreach ($path in @($contractPath, $controllerPath, $sweepPath, $testPath, $sweepTestPath, $workflowPath, $docPath)) {
         Assert-Condition -Condition (Test-Path -LiteralPath $path) -Message ("Required lifecycle file is missing: $path")
     }
 
     $contract = Get-Content -LiteralPath $contractPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $controller = Get-Content -LiteralPath $controllerPath -Raw -Encoding UTF8
+    $sweep = Get-Content -LiteralPath $sweepPath -Raw -Encoding UTF8
     $test = Get-Content -LiteralPath $testPath -Raw -Encoding UTF8
+    $sweepTest = Get-Content -LiteralPath $sweepTestPath -Raw -Encoding UTF8
     $workflow = Get-Content -LiteralPath $workflowPath -Raw -Encoding UTF8
     $doc = Get-Content -LiteralPath $docPath -Raw -Encoding UTF8
 
@@ -36,9 +40,9 @@ try {
     Assert-Condition -Condition ([bool]$contract.mergeControl.automaticMerge) -Message 'Automatic merge is not enabled in the executable contract.'
     Assert-Condition -Condition ([bool]$contract.mergeControl.exactHeadRequired) -Message 'Exact-head merge is not required.'
     Assert-Condition -Condition ($contract.mergeControl.method -eq 'squash') -Message 'Merge method must be squash.'
-    foreach ($label in @('pr-lifecycle:hold-merge', 'pr-lifecycle:auto-merge-legacy', 'pr-lifecycle:auto-merge-stacked', 'pr-lifecycle:auto-merge-fork')) {
-        $mergeText = ($contract.mergeControl | ConvertTo-Json -Depth 8)
-        Assert-Condition -Condition ($mergeText.Contains($label)) -Message ("Merge-control label is missing: $label")
+    foreach ($label in @('pr-lifecycle:hold-draft', 'pr-lifecycle:hold-merge', 'pr-lifecycle:auto-merge-legacy', 'pr-lifecycle:auto-merge-stacked', 'pr-lifecycle:auto-merge-fork')) {
+        $policyText = (($contract | ConvertTo-Json -Depth 10) + ' ' + $workflow + ' ' + $doc)
+        Assert-Condition -Condition ($policyText.Contains($label)) -Message ("Lifecycle-control label is missing: $label")
     }
 
     $advisoryText = (($contract.advisoryValidation | ConvertTo-Json -Depth 8) + ' ' + $doc).ToLowerInvariant()
@@ -72,16 +76,32 @@ try {
         Assert-Condition -Condition ($controller -notmatch $forbiddenPattern) -Message ("Controller contains a forbidden lifecycle command matching: $forbiddenPattern")
     }
 
+    Assert-Condition -Condition ($sweep -match "'pr',\s*'list'") -Message 'Lifecycle sweep does not enumerate open pull requests.'
+    Assert-Condition -Condition ($sweep -match 'Sort-Object -Unique') -Message 'Lifecycle sweep does not deduplicate PR numbers.'
+    Assert-Condition -Condition ($sweep -match 'Invoke-TbgPrLifecycle\.ps1') -Message 'Lifecycle sweep does not default to the bounded controller.'
+    Assert-Condition -Condition ($sweep -match 'TbgPrLifecycleSweepResult\.v1') -Message 'Lifecycle sweep does not emit its versioned result schema.'
+    Assert-Condition -Condition ($sweep -match 'pr-lifecycle-sweep-result\.json') -Message 'Lifecycle sweep does not write an aggregate result artifact.'
+    Assert-Condition -Condition ($sweepTest -match 'deduplicate') -Message 'Lifecycle sweep test does not verify deduplication.'
+    Assert-Condition -Condition ($sweepTest -match 'merge_eligible') -Message 'Lifecycle sweep test does not preserve action reporting.'
+
     Assert-Condition -Condition ($workflow -match '(?m)^\s*pull-requests:\s*write\s*$') -Message 'Lifecycle workflow needs pull-request write permission.'
     Assert-Condition -Condition ($workflow -match '(?m)^\s*contents:\s*write\s*$') -Message 'Lifecycle workflow needs contents write permission for GitHub merge.'
+    Assert-Condition -Condition ($workflow -match '(?m)^\s*issues:\s*write\s*$') -Message 'Lifecycle workflow needs issues write permission to bootstrap policy labels.'
     Assert-Condition -Condition ($workflow -match 'pull_request_target') -Message 'Lifecycle workflow must use the trusted default-branch pull_request_target path.'
     Assert-Condition -Condition ($workflow -match 'workflow_run') -Message 'Lifecycle workflow must react to repo-owned workflow completion.'
     Assert-Condition -Condition ($workflow -match 'pull_request_review') -Message 'Lifecycle workflow must react to review-state changes.'
     Assert-Condition -Condition ($workflow -match 'pull_request_review_thread') -Message 'Lifecycle workflow must react to review-thread resolution.'
-    Assert-Condition -Condition ($workflow -match 'Invoke-TbgPrLifecycle.ps1') -Message 'Lifecycle workflow does not invoke the controller.'
+    Assert-Condition -Condition ($workflow -match '(?m)^\s*issue_comment:\s*$') -Message 'Lifecycle workflow must support explicit reconciliation comments.'
+    Assert-Condition -Condition ($workflow -match '/reconcile-pr-lifecycle') -Message 'Lifecycle workflow does not expose the reconciliation comment command.'
+    Assert-Condition -Condition ($workflow -match "cron:\s*'\*/10 \* \* \* \*'") -Message 'Lifecycle workflow does not schedule missed-event reconciliation.'
+    Assert-Condition -Condition ($workflow -match 'Invoke-TbgPrLifecycleSweep\.ps1') -Message 'Lifecycle workflow does not invoke the open-PR sweep.'
+    Assert-Condition -Condition ($workflow -match 'Invoke-TbgPrLifecycle\.ps1') -Message 'Lifecycle workflow does not invoke the controller.'
     Assert-Condition -Condition ($workflow -match 'actions/upload-artifact@v4') -Message 'Lifecycle workflow does not publish its result artifact.'
     Assert-Condition -Condition ($workflow -match 'repository.default_branch') -Message 'Lifecycle workflow does not checkout the trusted default branch.'
     Assert-Condition -Condition ($workflow -notmatch '(?m)^\s*ref:\s*\$\{\{\s*github\.event\.pull_request\.head') -Message 'Lifecycle workflow must not checkout untrusted PR head code with a write token.'
+    Assert-Condition -Condition ($workflow -match 'Ensure lifecycle control labels') -Message 'Lifecycle workflow does not bootstrap control labels.'
+    Assert-Condition -Condition ($workflow -match '(?im)\bgh\s+label\s+create\b') -Message 'Lifecycle workflow does not create lifecycle labels through GitHub.'
+    Assert-Condition -Condition ($workflow.Contains('--force')) -Message 'Lifecycle label bootstrap must be idempotent.'
 
     foreach ($caseName in @(
         'ready-exact-head-merge-eligible',
@@ -99,7 +119,7 @@ try {
     Assert-Condition -Condition ($doc -match 'pr-lifecycle:hold-merge') -Message 'Lifecycle documentation does not explain the merge hold label.'
     Assert-Condition -Condition ($doc -match 'exact-head') -Message 'Lifecycle documentation does not explain exact-head merge.'
 
-    Write-Host 'PASS: repository-wide lifecycle automation uses deterministic exact-head merge blockers, preserves cross-platform advisory validation, publishes evidence, and cannot close, force, rewrite, or delete.' -ForegroundColor Green
+    Write-Host 'PASS: lifecycle automation uses deterministic exact-head blockers, self-heals missed events, bootstraps control labels, preserves cross-platform advisory validation, publishes evidence, and cannot close, force, rewrite, or delete.' -ForegroundColor Green
     exit 0
 } catch {
     Write-Host ('FAIL: PR lifecycle automation verifier: {0}' -f $_.Exception.Message) -ForegroundColor Red

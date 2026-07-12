@@ -31,7 +31,9 @@ jobs:
         run: |
           foreach ($path in @(
             './scripts/tbg/Invoke-TbgPrLifecycle.ps1',
+            './scripts/tbg/Invoke-TbgPrLifecycleSweep.ps1',
             './scripts/tbg/Test-TbgPrLifecycleAutomation.ps1',
+            './scripts/tbg/Test-TbgPrLifecycleSweep.ps1',
             './scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1'
           )) {
             $tokens = $null
@@ -49,6 +51,10 @@ jobs:
       - name: Test repository-wide PR lifecycle automation
         shell: pwsh
         run: ./scripts/tbg/Test-TbgPrLifecycleAutomation.ps1
+
+      - name: Test PR lifecycle reconciliation sweep
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgPrLifecycleSweep.ps1
 
       - name: Verify PR lifecycle automation boundaries
         shell: pwsh
