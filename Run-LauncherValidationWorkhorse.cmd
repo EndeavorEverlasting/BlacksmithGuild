@@ -8,7 +8,9 @@ echo This workhorse synchronizes the current sprint branch safely, validates the
 echo force-stops the Bannerlord process family, runs Forge Continue, and writes an English handoff.
 echo.
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-launcher-validation-workhorse.ps1" -RepoRoot "%~dp0" %*
+rem The PowerShell workhorse resolves RepoRoot from its own tracked location.
+rem Avoid passing %%~dp0 as a quoted argument because the trailing slash can escape the closing quote.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-launcher-validation-workhorse.ps1" %*
 set WORKHORSE_EXIT=%ERRORLEVEL%
 
 echo.
