@@ -25,6 +25,7 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
+          Write-Host 'Applying the bounded empty-file-set fingerprint correction.'
           $path = 'scripts/tbg/Invoke-TbgArtifactEngine.ps1'
           $workflowPath = '.github/workflows/patch-artifact-engine-empty-fingerprint.yml'
           $text = [System.IO.File]::ReadAllText((Resolve-Path $path))
