@@ -43,16 +43,22 @@ function Get-TbgGameProcessSnapshot {
         foreach ($process in @(Get-Process -Name $name -ErrorAction SilentlyContinue)) {
             $path = $null
             $title = $null
+            $startTimeUtc = $null
+            $responding = $null
+            $workingSet64 = $null
             try { $path = [string]$process.Path } catch { }
             try { $title = [string]$process.MainWindowTitle } catch { }
+            try { $startTimeUtc = $process.StartTime.ToUniversalTime().ToString('o') } catch { }
+            try { $responding = [bool]$process.Responding } catch { }
+            try { $workingSet64 = [int64]$process.WorkingSet64 } catch { }
             $rows += [pscustomobject][ordered]@{
                 id = [int]$process.Id
                 name = [string]$process.ProcessName
                 title = $title
                 path = $path
-                startTimeUtc = $(try { $process.StartTime.ToUniversalTime().ToString('o') } catch { $null })
-                responding = $(try { [bool]$process.Responding } catch { $null })
-                workingSet64 = $(try { [int64]$process.WorkingSet64 } catch { $null })
+                startTimeUtc = $startTimeUtc
+                responding = $responding
+                workingSet64 = $workingSet64
             }
         }
     }
@@ -152,6 +158,12 @@ function Write-TbgOperatorResult {
 
     $payload | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $resultPath -Encoding UTF8
 
+    $phasePath = ''
+    if ($PhaseTail -and $PhaseTail.path) { $phasePath = [string]$PhaseTail.path }
+    $color = 'Yellow'
+    if ($Verdict -like 'PASS*') { $color = 'Green' }
+    elseif ($Verdict -like 'FAILED*') { $color = 'Red' }
+
     $md = @(
         '# Autonomous Guild Loop Operator Result',
         '',
@@ -162,7 +174,7 @@ function Write-TbgOperatorResult {
         "- Process count before: $(@($BeforeProcesses).Count)",
         "- Process count after: $(@($AfterProcesses).Count)",
         "- Result JSON: `$resultPath`",
-        "- Phase log: `$($PhaseTail?.path)`",
+        "- Phase log: `$phasePath`",
         '',
         '## What this means',
         '',
@@ -176,7 +188,7 @@ function Write-TbgOperatorResult {
     )
     $md | Set-Content -LiteralPath $reportPath -Encoding UTF8
 
-    Write-Host "[TBG] Operator result: $Verdict - $Reason" -ForegroundColor $(if ($Verdict -like 'PASS*') { 'Green' } elseif ($Verdict -like 'FAILED*') { 'Red' } else { 'Yellow' })
+    Write-Host "[TBG] Operator result: $Verdict - $Reason" -ForegroundColor $color
     Write-Host "[TBG] Result JSON: $resultPath" -ForegroundColor Cyan
     Write-Host "[TBG] Report:      $reportPath" -ForegroundColor Cyan
 }
