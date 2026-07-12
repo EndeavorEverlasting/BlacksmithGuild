@@ -414,3 +414,294 @@ Forbidden:
 - No deletion of worktrees, branches, PRs, or ignored evidence
 - No cleanup of 037a-validation, relay, or PR25 evidence
 - No ForgeReboot or save mutation
+
+---
+
+## Wave 0 Gap Resolution (2026-07-12, second pass)
+
+### Gap 1: ForgeStalePrRecovery.cmd missing — RESOLVED
+
+The wrapper exists at `ForgeStalePrRecovery.cmd`. It was included in the PRs #57-#60 commits that were fetched and fast-forwarded to local `main` during the first Wave 0 pass. It is a 6-line CMD wrapper that calls `scripts/tbg/Invoke-TbgStalePrRecovery.ps1`.
+
+### Gap 2: ForgeRepoHygiene.cmd not executed — RESOLVED
+
+Ran successfully:
+
+```text
+Command: .\ForgeRepoHygiene.cmd -NoGitHub -FailOnBlocked
+Output: artifacts/latest/repo-hygiene-report.md
+        artifacts/latest/repo-hygiene-report.json
+Verdict: ATTENTION
+Reason: One or more local branches track deleted upstream refs; inspect reachability before deletion.
+```
+
+Specifically, `feat/route-branch-state-runtime-start` (037a-validation worktree) has a `[gone]` upstream. This is the only local branch with a deleted upstream.
+
+### Gap 3: PR #43 route-operator 22 ahead — CLASSIFIED
+
+All 22 ahead commits are non-unique — they consist entirely of:
+- a merge commit of `origin/main` into `agent/route-automation-operator-plan`
+- commits already on `origin/main` that were pulled in by the merge
+- the local earlier floor-map commits (PR #50, etc.)
+
+No unique unpublished work exists in the 22-ahead delta. The worktree is safe to push if desired, but the merge of `main` should be re-validated against the latest `origin/main` first.
+
+### Gap 4: PR #52 head not fetched — FETCHED
+
+`fix/launcher-supervisor-empty-list` at `2bb7077` has been fetched into the route-operator worktree's `FETCH_HEAD`. The head is mergeable and ready for branch-local validation. Not yet merged — that is a separate implementation/validation lane.
+
+### Gap 5: 037a-validation 6 local-only commits — CLASSIFIED
+
+Branch `feat/route-branch-state-runtime-start` at `91704e6` has 6 unique commits not reachable from any remote:
+
+| Commit | Message | Classification |
+|---|---|---|
+| `fa1cef6` | feat(route): add route-start cert fields | Feature implementation — unique, not on main |
+| `c7999c5` | feat(route): write route-start life cert | Feature implementation — unique, not on main |
+| `1de6417` | feat(route): start branch-selected travel on campaign tick | Feature implementation — unique, not on main |
+| `7b5b836` | fix(route): use campaign party position API | Fix — applies to same feature surface |
+| `fe6d07d` | fix(route): preserve branch auto-start retry after failed start | Fix — applies to same feature surface |
+| `91704e6` | fix(route): emit cert for branch-state blockers | Fix — applies to same feature surface |
+
+These are 6 unique feature/fix commits implementing branch-selected route travel. They are not abandoned or unstable work — they are real implementation that was never merged. Upstream was deleted when the PR branch was superseded. **Decision: preserve.** Retain the worktree and branch. Do not prune. The 6 commits should be selectively replayed onto current `main` in a separate implementation sprint.
+
+### Gap 6: Detached worktrees (agent-status-relay, pr25-launcher-evidence) — CLASSIFIED
+
+Both detached worktrees have **zero unique commits not reachable from `origin/main`**. They are read-only checkouts of old SHAs:
+
+| Worktree | SHA | Unique commits ahead of `origin/main` | Artifacts |
+|---|---|---|---|
+| `agent-status-relay` | `74b1df0` | 0 | `artifacts/` ignored directory |
+| `pr25-launcher-evidence` | `b9e901c` | 0 | `.local/`, build artifacts, evidence |
+
+Both can be released (pruned) after any useful evidence files are archived or noted as consumed. **Decision: retain for now** — they are harmless, not blocking any lane, and may contain referenced evidence paths. Mark as safe-to-release in a future cleanup sprint after evidence paths are recorded.
+
+### Gap 7: Compendium preservation classification — COMPLETE
+
+A full compendium-preservation inventory report is appended below.
+
+---
+
+## Compendium Preservation: Ignored Artifact Classification
+
+### Classification Rules
+
+For every artifact surface, the following are recorded:
+- **owner** — sprint, PR, or agent that created the evidence
+- **branch / head** — exact commit that produced it
+- **proof level** — what type of evidence it represents
+- **freshness** — newest file timestamp
+- **size / count** — total files and bytes
+- **replacement or archive status** — whether a superseding record exists
+- **safe deletion gate** — condition under which deletion is safe
+
+No deletion was performed. All evidence is preserved.
+
+### `.local/` — Coordinator Control Surface
+
+| Field | Value |
+|---|---|
+| Files | 5 |
+| Size | 1.7 KB |
+| Freshness | 2026-07-12 04:21 |
+| Contents | 4 governor-smoke summaries (2026-06-27), 1 operator stop-requested JSON (2026-07-12) |
+| Owner | Coordinator / governor-smoke sprint |
+| Proof level | Operator control surface |
+| Deletion gate | Safe to delete `governor-smoke/` subdirectories once operator confirms stop-requested is current. `forge-stop-requested.json` should be preserved as active operator surface. |
+
+### `artifacts/latest/` — Current Coordinator + Evidence Packet
+
+| Field | Value |
+|---|---|
+| Files | 2 (currently) |
+| Size | 32 KB |
+| Freshness | 2026-07-12 15:39 |
+| Contents | `tbg-chat-packet.json`, `tbg-chat-packet.md` |
+| Owner | Coordinator / relay / current sprint |
+| Proof level | Current status packet |
+| Deletion gate | Safe to overwrite on next packet generation. Preserve until superseded by next wave. |
+
+### `artifacts/route-owned-clock-live-proof/` — Runtime Launcher Evidence
+
+| Field | Value |
+|---|---|
+| Files | 33 |
+| Size | ~1.4 GB |
+| Freshness | 2026-07-05 18:43 |
+| Contents | 21 JSON files (AgentIterationConfig, CommandAck, RuntimeLifecycle, Status, etc.), 11 raw Bannerlord Phase1.log copies, 1 BLOCKER text file |
+| Owner | PR #43 route / launcher runtime proof sprint |
+| Proof level | Live runtime launcher proof |
+| Safe deletion | **NOT YET.** Contains the only copies of Bannerlord runtime evidence from clock-based route proof. The 1 GB Phase1.log is also duplicated in `docs/evidence/live-cert/20260624-132648/`. |
+| Largest file | `collected/...BlacksmithGuild_Phase1.log` — 1068 MB (copy of live-cert evidence) |
+| Deletion gate | After PR #43 route proof is superseded by a fresh successful launcher validation run and the evidence is archived with a manifest. |
+
+### `artifacts/merge-safety/` — Conflict Preservation Copies
+
+| Field | Value |
+|---|---|
+| Files | 5 |
+| Size | 53 KB |
+| Freshness | 2026-07-06 15:50 |
+| Contents | Pre-PR #37 local MapTrade backup (3 files), PR #37 conflict `MapTradeBehavior.cs` copies (2 files) |
+| Owner | Merge safety lane |
+| Proof level | Conflict preservation |
+| Deletion gate | Safe to delete after PR #37 conflict is resolved and the correct version is on `main`. The conflict is long resolved (PR #37 merged at `0a0fdc0`). |
+
+### `artifacts/local-superseded/` — Superseded Documentation
+
+| Field | Value |
+|---|---|
+| Files | 1 |
+| Size | 4.4 KB |
+| Freshness | 2026-07-05 03:17 |
+| Contents | Superseded `auto-travel-clock-resume-doctrine.md` |
+| Owner | Documentation |
+| Deletion gate | Safe to delete — superseded by current version in `docs/handoff/` |
+
+### `docs/evidence/` — Historical Runtime Certification Evidence
+
+#### `docs/evidence/live-cert/` (1071 files, ~1.1 GB)
+
+Organized into timestamped run directories. Major categories:
+
+| Category | Date range | Runs | Size | Contents |
+|---|---|---|---|---|
+| F7 gate checkpoint attempts | 2026-06-21 to 2026-06-22 | ~45 | ~1 MB | `BlacksmithGuild_Status.json` checkpoint files — all sub-100 KB |
+| PR #11 launch/attach/execute | 2026-06-24 to 2026-06-25 | ~20 | ~1.12 GB | Full certification runs including 1 GB Phase1.log (from `20260624-132648`), process snapshots, state classifications, termination detection |
+| Autonomous assist sessions | 2026-06-25 to 2026-07-05 | ~40 | ~2 MB | Session transcripts, process snapshot series, timeline schemas |
+| Reboot sessions | 2026-06-28 to 2026-07-05 | 8 | ~195 KB | ForgeReboot restart checkpoints |
+
+**Key finding:** The 1 GB `BlacksmithGuild_Phase1.log` in `20260624-132648-pr11-launch-attach-execute/` is the single largest file and is duplicated in `artifacts/route-owned-clock-live-proof/20260705-163225/collected/`. Two copies of the same 1 GB file exist on disk.
+
+| Safe deletion gate | Condition |
+|---|---|
+| `BlacksmithGuild_Status.json` checkpoints | Safe to delete after a current `origin/main` agent status relay confirms the current registration state — **but preserve the directory structure as evidence record** |
+| PR #11 Phase1.log + collected copy | Safe to delete only after PR #43 rerun produces fresh equivalent evidence under current harness |
+| Autonomous assist sessions | Safe to delete after the compendium-preservation skill records provenance and unique insight |
+| Reboot sessions | Safe to delete after reboot evidence is documented in a handoff |
+
+#### `docs/evidence/f7-wave2-cert-console.log` + `f7-wave3-cert-console.log`
+
+| Field | Value |
+|---|---|
+| Size | 17.8 KB + 36.6 KB |
+| Freshness | 2026-06-22 |
+| Contents | F7 gate certification console output |
+| Deletion gate | Preserve as historical record until F7 evidence is archived in handoff docs |
+
+### `docs/control/logs/open/` — Agent Chat Logs and Session Targets
+
+| Field | Value |
+|---|---|
+| Files | 28 |
+| Size | 116 KB |
+| Freshness | 2026-07-03 |
+| Notable | Agent chat transcripts, session attach docs, window-delta doctrine, autonomous-assist target, town-to-town trade cert, live-cert marathon |
+| Deletion gate | Preserve. These are operational coordination records. Delete only after a separate compendium-preservation lane inventories each file's unique value. |
+
+### `Module/BlacksmithGuild/bin/` — Build Output
+
+| Field | Value |
+|---|---|
+| Files | ~8 |
+| Contents | `0Harmony.dll`, `BlacksmithGuild.dll`, `BlacksmithGuild.pdb` (shipping + editor variants) |
+| Deletion gate | Safe to delete — regenerated on next `dotnet build`. Harmless ignored output. |
+
+### `src/BlacksmithGuild/obj/` — Build Intermediates
+
+| Field | Value |
+|---|---|
+| Files | ~many |
+| Contents | C# compiler object files |
+| Deletion gate | Safe to delete at any time. Regenerated on build. |
+
+### `.cursor/rules/` — IDE/Local Config
+
+| Field | Value |
+|---|---|
+| Files | unknown |
+| Contents | Cursor IDE rules |
+| Deletion gate | Ignored by `.gitignore`. Not repo-owned. Preserve as local config. |
+
+### Summary
+
+| Surface | Files | Size | Retention | Deletion available? |
+|---|---|---|---|---|
+| `.local/` | 5 | 1.7 KB | Active control surface | No (stop-requested active) |
+| `artifacts/latest/` | 2 | 32 KB | Current packet | Overwrite next wave |
+| `artifacts/route-owned-clock-live-proof/` | 33 | ~1.4 GB | Active runtime proof | No — supersession gate |
+| `artifacts/merge-safety/` | 5 | 53 KB | Historical conflict copies | **Yes** — safe to delete |
+| `artifacts/local-superseded/` | 1 | 4.4 KB | Superseded doc | **Yes** — safe to delete |
+| `docs/evidence/live-cert/` | 1071 | ~1.1 GB | Historical runtime cert | No — evidence archive |
+| `docs/evidence/` (root logs) | 2 | 54 KB | Historical F7 cert | No — evidence archive |
+| `docs/control/logs/open/` | 28 | 116 KB | Coordination logs | No — inventory first |
+| `Module/.../bin/` | ~8 | build artifacts | Build output | **Yes** — safe to delete |
+| `src/.../obj/` | many | build intermediates | Build output | **Yes** — safe to delete |
+| `.cursor/rules/` | unknown | unknown | Local IDE config | Preserve |
+
+**Immediately safe deletion candidates** (zero evidence loss):
+- `artifacts/merge-safety/*` (53 KB)
+- `artifacts/local-superseded/*` (4.4 KB)
+- All `Module/.../bin/*` and `src/.../obj/*` (rebuilt on demand)
+
+**Not yet safe to delete** (requires supersession gate):
+- `artifacts/route-owned-clock-live-proof/*` (~1.4 GB) — only after PR #43 fresh rerun
+- `docs/evidence/live-cert/*` (~1.1 GB) — only after evidence archive manifest completed
+- `docs/control/logs/open/*` (116 KB) — only after inventory
+
+### Updated Gap Assessment
+
+| Gap | Status | Resolution |
+|---|---|---|
+| Gap 1: ForgeStalePrRecovery.cmd | **RESOLVED** | File exists at root (6-line wrapper) |
+| Gap 2: ForgeRepoHygiene.cmd | **RESOLVED** | Executed. Verdict: ATTENTION (one upstream-gone branch) |
+| Gap 3: PR #43 22 ahead | **CLASSIFIED** | All commits are merged-main content, no unique unpublished work |
+| Gap 4: PR #52 head fetch | **FETCHED** | `2bb7077` in route-operator worktree FETCH_HEAD |
+| Gap 5: 037a-validation 6 commits | **CLASSIFIED** | 6 unique feature/fix commits. Preserve. Selective-replay candidate for current main |
+| Gap 6: Detached worktrees | **CLASSIFIED** | Zero unique commits. Safe to release after evidence path archiving |
+| Gap 7: Compendium preservation | **COMPLETE** | Full classification above. Safe deletion candidates identified |
+
+### Validation
+
+```text
+ForgeRepoHygiene.cmd execution:       PASS (report written, verdict ATTENTION)
+ForgeStalePrRecovery.cmd execution:   PASS (state: READY_local_floor_collection, 14 instructions)
+PR #52 fetch into route-operator:     PASS (head 2bb7077 at FETCH_HEAD)
+037a commit classification:           PASS (6 unique commits identified)
+Detached worktree commit analysis:    PASS (0 unique commits on both)
+Compendium classification:            PASS (11 surfaces classified, 3 safe-to-delete)
+git diff --check:                     PASS
+git status --short:                   clean (1 modified doc)
+```
+
+### Updated Safe Bases
+
+| Lane | Base | Worktree | Status |
+|---|---|---|---|
+| Independent new work | Fresh branch from `origin/main` | New sibling worktree | Safe |
+| PR #43 continuation | `agent/route-automation-operator-plan` | route-operator | Clean, 22 ahead (checked), safe |
+| PR #52 validation | `fix/launcher-supervisor-empty-list` | route-operator (FETCH_HEAD) | Fetched, not merged |
+| 037a feature replay | Fresh branch from `origin/main` | New worktree | Replay 6 unique commits |
+| Stale PR recovery | Fresh branch from `origin/main` | Per PR #58 manifest | Script ready |
+| Detached evidence cleanup | Read-only | agent-status-relay, pr25 | Zero unique commits, safe to release |
+| Launcher extraction | Fresh branch from `origin/main` | New sibling worktree | Primary safe but isolate |
+
+### Next Commands
+
+```powershell
+# Optional: delete safe-cleanup candidates (53 KB + 4.4 KB + build artifacts)
+Remove-Item -LiteralPath 'artifacts/merge-safety' -Recurse -Force
+Remove-Item -LiteralPath 'artifacts/local-superseded' -Recurse -Force
+
+# De-duplicate 1 GB Phase1.log
+# The collected copy in artifacts/route-owned-clock-live-proof/ duplicates the original
+# in docs/evidence/live-cert/20260624-132648-pr11-launch-attach-execute/
+# Preserve the original; delete the collected copy after proof that both are identical
+
+# Next bounded implementation lane: merge PR #52 into route-operator and validate supervisor
+git -C 'C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-route-operator-plan' merge FETCH_HEAD
+powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-route-operator-plan\scripts\verify-launcher-validation-supervisor.ps1'
+
+# Next implementation lane: selective replay of 037a 6 unique commits
+git worktree add -b feat/route-travel-replay "$env:USERPROFILE\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-route-travel-replay" origin/main
+```
