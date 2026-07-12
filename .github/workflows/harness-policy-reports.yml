@@ -5,6 +5,7 @@ on:
     paths:
       - '.tbg/harness/**'
       - '.tbg/workflows/**'
+      - '.tbg/plans/**'
       - '.tbg/guardrails/**'
       - '.claude/hooks/**'
       - 'scripts/harness/**'
@@ -14,11 +15,13 @@ on:
       - 'docs/architecture/**'
       - 'docs/handoff/**'
       - '.github/workflows/**'
+      - 'ForgeStalePrRecovery.cmd'
       - 'CLAUDE.md'
   push:
     paths:
       - '.tbg/harness/**'
       - '.tbg/workflows/**'
+      - '.tbg/plans/**'
       - '.tbg/guardrails/**'
       - '.claude/hooks/**'
       - 'scripts/harness/**'
@@ -28,6 +31,7 @@ on:
       - 'docs/architecture/**'
       - 'docs/handoff/**'
       - '.github/workflows/**'
+      - 'ForgeStalePrRecovery.cmd'
       - 'CLAUDE.md'
   workflow_dispatch:
 
@@ -59,6 +63,10 @@ jobs:
       - name: Verify effective-policy English reports
         shell: pwsh
         run: ./scripts/harness/Test-TbgEnglishRenderer.ps1
+
+      - name: Verify stale PR recovery English instructions
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgStalePrRecovery.ps1
 
       - name: Verify safe sprint workspace resolution
         shell: pwsh
