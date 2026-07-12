@@ -48,10 +48,20 @@ try {
     Assert-True ($flatHash -match '^[A-F0-9]{64}$') '.NET SHA-256 helper must return a stable uppercase hex digest'
     [System.IO.File]::AppendAllText($flatSave, '-changed')
     Assert-True ((Get-TbgFileSha256 -LiteralPath $flatSave) -ne $flatHash) 'SHA-256 helper must detect changed file content'
+
+    $diagnosticInvoker = Join-Path $RepoRoot 'scripts\invoke-collect-diagnostics.ps1'
+    Assert-True (Test-Path -LiteralPath $diagnosticInvoker -PathType Leaf) 'Diagnostic compatibility entry point must exist'
+    $diagnosticText = Get-Content -LiteralPath $diagnosticInvoker -Raw
+    Assert-True ($diagnosticText -like '*Get-TbgFileSha256*') 'Diagnostic collector fallback must use the real .NET SHA-256 helper'
+    Assert-True ($diagnosticText -like '*function global:Get-FileHash*') 'Diagnostic collector must provide a process-local Get-FileHash compatibility surface'
+    Assert-True ($diagnosticText -notlike '*fake*') 'Diagnostic hash fallback must not be a fake proof surface'
+
+    $diagnosticCmd = Get-Content -LiteralPath (Join-Path $RepoRoot 'CollectDiagnostics.cmd') -Raw
+    Assert-True ($diagnosticCmd -like '*invoke-collect-diagnostics.ps1*') 'CollectDiagnostics.cmd must route through the SHA-256 compatibility entry point'
 } finally {
     if (Test-Path -LiteralPath $fixtureRoot) {
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
     }
 }
 
-Write-Host 'Bannerlord save-layout contract: PASS (flat + legacy Native)'
+Write-Host 'Bannerlord save-layout contract: PASS (flat + legacy Native + diagnostic SHA-256 fallback)'
