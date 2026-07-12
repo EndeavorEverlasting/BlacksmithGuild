@@ -1,0 +1,108 @@
+{
+  "id": "compendium-preservation",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "compendium-preservation-and-rewarding-closeout",
+  "contextBanner": "[TBG | Compendium Preservation | coordinator/architecture | branch: docs/agent-skills-stale-pr-cherry-pick]",
+  "status": "contract_defined",
+  "purpose": "Preserve high-value insights from chats, annotations, stale PRs, runtime notes, and toolchain research without treating every stale snapshot as current truth.",
+  "allowedScope": [
+    "capturing user annotations, sprint summaries, PR comments, and stale snapshots as repo-owned doctrine candidates",
+    "classifying each insight as current truth, stale-but-useful principle, replay candidate, rejected artifact, or needs-runtime-proof",
+    "linking insights to executable contracts, skills, validators, PRs, artifacts, or exact next commands",
+    "turning recurring insights into workflow contracts, skills, relay packets, retention policies, or validation gates",
+    "recording closeout order for PRs, branches, comments, evidence bundles, and future harness work"
+  ],
+  "forbiddenScope": [
+    "treating stale chat text or stale PR bodies as current repo truth without verification",
+    "closing PRs, deleting branches, deleting worktrees, or deleting evidence without replacement, archive manifest, or rejection rationale",
+    "claiming runtime proof from documentation, static validators, stale evidence, or operator memory",
+    "demanding human-only proof when an agent-verifiable local harness path can be built and authorized",
+    "moving domain behavior into harness solely to preserve an idea or chase a percentage"
+  ],
+  "insightClasses": [
+    {
+      "class": "current_truth",
+      "meaning": "Matches current source, contracts, PR state, or fresh artifacts."
+    },
+    {
+      "class": "stale_but_useful_principle",
+      "meaning": "Old snapshot may be inaccurate, but the design principle should be preserved and revalidated."
+    },
+    {
+      "class": "replay_candidate",
+      "meaning": "A stale PR, branch, hunk, script, test, or doc contains value that should be selectively replayed onto a safe base."
+    },
+    {
+      "class": "needs_runtime_proof",
+      "meaning": "Cannot be closed or merged by static evidence alone; requires an agent-run local proof path with exact-head artifacts."
+    },
+    {
+      "class": "rejected_or_superseded",
+      "meaning": "The idea is obsolete, unsafe, or already replaced; preserve rationale before cleanup."
+    }
+  ],
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "capture_source",
+      "requiredEvidence": [
+        "source text, file, PR number, branch, artifact path, or comment link",
+        "snapshot date or freshness note",
+        "why the insight matters"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "classify_freshness",
+      "requiredEvidence": [
+        "current_truth, stale_but_useful_principle, replay_candidate, needs_runtime_proof, or rejected_or_superseded",
+        "authority chain used for verification"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "route_to_lane",
+      "requiredEvidence": [
+        "skill or workflow that owns the next move",
+        "safe base or blocked reason",
+        "forbidden scope checked"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "commit_repo_memory",
+      "requiredEvidence": [
+        "architecture doc, handoff doc, workflow contract, skill, validator, or PR body updated",
+        "source provenance retained without embedding huge logs or generated evidence"
+      ]
+    },
+    {
+      "sequence": 5,
+      "name": "close_loop",
+      "requiredEvidence": [
+        "validation command results or exact skipped commands",
+        "PR/branch/comment/evidence disposition",
+        "one exact next command"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "source insights preserved with provenance",
+      "each insight classified by freshness and utility",
+      "rewarding sprint sequence recorded",
+      "stale PR and evidence cleanup tied to replacement or archive rationale",
+      "agent-verifiable runtime proof path preferred over human-only gates where feasible",
+      "JSON files parse",
+      "git diff --check passes or exact local blocker is recorded"
+    ]
+  },
+  "terminalStates": [
+    "PASS_compendium_preserved",
+    "PASS_replay_candidate_routed",
+    "PASS_runtime_proof_path_recorded",
+    "BLOCKED_needs_current_repo_verification",
+    "BLOCKED_needs_local_runtime_harness",
+    "REJECTED_stale_snapshot_only"
+  ]
+}
