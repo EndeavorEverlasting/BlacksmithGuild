@@ -20,6 +20,29 @@ The correct action is:
 confirm_dependency_caution
 ```
 
+## Overlay semantics
+
+The CAUTION dialog is an overlay on the existing launcher state.
+
+```text
+PLAY or CONTINUE menu
+-> operator or harness clicks PLAY / CONTINUE
+-> dependency CAUTION overlay appears
+-> Confirm dismisses the launcher path and starts the game
+```
+
+Closing the CAUTION dialog or choosing **Cancel** returns to the underlying PLAY / CONTINUE menu. That is not recovery and must not be treated as progress.
+
+The harness rule is therefore explicit:
+
+```text
+confirm before retry
+never cancel dependency caution
+retry only when Confirm fails or Confirm does not produce a game handoff
+```
+
+A force-close retry must never be scheduled merely because the CAUTION overlay is present. The modal is first handled with **Confirm**. Only a failed Confirm dispatch, a CAUTION dialog that remains after Confirm, or a missing game handoff after Confirm may enter the bounded retry policy.
+
 The expected log markers are:
 
 ```text
@@ -70,18 +93,36 @@ expectedNextStates
 
 The key point is that the launcher does not need a process replacement to be in a new state. A native modal can reuse the same process and top-level HWND while changing the actionable window content. The harness must record that delta explicitly instead of reporting only that the click was unverified.
 
+## Root command path requirement
+
+The operator commands must use the modal-aware install/launch path:
+
+```text
+ForgeContinue.cmd -> forge.ps1 -Launch -LaunchIntent continue
+Forge.cmd         -> forge.ps1 -Launch -LaunchIntent play -SessionAuthorityMode FreshTestLaunch
+forge.ps1         -> install-mod.ps1
+install-mod.ps1   -> launcher-modal-aware-context-nav.ps1
+```
+
+`ForgeContinue.cmd` and `Forge.cmd` must not pass `-LaunchManual` and must not call `launcher-frozen-context-nav.ps1` directly. The frozen navigator is an implementation detail delegated by the modal-aware wrapper, not an operator entry point.
+
 ## Bounded full-close retry
 
 The ordinary modal, PLAY, CONTINUE, and launcher-context mechanisms remain the primary path. Recovery is only for the exception path after those mechanisms return a nonzero or blocked result.
 
-The default recovery budget is **one retry**, which means two total launch attempts:
+For dependency CAUTION specifically, the order is:
 
 ```text
-attempt 1 -> normal frozen/modal-aware launch
+attempt 1 -> PLAY / CONTINUE click
+CAUTION   -> Confirm
+success   -> game handoff
 failure   -> force-close launcher process family
 attempt 2 -> fresh launcher context and the same launch intent
+CAUTION   -> Confirm again if presented
 failure   -> explicit dead end
 ```
+
+The default recovery budget is **one retry**, which means two total launch attempts.
 
 The force-close scope is deliberately bounded to the Bannerlord launch family:
 
@@ -166,7 +207,7 @@ The normal operator flow remains:
 ForgeContinue.cmd
 ```
 
-No new command is required to enable the retry. On the first qualifying launcher exception, Forge Continue performs the bounded force-close and fresh-context retry automatically. On a second failure, the command stops instead of looping and points to:
+No new command is required to enable the retry. On the first qualifying launcher exception after modal handling, Forge Continue performs the bounded force-close and fresh-context retry automatically. On a second failure, the command stops instead of looping and points to:
 
 ```text
 BlacksmithGuild_Launch.log
