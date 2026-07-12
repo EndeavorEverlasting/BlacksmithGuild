@@ -1,4 +1,5 @@
-﻿# Verifies that Bannerlord dependency-mismatch CAUTION handling is a first-class launcher handoff state.
+﻿# Verifies that Bannerlord dependency-mismatch CAUTION handling is a first-class launcher handoff state
+# with one bounded force-close retry and an explicit machine-readable dead end.
 
 $ErrorActionPreference = 'Stop'
 
@@ -27,6 +28,7 @@ function Assert-Contains {
 
 $doc = 'docs\handoff\launcher-dependency-caution-handoff-doctrine.md'
 $wrapper = 'scripts\launcher-modal-aware-context-nav.ps1'
+$recovery = 'scripts\launcher-recovery-policy.ps1'
 $installer = 'scripts\install-mod.ps1'
 $workflow = '.tbg\workflows\continue-visible-trade-cycle.contract.json'
 
@@ -41,6 +43,15 @@ foreach ($needle in @(
     'expectedWindowChange=game_spawned|dependency_caution_modal|safe_mode_modal|singleplayer_window',
     'LAUNCH_STATE=dependency_caution_modal_detected',
     'LAUNCH_STATE=launcher_setup_handoff_observed',
+    'LAUNCH_STATE=launcher_recovery_retry_scheduled',
+    'LAUNCH_STATE=launcher_recovery_force_close_complete',
+    'LAUNCH_STATE=launcher_recovery_retry_started',
+    'LAUNCH_STATE=launcher_recovery_recovered',
+    'LAUNCH_STATE=launcher_recovery_dead_end',
+    'BlacksmithGuild_LauncherRecovery.json',
+    'TbgLauncherRecovery.v1',
+    'one retry',
+    'sameFailureAsPrevious',
     'the PID comes from the fresh `TbgLauncherWindowContext.v1` context',
     'the candidate window belongs to that same PID',
     'the candidate is not the Safe Mode modal',
@@ -62,11 +73,16 @@ foreach ($needle in @(
 
 foreach ($needle in @(
     'launcher-frozen-context-nav.ps1',
+    'launcher-recovery-policy.ps1',
     'Get-TbgLauncherWindowSnapshot',
     'Write-TbgLauncherWindowDelta',
     'Get-TbgDependencyCautionCandidate',
     'Invoke-TbgDependencyCautionConfirm',
     'Wait-TbgModalGameHandoff',
+    'Invoke-TbgRecoveryForFailure',
+    'RecoveryAttempt = 0',
+    'MaxRecoveryRetries = 1',
+    'PreviousFailureSignature',
     '$wasFrozenClickFailure',
     "`$tailText -match 'click_unverified_timeout'",
     "`$tailText -match 'operator_action_required'",
@@ -89,7 +105,34 @@ foreach ($needle in @(
     'MOUSEEVENTF_LEFTDOWN',
     'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed source=dependency_caution_confirmed'
 )) {
-    Assert-Contains $wrapper $needle 'wrapper must implement and log modal handling'
+    Assert-Contains $wrapper $needle 'wrapper must implement modal handling and route failures through recovery'
+}
+
+foreach ($needle in @(
+    'TbgLauncherRecovery.v1',
+    'BlacksmithGuild_LauncherRecovery.json',
+    'Get-TbgLauncherFailureSignature',
+    'Stop-TbgLauncherProcessFamilyForRetry',
+    'Invoke-TbgLauncherRecoveryRetry',
+    "@('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher', 'Watchdog')",
+    'Stop-Process -Id $process.Id -Force',
+    'MaxRecoveryRetries = 1',
+    'LAUNCH_STATE=launcher_recovery_retry_scheduled',
+    'LAUNCH_STATE=launcher_recovery_force_close_started',
+    'LAUNCH_STATE=launcher_recovery_force_close_complete',
+    'LAUNCH_STATE=launcher_recovery_retry_started',
+    'LAUNCH_STATE=launcher_recovery_recovered',
+    'LAUNCH_STATE=launcher_recovery_dead_end',
+    'sameFailureAsPrevious',
+    'retry_budget_exhausted',
+    'launcher_recovery_restart_failed',
+    'runtimeProofClaim = $false',
+    'RecoveryAttempt + 1',
+    'RecoveryAttempt -ge $MaxRecoveryRetries',
+    "Join-Path `$PSScriptRoot 'open-bannerlord-launcher.ps1'",
+    '& powershell.exe @retryArgs'
+)) {
+    Assert-Contains $recovery $needle 'recovery policy must force-close, retry once, and record terminal evidence'
 }
 
 foreach ($needle in @(
@@ -116,5 +159,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: launcher dependency caution doctrine verified.' -ForegroundColor Green
+Write-Host 'PASS: launcher dependency caution doctrine and bounded recovery verified.' -ForegroundColor Green
 exit 0
