@@ -25,10 +25,10 @@ try {
     $doc = Get-Content -LiteralPath $docPath -Raw -Encoding UTF8
 
     Assert-Condition -Condition ($contract.id -eq 'pr-lifecycle-automation') -Message 'Lifecycle contract id is incorrect.'
-    Assert-Condition -Condition (@($contract.requiredWorkflowNames).Count -ge 3) -Message 'Lifecycle contract must name the repo-owned platform-neutral workflows.'
-    foreach ($name in @('Governor Contracts', 'Harness Policy Reports', 'Hostile Escape Contracts')) {
-        Assert-Condition -Condition (@($contract.requiredWorkflowNames) -contains $name) -Message ("Required workflow is missing from the contract: $name")
+    foreach ($name in @('Governor Contracts', 'Harness Policy Reports')) {
+        Assert-Condition -Condition (@($contract.requiredWorkflowNames) -contains $name) -Message ("Always-required workflow is missing from the contract: $name")
     }
+    Assert-Condition -Condition (@($contract.conditionalRequiredWorkflowNames) -contains 'Hostile Escape Contracts') -Message 'Path-scoped Hostile Escape Contracts must be conditional-required.'
 
     $advisoryText = (($contract.advisoryValidation | ConvertTo-Json -Depth 8) + ' ' + $doc).ToLowerInvariant()
     foreach ($term in @('installed-game', 'windows', 'linux', 'modular', 'advisory')) {
@@ -42,6 +42,7 @@ try {
 
     Assert-Condition -Condition ($controller -match "'pr',\s*'ready'") -Message 'Controller does not implement ready-for-review promotion.'
     Assert-Condition -Condition ($controller -match 'requiredWorkflowNames') -Message 'Controller does not classify repo-owned required workflows.'
+    Assert-Condition -Condition ($controller -match 'conditionalRequiredWorkflowNames') -Message 'Controller does not classify path-scoped conditional workflows.'
     Assert-Condition -Condition ($controller -match 'advisoryChecks') -Message 'Controller does not preserve advisory check reporting.'
     foreach ($forbiddenPattern in @(
         "'pr',\s*'(merge|close)'",
@@ -62,11 +63,13 @@ try {
     Assert-Condition -Condition ($workflow -match 'Invoke-TbgPrLifecycle.ps1') -Message 'Lifecycle workflow does not invoke the controller.'
 
     Assert-Condition -Condition ($test -match 'advisory-platform-failures') -Message 'Regression does not cover failing advisory platform checks.'
+    Assert-Condition -Condition ($test -match 'conditional-workflow-absent') -Message 'Regression does not cover an absent path-scoped workflow.'
+    Assert-Condition -Condition ($test -match 'conditional-workflow-failure') -Message 'Regression does not cover a failing present path-scoped workflow.'
     Assert-Condition -Condition ($test -match 'Windows PowerShell 5.1 installed-game validation') -Message 'Regression does not cover Windows installed-game advisory validation.'
     Assert-Condition -Condition ($test -match 'Linux installed-game runtime proof') -Message 'Regression does not cover Linux installed-game advisory validation.'
     Assert-Condition -Condition ($doc -match 'pr-lifecycle:hold-draft') -Message 'Lifecycle documentation does not explain the explicit hold label.'
 
-    Write-Host 'PASS: repository-wide PR lifecycle automation is bounded, cross-platform, advisory for installed-game validation, and incapable of merge or close actions.' -ForegroundColor Green
+    Write-Host 'PASS: repository-wide PR lifecycle automation is bounded, cross-platform, conditional-workflow aware, advisory for installed-game validation, and incapable of merge or close actions.' -ForegroundColor Green
     exit 0
 } catch {
     Write-Host ('FAIL: PR lifecycle automation verifier: {0}' -f $_.Exception.Message) -ForegroundColor Red
