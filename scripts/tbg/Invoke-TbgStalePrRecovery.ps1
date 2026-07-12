@@ -181,7 +181,7 @@ else {
 }
 
 Add-TbgInstruction -List $instructions -Stage 'next_decision' -Subject 'The coordinator' -Verb 'must execute' -Object $nextCommand -Condition "after reading terminal state '$terminalState'" -Evidence 'the next command must produce the evidence required for the following bounded decision' -Command $nextCommand -Sentence "The coordinator must execute '$nextCommand' after reading terminal state '$terminalState', and the coordinator must preserve the command output for the following bounded decision."
-
+$instructionArray = $instructions.ToArray()
 $artifactPaths = @($resultPath, $reportPath, $eventsPath, $progressPath, $handoffPath)
 $resultDraft = [pscustomobject][ordered]@{
     schema = 'TbgStalePrRecoveryInstructionResult.v1'; profileId = [string]$contract.id; action = 'InvokeStalePrRecovery'
@@ -190,7 +190,7 @@ $resultDraft = [pscustomobject][ordered]@{
     status = $status; verdict = $verdict; terminalState = $terminalState; blockedReason = $blockedReason
     nextPatchHint = $nextCommand; selectedTargets = @($selectedEntries | ForEach-Object { [int]$_.pr })
     safeParallelWaves = @($selectedWaves | ForEach-Object { foreach ($parallel in @(Get-TbgValue -Object $_ -Name 'parallelWith' -Default @())) { $parallel } } | Select-Object -Unique)
-    sourceFiles = @($PlanPath, $contractRelative); artifacts = $artifactPaths; instructions = @($instructions)
+    sourceFiles = @($PlanPath, $contractRelative); artifacts = $artifactPaths; instructions = $instructionArray
 }
 
 Import-Module (Join-Path $repoRoot 'scripts/harness/TbgEffectivePolicy.psm1') -Force
@@ -204,19 +204,19 @@ $result = [pscustomobject][ordered]@{
     blockedReason = $blockedReason; nextCommand = $nextCommand; selectedTargets = $resultDraft.selectedTargets
     safeParallelWaves = $resultDraft.safeParallelWaves; effectivePolicy = $effectivePolicy
     englishSummary = "$policyEnglish $summarySentence"; sourceFiles = $resultDraft.sourceFiles; artifacts = $artifactPaths
-    instructions = @($instructions)
+    instructions = $instructionArray
 }
 
 $result | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $resultPath -Encoding UTF8
-@($instructions | ForEach-Object { $_ | ConvertTo-Json -Depth 10 -Compress }) | Set-Content -LiteralPath $eventsPath -Encoding UTF8
-@($instructions | ForEach-Object { $_.sentence }) | Set-Content -LiteralPath $progressPath -Encoding UTF8
+@($instructionArray | ForEach-Object { $_ | ConvertTo-Json -Depth 10 -Compress }) | Set-Content -LiteralPath $eventsPath -Encoding UTF8
+@($instructionArray | ForEach-Object { $_.sentence }) | Set-Content -LiteralPath $progressPath -Encoding UTF8
 
 $report = New-Object System.Collections.Generic.List[string]
 $report.Add('# Stale PR recovery instruction report'); $report.Add(''); $report.Add($result.englishSummary); $report.Add('')
 $report.Add("The repository is '$($result.repository)'."); $report.Add("The harness selected '$selectedLabel' and reached terminal state '$terminalState'.")
 if (-not [string]::IsNullOrWhiteSpace($blockedReason)) { $report.Add("The harness is blocked because $blockedReason") }
 $report.Add("The next command is '$nextCommand'."); $report.Add(''); $report.Add('## Ordered instructions')
-foreach ($instruction in $instructions) {
+foreach ($instruction in $instructionArray) {
     $report.Add(''); $report.Add("$($instruction.sequence). $($instruction.sentence)")
     if (-not [string]::IsNullOrWhiteSpace([string]$instruction.command)) { $report.Add(''); $report.Add('```text'); $report.Add([string]$instruction.command); $report.Add('```') }
 }
