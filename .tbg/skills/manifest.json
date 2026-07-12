@@ -7,7 +7,8 @@
     "Skills explain executable contracts, policies, manifests, source files, and current docs; they do not override them.",
     "Load only the narrowest skill needed for the active lane.",
     "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases.",
-    "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage."
+    "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage.",
+    "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified."
   ],
   "skills": [
     {
@@ -66,6 +67,26 @@
         "docs/architecture/harness-skill-maturity.md",
         "docs/architecture/local-agent-harness.md",
         "docs/architecture/effective-policy-english-reports.md"
+      ]
+    },
+    {
+      "id": "compendium-preservation",
+      "path": ".tbg/skills/compendium-preservation/SKILL.md",
+      "useWhen": [
+        "preserving high-value chat annotations, stale snapshots, PR comments, and runtime lessons without losing provenance",
+        "choosing the most rewarding next sprint across repo hygiene, harness maturity, runtime proof automation, evidence retention, and agent operations"
+      ],
+      "doNotUseFor": [
+        "treating stale snapshots as current truth without verification",
+        "closing PRs or deleting evidence without replacement or archive rationale",
+        "claiming runtime proof from static documentation"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/compendium-preservation.contract.json",
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
+        "docs/architecture/harness-skill-maturity.md",
+        "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md"
       ]
     },
     {
