@@ -1,4 +1,4 @@
-# Verifies dependency-CAUTION handling for both the legacy modal wrapper and the root fast frontdoor.
+﻿# Verifies dependency-CAUTION handling for both the legacy modal wrapper and the root fast frontdoor.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = New-Object System.Collections.Generic.List[string]
@@ -48,6 +48,9 @@ $legacyRecovery = 'scripts\launcher-recovery-policy.ps1'
 $fastFrontdoor = 'scripts\launcher-fast-frontdoor.ps1'
 $diagnostics = 'scripts\invoke-collect-diagnostics.ps1'
 $workflow = '.tbg\workflows\continue-visible-trade-cycle.contract.json'
+$continueCoordinator = 'scripts\run-forge-continue-campaign.ps1'
+$visibleRunner = 'scripts\run-tbg-visible-trade-cycle.ps1'
+$launchOperator = 'scripts\invoke-forge-launch-operator.ps1'
 
 foreach ($needle in @(
     '# Launcher Dependency Caution Handoff Doctrine',
@@ -109,15 +112,20 @@ Forbid $fastFrontdoor 'TimeoutSec = 60' 'root launcher phases are capped at five
 NeedBefore $fastFrontdoor "Click-LauncherFraction -Window `$window -XFraction 0.55 -YFraction 0.88 -Label 'dependency_caution_confirm'" 'LAUNCH_STATE=fast_retry_scheduled' 'Confirm must precede force-close retry'
 NeedBefore $fastFrontdoor 'Wait-GameUntil -Deadline $attemptDeadline' 'LAUNCH_STATE=fast_retry_scheduled' 'post-Confirm game handoff wait must precede retry'
 
-foreach ($cmd in @('Forge.cmd', 'ForgeContinue.cmd')) {
-    Need $cmd 'launcher-fast-frontdoor.ps1' 'root command must use fast state machine'
-    Need $cmd '-LaunchManual' 'forge.ps1 owns build/install/open; fast frontdoor owns UI navigation'
-    Need $cmd '-TotalBudgetSec 30'
-    Need $cmd '-PhaseBudgetSec 5'
-    Need $cmd '-MaxAttempts 2'
-    Forbid $cmd 'launcher-frozen-context-nav.ps1' 'root command must not bypass into frozen navigator'
-    Forbid $cmd 'launcher-modal-aware-context-nav.ps1' 'root command must not invoke the legacy wrapper directly'
+foreach ($needle in @('launcher-fast-frontdoor.ps1', '-LaunchManual', '-TotalBudgetSec 30', '-PhaseBudgetSec 5', '-MaxAttempts 2')) {
+    Need 'Forge.cmd' $needle 'Forge play root command must retain the direct fast state machine'
 }
+Forbid 'Forge.cmd' 'launcher-frozen-context-nav.ps1' 'root command must not bypass into frozen navigator'
+Forbid 'Forge.cmd' 'launcher-modal-aware-context-nav.ps1' 'root command must not invoke the legacy wrapper directly'
+
+Need 'ForgeContinue.cmd' 'run-forge-continue-campaign.ps1' 'Continue root command must delegate to the campaign coordinator'
+Need $continueCoordinator 'run-tbg-visible-trade-cycle.ps1' 'campaign coordinator must retain the exact-save visible-trade certifier'
+Need $visibleRunner 'invoke-forge-launch-operator.ps1' 'visible-trade certifier must delegate launcher ownership'
+foreach ($needle in @('LaunchManual = $true', 'launcher-fast-frontdoor.ps1', '-TotalBudgetSec 30', '-PhaseBudgetSec 5', '-MaxAttempts 2')) {
+    Need $launchOperator $needle 'Continue delegation must retain the fast state machine and bounded budgets'
+}
+Forbid $launchOperator 'launcher-frozen-context-nav.ps1' 'Continue operator must not bypass into frozen navigator'
+Forbid $launchOperator 'launcher-modal-aware-context-nav.ps1' 'Continue operator must not invoke the legacy wrapper directly'
 
 foreach ($needle in @(
     'BlacksmithGuild_LauncherRecovery.json',

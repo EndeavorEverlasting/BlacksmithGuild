@@ -27,10 +27,15 @@ $oldTimeout = $env:TBG_OPERATOR_INTERACTIVE_FOCUS_TIMEOUT_SEC
 try {
     $env:TBG_OPERATOR_INTERACTIVE_FOCUS = '1'
     $env:TBG_OPERATOR_INTERACTIVE_FOCUS_TIMEOUT_SEC = [string]$TimeoutSec
-    $forgeParams = @{ Launch = $true; LaunchIntent = $LaunchIntent }
+    $forgeParams = @{ Launch = $true; LaunchIntent = $LaunchIntent; LaunchManual = $true }
     if ($SkipSaveBackup) { $forgeParams.SkipSaveBackup = $true }
     if ($AllowFocusSteal) { $forgeParams.AllowFocusSteal = $true }
     & (Join-Path $RepoRoot 'forge.ps1') @forgeParams
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    $frontdoor = Join-Path $PSScriptRoot 'launcher-fast-frontdoor.ps1'
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $frontdoor `
+        -LaunchIntent $LaunchIntent -TotalBudgetSec 30 -PhaseBudgetSec 5 -MaxAttempts 2
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 finally {
