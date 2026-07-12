@@ -29,7 +29,7 @@ This sprint does not install WezTerm.
 Allowed operator actions after review:
 
 ```powershell
-$env:TBG_REPO = "C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild"
+$env:TBG_REPO = "<path-to-your-BlacksmithGuild-checkout>"
 wezterm --config-file .\docs\examples\wezterm\tbg-operator.wezterm.lua
 ```
 
