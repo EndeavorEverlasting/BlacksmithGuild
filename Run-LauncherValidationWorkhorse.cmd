@@ -4,24 +4,28 @@ setlocal
 echo.
 echo The Blacksmith Guild - Launcher Validation Workhorse
 echo.
-echo This workhorse synchronizes the current sprint branch safely, validates the launcher harness,
-echo force-stops the Bannerlord process family, runs Forge Continue, and writes an English handoff.
+echo This supervisor persists across ordinary concurrency states instead of stopping at the first busy worktree.
+echo Workspace modes: current synced, current local commits, isolated remote, and isolated local snapshot.
+echo It retries fetch and isolated-worktree creation, runs the strict leaf worker, and writes English handoffs.
 echo.
 
-rem The PowerShell workhorse resolves RepoRoot from its own tracked location.
-rem Avoid passing %%~dp0 as a quoted argument because the trailing slash can escape the closing quote.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-launcher-validation-workhorse.ps1" %*
+rem The PowerShell supervisor resolves RepoRoot from its own tracked location.
+rem It never resets, cleans, stashes, deletes, force-pushes, or merges the operator's work.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-launcher-validation-supervisor.ps1" %*
 set WORKHORSE_EXIT=%ERRORLEVEL%
 
 echo.
 if %WORKHORSE_EXIT% EQU 0 (
-    echo The launcher validation workhorse completed successfully.
+    echo The multimodal launcher validation supervisor completed successfully.
 ) else (
-    echo The launcher validation workhorse stopped with exit code %WORKHORSE_EXIT%.
+    echo The multimodal launcher validation supervisor stopped with exit code %WORKHORSE_EXIT% after exhausting its safe modes or reaching a clear semantic dead end.
 )
-echo Latest progress: %~dp0artifacts\latest\launcher-validation-workhorse.progress.log
-echo Latest handoff:  %~dp0artifacts\latest\launcher-validation-workhorse.handoff.md
-echo Latest result:   %~dp0artifacts\latest\launcher-validation-workhorse.result.json
+echo Supervisor progress: %~dp0artifacts\latest\launcher-validation-supervisor.progress.log
+echo Supervisor handoff:  %~dp0artifacts\latest\launcher-validation-supervisor.handoff.md
+echo Supervisor result:   %~dp0artifacts\latest\launcher-validation-supervisor.result.json
+echo Leaf progress:       %~dp0artifacts\latest\launcher-validation-workhorse.progress.log
+echo Leaf handoff:        %~dp0artifacts\latest\launcher-validation-workhorse.handoff.md
+echo Leaf result:         %~dp0artifacts\latest\launcher-validation-workhorse.result.json
 
 if not defined TBG_NO_PAUSE pause
 exit /b %WORKHORSE_EXIT%
