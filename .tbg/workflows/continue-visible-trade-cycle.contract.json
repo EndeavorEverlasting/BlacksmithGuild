@@ -12,7 +12,8 @@
     "MapTrade movement through Bannerlord APIs",
     "town arrival and trade execution through Bannerlord mechanisms",
     "visible Inventory or Trade surface",
-    "fresh correlated machine evidence and bounded English reporting"
+    "fresh correlated machine evidence and bounded English reporting",
+    "expected native launcher-stage modals such as Safe Mode and dependency-mismatch caution, without treating them as runtime proof"
   ],
   "forbiddenScope": [
     "free gold, items, mounts, stamina, XP, or movement",
@@ -46,6 +47,24 @@
       "launcherProcessIsGameRuntime": false,
       "commandAuthorityRequiresSharedRuntimeDetection": true,
       "loadingHandoffIsNotRuntimeProof": true,
+      "dependencyMismatchCaution": {
+        "classification": "dependency_mismatch_caution_modal",
+        "defaultAction": "confirm",
+        "logMarkers": [
+          "LAUNCH_STATE=dependency_caution_detected",
+          "CLICK_DEPENDENCY_CAUTION_RESULT result=confirm_dispatched",
+          "dependencyMismatchHandled=true"
+        ],
+        "requires": [
+          "fresh TbgLauncherWindowContext.v1 PID",
+          "same-PID candidate window",
+          "not Safe Mode",
+          "not Singleplayer runtime",
+          "foreground acquired before real input",
+          "PID/HWND revalidated immediately before Confirm"
+        ],
+        "proofBoundary": "Confirms a native launcher dependency caution only; it is not runtime proof."
+      },
       "failedSpawnCleanup": "close only the exact fresh PID/HWND absent from the S1 baseline and bound by this run's launcher context, after shared detection proves no live game runtime"
     }
   },
@@ -209,6 +228,7 @@
   },
   "validationCommands": [
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-bannerlord-save-layout-contract.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-launcher-dependency-caution-doctrine.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-visible-trade-cycle-contract.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-operator-control-surface.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-engine-toggle-authority-contract.ps1",
