@@ -30,13 +30,13 @@ Before telling a user to run a PowerShell inbox command directly:
 |---|---|---:|---|---|
 | `ForgeContinue.cmd` | launch Continue path | Loads game | `BlacksmithGuild_Launch.log`, status JSON | Daily dev/play launch path |
 | `Forge.cmd` | launch New/Play path | Creates/loads test path | launch + character/build JSON | Fresh bootstrap / visible character creation |
-| `ForgeStop.cmd` | stop game process | Unsaved progress risk | process state | Emergency/cleanup stop |
+| `ForgeStop.cmd` | timed stop context | Unsaved progress risk | stop sentinel + launch log | Five-second Soft/Force/Cancel quit window; soft stop is the default |
 | `Run-MarketIntel.cmd` | `MarketSnapshotNow` | No | `BlacksmithGuild_MarketIntel.json` | Read-only market action plan |
 | `Run-FoodAdvisory.cmd` | `AnalyzeFood` | No | `BlacksmithGuild_FoodAdvisory.json` | Direct read-only Food runway/diversity/candidate advisory |
 | `Run-FoodGovernorCheck.cmd` | compatibility alias to `Run-FoodAdvisory.cmd` | No | `BlacksmithGuild_FoodAdvisory.json` | Backward-compatible old Food wrapper name |
 | `Run-HorseMarketIntel.cmd` | `AnalyzeHorseMarket` | No | `BlacksmithGuild_HorseMarketIntel.json` | Read-only pack/horse/capacity intel |
 | `Run-GuildLoopAdvisory.cmd` | `RunGuildLoopNow` | No | `BlacksmithGuild_GuildLoopReport.json` | Advisory market + forge + crew plan |
-| `Run-AutonomousGuildLoop.cmd` | `scripts/run-autonomous-guild-loop-operator.ps1` -> `RunAutonomousGuildLoopNow` | Yes / possible movement and supported vanilla actions | `BlacksmithGuild_AutonomousGuildLoop.json`, `artifacts/latest/autonomous-guild-loop-operator.json` | Crash-aware one-cycle operator runner; records when Bannerlord disappears or no ACK/status arrives |
+| `Run-AutonomousGuildLoop.cmd` | context controller -> `SetEngineToggleAutomation` -> `ResumeCampaignClock` -> `RunAutonomousGuildLoopNow` | Yes / movement, time, trade, forge actions | `BlacksmithGuild_AutonomousGuildLoop.json`, `artifacts/latest/autonomous-guild-loop-operator.json` | Five-second cancel gate, automatic foreground/mode/clock setup, active focus/pause correction, crash-aware bounded cycle |
 | `Run-CohesionAnalyze.cmd` | `AnalyzeCohesionOpportunities` | No | `BlacksmithGuild_CohesionOpportunities.json` | Read-only cohesion/safety opportunity scan |
 | `Run-CohesionMove.cmd` | `RunVisibleCohesionMoveNow` | Yes / movement | `BlacksmithGuild_CohesionMove.json` | Visible player-party cohesion move; disposable save unless accepted |
 | `Run-AutoTravelChoices.cmd` | `ShowAutoTravelChoices` | No | Phase1 `[TBG TRAVEL]` lines / status | Read-only ranked travel choices |
@@ -44,22 +44,41 @@ Before telling a user to run a PowerShell inbox command directly:
 | `Run-ExportEvidence.cmd` | `ExportTbgEvidence.cmd` | No | `docs/evidence/latest/README.md` | Root alias for evidence export |
 | `ExportTbgEvidence.cmd` | evidence export path | No | `docs/evidence/latest/` | Existing evidence snapshot command |
 | `CollectCertLogs.cmd` | cert/log collection path | No | cert/log bundle | Raw cert and troubleshooting bundle |
-| `CollectDiagnostics.cmd` | diagnostics collection path | No | diagnostics bundle | Crash/log diagnostics |
+| `CollectDiagnostics.cmd` | hash-compatible diagnostic wrapper | No | diagnostics bundle | Crash/log diagnostics even when Windows PowerShell cannot autoload `Get-FileHash` |
 | `BackupSaves.cmd` | save backup path | No | backup copy | Save protection before risky runs |
 
 ---
 
-## Autonomous Guild Loop operator note
+## Context-aware Autonomous Guild Loop
 
-`Run-AutonomousGuildLoop.cmd` is an operator/play wrapper, not a live certification harness. It now writes `artifacts/latest/autonomous-guild-loop-operator.json` and `.md` for terminal outcomes.
+`Run-AutonomousGuildLoop.cmd` is the normal play/operator surface, not a live certification harness. Clicking it declares **Automation intent**.
 
-Important outcomes:
+The controller performs this sequence automatically:
 
-- `FAILED_game_disappeared_during_command`: Bannerlord existed when the command was sent and vanished before matching ACK/status.
-- `BLOCKED_no_ack`: the command inbox was written, but no matching ACK/status appeared before timeout.
-- `PASS_ack_success` / `PASS_status_success`: the game acknowledged or reported the command as successful.
+1. Wait five seconds. Press **Q** or **Escape** to quit instead.
+2. Detect a live Bannerlord Singleplayer runtime.
+3. Bring the bound Bannerlord window to the foreground.
+4. Run `SetEngineToggleAutomation` unless the authority evidence already says `Automation`.
+5. Run `ResumeCampaignClock`.
+6. Run `RunAutonomousGuildLoopNow`.
+7. Keep watching the bounded cycle, reacquire Bannerlord focus when it is lost, and issue another `ResumeCampaignClock` when status reports a paused map.
+8. Write `artifacts/latest/autonomous-guild-loop-operator.json` and `.md` with every context transition.
 
-The wrapper tells the user that Bannerlord should stay foreground and unpaused for movement. It does not pretend alt-tab is safe for movement automation.
+Context-sensitive quit behavior:
+
+- `ForgeStop.cmd` declares **Quit intent** and defaults to a soft stop after a five-second Soft/Force/Cancel window.
+- A fresh ForgeStop sentinel is not silently overridden by the automation wrapper.
+- If the user starts the automation wrapper while a stop context is still active, the wrapper provides a five-second **C to cancel the quit** window. Otherwise it honors the stop and exits without focusing or unpausing the game.
+
+Important terminal outcomes:
+
+- `PASS_cycle_complete`: the bounded guild loop reached its terminal Complete report.
+- `FAILED_game_disappeared_during_command`: Bannerlord vanished while setup or the loop was active.
+- `BLOCKED_no_ack`: a context command was written but no matching ACK/status arrived.
+- `BLOCKED_loop_not_terminal`: startup was acknowledged, but the guild-loop report did not become terminal before the bounded watch expired.
+- `USER_QUIT_REQUESTED` / `USER_QUIT_HONORED`: the timed quit context won, so automation did not continue.
+
+The controller uses focus to prevent Bannerlord's focus-loss pause from silently blocking movement. This means the automation session may bring Bannerlord back to the foreground while its bounded cycle is active. Use `ForgeStop.cmd` to stop that behavior.
 
 ---
 
@@ -115,7 +134,7 @@ These areas either need more wrappers or should be made clearer before normal us
 | Character build catalog/matrix | Cert/matrix wrappers exist, but these are agent/test-save surfaces | Do not present as normal personal-save click paths |
 | Stage D rest/time mutation | Read-only rest plan exists; no wait/rest mutation | Do not add mutation wrapper until proof gate exists |
 | Headless safe craft mutation | Blocks with `CraftManual` until API proven | No craft wrapper until safe craft mutation is proven |
-| Multi-cycle guild loop | One cycle only; operator wrapper is crash-aware but still requires foreground/unpaused movement | Add a focus/pause-aware watch mode before presenting this as continuous background play |
+| Multi-cycle guild loop | Context-aware one-cycle play mode exists | Add deliberate multi-cycle/session policy only after one-cycle runtime behavior is stable |
 
 ---
 
@@ -147,9 +166,11 @@ echo WARNING: This can change campaign state. Use a disposable save unless accep
 When adding a new user-facing feature:
 
 - [ ] Is there a root-level `.cmd` wrapper?
-- [ ] Does the wrapper pause so the user can read the result?
+- [ ] Does the wrapper pause on failure so the user can read the result?
 - [ ] Does the wrapper preserve the PowerShell exit code?
 - [ ] Does the wrapper state save impact clearly?
 - [ ] Is the output JSON named in the wrapper and docs?
+- [ ] Does a movement wrapper explicitly account for engine mode, focus, and campaign time?
+- [ ] Does a quit path have a bounded cancel/change-mind window rather than an indefinite prompt?
 - [ ] Is this file updated?
 - [ ] Is `scripts/verify-clickable-command-surface.ps1` updated?
