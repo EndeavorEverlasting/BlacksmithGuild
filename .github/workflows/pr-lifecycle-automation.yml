@@ -1,0 +1,117 @@
+name: PR Lifecycle Automation
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - converted_to_draft
+      - ready_for_review
+      - labeled
+      - unlabeled
+  pull_request_review:
+    types:
+      - submitted
+      - edited
+      - dismissed
+  pull_request_review_thread:
+    types:
+      - resolved
+      - unresolved
+  workflow_run:
+    workflows:
+      - Governor Contracts
+      - Harness Policy Reports
+      - Hostile Escape Contracts
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to inspect, promote, and merge when eligible
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  actions: read
+  checks: read
+  pull-requests: write
+
+concurrency:
+  group: pr-lifecycle-${{ github.event.pull_request.number || github.event.workflow_run.head_sha || inputs.pr_number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  inspect-promote-and-merge:
+    name: Inspect evidence, promote, and exact-head merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout trusted default-branch controller
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Resolve pull request number
+        id: resolve
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          $event = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+          $number = ''
+
+          if ($env:EVENT_NAME -in @('pull_request_target', 'pull_request_review', 'pull_request_review_thread')) {
+            $number = [string]$event.pull_request.number
+          } elseif ($env:EVENT_NAME -eq 'workflow_run') {
+            $pullRequests = @($event.workflow_run.pull_requests)
+            if ($pullRequests.Count -gt 0) {
+              $number = [string]$pullRequests[0].number
+            } else {
+              $headSha = [string]$event.workflow_run.head_sha
+              $previousErrorActionPreference = $ErrorActionPreference
+              try {
+                $ErrorActionPreference = 'Continue'
+                $global:LASTEXITCODE = 0
+                $number = (& gh api "repos/$env:REPOSITORY/commits/$headSha/pulls" --jq '.[0].number // empty' 2>$null | Out-String).Trim()
+                $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+              } finally {
+                $ErrorActionPreference = $previousErrorActionPreference
+              }
+              if ($exitCode -ne 0) { throw "Could not resolve a pull request for workflow head $headSha." }
+            }
+          } elseif ($env:EVENT_NAME -eq 'workflow_dispatch') {
+            $number = [string]$env:DISPATCH_PR_NUMBER
+          }
+
+          "pr_number=$number" >> $env:GITHUB_OUTPUT
+          if ([string]::IsNullOrWhiteSpace($number)) {
+            Write-Host 'No associated pull request was found; the lifecycle run is a safe no-op.'
+          } else {
+            Write-Host "Resolved pull request #$number."
+          }
+
+      - name: Inspect evidence, promote, and merge when eligible
+        if: steps.resolve.outputs.pr_number != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $outputPath = Join-Path $env:RUNNER_TEMP 'pr-lifecycle-result.json'
+          ./scripts/tbg/Invoke-TbgPrLifecycle.ps1 `
+            -PrNumber ([int]'${{ steps.resolve.outputs.pr_number }}') `
+            -Repository '${{ github.repository }}' `
+            -OutputPath $outputPath
+
+      - name: Upload lifecycle result
+        if: always() && steps.resolve.outputs.pr_number != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-lifecycle-${{ steps.resolve.outputs.pr_number }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/pr-lifecycle-result.json
+          if-no-files-found: warn
+          retention-days: 14
