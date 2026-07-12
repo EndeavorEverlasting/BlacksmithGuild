@@ -49,13 +49,14 @@ jobs:
           if ($errors.Count -gt 0) { throw ($errors.Message -join '; ') }
           Write-Host 'Timed guild-loop controller parse: PASS'
 
-      - name: Parse launcher modal, recovery, fast-frontdoor, workhorse, and diagnostics controllers
+      - name: Parse launcher modal, recovery, fast-frontdoor, supervisor, workhorse, and diagnostics controllers
         shell: pwsh
         run: |
           foreach ($path in @(
             './scripts/launcher-modal-aware-context-nav.ps1',
             './scripts/launcher-recovery-policy.ps1',
             './scripts/launcher-fast-frontdoor.ps1',
+            './scripts/run-launcher-validation-supervisor.ps1',
             './scripts/run-launcher-validation-workhorse.ps1',
             './scripts/invoke-collect-diagnostics.ps1'
           )) {
@@ -69,7 +70,7 @@ jobs:
               throw (('{0}: {1}' -f $path, ($errors.Message -join '; ')))
             }
           }
-          Write-Host 'Launcher modal/recovery/fast-frontdoor/workhorse/diagnostics controller parse: PASS'
+          Write-Host 'Launcher modal/recovery/fast-frontdoor/supervisor/workhorse/diagnostics controller parse: PASS'
 
       - name: Verify autonomous guild-loop context controller
         shell: pwsh
@@ -110,6 +111,10 @@ jobs:
       - name: Verify launcher validation workhorse
         shell: pwsh
         run: ./scripts/verify-launcher-validation-workhorse.ps1
+
+      - name: Verify multimodal launcher validation supervisor
+        shell: pwsh
+        run: ./scripts/verify-launcher-validation-supervisor.ps1
 
       - name: Verify clickable command surface
         shell: pwsh
