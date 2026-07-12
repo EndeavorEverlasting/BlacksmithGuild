@@ -195,7 +195,8 @@ try {
                     RespectUserForeground = -not $AllowFocusSteal
                 }
                 if ($AllowFocusSteal) { $frozenNavParams.AllowFocusSteal = $true }
-                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') @frozenNavParams -LaunchSetup
+                # Modal-aware wrapper delegates to launcher-frozen-context-nav.ps1, then handles expected launcher-stage modals.
+                & (Join-Path $PSScriptRoot 'launcher-modal-aware-context-nav.ps1') @frozenNavParams -LaunchSetup
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
@@ -206,6 +207,8 @@ try {
                     $continueVerified = ($launchText -match 'LAUNCH_STATE=continue_clicked') -or
                         ($launchText -match 'LAUNCH_STATE=game_spawned') -or
                         ($launchText -match 'LAUNCH_STATE=launcher_setup_handoff_observed') -or
+                        ($launchText -match 'LAUNCH_STATE=dependency_caution_detected') -or
+                        ($launchText -match 'dependencyMismatchHandled=true') -or
                         ($launchText -match 'LAUNCH_STATE=hotkeys_ready') -or
                         ($launchText -match 'classification=hotkeys_ready')
                 }
@@ -225,6 +228,8 @@ try {
                     $playVerified = ($launchText -match 'LAUNCH_STATE=play_clicked') -or
                         ($launchText -match 'LAUNCH_STATE=game_spawned') -or
                         ($launchText -match 'LAUNCH_STATE=launcher_setup_handoff_observed') -or
+                        ($launchText -match 'LAUNCH_STATE=dependency_caution_detected') -or
+                        ($launchText -match 'dependencyMismatchHandled=true') -or
                         ($launchText -match 'LAUNCH_STATE=hotkeys_ready') -or
                         ($launchText -match 'classification=hotkeys_ready')
                 }
