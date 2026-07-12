@@ -27,10 +27,10 @@ Plan: [docs/plans/006e-main-menu-auto-launch.plan.md](plans/006e-main-menu-auto-
 5. Copy that save file to:
 
 ```text
-Documents\Mount and Blade II Bannerlord\Game Saves\Native\BlacksmithGuild_DevStart.sav
+Documents\Mount and Blade II Bannerlord\Game Saves\BlacksmithGuildDevStart.sav
 ```
 
-The repo does **not** commit `.sav` binaries — only this Documents path is documented.
+Older Bannerlord layouts may instead use `Game Saves\Native\BlacksmithGuild_DevStart.sav`. The harness discovers both layouts and both explicit dev-save spellings. The repo does **not** commit `.sav` binaries.
 
 ## Daily dev loop (preferred)
 

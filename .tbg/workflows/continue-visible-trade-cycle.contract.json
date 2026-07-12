@@ -32,7 +32,14 @@
     "requiresCleanCommittedHead": true,
     "requiresBannerlordStopped": true,
     "requiresExpectedHead": true,
-    "savePattern": "BlacksmithGuild_DevStart*.sav"
+    "savePatterns": [
+      "BlacksmithGuild_DevStart*.sav",
+      "BlacksmithGuildDevStart*.sav"
+    ],
+    "saveRoots": [
+      "Documents\\Mount and Blade II Bannerlord\\Game Saves",
+      "Documents\\Mount and Blade II Bannerlord\\Game Saves\\Native"
+    ]
   },
   "orderedHandoffs": [
     {
@@ -193,6 +200,7 @@
     "exitCode": 3
   },
   "validationCommands": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-bannerlord-save-layout-contract.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-visible-trade-cycle-contract.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-operator-control-surface.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-engine-toggle-authority-contract.ps1",

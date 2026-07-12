@@ -141,9 +141,10 @@ function Invoke-ForgeCommandChecked {
 function Find-ExplicitDevSave {
     param([string]$RequestedPath)
 
-    $saveRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mount and Blade II Bannerlord\Game Saves\Native'
-    if (-not (Test-Path -LiteralPath $saveRoot)) {
-        throw "BLOCKED_save_identity:save_root_missing:$saveRoot"
+    $docsRoot = Get-BannerlordDocsRoot
+    $saveRoots = @(Get-BannerlordExistingGameSaveRoots -DocsRoot $docsRoot)
+    if ($saveRoots.Count -eq 0) {
+        throw "BLOCKED_save_identity:save_roots_missing:$(@(Get-BannerlordGameSaveRoots -DocsRoot $docsRoot) -join ',')"
     }
 
     $candidate = $null
@@ -151,16 +152,14 @@ function Find-ExplicitDevSave {
         $resolved = Resolve-Path -LiteralPath $RequestedPath -ErrorAction Stop
         $candidate = Get-Item -LiteralPath $resolved.Path
     } else {
-        $candidate = Get-ChildItem -LiteralPath $saveRoot -Filter 'BlacksmithGuild_DevStart*.sav' -File |
-            Sort-Object LastWriteTimeUtc -Descending |
-            Select-Object -First 1
+        $candidate = Get-BannerlordDevSaveCandidates -DocsRoot $docsRoot | Select-Object -First 1
     }
 
-    if ($null -eq $candidate -or $candidate.Name -notlike 'BlacksmithGuild_DevStart*.sav') {
-        throw 'BLOCKED_save_identity:no_explicit_BlacksmithGuild_DevStart_save'
+    if ($null -eq $candidate -or -not (Test-BannerlordDevSaveName -Name $candidate.Name)) {
+        throw 'BLOCKED_save_identity:no_explicit_BlacksmithGuildDevStart_save'
     }
-    if (-not [string]::Equals($candidate.DirectoryName, $saveRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "BLOCKED_save_identity:save_outside_native_root:$($candidate.FullName)"
+    if (-not (Test-BannerlordRecognizedSavePath -Path $candidate.FullName -DocsRoot $docsRoot)) {
+        throw "BLOCKED_save_identity:save_outside_recognized_root:$($candidate.FullName)"
     }
     return $candidate
 }
@@ -187,9 +186,9 @@ function Write-EnglishReport {
     param($Result)
 
     $saveSentence = if ($Result.evidenceSummary.saveIdentityVerified) {
-        "The runtime proved that Bannerlord loaded the requested save `$($Result.request.requestedSaveId)` by matching MBSaveLoad.ActiveSaveSlotName to the pinned request."
+        "The runtime proved that Bannerlord loaded the requested save **$($Result.request.requestedSaveId)** by matching MBSaveLoad.ActiveSaveSlotName to the pinned request."
     } else {
-        "The runtime did not prove that Bannerlord loaded the pinned save `$($Result.request.requestedSaveId)`."
+        "The runtime did not prove that Bannerlord loaded the pinned save **$($Result.request.requestedSaveId)**."
     }
     $tradeSentence = if ($Result.evidenceSummary.realBuyDelta) {
         "Bannerlord recorded a real buy: gold changed by $($Result.evidenceSummary.goldDelta), inventory changed by $($Result.evidenceSummary.inventoryDelta), and the runtime marked the delta as non-fake."
@@ -210,7 +209,7 @@ function Write-EnglishReport {
     $body = @"
 # TBG visible trade cycle
 
-This run ended as **$($Result.terminalState)** on branch `$($Result.branch)` at commit `$($Result.headSha)`. Its machine-readable result is `visible-trade-cycle.result.json`, and both files are overwritten on the next run so routine evidence stays bounded.
+This run ended as **$($Result.terminalState)** on branch **$($Result.branch)** at commit **$($Result.headSha)**. Its machine-readable result is **visible-trade-cycle.result.json**, and both files are overwritten on the next run so routine evidence stays bounded.
 
 $saveSentence
 
@@ -228,7 +227,7 @@ $branch = (git branch --show-current).Trim()
 $head = (git rev-parse HEAD).Trim()
 $status = @(git status --porcelain)
 $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $repoRoot
-$docsRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mount and Blade II Bannerlord'
+$docsRoot = Get-BannerlordDocsRoot
 $requestPath = Join-Path $bannerlordRoot 'BlacksmithGuild_VisibleTradeCycleRequest.json'
 $saveIdentityCandidates = @(
     (Join-Path $bannerlordRoot 'BlacksmithGuild_SaveIdentity.json'),

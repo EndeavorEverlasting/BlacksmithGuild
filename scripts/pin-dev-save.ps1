@@ -4,15 +4,15 @@ param(
 )
 
 $ErrorActionPreference = 'SilentlyContinue'
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 
-$saveRoot = Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord\Game Saves\Native'
-if (-not (Test-Path -LiteralPath $saveRoot)) {
-    return
+$latest = if ($PSBoundParameters.ContainsKey('SavePrefix')) {
+    @(Get-BannerlordExistingGameSaveRoots | ForEach-Object {
+        Get-ChildItem -LiteralPath $_ -Filter "$SavePrefix*.sav" -File -ErrorAction SilentlyContinue
+    }) | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
+} else {
+    Get-BannerlordDevSaveCandidates | Select-Object -First 1
 }
-
-$latest = Get-ChildItem -LiteralPath $saveRoot -Filter "$SavePrefix*.sav" |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
 
 if (-not $latest) {
     return

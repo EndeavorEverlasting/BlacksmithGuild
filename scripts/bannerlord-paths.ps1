@@ -10,6 +10,69 @@ function Get-BannerlordDocsRoot {
     return $docsRoot
 }
 
+function Get-BannerlordGameSaveRoots {
+    param([string]$DocsRoot = (Get-BannerlordDocsRoot))
+
+    $gameSavesRoot = Join-Path $DocsRoot 'Game Saves'
+    return @(
+        $gameSavesRoot
+        (Join-Path $gameSavesRoot 'Native')
+    ) | Select-Object -Unique
+}
+
+function Get-BannerlordExistingGameSaveRoots {
+    param([string]$DocsRoot = (Get-BannerlordDocsRoot))
+
+    return @(Get-BannerlordGameSaveRoots -DocsRoot $DocsRoot |
+        Where-Object { Test-Path -LiteralPath $_ -PathType Container })
+}
+
+function Get-BannerlordDevSavePatterns {
+    # Some Bannerlord versions/installations place saves directly in Game Saves
+    # and preserve the in-game name without the historical separator.
+    return @('BlacksmithGuild_DevStart*.sav', 'BlacksmithGuildDevStart*.sav')
+}
+
+function Test-BannerlordDevSaveName {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    foreach ($pattern in (Get-BannerlordDevSavePatterns)) {
+        if ($Name -like $pattern) { return $true }
+    }
+    return $false
+}
+
+function Get-BannerlordDevSaveCandidates {
+    param([string]$DocsRoot = (Get-BannerlordDocsRoot))
+
+    $candidates = @()
+    foreach ($root in @(Get-BannerlordExistingGameSaveRoots -DocsRoot $DocsRoot)) {
+        foreach ($pattern in (Get-BannerlordDevSavePatterns)) {
+            $candidates += @(Get-ChildItem -LiteralPath $root -Filter $pattern -File -ErrorAction SilentlyContinue)
+        }
+    }
+    return @($candidates |
+        Sort-Object FullName -Unique |
+        Sort-Object LastWriteTimeUtc -Descending)
+}
+
+function Test-BannerlordRecognizedSavePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [string]$DocsRoot = (Get-BannerlordDocsRoot)
+    )
+
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $directory = [System.IO.Path]::GetDirectoryName($fullPath)
+    foreach ($root in @(Get-BannerlordGameSaveRoots -DocsRoot $DocsRoot)) {
+        $fullRoot = [System.IO.Path]::GetFullPath($root).TrimEnd('\', '/')
+        if ([string]::Equals($directory.TrimEnd('\', '/'), $fullRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $true
+        }
+    }
+    return $false
+}
+
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot = (Split-Path -Parent $PSScriptRoot))
 

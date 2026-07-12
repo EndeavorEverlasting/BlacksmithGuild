@@ -5,6 +5,8 @@ $script:GovernorClassificationBlocked = 'BLOCKED'
 $script:GovernorClassificationEnvironmentBlocked = 'ENVIRONMENT BLOCKED'
 $script:GovernorClassificationUserCancelled = 'USER CANCELLED'
 
+. (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+
 function Get-GovernorOperatorLocalRoot {
     param([string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path)
     return Join-Path $RepoRoot '.local'
@@ -85,20 +87,16 @@ function Assert-GovernorNotStopped {
     }
 }
 
-function Get-GovernorNativeSaveRoot {
-    return Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mount and Blade II Bannerlord\Game Saves\Native'
-}
-
 function Get-GovernorDisposableSavePatterns {
-    return @('BlacksmithGuild_DevStart*.sav', 'BlacksmithGuild_Disposable_*.sav', 'TBG_Disposable_*.sav')
+    return @((Get-BannerlordDevSavePatterns) + @('BlacksmithGuild_Disposable_*.sav', 'TBG_Disposable_*.sav'))
 }
 
 function Get-GovernorDisposableSaveCandidates {
-    $root = Get-GovernorNativeSaveRoot
-    if (-not (Test-Path -LiteralPath $root)) { return @() }
     $all = @()
-    foreach ($pattern in (Get-GovernorDisposableSavePatterns)) {
-        $all += @(Get-ChildItem -LiteralPath $root -Filter $pattern -File -ErrorAction SilentlyContinue)
+    foreach ($root in @(Get-BannerlordExistingGameSaveRoots)) {
+        foreach ($pattern in (Get-GovernorDisposableSavePatterns)) {
+            $all += @(Get-ChildItem -LiteralPath $root -Filter $pattern -File -ErrorAction SilentlyContinue)
+        }
     }
     return @($all | Sort-Object FullName -Unique | Sort-Object LastWriteTimeUtc -Descending)
 }

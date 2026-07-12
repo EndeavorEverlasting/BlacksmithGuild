@@ -6,10 +6,6 @@
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
 
-function Get-DevSaveNativeRoot {
-    return Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Mount and Blade II Bannerlord\Game Saves\Native'
-}
-
 function Get-DevSaveFile {
     $match = Get-GovernorBestDisposableSave
     if ($match) { return $match.File }

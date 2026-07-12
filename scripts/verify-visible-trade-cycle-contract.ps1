@@ -92,7 +92,8 @@ $runner = 'scripts\run-tbg-visible-trade-cycle.ps1'
 foreach ($needle in @(
         "throw 'FAILED_preflight:ExpectedHead is mandatory for certifying mode'",
         'preexisting_bannerlord_process',
-        "-Filter 'BlacksmithGuild_DevStart*.sav'",
+        'Get-BannerlordDevSaveCandidates',
+        'Test-BannerlordRecognizedSavePath',
         "requestedSaveId = `$requestedSaveId",
         "requestedSaveSha256AtStart = `$saveHash",
         "Join-Path `$bannerlordRoot 'BlacksmithGuild_VisibleTradeCycleRequest.json'",
@@ -158,9 +159,12 @@ try {
         -WindowStyle Hidden
     Assert-True ($diagnosticProcess.ExitCode -eq 3) "Diagnostic mode must exit 3, got $($diagnosticProcess.ExitCode)"
     $diagnosticResult = Get-Content -LiteralPath (Join-Path $diagnosticRoot 'visible-trade-cycle.result.json') -Raw | ConvertFrom-Json
+    $diagnosticReport = Get-Content -LiteralPath (Join-Path $diagnosticRoot 'visible-trade-cycle.report.md') -Raw
     Assert-True ($diagnosticResult.passFail -eq 'DIAGNOSTIC') 'Diagnostic mode must never write PASS'
     Assert-True ($diagnosticResult.terminalState -eq 'DIAGNOSTIC_ONLY') 'Diagnostic mode terminal state drift'
     Assert-True (-not [bool]$diagnosticResult.preflight.nativeContinueLaunched) 'Diagnostic mode must not launch Bannerlord'
+    Assert-True (-not $diagnosticReport.Contains('$(')) 'English report must interpolate result fields instead of leaking PowerShell syntax'
+    Assert-True (-not $diagnosticReport.Contains([char]11)) 'English report must not contain a vertical-tab escape from Markdown backticks'
 } finally {
     if (Test-Path -LiteralPath $diagnosticRoot) {
         Remove-Item -LiteralPath $diagnosticRoot -Recurse -Force

@@ -8,7 +8,7 @@ The terminal unattended workflow is now:
 .\Run-TbgVisibleTradeCycle.cmd -ExpectedHead (git rev-parse HEAD)
 ```
 
-Certifying mode requires a clean committed exact head, Bannerlord closed, and an explicit `BlacksmithGuild_DevStart*.sav`. It builds and installs Release, verifies the on-disk and process-loaded DLL hashes, proves `MBSaveLoad.ActiveSaveSlotName`, enables only MapTrade Automation, waits for real movement/arrival/non-fake buy deltas and the vanilla trade inventory surface, then proves MapTrade returned to Manual. `-Diagnostic`, `-SkipBuild`, and `-SkipLaunch` are non-certifying and can never emit PASS.
+Certifying mode requires a clean committed exact head, Bannerlord closed, and an explicit `BlacksmithGuild_DevStart*.sav` or `BlacksmithGuildDevStart*.sav`. Both the current flat `Game Saves` layout and the legacy `Game Saves\Native` layout are supported. It builds and installs Release, verifies the on-disk and process-loaded DLL hashes, proves `MBSaveLoad.ActiveSaveSlotName`, enables only MapTrade Automation, waits for real movement/arrival/non-fake buy deltas and the vanilla trade inventory surface, then proves MapTrade returned to Manual. `-Diagnostic`, `-SkipBuild`, and `-SkipLaunch` are non-certifying and can never emit PASS.
 
 For an unattended regression test of the recursive-branch route start, run `Run-MapTradeBranchAutostartProof.cmd` from a clean committed head with Bannerlord closed. The runner builds and installs that head, launches native Continue, requires a fresh town-menu branch target, enables only MapTrade Automation, waits for the exact automatic source plus positive movement, returns MapTrade to Manual, and writes a terminal result. A person pressing `Ctrl+Alt+T` is not a prerequisite for this proof.
 
@@ -257,11 +257,11 @@ git diff --check
 
 ## Gaps and risks
 
-- No new live gameplay PASS is claimed by this plan or its static verifiers.
+- A live gameplay PASS is claimed only when the terminal runner writes a fresh exact-head `PASS_visible_trade_cycle`; static verifiers cannot make that claim.
 - Native Continue does not prove named-save identity.
 - The current route changes require fresh movement evidence from a town-menu attach.
 - Engine labels for Cohesion, HorseMarket, Smithing, and Companion are not complete service gates.
-- A user can see notices and map movement, but fully visible automated marketplace trading is not implemented.
+- The terminal runner and runtime evidence seam for visible automated marketplace trading are implemented; the exact head still requires fresh live evidence before merge.
 
 ## Next command
 
