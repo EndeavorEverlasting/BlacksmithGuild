@@ -153,15 +153,19 @@ This artifact is local generated evidence. It is not committed to the repo and d
 
 ## Runtime proof boundary
 
-Confirming the caution dialog or recovering the launcher proves only this:
+Confirming the caution dialog proves only this:
 
 ```text
 native launcher dependency caution was handled
-or
+```
+
+Recovering after the bounded force-close retry proves only this:
+
+```text
 launcher setup recovered after one bounded retry
 ```
 
-It does **not** prove:
+Neither result proves:
 
 - loaded DLL identity;
 - exact save identity;
