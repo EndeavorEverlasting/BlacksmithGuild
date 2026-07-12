@@ -38,14 +38,13 @@ Success looks like:
 3. Stale PRs are classified and selectively replayed or closed with rationale.
 4. Evidence bundles are archived with manifests before old worktrees or ignored artifacts are removed.
 5. Worker engines share common cadence, proof, and handoff vocabulary so future route, trade, smithing, horse, companion, and caravan-escort work does not become engine-specific chaos.
-6. The operator shell is stable enough that long-running repo work, proof commands, and artifact relay happen in named terminal sessions rather than buried chat scrollback.
 
 ## Current PR interpretation
 
 | PR | Role | Current decision |
 |---|---|---|
 | #43 `agent/route-automation-operator-plan` | Active route/operator-control runtime lane. | Keep draft until exact-head runtime proof is collected by harness; do not leave human-only proof as the permanent gate. |
-| #45 `docs/agent-skills-stale-pr-cherry-pick` | Agent rules, skill factoring, harness maturity, stale PR replay, compendium preservation, and operator terminal environment. | Merge after static checks; this becomes the doctrine bridge for future agents. |
+| #45 `docs/agent-skills-stale-pr-cherry-pick` | Agent rules, skill factoring, harness maturity, stale PR replay, and this compendium layer. | Merge after static checks; this becomes the doctrine bridge for future agents. |
 | #46 `sprint/local-agent-status-relay` | Local evidence relay. | Already merged. Treat as the raw material for a future AXI-style TBG command. |
 | #5-#38 stale legacy PRs | Mixed stale work, proof fragments, old runtime ideas, and harness concepts. | Do not blindly delete or squash. Classify, replay useful value onto current base, then close with rationale. |
 
@@ -111,6 +110,20 @@ Repo-safe adoption means:
 3. `ForgeAgentStatus.cmd` and future `tbg-axi` commands should produce compact output that fits a terminal pane and write long details to artifacts or PR comments.
 4. Runtime proof cannot be inferred from a terminal layout. The terminal only hosts commands; proof still comes from exact-head artifacts, hashes, timestamps, state files, and validators.
 5. No personal WezTerm configuration, local shell history, fonts, screenshots, tokens, or machine-specific private paths should be committed.
+
+Concrete repo-safe profile template:
+
+```text
+docs/examples/wezterm/tbg-operator.wezterm.lua
+```
+
+Profile handoff:
+
+```text
+docs/handoff/wezterm-operator-profile.md
+```
+
+The template uses `TBG_REPO` instead of a hard-coded checkout path, defines launch-menu entries rather than top-level side effects, and keeps runtime proof separate from terminal organization.
 
 Suggested session topology:
 
@@ -231,11 +244,11 @@ This prevents useful reference-assembly fixes, launcher seams, proof contracts, 
 
 1. Merge the skills/doctrine/compendium PR after static checks pass.
 2. Use the merged relay from PR #46 as the source for a future `tbg-axi` command.
-3. Treat WezTerm as the first operator-shell candidate for local TBG workspaces, while keeping every repo command terminal-agnostic.
-4. Finish PR #43 by replacing the human-only live gate with an agent-verifiable exact-head proof command.
-5. Use the compendium and stale-PR skills to select the first legacy PR stack to replay and close.
-6. Add evidence archive/retention commands before deleting retired worktrees or large ignored artifact lanes.
-7. Start external tool adoption by inspecting Firstmate and Treehouse outside the repo; BlacksmithGuild should expose contracts and packets to them, not vendor them.
+3. Finish PR #43 by replacing the human-only live gate with an agent-verifiable exact-head proof command.
+4. Use the compendium and stale-PR skills to select the first legacy PR stack to replay and close.
+5. Add evidence archive/retention commands before deleting retired worktrees or large ignored artifact lanes.
+6. Start external tool adoption by inspecting Firstmate and Treehouse outside the repo; BlacksmithGuild should expose contracts and packets to them, not vendor them.
+7. Use the WezTerm template only as an operator shell convenience; do not require it for validators or runtime proof.
 
 ## First stale PR area to pursue after current closeout
 
@@ -262,8 +275,8 @@ Done means:
 - runtime proof is framed as agent-verifiable;
 - performance/cadence concerns are generalized across engines;
 - evidence retention has an archive path rather than indefinite clutter;
-- WezTerm is incorporated as a first-class operator shell candidate without becoming a repo dependency;
-- external agentic tools are placed above the repo, not inside it.
+- external agentic tools are placed above the repo, not inside it;
+- WezTerm has a repo-safe template and remains external to runtime proof.
 
 ## Exact next command
 
