@@ -1,5 +1,5 @@
 ﻿# Verifies that Bannerlord dependency-mismatch CAUTION handling is a first-class launcher handoff state
-# with one bounded force-close retry and an explicit machine-readable dead end.
+# with one bounded force-close retry, an explicit machine-readable dead end, and diagnostic retention.
 
 $ErrorActionPreference = 'Stop'
 
@@ -29,6 +29,7 @@ function Assert-Contains {
 $doc = 'docs\handoff\launcher-dependency-caution-handoff-doctrine.md'
 $wrapper = 'scripts\launcher-modal-aware-context-nav.ps1'
 $recovery = 'scripts\launcher-recovery-policy.ps1'
+$diagnostics = 'scripts\invoke-collect-diagnostics.ps1'
 $installer = 'scripts\install-mod.ps1'
 $workflow = '.tbg\workflows\continue-visible-trade-cycle.contract.json'
 
@@ -136,6 +137,16 @@ foreach ($needle in @(
 }
 
 foreach ($needle in @(
+    'BlacksmithGuild_LauncherRecovery.json',
+    'BlacksmithGuild_Diagnostics',
+    "Join-Path `$latestBundle.FullName 'status'",
+    "Copy-Item -LiteralPath `$recoverySource -Destination `$destination -Force",
+    'Added launcher recovery evidence'
+)) {
+    Assert-Contains $diagnostics $needle 'diagnostic compatibility entrypoint must retain launcher recovery evidence'
+}
+
+foreach ($needle in @(
     'launcher-modal-aware-context-nav.ps1',
     'dependencyMismatchHandled=true',
     'LAUNCH_STATE=dependency_caution_detected'
@@ -159,5 +170,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: launcher dependency caution doctrine and bounded recovery verified.' -ForegroundColor Green
+Write-Host 'PASS: launcher dependency caution doctrine, bounded recovery, and diagnostic retention verified.' -ForegroundColor Green
 exit 0
