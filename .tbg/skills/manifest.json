@@ -10,7 +10,8 @@
     "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage.",
     "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified.",
     "External agent-operation tools coordinate above the repo; BlacksmithGuild retains authority over scope, proof levels, validators, artifacts, and runtime boundaries.",
-    "WezTerm and adjacent terminal/editor/session tools are operator-environment aids; BlacksmithGuild exposes clean commands and packets to them but does not vendor or require them."
+    "WezTerm and adjacent terminal/editor/session tools are operator-environment aids; BlacksmithGuild exposes clean commands and packets to them but does not vendor or require them.",
+    "Implementation completion across concurrent pushes requires one lane per worktree, current main as the default base, and explicit replay/archive/proof disposition before PR or branch cleanup."
   ],
   "skills": [
     {
@@ -97,7 +98,8 @@
       "distribution": "repo_internal",
       "useWhen": [
         "adopting or evaluating Firstmate, Treehouse, no-mistakes, gnhf, AXI, Lavish, npx skills, or another external agent-operations tool around BlacksmithGuild",
-        "designing coordinator, worktree lease, generic gate, compact tool interface, visual review, or skill-distribution boundaries"
+        "designing coordinator, worktree lease, generic gate, compact tool interface, visual review, or skill-distribution boundaries",
+        "finishing implementation across concurrent pushes while keeping branches, worktrees, stale PR replay, evidence retention, and first-user tests clean"
       ],
       "doNotUseFor": [
         "runtime product patches",
@@ -108,9 +110,12 @@
       "primaryContracts": [
         "AGENTS.md",
         ".tbg/workflows/agentic-operations-adoption.contract.json",
+        ".tbg/workflows/implementation-completion-clean-branches.contract.json",
         "docs/architecture/agentic-operations-layer.md",
         "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
         "docs/handoff/agentic-toolchain-sprint-map.md",
+        "docs/handoff/implementation-completion-clean-branches.md",
+        "docs/first-test-after-clone.md",
         "docs/handoff/local-agent-status-relay.md"
       ]
     },
