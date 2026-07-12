@@ -68,7 +68,8 @@ foreach ($needle in @(
     'Test-WorkspaceRecoverableFailure',
     'workspace_modes_exhausted',
     'clear_semantic_dead_end',
-    'git worktree',
+    "@('worktree', 'add', '-b', `$workerBranch, `$path, `$Ref)",
+    "@('worktree', 'prune')",
     'launcher-validation-supervisor.progress.log',
     'launcher-validation-supervisor.handoff.md',
     'launcher-validation-supervisor.result.json'
