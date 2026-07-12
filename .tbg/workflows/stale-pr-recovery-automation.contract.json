@@ -1,0 +1,107 @@
+{
+  "id": "stale-pr-recovery-automation",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "stale-pr-recovery-syntactic-english",
+  "contextBanner": "[TBG | Stale PR Recovery Automation | harness/cleanup | branch: feat/stale-pr-recovery-syntactic-english]",
+  "purpose": "Convert the stale PR recovery manifest into deterministic machine instructions and complete syntactic-English sentences without executing a cherry-pick, closing a PR, deleting a branch, or claiming runtime proof.",
+  "lane": "harness/cleanup/selective-replay-instruction-renderer",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "proofLevel": "static_harness",
+  "validationMode": "offline",
+  "planPath": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
+  "resultPath": "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+  "requiredArtifacts": [
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.report.md",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.events.jsonl",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.progress.log",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.handoff.md"
+  ],
+  "allowedScope": [
+    "read the committed stale PR recovery plan",
+    "select a wave or source PR",
+    "render deterministic instructions",
+    "write ignored result, report, event, progress, and handoff artifacts",
+    "block execution when local floor proof is absent",
+    "name exact validators and disposition gates"
+  ],
+  "forbiddenScope": [
+    "execute git cherry-pick",
+    "execute a merge or squash",
+    "close or retarget a pull request",
+    "delete a branch or worktree",
+    "remove evidence",
+    "launch Bannerlord",
+    "claim build, behavior, or runtime proof"
+  ],
+  "operatingLoop": [
+    "request",
+    "evidence",
+    "bounded_plan",
+    "action",
+    "artifacts",
+    "validation",
+    "report",
+    "next_decision"
+  ],
+  "syntacticEnglish": {
+    "schema": "TbgSyntacticEnglishInstruction.v1",
+    "requiredFields": [
+      "sequence",
+      "stage",
+      "subject",
+      "verb",
+      "object",
+      "condition",
+      "evidence",
+      "command",
+      "sentence"
+    ],
+    "rules": [
+      "Every sentence names the acting subject.",
+      "Every sentence contains one explicit action verb.",
+      "Every conditional sentence states the condition before the terminal decision.",
+      "Every command sentence names the evidence that the command must produce.",
+      "Every blocked state names one exact next command or one exact owner decision.",
+      "The English report and JSON result describe the same instruction objects.",
+      "Raw JSON is never the primary human report."
+    ]
+  },
+  "localFloorGate": {
+    "requiredBeforeReplay": true,
+    "unverifiedVerdict": "BLOCKED",
+    "unverifiedTerminalState": "BLOCKED_local_floor_unverified",
+    "requiredEvidence": [
+      "current branch",
+      "current HEAD",
+      "short status",
+      "conflicted paths",
+      "in-progress Git operation",
+      "worktree list",
+      "branch upstream state",
+      "repo hygiene report"
+    ]
+  },
+  "doneGate": {
+    "requires": [
+      "the plan parses",
+      "the contract parses",
+      "every operating-loop stage is rendered",
+      "every instruction is a complete sentence",
+      "the JSON and English artifacts contain the same instruction count",
+      "no generated command uses a destructive forbidden operation",
+      "a non-floor wave blocks without local floor proof",
+      "a verified-floor fixture produces a bounded ready decision",
+      "the validator passes in CI"
+    ]
+  },
+  "terminalStates": [
+    "READY_local_floor_collection",
+    "READY_bounded_recovery_instruction",
+    "BLOCKED_local_floor_unverified",
+    "BLOCKED_wave_dependency",
+    "BLOCKED_source_pr_not_in_plan"
+  ]
+}
