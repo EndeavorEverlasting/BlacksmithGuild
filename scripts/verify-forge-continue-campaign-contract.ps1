@@ -103,7 +103,7 @@ foreach ($path in @($runner, 'scripts\verify-forge-continue-campaign-contract.ps
     $tokens = $null
     $errors = $null
     [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $repoRoot $path), [ref]$tokens, [ref]$errors)
-    if ($errors.Count -gt 0) { $failures.Add("PowerShell parse failed for $path: $($errors.Message -join '; ')") | Out-Null }
+    if ($errors.Count -gt 0) { $failures.Add("PowerShell parse failed for ${path}: $($errors.Message -join '; ')") | Out-Null }
 }
 
 if ($failures.Count -gt 0) {
