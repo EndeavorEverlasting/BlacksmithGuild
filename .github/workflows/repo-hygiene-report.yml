@@ -1,0 +1,48 @@
+name: Repo Hygiene Report
+
+on:
+  pull_request:
+    paths:
+      - 'ForgeRepoHygiene.cmd'
+      - 'scripts/tbg/Get-TbgRepoHygieneReport.ps1'
+      - 'scripts/tbg/Test-TbgRepoHygieneReport.ps1'
+      - '.github/workflows/repo-hygiene-report.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: PowerShell integration test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run isolated repo hygiene integration test
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgRepoHygieneReport.ps1
+
+      - name: Run report against checkout
+        shell: pwsh
+        run: |
+          ./scripts/tbg/Get-TbgRepoHygieneReport.ps1 `
+            -RepoRoot . `
+            -OutPath "$env:RUNNER_TEMP/repo-hygiene-report.md" `
+            -JsonOutPath "$env:RUNNER_TEMP/repo-hygiene-report.json" `
+            -NoGitHub
+
+          $report = Get-Content -LiteralPath "$env:RUNNER_TEMP/repo-hygiene-report.json" -Raw | ConvertFrom-Json
+          if ($report.schema -ne 'TbgRepoHygieneReport.v1') {
+            throw "Unexpected report schema: $($report.schema)"
+          }
+          if ($report.verdict -ne 'CLEAN') {
+            throw "Checkout report should be CLEAN but was $($report.verdict): $($report.blockedReason)"
+          }
+
+      - name: Verify patch hygiene
+        shell: pwsh
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          git diff --check "origin/${{ github.base_ref }}...HEAD"
