@@ -25,6 +25,10 @@ jobs:
           Write-Host 'This workflow runs text and contract verifiers only.'
           Write-Host 'Bannerlord compile remains a separate Windows developer box validation gate.'
 
+      - name: Verify autonomous guild-loop context controller
+        shell: pwsh
+        run: ./scripts/verify-autonomous-guild-loop-context-contract.ps1
+
       - name: Verify campaign governor contract
         shell: pwsh
         run: ./scripts/verify-campaign-governor-contract.ps1
@@ -56,10 +60,6 @@ jobs:
       - name: Verify clickable command surface
         shell: pwsh
         run: ./scripts/verify-clickable-command-surface.ps1
-
-      - name: Verify autonomous guild-loop context controller
-        shell: pwsh
-        run: ./scripts/verify-autonomous-guild-loop-context-contract.ps1
 
       - name: Verify command-bus patch contract
         shell: pwsh
