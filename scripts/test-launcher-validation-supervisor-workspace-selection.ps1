@@ -53,9 +53,7 @@ try {
     $gitCommand = Get-Command git.exe -ErrorAction Stop
     $gitPath = $gitCommand.Source
     $supervisorSource = Join-Path $repoRoot 'scripts\run-launcher-validation-supervisor.ps1'
-    $workhorseSource = Join-Path $repoRoot 'scripts\run-launcher-validation-workhorse.ps1'
     Assert-Condition -Condition (Test-Path -LiteralPath $supervisorSource) -Message 'The launcher validation supervisor source is missing.'
-    Assert-Condition -Condition (Test-Path -LiteralPath $workhorseSource) -Message 'The launcher validation workhorse source is missing.'
 
     New-Item -ItemType Directory -Force -Path $tempRoot, $fixtureRoot, $shimRoot | Out-Null
     [void](Invoke-FixtureGit -Arguments @('init', '--bare', $remoteRoot))
@@ -67,7 +65,27 @@ try {
     $fixtureScripts = Join-Path $fixtureRoot 'scripts'
     New-Item -ItemType Directory -Force -Path $fixtureScripts | Out-Null
     Copy-Item -LiteralPath $supervisorSource -Destination (Join-Path $fixtureScripts 'run-launcher-validation-supervisor.ps1')
-    Copy-Item -LiteralPath $workhorseSource -Destination (Join-Path $fixtureScripts 'run-launcher-validation-workhorse.ps1')
+    @'
+param(
+    [string]$RepoRoot,
+    [string]$LaunchIntent,
+    [string]$ExpectedBranch,
+    [switch]$SkipSync,
+    [switch]$SkipValidators,
+    [switch]$SkipStop,
+    [switch]$NoLaunch
+)
+$latestRoot = Join-Path $RepoRoot 'artifacts\latest'
+New-Item -ItemType Directory -Force -Path $latestRoot | Out-Null
+'PASSED: The synthetic leaf accepted the supervisor handoff.' | Set-Content -LiteralPath (Join-Path $latestRoot 'launcher-validation-workhorse.progress.log') -Encoding UTF8
+'# Synthetic launcher-validation leaf handoff' | Set-Content -LiteralPath (Join-Path $latestRoot 'launcher-validation-workhorse.handoff.md') -Encoding UTF8
+[ordered]@{
+    schema = 'TbgLauncherValidationWorkhorse.v1'
+    terminalState = 'validation_only_complete'
+    exitCode = 0
+} | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $latestRoot 'launcher-validation-workhorse.result.json') -Encoding UTF8
+exit 0
+'@ | Set-Content -LiteralPath (Join-Path $fixtureScripts 'run-launcher-validation-workhorse.ps1') -Encoding UTF8
     'artifacts/' | Set-Content -LiteralPath (Join-Path $fixtureRoot '.gitignore') -Encoding UTF8
 
     [void](Invoke-FixtureGit -WorkingRoot $fixtureRoot -Arguments @('add', '.gitignore', 'scripts/run-launcher-validation-supervisor.ps1', 'scripts/run-launcher-validation-workhorse.ps1'))
