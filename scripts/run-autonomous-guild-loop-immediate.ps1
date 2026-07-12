@@ -28,7 +28,7 @@ $loopPaths = @(
     (Join-Path $bannerlordRoot 'BlacksmithGuild_AutonomousGuildLoop.json'),
     (Join-Path $docsRoot 'BlacksmithGuild_AutonomousGuildLoop.json')
 )
-$transitions = New-Object 'System.Collections.Generic.List[object]'
+$transitions = [System.Collections.Generic.List[object]]::new()
 $nextSequence = [int64]([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())
 $focusCount = 0
 
@@ -155,6 +155,7 @@ function Write-Result {
     param([string]$Verdict, [string]$Reason, $LastCommand = $null)
     $status = Read-LatestJson $statusPaths
     $loop = Read-LatestJson $loopPaths
+    $transitionSnapshot = if ($transitions.Count -gt 0) { @($transitions.ToArray()) } else { @() }
     $payload = [ordered]@{
         schemaVersion = 'TbgAutonomousGuildLoopOperatorResult.v2'
         generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -163,7 +164,7 @@ function Write-Result {
         verdict = $Verdict
         reason = $Reason
         focusReacquireCount = $script:focusCount
-        contextTransitions = @($transitions)
+        contextTransitions = $transitionSnapshot
         lastCommand = $LastCommand
         status = $status
         guildLoop = $loop
@@ -172,8 +173,8 @@ function Write-Result {
     @(
         '# Autonomous Guild Loop Operator Result',
         '',
-        "- Mode: immediate",
-        "- Startup grace seconds: 0",
+        '- Mode: immediate',
+        '- Startup grace seconds: 0',
         "- Verdict: $Verdict",
         "- Reason: $Reason",
         "- Focus reacquisitions: $script:focusCount",
