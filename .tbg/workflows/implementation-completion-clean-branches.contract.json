@@ -1,0 +1,163 @@
+{
+  "id": "implementation-completion-clean-branches",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "implementation-completion-clean-branches-first-test",
+  "contextBanner": "[TBG | Implementation Completion + Clean Branches | coordinator/harness docs | branch: docs/implementation-completion-worktree-first-test]",
+  "status": "contract_defined",
+  "purpose": "Define how BlacksmithGuild moves from concurrent PR/worktree activity to implementation completion while keeping main, feature branches, worktrees, and first-user tests clean.",
+  "allowedScope": [
+    "documenting clean branch and worktree collaboration rules",
+    "documenting how external coordination tools should use git worktrees without replacing repo proof contracts",
+    "documenting the first safe test a user can run after cloning main",
+    "recording merge and stale-PR closeout sequence for current active lanes",
+    "linking first-test, relay, and PR-check commands to existing repo scripts and docs"
+  ],
+  "forbiddenScope": [
+    "runtime gameplay source edits under this documentation sprint",
+    "Bannerlord launch, ForgeReboot, command inbox writes, or save mutation",
+    "claiming runtime proof from a clean branch, merged PR, GitHub CI, or documentation",
+    "deleting branches, worktrees, artifacts, or PR comments without proof and retention rationale",
+    "making external tools such as Firstmate, Treehouse, no-mistakes, WezTerm, tmux, Neovim, or voice input required repo dependencies"
+  ],
+  "branchRules": [
+    {
+      "rule": "main_is_clean_base",
+      "meaning": "New work starts from current origin/main unless the sprint explicitly owns a different open PR branch. Do not continue on stale merged branches."
+    },
+    {
+      "rule": "one_lane_one_worktree",
+      "meaning": "Every concurrent lane gets a named worktree. Do not share one checkout across docs, runtime proof, stale replay, and artifact retention work."
+    },
+    {
+      "rule": "fetch_before_action",
+      "meaning": "Fetch before checkout, merge, PR review, or cleanup. Treat branch state as stale after any known concurrent push."
+    },
+    {
+      "rule": "close_after_replay",
+      "meaning": "Stale PRs close only after useful commits, hunks, docs, tests, or evidence references are replayed, rejected, or superseded with rationale."
+    },
+    {
+      "rule": "proof_before_ready",
+      "meaning": "Runtime PRs leave draft only after exact-head artifacts prove the claimed level. Human observation is helpful, not the default proof mechanism."
+    }
+  ],
+  "worktreeLanes": [
+    {
+      "lane": "main-sync",
+      "purpose": "Fetch, status, branch audit, first-test verification.",
+      "base": "origin/main",
+      "mayShareWith": ["docs-only checks"],
+      "mustNotShareWith": ["runtime proof", "artifact cleanup"]
+    },
+    {
+      "lane": "route-runtime-proof",
+      "purpose": "PR #43 exact-head runtime proof and cleanup.",
+      "base": "PR #43 head or current replacement branch",
+      "mustIsolate": true
+    },
+    {
+      "lane": "docs-contracts",
+      "purpose": "Docs, skills, workflow contracts, first-test guides.",
+      "base": "origin/main",
+      "mustIsolate": false
+    },
+    {
+      "lane": "stale-pr-replay",
+      "purpose": "Selective replay from PR #5-#38 after value classification.",
+      "base": "origin/main after doctrine merge",
+      "mustIsolate": true
+    },
+    {
+      "lane": "artifact-retention",
+      "purpose": "Archive ignored evidence with manifests before worktree deletion.",
+      "base": "origin/main plus retention contract",
+      "mustIsolate": true
+    }
+  ],
+  "firstTestAfterClone": {
+    "goal": "Give a new user or agent a safe first validation path that does not require runtime proof or a live game launch.",
+    "commands": [
+      "git clone https://github.com/EndeavorEverlasting/BlacksmithGuild.git",
+      "cd BlacksmithGuild",
+      "git status --short",
+      "git branch --show-current",
+      "git log --oneline --decorate -5",
+      "dotnet --version",
+      "dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug",
+      "git diff --check"
+    ],
+    "optionalWindowsRepoChecks": [
+      "Get-ChildItem .tbg -Recurse -File -Filter *.json | ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json | Out-Null }",
+      ".\\ForgeAgentStatus.cmd -PrNumber 43"
+    ],
+    "optionalGameBackedNextStep": ".\\forge.ps1 -Check -SkipSaveBackup"
+  },
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "sync_main_and_packet",
+      "requiredEvidence": [
+        "git fetch origin --prune",
+        "clean or explained local status",
+        "ForgeAgentStatus packet if available"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "allocate_worktrees",
+      "requiredEvidence": [
+        "worktree path",
+        "branch/head",
+        "lane owner",
+        "release condition"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "finish_active_lanes",
+      "requiredEvidence": [
+        "PR #43 runtime proof disposition",
+        "docs/contracts lane merged or closed",
+        "no stale merged branches used as bases"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "replay_stale_prs",
+      "requiredEvidence": [
+        "value classification",
+        "selected replay base",
+        "validation command",
+        "closure rationale"
+      ]
+    },
+    {
+      "sequence": 5,
+      "name": "publish_first_test",
+      "requiredEvidence": [
+        "user-facing first-test doc",
+        "index link",
+        "safe no-game path separated from game-backed path"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "clean-branch/worktree collaboration plan is committed",
+      "first-test-after-clone guide is committed and discoverable",
+      "concurrent-push handling is explicit",
+      "runtime proof and static checks remain separated",
+      "stale PR closure depends on replay or rationale",
+      "JSON files parse",
+      "git diff --check passes or exact local blocker is recorded"
+    ]
+  },
+  "terminalStates": [
+    "PASS_plan_committed",
+    "PASS_first_test_documented",
+    "PASS_worktree_lanes_defined",
+    "BLOCKED_needs_local_worktree_validation",
+    "BLOCKED_runtime_proof_lane_not_ready",
+    "REJECTED_dirty_branch_or_unarchived_evidence"
+  ]
+}

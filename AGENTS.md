@@ -48,6 +48,8 @@ Required default skills:
 - `operator-terminal-environment` for WezTerm, tmux, Neovim, voice-input, terminal-session, and local shell ergonomics around repo commands without making those tools repo dependencies.
 - `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
 
+Use `agentic-operations` when a sprint coordinates external agent tools, multi-worktree leases, clean branch completion, first-test-after-clone guidance, or implementation closeout across concurrent pushes.
+
 Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
 
 ## Harness maturity rule
@@ -81,6 +83,21 @@ Default posture:
 3. keep long details in artifacts or PR comments instead of terminal scrollback;
 4. never commit personal terminal config, shell history, fonts, screenshots, tokens, or generated terminal logs;
 5. use `.tbg/skills/operator-terminal-environment/SKILL.md` and `.tbg/workflows/operator-terminal-environment.contract.json` before changing terminal/operator-environment doctrine.
+
+## Clean branch completion rule
+
+Implementation completion must survive concurrent pushes without turning `main` into a junk drawer.
+
+Default posture:
+1. fetch before branch, PR, merge, replay, cleanup, or proof decisions;
+2. use one branch and one worktree per active lane;
+3. keep `origin/main` as the default base unless the sprint explicitly owns an open PR branch;
+4. use `ForgeAgentStatus` or a future TBG AXI command to move local state into compact artifacts or PR comments;
+5. keep no-game first-user checks separate from runtime proof;
+6. close stale PRs only after selected value is replayed, rejected, or superseded with rationale;
+7. archive evidence with a manifest before removing runtime-evidence worktrees or ignored artifact lanes.
+
+Use `.tbg/workflows/implementation-completion-clean-branches.contract.json`, `docs/handoff/implementation-completion-clean-branches.md`, and `docs/first-test-after-clone.md` for implementation closeout and first-clone validation work.
 
 ## Stale PR policy
 
