@@ -136,7 +136,7 @@ foreach ($needle in @(
     'Unpublished commits do not mean stop',
     'Divergence does not mean stop',
     'Run-LauncherValidationWorkhorse.cmd',
-    'does not reset or discard local work',
+    'do not reset or discard local work',
     'does not prove movement or trading',
     'TbgLauncherValidationSupervisor.v1'
 )) { Need $doc $needle }
