@@ -210,9 +210,9 @@ function Write-HandoffAndResult {
         artifacts = @($artifacts.ToArray() | Select-Object -Unique)
         risks = @($risks.ToArray())
         proof = [ordered]@{
-            contractProof = ($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'passed' }).Count -gt 0
+            contractProof = @($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'passed' }).Count -gt 0
             harnessProof = $true
-            staticTestProof = ($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'failed' }).Count -eq 0
+            staticTestProof = @($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'failed' }).Count -eq 0
             buildProof = ($terminalState -eq 'launcher_handoff_observed')
             launcherProof = ($terminalState -eq 'launcher_handoff_observed')
             commandAckProof = $false

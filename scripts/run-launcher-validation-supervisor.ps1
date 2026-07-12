@@ -85,9 +85,15 @@ function Invoke-GitRaw {
         [string]$WorkingRoot = $originRoot,
         [switch]$AllowFailure
     )
-    $global:LASTEXITCODE = 0
-    $output = & git -C $WorkingRoot @Arguments 2>&1
-    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = 0
+        $output = & git -C $WorkingRoot @Arguments 2>&1
+        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     if (-not $AllowFailure -and $exitCode -ne 0) {
         throw ('git -C "{0}" {1} returned exit code {2}: {3}' -f $WorkingRoot, ($Arguments -join ' '), $exitCode, (($output | Out-String).Trim()))
     }
