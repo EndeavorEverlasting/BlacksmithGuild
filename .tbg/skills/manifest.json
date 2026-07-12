@@ -8,7 +8,8 @@
     "Load only the narrowest skill needed for the active lane.",
     "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases.",
     "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage.",
-    "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified."
+    "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified.",
+    "WezTerm and adjacent terminal/editor/session tools are operator-environment aids; BlacksmithGuild exposes clean commands and packets to them but does not vendor or require them."
   ],
   "skills": [
     {
@@ -87,6 +88,26 @@
         "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
         "docs/architecture/harness-skill-maturity.md",
         "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md"
+      ]
+    },
+    {
+      "id": "operator-terminal-environment",
+      "path": ".tbg/skills/operator-terminal-environment/SKILL.md",
+      "useWhen": [
+        "designing local operator terminal, pane, session, shell, editor, or voice-input workflows around BlacksmithGuild commands",
+        "incorporating WezTerm, tmux, Neovim, or adjacent operator tools into the agentic operations layer without making them repo dependencies"
+      ],
+      "doNotUseFor": [
+        "runtime gameplay changes",
+        "tool installation sprints unless explicitly owned",
+        "committing personal terminal config, fonts, shell history, screenshots, or generated terminal logs",
+        "claiming runtime proof from terminal organization"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/operator-terminal-environment.contract.json",
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
+        "docs/handoff/local-agent-status-relay.md"
       ]
     },
     {
