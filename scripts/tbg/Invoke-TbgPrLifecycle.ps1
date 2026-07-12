@@ -76,6 +76,7 @@ if (-not (Test-Path -LiteralPath $ContractPath)) {
 }
 $contract = Read-JsonFile -Path $ContractPath
 $requiredWorkflowNames = @($contract.requiredWorkflowNames | ForEach-Object { [string]$_ })
+$conditionalRequiredWorkflowNames = @($contract.conditionalRequiredWorkflowNames | ForEach-Object { [string]$_ })
 $holdLabel = [string]$contract.draftControl.holdLabel
 
 if (-not [string]::IsNullOrWhiteSpace($PrJsonPath)) {
@@ -131,7 +132,7 @@ foreach ($check in $checks) {
         link = [string](Get-PropertyValue -InputObject $check -Name 'link' -DefaultValue '')
     }
 
-    if ($requiredWorkflowNames -contains $workflow) {
+    if (($requiredWorkflowNames -contains $workflow) -or ($conditionalRequiredWorkflowNames -contains $workflow)) {
         $requiredChecks.Add($row) | Out-Null
     } else {
         $advisoryChecks.Add($row) | Out-Null
@@ -164,13 +165,13 @@ if ($state -ne 'OPEN') {
     $reason = ('The pull request carries the explicit hold label "{0}".' -f $holdLabel)
 } elseif ($missingRequiredWorkflows.Count -gt 0) {
     $action = 'waiting_required_workflows'
-    $reason = ('Required workflow checks are not present yet: {0}.' -f ($missingRequiredWorkflows -join ', '))
+    $reason = ('Always-required workflow checks are not present yet: {0}.' -f ($missingRequiredWorkflows -join ', '))
 } elseif ($requiredNotSuccessful.Count -gt 0) {
     $action = 'waiting_required_checks'
-    $reason = ('One or more required checks are not successful: {0}.' -f (($requiredNotSuccessful | ForEach-Object { '{0}/{1}={2}' -f $_.workflow, $_.name, $_.bucket }) -join '; '))
+    $reason = ('One or more required or present conditional checks are not successful: {0}.' -f (($requiredNotSuccessful | ForEach-Object { '{0}/{1}={2}' -f $_.workflow, $_.name, $_.bucket }) -join '; '))
 } else {
     $action = 'ready_promoted'
-    $reason = 'All required platform-neutral workflows passed; advisory platform and game-backed checks do not block readiness.'
+    $reason = 'All always-required workflows and present conditional workflows passed; advisory platform and game-backed checks do not block readiness.'
     if (-not $DryRun) {
         [void](Invoke-GhText -Arguments @('pr', 'ready', [string]$PrNumber, '--repo', $Repository))
     }
@@ -186,6 +187,7 @@ $result = [ordered]@{
     dryRun = [bool]$DryRun
     reason = $reason
     requiredWorkflowNames = $requiredWorkflowNames
+    conditionalRequiredWorkflowNames = $conditionalRequiredWorkflowNames
     missingRequiredWorkflows = $missingRequiredWorkflows
     requiredChecks = @($requiredChecks.ToArray())
     advisoryChecks = @($advisoryChecks.ToArray())
