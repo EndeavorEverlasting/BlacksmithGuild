@@ -85,7 +85,7 @@ try {
     Assert-Condition -Condition ($workflow -notmatch '(?m)^\s*ref:\s*\$\{\{\s*github\.event\.pull_request\.head') -Message 'Lifecycle workflow must not checkout untrusted PR head code with a write token.'
     Assert-Condition -Condition ($workflow -match 'Ensure lifecycle control labels') -Message 'Lifecycle workflow does not bootstrap control labels.'
     Assert-Condition -Condition ($workflow -match '(?im)\bgh\s+label\s+create\b') -Message 'Lifecycle workflow does not create lifecycle labels through GitHub.'
-    Assert-Condition -Condition ($workflow -match '(?im)\b--force\b') -Message 'Lifecycle label bootstrap must be idempotent.'
+    Assert-Condition -Condition ($workflow.Contains('--force')) -Message 'Lifecycle label bootstrap must be idempotent.'
 
     foreach ($caseName in @(
         'ready-exact-head-merge-eligible',
