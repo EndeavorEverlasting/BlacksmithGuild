@@ -39,7 +39,7 @@ function Invoke-NativeCommand {
 
     if ($exitCode -ne 0 -and -not $AllowFailure) {
         $rendered = "$FilePath $($Arguments -join ' ')"
-        throw "Command failed with exit code $exitCode: $rendered`n$text"
+        throw "Command failed with exit code ${exitCode}: $rendered`n$text"
     }
 
     return [pscustomobject]@{
