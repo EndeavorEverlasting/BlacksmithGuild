@@ -1,11 +1,21 @@
 ﻿# Verifies that Bannerlord dependency-mismatch CAUTION handling is a first-class launcher handoff state
 # with one bounded force-close retry, an explicit machine-readable dead end, child-state preservation,
-# dual-surface terminal evidence, and diagnostic retention.
+# dual-surface terminal evidence, diagnostic retention, and root command routing through the modal-aware path.
 
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = New-Object System.Collections.Generic.List[string]
+
+function Get-RepoText {
+    param([Parameter(Mandatory = $true)][string]$RelativePath)
+    $path = Join-Path $repoRoot $RelativePath
+    if (-not (Test-Path -LiteralPath $path)) {
+        $failures.Add("missing file: $RelativePath") | Out-Null
+        return ''
+    }
+    return Get-Content -LiteralPath $path -Raw -Encoding UTF8
+}
 
 function Assert-Contains {
     param(
@@ -14,16 +24,41 @@ function Assert-Contains {
         [string]$Why = ''
     )
 
-    $path = Join-Path $repoRoot $RelativePath
-    if (-not (Test-Path -LiteralPath $path)) {
-        $failures.Add("missing file: $RelativePath") | Out-Null
-        return
-    }
-
-    $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+    $text = Get-RepoText -RelativePath $RelativePath
     if ($text.IndexOf($Needle, [System.StringComparison]::Ordinal) -lt 0) {
         $suffix = if ($Why) { " ($Why)" } else { '' }
         $failures.Add("$RelativePath missing '$Needle'$suffix") | Out-Null
+    }
+}
+
+function Assert-NotContains {
+    param(
+        [Parameter(Mandatory = $true)][string]$RelativePath,
+        [Parameter(Mandatory = $true)][string]$Needle,
+        [string]$Why = ''
+    )
+
+    $text = Get-RepoText -RelativePath $RelativePath
+    if ($text.IndexOf($Needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        $suffix = if ($Why) { " ($Why)" } else { '' }
+        $failures.Add("$RelativePath unexpectedly contains '$Needle'$suffix") | Out-Null
+    }
+}
+
+function Assert-OccursBefore {
+    param(
+        [Parameter(Mandatory = $true)][string]$RelativePath,
+        [Parameter(Mandatory = $true)][string]$First,
+        [Parameter(Mandatory = $true)][string]$Second,
+        [string]$Why = ''
+    )
+
+    $text = Get-RepoText -RelativePath $RelativePath
+    $firstIndex = $text.IndexOf($First, [System.StringComparison]::Ordinal)
+    $secondIndex = $text.IndexOf($Second, [System.StringComparison]::Ordinal)
+    if ($firstIndex -lt 0 -or $secondIndex -lt 0 -or $firstIndex -ge $secondIndex) {
+        $suffix = if ($Why) { " ($Why)" } else { '' }
+        $failures.Add("$RelativePath must place '$First' before '$Second'$suffix") | Out-Null
     }
 }
 
@@ -33,6 +68,8 @@ $recovery = 'scripts\launcher-recovery-policy.ps1'
 $diagnostics = 'scripts\invoke-collect-diagnostics.ps1'
 $installer = 'scripts\install-mod.ps1'
 $workflow = '.tbg\workflows\continue-visible-trade-cycle.contract.json'
+$forgeContinue = 'ForgeContinue.cmd'
+$forgePlay = 'Forge.cmd'
 
 foreach ($needle in @(
     '# Launcher Dependency Caution Handoff Doctrine',
@@ -54,11 +91,19 @@ foreach ($needle in @(
     'TbgLauncherRecovery.v1',
     'one retry',
     'sameFailureAsPrevious',
+    'The CAUTION dialog is an overlay on the existing launcher state.',
+    'Closing the CAUTION dialog or choosing **Cancel** returns to the underlying PLAY / CONTINUE menu.',
+    'confirm before retry',
+    'never cancel dependency caution',
+    'retry only when Confirm fails or Confirm does not produce a game handoff',
+    'A force-close retry must never be scheduled merely because the CAUTION overlay is present.',
+    'ForgeContinue.cmd -> forge.ps1 -Launch -LaunchIntent continue',
+    'must not pass `-LaunchManual`',
+    'must not call `launcher-frozen-context-nav.ps1` directly',
     'parent launcher process reads and preserves the child attempt''s terminal recovery state',
     'BlacksmithGuild_Launch.log contains LAUNCH_STATE=launcher_recovery_dead_end',
     'BlacksmithGuild_LauncherRecovery.json has state=dead_end',
     'status/BlacksmithGuild_LauncherRecovery.json',
-    'ForgeContinue.cmd',
     'No new command is required to enable the retry.',
     'the PID comes from the fresh `TbgLauncherWindowContext.v1` context',
     'the candidate window belongs to that same PID',
@@ -116,6 +161,10 @@ foreach ($needle in @(
     Assert-Contains $wrapper $needle 'wrapper must implement modal handling and route failures through recovery'
 }
 
+Assert-NotContains $wrapper 'Cancel' 'dependency CAUTION must never use Cancel as recovery'
+Assert-OccursBefore $wrapper 'Invoke-TbgDependencyCautionConfirm -Candidate $candidate -ExpectedPid $expectedPid' "Invoke-TbgRecoveryForFailure -FailureClass 'dependency_caution_confirm_failed'" 'Confirm must be attempted before retry'
+Assert-OccursBefore $wrapper '$handoffObserved = Wait-TbgModalGameHandoff -TimeoutSec 60' "Invoke-TbgRecoveryForFailure -FailureClass 'dependency_caution_still_present'" 'game handoff wait must precede retry after Confirm'
+
 foreach ($needle in @(
     'TbgLauncherRecovery.v1',
     'BlacksmithGuild_LauncherRecovery.json',
@@ -167,6 +216,31 @@ foreach ($needle in @(
 }
 
 foreach ($needle in @(
+    'forge.ps1',
+    '-Launch',
+    '-LaunchIntent continue',
+    'modal-aware CONTINUE',
+    'bounded launcher-family force-close retry'
+)) {
+    Assert-Contains $forgeContinue $needle 'ForgeContinue must use the modal-aware install/launch path'
+}
+Assert-NotContains $forgeContinue '-LaunchManual' 'ForgeContinue must not bypass modal handling'
+Assert-NotContains $forgeContinue 'launcher-frozen-context-nav.ps1' 'ForgeContinue must not call the frozen navigator directly'
+
+foreach ($needle in @(
+    'forge.ps1',
+    '-Launch',
+    '-LaunchIntent play',
+    '-SessionAuthorityMode FreshTestLaunch',
+    'modal-aware PLAY',
+    'bounded launcher-family force-close retry'
+)) {
+    Assert-Contains $forgePlay $needle 'Forge must use the modal-aware install/launch path'
+}
+Assert-NotContains $forgePlay '-LaunchManual' 'Forge must not bypass modal handling'
+Assert-NotContains $forgePlay 'launcher-frozen-context-nav.ps1' 'Forge must not call the frozen navigator directly'
+
+foreach ($needle in @(
     'dependencyMismatchCaution',
     'dependency_mismatch_caution_modal',
     'confirm',
@@ -182,5 +256,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: launcher dependency caution doctrine, bounded recovery, child dead-end preservation, dual-surface evidence, and diagnostic retention verified.' -ForegroundColor Green
+Write-Host 'PASS: root Forge commands route through modal-aware Confirm-first handling, bounded recovery, terminal evidence, and diagnostics retention.' -ForegroundColor Green
 exit 0
