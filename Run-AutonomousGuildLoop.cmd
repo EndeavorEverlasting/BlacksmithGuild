@@ -3,6 +3,7 @@ setlocal
 cd /d "%~dp0"
 echo.
 echo [TBG] Autonomous Guild Loop - one bounded operator cycle
+echo Command: RunAutonomousGuildLoopNow
 echo WARNING: May move the party and may attempt supported vanilla actions.
 echo Use any save only if you accept campaign-state changes.
 echo Requires: Bannerlord loaded, mod ON, command inbox polling, game foreground/unpaused for movement.
