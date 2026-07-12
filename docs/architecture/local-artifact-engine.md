@@ -15,8 +15,8 @@ producer writes file -> file remains on disk -> operator notices later
 into this bounded sequence:
 
 ```text
-producer writes file
-  -> producer emits a named trigger
+producer writes file or configured artifact changes
+  -> named producer trigger or local watcher detects the event
   -> local toggle grants or denies automatic authority
   -> artifact index parses changed files
   -> registry routes declared downstream engines
@@ -97,6 +97,26 @@ Auto mode does not grant mutation authority. Every registered engine remains rea
 Strict mode performs the auto cascade and returns a nonzero result when parsing or a required dependency produces a blocker.
 
 Strict mode is appropriate for validation gates and unattended checks that must fail closed.
+
+## Watcher and Producer Paths
+
+The engine supports two automatic event paths.
+
+### Watcher path
+
+When automatic processing is enabled, the watcher polls the configured artifact roots. Fingerprints suppress unchanged passes. A changed file set produces a pass whose trigger source is:
+
+```text
+watcher_change_detection
+```
+
+The watcher path does not require a producer wrapper or a chat session. It is the fallback that makes independently written local artifacts discoverable.
+
+### Producer path
+
+A known producer may call the router after its own atomic artifact write succeeds. This path avoids waiting for the next polling interval and preserves the producer identity in the aggregate result.
+
+Neither path may enable the control plane. Only the local operator toggle grants automatic authority.
 
 ## Registered Engines
 
@@ -211,6 +231,8 @@ The router enforces these boundaries:
 8. A settle delay allows a successful producer to finish atomic output replacement before parsing begins.
 9. Input fingerprints suppress unchanged watcher work.
 10. The output directory is excluded from artifact discovery.
+11. The watcher process is represented by a local lease containing its PID and start time.
+12. `off` revokes authority, stops the recorded watcher, and removes the lease.
 
 The router never executes a command found inside an artifact.
 
@@ -278,16 +300,27 @@ Do not add an engine merely to increase harness size. Add one when it removes a 
 
 ## Validation
 
-Run:
+Run the static control-plane validator:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgArtifactEngine.ps1
+```
+
+Run the Windows watcher lifecycle smoke on a Windows host:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgArtifactWatcher.ps1
+```
+
+Run repository contracts:
+
+```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
 git diff --check
 git status --short
 ```
 
-The fixture validator proves:
+The static fixture validator proves:
 
 - the toggle can be disabled and enabled;
 - manual execution works while automatic execution is disabled;
@@ -302,14 +335,28 @@ The fixture validator proves:
 - PowerShell files parse;
 - registry and contract JSON parse.
 
+The Windows watcher smoke proves on an ephemeral Windows PowerShell host that:
+
+- `on` starts a separate watcher process;
+- the watcher lease records a live PID;
+- a new configured artifact is detected without a producer command;
+- the automatic result records `watcher_change_detection`;
+- the selected observe mode is preserved;
+- the artifact-index packet contains the changed artifact;
+- `off` revokes automatic authority;
+- `off` stops the watcher process and removes the watcher lease.
+
 ## Proof Boundary
 
-Passing this validator establishes contract proof and static harness proof for artifact discovery, parsing, routing, toggle behavior, producer triggers, cascade behavior, reporting, and strict failure handling.
+Passing the static validator establishes contract proof and static harness proof for artifact discovery, parsing, routing, toggle behavior, producer triggers, cascade behavior, reporting, and strict failure handling.
 
-It does not establish:
+Passing the Windows watcher smoke adds Windows PowerShell watcher harness proof for process start, unprompted change detection, packet generation, and toggle-controlled stop on the CI host.
 
-- a persistent watcher run on the operator's Windows machine;
+These validators do not establish:
+
+- persistent operation on the operator's specific Windows machine;
 - parsing of the operator's current ignored artifact collection;
+- operating-system startup registration or reboot persistence;
 - build proof;
 - launcher proof;
 - command acknowledgement proof;

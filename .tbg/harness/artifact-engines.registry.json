@@ -1,6 +1,6 @@
 {
   "schema": "TbgArtifactEngineRegistry.v1",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "defaults": {
     "outputRoot": "artifacts/latest/artifact-engine",
     "stateRoot": ".local/tbg-artifact-engine",
@@ -20,6 +20,7 @@
       "authority": "read_only",
       "required": true,
       "sourceRoots": [
+        ".tbg/harness/artifact-engines.registry.json",
         "artifacts/latest"
       ],
       "rootFilePatterns": [

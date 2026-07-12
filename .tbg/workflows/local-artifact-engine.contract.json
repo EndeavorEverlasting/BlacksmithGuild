@@ -3,13 +3,13 @@
   "schemaVersion": "TbgWorkflowContract.v1",
   "status": "implementation_active",
   "sprint": "local-artifact-engine-control-plane",
-  "contextBanner": "[TBG | Local Artifact Engine | harness/control-plane | branch: feat/local-artifact-engine-control-plane]",
+  "contextBanner": "[TBG | Local Artifact Engine | harness/control-plane | main]",
   "purpose": "Parse repo-local and explicitly supplied local artifacts, normalize evidence, cascade registered read-only engines, and produce operator-facing English reports without treating raw artifacts as self-executing truth.",
   "lane": "harness/local-artifact-control-plane",
   "requiresInactiveRuntime": false,
   "requiresForgeStopFirst": false,
-  "proofLevel": "static_harness",
-  "validationMode": "offline",
+  "proofLevel": "windows_watcher_harness",
+  "validationMode": "offline_cross_platform",
   "registryPath": ".tbg/harness/artifact-engines.registry.json",
   "statePath": ".local/tbg-artifact-engine/state.json",
   "fingerprintPath": ".local/tbg-artifact-engine/fingerprints.json",
@@ -45,6 +45,8 @@
     "Every engine action must be deterministic, idempotent, local, bounded, and read-only with respect to source code, Git history, pull requests, worktrees, saves, and game state.",
     "An upstream engine may enqueue downstream engines only through declared registry edges.",
     "A cascade must reject cycles, enforce a maximum engine count, and exclude its own output directory from discovery.",
+    "The watcher must detect changed configured artifacts without requiring a producer command, while named producer triggers remain the low-latency path.",
+    "Turning the toggle off must revoke automatic authority and stop the watcher process recorded by the local lease.",
     "JSON owns variables and machine state. English reports own operator explanation. The two surfaces must describe the same terminal state and next decision.",
     "Artifact parsing may classify proof, but it may not manufacture proof that the source artifact does not contain.",
     "The automatic path must fail closed when strict mode encounters missing required inputs, invalid JSON, a registry cycle, or an unregistered engine."
@@ -55,6 +57,7 @@
     "parse JSON, JSONL, Markdown, text, and log files within configured size limits",
     "write ignored normalized packets, reports, events, progress, fingerprints, state, and handoff files",
     "start or stop a repo-local watcher process when the operator changes the toggle",
+    "detect changed configured artifacts through polling without a producer command",
     "cascade registered internal read-only engines",
     "classify terminal state, proof boundary, blockers, and exact next commands"
   ],
@@ -70,6 +73,7 @@
   ],
   "operatingLoop": [
     "toggle_authority",
+    "watcher_or_producer_trigger",
     "artifact_discovery",
     "artifact_parse",
     "engine_classification",
@@ -91,7 +95,11 @@
       "stale PR recovery output produces a bounded next-action packet",
       "the handoff engine consumes upstream engine packets",
       "the JSON result, JSONL events, progress log, English report, and handoff agree",
-      "the validator passes in CI"
+      "Windows PowerShell starts the watcher and records a live process lease",
+      "the Windows watcher detects a changed configured artifact without a producer command",
+      "the watcher writes a watcher_change_detection result in the selected mode",
+      "turning the toggle off stops the recorded watcher process and removes its lease",
+      "the static validator and Windows watcher smoke both pass in CI"
     ]
   },
   "terminalStates": [
