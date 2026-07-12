@@ -24,8 +24,10 @@ function Invoke-TbgChild {
     foreach ($argument in $Arguments) { $hostArguments.Add($argument) | Out-Null }
 
     $output = & $hostPath @($hostArguments.ToArray()) 2>&1
+    $exitCode = $LASTEXITCODE
+    $global:LASTEXITCODE = 0
     return [pscustomobject]@{
-        exitCode = $LASTEXITCODE
+        exitCode = $exitCode
         output = (($output | Out-String).TrimEnd())
     }
 }
