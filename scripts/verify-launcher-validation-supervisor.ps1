@@ -104,7 +104,7 @@ foreach ($needle in @(
     'Divergence does not mean stop',
     'safe fast-forward',
     'concurrent worktrees',
-    'does not reset or discard local work',
+    'do not reset or discard local work',
     'does not prove movement or trading',
     'TbgLauncherValidationSupervisor.v1'
 )) { Need $doc $needle }
