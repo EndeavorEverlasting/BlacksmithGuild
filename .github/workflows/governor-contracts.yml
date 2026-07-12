@@ -57,6 +57,10 @@ jobs:
         shell: pwsh
         run: ./scripts/verify-clickable-command-surface.ps1
 
+      - name: Verify autonomous guild-loop context controller
+        shell: pwsh
+        run: ./scripts/verify-autonomous-guild-loop-context-contract.ps1
+
       - name: Verify command-bus patch contract
         shell: pwsh
         run: ./scripts/verify-campaign-governor-commandbus-patch-contract.ps1
