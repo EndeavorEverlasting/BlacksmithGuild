@@ -1,4 +1,4 @@
-# Persistent multimodal supervisor for the launcher-validation workhorse.
+﻿# Persistent multimodal supervisor for the launcher-validation workhorse.
 # It treats dirty, ahead, diverged, or wrong-branch worktrees as mode-selection inputs,
 # not immediate terminal failures. It never discards local work.
 
@@ -85,9 +85,15 @@ function Invoke-GitRaw {
         [string]$WorkingRoot = $originRoot,
         [switch]$AllowFailure
     )
-    $global:LASTEXITCODE = 0
-    $output = & git -C $WorkingRoot @Arguments 2>&1
-    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = 0
+        $output = & git -C $WorkingRoot @Arguments 2>&1
+        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     if (-not $AllowFailure -and $exitCode -ne 0) {
         throw ('git -C "{0}" {1} returned exit code {2}: {3}' -f $WorkingRoot, ($Arguments -join ' '), $exitCode, (($output | Out-String).Trim()))
     }
@@ -170,7 +176,9 @@ function New-ModeCandidate {
 
 function Add-CandidateUnique {
     param(
-        [Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$List,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[object]]$List,
         [Parameter(Mandatory = $true)]$Candidate
     )
     if (-not ($List | Where-Object { $_.mode -eq $Candidate.mode -and $_.ref -eq $Candidate.ref })) {
