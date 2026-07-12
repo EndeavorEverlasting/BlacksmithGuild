@@ -154,8 +154,13 @@ jobs:
     name: Windows PowerShell 5.1 supervisor regression
     runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout exact pull-request commit
+        shell: powershell
+        run: |
+          git init -q .
+          git remote add origin "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY.git"
+          git fetch -q --depth 1 origin $env:GITHUB_SHA
+          git checkout -q --detach FETCH_HEAD
 
       - name: Exercise synchronized first-candidate selection
         shell: powershell
