@@ -32,7 +32,7 @@ Put repo-wide facts here:
 - encoding rules;
 - where to find executable contracts and targeted skills.
 
-Put conditional brush-up material in `.tbg/skills/<skill-id>/SKILL.md`, not in this file. A skill may explain a workflow, proof ladder, stale-PR recovery path, operator control surface, launcher lifecycle, or MCP/LSP search pattern, but it must point back to executable contracts, policies, manifests, scripts, or current docs as the authority.
+Put conditional brush-up material in `.tbg/skills/<skill-id>/SKILL.md`, not in this file. A skill may explain a workflow, proof ladder, stale-PR recovery path, operator control surface, launcher lifecycle, terminal environment, or MCP/LSP search pattern, but it must point back to executable contracts, policies, manifests, scripts, or current docs as the authority.
 
 If a skill disagrees with a workflow contract, harness policy, operator catalog, or current source file, the executable source wins and the skill must be corrected.
 
@@ -45,6 +45,7 @@ Required default skills:
 - `agent-skill-factoring` for changing agent rules, skill docs, manifests, or prompt surfaces.
 - `harness-maturity` for deciding whether logic belongs in harness plumbing, a workflow contract, a registry, or narrow skill/domain code.
 - `compendium-preservation` for preserving high-value chat annotations, stale snapshots, and cross-sprint insights without treating stale context as current truth.
+- `operator-terminal-environment` for WezTerm, tmux, Neovim, voice-input, terminal-session, and local shell ergonomics around repo commands without making those tools repo dependencies.
 - `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
 
 Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
@@ -69,6 +70,17 @@ Default posture:
 5. verify against current source, contracts, PR state, or fresh artifacts before implementation or closeout.
 
 Use `.tbg/skills/compendium-preservation/SKILL.md` and `.tbg/workflows/compendium-preservation.contract.json` when a sprint needs to preserve a large set of insights without losing rigor.
+
+## Operator terminal environment rule
+
+WezTerm, tmux, Neovim, and voice-input tools belong to the operator environment layer above the repo. They help the operator and agents run, read, and organize BlacksmithGuild commands; they are not runtime proof and they are not required repo dependencies.
+
+Default posture:
+1. expose clean repo commands and compact packets that work in any terminal;
+2. document optional terminal/session topology as examples, not mandatory setup;
+3. keep long details in artifacts or PR comments instead of terminal scrollback;
+4. never commit personal terminal config, shell history, fonts, screenshots, tokens, or generated terminal logs;
+5. use `.tbg/skills/operator-terminal-environment/SKILL.md` and `.tbg/workflows/operator-terminal-environment.contract.json` before changing terminal/operator-environment doctrine.
 
 ## Stale PR policy
 
