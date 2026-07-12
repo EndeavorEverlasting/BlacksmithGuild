@@ -1,6 +1,6 @@
 {
   "schemaVersion": "TbgOperatorControlSurface.v1",
-  "updatedDate": "2026-07-11",
+  "updatedDate": "2026-07-12",
   "purpose": "Canonical operator-facing launch, hotkey, engine, wrapper, capability, and proof-level catalog.",
   "sourceFiles": [
     "src/BlacksmithGuild/DevTools/DevHotkeyHandler.cs",
@@ -10,6 +10,7 @@
     ".tbg/operator/worker-cadence.json",
     "scripts/run-maptrade-branch-autostart-proof.ps1",
     "scripts/run-tbg-visible-trade-cycle.ps1",
+    "scripts/run-autonomous-guild-loop-operator.ps1",
     "scripts/run-autonomous-assist-session.ps1",
     "scripts/forge-stop.ps1"
   ],
@@ -118,10 +119,10 @@
     },
     {
       "command": ".\\Run-AutonomousGuildLoop.cmd",
-      "kind": "async_start",
-      "terminalWait": false,
-      "result": "BlacksmithGuild_AutonomousGuildLoop.json",
-      "stop": "Ctrl+Alt+T until Manual, Ctrl+Alt+B, or .\\ForgeStop.cmd soft"
+      "kind": "operator_play_diagnostic",
+      "terminalWait": true,
+      "result": "BlacksmithGuild_AutonomousGuildLoop.json plus artifacts/latest/autonomous-guild-loop-operator.json",
+      "stop": "Ctrl+Alt+T until Manual, Ctrl+Alt+B, or .\\ForgeStop.cmd soft. If Bannerlord disappears during wait, wrapper records FAILED_game_disappeared_during_command."
     },
     {
       "command": ".\\Run-AutonomousAssistSession.cmd",
@@ -161,7 +162,7 @@
       "authorityGateEffective": true,
       "automationCapability": "One bounded asynchronous cycle; explicit start is allowed in Hybrid.",
       "handoff": "market plan -> route/cohesion -> bounded trade/forge step -> loop report",
-      "runtimeProof": "terminal wrapper wait is not implemented"
+      "runtimeProof": "operator wrapper records terminal ACK/status/crash outcomes; continuous background play still needs focus/pause watch mode"
     },
     {
       "engine": "Cohesion",
