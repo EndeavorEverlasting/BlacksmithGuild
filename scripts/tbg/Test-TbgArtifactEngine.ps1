@@ -48,7 +48,7 @@ foreach ($path in @($scriptPath, $testPath)) {
     $tokens = $null
     $errors = $null
     [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$tokens, [ref]$errors) | Out-Null
-    Assert-Tbg -Condition ($errors.Count -eq 0) -Message "PowerShell parse errors were found in $path: $($errors.Message -join '; ')"
+    Assert-Tbg -Condition ($errors.Count -eq 0) -Message "PowerShell parse errors were found in ${path}: $($errors.Message -join '; ')"
 }
 
 foreach ($path in @($contractPath, $registryPath)) {
