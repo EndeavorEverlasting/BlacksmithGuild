@@ -1,6 +1,6 @@
 ﻿# Verifies that Bannerlord dependency-mismatch CAUTION handling is a first-class launcher handoff state
 # with one bounded force-close retry, an explicit machine-readable dead end, child-state preservation,
-# and diagnostic retention.
+# dual-surface terminal evidence, and diagnostic retention.
 
 $ErrorActionPreference = 'Stop'
 
@@ -55,7 +55,11 @@ foreach ($needle in @(
     'one retry',
     'sameFailureAsPrevious',
     'parent launcher process reads and preserves the child attempt''s terminal recovery state',
+    'BlacksmithGuild_Launch.log contains LAUNCH_STATE=launcher_recovery_dead_end',
+    'BlacksmithGuild_LauncherRecovery.json has state=dead_end',
     'status/BlacksmithGuild_LauncherRecovery.json',
+    'ForgeContinue.cmd',
+    'No new command is required to enable the retry.',
     'the PID comes from the fresh `TbgLauncherWindowContext.v1` context',
     'the candidate window belongs to that same PID',
     'the candidate is not the Safe Mode modal',
@@ -178,5 +182,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: launcher dependency caution doctrine, bounded recovery, child dead-end preservation, and diagnostic retention verified.' -ForegroundColor Green
+Write-Host 'PASS: launcher dependency caution doctrine, bounded recovery, child dead-end preservation, dual-surface evidence, and diagnostic retention verified.' -ForegroundColor Green
 exit 0
