@@ -11,11 +11,13 @@ on:
       - 'scripts/harness/**'
       - 'scripts/mcp/**'
       - 'scripts/tbg/**'
-      - '.claude/hooks/**'
       - 'docs/architecture/**'
       - 'docs/handoff/**'
       - '.github/workflows/**'
+      - 'ForgeArtifactEngine.cmd'
+      - 'ForgeRepoHygiene.cmd'
       - 'ForgeStalePrRecovery.cmd'
+      - 'AGENTS.md'
       - 'CLAUDE.md'
   push:
     paths:
@@ -27,11 +29,13 @@ on:
       - 'scripts/harness/**'
       - 'scripts/mcp/**'
       - 'scripts/tbg/**'
-      - '.claude/hooks/**'
       - 'docs/architecture/**'
       - 'docs/handoff/**'
       - '.github/workflows/**'
+      - 'ForgeArtifactEngine.cmd'
+      - 'ForgeRepoHygiene.cmd'
       - 'ForgeStalePrRecovery.cmd'
+      - 'AGENTS.md'
       - 'CLAUDE.md'
   workflow_dispatch:
 
@@ -85,6 +89,30 @@ jobs:
         with:
           name: stale-pr-recovery-validator-${{ github.run_id }}
           path: artifacts/latest/stale-pr-recovery-ci/validator.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify local artifact engine control plane
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/artifact-engine-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgArtifactEngine.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload local artifact engine validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-engine-validator-${{ github.run_id }}
+          path: artifacts/latest/artifact-engine-ci/validator.log
           if-no-files-found: error
           retention-days: 14
 
