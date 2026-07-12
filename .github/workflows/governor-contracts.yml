@@ -149,3 +149,14 @@ jobs:
         run: |
           Write-Host 'Command-bus source verifier intentionally requires the local patch output.'
           Write-Host 'Run scripts/validate-campaign-governor-local.ps1 -ApplyCommandBusPatch on Windows developer box before marking PR ready.'
+
+  windows-powershell-supervisor-regression:
+    name: Windows PowerShell 5.1 supervisor regression
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Exercise synchronized first-candidate selection
+        shell: powershell
+        run: .\scripts\test-launcher-validation-supervisor-workspace-selection.ps1
