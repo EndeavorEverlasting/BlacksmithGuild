@@ -44,6 +44,7 @@ Required default skills:
 - `repo-floor-hygiene` for branch, PR, worktree, conflict, stale artifact, and safe-base mapping.
 - `agent-skill-factoring` for changing agent rules, skill docs, manifests, or prompt surfaces.
 - `harness-maturity` for deciding whether logic belongs in harness plumbing, a workflow contract, a registry, or narrow skill/domain code.
+- `compendium-preservation` for preserving high-value chat annotations, stale snapshots, and cross-sprint insights without treating stale context as current truth.
 - `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
 
 Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
@@ -55,6 +56,19 @@ Harness maturity is not a raw line-count target. A thick harness is useful when 
 Keep domain behavior narrow. Route, smithing, economy, trade, save identity, launcher lifecycle, and gameplay decisions should not be moved into harness merely to make the harness percentage look higher.
 
 Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before any refactor that claims to make the app more harness-driven. The acceptable reason is a real safety, replay, audit, rollback, reporting, or agent-context-load problem. Reject percentage chasing.
+
+## Compendium preservation rule
+
+Long chat annotations, stale PR descriptions, and operator comments can contain important design insight, but they are not automatically current repo truth.
+
+Default posture:
+1. capture the source and its approximate freshness;
+2. classify it as current truth, stale-but-useful principle, replay candidate, needs runtime proof, or rejected/superseded;
+3. route it to the narrowest owning skill or workflow;
+4. preserve provenance in a repo-owned doc, contract, PR body, or artifact index;
+5. verify against current source, contracts, PR state, or fresh artifacts before implementation or closeout.
+
+Use `.tbg/skills/compendium-preservation/SKILL.md` and `.tbg/workflows/compendium-preservation.contract.json` when a sprint needs to preserve a large set of insights without losing rigor.
 
 ## Stale PR policy
 
