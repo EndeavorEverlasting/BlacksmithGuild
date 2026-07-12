@@ -60,6 +60,20 @@ Keep domain behavior narrow. Route, smithing, economy, trade, save identity, lau
 
 Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before any refactor that claims to make the app more harness-driven. The acceptable reason is a real safety, replay, audit, rollback, reporting, or agent-context-load problem. Reject percentage chasing.
 
+## Continuum interoperability rule
+
+BlacksmithGuild may export proven cross-cutting harness capabilities to Continuum, but Continuum remains an optional development accelerator rather than a build, validation, launch, or runtime dependency.
+
+Default posture:
+1. classify the generic core separately from the BlacksmithGuild adapter;
+2. export metadata before moving implementation;
+3. require Continuum parity tests and BlacksmithGuild standalone fallback proof before delegation;
+4. keep repo policy, paths, workflow names, proof vocabulary, game adapters, and runtime authority in BlacksmithGuild;
+5. move no route, smithing, economy, trade, save, launcher, campaign, or gameplay behavior into Continuum's generic core;
+6. remove duplicated BlacksmithGuild code only in a later explicit extraction sprint with rollback instructions.
+
+Use `.tbg/workflows/continuum-interoperability.contract.json`, `scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1`, and `docs/architecture/continuum-interoperability.md` for this experiment.
+
 ## Compendium preservation rule
 
 Long chat annotations, stale PR descriptions, and operator comments can contain important design insight, but they are not automatically current repo truth.

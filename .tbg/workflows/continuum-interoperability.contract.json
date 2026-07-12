@@ -1,0 +1,277 @@
+{
+  "id": "continuum-interoperability",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "continuum-harness-interoperability",
+  "contextBanner": "[TBG | Continuum Interoperability | harness architecture | branch: feat/continuum-harness-interoperability]",
+  "status": "experiment_active",
+  "purpose": "Expose BlacksmithGuild harness capabilities to Continuum through a versioned, one-way packet while preserving BlacksmithGuild as a standalone app and authority over its runtime, proof, and domain adapters.",
+  "producer": {
+    "repo": "EndeavorEverlasting/BlacksmithGuild",
+    "appId": "blacksmith-guild",
+    "authority": "BlacksmithGuild owns capability classification, app adapters, proof boundaries, and removal decisions."
+  },
+  "consumer": {
+    "repo": "EndeavorEverlasting/Continuum",
+    "required": false,
+    "relationship": "optional_development_accelerator"
+  },
+  "operatingModel": {
+    "packetDirection": "blacksmithguild_to_continuum",
+    "requiredForBuild": false,
+    "requiredForRuntime": false,
+    "requiredForRepositoryValidation": false,
+    "continuumMayMutateBlacksmithGuildRuntime": false,
+    "blacksmithGuildRemainsStandalone": true
+  },
+  "allowedScope": [
+    "inventorying cross-cutting harness capabilities already proven useful in BlacksmithGuild",
+    "exporting capability metadata, source paths, ownership boundaries, and migration readiness",
+    "letting Continuum consume generic contracts or reimplement generic orchestration behind an optional adapter",
+    "validating that BlacksmithGuild remains buildable, testable, and operable without Continuum",
+    "preserving app-specific policy, workflow names, evidence semantics, and game/runtime adapters in BlacksmithGuild"
+  ],
+  "forbiddenScope": [
+    "making Continuum a BlacksmithGuild build, validation, launch, or runtime dependency",
+    "moving route, smithing, economy, trade, campaign, save, launcher, or gameplay decisions into a generic Continuum core",
+    "deleting BlacksmithGuild harness code before a replacement has parity evidence and an app-owned adapter",
+    "allowing Continuum to redefine BlacksmithGuild proof levels or claim installed-game behavior",
+    "cross-repository mutation from the export command",
+    "claiming runtime proof from this static interoperability contract"
+  ],
+  "classifications": [
+    {
+      "id": "candidate_for_continuum",
+      "meaning": "Cross-cutting capability whose generic core may be implemented in Continuum after parity tests exist."
+    },
+    {
+      "id": "blacksmith_adapter",
+      "meaning": "Repository-owned policy or adapter that may call a generic Continuum capability but remains authoritative in BlacksmithGuild."
+    },
+    {
+      "id": "domain_locked",
+      "meaning": "Game, launcher, save, campaign, route, smithing, trade, economy, or runtime behavior that must remain outside Continuum's generic core."
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "exact-head-pr-lifecycle",
+      "classification": "candidate_for_continuum",
+      "maturity": "repo_proven",
+      "summary": "Inspect exact-head checks, review state, mergeability, holds, reconciliation, and bounded squash merge decisions.",
+      "sourcePaths": [
+        ".github/workflows/pr-lifecycle-automation.yml",
+        ".tbg/workflows/pr-lifecycle-automation.contract.json",
+        "scripts/tbg/Invoke-TbgPrLifecycle.ps1",
+        "scripts/tbg/Invoke-TbgPrLifecycleSweep.ps1",
+        "scripts/tbg/Test-TbgPrLifecycleAutomation.ps1",
+        "scripts/tbg/Test-TbgPrLifecycleSweep.ps1",
+        "scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1"
+      ],
+      "genericCore": [
+        "exact-head identity",
+        "required, conditional-required, and advisory check classification",
+        "review and unresolved-thread blockers",
+        "draft promotion and deterministic merge eligibility",
+        "scheduled and explicit reconciliation",
+        "machine-readable lifecycle result packets"
+      ],
+      "blacksmithAdapter": [
+        "required workflow names",
+        "control labels",
+        "legacy and stacked PR policy",
+        "installed-game and OS-specific validation remains advisory"
+      ],
+      "proofLevel": "github_lifecycle_harness_proof"
+    },
+    {
+      "id": "repo-floor-topology",
+      "classification": "candidate_for_continuum",
+      "maturity": "contract_proven",
+      "summary": "Map branches, PRs, worktrees, conflicts, dirty state, stale value, and safe sprint bases before implementation.",
+      "sourcePaths": [
+        ".tbg/skills/repo-floor-hygiene/SKILL.md",
+        ".tbg/harness/manifest.json",
+        "docs/handoff/post-pr41-repo-hygiene-map.md"
+      ],
+      "genericCore": [
+        "branch and PR topology packet",
+        "dirty and conflicted worktree classification",
+        "safe-base selection",
+        "stale value replay disposition",
+        "non-destructive cleanup recommendations"
+      ],
+      "blacksmithAdapter": [
+        "protected local path",
+        "BlacksmithGuild artifact exclusions",
+        "repo-specific stale PR map"
+      ],
+      "proofLevel": "repository_hygiene_harness_proof"
+    },
+    {
+      "id": "harness-maturity-classifier",
+      "classification": "candidate_for_continuum",
+      "maturity": "contract_proven",
+      "summary": "Classify proposed logic as cross-cutting harness, narrow skill/domain behavior, or rejected ceremony.",
+      "sourcePaths": [
+        ".tbg/workflows/harness-skill-maturity.contract.json",
+        ".tbg/skills/harness-maturity/SKILL.md",
+        "docs/architecture/harness-skill-maturity.md"
+      ],
+      "genericCore": [
+        "pain-point evidence requirement",
+        "cross-cutting versus domain classification",
+        "minimal-surface selection",
+        "authority-chain validation",
+        "percentage-chasing rejection"
+      ],
+      "blacksmithAdapter": [
+        "BlacksmithGuild domain boundaries",
+        "repo-owned skill and workflow paths"
+      ],
+      "proofLevel": "architecture_contract_proof"
+    },
+    {
+      "id": "implementation-closeout",
+      "classification": "candidate_for_continuum",
+      "maturity": "contract_proven",
+      "summary": "Coordinate concurrent branches and worktrees through replay, validation, evidence retention, first-user checks, and clean closeout.",
+      "sourcePaths": [
+        ".tbg/workflows/implementation-completion-clean-branches.contract.json",
+        "docs/handoff/implementation-completion-clean-branches.md",
+        "docs/first-test-after-clone.md"
+      ],
+      "genericCore": [
+        "one lane per worktree",
+        "fetch-before-decision",
+        "current canonical base selection",
+        "replay-before-close",
+        "first-test separation from runtime proof"
+      ],
+      "blacksmithAdapter": [
+        "BlacksmithGuild first-test commands",
+        "artifact retention paths",
+        "active runtime proof lane names"
+      ],
+      "proofLevel": "implementation_closeout_contract_proof"
+    },
+    {
+      "id": "policy-reporting",
+      "classification": "candidate_for_continuum",
+      "maturity": "policy_proven",
+      "summary": "Render policy and decision state as separate machine-readable and syntactic-English reports.",
+      "sourcePaths": [
+        ".tbg/harness/policies/policy-reporting.policy.json",
+        ".tbg/harness/manifest.json",
+        "docs/architecture/effective-policy-english-reports.md"
+      ],
+      "genericCore": [
+        "machine-readable raw records",
+        "separate English rendering",
+        "versioned schemas",
+        "artifact registration",
+        "report provenance"
+      ],
+      "blacksmithAdapter": [
+        "BlacksmithGuild schema names",
+        "repo artifact locations",
+        "app-specific policy vocabulary"
+      ],
+      "proofLevel": "policy_reporting_contract_proof"
+    },
+    {
+      "id": "bannerlord-runtime-authority",
+      "classification": "domain_locked",
+      "maturity": "app_owned",
+      "summary": "Keep installed-game, launcher, save, campaign, movement, trade, smithing, and live behavior authority inside BlacksmithGuild.",
+      "sourcePaths": [
+        "AGENTS.md",
+        ".tbg/harness/manifest.json"
+      ],
+      "genericCore": [],
+      "blacksmithAdapter": [
+        "Bannerlord installation and process discovery",
+        "launcher lifecycle",
+        "save identity and mutation boundaries",
+        "campaign attach and command acknowledgement",
+        "movement, route, trade, economy, and smithing behavior",
+        "installed-game evidence and live runtime proof"
+      ],
+      "proofLevel": "app_runtime_authority_only"
+    }
+  ],
+  "migrationRules": [
+    "Export metadata before moving implementation.",
+    "Require a Continuum-side parity test for every generic capability before BlacksmithGuild delegates to it.",
+    "Keep a BlacksmithGuild adapter that owns repo policy, paths, workflow names, proof vocabulary, and domain boundaries.",
+    "Run BlacksmithGuild validation with Continuum unavailable before accepting any delegation.",
+    "Remove duplicated BlacksmithGuild generic code only in a later explicit extraction sprint with rollback instructions.",
+    "Treat installed-game Windows and Linux runs as advisory evidence unless a narrowly scoped app-runtime sprint explicitly requires one."
+  ],
+  "packet": {
+    "schema": "TbgContinuumCapabilityPacket.v1",
+    "schemaPath": ".tbg/harness/schemas/continuum-capability-packet.schema.json",
+    "exporterPath": "scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1",
+    "defaultTransport": "stdout",
+    "optionalTransport": "explicit_file",
+    "networkAccess": false,
+    "crossRepositoryMutation": false
+  },
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "inventory",
+      "requiredEvidence": [
+        "current BlacksmithGuild source paths",
+        "capability classification",
+        "generic core and app adapter split"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "export",
+      "requiredEvidence": [
+        "schema-valid capability packet",
+        "no network access",
+        "no Continuum dependency"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "consume_experimentally",
+      "requiredEvidence": [
+        "Continuum adapter or importer",
+        "parity tests",
+        "BlacksmithGuild standalone validation"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "extract_deliberately",
+      "requiredEvidence": [
+        "explicit extraction sprint",
+        "rollback path",
+        "no loss of BlacksmithGuild policy or runtime authority"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "contract and schema parse",
+      "all source paths exist",
+      "capability ids are unique",
+      "generic candidate cores exclude app-domain behavior",
+      "domain-locked runtime authority is explicit",
+      "export packet validates",
+      "BlacksmithGuild remains standalone",
+      "Governor Contracts pass"
+    ]
+  },
+  "terminalStates": [
+    "PASS_export_boundary_proven",
+    "PASS_continuum_candidate_inventory_published",
+    "BLOCKED_missing_source_path",
+    "BLOCKED_packet_invalid",
+    "REJECTED_runtime_coupling",
+    "REJECTED_domain_behavior_extraction"
+  ]
+}
