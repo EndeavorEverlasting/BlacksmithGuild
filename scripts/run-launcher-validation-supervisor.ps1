@@ -1,4 +1,4 @@
-# Persistent multimodal supervisor for the launcher-validation workhorse.
+﻿# Persistent multimodal supervisor for the launcher-validation workhorse.
 # It treats dirty, ahead, diverged, or wrong-branch worktrees as mode-selection inputs,
 # not immediate terminal failures. It never discards local work.
 
@@ -170,7 +170,9 @@ function New-ModeCandidate {
 
 function Add-CandidateUnique {
     param(
-        [Parameter(Mandatory = $true)][System.Collections.Generic.List[object]]$List,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.List[object]]$List,
         [Parameter(Mandatory = $true)]$Candidate
     )
     if (-not ($List | Where-Object { $_.mode -eq $Candidate.mode -and $_.ref -eq $Candidate.ref })) {
