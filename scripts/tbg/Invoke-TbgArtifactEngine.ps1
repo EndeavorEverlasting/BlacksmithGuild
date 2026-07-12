@@ -24,7 +24,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-function Get-TbgPropertyValue {
+function Get-TbgValue {
     param(
         [AllowNull()][object]$Object,
         [Parameter(Mandatory = $true)][string]$Name,
@@ -66,31 +66,31 @@ function Get-TbgRelativePath {
         [Parameter(Mandatory = $true)][string]$Path
     )
 
-    $rootFull = [System.IO.Path]::GetFullPath($RepoRoot).TrimEnd('\', '/')
-    $pathFull = [System.IO.Path]::GetFullPath($Path)
-    if ($pathFull.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return $pathFull.Substring($rootFull.Length).TrimStart('\', '/') -replace '\\', '/'
+    $root = [System.IO.Path]::GetFullPath($RepoRoot).TrimEnd('\', '/')
+    $full = [System.IO.Path]::GetFullPath($Path)
+    if ($full.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return ($full.Substring($root.Length).TrimStart('\', '/') -replace '\\', '/')
     }
-    return $pathFull
+    return $full
 }
 
-function Write-TbgJsonAtomic {
+function Write-TbgJson {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)][object]$Value,
-        [int]$Depth = 20
+        [int]$Depth = 24
     )
 
     $directory = Split-Path -Parent $Path
     if (-not [string]::IsNullOrWhiteSpace($directory)) {
         New-Item -ItemType Directory -Force -Path $directory | Out-Null
     }
-    $temporaryPath = "$Path.tmp.$PID"
-    $Value | ConvertTo-Json -Depth $Depth | Set-Content -LiteralPath $temporaryPath -Encoding UTF8
-    Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
+    $temporary = "$Path.tmp.$PID"
+    $Value | ConvertTo-Json -Depth $Depth | Set-Content -LiteralPath $temporary -Encoding UTF8
+    Move-Item -LiteralPath $temporary -Destination $Path -Force
 }
 
-function Write-TbgTextAtomic {
+function Write-TbgText {
     param(
         [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)][string]$Text
@@ -100,17 +100,17 @@ function Write-TbgTextAtomic {
     if (-not [string]::IsNullOrWhiteSpace($directory)) {
         New-Item -ItemType Directory -Force -Path $directory | Out-Null
     }
-    $temporaryPath = "$Path.tmp.$PID"
-    $Text | Set-Content -LiteralPath $temporaryPath -Encoding UTF8
-    Move-Item -LiteralPath $temporaryPath -Destination $Path -Force
+    $temporary = "$Path.tmp.$PID"
+    $Text | Set-Content -LiteralPath $temporary -Encoding UTF8
+    Move-Item -LiteralPath $temporary -Destination $Path -Force
 }
 
-function Get-TbgSha256Text {
+function Get-TbgHash {
     param([Parameter(Mandatory = $true)][string]$Text)
 
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
         return ([System.BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
     }
     finally {
@@ -120,17 +120,13 @@ function Get-TbgSha256Text {
 
 function Get-TbgState {
     param(
-        [Parameter(Mandatory = $true)][string]$StatePath,
+        [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)][string]$DefaultMode
     )
 
-    if (Test-Path -LiteralPath $StatePath -PathType Leaf) {
-        try {
-            return Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
-        }
-        catch {
-            throw "The artifact engine state file is invalid: $StatePath. $($_.Exception.Message)"
-        }
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+        catch { throw "The artifact engine state file is invalid: $Path. $($_.Exception.Message)" }
     }
 
     return [pscustomobject][ordered]@{
@@ -146,69 +142,61 @@ function Get-TbgState {
 
 function Set-TbgState {
     param(
-        [Parameter(Mandatory = $true)][string]$StatePath,
+        [Parameter(Mandatory = $true)][string]$Path,
         [Parameter(Mandatory = $true)][bool]$Enabled,
         [Parameter(Mandatory = $true)][string]$StateMode,
         [Parameter(Mandatory = $true)][string]$UpdatedBy,
         [string[]]$Roots = @()
     )
 
-    $current = Get-TbgState -StatePath $StatePath -DefaultMode $StateMode
-    $generation = [int](Get-TbgPropertyValue -Object $current -Name 'generation' -Default 0) + 1
+    $current = Get-TbgState -Path $Path -DefaultMode $StateMode
     $state = [pscustomobject][ordered]@{
         schema = 'TbgArtifactEngineState.v1'
         enabled = $Enabled
         mode = $StateMode
-        generation = $generation
+        generation = ([int](Get-TbgValue -Object $current -Name 'generation' -Default 0) + 1)
         updatedUtc = (Get-Date).ToUniversalTime().ToString('o')
         updatedBy = $UpdatedBy
         additionalArtifactRoots = @($Roots)
     }
-    Write-TbgJsonAtomic -Path $StatePath -Value $state
+    Write-TbgJson -Path $Path -Value $state
     return $state
 }
 
-function Get-TbgWatcherState {
-    param([Parameter(Mandatory = $true)][string]$WatcherPath)
+function Get-TbgWatcher {
+    param([Parameter(Mandatory = $true)][string]$Path)
 
-    if (-not (Test-Path -LiteralPath $WatcherPath -PathType Leaf)) { return $null }
-    try {
-        return Get-Content -LiteralPath $WatcherPath -Raw | ConvertFrom-Json
-    }
-    catch {
-        return $null
-    }
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+    try { return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json }
+    catch { return $null }
 }
 
-function Test-TbgWatcherRunning {
+function Test-TbgWatcher {
     param([AllowNull()][object]$Watcher)
 
     if ($null -eq $Watcher) { return $false }
-    $watcherPid = [int](Get-TbgPropertyValue -Object $Watcher -Name 'pid' -Default 0)
+    $watcherPid = [int](Get-TbgValue -Object $Watcher -Name 'pid' -Default 0)
     if ($watcherPid -le 0) { return $false }
     $process = Get-Process -Id $watcherPid -ErrorAction SilentlyContinue
     if ($null -eq $process) { return $false }
 
-    $recordedStart = [string](Get-TbgPropertyValue -Object $Watcher -Name 'startedUtc' -Default '')
+    $recordedStart = [string](Get-TbgValue -Object $Watcher -Name 'startedUtc' -Default '')
     if ([string]::IsNullOrWhiteSpace($recordedStart)) { return $true }
     try {
         $difference = [math]::Abs(($process.StartTime.ToUniversalTime() - [datetime]::Parse($recordedStart).ToUniversalTime()).TotalSeconds)
         return ($difference -lt 3)
     }
-    catch {
-        return $true
-    }
+    catch { return $true }
 }
 
 function Stop-TbgWatcher {
-    param([Parameter(Mandatory = $true)][string]$WatcherPath)
+    param([Parameter(Mandatory = $true)][string]$Path)
 
-    $watcher = Get-TbgWatcherState -WatcherPath $WatcherPath
-    if (Test-TbgWatcherRunning -Watcher $watcher) {
-        $watcherPid = [int]$watcher.pid
-        Stop-Process -Id $watcherPid -ErrorAction SilentlyContinue
+    $watcher = Get-TbgWatcher -Path $Path
+    if (Test-TbgWatcher -Watcher $watcher) {
+        Stop-Process -Id ([int]$watcher.pid) -ErrorAction SilentlyContinue
     }
-    Remove-Item -LiteralPath $WatcherPath -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
 }
 
 function Start-TbgWatcher {
@@ -221,20 +209,17 @@ function Start-TbgWatcher {
         [string[]]$Roots = @()
     )
 
-    $existing = Get-TbgWatcherState -WatcherPath $WatcherPath
-    if (Test-TbgWatcherRunning -Watcher $existing) {
-        return $existing
-    }
+    $existing = Get-TbgWatcher -Path $WatcherPath
+    if (Test-TbgWatcher -Watcher $existing) { return $existing }
 
-    $hostProcess = Get-Process -Id $PID
-    $hostPath = $hostProcess.Path
+    $hostPath = (Get-Process -Id $PID).Path
     if ([string]::IsNullOrWhiteSpace($hostPath)) {
-        $hostPath = if ($PSVersionTable.PSEdition -eq 'Core') { 'pwsh' } else { 'powershell.exe' }
+        $hostPath = if ([string](Get-TbgValue -Object $PSVersionTable -Name 'PSEdition' -Default 'Desktop') -eq 'Core') { 'pwsh' } else { 'powershell.exe' }
     }
 
     $arguments = New-Object System.Collections.Generic.List[string]
     $arguments.Add('-NoProfile') | Out-Null
-    if ($IsWindows -or $PSVersionTable.PSEdition -ne 'Core') {
+    if ($env:OS -eq 'Windows_NT') {
         $arguments.Add('-ExecutionPolicy') | Out-Null
         $arguments.Add('Bypass') | Out-Null
     }
@@ -252,17 +237,15 @@ function Start-TbgWatcher {
         $arguments.Add(('"{0}"' -f $root)) | Out-Null
     }
 
-    $startParameters = @{
+    $parameters = @{
         FilePath = $hostPath
         ArgumentList = @($arguments.ToArray())
         PassThru = $true
     }
-    if ($env:OS -eq 'Windows_NT') {
-        $startParameters['WindowStyle'] = 'Hidden'
-    }
-
-    $process = Start-Process @startParameters
+    if ($env:OS -eq 'Windows_NT') { $parameters['WindowStyle'] = 'Hidden' }
+    $process = Start-Process @parameters
     Start-Sleep -Milliseconds 150
+
     $watcher = [pscustomobject][ordered]@{
         schema = 'TbgArtifactEngineWatcher.v1'
         pid = $process.Id
@@ -270,11 +253,11 @@ function Start-TbgWatcher {
         scriptPath = $ScriptPath
         pollSeconds = $Interval
     }
-    Write-TbgJsonAtomic -Path $WatcherPath -Value $watcher
+    Write-TbgJson -Path $WatcherPath -Value $watcher
     return $watcher
 }
 
-function Get-TbgEngineFiles {
+function Get-TbgFiles {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][object]$Engine,
@@ -283,19 +266,19 @@ function Get-TbgEngineFiles {
     )
 
     $files = New-Object System.Collections.Generic.List[object]
+    $extensions = @((Get-TbgValue -Object $Engine -Name 'extensions' -Default @()) | ForEach-Object { ([string]$_).ToLowerInvariant() })
     $excludePrefixes = @($Registry.defaults.excludePrefixes)
-    $extensions = @($Engine.extensions | ForEach-Object { ([string]$_).ToLowerInvariant() })
+    $roots = @((Get-TbgValue -Object $Engine -Name 'sourceRoots' -Default @())) + @($ExtraRoots)
 
-    foreach ($sourceRoot in @($Engine.sourceRoots) + @($ExtraRoots)) {
+    foreach ($sourceRoot in $roots) {
         if ([string]::IsNullOrWhiteSpace([string]$sourceRoot)) { continue }
         $resolvedRoot = Resolve-TbgPath -RepoRoot $RepoRoot -Path ([string]$sourceRoot)
         if (-not (Test-Path -LiteralPath $resolvedRoot)) { continue }
-
-        if (Test-Path -LiteralPath $resolvedRoot -PathType Leaf) {
-            $candidates = @(Get-Item -LiteralPath $resolvedRoot)
+        $candidates = if (Test-Path -LiteralPath $resolvedRoot -PathType Leaf) {
+            @(Get-Item -LiteralPath $resolvedRoot)
         }
         else {
-            $candidates = @(Get-ChildItem -LiteralPath $resolvedRoot -Recurse -File -ErrorAction SilentlyContinue)
+            @(Get-ChildItem -LiteralPath $resolvedRoot -Recurse -File -ErrorAction SilentlyContinue)
         }
 
         foreach ($candidate in $candidates) {
@@ -303,8 +286,8 @@ function Get-TbgEngineFiles {
             $relative = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $candidate.FullName
             $excluded = $false
             foreach ($prefix in $excludePrefixes) {
-                $normalizedPrefix = ([string]$prefix).TrimEnd('/', '\')
-                if ($relative.StartsWith($normalizedPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+                $normalized = ([string]$prefix).TrimEnd('/', '\')
+                if ($relative.StartsWith($normalized, [System.StringComparison]::OrdinalIgnoreCase)) {
                     $excluded = $true
                     break
                 }
@@ -313,7 +296,7 @@ function Get-TbgEngineFiles {
         }
     }
 
-    foreach ($pattern in @($Engine.rootFilePatterns)) {
+    foreach ($pattern in @((Get-TbgValue -Object $Engine -Name 'rootFilePatterns' -Default @()))) {
         foreach ($candidate in @(Get-ChildItem -LiteralPath $RepoRoot -File -Filter ([string]$pattern) -ErrorAction SilentlyContinue)) {
             $files.Add($candidate) | Out-Null
         }
@@ -322,14 +305,14 @@ function Get-TbgEngineFiles {
     return @($files.ToArray() | Sort-Object FullName -Unique)
 }
 
-function Get-TbgCandidateFiles {
+function Get-TbgCandidates {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][object]$Engine
     )
 
     $files = New-Object System.Collections.Generic.List[object]
-    foreach ($candidatePath in @($Engine.candidatePaths)) {
+    foreach ($candidatePath in @((Get-TbgValue -Object $Engine -Name 'candidatePaths' -Default @()))) {
         $resolved = Resolve-TbgPath -RepoRoot $RepoRoot -Path ([string]$candidatePath)
         if (Test-Path -LiteralPath $resolved -PathType Leaf) {
             $files.Add((Get-Item -LiteralPath $resolved)) | Out-Null
@@ -338,17 +321,16 @@ function Get-TbgCandidateFiles {
     return @($files.ToArray())
 }
 
-function Get-TbgFileSetFingerprint {
+function Get-TbgFingerprint {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
-        [Parameter(Mandatory = $true)][object[]]$Files
+        [object[]]$Files = @()
     )
 
     $parts = @($Files | Sort-Object FullName | ForEach-Object {
-        $relative = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $_.FullName
-        "$relative|$($_.Length)|$($_.LastWriteTimeUtc.Ticks)"
+        "$(Get-TbgRelativePath -RepoRoot $RepoRoot -Path $_.FullName)|$($_.Length)|$($_.LastWriteTimeUtc.Ticks)"
     })
-    return Get-TbgSha256Text -Text ($parts -join "`n")
+    return Get-TbgHash -Text ($parts -join "`n")
 }
 
 function ConvertFrom-TbgArtifact {
@@ -383,30 +365,25 @@ function ConvertFrom-TbgArtifact {
     }
 
     try {
-        $content = Get-Content -LiteralPath $File.FullName -Raw -ErrorAction Stop
+        $content = Get-Content -LiteralPath $File.FullName -Raw
         $record.lineCount = if ([string]::IsNullOrEmpty($content)) { 0 } else { @($content -split "`r?`n").Count }
         switch ($record.extension) {
             '.json' {
                 $value = $content | ConvertFrom-Json -ErrorAction Stop
                 $record.parseStatus = 'parsed'
-                $record.artifactSchema = [string](Get-TbgPropertyValue -Object $value -Name 'schema' -Default '')
-                $record.status = [string](Get-TbgPropertyValue -Object $value -Name 'status' -Default '')
-                $record.verdict = [string](Get-TbgPropertyValue -Object $value -Name 'verdict' -Default (Get-TbgPropertyValue -Object $value -Name 'passFail' -Default ''))
-                $record.terminalState = [string](Get-TbgPropertyValue -Object $value -Name 'terminalState' -Default '')
-                $record.proofLevel = [string](Get-TbgPropertyValue -Object $value -Name 'proofLevel' -Default '')
-                $record.nextCommand = [string](Get-TbgPropertyValue -Object $value -Name 'nextCommand' -Default '')
-                $record.summary = "The JSON artifact parsed successfully."
+                $record.artifactSchema = [string](Get-TbgValue -Object $value -Name 'schema' -Default '')
+                $record.status = [string](Get-TbgValue -Object $value -Name 'status' -Default '')
+                $record.verdict = [string](Get-TbgValue -Object $value -Name 'verdict' -Default (Get-TbgValue -Object $value -Name 'passFail' -Default ''))
+                $record.terminalState = [string](Get-TbgValue -Object $value -Name 'terminalState' -Default '')
+                $record.proofLevel = [string](Get-TbgValue -Object $value -Name 'proofLevel' -Default '')
+                $record.nextCommand = [string](Get-TbgValue -Object $value -Name 'nextCommand' -Default '')
+                $record.summary = 'The JSON artifact parsed successfully.'
             }
             '.jsonl' {
-                $lineErrors = 0
-                $nonEmptyLines = @($content -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
-                foreach ($line in $nonEmptyLines) {
-                    try { $line | ConvertFrom-Json -ErrorAction Stop | Out-Null }
-                    catch { $lineErrors++ }
-                }
-                if ($lineErrors -gt 0) { throw "$lineErrors JSONL lines did not parse." }
+                $lines = @($content -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+                foreach ($line in $lines) { $line | ConvertFrom-Json -ErrorAction Stop | Out-Null }
                 $record.parseStatus = 'parsed'
-                $record.summary = "The JSONL artifact contains $($nonEmptyLines.Count) valid event lines."
+                $record.summary = "The JSONL artifact contains $($lines.Count) valid event lines."
             }
             default {
                 $lines = @($content -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -426,7 +403,7 @@ function ConvertFrom-TbgArtifact {
     return [pscustomobject]$record
 }
 
-function New-TbgEnginePacket {
+function New-TbgPacket {
     param(
         [Parameter(Mandatory = $true)][string]$EngineId,
         [Parameter(Mandatory = $true)][string]$Schema,
@@ -453,7 +430,7 @@ function New-TbgEnginePacket {
     }
 }
 
-function Invoke-TbgInventoryEngine {
+function Invoke-TbgInventory {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][object]$Engine,
@@ -461,178 +438,156 @@ function Invoke-TbgInventoryEngine {
         [string[]]$ExtraRoots = @()
     )
 
-    $files = @(Get-TbgEngineFiles -RepoRoot $RepoRoot -Engine $Engine -Registry $Registry -ExtraRoots $ExtraRoots)
-    $maxBytes = [long]$Registry.defaults.maxParseBytes
-    $observations = @($files | ForEach-Object { ConvertFrom-TbgArtifact -RepoRoot $RepoRoot -File $_ -MaxBytes $maxBytes })
+    $files = @(Get-TbgFiles -RepoRoot $RepoRoot -Engine $Engine -Registry $Registry -ExtraRoots $ExtraRoots)
+    $observations = @($files | ForEach-Object { ConvertFrom-TbgArtifact -RepoRoot $RepoRoot -File $_ -MaxBytes ([long]$Registry.defaults.maxParseBytes) })
     $errors = @($observations | Where-Object { $_.parseStatus -eq 'error' })
     $parsed = @($observations | Where-Object { $_.parseStatus -eq 'parsed' })
-    $metadataOnly = @($observations | Where-Object { $_.parseStatus -eq 'metadata_only' })
+    $metadata = @($observations | Where-Object { $_.parseStatus -eq 'metadata_only' })
     $terminal = if ($errors.Count -gt 0) { 'ATTENTION_artifact_parse_errors' } else { 'READY_artifact_index_updated' }
     $next = if ($errors.Count -gt 0) { "Get-Content -LiteralPath '$($errors[0].path)' -Raw" } else { '.\ForgeArtifactEngine.cmd status' }
     $sentences = @(
         "The artifact-index engine inspected $($observations.Count) configured local artifacts.",
-        "The artifact-index engine parsed $($parsed.Count) artifacts, retained metadata only for $($metadataOnly.Count) oversized artifacts, and recorded $($errors.Count) parse errors.",
-        "The artifact-index engine excluded its own output directory so generated reports cannot create an infinite trigger loop.",
+        "The artifact-index engine parsed $($parsed.Count) artifacts, retained metadata for $($metadata.Count) oversized artifacts, and recorded $($errors.Count) parse errors.",
+        'The artifact-index engine excluded its own output directory so generated reports cannot create an infinite trigger loop.',
         "The operator should run '$next' as the next command."
     )
     $payload = [pscustomobject][ordered]@{
         count = $observations.Count
         parsedCount = $parsed.Count
-        metadataOnlyCount = $metadataOnly.Count
+        metadataOnlyCount = $metadata.Count
         parseErrorCount = $errors.Count
         artifacts = @($observations)
     }
-    return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgArtifactIndex.v1' -TerminalState $terminal -NextCommand $next -Payload $payload -Sentences $sentences -Blocking:$false
+    return New-TbgPacket -EngineId $Engine.id -Schema 'TbgArtifactIndex.v1' -TerminalState $terminal -NextCommand $next -Payload $payload -Sentences $sentences
 }
 
-function Invoke-TbgRepoFloorEngine {
+function Invoke-TbgRepoFloor {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][object]$Engine
     )
 
-    $files = @(Get-TbgCandidateFiles -RepoRoot $RepoRoot -Engine $Engine)
+    $files = @(Get-TbgCandidates -RepoRoot $RepoRoot -Engine $Engine)
     $jsonFile = @($files | Where-Object { $_.Extension -eq '.json' } | Select-Object -First 1)
     if ($jsonFile.Count -eq 0) {
-        $sentences = @(
-            "The repo-floor-context engine did not find a repository hygiene JSON artifact.",
-            "The missing repository hygiene artifact does not prove that the repository floor is clean.",
+        return New-TbgPacket -EngineId $Engine.id -Schema 'TbgRepoFloorContext.v1' -TerminalState 'UNAVAILABLE_repo_floor_artifact_missing' -NextCommand '.\ForgeRepoHygiene.cmd -NoGitHub -FailOnBlocked' -Payload ([pscustomobject]@{ artifactFound = $false }) -Sentences @(
+            'The repo-floor-context engine did not find a repository hygiene JSON artifact.',
+            'The missing repository hygiene artifact does not prove that the repository floor is clean.',
             "The operator should run '.\ForgeRepoHygiene.cmd -NoGitHub -FailOnBlocked' as the next command."
         )
-        return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgRepoFloorContext.v1' -TerminalState 'UNAVAILABLE_repo_floor_artifact_missing' -NextCommand '.\ForgeRepoHygiene.cmd -NoGitHub -FailOnBlocked' -Payload ([pscustomobject]@{ artifactFound = $false }) -Sentences $sentences -Blocking:$false
     }
 
-    try {
-        $source = Get-Content -LiteralPath $jsonFile[0].FullName -Raw | ConvertFrom-Json -ErrorAction Stop
-    }
+    try { $source = Get-Content -LiteralPath $jsonFile[0].FullName -Raw | ConvertFrom-Json -ErrorAction Stop }
     catch {
-        $sentences = @(
-            "The repo-floor-context engine found the repository hygiene artifact but could not parse it.",
+        return New-TbgPacket -EngineId $Engine.id -Schema 'TbgRepoFloorContext.v1' -TerminalState 'BLOCKED_repo_floor_parse_error' -NextCommand "Get-Content -LiteralPath '$($jsonFile[0].FullName)' -Raw" -Payload ([pscustomobject]@{ artifactFound = $true; parseError = $_.Exception.Message }) -Sentences @(
+            'The repo-floor-context engine found the repository hygiene artifact but could not parse it.',
             "The operator should inspect '$($jsonFile[0].FullName)' before any floor-dependent action runs."
-        )
-        return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgRepoFloorContext.v1' -TerminalState 'BLOCKED_repo_floor_parse_error' -NextCommand "Get-Content -LiteralPath '$($jsonFile[0].FullName)' -Raw" -Payload ([pscustomobject]@{ artifactFound = $true; parseError = $_.Exception.Message }) -Sentences $sentences -Blocking:$true
+        ) -Blocking $true
     }
 
-    $verdict = [string](Get-TbgPropertyValue -Object $source -Name 'verdict' -Default 'UNKNOWN')
-    $dirty = @((Get-TbgPropertyValue -Object $source -Name 'dirtyPaths' -Default @()))
-    $conflicts = @((Get-TbgPropertyValue -Object $source -Name 'conflictedFiles' -Default @()))
-    $operations = @((Get-TbgPropertyValue -Object $source -Name 'operations' -Default @()))
-    $worktrees = @((Get-TbgPropertyValue -Object $source -Name 'worktrees' -Default @()))
-    $next = [string](Get-TbgPropertyValue -Object $source -Name 'nextCommand' -Default 'git status --short')
-    $terminal = switch ($verdict) {
-        'CLEAN' { 'READY_repo_floor_clean' }
-        'BLOCKED' { 'BLOCKED_repo_floor' }
-        default { 'ATTENTION_repo_floor_needs_review' }
-    }
+    $verdict = [string](Get-TbgValue -Object $source -Name 'verdict' -Default 'UNKNOWN')
+    $dirty = @((Get-TbgValue -Object $source -Name 'dirtyPaths' -Default @()))
+    $conflicts = @((Get-TbgValue -Object $source -Name 'conflictedFiles' -Default @()))
+    $operations = @((Get-TbgValue -Object $source -Name 'operations' -Default @()))
+    $worktrees = @((Get-TbgValue -Object $source -Name 'worktrees' -Default @()))
+    $next = [string](Get-TbgValue -Object $source -Name 'nextCommand' -Default 'git status --short')
+    $terminal = if ($verdict -eq 'CLEAN') { 'READY_repo_floor_clean' } elseif ($verdict -eq 'BLOCKED') { 'BLOCKED_repo_floor' } else { 'ATTENTION_repo_floor_needs_review' }
     $blocking = ($verdict -eq 'BLOCKED')
-    $sentences = @(
-        "The repo-floor-context engine parsed repository hygiene evidence for branch '$([string](Get-TbgPropertyValue -Object $source -Name 'branch' -Default 'unknown'))' at HEAD '$([string](Get-TbgPropertyValue -Object $source -Name 'head' -Default 'unknown'))'.",
-        "The repository hygiene artifact reports verdict '$verdict', $($dirty.Count) dirty paths, $($conflicts.Count) conflicted files, $($operations.Count) active Git operations, and $($worktrees.Count) registered worktrees.",
-        "The repo-floor-context engine classified the floor as '$terminal'.",
-        "The operator should run '$next' as the next command."
-    )
-    $payload = [pscustomobject][ordered]@{
+    return New-TbgPacket -EngineId $Engine.id -Schema 'TbgRepoFloorContext.v1' -TerminalState $terminal -NextCommand $next -Payload ([pscustomobject][ordered]@{
         artifactFound = $true
         sourcePath = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $jsonFile[0].FullName
-        branch = [string](Get-TbgPropertyValue -Object $source -Name 'branch' -Default '')
-        head = [string](Get-TbgPropertyValue -Object $source -Name 'head' -Default '')
-        upstream = [string](Get-TbgPropertyValue -Object $source -Name 'upstream' -Default '')
+        branch = [string](Get-TbgValue -Object $source -Name 'branch' -Default '')
+        head = [string](Get-TbgValue -Object $source -Name 'head' -Default '')
+        upstream = [string](Get-TbgValue -Object $source -Name 'upstream' -Default '')
         verdict = $verdict
         dirtyCount = $dirty.Count
         conflictCount = $conflicts.Count
         operationCount = $operations.Count
         worktreeCount = $worktrees.Count
-    }
-    return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgRepoFloorContext.v1' -TerminalState $terminal -NextCommand $next -Payload $payload -Sentences $sentences -Blocking:$blocking
+    }) -Sentences @(
+        "The repo-floor-context engine parsed repository hygiene evidence for branch '$([string](Get-TbgValue -Object $source -Name 'branch' -Default 'unknown'))' at HEAD '$([string](Get-TbgValue -Object $source -Name 'head' -Default 'unknown'))'.",
+        "The repository hygiene artifact reports verdict '$verdict', $($dirty.Count) dirty paths, $($conflicts.Count) conflicted files, $($operations.Count) active Git operations, and $($worktrees.Count) registered worktrees.",
+        "The repo-floor-context engine classified the floor as '$terminal'.",
+        "The operator should run '$next' as the next command."
+    ) -Blocking $blocking
 }
 
-function Invoke-TbgStalePrEngine {
+function Invoke-TbgStalePr {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][string]$OutputRoot,
         [Parameter(Mandatory = $true)][object]$Engine
     )
 
-    $files = @(Get-TbgCandidateFiles -RepoRoot $RepoRoot -Engine $Engine)
+    $files = @(Get-TbgCandidates -RepoRoot $RepoRoot -Engine $Engine)
     $jsonFile = @($files | Where-Object { $_.Extension -eq '.json' } | Select-Object -First 1)
     if ($jsonFile.Count -eq 0) {
-        $sentences = @(
-            "The stale-pr-next-action engine did not find a stale PR recovery result artifact.",
+        return New-TbgPacket -EngineId $Engine.id -Schema 'TbgStalePrNextAction.v1' -TerminalState 'UNAVAILABLE_stale_pr_recovery_artifact_missing' -NextCommand '.\ForgeStalePrRecovery.cmd -Wave 0' -Payload ([pscustomobject]@{ artifactFound = $false }) -Sentences @(
+            'The stale-pr-next-action engine did not find a stale PR recovery result artifact.',
             "The operator should run '.\ForgeStalePrRecovery.cmd -Wave 0' before requesting a recovery action."
         )
-        return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgStalePrNextAction.v1' -TerminalState 'UNAVAILABLE_stale_pr_recovery_artifact_missing' -NextCommand '.\ForgeStalePrRecovery.cmd -Wave 0' -Payload ([pscustomobject]@{ artifactFound = $false }) -Sentences $sentences -Blocking:$false
     }
 
-    try {
-        $source = Get-Content -LiteralPath $jsonFile[0].FullName -Raw | ConvertFrom-Json -ErrorAction Stop
-    }
+    try { $source = Get-Content -LiteralPath $jsonFile[0].FullName -Raw | ConvertFrom-Json -ErrorAction Stop }
     catch {
-        $sentences = @(
-            "The stale-pr-next-action engine found the recovery artifact but could not parse it.",
+        return New-TbgPacket -EngineId $Engine.id -Schema 'TbgStalePrNextAction.v1' -TerminalState 'BLOCKED_stale_pr_parse_error' -NextCommand "Get-Content -LiteralPath '$($jsonFile[0].FullName)' -Raw" -Payload ([pscustomobject]@{ artifactFound = $true; parseError = $_.Exception.Message }) -Sentences @(
+            'The stale-pr-next-action engine found the recovery artifact but could not parse it.',
             "The operator should inspect '$($jsonFile[0].FullName)' before any recovery action runs."
-        )
-        return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgStalePrNextAction.v1' -TerminalState 'BLOCKED_stale_pr_parse_error' -NextCommand "Get-Content -LiteralPath '$($jsonFile[0].FullName)' -Raw" -Payload ([pscustomobject]@{ artifactFound = $true; parseError = $_.Exception.Message }) -Sentences $sentences -Blocking:$true
+        ) -Blocking $true
     }
 
-    $repoFloorPath = Join-Path $OutputRoot 'repo-floor-context.result.json'
-    $repoFloorReady = $false
-    $repoFloorTerminal = 'UNAVAILABLE_repo_floor_context'
-    if (Test-Path -LiteralPath $repoFloorPath -PathType Leaf) {
+    $floorTerminal = 'UNAVAILABLE_repo_floor_context'
+    $floorReady = $false
+    $floorPath = Join-Path $OutputRoot 'repo-floor-context.result.json'
+    if (Test-Path -LiteralPath $floorPath -PathType Leaf) {
         try {
-            $repoFloor = Get-Content -LiteralPath $repoFloorPath -Raw | ConvertFrom-Json
-            $repoFloorTerminal = [string]$repoFloor.terminalState
-            $repoFloorReady = ($repoFloorTerminal -eq 'READY_repo_floor_clean')
+            $floor = Get-Content -LiteralPath $floorPath -Raw | ConvertFrom-Json
+            $floorTerminal = [string]$floor.terminalState
+            $floorReady = ($floorTerminal -eq 'READY_repo_floor_clean')
         }
-        catch {
-            $repoFloorReady = $false
-        }
+        catch { $floorReady = $false }
     }
 
-    $sourceTerminal = [string](Get-TbgPropertyValue -Object $source -Name 'terminalState' -Default 'UNKNOWN_stale_pr_state')
-    $sourceNext = [string](Get-TbgPropertyValue -Object $source -Name 'nextCommand' -Default '.\ForgeStalePrRecovery.cmd -Wave 0')
-    $sourceVerdict = [string](Get-TbgPropertyValue -Object $source -Name 'verdict' -Default (Get-TbgPropertyValue -Object $source -Name 'status' -Default 'UNKNOWN'))
+    $sourceTerminal = [string](Get-TbgValue -Object $source -Name 'terminalState' -Default 'UNKNOWN_stale_pr_state')
+    $sourceVerdict = [string](Get-TbgValue -Object $source -Name 'verdict' -Default (Get-TbgValue -Object $source -Name 'status' -Default 'UNKNOWN'))
     $terminal = $sourceTerminal
-    $next = $sourceNext
+    $next = [string](Get-TbgValue -Object $source -Name 'nextCommand' -Default '.\ForgeStalePrRecovery.cmd -Wave 0')
     $blocking = ($sourceVerdict -eq 'BLOCKED' -or $sourceTerminal.StartsWith('BLOCKED_'))
-
-    if ($sourceTerminal -eq 'READY_bounded_recovery_instruction' -and -not $repoFloorReady) {
+    if ($sourceTerminal -eq 'READY_bounded_recovery_instruction' -and -not $floorReady) {
         $terminal = 'BLOCKED_local_floor_context_not_clean'
         $next = '.\ForgeRepoHygiene.cmd -NoGitHub -FailOnBlocked'
         $blocking = $true
     }
 
-    $sentences = @(
-        "The stale-pr-next-action engine parsed recovery state '$sourceTerminal' with verdict '$sourceVerdict'.",
-        "The repo-floor dependency currently reports '$repoFloorTerminal'.",
-        "The stale-pr-next-action engine classified the executable next decision as '$terminal'.",
-        "The operator should run '$next' as the next command."
-    )
-    $payload = [pscustomobject][ordered]@{
+    return New-TbgPacket -EngineId $Engine.id -Schema 'TbgStalePrNextAction.v1' -TerminalState $terminal -NextCommand $next -Payload ([pscustomobject][ordered]@{
         artifactFound = $true
         sourcePath = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $jsonFile[0].FullName
         sourceTerminalState = $sourceTerminal
         sourceVerdict = $sourceVerdict
-        repoFloorTerminalState = $repoFloorTerminal
-        repoFloorReady = $repoFloorReady
-    }
-    return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgStalePrNextAction.v1' -TerminalState $terminal -NextCommand $next -Payload $payload -Sentences $sentences -Blocking:$blocking
+        repoFloorTerminalState = $floorTerminal
+        repoFloorReady = $floorReady
+    }) -Sentences @(
+        "The stale-pr-next-action engine parsed recovery state '$sourceTerminal' with verdict '$sourceVerdict'.",
+        "The repo-floor dependency currently reports '$floorTerminal'.",
+        "The stale-pr-next-action engine classified the executable next decision as '$terminal'.",
+        "The operator should run '$next' as the next command."
+    ) -Blocking $blocking
 }
 
-function Invoke-TbgProofBoundaryEngine {
+function Invoke-TbgProofBoundary {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][object]$Engine
     )
 
-    $files = @(Get-TbgCandidateFiles -RepoRoot $RepoRoot -Engine $Engine)
+    $files = @(Get-TbgCandidates -RepoRoot $RepoRoot -Engine $Engine)
     $claims = New-Object System.Collections.Generic.List[object]
     foreach ($file in $files) {
         try {
             $value = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json -ErrorAction Stop
-            $schema = [string](Get-TbgPropertyValue -Object $value -Name 'schema' -Default '')
-            $status = [string](Get-TbgPropertyValue -Object $value -Name 'status' -Default '')
-            $verdict = [string](Get-TbgPropertyValue -Object $value -Name 'verdict' -Default (Get-TbgPropertyValue -Object $value -Name 'passFail' -Default ''))
-            $sourceProof = [string](Get-TbgPropertyValue -Object $value -Name 'proofLevel' -Default '')
+            $status = [string](Get-TbgValue -Object $value -Name 'status' -Default '')
+            $verdict = [string](Get-TbgValue -Object $value -Name 'verdict' -Default (Get-TbgValue -Object $value -Name 'passFail' -Default ''))
+            $sourceProof = [string](Get-TbgValue -Object $value -Name 'proofLevel' -Default '')
             $candidate = 'artifact_inspection'
             if ($file.Name -eq 'BlacksmithGuild_CommandAck.json' -and ($status -match 'success|pass|ack' -or $verdict -match 'success|pass|ack')) {
                 $candidate = 'command_ack_candidate'
@@ -645,7 +600,7 @@ function Invoke-TbgProofBoundaryEngine {
             }
             $claims.Add([pscustomobject][ordered]@{
                 path = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $file.FullName
-                schema = $schema
+                schema = [string](Get-TbgValue -Object $value -Name 'schema' -Default '')
                 status = $status
                 verdict = $verdict
                 sourceProofLevel = $sourceProof
@@ -669,21 +624,19 @@ function Invoke-TbgProofBoundaryEngine {
     }
 
     $next = if ($files.Count -gt 0) { '.\ForgeArtifactEngine.cmd run -Mode strict' } else { '.\ForgeArtifactEngine.cmd status' }
-    $sentences = @(
-        "The runtime-proof-boundary engine inspected $($files.Count) known runtime or launcher artifacts.",
-        "The parser classified every source claim conservatively because parsing alone does not verify freshness, causality, or observed behavior.",
-        "The highest proof level created by this engine is artifact inspection, even when a source artifact reports a higher candidate level.",
-        "The operator should run '$next' as the next command."
-    )
-    $payload = [pscustomobject][ordered]@{
+    return New-TbgPacket -EngineId $Engine.id -Schema 'TbgRuntimeProofBoundary.v1' -TerminalState 'READY_proof_boundary_classified' -NextCommand $next -Payload ([pscustomobject][ordered]@{
         artifactCount = $files.Count
         parserProofLevel = 'artifact_inspection'
         claims = @($claims.ToArray())
-    }
-    return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgRuntimeProofBoundary.v1' -TerminalState 'READY_proof_boundary_classified' -NextCommand $next -Payload $payload -Sentences $sentences -Blocking:$false
+    }) -Sentences @(
+        "The runtime-proof-boundary engine inspected $($files.Count) known runtime or launcher artifacts.",
+        'The parser classified every source claim conservatively because parsing alone does not verify freshness, causality, or observed behavior.',
+        'The highest proof level created by this engine is artifact inspection, even when a source artifact reports a higher candidate level.',
+        "The operator should run '$next' as the next command."
+    )
 }
 
-function Invoke-TbgHandoffEngine {
+function Invoke-TbgHandoff {
     param(
         [Parameter(Mandatory = $true)][string]$OutputRoot,
         [Parameter(Mandatory = $true)][object]$Engine
@@ -698,21 +651,19 @@ function Invoke-TbgHandoffEngine {
         try {
             $value = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
             $summaries.Add([pscustomobject][ordered]@{
-                engineId = $engineId
+                engineId = [string]$engineId
                 terminalState = [string]$value.terminalState
                 blocking = [bool]$value.blocking
                 nextCommand = [string]$value.nextCommand
                 resultPath = $path
             }) | Out-Null
             if ([bool]$value.blocking) { $blocking = $true }
-            if (-not [string]::IsNullOrWhiteSpace([string]$value.nextCommand)) {
-                $nextCommands.Add([string]$value.nextCommand) | Out-Null
-            }
+            if (-not [string]::IsNullOrWhiteSpace([string]$value.nextCommand)) { $nextCommands.Add([string]$value.nextCommand) | Out-Null }
         }
         catch {
             $blocking = $true
             $summaries.Add([pscustomobject][ordered]@{
-                engineId = $engineId
+                engineId = [string]$engineId
                 terminalState = 'BLOCKED_engine_result_parse_error'
                 blocking = $true
                 nextCommand = "Get-Content -LiteralPath '$path' -Raw"
@@ -723,45 +674,70 @@ function Invoke-TbgHandoffEngine {
 
     $next = if ($nextCommands.Count -gt 0) { $nextCommands[0] } else { '.\ForgeArtifactEngine.cmd status' }
     $terminal = if ($blocking) { 'BLOCKED_handoff_contains_blockers' } else { 'READY_handoff_compressed' }
-    $sentences = @(
-        "The handoff-compressor engine collected $($summaries.Count) upstream engine results.",
-        "The compressed handoff reports terminal state '$terminal'.",
-        "The handoff preserves each upstream terminal state and next command without converting parser output into runtime proof.",
-        "The operator should run '$next' as the next command."
-    )
-    $payload = [pscustomobject][ordered]@{
+    return New-TbgPacket -EngineId $Engine.id -Schema 'TbgArtifactEngineHandoff.v1' -TerminalState $terminal -NextCommand $next -Payload ([pscustomobject][ordered]@{
         engines = @($summaries.ToArray())
         recommendedNextCommand = $next
-    }
-    return New-TbgEnginePacket -EngineId $Engine.id -Schema 'TbgArtifactEngineHandoff.v1' -TerminalState $terminal -NextCommand $next -Payload $payload -Sentences $sentences -Blocking:$blocking
+    }) -Sentences @(
+        "The handoff-compressor engine collected $($summaries.Count) upstream engine results.",
+        "The compressed handoff reports terminal state '$terminal'.",
+        'The handoff preserves each upstream terminal state and next command without converting parser output into runtime proof.',
+        "The operator should run '$next' as the next command."
+    ) -Blocking $blocking
 }
 
-function Write-TbgEnginePacket {
+function Write-TbgPacket {
     param(
         [Parameter(Mandatory = $true)][string]$OutputRoot,
         [Parameter(Mandatory = $true)][object]$Engine,
         [Parameter(Mandatory = $true)][object]$Packet
     )
 
-    $stem = [string]$Engine.outputStem
-    $resultPath = Join-Path $OutputRoot "$($Engine.id).result.json"
-    $namedResultPath = Join-Path $OutputRoot "$stem.result.json"
-    $reportPath = Join-Path $OutputRoot "$stem.report.md"
-    Write-TbgJsonAtomic -Path $resultPath -Value $Packet.result
-    if ($namedResultPath -ne $resultPath) {
-        Write-TbgJsonAtomic -Path $namedResultPath -Value $Packet.result
-    }
+    $engineResult = Join-Path $OutputRoot "$($Engine.id).result.json"
+    $namedResult = Join-Path $OutputRoot "$($Engine.outputStem).result.json"
+    Write-TbgJson -Path $engineResult -Value $Packet.result
+    if ($namedResult -ne $engineResult) { Write-TbgJson -Path $namedResult -Value $Packet.result }
 
     $lines = New-Object System.Collections.Generic.List[string]
     $lines.Add("# $($Engine.id) Engine Report") | Out-Null
     $lines.Add('') | Out-Null
-    foreach ($sentence in @($Packet.reportLines)) {
-        $lines.Add([string]$sentence) | Out-Null
-    }
-    Write-TbgTextAtomic -Path $reportPath -Text (($lines -join "`n") + "`n")
+    foreach ($sentence in @($Packet.reportLines)) { $lines.Add([string]$sentence) | Out-Null }
+    Write-TbgText -Path (Join-Path $OutputRoot "$($Engine.outputStem).report.md") -Text (($lines -join "`n") + "`n")
 }
 
-function Invoke-TbgArtifactPass {
+function Assert-TbgRegistry {
+    param([Parameter(Mandatory = $true)][object]$Registry)
+
+    $map = @{}
+    foreach ($engine in @($Registry.engines)) {
+        $id = [string]$engine.id
+        if ([string]::IsNullOrWhiteSpace($id)) { throw 'The registry contains an engine without an id.' }
+        if ($map.ContainsKey($id)) { throw "The registry contains duplicate engine '$id'." }
+        if ([string]$engine.authority -ne 'read_only') { throw "Engine '$id' does not declare read_only authority." }
+        $map[$id] = $engine
+    }
+
+    foreach ($engine in @($Registry.engines)) {
+        foreach ($downstream in @((Get-TbgValue -Object $engine -Name 'downstream' -Default @()))) {
+            if (-not $map.ContainsKey([string]$downstream)) { throw "Engine '$($engine.id)' names unregistered downstream engine '$downstream'." }
+        }
+    }
+
+    $visiting = @{}
+    $visited = @{}
+    function Visit-TbgNode {
+        param([string]$Id)
+        if ($visiting.ContainsKey($Id)) { throw "The artifact engine registry contains a cycle at '$Id'." }
+        if ($visited.ContainsKey($Id)) { return }
+        $visiting[$Id] = $true
+        foreach ($child in @((Get-TbgValue -Object $map[$Id] -Name 'downstream' -Default @()))) { Visit-TbgNode -Id ([string]$child) }
+        $visiting.Remove($Id)
+        $visited[$Id] = $true
+    }
+    foreach ($id in @($map.Keys)) { Visit-TbgNode -Id $id }
+    return $map
+}
+
+function Invoke-TbgPass {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
         [Parameter(Mandatory = $true)][object]$Registry,
@@ -779,32 +755,17 @@ function Invoke-TbgArtifactPass {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $LockPath) | Out-Null
     $lock = $null
     try {
-        try {
-            $lock = New-Object System.IO.FileStream($LockPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
-        }
+        try { $lock = New-Object System.IO.FileStream($LockPath, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None) }
         catch {
-            Write-Host 'The artifact engine skipped this pass because another engine pass owns the local lock.'
+            Write-Host 'The artifact engine skipped this pass because another pass owns the local lock.'
             return $null
         }
 
+        $engineMap = Assert-TbgRegistry -Registry $Registry
         $fingerprints = @{}
         if (Test-Path -LiteralPath $FingerprintPath -PathType Leaf) {
             try { $fingerprints = ConvertTo-TbgHashtable (Get-Content -LiteralPath $FingerprintPath -Raw | ConvertFrom-Json) }
             catch { $fingerprints = @{} }
-        }
-
-        $engineMap = @{}
-        foreach ($engine in @($Registry.engines)) {
-            if ($engineMap.ContainsKey([string]$engine.id)) { throw "The registry contains duplicate engine '$($engine.id)'." }
-            $engineMap[[string]$engine.id] = $engine
-        }
-
-        foreach ($engine in @($Registry.engines)) {
-            foreach ($downstream in @($engine.downstream)) {
-                if (-not $engineMap.ContainsKey([string]$downstream)) {
-                    throw "Engine '$($engine.id)' names unregistered downstream engine '$downstream'."
-                }
-            }
         }
 
         $queue = New-Object System.Collections.Generic.Queue[string]
@@ -814,32 +775,23 @@ function Invoke-TbgArtifactPass {
         $runs = New-Object System.Collections.Generic.List[object]
         $events = New-Object System.Collections.Generic.List[object]
         $progress = New-Object System.Collections.Generic.List[string]
-        $maxCascade = [int]$Registry.defaults.maxCascadeEngines
+        $maximum = [int]$Registry.defaults.maxCascadeEngines
         $sequence = 0
 
         while ($queue.Count -gt 0) {
-            if ($runs.Count -ge $maxCascade) {
-                throw "The artifact engine exceeded the configured cascade limit of $maxCascade engines."
-            }
-
+            if ($runs.Count -ge $maximum) { throw "The artifact engine exceeded the configured cascade limit of $maximum engines." }
             $engineId = $queue.Dequeue()
             $queued.Remove($engineId)
-            if ($completed.ContainsKey($engineId)) {
-                throw "The artifact engine detected a registry cycle at '$engineId'."
-            }
-            if (-not $engineMap.ContainsKey($engineId)) {
-                throw "The artifact engine '$engineId' is not registered."
-            }
+            if ($completed.ContainsKey($engineId)) { continue }
+            if (-not $engineMap.ContainsKey($engineId)) { throw "The artifact engine '$engineId' is not registered." }
 
             $engine = $engineMap[$engineId]
             $implementation = [string]$engine.implementation
-            $inputFiles = @()
-            if ($implementation -eq 'inventory') {
-                $inputFiles = @(Get-TbgEngineFiles -RepoRoot $RepoRoot -Engine $engine -Registry $Registry -ExtraRoots $ExtraRoots)
+            $inputFiles = if ($implementation -eq 'inventory') {
+                @(Get-TbgFiles -RepoRoot $RepoRoot -Engine $engine -Registry $Registry -ExtraRoots $ExtraRoots)
             }
-            elseif ($implementation -ne 'handoff') {
-                $inputFiles = @(Get-TbgCandidateFiles -RepoRoot $RepoRoot -Engine $engine)
-            }
+            elseif ($implementation -eq 'handoff') { @() }
+            else { @(Get-TbgCandidates -RepoRoot $RepoRoot -Engine $engine) }
 
             $fingerprint = if ($implementation -eq 'handoff') {
                 $upstreamParts = @($engine.consumesEngineResults | ForEach-Object {
@@ -849,34 +801,32 @@ function Invoke-TbgArtifactPass {
                         "$($_)|$($item.Length)|$($item.LastWriteTimeUtc.Ticks)"
                     }
                 })
-                Get-TbgSha256Text -Text ($upstreamParts -join "`n")
+                Get-TbgHash -Text ($upstreamParts -join "`n")
             }
-            else {
-                Get-TbgFileSetFingerprint -RepoRoot $RepoRoot -Files $inputFiles
-            }
+            else { Get-TbgFingerprint -RepoRoot $RepoRoot -Files $inputFiles }
 
-            $previousFingerprint = if ($fingerprints.ContainsKey($engineId)) { [string]$fingerprints[$engineId] } else { '' }
-            $changed = ($fingerprint -ne $previousFingerprint)
-            $shouldRun = $ForcePass -or -not $WatchPass -or $changed
+            $previous = if ($fingerprints.ContainsKey($engineId)) { [string]$fingerprints[$engineId] } else { '' }
+            $changed = ($fingerprint -ne $previous)
+            $shouldRun = $ForcePass -or (-not $WatchPass) -or $changed
             if (-not $shouldRun) {
                 $completed[$engineId] = $true
                 continue
             }
 
             $packet = switch ($implementation) {
-                'inventory' { Invoke-TbgInventoryEngine -RepoRoot $RepoRoot -Engine $engine -Registry $Registry -ExtraRoots $ExtraRoots }
-                'repo_floor' { Invoke-TbgRepoFloorEngine -RepoRoot $RepoRoot -Engine $engine }
-                'stale_pr' { Invoke-TbgStalePrEngine -RepoRoot $RepoRoot -OutputRoot $OutputRoot -Engine $engine }
-                'proof_boundary' { Invoke-TbgProofBoundaryEngine -RepoRoot $RepoRoot -Engine $engine }
-                'handoff' { Invoke-TbgHandoffEngine -OutputRoot $OutputRoot -Engine $engine }
+                'inventory' { Invoke-TbgInventory -RepoRoot $RepoRoot -Engine $engine -Registry $Registry -ExtraRoots $ExtraRoots }
+                'repo_floor' { Invoke-TbgRepoFloor -RepoRoot $RepoRoot -Engine $engine }
+                'stale_pr' { Invoke-TbgStalePr -RepoRoot $RepoRoot -OutputRoot $OutputRoot -Engine $engine }
+                'proof_boundary' { Invoke-TbgProofBoundary -RepoRoot $RepoRoot -Engine $engine }
+                'handoff' { Invoke-TbgHandoff -OutputRoot $OutputRoot -Engine $engine }
                 default { throw "The artifact engine implementation '$implementation' is not supported." }
             }
 
-            Write-TbgEnginePacket -OutputRoot $OutputRoot -Engine $engine -Packet $packet
+            Write-TbgPacket -OutputRoot $OutputRoot -Engine $engine -Packet $packet
             $fingerprints[$engineId] = $fingerprint
             $completed[$engineId] = $true
             $sequence++
-            $eventSentence = "The local artifact router ran engine '$engineId' and produced terminal state '$($packet.result.terminalState)'."
+            $sentence = "The local artifact router ran engine '$engineId' and produced terminal state '$($packet.result.terminalState)'."
             $events.Add([pscustomobject][ordered]@{
                 schema = 'TbgArtifactEngineEvent.v1'
                 sequence = $sequence
@@ -887,13 +837,13 @@ function Invoke-TbgArtifactPass {
                 terminalState = [string]$packet.result.terminalState
                 blocking = [bool]$packet.result.blocking
                 nextCommand = [string]$packet.result.nextCommand
-                sentence = $eventSentence
+                sentence = $sentence
             }) | Out-Null
-            $progress.Add($eventSentence) | Out-Null
+            $progress.Add($sentence) | Out-Null
             $runs.Add([pscustomobject][ordered]@{
                 engineId = $engineId
                 implementation = $implementation
-                inputCount = $inputFiles.Count
+                inputCount = @($inputFiles).Count
                 changed = $changed
                 terminalState = [string]$packet.result.terminalState
                 blocking = [bool]$packet.result.blocking
@@ -901,7 +851,7 @@ function Invoke-TbgArtifactPass {
             }) | Out-Null
 
             if ($StateMode -ne 'observe') {
-                foreach ($downstream in @($engine.downstream)) {
+                foreach ($downstream in @((Get-TbgValue -Object $engine -Name 'downstream' -Default @()))) {
                     $downstreamId = [string]$downstream
                     if (-not $completed.ContainsKey($downstreamId) -and -not $queued.ContainsKey($downstreamId)) {
                         $queue.Enqueue($downstreamId)
@@ -911,20 +861,14 @@ function Invoke-TbgArtifactPass {
             }
         }
 
-        Write-TbgJsonAtomic -Path $FingerprintPath -Value ([pscustomobject]$fingerprints)
+        Write-TbgJson -Path $FingerprintPath -Value ([pscustomobject]$fingerprints
+        )
         $blockingRuns = @($runs.ToArray() | Where-Object { $_.blocking })
-        $parseErrorRuns = @($runs.ToArray() | Where-Object { $_.terminalState -match 'parse_error|parse_errors' })
-        $strictFailure = ($StateMode -eq 'strict' -and ($blockingRuns.Count -gt 0 -or $parseErrorRuns.Count -gt 0))
-        $terminal = if ($strictFailure) {
-            'BLOCKED_artifact_engine_strict'
-        }
-        elseif ($StateMode -eq 'observe') {
-            'READY_observe_complete'
-        }
-        else {
-            'READY_auto_cascade_complete'
-        }
+        $parseRuns = @($runs.ToArray() | Where-Object { $_.terminalState -match 'parse_error|parse_errors' })
+        $strictFailure = ($StateMode -eq 'strict' -and ($blockingRuns.Count -gt 0 -or $parseRuns.Count -gt 0))
+        $terminal = if ($strictFailure) { 'BLOCKED_artifact_engine_strict' } elseif ($StateMode -eq 'observe') { 'READY_observe_complete' } else { 'READY_auto_cascade_complete' }
         $next = if ($blockingRuns.Count -gt 0) { [string]$blockingRuns[0].nextCommand } else { '.\ForgeArtifactEngine.cmd status' }
+
         $result = [pscustomobject][ordered]@{
             schema = 'TbgArtifactEngineRun.v1'
             generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
@@ -943,51 +887,44 @@ function Invoke-TbgArtifactPass {
                 handoff = 'artifacts/latest/artifact-engine/artifact-engine.handoff.md'
             }
         }
-        Write-TbgJsonAtomic -Path (Join-Path $OutputRoot 'artifact-engine.result.json') -Value $result
+        Write-TbgJson -Path (Join-Path $OutputRoot 'artifact-engine.result.json') -Value $result
+        Write-TbgText -Path (Join-Path $OutputRoot 'artifact-engine.events.jsonl') -Text ((@($events.ToArray() | ForEach-Object { $_ | ConvertTo-Json -Depth 10 -Compress }) -join "`n") + "`n")
+        Write-TbgText -Path (Join-Path $OutputRoot 'artifact-engine.progress.log') -Text ((@($progress.ToArray()) -join "`n") + "`n")
 
-        $eventLines = @($events.ToArray() | ForEach-Object { $_ | ConvertTo-Json -Depth 10 -Compress })
-        Write-TbgTextAtomic -Path (Join-Path $OutputRoot 'artifact-engine.events.jsonl') -Text (($eventLines -join "`n") + "`n")
-        Write-TbgTextAtomic -Path (Join-Path $OutputRoot 'artifact-engine.progress.log') -Text ((@($progress.ToArray()) -join "`n") + "`n")
+        $report = New-Object System.Collections.Generic.List[string]
+        $report.Add('# TBG Local Artifact Engine Report') | Out-Null
+        $report.Add('') | Out-Null
+        $report.Add("The local artifact router ran in '$StateMode' mode because '$TriggerSource' triggered the pass.") | Out-Null
+        $report.Add("The router completed $($runs.Count) registered engines and produced terminal state '$terminal'.") | Out-Null
+        $report.Add("The router found $($blockingRuns.Count) blocking engine results and $($parseRuns.Count) parse-error engine results.") | Out-Null
+        $report.Add("The operator should run '$next' as the next command.") | Out-Null
+        $report.Add('') | Out-Null
+        $report.Add('## Engine Results') | Out-Null
+        $report.Add('') | Out-Null
+        foreach ($run in @($runs.ToArray())) { $report.Add("- The '$($run.engineId)' engine produced '$($run.terminalState)' and recommends '$($run.nextCommand)'.") | Out-Null }
+        $report.Add('') | Out-Null
+        $report.Add('The parser does not claim build, launcher, movement, trade, behavior-observed, or live runtime proof merely because it parsed an artifact.') | Out-Null
+        Write-TbgText -Path (Join-Path $OutputRoot 'artifact-engine.report.md') -Text (($report -join "`n") + "`n")
 
-        $reportLines = New-Object System.Collections.Generic.List[string]
-        $reportLines.Add('# TBG Local Artifact Engine Report') | Out-Null
-        $reportLines.Add('') | Out-Null
-        $reportLines.Add("The local artifact router ran in '$StateMode' mode because '$TriggerSource' triggered the pass.") | Out-Null
-        $reportLines.Add("The router completed $($runs.Count) registered engines and produced terminal state '$terminal'.") | Out-Null
-        $reportLines.Add("The router found $($blockingRuns.Count) blocking engine results and $($parseErrorRuns.Count) parse-error engine results.") | Out-Null
-        $reportLines.Add("The operator should run '$next' as the next command.") | Out-Null
-        $reportLines.Add('') | Out-Null
-        $reportLines.Add('## Engine Results') | Out-Null
-        $reportLines.Add('') | Out-Null
-        foreach ($run in @($runs.ToArray())) {
-            $reportLines.Add("- The '$($run.engineId)' engine produced '$($run.terminalState)' and recommends '$($run.nextCommand)'.") | Out-Null
-        }
-        $reportLines.Add('') | Out-Null
-        $reportLines.Add('The parser does not claim build, launcher, movement, trade, behavior-observed, or live runtime proof merely because it parsed an artifact.') | Out-Null
-        Write-TbgTextAtomic -Path (Join-Path $OutputRoot 'artifact-engine.report.md') -Text (($reportLines -join "`n") + "`n")
-
-        $handoffLines = New-Object System.Collections.Generic.List[string]
-        $handoffLines.Add('# TBG Artifact Engine Handoff') | Out-Null
-        $handoffLines.Add('') | Out-Null
-        $handoffLines.Add("Repository: $RepoRoot") | Out-Null
-        $handoffLines.Add("Trigger source: $TriggerSource") | Out-Null
-        $handoffLines.Add("Mode: $StateMode") | Out-Null
-        $handoffLines.Add("Terminal state: $terminal") | Out-Null
-        $handoffLines.Add("Next command: $next") | Out-Null
-        $handoffLines.Add('') | Out-Null
-        $handoffLines.Add('Engine packets:') | Out-Null
-        foreach ($run in @($runs.ToArray())) {
-            $handoffLines.Add("- $($run.engineId): $($run.terminalState); $(Join-Path $OutputRoot "$($run.engineId).result.json")") | Out-Null
-        }
-        $handoffLines.Add('') | Out-Null
-        $handoffLines.Add('Proof boundary: artifact parsing and static harness proof only. Inspect source evidence and run the owning validator before making a higher claim.') | Out-Null
-        Write-TbgTextAtomic -Path (Join-Path $OutputRoot 'artifact-engine.handoff.md') -Text (($handoffLines -join "`n") + "`n")
+        $handoff = New-Object System.Collections.Generic.List[string]
+        $handoff.Add('# TBG Artifact Engine Handoff') | Out-Null
+        $handoff.Add('') | Out-Null
+        $handoff.Add("Repository: $RepoRoot") | Out-Null
+        $handoff.Add("Trigger source: $TriggerSource") | Out-Null
+        $handoff.Add("Mode: $StateMode") | Out-Null
+        $handoff.Add("Terminal state: $terminal") | Out-Null
+        $handoff.Add("Next command: $next") | Out-Null
+        $handoff.Add('') | Out-Null
+        $handoff.Add('Engine packets:') | Out-Null
+        foreach ($run in @($runs.ToArray())) { $handoff.Add("- $($run.engineId): $($run.terminalState); $(Join-Path $OutputRoot "$($run.engineId).result.json")") | Out-Null }
+        $handoff.Add('') | Out-Null
+        $handoff.Add('Proof boundary: artifact parsing and static harness proof only. Inspect source evidence and run the owning validator before making a higher claim.') | Out-Null
+        Write-TbgText -Path (Join-Path $OutputRoot 'artifact-engine.handoff.md') -Text (($handoff -join "`n") + "`n")
 
         Write-Host "Artifact engine terminal state: $terminal"
         Write-Host "Artifact engine report: $(Join-Path $OutputRoot 'artifact-engine.report.md')"
         Write-Host "Next command: $next"
-        if ($strictFailure) { return [pscustomobject]@{ exitCode = 2; result = $result } }
-        return [pscustomobject]@{ exitCode = 0; result = $result }
+        return [pscustomobject]@{ exitCode = $(if ($strictFailure) { 2 } else { 0 }); result = $result }
     }
     finally {
         if ($null -ne $lock) { $lock.Dispose() }
@@ -996,13 +933,10 @@ function Invoke-TbgArtifactPass {
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $resolvedRegistryPath = Resolve-TbgPath -RepoRoot $repoRoot -Path $RegistryPath
-if (-not (Test-Path -LiteralPath $resolvedRegistryPath -PathType Leaf)) {
-    throw "The artifact engine registry is missing: $resolvedRegistryPath"
-}
+if (-not (Test-Path -LiteralPath $resolvedRegistryPath -PathType Leaf)) { throw "The artifact engine registry is missing: $resolvedRegistryPath" }
 $registry = Get-Content -LiteralPath $resolvedRegistryPath -Raw | ConvertFrom-Json
-if ([string]$registry.schema -ne 'TbgArtifactEngineRegistry.v1') {
-    throw "The artifact engine registry schema is unsupported: $($registry.schema)"
-}
+if ([string]$registry.schema -ne 'TbgArtifactEngineRegistry.v1') { throw "The artifact engine registry schema is unsupported: $($registry.schema)" }
+Assert-TbgRegistry -Registry $registry | Out-Null
 
 $outputRoot = Resolve-TbgPath -RepoRoot $repoRoot -Path $OutputDirectory
 $stateRoot = Resolve-TbgPath -RepoRoot $repoRoot -Path ([string]$registry.defaults.stateRoot)
@@ -1014,59 +948,52 @@ New-Item -ItemType Directory -Force -Path $stateRoot | Out-Null
 
 switch ($Command) {
     'status' {
-        $state = Get-TbgState -StatePath $statePath -DefaultMode $Mode
-        $watcher = Get-TbgWatcherState -WatcherPath $watcherPath
-        $watcherRunning = Test-TbgWatcherRunning -Watcher $watcher
-        $status = [pscustomobject][ordered]@{
+        $state = Get-TbgState -Path $statePath -DefaultMode $Mode
+        $watcher = Get-TbgWatcher -Path $watcherPath
+        $running = Test-TbgWatcher -Watcher $watcher
+        [pscustomobject][ordered]@{
             schema = 'TbgArtifactEngineStatus.v1'
             enabled = [bool]$state.enabled
             mode = [string]$state.mode
-            watcherRunning = $watcherRunning
-            watcherPid = if ($watcherRunning) { [int]$watcher.pid } else { 0 }
+            watcherRunning = $running
+            watcherPid = if ($running) { [int]$watcher.pid } else { 0 }
             statePath = $statePath
             registryPath = $resolvedRegistryPath
             outputDirectory = $outputRoot
             additionalArtifactRoots = @($state.additionalArtifactRoots)
-        }
-        $status | ConvertTo-Json -Depth 8
-        if ($status.enabled) {
-            Write-Host "The local artifact engine is enabled in '$($status.mode)' mode, and watcherRunning=$watcherRunning."
-        }
-        else {
-            Write-Host 'The local artifact engine automatic toggle is off. Manual run remains available.'
-        }
+        } | ConvertTo-Json -Depth 8
+        if ([bool]$state.enabled) { Write-Host "The local artifact engine is enabled in '$($state.mode)' mode, and watcherRunning=$running." }
+        else { Write-Host 'The local artifact engine automatic toggle is off. Manual run remains available.' }
+        exit 0
+    }
+    'off' {
+        $current = Get-TbgState -Path $statePath -DefaultMode $Mode
+        Set-TbgState -Path $statePath -Enabled $false -StateMode ([string]$current.mode) -UpdatedBy 'operator_off' -Roots @($current.additionalArtifactRoots) | Out-Null
+        Stop-TbgWatcher -Path $watcherPath
+        Write-Host 'The local artifact engine automatic toggle is off. Manual run remains available.'
         exit 0
     }
     'on' {
-        $state = Set-TbgState -StatePath $statePath -Enabled $true -StateMode $Mode -UpdatedBy 'operator_on' -Roots $AdditionalArtifactRoot
-        $pass = Invoke-TbgArtifactPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode $Mode -TriggerSource 'toggle_on' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $AdditionalArtifactRoot -ForcePass
+        Set-TbgState -Path $statePath -Enabled $true -StateMode $Mode -UpdatedBy 'operator_on' -Roots $AdditionalArtifactRoot | Out-Null
+        $pass = Invoke-TbgPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode $Mode -TriggerSource 'toggle_on' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $AdditionalArtifactRoot -ForcePass
         if (-not $NoStart) {
             $watcher = Start-TbgWatcher -ScriptPath $PSCommandPath -Registry $resolvedRegistryPath -Output $outputRoot -WatcherPath $watcherPath -Interval $PollSeconds -Roots $AdditionalArtifactRoot
             Write-Host "The local artifact engine is on in '$Mode' mode with watcher PID $($watcher.pid)."
         }
-        else {
-            Write-Host "The local artifact engine is on in '$Mode' mode without starting a watcher because -NoStart was supplied."
-        }
+        else { Write-Host "The local artifact engine is on in '$Mode' mode without starting a watcher because -NoStart was supplied." }
         if ($null -ne $pass) { exit [int]$pass.exitCode }
         exit 0
     }
-    'off' {
-        $current = Get-TbgState -StatePath $statePath -DefaultMode $Mode
-        Set-TbgState -StatePath $statePath -Enabled $false -StateMode ([string]$current.mode) -UpdatedBy 'operator_off' -Roots @($current.additionalArtifactRoots) | Out-Null
-        Stop-TbgWatcher -WatcherPath $watcherPath
-        Write-Host 'The local artifact engine automatic toggle is off. Manual run remains available.'
-        exit 0
-    }
     'toggle' {
-        $current = Get-TbgState -StatePath $statePath -DefaultMode $Mode
+        $current = Get-TbgState -Path $statePath -DefaultMode $Mode
         if ([bool]$current.enabled) {
-            Set-TbgState -StatePath $statePath -Enabled $false -StateMode ([string]$current.mode) -UpdatedBy 'operator_toggle_off' -Roots @($current.additionalArtifactRoots) | Out-Null
-            Stop-TbgWatcher -WatcherPath $watcherPath
+            Set-TbgState -Path $statePath -Enabled $false -StateMode ([string]$current.mode) -UpdatedBy 'operator_toggle_off' -Roots @($current.additionalArtifactRoots) | Out-Null
+            Stop-TbgWatcher -Path $watcherPath
             Write-Host 'The local artifact engine toggle changed from on to off.'
             exit 0
         }
-        $state = Set-TbgState -StatePath $statePath -Enabled $true -StateMode $Mode -UpdatedBy 'operator_toggle_on' -Roots $AdditionalArtifactRoot
-        $pass = Invoke-TbgArtifactPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode $Mode -TriggerSource 'toggle_on' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $AdditionalArtifactRoot -ForcePass
+        Set-TbgState -Path $statePath -Enabled $true -StateMode $Mode -UpdatedBy 'operator_toggle_on' -Roots $AdditionalArtifactRoot | Out-Null
+        $pass = Invoke-TbgPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode $Mode -TriggerSource 'toggle_on' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $AdditionalArtifactRoot -ForcePass
         if (-not $NoStart) {
             $watcher = Start-TbgWatcher -ScriptPath $PSCommandPath -Registry $resolvedRegistryPath -Output $outputRoot -WatcherPath $watcherPath -Interval $PollSeconds -Roots $AdditionalArtifactRoot
             Write-Host "The local artifact engine toggle changed from off to on with watcher PID $($watcher.pid)."
@@ -1075,55 +1002,49 @@ switch ($Command) {
         exit 0
     }
     'run' {
-        $state = Get-TbgState -StatePath $statePath -DefaultMode $Mode
+        $state = Get-TbgState -Path $statePath -DefaultMode $Mode
         $runMode = if ($PSBoundParameters.ContainsKey('Mode')) { $Mode } else { [string]$state.mode }
         $roots = if ($AdditionalArtifactRoot.Count -gt 0) { $AdditionalArtifactRoot } else { @($state.additionalArtifactRoots) }
-        $pass = Invoke-TbgArtifactPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode $runMode -TriggerSource 'manual_run' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $roots -ForcePass
+        $pass = Invoke-TbgPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode $runMode -TriggerSource 'manual_run' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $roots -ForcePass:$Force
         if ($null -ne $pass) { exit [int]$pass.exitCode }
         exit 0
     }
     'trigger' {
-        $state = Get-TbgState -StatePath $statePath -DefaultMode $Mode
+        $state = Get-TbgState -Path $statePath -DefaultMode $Mode
         if (-not [bool]$state.enabled) {
             Write-Host "The producer '$Source' did not start an artifact pass because the automatic toggle is off."
             exit 0
         }
+        Start-Sleep -Milliseconds ([int]$registry.defaults.settleMilliseconds)
         $roots = if ($AdditionalArtifactRoot.Count -gt 0) { $AdditionalArtifactRoot } else { @($state.additionalArtifactRoots) }
-        $pass = Invoke-TbgArtifactPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode ([string]$state.mode) -TriggerSource $Source -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $roots -ForcePass
+        $pass = Invoke-TbgPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode ([string]$state.mode) -TriggerSource $Source -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $roots -ForcePass
         if ($null -ne $pass) { exit [int]$pass.exitCode }
         exit 0
     }
     'watch' {
-        $state = Get-TbgState -StatePath $statePath -DefaultMode $Mode
-        if (-not [bool]$state.enabled) {
-            Write-Host 'The watcher did not start because the automatic toggle is off.'
-            exit 0
-        }
-        $watcher = [pscustomobject][ordered]@{
+        $state = Get-TbgState -Path $statePath -DefaultMode $Mode
+        if (-not [bool]$state.enabled) { Write-Host 'The watcher did not start because the automatic toggle is off.'; exit 0 }
+        Write-TbgJson -Path $watcherPath -Value ([pscustomobject][ordered]@{
             schema = 'TbgArtifactEngineWatcher.v1'
             pid = $PID
             startedUtc = (Get-Process -Id $PID).StartTime.ToUniversalTime().ToString('o')
             scriptPath = $PSCommandPath
             pollSeconds = $PollSeconds
-        }
-        Write-TbgJsonAtomic -Path $watcherPath -Value $watcher
+        })
         try {
             while ($true) {
-                $state = Get-TbgState -StatePath $statePath -DefaultMode $Mode
+                $state = Get-TbgState -Path $statePath -DefaultMode $Mode
                 if (-not [bool]$state.enabled) { break }
-                $roots = @($state.additionalArtifactRoots)
-                $pass = Invoke-TbgArtifactPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode ([string]$state.mode) -TriggerSource 'watcher_change_detection' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots $roots -WatchPass
+                $pass = Invoke-TbgPass -RepoRoot $repoRoot -Registry $registry -OutputRoot $outputRoot -StateMode ([string]$state.mode) -TriggerSource 'watcher_change_detection' -FingerprintPath $fingerprintPath -LockPath $lockPath -ExtraRoots @($state.additionalArtifactRoots) -WatchPass
                 if ($null -ne $pass -and [int]$pass.exitCode -ne 0 -and [string]$state.mode -eq 'strict') {
-                    Write-Error 'The strict artifact watcher found a blocker. The watcher will remain alive so the operator can inspect and correct the source artifact.'
+                    Write-Warning 'The strict artifact watcher found a blocker. The watcher remains active so the operator can correct the source artifact.'
                 }
                 Start-Sleep -Seconds $PollSeconds
             }
         }
         finally {
-            $currentWatcher = Get-TbgWatcherState -WatcherPath $watcherPath
-            if ($null -ne $currentWatcher -and [int]$currentWatcher.pid -eq $PID) {
-                Remove-Item -LiteralPath $watcherPath -Force -ErrorAction SilentlyContinue
-            }
+            $currentWatcher = Get-TbgWatcher -Path $watcherPath
+            if ($null -ne $currentWatcher -and [int]$currentWatcher.pid -eq $PID) { Remove-Item -LiteralPath $watcherPath -Force -ErrorAction SilentlyContinue }
         }
         Write-Host 'The local artifact watcher stopped because the automatic toggle is off.'
         exit 0
