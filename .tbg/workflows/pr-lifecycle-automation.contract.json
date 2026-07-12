@@ -11,10 +11,12 @@
   },
   "requiredWorkflowNames": [
     "Governor Contracts",
-    "Harness Policy Reports",
+    "Harness Policy Reports"
+  ],
+  "conditionalRequiredWorkflowNames": [
     "Hostile Escape Contracts"
   ],
-  "requiredGateDefinition": "Only checks belonging to requiredWorkflowNames determine automatic readiness. Unlisted external checks and advisory platform/game workflows are reported but do not block readiness.",
+  "requiredGateDefinition": "Checks from requiredWorkflowNames must be present and successful. Checks from conditionalRequiredWorkflowNames block when present but their absence does not deadlock unrelated PRs. Unlisted external checks and advisory platform/game workflows are reported but do not block readiness.",
   "advisoryValidation": {
     "alwaysAdvisoryByDefault": [
       "installed-game execution",
@@ -33,7 +35,7 @@
       "cross-platform builds where the project supports them",
       "policy and architecture verifiers"
     ],
-    "workflowRule": "Keep installed-game and OS-specific jobs in separately named advisory workflows. Do not place them in a required workflow whose completion controls readiness."
+    "workflowRule": "Keep installed-game and OS-specific jobs in separately named advisory workflows. Do not place them in an always-required workflow whose completion controls readiness. Path-scoped platform-neutral workflows belong in conditionalRequiredWorkflowNames."
   },
   "draftControl": {
     "automaticPromotion": true,
@@ -43,7 +45,7 @@
   "allowedActions": [
     "query pull-request metadata",
     "query checks and workflow conclusions",
-    "classify required and advisory validation",
+    "classify always-required, conditional-required, and advisory validation",
     "write a lifecycle summary",
     "mark an eligible draft pull request ready for review",
     "leave an already-ready pull request unchanged"
