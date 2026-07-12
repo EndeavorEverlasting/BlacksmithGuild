@@ -5,6 +5,7 @@ on:
     paths:
       - '.tbg/harness/**'
       - '.tbg/workflows/**'
+      - '.tbg/plans/**'
       - '.tbg/guardrails/**'
       - '.claude/hooks/**'
       - 'scripts/harness/**'
@@ -14,11 +15,13 @@ on:
       - 'docs/architecture/**'
       - 'docs/handoff/**'
       - '.github/workflows/**'
+      - 'ForgeStalePrRecovery.cmd'
       - 'CLAUDE.md'
   push:
     paths:
       - '.tbg/harness/**'
       - '.tbg/workflows/**'
+      - '.tbg/plans/**'
       - '.tbg/guardrails/**'
       - '.claude/hooks/**'
       - 'scripts/harness/**'
@@ -28,6 +31,7 @@ on:
       - 'docs/architecture/**'
       - 'docs/handoff/**'
       - '.github/workflows/**'
+      - 'ForgeStalePrRecovery.cmd'
       - 'CLAUDE.md'
   workflow_dispatch:
 
@@ -59,6 +63,30 @@ jobs:
       - name: Verify effective-policy English reports
         shell: pwsh
         run: ./scripts/harness/Test-TbgEnglishRenderer.ps1
+
+      - name: Verify stale PR recovery English instructions
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/stale-pr-recovery-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgStalePrRecovery.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload stale PR recovery validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stale-pr-recovery-validator-${{ github.run_id }}
+          path: artifacts/latest/stale-pr-recovery-ci/validator.log
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Verify safe sprint workspace resolution
         shell: pwsh

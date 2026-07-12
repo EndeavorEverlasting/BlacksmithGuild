@@ -18,6 +18,8 @@
     "reportingPolicy": ".tbg/harness/policies/policy-reporting.policy.json",
     "interoperabilityContract": ".tbg/workflows/continuum-interoperability.contract.json",
     "continuumCapabilitySchema": ".tbg/harness/schemas/continuum-capability-packet.schema.json",
+    "stalePrRecoveryContract": ".tbg/workflows/stale-pr-recovery-automation.contract.json",
+    "stalePrRecoveryPlan": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
     "artifactsLatest": "artifacts/latest"
   },
   "runtime": {
@@ -36,6 +38,7 @@
     "AGENTS.md is the common denominator; targeted skills live under .tbg/skills.",
     "Harness maturity means cross-cutting plumbing moves into contracts, policies, registries, guards, evidence, and reporting; domain behavior remains visible in skills or source modules.",
     "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases.",
+    "Stale PR recovery instructions must pair structured JSON with complete syntactic-English sentences before an agent may act automatically.",
     "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency.",
     "Generic harness capabilities may move to Continuum only after parity tests, an app-owned adapter, standalone fallback proof, and an explicit extraction sprint."
   ]
