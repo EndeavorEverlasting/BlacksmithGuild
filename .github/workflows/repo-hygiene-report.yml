@@ -72,5 +72,6 @@ jobs:
       - name: Verify patch hygiene
         shell: pwsh
         run: |
-          git fetch origin "${{ github.base_ref }}" --depth=1
-          git diff --check "origin/${{ github.base_ref }}...HEAD"
+          $baseRef = '${{ github.base_ref }}'
+          git fetch origin "+refs/heads/$baseRef`:refs/remotes/origin/$baseRef" --depth=1
+          git diff --check "origin/$baseRef...HEAD"
