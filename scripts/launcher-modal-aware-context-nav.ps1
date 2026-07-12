@@ -3,8 +3,9 @@
 # This wrapper delegates the primary PLAY/CONTINUE click to launcher-frozen-context-nav.ps1.
 # If the frozen navigator cannot prove a game handoff, this wrapper inspects the bound
 # launcher PID/HWND from LauncherWindowContext and handles Bannerlord's dependency-mismatch
-# CAUTION modal as a first-class launcher handoff state. It confirms only the process/window
-# that came from the fresh LauncherWindowContext. It does not claim runtime proof.
+# CAUTION modal as a first-class launcher handoff state. A bounded recovery policy force-closes
+# the Bannerlord launcher process family and retries once with a fresh launcher context before
+# emitting a machine-readable dead end. It does not claim runtime proof.
 
 param(
     [Parameter(Mandatory = $true)]
@@ -21,11 +22,17 @@ param(
     [switch]$AllowFocusSteal,
     [switch]$LaunchSetup,
     [switch]$AllowLongRun,
-    [string]$LongRunReason
+    [string]$LongRunReason,
+    [ValidateRange(0, 2)]
+    [int]$RecoveryAttempt = 0,
+    [ValidateRange(0, 2)]
+    [int]$MaxRecoveryRetries = 1,
+    [string]$PreviousFailureSignature = $null
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
+. (Join-Path $PSScriptRoot 'launcher-recovery-policy.ps1')
 
 if (-not $LauncherContextPath) {
     $LauncherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
@@ -303,6 +310,26 @@ function Wait-TbgModalGameHandoff {
     return $false
 }
 
+function Invoke-TbgRecoveryForFailure {
+    param(
+        [Parameter(Mandatory = $true)][string]$FailureClass,
+        $Snapshot = $null,
+        [string]$Detail = $null,
+        [int]$InnerExitCode = 1
+    )
+
+    $signature = Get-TbgLauncherFailureSignature -FailureClass $FailureClass -Snapshot $Snapshot -Detail $Detail
+    $logCallback = { param($Message) Write-TbgModalNavLog -Message $Message }
+    $result = Invoke-TbgLauncherRecoveryRetry -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent `
+        -LauncherContextPath $LauncherContextPath -RetryScriptPath $PSCommandPath `
+        -FailureClass $FailureClass -FailureSignature $signature -RecoveryAttempt $RecoveryAttempt `
+        -MaxRecoveryRetries $MaxRecoveryRetries -PreviousFailureSignature $PreviousFailureSignature `
+        -InnerExitCode $InnerExitCode -TimeoutSec $TimeoutSec -PollMs $PollMs `
+        -RespectUserForeground $RespectUserForeground -AllowFocusSteal:$AllowFocusSteal `
+        -LaunchSetup:$LaunchSetup -AllowLongRun:$AllowLongRun -LongRunReason $LongRunReason -Log $logCallback
+    exit ([int]$result)
+}
+
 $navArgs = @(
     '-NoProfile',
     '-ExecutionPolicy', 'Bypass',
@@ -335,22 +362,28 @@ $wasFrozenClickFailure = ($tailText -match 'click_unverified_timeout') -or
     ($tailText -match 'frozen CONTINUE/PLAY click did not spawn game')
 
 if (-not $wasFrozenInvalidation -and -not $wasFrozenClickFailure) {
-    exit $navExit
+    Invoke-TbgRecoveryForFailure -FailureClass 'unclassified_frozen_navigation_failure' -Detail ('navExit={0}' -f $navExit) -InnerExitCode $navExit
 }
 
-$context = Read-TbgLauncherContext
+$context = $null
+try {
+    $context = Read-TbgLauncherContext
+} catch {
+    Invoke-TbgRecoveryForFailure -FailureClass 'launcher_context_unreadable' -Detail $_.Exception.Message -InnerExitCode $navExit
+}
+
 $expectedPid = [int]$context.processId
 $originalHwnd = [IntPtr]([int64]$context.hwnd)
 $afterReason = if ($wasFrozenInvalidation) { 'frozen_target_invalidated' } else { 'frozen_click_unverified_or_operator_action' }
-Write-TbgModalNavLog ('LAUNCH_STATE=modal_probe_started after={0} navExit={1} launchIntent={2} expectedPid={3} originalHwnd={4} expectedWindowChange=game_spawned|dependency_caution_modal|safe_mode_modal|singleplayer_window runtimeProofClaim=false' -f `
-    $afterReason, $navExit, $LaunchIntent, $expectedPid, $originalHwnd.ToInt64())
+Write-TbgModalNavLog ('LAUNCH_STATE=modal_probe_started after={0} navExit={1} launchIntent={2} expectedPid={3} originalHwnd={4} recoveryAttempt={5} maxRecoveryRetries={6} expectedWindowChange=game_spawned|dependency_caution_modal|safe_mode_modal|singleplayer_window runtimeProofClaim=false' -f `
+    $afterReason, $navExit, $LaunchIntent, $expectedPid, $originalHwnd.ToInt64(), $RecoveryAttempt, $MaxRecoveryRetries)
 $snapshot = Write-TbgLauncherWindowDelta -After $afterReason -ExpectedPid $expectedPid -OriginalHwnd $originalHwnd
 
 $candidate = Get-TbgDependencyCautionCandidate -ExpectedPid $expectedPid -OriginalHwnd $originalHwnd
 if (-not $candidate) {
     Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_not_detected classification=no_dependency_caution_candidate after={0} pid={1} processExists={2} processName="{3}" title="{4}" hwnd={5} size={6}x{7} runtimeProofClaim=false' -f `
         $afterReason, $expectedPid, $snapshot.processExists, ([string]$snapshot.processName), ([string]$snapshot.title), $snapshot.hwnd, $snapshot.width, $snapshot.height)
-    exit $navExit
+    Invoke-TbgRecoveryForFailure -FailureClass 'no_dependency_caution_candidate' -Snapshot $snapshot -Detail $afterReason -InnerExitCode $navExit
 }
 
 Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_modal_detected classification=dependency_mismatch_caution_modal hwnd={0} pid={1} processName="{2}" title="{3}" size={4}x{5} action=confirm_dependency_caution_required defaultAction=confirm after={6} dependencyMismatchHandled=pending runtimeProofClaim=false' -f `
@@ -358,7 +391,14 @@ Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_modal_detected classifica
 Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_detected classification=dependency_mismatch_caution_modal hwnd={0} pid={1} title="{2}" size={3}x{4} action=confirm_dependency_caution_required defaultAction=confirm runtimeProofClaim=false' -f `
     ([IntPtr]$candidate.hwnd).ToInt64(), $expectedPid, ([string]$candidate.title), $candidate.width, $candidate.height)
 
-Invoke-TbgDependencyCautionConfirm -Candidate $candidate -ExpectedPid $expectedPid
+try {
+    Invoke-TbgDependencyCautionConfirm -Candidate $candidate -ExpectedPid $expectedPid
+} catch {
+    Write-TbgModalNavLog ('CLICK_DEPENDENCY_CAUTION_RESULT result=confirm_failed pid={0} failure="{1}" dependencyMismatchHandled=false runtimeProofClaim=false' -f `
+        $expectedPid, (ConvertTo-TbgLauncherSignatureToken $_.Exception.Message))
+    Invoke-TbgRecoveryForFailure -FailureClass 'dependency_caution_confirm_failed' -Snapshot $snapshot -Detail $_.Exception.Message -InnerExitCode 1
+}
+
 $handoffObserved = Wait-TbgModalGameHandoff -TimeoutSec 60
 if ($handoffObserved) {
     Write-TbgModalNavLog 'LAUNCH_STATE=game_spawned classification=game_spawned evidence=dependency_caution_confirmed_then_game_spawned dependencyMismatchHandled=true runtimeProofClaim=false'
@@ -369,8 +409,8 @@ if ($handoffObserved) {
 $stillPresent = Get-TbgDependencyCautionCandidate -ExpectedPid $expectedPid -OriginalHwnd $originalHwnd
 if ($stillPresent) {
     Write-TbgModalNavLog ('CLICK_DEPENDENCY_CAUTION_RESULT result=caution_still_present hwnd={0} pid={1} dependencyMismatchHandled=false runtimeProofClaim=false' -f ([IntPtr]$stillPresent.hwnd).ToInt64(), $expectedPid)
-    throw 'operator_action_required: dependency mismatch caution still present after Confirm click'
+    Invoke-TbgRecoveryForFailure -FailureClass 'dependency_caution_still_present' -Snapshot $snapshot -Detail 'confirm_dispatched_modal_remained' -InnerExitCode 1
 }
 
 Write-TbgModalNavLog ('CLICK_DEPENDENCY_CAUTION_RESULT result=game_not_spawned pid={0} dependencyMismatchHandled=false runtimeProofClaim=false' -f $expectedPid)
-throw 'operator_action_required: dependency mismatch caution confirmed but game did not spawn'
+Invoke-TbgRecoveryForFailure -FailureClass 'dependency_caution_confirmed_game_not_spawned' -Snapshot $snapshot -Detail 'confirm_dispatched_no_game_handoff' -InnerExitCode 1
