@@ -1,4 +1,4 @@
-# Static contract for the local launcher validation workhorse.
+# Static contract for the multimodal launcher validation supervisor and strict leaf workhorse.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = [System.Collections.Generic.List[string]]::new()
@@ -30,12 +30,17 @@ function Forbid {
 }
 
 $cmd = 'Run-LauncherValidationWorkhorse.cmd'
+$supervisor = 'scripts\run-launcher-validation-supervisor.ps1'
 $workhorse = 'scripts\run-launcher-validation-workhorse.ps1'
 $doc = 'docs\handoff\launcher-validation-workhorse.md'
 
 foreach ($needle in @(
     'Launcher Validation Workhorse',
-    'run-launcher-validation-workhorse.ps1',
+    'run-launcher-validation-supervisor.ps1',
+    'current synced, current local commits, isolated remote, and isolated local snapshot',
+    'launcher-validation-supervisor.progress.log',
+    'launcher-validation-supervisor.handoff.md',
+    'launcher-validation-supervisor.result.json',
     'launcher-validation-workhorse.progress.log',
     'launcher-validation-workhorse.handoff.md',
     'launcher-validation-workhorse.result.json',
@@ -44,6 +49,20 @@ foreach ($needle in @(
 )) { Need $cmd $needle }
 Forbid $cmd '-RepoRoot "%~dp0"'
 Forbid $cmd 'git reset --hard'
+Forbid $cmd 'run-launcher-validation-workhorse.ps1" %*'
+
+foreach ($needle in @(
+    'TbgLauncherValidationSupervisorEvent.v1',
+    'TbgLauncherValidationSupervisor.v1',
+    'current_synced',
+    'current_local_commits',
+    'isolated_remote',
+    'isolated_local_snapshot',
+    'run-launcher-validation-workhorse.ps1',
+    'Test-WorkspaceRecoverableFailure',
+    'workspace_modes_exhausted',
+    'clear_semantic_dead_end'
+)) { Need $supervisor $needle }
 
 foreach ($needle in @(
     'TbgSyntacticEnglishProgressEvent.v1',
@@ -93,9 +112,14 @@ if ($eventMatches.Count -lt 12) {
 
 foreach ($needle in @(
     '# Launcher Validation Workhorse',
+    'Multimodal persistence',
     'Syntactic-English progress',
     'safe fast-forward',
     'concurrent worktrees',
+    'current_synced',
+    'current_local_commits',
+    'isolated_remote',
+    'isolated_local_snapshot',
     'progress.log',
     'events.jsonl',
     'handoff.md',
@@ -111,5 +135,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: launcher validation workhorse, syntactic-English progress, safe concurrency, evidence, and handoff contract verified.' -ForegroundColor Green
+Write-Host 'PASS: multimodal supervisor, strict leaf workhorse, syntactic-English progress, concurrency persistence, evidence, and handoff contract verified.' -ForegroundColor Green
 exit 0
