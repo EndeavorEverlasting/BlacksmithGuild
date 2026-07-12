@@ -1,16 +1,19 @@
 name: Apply Launcher Harness Follow-up
 
 on:
-  push:
+  pull_request:
     branches:
-      - fix/launcher-supervisor-empty-list
+      - agent/route-automation-operator-plan
 
 permissions:
   contents: write
 
 jobs:
   apply-bounded-repair:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.event.pull_request.number == 52 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout owned branch
@@ -18,10 +21,12 @@ jobs:
         with:
           ref: fix/launcher-supervisor-empty-list
           fetch-depth: 0
+          token: ${{ github.token }}
 
       - name: Apply exact bounded replacements
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           def replace_exact(path: str, old: bytes, new: bytes) -> None:
@@ -35,29 +40,30 @@ jobs:
           replace_exact(
               'scripts/run-launcher-validation-workhorse.ps1',
               b"contractProof = ($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'passed' }).Count -gt 0",
-              b"contractProof = @(\$steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'passed' }).Count -gt 0".replace(b'\\$', b'$'),
+              b"contractProof = @($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'passed' }).Count -gt 0",
           )
           replace_exact(
               'scripts/run-launcher-validation-workhorse.ps1',
               b"staticTestProof = ($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'failed' }).Count -eq 0",
-              b"staticTestProof = @(\$steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'failed' }).Count -eq 0".replace(b'\\$', b'$'),
+              b"staticTestProof = @($steps | Where-Object { $_.name -like 'verify-*' -and $_.status -eq 'failed' }).Count -eq 0",
           )
 
           old = b"""    $global:LASTEXITCODE = 0
-    $output = & git -C $WorkingRoot @Arguments 2>&1
-    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
-"""
+              $output = & git -C $WorkingRoot @Arguments 2>&1
+              $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+          """.replace(b'              ', b'    ')
           new = b"""    $previousErrorActionPreference = $ErrorActionPreference
-    try {
-        $ErrorActionPreference = 'Continue'
-        $global:LASTEXITCODE = 0
-        $output = & git -C $WorkingRoot @Arguments 2>&1
-        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
-    } finally {
-        $ErrorActionPreference = $previousErrorActionPreference
-    }
-"""
+              try {
+                  $ErrorActionPreference = 'Continue'
+                  $global:LASTEXITCODE = 0
+                  $output = & git -C $WorkingRoot @Arguments 2>&1
+                  $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+              } finally {
+                  $ErrorActionPreference = $previousErrorActionPreference
+              }
+          """.replace(b'              ', b'    ')
           replace_exact('scripts/run-launcher-validation-supervisor.ps1', old, new)
+          PY
 
       - name: Show and validate diff
         shell: bash
