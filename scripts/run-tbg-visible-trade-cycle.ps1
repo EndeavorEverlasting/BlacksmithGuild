@@ -113,7 +113,7 @@ function Wait-TbgJsonEvidence {
                     Path = $candidate
                     Value = $value
                     LastWriteTimeUtc = $item.LastWriteTimeUtc
-                    Sha256 = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash
+                    Sha256 = Get-TbgFileSha256 -LiteralPath $candidate
                 }
             }
         }
@@ -185,10 +185,15 @@ function Get-FailureTerminalState {
 function Write-EnglishReport {
     param($Result)
 
-    $saveSentence = if ($Result.evidenceSummary.saveIdentityVerified) {
-        "The runtime proved that Bannerlord loaded the requested save **$($Result.request.requestedSaveId)** by matching MBSaveLoad.ActiveSaveSlotName to the pinned request."
+    $requestedSaveLabel = if ([string]::IsNullOrWhiteSpace([string]$Result.request.requestedSaveId)) {
+        'not selected before the run stopped'
     } else {
-        "The runtime did not prove that Bannerlord loaded the pinned save **$($Result.request.requestedSaveId)**."
+        [string]$Result.request.requestedSaveId
+    }
+    $saveSentence = if ($Result.evidenceSummary.saveIdentityVerified) {
+        "The runtime proved that Bannerlord loaded the requested save **$requestedSaveLabel** by matching MBSaveLoad.ActiveSaveSlotName to the pinned request."
+    } else {
+        "The runtime did not prove that Bannerlord loaded the pinned save (**$requestedSaveLabel**)."
     }
     $tradeSentence = if ($Result.evidenceSummary.realBuyDelta) {
         "Bannerlord recorded a real buy: gold changed by $($Result.evidenceSummary.goldDelta), inventory changed by $($Result.evidenceSummary.inventoryDelta), and the runtime marked the delta as non-fake."
@@ -311,7 +316,7 @@ try {
 
     $selectedSave = Find-ExplicitDevSave -RequestedPath $SavePath
     $requestedSaveId = [System.IO.Path]::GetFileNameWithoutExtension($selectedSave.Name)
-    $saveHash = (Get-FileHash -LiteralPath $selectedSave.FullName -Algorithm SHA256).Hash
+    $saveHash = Get-TbgFileSha256 -LiteralPath $selectedSave.FullName
     $selectedSave.LastWriteTimeUtc = (Get-Date).ToUniversalTime()
     $selectedSave.LastAccessTimeUtc = $selectedSave.LastWriteTimeUtc
     $preflightChecks.explicitDevSavePinned = $true
@@ -341,8 +346,8 @@ try {
 
     if (-not (Test-Path -LiteralPath $localDllPath)) { throw "FAILED_preflight:local_dll_missing:$localDllPath" }
     if (-not (Test-Path -LiteralPath $installedDllPath)) { throw "FAILED_preflight:installed_dll_missing:$installedDllPath" }
-    $localDllHash = (Get-FileHash -LiteralPath $localDllPath -Algorithm SHA256).Hash
-    $installedDllHash = (Get-FileHash -LiteralPath $installedDllPath -Algorithm SHA256).Hash
+    $localDllHash = Get-TbgFileSha256 -LiteralPath $localDllPath
+    $installedDllHash = Get-TbgFileSha256 -LiteralPath $installedDllPath
     if (-not [string]::Equals($localDllHash, $installedDllHash, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "FAILED_preflight:installed_dll_hash_mismatch local=$localDllHash installed=$installedDllHash"
     }

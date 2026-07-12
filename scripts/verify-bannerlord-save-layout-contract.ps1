@@ -44,6 +44,10 @@ try {
     Assert-True (Test-BannerlordRecognizedSavePath -Path $flatSave -DocsRoot $fixtureRoot) 'Flat save path must be recognized'
     Assert-True (Test-BannerlordRecognizedSavePath -Path $nativeSave -DocsRoot $fixtureRoot) 'Native save path must be recognized'
     Assert-True (-not (Test-BannerlordRecognizedSavePath -Path $nestedSave -DocsRoot $fixtureRoot)) 'Nested/unrecognized save paths must be rejected'
+    $flatHash = Get-TbgFileSha256 -LiteralPath $flatSave
+    Assert-True ($flatHash -match '^[A-F0-9]{64}$') '.NET SHA-256 helper must return a stable uppercase hex digest'
+    [System.IO.File]::AppendAllText($flatSave, '-changed')
+    Assert-True ((Get-TbgFileSha256 -LiteralPath $flatSave) -ne $flatHash) 'SHA-256 helper must detect changed file content'
 } finally {
     if (Test-Path -LiteralPath $fixtureRoot) {
         Remove-Item -LiteralPath $fixtureRoot -Recurse -Force

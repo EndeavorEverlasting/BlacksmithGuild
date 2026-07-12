@@ -94,6 +94,7 @@ foreach ($needle in @(
         'preexisting_bannerlord_process',
         'Get-BannerlordDevSaveCandidates',
         'Test-BannerlordRecognizedSavePath',
+        'Get-TbgFileSha256',
         "requestedSaveId = `$requestedSaveId",
         "requestedSaveSha256AtStart = `$saveHash",
         "Join-Path `$bannerlordRoot 'BlacksmithGuild_VisibleTradeCycleRequest.json'",
@@ -165,10 +166,13 @@ try {
     Assert-True (-not [bool]$diagnosticResult.preflight.nativeContinueLaunched) 'Diagnostic mode must not launch Bannerlord'
     Assert-True (-not $diagnosticReport.Contains('$(')) 'English report must interpolate result fields instead of leaking PowerShell syntax'
     Assert-True (-not $diagnosticReport.Contains([char]11)) 'English report must not contain a vertical-tab escape from Markdown backticks'
+    Assert-True ($diagnosticReport.Contains('not selected before the run stopped')) 'Early failure report must explain that no save was selected'
 } finally {
     if (Test-Path -LiteralPath $diagnosticRoot) {
         Remove-Item -LiteralPath $diagnosticRoot -Recurse -Force
     }
 }
+
+Assert-True (-not $runnerText.Contains('Get-FileHash')) 'CMD runner must not depend on PowerShell module autoloading for SHA-256'
 
 Write-Host "Visible trade cycle contract: PASS ($(@($fixtures.cases).Count) fixtures)"

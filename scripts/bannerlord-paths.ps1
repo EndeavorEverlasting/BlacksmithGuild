@@ -73,6 +73,19 @@ function Test-BannerlordRecognizedSavePath {
     return $false
 }
 
+function Get-TbgFileSha256 {
+    param([Parameter(Mandatory = $true)][string]$LiteralPath)
+
+    $stream = [System.IO.File]::OpenRead($LiteralPath)
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return ([System.BitConverter]::ToString($algorithm.ComputeHash($stream))).Replace('-', '')
+    } finally {
+        $algorithm.Dispose()
+        $stream.Dispose()
+    }
+}
+
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot = (Split-Path -Parent $PSScriptRoot))
 
