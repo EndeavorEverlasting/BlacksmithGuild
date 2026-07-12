@@ -14,6 +14,7 @@ namespace BlacksmithGuild.DevTools
     /// </summary>
     public static class CampaignMapReadyOrchestrator
     {
+        private const string StabilizationStatusCadenceWorker = "MapReady.StabilizationStatus";
         private const int DeferredHookMinTicks = 5;
         private const int PostStabilizationHeavyFlushMinTicks = 10;
         private const float PostMapReadyStabilizationSec = 20f;
@@ -94,6 +95,7 @@ namespace BlacksmithGuild.DevTools
             _hasRunAgentAutoLoop = false;
             _hasRunAgentAutoMapTradeRoute = false;
             _lastOrchestratorDeferKey = null;
+            RuntimeCadenceGate.Reset(StabilizationStatusCadenceWorker);
         }
 
         public static void OnApplicationTick(float dt)
@@ -134,9 +136,14 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            GameSessionState.Refresh();
+            GameSessionState.RefreshForRealtimeTick();
 
-            if (_stabilizationSecRemaining > 0f && GameSessionState.IsCampaignSessionReady)
+            if (_stabilizationSecRemaining > 0f
+                && GameSessionState.IsCampaignSessionReady
+                && RuntimeCadenceGate.TryEnter(
+                    StabilizationStatusCadenceWorker,
+                    DevToolsConfig.StabilizationStatusSyncIntervalMs,
+                    hardMinimumMs: 250))
             {
                 GameSessionState.SyncForgeStatus();
             }

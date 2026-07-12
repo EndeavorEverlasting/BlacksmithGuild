@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "TbgWorkerCadence.v1",
+  "updatedDate": "2026-07-11",
+  "purpose": "Bound expensive campaign workers by elapsed time and refresh market intelligence only when demanded, invalidated, or stale.",
+  "sharedGate": "src/BlacksmithGuild/DevTools/RuntimeCadenceGate.cs",
+  "marketRefreshKnowledge": {
+    "bannerlordInternalScheduleKnown": false,
+    "assumption": "none",
+    "policy": "on_demand_event_or_ttl",
+    "automaticContinuousScan": false,
+    "explicitForceRefresh": "Ctrl+Alt+M",
+    "invalidationEvents": [
+      "campaign_daily_tick",
+      "trade_completed",
+      "smithing_inventory_changed",
+      "settlement_changed",
+      "party_moved_beyond_cache_radius"
+    ],
+    "maxCampaignAgeHours": 24,
+    "maxMapMovementDistance": 10
+  },
+  "budgets": {
+    "realtimeSessionRefreshMs": 100,
+    "unchangedLifecycleWriteMs": 1000,
+    "stabilizationStatusWriteMs": 1000,
+    "governorDecisionMs": 10000,
+    "branchStatePollMs": 2000,
+    "activeRouteMonitorMs": 250,
+    "assistMovementSampleMs": 250,
+    "assistEvidenceWriteMs": 1000,
+    "movementProofMaxSamples": 64,
+    "fileInboxHeavyWorkOnlyWhenPending": true,
+    "horseAtlasMaxScanSettlements": 24,
+    "slowSegmentMs": 8
+  },
+  "workers": [
+    {
+      "worker": "CampaignRuntimeGovernor",
+      "activeWhen": "Governor automation enabled and not paused",
+      "expensiveWork": "food, capacity, horse, smithing, companion, diplomacy, threat, and cached-only market status"
+    },
+    {
+      "worker": "MapTradeBranchStatePoll",
+      "activeWhen": "MapTrade is idle and its authority mode is Automation",
+      "expensiveWork": "BlacksmithGuild_Status.json read; unchanged blocker evidence is suppressed"
+    },
+    {
+      "worker": "MapTradeActiveMonitor",
+      "activeWhen": "A visible route is running",
+      "expensiveWork": "hostile-party safety scan and arrival handling"
+    },
+    {
+      "worker": "AutoTravelHostileScan",
+      "activeWhen": "An auto-travel destination is active",
+      "expensiveWork": "hostile-party enumeration"
+    },
+    {
+      "worker": "AssistMovementProof",
+      "activeWhen": "An assistive travel proof is active",
+      "expensiveWork": "settlement sampling, bounded proof classification, and JSON evidence"
+    },
+    {
+      "worker": "GuildLoopActiveMonitor",
+      "activeWhen": "A guild-loop route is running",
+      "expensiveWork": "surface refresh and arrival handling"
+    },
+    {
+      "worker": "CohesionActiveMonitor",
+      "activeWhen": "A cohesion movement or wait is running",
+      "expensiveWork": "surface refresh, encounter checks, and cohesion re-evaluation"
+    }
+  ],
+  "runtimeEvidence": {
+    "profilerFile": "BlacksmithGuild_TickCostProfiler.json",
+    "cadenceFile": "BlacksmithGuild_RuntimeCadence.json",
+    "marketFile": "BlacksmithGuild_MarketIntel.json",
+    "movementFile": "BlacksmithGuild_MovementProof.json",
+    "periodicProfilerWritesDefault": false,
+    "marketHandoffFields": [
+      "scanElapsedMs",
+      "scanPassCount",
+      "settlementsEnumerated",
+      "townsVisited",
+      "candidateItemCount",
+      "priceLookupCount",
+      "scanExecutionCount",
+      "cacheReuseCount"
+    ],
+    "interpretation": "Compare segment count, slowCount, averageMs, and maxMs during a representative route; absence of a scan is not gameplay proof."
+  }
+}

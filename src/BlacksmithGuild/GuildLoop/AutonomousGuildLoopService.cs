@@ -16,6 +16,7 @@ namespace BlacksmithGuild.GuildLoop
 {
     public static class AutonomousGuildLoopService
     {
+        private const string ActiveMonitorCadenceWorker = "GuildLoop.ActiveMonitor";
         public const string RunAutonomousGuildLoopNowCommand = "RunAutonomousGuildLoopNow";
         public const string AbortAutonomousGuildLoopNowCommand = "AbortAutonomousGuildLoopNow";
         public const string ReportFileName = "BlacksmithGuild_AutonomousGuildLoop.json";
@@ -34,6 +35,15 @@ namespace BlacksmithGuild.GuildLoop
 
         public static bool IsTerminal =>
             _activeReport == null || _activeReport.Verdict != null;
+
+        public static void ResetForNewCampaign()
+        {
+            _activeReport = null;
+            _mission = null;
+            _abortRequested = false;
+            LastFailReason = null;
+            RuntimeCadenceGate.Reset(ActiveMonitorCadenceWorker);
+        }
 
         public static bool StartNow(string source = RunAutonomousGuildLoopNowCommand)
         {
@@ -67,6 +77,7 @@ namespace BlacksmithGuild.GuildLoop
                 Source = source,
                 Capabilities = ProbeCapabilities()
             };
+            RuntimeCadenceGate.Reset(ActiveMonitorCadenceWorker);
 
             AddStep("Preflight", "Success", "campaign map ready");
             return ContinueFromFactionPosture(source);
@@ -87,7 +98,15 @@ namespace BlacksmithGuild.GuildLoop
                 return;
             }
 
-            GameSessionState.Refresh();
+            if (!RuntimeCadenceGate.TryEnter(
+                ActiveMonitorCadenceWorker,
+                DevToolsConfig.GuildLoopActiveMonitorIntervalMs,
+                hardMinimumMs: 100))
+            {
+                return;
+            }
+
+            GameSessionState.RefreshForRealtimeTick();
             if (GameSessionState.IsMapMenuOpen)
             {
                 MapTradeVisibleMovementDriver.Hold();
@@ -119,7 +138,7 @@ namespace BlacksmithGuild.GuildLoop
         private static bool ContinueFromMarketScan(string source)
         {
             _activeReport.Phase = GuildLoopPhase.MarketScan;
-            if (!MarketIntelligenceService.RunScanNow(source))
+            if (!MarketIntelligenceService.EnsureFreshScan(source))
             {
                 AddStep("MarketScan", "Blocked", "market scan failed");
                 Complete("Blocked", "market scan failed");

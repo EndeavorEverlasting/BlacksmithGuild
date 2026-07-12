@@ -1,5 +1,17 @@
 # Load, Toggle, Travel, and Visible-Trade Operator Plan
 
+Performance and market-cache behavior for this flow are defined in [Worker Cadence and Market Refresh](worker-cadence-and-market-refresh.md). Market enumeration is on-demand; it is not a campaign-tick polling loop.
+
+The terminal unattended workflow is now:
+
+```powershell
+.\Run-TbgVisibleTradeCycle.cmd -ExpectedHead (git rev-parse HEAD)
+```
+
+Certifying mode requires a clean committed exact head, Bannerlord closed, and an explicit `BlacksmithGuild_DevStart*.sav`. It builds and installs Release, verifies the on-disk and process-loaded DLL hashes, proves `MBSaveLoad.ActiveSaveSlotName`, enables only MapTrade Automation, waits for real movement/arrival/non-fake buy deltas and the vanilla trade inventory surface, then proves MapTrade returned to Manual. `-Diagnostic`, `-SkipBuild`, and `-SkipLaunch` are non-certifying and can never emit PASS.
+
+For an unattended regression test of the recursive-branch route start, run `Run-MapTradeBranchAutostartProof.cmd` from a clean committed head with Bannerlord closed. The runner builds and installs that head, launches native Continue, requires a fresh town-menu branch target, enables only MapTrade Automation, waits for the exact automatic source plus positive movement, returns MapTrade to Manual, and writes a terminal result. A person pressing `Ctrl+Alt+T` is not a prerequisite for this proof.
+
 ```text
 [TBG | Operator Load/Toggle/Visible Trade | implementation plan | branch: agent/route-automation-operator-plan]
 ```
@@ -215,7 +227,7 @@ No lower level may satisfy a higher level.
 
 ## Implementation order for the final CMD
 
-The future `Run-TbgVisibleTradeCycle.cmd` must be implemented in this order:
+`Run-TbgVisibleTradeCycle.cmd` implements the first complete buy-cycle proof in this order; later sell/horse/smithing legs remain separate bounded extensions:
 
 1. Exact save request and loaded-save identity.
 2. Pre-launch Manual mode and in-game effective-mode visibility.

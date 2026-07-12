@@ -13,7 +13,8 @@ namespace BlacksmithGuild.DevTools
 
         private static DateTime? _moduleLoadedAtUtc;
         private static DateTime _lastHeartbeatUtc = DateTime.MinValue;
-        private static DateTime _lastFrameHeartbeatWriteUtc = DateTime.MinValue;
+        private static DateTime _lastLifecycleWriteUtc = DateTime.MinValue;
+        private static string _lastStateHeartbeatFingerprint;
         private static string _lastKnownGameplaySurface = GameplaySurfaceKinds.Unknown;
         private static string _lastKnownGameLifecycle = GameLifecycleKinds.Unknown;
         private static string _lastCommandName;
@@ -41,25 +42,39 @@ namespace BlacksmithGuild.DevTools
         {
             var now = DateTime.UtcNow;
             _lastHeartbeatUtc = now;
-            if ((now - _lastFrameHeartbeatWriteUtc).TotalMilliseconds < 1000)
+            if ((now - _lastLifecycleWriteUtc).TotalMilliseconds
+                < Math.Max(250, DevToolsConfig.RuntimeLifecycleHeartbeatWriteIntervalMs))
             {
                 return;
             }
 
-            _lastFrameHeartbeatWriteUtc = now;
             WriteLifecycleFile();
         }
 
         public static void OnHeartbeat(GameplaySurfaceSnapshot snapshot)
         {
-            _lastHeartbeatUtc = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            _lastHeartbeatUtc = now;
             if (snapshot != null)
             {
                 _lastKnownGameplaySurface = snapshot.GameplaySurface ?? GameplaySurfaceKinds.Unknown;
                 _lastKnownGameLifecycle = snapshot.GameLifecycle ?? GameLifecycleKinds.Unknown;
             }
 
-            WriteLifecycleFile();
+            var fingerprint = (_lastKnownGameplaySurface ?? string.Empty)
+                + "|" + (_lastKnownGameLifecycle ?? string.Empty);
+            var changed = !string.Equals(
+                fingerprint,
+                _lastStateHeartbeatFingerprint,
+                StringComparison.Ordinal);
+            var writeDue = (now - _lastLifecycleWriteUtc).TotalMilliseconds
+                >= Math.Max(250, DevToolsConfig.RuntimeLifecycleHeartbeatWriteIntervalMs);
+            if (changed || writeDue)
+            {
+                _lastStateHeartbeatFingerprint = fingerprint;
+                WriteLifecycleFile();
+            }
+
             if (!_runtimeLifecycleCheckpointEmitted)
             {
                 _runtimeLifecycleCheckpointEmitted = true;
@@ -165,6 +180,7 @@ namespace BlacksmithGuild.DevTools
                 builder.AppendLine($"  \"shutdownReason\": {JsonString(_shutdownReason)}");
                 builder.AppendLine("}");
                 WriteAllTextAtomic(LifecyclePath, builder.ToString());
+                _lastLifecycleWriteUtc = DateTime.UtcNow;
             }
             catch (Exception ex)
             {

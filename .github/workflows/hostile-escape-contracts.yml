@@ -1,0 +1,23 @@
+name: Hostile Escape Contracts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hostile-escape-contract:
+    name: Pure hostile geometry and runtime boundary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Execute hostile escape-vector fixtures
+        shell: pwsh
+        run: ./scripts/verify-hostile-escape-vector-contract.ps1

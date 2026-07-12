@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://blacksmithguild.local/schemas/evidence-retention-result.schema.json",
+  "title": "TBG evidence retention result",
+  "type": "object",
+  "required": [
+    "schema",
+    "action",
+    "timestampUtc",
+    "repoRoot",
+    "branch",
+    "retentionProfile",
+    "mode",
+    "status",
+    "verdict",
+    "policyPath",
+    "archiveRepoRoot",
+    "archiveRoot",
+    "summary",
+    "candidates",
+    "artifacts"
+  ],
+  "properties": {
+    "schema": { "const": "tbg.evidence-retention.result.v1" },
+    "action": { "const": "ManageEvidenceRetention" },
+    "timestampUtc": { "type": "string", "format": "date-time" },
+    "repoRoot": { "type": "string", "minLength": 1 },
+    "branch": { "type": "string" },
+    "retentionProfile": { "enum": ["active_worktree", "retired_detached_worktree"] },
+    "mode": { "enum": ["plan", "apply"] },
+    "status": { "enum": ["ready", "complete", "partial", "blocked"] },
+    "verdict": {
+      "enum": [
+        "retention_plan_ready",
+        "retention_apply_complete",
+        "retention_apply_partial",
+        "nothing_to_archive",
+        "retention_blocked"
+      ]
+    },
+    "policyPath": { "type": "string", "minLength": 1 },
+    "archiveRepoRoot": { "type": "string", "minLength": 1 },
+    "archiveRoot": { "type": "string", "minLength": 1 },
+    "retiredWorktreeChecks": { "type": "object" },
+    "summary": {
+      "type": "object",
+      "required": [
+        "discoveredCount",
+        "plannedCount",
+        "archivedCount",
+        "protectedCount",
+        "blockedCount",
+        "deferredCount",
+        "plannedBytes",
+        "archivedSourceBytes",
+        "liveCandidateBytes",
+        "sizePressureBytes",
+        "projectedLiveBytesAfterApply"
+      ]
+    },
+    "candidates": { "type": "array" },
+    "artifacts": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": true
+}

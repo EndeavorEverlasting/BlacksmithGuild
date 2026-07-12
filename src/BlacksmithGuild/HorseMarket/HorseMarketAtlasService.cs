@@ -59,6 +59,7 @@ namespace BlacksmithGuild.HorseMarket
     public sealed class HorseMarketAtlasReport
     {
         public string GeneratedUtc;
+        public double GeneratedCampaignDay = -1d;
         public string Source;
         public string Mode;
         public bool ReadOnly = true;
@@ -87,6 +88,11 @@ namespace BlacksmithGuild.HorseMarket
         public static string ReportPath => Path.Combine(BasePath.Name, ReportFileName);
         public static HorseMarketAtlasReport LastReport { get; private set; }
 
+        public static void ResetForNewCampaign()
+        {
+            LastReport = null;
+        }
+
         public static bool RunScanNow(string source = ScanHorseAtlasCommand)
         {
             if (Campaign.Current == null || MobileParty.MainParty == null)
@@ -107,6 +113,7 @@ namespace BlacksmithGuild.HorseMarket
             var report = new HorseMarketAtlasReport
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                GeneratedCampaignDay = ReadCampaignDay(),
                 Source = source,
                 Mode = mode.ToString(),
                 CurrentSettlement = GameSessionState.CurrentSettlementName,
@@ -143,6 +150,20 @@ namespace BlacksmithGuild.HorseMarket
                 return true;
             }
 
+            var nowCampaignDay = ReadCampaignDay();
+            if (LastReport.GeneratedCampaignDay >= 0d && nowCampaignDay >= LastReport.GeneratedCampaignDay)
+            {
+                var campaignAgeHours = (nowCampaignDay - LastReport.GeneratedCampaignDay) * 24d;
+                if (campaignAgeHours > DevToolsConfig.HorseMarketAtlasFreshnessHours)
+                {
+                    reason = $"horse atlas stale campaignAgeHours={campaignAgeHours:0.#}; nextAction=RefreshHorseAtlas";
+                    return true;
+                }
+
+                reason = null;
+                return false;
+            }
+
             if (!DateTime.TryParse(LastReport.GeneratedUtc, out var generated))
             {
                 reason = "horse atlas timestamp unreadable; nextAction=RefreshHorseAtlas";
@@ -166,12 +187,16 @@ namespace BlacksmithGuild.HorseMarket
             try { settlements = new List<Settlement>(Settlement.All); }
             catch { return; }
 
+            settlements = settlements
+                .Where(settlement => settlement != null
+                    && (settlement.IsTown || settlement.IsVillage || settlement.IsCastle)
+                    && settlement.ItemRoster != null)
+                .OrderBy(settlement => CampaignMapMovementHelper.Distance(party, settlement))
+                .Take(Math.Max(1, DevToolsConfig.HorseMarketAtlasMaxScanSettlementCount))
+                .ToList();
+
             foreach (var settlement in settlements)
             {
-                if (settlement == null) continue;
-                if (!settlement.IsTown && !settlement.IsVillage && !settlement.IsCastle) continue;
-                if (settlement.ItemRoster == null) continue;
-
                 var distance = CampaignMapMovementHelper.Distance(party, settlement);
                 if (mode == HorseMarketAtlasMode.DiscoveredOnly)
                 {
@@ -332,6 +357,7 @@ namespace BlacksmithGuild.HorseMarket
             var sb = new StringBuilder();
             sb.AppendLine("{");
             Str(sb, "generatedUtc", r.GeneratedUtc, true);
+            sb.AppendLine($"  \"generatedCampaignDay\": {r.GeneratedCampaignDay.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)},");
             Str(sb, "source", r.Source, true);
             Str(sb, "mode", r.Mode, true);
             sb.AppendLine($"  \"readOnly\": true,");
@@ -422,5 +448,10 @@ namespace BlacksmithGuild.HorseMarket
             sb.AppendLine();
         }
         private static string Esc(string v) => (v ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+        private static double ReadCampaignDay()
+        {
+            try { return CampaignTime.Now.ToDays; }
+            catch { return -1d; }
+        }
     }
 }

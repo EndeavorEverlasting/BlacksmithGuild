@@ -40,7 +40,7 @@ namespace BlacksmithGuild.MapTrade
         private static void Write(string fileName, string json)
         {
             var path = Path.Combine(BasePath.Name, fileName);
-            File.WriteAllText(path, json, Encoding.UTF8);
+            DevTools.RuntimeProofContext.WriteAllTextAtomic(path, json);
             MirrorEvidence(path, fileName);
         }
 
@@ -84,6 +84,9 @@ namespace BlacksmithGuild.MapTrade
         {
             var sb = new StringBuilder();
             sb.AppendLine("{");
+            sb.AppendLine($"  \"runId\": {NullableString(report.RunId)},");
+            sb.AppendLine($"  \"headSha\": {NullableString(report.HeadSha)},");
+            sb.AppendLine($"  \"runtimeSessionId\": {NullableString(report.RuntimeSessionId)},");
             sb.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
             sb.AppendLine($"  \"source\": \"{Escape(report.Source)}\",");
             sb.AppendLine($"  \"startedAtUtc\": {NullableString(report.StartedAtUtc)},");
@@ -95,6 +98,12 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"  \"attemptedUnpause\": {(report.AttemptedUnpause ? "true" : "false")},");
             sb.AppendLine($"  \"travelCommandIssued\": {(report.TravelCommandIssued ? "true" : "false")},");
             sb.AppendLine($"  \"routeStarted\": {(report.RouteStarted ? "true" : "false")},");
+            sb.AppendLine($"  \"autoStartTickReturnObserved\": {(report.AutoStartTickReturnObserved ? "true" : "false")},");
+            sb.AppendLine($"  \"sameTickHoldObserved\": {(report.SameTickHoldObserved ? "true" : "false")},");
+            sb.AppendLine($"  \"movementObserved\": {(report.MovementObserved ? "true" : "false")},");
+            sb.AppendLine($"  \"partyMovedDistance\": {report.PartyMovedDistance:0.###},");
+            sb.AppendLine($"  \"arrivalObserved\": {(report.ArrivalObserved ? "true" : "false")},");
+            sb.AppendLine($"  \"arrivedSettlement\": {NullableString(report.ArrivedSettlement)},");
             sb.AppendLine($"  \"runtimeProofClaim\": {NullableString(report.RuntimeProofClaim)},");
             sb.AppendLine($"  \"state\": \"{report.State}\",");
             sb.AppendLine($"  \"verdict\": \"{Escape(report.Verdict)}\",");
@@ -107,6 +116,9 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine(",");
             sb.AppendLine("  \"tradeExecution\": ");
             AppendTradeExecution(sb, report.TradeExecution, "  ");
+            sb.AppendLine(",");
+            sb.AppendLine("  \"tradeSurface\": ");
+            AppendTradeSurface(sb, report.TradeSurface, "  ");
             sb.AppendLine(",");
             sb.AppendLine("  \"mission\": {");
             var mission = report.Mission;
@@ -223,8 +235,28 @@ namespace BlacksmithGuild.MapTrade
             sb.AppendLine($"{indent}  \"quantityBought\": {execution.QuantityBought},");
             sb.AppendLine($"{indent}  \"inventoryBefore\": {execution.InventoryBefore},");
             sb.AppendLine($"{indent}  \"inventoryAfter\": {execution.InventoryAfter},");
+            sb.AppendLine($"{indent}  \"inventoryDelta\": {execution.InventoryAfter - execution.InventoryBefore},");
+            sb.AppendLine($"{indent}  \"fakeGameplayDelta\": {(execution.FakeGameplayDelta ? "true" : "false")},");
             sb.AppendLine($"{indent}  \"executionMethod\": {NullableString(execution.ExecutionMethod)},");
             sb.AppendLine($"{indent}  \"itemClassification\": {NullableString(execution.ItemClassification)}");
+            sb.Append($"{indent}}}");
+        }
+
+        private static void AppendTradeSurface(StringBuilder sb, MapTradeTradeSurfaceEvidence surface, string indent)
+        {
+            if (surface == null)
+            {
+                sb.Append($"{indent}null");
+                return;
+            }
+
+            sb.AppendLine($"{indent}{{");
+            sb.AppendLine($"{indent}  \"surface\": {NullableString(surface.Surface)},");
+            sb.AppendLine($"{indent}  \"visible\": {(surface.Visible ? "true" : "false")},");
+            sb.AppendLine($"{indent}  \"openedAtUtc\": {NullableString(surface.OpenedAtUtc)},");
+            sb.AppendLine($"{indent}  \"settlement\": {NullableString(surface.Settlement)},");
+            sb.AppendLine($"{indent}  \"method\": {NullableString(surface.Method)},");
+            sb.AppendLine($"{indent}  \"activeState\": {NullableString(surface.ActiveState)}");
             sb.Append($"{indent}}}");
         }
 

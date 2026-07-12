@@ -85,9 +85,23 @@ namespace BlacksmithGuild.DevTools
         private static bool _lastHeroReadyProbe;
         private static DateTime _lastReadHeroTraceUtc = DateTime.MinValue;
         private static string _lastPromotionFingerprint;
+        public static void RefreshForRealtimeTick()
+        {
+            if (!RuntimeCadenceGate.TryEnter(
+                "GameSessionState.Refresh",
+                DevToolsConfig.GameSessionStateRealtimeRefreshIntervalMs))
+            {
+                return;
+            }
+
+            Refresh();
+        }
 
         public static void Refresh()
         {
+            RuntimeCadenceGate.DeferNext(
+                "GameSessionState.Refresh",
+                DevToolsConfig.GameSessionStateRealtimeRefreshIntervalMs);
             var fingerprint = BuildRefreshFingerprint();
             var fingerprintChanged = !string.Equals(fingerprint, _lastRefreshFingerprint, StringComparison.Ordinal);
             var traceDue = fingerprintChanged

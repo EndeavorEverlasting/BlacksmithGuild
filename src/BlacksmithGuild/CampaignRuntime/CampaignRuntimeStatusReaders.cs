@@ -148,6 +148,11 @@ namespace BlacksmithGuild.CampaignRuntime
                 return "report_insufficient:no_cached_market_scan";
             }
 
+            if (!MarketIntelligenceService.HasFreshCachedScan)
+            {
+                return "report_insufficient:stale_market_scan:" + MarketIntelligenceService.CacheStatusDetail;
+            }
+
             var summary = MarketIntelligenceService.Summary;
             return $"cached:nearest={summary.NearestTown ?? "unknown"} spreads={summary.SpreadCount} routes={summary.RouteCount}";
         }
@@ -171,12 +176,13 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             try
             {
-                var settlement = TavernHeroScanner.BuildSettlementSnapshot();
-                var companions = TavernHeroScanner.BuildCompanionSnapshot(MobileParty.MainParty);
                 if (!GameSessionState.IsSettlementInteriorReady && !GameSessionState.IsSettlementMenuReady)
                 {
-                    return $"not_applicable:not_in_town slots={companions.RemainingSlots}";
+                    return "not_applicable:not_in_town";
                 }
+
+                var settlement = TavernHeroScanner.BuildSettlementSnapshot();
+                var companions = TavernHeroScanner.BuildCompanionSnapshot(MobileParty.MainParty);
 
                 if (settlement.HasTavern != true)
                 {
@@ -221,10 +227,14 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             try
             {
-                // SelectBestMission already calls RunScanNow when HasCachedScan is false, so
-                // we do NOT short-circuit here.  The early guard was preventing on-demand scan
-                // and causing DestinationCandidate to stay null on every cold session, which
-                // ultimately blocked the runner with handoff_missing_travel_target.
+                // Governor status collection is observe-only and must never trigger full price
+                // enumeration. A workflow or explicit market command owns refresh; the next
+                // Governor cycle can consume that fresh cache.
+                if (!MarketIntelligenceService.HasFreshCachedScan)
+                {
+                    return null;
+                }
+
                 var mission = MapTradeMissionSelector.SelectBestMission();
                 if (mission == null || mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
                 {

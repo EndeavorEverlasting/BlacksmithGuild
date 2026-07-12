@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Reporting;
+using BlacksmithGuild.Market;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.Library;
@@ -154,6 +155,7 @@ namespace BlacksmithGuild.Forge
 
                 if (success)
                 {
+                    MarketIntelligenceService.InvalidateCache("smithing_inventory_changed");
                     InGameNotice.Success(
                         ModDisplay.CompactLine("Weapon Smelt", $"{candidate.ItemName} smelted by {result.ActorName}."));
                 }

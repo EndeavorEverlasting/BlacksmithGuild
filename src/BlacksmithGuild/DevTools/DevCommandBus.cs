@@ -520,12 +520,31 @@ namespace BlacksmithGuild.DevTools
                 case DevCommandRegistry.ShowForgeStatusCommand:
                     ForgeStatus.DisplaySummaryInGame();
                     return DevCommandResult.Success;
+                case RuntimeCadenceGate.ShowRuntimeCadenceCommand:
+                    return RuntimeCadenceGate.ShowNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case RuntimeProofContext.ReportSaveIdentityNowCommand:
+                    return RuntimeProofContext.ReportSaveIdentityNow(commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Blocked;
                 case DevCommandRegistry.AdvanceOneDayCommand:
                     return TimeDevTools.AdvanceOneDay() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case DevCommandRegistry.ToggleFastForwardCommand:
                     return TimeDevTools.ToggleFastForward() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case DevCommandRegistry.ResumeCampaignClockCommand:
                     return TimeDevTools.ResumeCampaignClock() ? DevCommandResult.Success : DevCommandResult.Failed;
+                case EngineToggleAuthority.ShowEngineToggleStateCommand:
+                case EngineToggleAuthority.CycleEngineToggleModeCommand:
+                case EngineToggleAuthority.SetEngineToggleManualCommand:
+                case EngineToggleAuthority.SetEngineToggleHybridCommand:
+                case EngineToggleAuthority.SetEngineToggleAutomationCommand:
+                case EngineToggleAuthority.SetMapTradeManualCommand:
+                case EngineToggleAuthority.SetMapTradeHybridCommand:
+                case EngineToggleAuthority.SetMapTradeAutomationCommand:
+                    return EngineToggleAuthority.RunCommand(commandName, source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     return EconomyTestScenarios.RunRichPlayerEconomyTest();
                 case CharacterProgressionTestScenarios.RichSmithingProgressionTestName:

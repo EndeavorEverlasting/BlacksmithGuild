@@ -1,0 +1,51 @@
+{
+  "schema": "tbg.evidence-retention.policy.v1",
+  "defaultMode": "plan",
+  "archive": {
+    "relativePath": "artifacts/archive",
+    "compression": "zip",
+    "verification": "sha256_each_entry",
+    "manifestSuffix": ".manifest.json"
+  },
+  "candidateRoots": [
+    {
+      "relativePath": "artifacts",
+      "minimumAgeDays": 14,
+      "keepNewest": 2,
+      "maxArchivesPerApply": 4,
+      "maximumLiveBytes": 1073741824
+    }
+  ],
+  "retiredWorktreeProfile": {
+    "profileId": "retired_detached_worktree",
+    "explicitSwitchRequired": true,
+    "minimumAgeDays": 3,
+    "keepNewest": 0,
+    "maxArchivesPerApply": 4,
+    "requireDetachedHead": true,
+    "requireCleanTrackedWorktree": true,
+    "requireHeadAncestorOf": "origin/main",
+    "requireDifferentArchiveRepoRoot": true,
+    "requireSameGitCommonDirectory": true,
+    "requireExclusiveFileProbe": true
+  },
+  "protectedRelativePaths": [
+    "artifacts/latest",
+    "artifacts/current",
+    "artifacts/archive"
+  ],
+  "protectedLeafNames": [
+    "latest",
+    "current",
+    "archive"
+  ],
+  "safety": {
+    "requireGitIgnored": true,
+    "rejectTrackedContent": true,
+    "rejectReparsePoints": true,
+    "archiveMustRemainUnderRepoRoot": true,
+    "deleteOnlyAfterArchiveVerification": true,
+    "applyRequiresExplicitSwitch": true
+  },
+  "resultPath": "artifacts/latest/evidence-retention.result.json"
+}

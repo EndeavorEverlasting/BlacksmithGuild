@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.Forge;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
@@ -15,6 +16,8 @@ namespace BlacksmithGuild.DevTools
 {
     public static class AutoTravelService
     {
+        private const string HostileScanCadenceWorker = "AutoTravel.HostileScan";
+        private const string MovementObservationCadenceWorker = "Assist.MovementObservation";
         public const string ShowAutoTravelChoicesCommand = "ShowAutoTravelChoices";
         public const string AutoTravelToRecommendedCommand = "AutoTravelToRecommended";
         public const string AutoTravelChoice1Command = "AutoTravelChoice1";
@@ -26,12 +29,10 @@ namespace BlacksmithGuild.DevTools
 
         private const int ChoiceCount = 5;
         private const float HostilePreFilterDistance = 10f;
-        private const int HostileCheckIntervalTicks = 5;
         private const float AssistMovementThreshold = 0.30f;
         private static readonly List<AutoTravelChoice> _choices = new List<AutoTravelChoice>();
         private static string _lastFailReason;
         private static Settlement _activeDestination;
-        private static int _hostileCheckTickCounter;
 
         private static AssistiveTravelExecutionResult _assistResult;
         private static Vec2 _assistStartPos;
@@ -40,6 +41,7 @@ namespace BlacksmithGuild.DevTools
         private static bool _assistMovementObserved;
         private static string _assistLastMovementSampleSignature;
         private static string _assistLastMovementClassification;
+        private static DateTime _nextAssistEvidenceWriteUtc = DateTime.MinValue;
 
         public static string LastFailReason => _lastFailReason;
 
@@ -51,6 +53,21 @@ namespace BlacksmithGuild.DevTools
         public static bool IsAssistTravelActive => _assistResult != null && _activeDestination != null;
 
         public static Settlement ActiveRouteDestination => _activeDestination;
+
+        public static void ResetForNewCampaign()
+        {
+            _choices.Clear();
+            _lastFailReason = null;
+            _activeDestination = null;
+            _assistResult = null;
+            _assistMaxDistance = 0;
+            _assistMovementObserved = false;
+            _assistLastMovementSampleSignature = null;
+            _assistLastMovementClassification = null;
+            _nextAssistEvidenceWriteUtc = DateTime.MinValue;
+            RuntimeCadenceGate.Reset(HostileScanCadenceWorker);
+            RuntimeCadenceGate.Reset(MovementObservationCadenceWorker);
+        }
 
         public static void OnCampaignTick()
         {
@@ -69,7 +86,7 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
-            if (!ShouldCheckHostilesThisTick())
+            if (!ShouldCheckHostilesNow())
             {
                 return;
             }
@@ -168,7 +185,7 @@ namespace BlacksmithGuild.DevTools
             }
 
             _activeDestination = destination;
-            _hostileCheckTickCounter = 0;
+            RuntimeCadenceGate.Reset(HostileScanCadenceWorker);
             if (assistResult != null)
             {
                 BeginAssistTravel(assistResult);
@@ -195,6 +212,8 @@ namespace BlacksmithGuild.DevTools
             _assistMovementObserved = false;
             _assistLastMovementSampleSignature = null;
             _assistLastMovementClassification = null;
+            RuntimeCadenceGate.Reset(MovementObservationCadenceWorker);
+            _nextAssistEvidenceWriteUtc = DateTime.MinValue;
 
             if (result != null)
             {
@@ -213,7 +232,11 @@ namespace BlacksmithGuild.DevTools
             if (result != null)
             {
                 result.TravelClockRunning = IsClockRunning();
-                MovementProofLedgerService.CaptureSample(result.MovementProof, "begin_observation", "assist_travel_started");
+                MovementProofLedgerService.CaptureSample(
+                    result.MovementProof,
+                    "begin_observation",
+                    "assist_travel_started",
+                    _activeDestination);
                 RefreshMovementProof(result, fairWindowElapsed: false, forceWrite: true);
             }
         }
@@ -228,6 +251,16 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
+            if (!RuntimeCadenceGate.TryEnter(
+                MovementObservationCadenceWorker,
+                DevToolsConfig.AssistMovementObservationIntervalMs,
+                hardMinimumMs: 100))
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+
             var pos = MobileParty.MainParty.GetPosition2D;
             var movedFromStart = pos.Distance(_assistStartPos);
             if (movedFromStart > _assistMaxDistance)
@@ -235,13 +268,16 @@ namespace BlacksmithGuild.DevTools
                 _assistMaxDistance = movedFromStart;
             }
 
-            var now = DateTime.UtcNow;
             result.PartyMovedDistance = _assistMaxDistance;
             result.MovementObservationEndedAtUtc = now;
             result.MovementObservationMs = (int)Math.Max(0, (now - _assistStartUtc).TotalMilliseconds);
             result.MovementObservationAttempts++;
             result.TravelClockRunning = IsClockRunning();
-            MovementProofLedgerService.CaptureSample(result.MovementProof, "realtime_tick", "travel_tick");
+            MovementProofLedgerService.CaptureSample(
+                result.MovementProof,
+                "realtime_tick",
+                "travel_tick",
+                _activeDestination);
 
             var changed = false;
 
@@ -307,7 +343,11 @@ namespace BlacksmithGuild.DevTools
             result.PartyMovedDistance = _assistMaxDistance;
             result.MovementIntentSet = true;
 
-            MovementProofLedgerService.CaptureSample(result.MovementProof, "arrival", "arrival_observed");
+            MovementProofLedgerService.CaptureSample(
+                result.MovementProof,
+                "arrival",
+                "arrival_observed",
+                _activeDestination);
             RefreshMovementProof(result, fairWindowElapsed: true, forceWrite: true);
 
             AutomationRuntimeEventEmitter.Emit(
@@ -361,11 +401,15 @@ namespace BlacksmithGuild.DevTools
             var classificationText = classification.ToString();
             var sampleChanged = !string.Equals(_assistLastMovementSampleSignature, sampleSignature, StringComparison.Ordinal);
             var classificationChanged = !string.Equals(_assistLastMovementClassification, classificationText, StringComparison.Ordinal);
-            if (forceWrite || sampleChanged || classificationChanged)
+            var now = DateTime.UtcNow;
+            var periodicWriteDue = now >= _nextAssistEvidenceWriteUtc;
+            if (forceWrite || classificationChanged || (sampleChanged && periodicWriteDue))
             {
                 MovementProofLedgerService.Write(result.MovementProof);
                 _assistLastMovementSampleSignature = sampleSignature;
                 _assistLastMovementClassification = classificationText;
+                _nextAssistEvidenceWriteUtc = now.AddMilliseconds(
+                    Math.Max(250, DevToolsConfig.AssistMovementEvidenceWriteIntervalMs));
                 return true;
             }
 
@@ -443,10 +487,12 @@ namespace BlacksmithGuild.DevTools
             return true;
         }
 
-        private static bool ShouldCheckHostilesThisTick()
+        private static bool ShouldCheckHostilesNow()
         {
-            _hostileCheckTickCounter++;
-            return _hostileCheckTickCounter % HostileCheckIntervalTicks == 0;
+            return RuntimeCadenceGate.TryEnter(
+                HostileScanCadenceWorker,
+                DevToolsConfig.AutoTravelHostileScanIntervalMs,
+                hardMinimumMs: 100);
         }
 
         private static bool RefreshChoices()
@@ -520,7 +566,7 @@ namespace BlacksmithGuild.DevTools
 
             var name = destination.Name?.ToString() ?? destination.StringId;
             _activeDestination = destination;
-            _hostileCheckTickCounter = 0;
+            RuntimeCadenceGate.Reset(HostileScanCadenceWorker);
             DebugLogger.Test($"[TBG TRAVEL] auto-travel started to {name} via {selector}; cautious route monitor active.", showInGame: false);
             InGameNotice.Success($"TBG TRAVEL: heading to {name}. Travel pauses if war-hostiles block the route.");
             return DevCommandResult.Success;
@@ -672,25 +718,25 @@ namespace BlacksmithGuild.DevTools
         private static bool TryDetectBlockingHostiles(MobileParty main, out string detail)
         {
             detail = null;
-            foreach (var party in MobileParty.All)
+            var snapshot = CampaignThreatSnapshotProvider.Capture(
+                main,
+                Math.Max(HostilePreFilterDistance, DevToolsConfig.MapTradeAvoidHostileRadius));
+            if (!snapshot.ScanSucceeded)
             {
-                if (party == null || party == main || party.MapFaction == null || main.MapFaction == null ||
-                    !party.MapFaction.IsAtWarWith(main.MapFaction))
+                detail = "hostile safety snapshot unavailable: " + snapshot.ScanFailure;
+                return true;
+            }
+
+            foreach (var hostile in snapshot.Hostiles)
+            {
+                if (hostile == null || hostile.Distance > HostilePreFilterDistance)
                 {
                     continue;
                 }
 
-                var distance = main.GetPosition2D.Distance(party.GetPosition2D);
-                if (distance > HostilePreFilterDistance)
+                if (hostile.Distance <= 6f && hostile.Strength >= snapshot.ProtectedStrength)
                 {
-                    continue;
-                }
-
-                var hostileStrength = party.Party == null ? 0 : party.Party.NumberOfAllMembers;
-                var mainStrength = main.Party == null ? 0 : main.Party.NumberOfAllMembers;
-                if (distance <= 6f && hostileStrength >= mainStrength)
-                {
-                    detail = $"nearby war-hostile {party.Name} is too close/strong; wait or move manually";
+                    detail = $"nearby war-hostile {hostile.PartyName} is too close/strong; wait or move manually";
                     return true;
                 }
             }

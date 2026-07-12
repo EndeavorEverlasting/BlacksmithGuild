@@ -5,11 +5,23 @@
   "sourceFiles": [
     "src/BlacksmithGuild/DevTools/DevHotkeyHandler.cs",
     "src/BlacksmithGuild/DevTools/EngineToggleAuthority.cs",
+    "src/BlacksmithGuild/DevTools/RuntimeCadenceGate.cs",
     "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs",
+    ".tbg/operator/worker-cadence.json",
+    "scripts/run-maptrade-branch-autostart-proof.ps1",
+    "scripts/run-tbg-visible-trade-cycle.ps1",
     "scripts/run-autonomous-assist-session.ps1",
     "scripts/forge-stop.ps1"
   ],
   "launchPaths": [
+    {
+      "id": "verified_visible_trade_cycle",
+      "command": ".\\Run-TbgVisibleTradeCycle.cmd -ExpectedHead <full-40-character-HEAD>",
+      "intent": "continue",
+      "behavior": "Pin an explicit disposable dev save, prove the active save slot and loaded DLL hash, travel through Bannerlord, execute one real buy, leave the vanilla trade inventory visible, then prove MapTrade Manual cleanup.",
+      "exactSaveIdentityVerified": true,
+      "warning": "Certifying mode requires a clean committed exact head and no pre-existing Bannerlord process. Diagnostic/skip modes can never PASS."
+    },
     {
       "id": "continue_native",
       "command": ".\\ForgeContinue.cmd",
@@ -90,6 +102,20 @@
     }
   ],
   "wrappers": [
+    {
+      "command": ".\\Run-TbgVisibleTradeCycle.cmd",
+      "kind": "terminal_visible_trade_proof",
+      "terminalWait": true,
+      "result": "artifacts/latest/visible-trade-cycle.result.json and visible-trade-cycle.report.md",
+      "stop": "Runner returns only MapTrade to Manual and requires fresh authority evidence; Ctrl+Alt+B remains the in-game emergency abort"
+    },
+    {
+      "command": ".\\Run-MapTradeBranchAutostartProof.cmd",
+      "kind": "terminal_agent_proof",
+      "terminalWait": true,
+      "result": "artifacts/maptrade-branch-autostart-proof/<runId>/result.json",
+      "stop": "Runner always sends SetMapTradeManual and records cleanup"
+    },
     {
       "command": ".\\Run-AutonomousGuildLoop.cmd",
       "kind": "async_start",
@@ -178,6 +204,14 @@
       "runtimeProof": "external runner stop is separate from the in-game hotkey"
     }
   ],
+  "performancePolicy": {
+    "marketRefreshScheduleKnown": false,
+    "continuousMarketScan": false,
+    "marketScanMode": "on_demand_event_or_ttl",
+    "workerCadenceContract": ".tbg/operator/worker-cadence.json",
+    "runtimeProfiler": "BlacksmithGuild_TickCostProfiler.json",
+    "runtimeCadence": "BlacksmithGuild_RuntimeCadence.json"
+  },
   "proofLevels": [
     {
       "level": "save_loaded",

@@ -33,6 +33,6 @@ Result-producing scripts should emit:
 
 - Policies are source-of-truth.
 - Hooks must call harness scripts instead of duplicating policy logic.
-- Do not add runtime side effects here.
+- Do not add game/runtime side effects here. Local ignored-evidence maintenance is allowed only through an executable policy, a plan-only default, and an explicit verified apply action.
 - Prefer specific verdicts over broad pass/fail.
 - Distinguish missing tool, invalid repo, blocked command, and missing evidence.

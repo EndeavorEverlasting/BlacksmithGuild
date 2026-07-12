@@ -1,109 +1,208 @@
 {
   "id": "continue-visible-trade-cycle",
   "schemaVersion": "TbgWorkflowContract.v1",
-  "sprint": "operator-load-toggle-visible-trade-plan",
-  "contextBanner": "[TBG | Continue Visible Trade Cycle | operator/runtime handoff | branch: agent/route-automation-operator-plan]",
-  "status": "planned_with_partial_runtime_mechanisms",
-  "purpose": "Load an explicitly identified save, give the operator truthful hotkey control, travel through Bannerlord movement, arrive at a town, perform a real trade, and make the trading state visible without cheats or fabricated deltas.",
+  "sprint": "unattended-visible-trade-cycle",
+  "contextBanner": "[TBG | Continue Visible Trade Cycle | unattended harness | branch: agent/route-automation-operator-plan]",
+  "status": "terminal_runner_implemented_runtime_evidence_gated",
+  "purpose": "Pin and prove one explicit development save, travel through Bannerlord movement, enter a town, perform one real buy, leave the Inventory or Trade surface visible to the user, and prove targeted Manual cleanup without cheats, fabricated deltas, or human hotkey input.",
   "allowedScope": [
-    "native Bannerlord Continue/New launch paths",
-    "explicit save-identity reporting",
-    "EngineToggleAuthority mode changes",
-    "MapTrade/GuildLoop/Assistive movement through Bannerlord APIs",
+    "native Bannerlord Continue launch path",
+    "explicit BlacksmithGuild_DevStart save pinning and runtime identity verification",
+    "targeted MapTrade Automation and Manual commands",
+    "MapTrade movement through Bannerlord APIs",
     "town arrival and trade execution through Bannerlord mechanisms",
-    "in-game notices and linked machine evidence",
-    "bounded operator stop and abort controls"
+    "visible Inventory or Trade surface",
+    "fresh correlated machine evidence and bounded English reporting"
   ],
   "forbiddenScope": [
     "free gold, items, mounts, stamina, XP, or movement",
-    "fake inventory or gold deltas",
+    "fake or arithmetically inconsistent inventory and gold deltas",
     "route-start-only claims presented as arrival or trade",
-    "command ACK presented as asynchronous completion",
+    "command ACK presented as asynchronous completion or Manual cleanup",
     "unnamed native Continue presented as exact-save proof",
-    "sell, craft, horse, or companion automation claims beyond implemented mechanisms",
-    "stale or different-target evidence accepted as current PASS"
+    "global Automation when only MapTrade is under test",
+    "stale, different-run, different-head, or different-save evidence accepted as current PASS",
+    "diagnostic or skip mode accepted as PASS",
+    "commands sent to a Bannerlord session the runner did not launch"
   ],
   "operatorEntry": {
-    "current": ".\\ForgeContinue.cmd",
-    "target": ".\\Run-TbgVisibleTradeCycle.cmd",
-    "currentLimitation": "Native Continue does not prove the selected save identity; the target terminal-waiting CMD is not implemented."
+    "command": ".\\Run-TbgVisibleTradeCycle.cmd -ExpectedHead <full-40-character-HEAD>",
+    "script": "scripts/run-tbg-visible-trade-cycle.ps1",
+    "terminalWait": true,
+    "requiresCleanCommittedHead": true,
+    "requiresBannerlordStopped": true,
+    "requiresExpectedHead": true,
+    "savePattern": "BlacksmithGuild_DevStart*.sav"
   },
   "orderedHandoffs": [
     {
       "sequence": 1,
-      "producer": "launcher runner",
+      "producer": "terminal runner",
       "consumer": "runtime save identity",
-      "input": "requested save or native Continue intent",
-      "requiredOutput": "requestedSaveId, loadedSaveId, identityVerified",
-      "currentState": "gap"
+      "input": "TbgVisibleTradeCycleRequest.v1 with runId, requestedSaveId, and headSha",
+      "requiredOutput": "TbgSaveIdentityEvidence.v1 whose loadedSaveId and MBSaveLoad.ActiveSaveSlotName exactly equal requestedSaveId",
+      "currentState": "runner_enforced"
     },
     {
       "sequence": 2,
       "producer": "runtime save identity",
       "consumer": "EngineToggleAuthority",
-      "input": "verified campaign attach",
-      "requiredOutput": "effective global and per-engine modes shown to operator",
-      "currentState": "partial"
+      "input": "verified campaign attach for the correlated run and head",
+      "requiredOutput": "fresh baseline TbgEngineToggleAuthorityEvidence.v1",
+      "currentState": "runner_enforced"
     },
     {
       "sequence": 3,
       "producer": "EngineToggleAuthority",
-      "consumer": "MapTrade/GuildLoop route worker",
-      "input": "Automation permission or explicit Hybrid command",
-      "requiredOutput": "correlated route request with exact target",
-      "currentState": "implemented"
+      "consumer": "MapTrade route worker",
+      "input": "SetMapTradeAutomation",
+      "requiredOutput": "MapTrade=Automation while every non-MapTrade engine remains at its baseline mode",
+      "currentState": "runner_enforced"
     },
     {
       "sequence": 4,
-      "producer": "route worker",
-      "consumer": "movement observer",
-      "input": "Bannerlord SetMoveGoToSettlement order",
-      "requiredOutput": "positive distance, clock running, no immediate hold",
-      "currentState": "implemented_needs_fresh_branch_proof"
+      "producer": "MapTrade route worker",
+      "consumer": "movement and arrival observer",
+      "input": "RunAutonomousVisibleTradeRouteNow",
+      "requiredOutput": "fresh correlated route start, positive party-position delta, and exact-target arrival",
+      "currentState": "runner_enforced"
     },
     {
       "sequence": 5,
-      "producer": "movement observer",
-      "consumer": "town/trade worker",
+      "producer": "movement and arrival observer",
+      "consumer": "town trade worker",
       "input": "fresh target arrival",
-      "requiredOutput": "town arrival and trade surface state",
-      "currentState": "partial"
+      "requiredOutput": "one bounded Bannerlord buy with non-fake, arithmetically consistent gold and inventory deltas",
+      "currentState": "runner_enforced"
     },
     {
       "sequence": 6,
-      "producer": "town/trade worker",
-      "consumer": "evidence/finalizer",
-      "input": "one real Bannerlord buy or sell",
-      "requiredOutput": "gold delta, inventory delta, item identity, visible user feedback",
-      "currentState": "buy_partial_sell_gap_trade_ui_gap"
+      "producer": "town trade worker",
+      "consumer": "visible surface observer",
+      "input": "completed real buy",
+      "requiredOutput": "Inventory or Trade surface visibly open at the arrived settlement",
+      "currentState": "runner_enforced"
     },
     {
       "sequence": 7,
-      "producer": "evidence/finalizer",
+      "producer": "terminal runner",
       "consumer": "operator and next engine",
-      "input": "correlated proof-level artifacts",
-      "requiredOutput": "English summary, machine result, blocker/next action, terminal state",
-      "currentState": "planned"
+      "input": "terminal runtime evidence followed by SetMapTradeManual",
+      "requiredOutput": "fresh Manual authority state plus bounded linked JSON and syntactic-English results",
+      "currentState": "runner_enforced"
     }
   ],
+  "runtimeEvidenceContracts": {
+    "request": {
+      "file": "BlacksmithGuild_VisibleTradeCycleRequest.json",
+      "schemaVersion": "TbgVisibleTradeCycleRequest.v1",
+      "requiredFields": [
+        "runId",
+        "correlationId",
+        "requestedSaveId",
+        "requestedSaveFileName",
+        "requestedSaveSha256AtStart",
+        "headSha",
+        "createdAtUtc"
+      ]
+    },
+    "saveIdentity": {
+      "file": "BlacksmithGuild_SaveIdentity.json",
+      "schemaVersion": "TbgSaveIdentityEvidence.v1",
+      "requiredFields": [
+        "runId",
+        "headSha",
+        "requestedSaveId",
+        "loadedSaveId",
+        "activeSaveSlotName",
+        "identityVerified",
+        "observedAtUtc"
+      ],
+      "exactRuntimeSource": "MBSaveLoad.ActiveSaveSlotName"
+    },
+    "engineAuthority": {
+      "file": "BlacksmithGuild_EngineToggleAuthority.json",
+      "schemaVersion": "TbgEngineToggleAuthorityEvidence.v1",
+      "requiredFields": [
+        "runId",
+        "headSha",
+        "source",
+        "observedAtUtc",
+        "engines.MapTrade.mode"
+      ]
+    },
+    "terminalRuntime": {
+      "file": "BlacksmithGuild_VisibleTradeCycle.json",
+      "schemaVersion": "TbgVisibleTradeRuntimeEvidence.v1",
+      "requiredFields": [
+        "runId",
+        "headSha",
+        "source",
+        "observedAtUtc",
+        "terminal",
+        "state",
+        "route.started",
+        "route.movementObserved",
+        "route.partyMovedDistance",
+        "route.arrivalObserved",
+        "route.targetSettlement",
+        "route.arrivedSettlement",
+        "tradeExecution.fakeGameplayDelta",
+        "tradeExecution.mutationApplied",
+        "tradeExecution.goldBefore",
+        "tradeExecution.goldAfter",
+        "tradeExecution.goldDelta",
+        "tradeExecution.inventoryBefore",
+        "tradeExecution.inventoryAfter",
+        "tradeExecution.inventoryDelta",
+        "tradeExecution.itemId",
+        "tradeExecution.quantityBought",
+        "tradeSurface.surface",
+        "tradeSurface.visible",
+        "tradeSurface.openedAtUtc",
+        "tradeSurface.settlement"
+      ]
+    }
+  },
   "requiredArtifacts": [
-    "BlacksmithGuild_Status.json",
-    "BlacksmithGuild_RuntimeLifecycle.json",
+    "BlacksmithGuild_VisibleTradeCycleRequest.json",
+    "BlacksmithGuild_SaveIdentity.json",
+    "BlacksmithGuild_EngineToggleAuthority.json",
     "BlacksmithGuild_MapTradeRouteCert.json",
     "BlacksmithGuild_MapTradeCert.json",
-    "BlacksmithGuild_AutonomousGuildLoop.json",
-    "visible-trade-cycle.result.json",
-    "visible-trade-cycle.report.md"
+    "BlacksmithGuild_VisibleTradeCycle.json",
+    "artifacts/latest/visible-trade-cycle.request.json",
+    "artifacts/latest/visible-trade-cycle.result.json",
+    "artifacts/latest/visible-trade-cycle.report.md"
   ],
+  "evidenceRetention": {
+    "mode": "latest_only",
+    "bounded": true,
+    "pathsAreOverwritten": true,
+    "historicalAnalysisOwner": "TBG evidence-retention harness"
+  },
+  "diagnosticPolicy": {
+    "switches": [
+      "Diagnostic",
+      "SkipBuild",
+      "SkipLaunch"
+    ],
+    "mayLaunch": false,
+    "maySendCommands": false,
+    "mayPass": false,
+    "exitCode": 3
+  },
   "validationCommands": [
-    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-route-branch-autostart-contract.ps1",
-    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-route-owned-clock-resume-contract.ps1",
-    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-route-owned-clock-live-proof-collector-contract.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-visible-trade-cycle-contract.ps1",
     "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-operator-control-surface.ps1",
-    "dotnet build src\\BlacksmithGuild\\BlacksmithGuild.csproj --configuration Debug --no-restore"
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-engine-toggle-authority-contract.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-route-branch-autostart-contract.ps1",
+    "dotnet build src\\BlacksmithGuild\\BlacksmithGuild.csproj --configuration Release --no-restore"
   ],
   "terminalStates": [
     "PASS_visible_trade_cycle",
+    "DIAGNOSTIC_ONLY",
+    "FAILED_preflight",
     "BLOCKED_save_identity",
     "BLOCKED_engine_authority",
     "BLOCKED_route_start",
@@ -111,16 +210,16 @@
     "BLOCKED_arrival",
     "BLOCKED_trade_delta",
     "BLOCKED_trade_visibility",
+    "BLOCKED_manual_cleanup",
     "ABORTED_operator",
     "FAILED_runtime"
   ],
   "currentBlockers": [
-    "exact loaded-save identity is not emitted by native Continue",
-    "current route branch needs fresh town-menu movement proof",
-    "route-start travel mission is travel-only and does not prove trading",
-    "sell execution remains a stub",
-    "automated marketplace/trade-screen visibility is not implemented",
-    "root autonomous wrapper waits for command ACK, not terminal workflow completion",
-    "one correlation identity does not yet span effective policy, worker action, result, and next-engine handoff"
+    "No PASS is valid until this exact committed head has fresh correlated evidence from all required runtime producers.",
+    "A pinned file timestamp is only a Continue preference; MBSaveLoad.ActiveSaveSlotName is the loaded-save authority.",
+    "Command acknowledgements are accepted only as transport outcomes and never as route, trade, visibility, or cleanup proof.",
+    "The final Inventory or Trade surface must remain visible to the user after the runner returns MapTrade to Manual.",
+    "The runner intentionally leaves the game open so the proven trade surface can be observed; it does not claim a process-stop outcome.",
+    "Sell, smithing, horse, companion, and multi-cycle orchestration remain outside this one-real-buy certificate."
   ]
 }

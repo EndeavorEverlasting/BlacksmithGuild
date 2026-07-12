@@ -64,6 +64,10 @@ jobs:
         shell: pwsh
         run: ./scripts/harness/Test-TbgSprintWorkspace.ps1
 
+      - name: Verify bounded evidence retention
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgEvidenceRetention.ps1
+
       - name: Verify project AI layer readiness
         shell: pwsh
         run: ./scripts/harness/Test-TbgHarnessReadiness.ps1 -ContractId 'project-ai-layer'

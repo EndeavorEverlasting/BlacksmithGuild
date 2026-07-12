@@ -1,0 +1,22 @@
+{
+  "schema": "tbg.evidence-retention.fixtures.v1",
+  "referenceTimeUtc": "2026-07-11T12:00:00Z",
+  "runs": [
+    { "name": "old-a", "ageDays": 40, "expectedPlanDisposition": "planned" },
+    { "name": "old-b", "ageDays": 30, "expectedPlanDisposition": "planned" },
+    { "name": "old-newest", "ageDays": 20, "expectedPlanDisposition": "protected_newest" },
+    { "name": "recent", "ageDays": 1, "expectedPlanDisposition": "protected_newest" },
+    { "name": "tracked-old", "ageDays": 50, "expectedPlanDisposition": "blocked_tracked_content" },
+    { "name": "latest", "ageDays": 60, "expectedPlanDisposition": "protected_path" },
+    { "name": "current", "ageDays": 60, "expectedPlanDisposition": "protected_path" }
+  ],
+  "expected": {
+    "planVerdict": "retention_plan_ready",
+    "planCount": 2,
+    "applyVerdict": "retention_apply_complete",
+    "archiveCount": 2,
+    "archiveVerification": "sha256_each_entry",
+    "retiredProfile": "retired_detached_worktree",
+    "retiredPlanCount": 2
+  }
+}

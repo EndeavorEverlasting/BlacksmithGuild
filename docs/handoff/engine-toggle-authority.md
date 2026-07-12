@@ -308,6 +308,10 @@ Visible mechanics PASS: command ack + route set + clock running + positive movem
 
 Do not claim a mechanism has passed merely because the mode was toggled to Automation.
 
-## Next sprint
+## Agent and script control
 
-After travel gaps are fixed and visible movement proof is stable, migrate remaining raw config readers to the authority and add file-inbox commands for direct `SetEngineToggleManual`, `SetEngineToggleHybrid`, `SetEngineToggleAutomation`, and `ShowEngineToggleState` once `DevCommandBus` is updated to execute them.
+The file inbox now dispatches `ShowEngineToggleState`, the three global set commands, and the three targeted MapTrade commands: `SetMapTradeManual`, `SetMapTradeHybrid`, and `SetMapTradeAutomation`.
+
+Unattended MapTrade validation must use the targeted commands. `SetMapTradeAutomation` changes only MapTrade, so a route proof does not silently enable Governor, Smithing, Companion, or another worker. `SetMapTradeManual` requests the same active route hold/abort as the in-game authority and is the required terminal cleanup command for an agent-run proof.
+
+The next implementation sprint should migrate remaining direct readers to authority calls. The targeted command seam does not turn the incomplete Cohesion, HorseMarket, Smithing, or Companion mode gates into runtime PASS.

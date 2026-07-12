@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "contractId": "hostile-escape-vector/v1",
+  "fixtures": [
+    {
+      "name": "single hostile east recommends west",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 20.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 0.0,
+        "hostiles": [
+          { "partyId": "east", "positionX": 5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 0.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 1,
+        "headingXMin": -1.001,
+        "headingXMax": -0.999,
+        "headingYMin": -0.001,
+        "headingYMax": 0.001,
+        "threatsSurroundProtectedParty": false,
+        "fallbackDirectionUsed": false,
+        "improvesMinimumClearance": true,
+        "geometryConfidence": "High"
+      }
+    },
+    {
+      "name": "orthogonal hostiles combine into southwest heading",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 20.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 0.0,
+        "hostiles": [
+          { "partyId": "east", "positionX": 5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 0.0 },
+          { "partyId": "north", "positionX": 0.0, "positionY": 5.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 0.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 2,
+        "headingXMin": -0.708,
+        "headingXMax": -0.706,
+        "headingYMin": -0.708,
+        "headingYMax": -0.706,
+        "threatsSurroundProtectedParty": false,
+        "fallbackDirectionUsed": false,
+        "improvesMinimumClearance": true,
+        "geometryConfidence": "Medium"
+      }
+    },
+    {
+      "name": "opposed equal hostiles expose surrounding cancellation",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 20.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 0.0,
+        "hostiles": [
+          { "partyId": "east", "positionX": 5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 0.0 },
+          { "partyId": "west", "positionX": -5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 0.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 2,
+        "headingXMin": -1.001,
+        "headingXMax": -0.999,
+        "headingYMin": -0.001,
+        "headingYMax": 0.001,
+        "threatsSurroundProtectedParty": true,
+        "fallbackDirectionUsed": true,
+        "improvesMinimumClearance": false,
+        "geometryConfidence": "Low"
+      }
+    },
+    {
+      "name": "outside influence radius produces no recommendation",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 10.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 0.0,
+        "hostiles": [
+          { "partyId": "far", "positionX": 20.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 0.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 0,
+        "headingXMin": -0.001,
+        "headingXMax": 0.001,
+        "headingYMin": -0.001,
+        "headingYMax": 0.001,
+        "threatsSurroundProtectedParty": false,
+        "fallbackDirectionUsed": false,
+        "improvesMinimumClearance": false,
+        "geometryConfidence": "Clear"
+      }
+    },
+    {
+      "name": "stronger west hostile dominates opposed weaker threat",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 20.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 0.0,
+        "hostiles": [
+          { "partyId": "east-weak", "positionX": 5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 50, "clearanceRadius": 0.0 },
+          { "partyId": "west-strong", "positionX": -5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 200, "clearanceRadius": 0.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 2,
+        "headingXMin": 0.999,
+        "headingXMax": 1.001,
+        "headingYMin": -0.001,
+        "headingYMax": 0.001,
+        "threatsSurroundProtectedParty": false,
+        "fallbackDirectionUsed": false,
+        "improvesMinimumClearance": false,
+        "geometryConfidence": "Medium"
+      }
+    },
+    {
+      "name": "approaching north hostile uses predicted position",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 20.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 5.0,
+        "hostiles": [
+          { "partyId": "north-approaching", "positionX": 0.0, "positionY": 10.0, "velocityX": 0.0, "velocityY": -1.0, "strength": 100, "clearanceRadius": 0.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 1,
+        "headingXMin": -0.001,
+        "headingXMax": 0.001,
+        "headingYMin": -1.001,
+        "headingYMax": -0.999,
+        "threatsSurroundProtectedParty": false,
+        "fallbackDirectionUsed": false,
+        "improvesMinimumClearance": true,
+        "geometryConfidence": "High"
+      }
+    },
+    {
+      "name": "per-threat clearance radius contributes to safe margin",
+      "request": {
+        "protectedPartyId": "protected",
+        "protectedPositionX": 0.0,
+        "protectedPositionY": 0.0,
+        "protectedStrength": 100,
+        "minimumClearance": 2.0,
+        "maximumInfluenceDistance": 20.0,
+        "suggestedStepDistance": 2.0,
+        "predictionHorizonSeconds": 0.0,
+        "hostiles": [
+          { "partyId": "large-east", "positionX": 5.0, "positionY": 0.0, "velocityX": 0.0, "velocityY": 0.0, "strength": 100, "clearanceRadius": 2.0 }
+        ]
+      },
+      "expect": {
+        "threatsConsidered": 1,
+        "headingXMin": -1.001,
+        "headingXMax": -0.999,
+        "headingYMin": -0.001,
+        "headingYMax": 0.001,
+        "threatsSurroundProtectedParty": false,
+        "fallbackDirectionUsed": false,
+        "improvesMinimumClearance": true,
+        "geometryConfidence": "High"
+      }
+    }
+  ]
+}

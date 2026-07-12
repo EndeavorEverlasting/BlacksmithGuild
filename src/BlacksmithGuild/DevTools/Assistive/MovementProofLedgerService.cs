@@ -51,7 +51,8 @@ namespace BlacksmithGuild.DevTools.Assistive
         public static MovementProofSample CaptureSample(
             MovementProofLedger ledger,
             string phase,
-            string reason = null)
+            string reason = null,
+            Settlement target = null)
         {
             if (ledger == null)
             {
@@ -93,10 +94,10 @@ namespace BlacksmithGuild.DevTools.Assistive
                         }
                     }
 
-                    var target = ResolveTargetSettlement(ledger);
-                    if (target != null)
+                    var targetSettlement = target ?? ResolveTargetSettlement(ledger);
+                    if (targetSettlement != null)
                     {
-                        distanceToTarget = pos.Distance(target.GetPosition2D);
+                        distanceToTarget = pos.Distance(targetSettlement.GetPosition2D);
                     }
                 }
                 catch
@@ -123,6 +124,13 @@ namespace BlacksmithGuild.DevTools.Assistive
                 CampaignClockRunning = CampaignClockResumeHelper.IsClockRunning(),
                 MovementIntentSet = ledger.ExecuteRequested && ledger.ExecuteAllowed && ledger.TravelApiCallSucceeded
             };
+
+            var maxSamples = Math.Max(4, DevToolsConfig.MovementProofMaxSamples);
+            if (ledger.Samples.Count >= maxSamples && ledger.Samples.Count > 1)
+            {
+                // Preserve the initial checkpoint and retain a bounded rolling tail.
+                ledger.Samples.RemoveAt(1);
+            }
 
             ledger.Samples.Add(sample);
             return sample;

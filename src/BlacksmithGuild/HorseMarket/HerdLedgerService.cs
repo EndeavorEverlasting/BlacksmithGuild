@@ -27,6 +27,7 @@ namespace BlacksmithGuild.HorseMarket
     public sealed class HerdLedgerSnapshot
     {
         public string GeneratedUtc;
+        public double GeneratedCampaignDay = -1d;
         public int PartyGold;
         public int SafeGoldReserve;
         public int SpendableGold;
@@ -76,6 +77,11 @@ namespace BlacksmithGuild.HorseMarket
         public static string ReportPath => Path.Combine(BasePath.Name, ReportFileName);
         public static HerdLedgerSnapshot LastSnapshot { get; private set; }
 
+        public static void ResetForNewCampaign()
+        {
+            LastSnapshot = null;
+        }
+
         public static bool RunAnalyzeNow(string source = AnalyzeHerdLedgerCommand)
         {
             if (Campaign.Current == null || MobileParty.MainParty == null)
@@ -105,6 +111,20 @@ namespace BlacksmithGuild.HorseMarket
             {
                 reason = "herd ledger missing; nextAction=AnalyzeHerdLedger";
                 return true;
+            }
+
+            var nowCampaignDay = ReadCampaignDay();
+            if (LastSnapshot.GeneratedCampaignDay >= 0d && nowCampaignDay >= LastSnapshot.GeneratedCampaignDay)
+            {
+                var campaignAgeHours = (nowCampaignDay - LastSnapshot.GeneratedCampaignDay) * 24d;
+                if (campaignAgeHours > DevToolsConfig.HerdLedgerFreshnessHours)
+                {
+                    reason = $"herd ledger stale campaignAgeHours={campaignAgeHours:0.#}; nextAction=AnalyzeHerdLedger";
+                    return true;
+                }
+
+                reason = null;
+                return false;
             }
 
             if (!DateTime.TryParse(LastSnapshot.GeneratedUtc, out var generated))
@@ -190,6 +210,7 @@ namespace BlacksmithGuild.HorseMarket
             var snapshot = new HerdLedgerSnapshot
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
+                GeneratedCampaignDay = ReadCampaignDay(),
                 PartyGold = gold,
                 SafeGoldReserve = reserve,
                 SpendableGold = spendable,
@@ -258,6 +279,7 @@ namespace BlacksmithGuild.HorseMarket
             var sb = new StringBuilder();
             sb.AppendLine("{");
             Str(sb, "generatedUtc", s.GeneratedUtc, true);
+            sb.AppendLine($"  \"generatedCampaignDay\": {s.GeneratedCampaignDay.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)},");
             sb.AppendLine($"  \"readOnly\": true,");
             sb.AppendLine($"  \"partyGold\": {s.PartyGold},");
             sb.AppendLine($"  \"safeGoldReserve\": {s.SafeGoldReserve},");
@@ -308,5 +330,10 @@ namespace BlacksmithGuild.HorseMarket
             sb.AppendLine();
         }
         private static string Esc(string v) => (v ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+        private static double ReadCampaignDay()
+        {
+            try { return CampaignTime.Now.ToDays; }
+            catch { return -1d; }
+        }
     }
 }

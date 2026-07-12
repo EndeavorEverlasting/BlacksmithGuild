@@ -13,6 +13,11 @@ namespace BlacksmithGuild.Cohesion
     {
         private static readonly Dictionary<string, Vec2> _positionSamples = new Dictionary<string, Vec2>();
 
+        public static void ResetForNewCampaign()
+        {
+            _positionSamples.Clear();
+        }
+
         public static List<CohesionPartySnapshot> Scan(float radius, MobileParty main)
         {
             var results = new List<CohesionPartySnapshot>();

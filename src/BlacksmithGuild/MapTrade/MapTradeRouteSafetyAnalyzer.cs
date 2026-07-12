@@ -26,7 +26,10 @@ namespace BlacksmithGuild.MapTrade
 
         public static MapTradeRouteSafetyReport BuildReport(string source)
         {
-            MapTradeBanditAvoidanceService.HasBlockingHostiles(out var hostileCount, out var nearestHostile);
+            var hostileSnapshot = MapTradeBanditAvoidanceService.CaptureSafetySnapshot();
+            HostileEscapeEvidenceWriter.Write(hostileSnapshot, source);
+            var hostileCount = hostileSnapshot.HostileCount;
+            var nearestHostile = hostileSnapshot.NearestHostileDistance;
             var army = MapTradeArmyPressureAnalyzer.AnalyzeNow();
             var decisions = new List<MapTradeCohesionDecision>();
             CohesionOpportunity cohesion = null;
@@ -49,7 +52,12 @@ namespace BlacksmithGuild.MapTrade
 
             var verdict = "SafeEnough";
             string blockedReason = null;
-            if (hostileCount > 0 && nearestHostile <= DevToolsConfig.MapTradeAbortHostileRadius)
+            if (!hostileSnapshot.ScanSucceeded)
+            {
+                verdict = "Blocked";
+                blockedReason = hostileSnapshot.ScanFailure ?? "hostile safety snapshot unavailable";
+            }
+            else if (hostileCount > 0 && nearestHostile <= DevToolsConfig.MapTradeAbortHostileRadius)
             {
                 verdict = "HighRisk";
                 blockedReason = $"hostile within {nearestHostile:0.#} units";

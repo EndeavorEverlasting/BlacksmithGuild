@@ -8,6 +8,7 @@ namespace BlacksmithGuild.Cohesion
 {
     public static class CohesionExecutionDriver
     {
+        private const string ActiveMonitorCadenceWorker = "Cohesion.ActiveMonitor";
         public const string RunVisibleCohesionMoveNowCommand = "RunVisibleCohesionMoveNow";
         public const string AbortCohesionMoveNowCommand = "AbortCohesionMoveNow";
 
@@ -24,6 +25,13 @@ namespace BlacksmithGuild.Cohesion
             && _activeReport.State != CohesionExecutionState.Blocked
             && _activeReport.State != CohesionExecutionState.Aborted
             && _activeReport.State != CohesionExecutionState.Failed;
+
+        public static void ResetForNewCampaign()
+        {
+            _abortRequested = false;
+            LastFailReason = null;
+            ClearActive();
+        }
 
         public static bool StartMoveNow(string source = RunVisibleCohesionMoveNowCommand)
         {
@@ -110,7 +118,15 @@ namespace BlacksmithGuild.Cohesion
                 return;
             }
 
-            GameSessionState.Refresh();
+            if (!RuntimeCadenceGate.TryEnter(
+                ActiveMonitorCadenceWorker,
+                DevToolsConfig.CohesionActiveMonitorIntervalMs,
+                hardMinimumMs: 100))
+            {
+                return;
+            }
+
+            GameSessionState.RefreshForRealtimeTick();
             if (ShouldStopForEncounter())
             {
                 Finish(_activeReport.Source, CohesionExecutionState.Failed, "Failed", "EncounterInterrupted");
@@ -320,6 +336,7 @@ namespace BlacksmithGuild.Cohesion
             _activeOpportunity = null;
             _moveTarget = null;
             _waitTicks = 0;
+            RuntimeCadenceGate.Reset(ActiveMonitorCadenceWorker);
         }
 
         private static void PauseIfVisible(string label)

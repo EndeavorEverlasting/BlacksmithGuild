@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Reporting;
+using BlacksmithGuild.Market;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Library;
 
@@ -113,6 +114,7 @@ namespace BlacksmithGuild.Forge
 
                 if (executed)
                 {
+                    MarketIntelligenceService.InvalidateCache("smithing_inventory_changed");
                     DebugLogger.Test(
                         $"[TBG FORGE] action={action} actor={actorLabel} refineCount={refineCount} reserveBefore charcoal={charcoalBefore} hardwood={hardwoodBefore} reserveAfter charcoal={charcoalAfter} hardwood={hardwoodAfter}",
                         showInGame: false);

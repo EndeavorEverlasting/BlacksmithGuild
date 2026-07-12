@@ -1,0 +1,204 @@
+{
+  "schemaVersion": "TbgVisibleTradeCycleFixtures.v1",
+  "baseCase": {
+    "request": {
+      "schemaVersion": "TbgVisibleTradeCycleRequest.v1",
+      "runId": "fixture-run-001",
+      "correlationId": "fixture-run-001",
+      "requestedSaveId": "BlacksmithGuild_DevStart_001",
+      "headSha": "1111111111111111111111111111111111111111",
+      "expectedAssemblySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "createdAtUtc": "2026-07-11T12:00:00.0000000Z"
+    },
+    "saveIdentity": {
+      "schemaVersion": "TbgSaveIdentity.v1",
+      "runId": "fixture-run-001",
+      "runtimeSessionId": "runtime-session-001",
+      "headSha": "1111111111111111111111111111111111111111",
+      "requestedSaveId": "BlacksmithGuild_DevStart_001",
+      "loadedSaveId": "BlacksmithGuild_DevStart_001",
+      "activeSaveSlotName": "BlacksmithGuild_DevStart_001",
+      "identityVerified": true,
+      "loadedAssemblySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "observedAtUtc": "2026-07-11T12:00:10.0000000Z"
+    },
+    "authorityBefore": {
+      "schemaVersion": "TbgEngineToggleAuthority.v1",
+      "runId": "fixture-run-001",
+      "runtimeSessionId": "runtime-session-001",
+      "headSha": "1111111111111111111111111111111111111111",
+      "source": "ShowEngineToggleState",
+      "updatedAtUtc": "2026-07-11T12:00:11.0000000Z",
+      "engines": {
+        "Governor": { "mode": "Manual" },
+        "MapTrade": { "mode": "Hybrid" },
+        "GuildLoop": { "mode": "Hybrid" },
+        "Cohesion": { "mode": "Manual" },
+        "HorseMarket": { "mode": "Manual" },
+        "Smithing": { "mode": "Manual" },
+        "Companion": { "mode": "Manual" },
+        "Assistive": { "mode": "Hybrid" }
+      }
+    },
+    "authorityAutomation": {
+      "schemaVersion": "TbgEngineToggleAuthority.v1",
+      "runId": "fixture-run-001",
+      "runtimeSessionId": "runtime-session-001",
+      "headSha": "1111111111111111111111111111111111111111",
+      "source": "SetMapTradeAutomation",
+      "updatedAtUtc": "2026-07-11T12:00:12.0000000Z",
+      "engines": {
+        "Governor": { "mode": "Manual" },
+        "MapTrade": { "mode": "Automation" },
+        "GuildLoop": { "mode": "Hybrid" },
+        "Cohesion": { "mode": "Manual" },
+        "HorseMarket": { "mode": "Manual" },
+        "Smithing": { "mode": "Manual" },
+        "Companion": { "mode": "Manual" },
+        "Assistive": { "mode": "Hybrid" }
+      }
+    },
+    "runtimeEvidence": {
+      "schemaVersion": "TbgVisibleTradeRuntimeEvidence.v1",
+      "runId": "fixture-run-001",
+      "runtimeSessionId": "runtime-session-001",
+      "headSha": "1111111111111111111111111111111111111111",
+      "loadedAssemblySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "generatedAtUtc": "2026-07-11T12:05:00.0000000Z",
+      "terminal": true,
+      "state": "Complete",
+      "pass": true,
+      "route": {
+        "startedAtUtc": "2026-07-11T12:00:13.0000000Z",
+        "started": true,
+        "movementObserved": true,
+        "partyMovedDistance": 3.25,
+        "arrivalObserved": true,
+        "targetSettlement": "Sargot",
+        "arrivedSettlement": "Sargot"
+      },
+      "tradeExecution": {
+        "fakeGameplayDelta": false,
+        "mutationApplied": true,
+        "goldBefore": 10000,
+        "goldAfter": 9900,
+        "goldDelta": -100,
+        "inventoryBefore": 2,
+        "inventoryAfter": 3,
+        "inventoryDelta": 1,
+        "itemId": "iron_ore",
+        "quantityBought": 1
+      },
+      "tradeSurface": {
+        "surface": "trading",
+        "visible": true,
+        "openedAtUtc": "2026-07-11T12:04:59.0000000Z",
+        "settlement": "Sargot",
+        "activeState": "InventoryState"
+      }
+    },
+    "authorityManual": {
+      "schemaVersion": "TbgEngineToggleAuthority.v1",
+      "runId": "fixture-run-001",
+      "runtimeSessionId": "runtime-session-001",
+      "headSha": "1111111111111111111111111111111111111111",
+      "source": "SetMapTradeManual",
+      "updatedAtUtc": "2026-07-11T12:05:01.0000000Z",
+      "engines": {
+        "Governor": { "mode": "Manual" },
+        "MapTrade": { "mode": "Manual" },
+        "GuildLoop": { "mode": "Hybrid" },
+        "Cohesion": { "mode": "Manual" },
+        "HorseMarket": { "mode": "Manual" },
+        "Smithing": { "mode": "Manual" },
+        "Companion": { "mode": "Manual" },
+        "Assistive": { "mode": "Hybrid" }
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "complete_real_visible_buy_passes",
+      "overrides": [],
+      "expectedPass": true,
+      "expectedTerminalState": "PASS_visible_trade_cycle"
+    },
+    {
+      "id": "wrong_loaded_save_is_blocked",
+      "overrides": [
+        { "path": "saveIdentity.loadedSaveId", "value": "autosave_3" }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "BLOCKED_save_identity"
+    },
+    {
+      "id": "ack_only_runtime_is_not_completion",
+      "overrides": [
+        { "path": "runtimeEvidence.route", "action": "remove" },
+        { "path": "runtimeEvidence.tradeExecution", "action": "remove" },
+        { "path": "runtimeEvidence.tradeSurface", "action": "remove" },
+        { "path": "runtimeEvidence.terminal", "value": false },
+        { "path": "runtimeEvidence.state", "value": "CommandAck" }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "FAILED_runtime"
+    },
+    {
+      "id": "fake_delta_is_blocked",
+      "overrides": [
+        { "path": "runtimeEvidence.tradeExecution.fakeGameplayDelta", "value": true }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "BLOCKED_trade_delta"
+    },
+    {
+      "id": "delta_arithmetic_mismatch_is_blocked",
+      "overrides": [
+        { "path": "runtimeEvidence.tradeExecution.inventoryDelta", "value": 2 }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "BLOCKED_trade_delta"
+    },
+    {
+      "id": "hidden_trade_surface_is_blocked",
+      "overrides": [
+        { "path": "runtimeEvidence.tradeSurface.visible", "value": false }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "BLOCKED_trade_visibility"
+    },
+    {
+      "id": "collateral_engine_mode_change_is_blocked",
+      "overrides": [
+        { "path": "authorityAutomation.engines.GuildLoop.mode", "value": "Automation" }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "BLOCKED_engine_authority"
+    },
+    {
+      "id": "manual_ack_without_manual_state_is_blocked",
+      "overrides": [
+        { "path": "authorityManual.engines.MapTrade.mode", "value": "Automation" },
+        { "path": "authorityManual.commandAck", "value": true }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "BLOCKED_manual_cleanup"
+    },
+    {
+      "id": "stale_runtime_evidence_is_rejected",
+      "overrides": [
+        { "path": "runtimeEvidence.generatedAtUtc", "value": "2026-07-11T11:00:00.0000000Z" }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "FAILED_runtime"
+    },
+    {
+      "id": "wrong_head_is_rejected",
+      "overrides": [
+        { "path": "runtimeEvidence.headSha", "value": "2222222222222222222222222222222222222222" }
+      ],
+      "expectedPass": false,
+      "expectedTerminalState": "FAILED_runtime"
+    }
+  ]
+}

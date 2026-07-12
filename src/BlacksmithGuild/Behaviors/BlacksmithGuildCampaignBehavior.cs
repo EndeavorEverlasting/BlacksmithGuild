@@ -5,6 +5,7 @@ using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.MapTrade;
+using BlacksmithGuild.Market;
 using BlacksmithGuild.Treasury;
 using TaleWorlds.CampaignSystem;
 
@@ -18,6 +19,7 @@ namespace BlacksmithGuild.Behaviors
 
         internal static void ResetCampaignMapReadyAnnouncement()
         {
+            RuntimeSessionResetCoordinator.ResetForNewCampaign();
             CampaignMapReadyOrchestrator.ResetForNewCampaign();
         }
 
@@ -30,6 +32,7 @@ namespace BlacksmithGuild.Behaviors
         private void OnDailyTick()
         {
             GameReadinessService.RunPreflightWhenReady();
+            MarketIntelligenceService.OnDailyTick();
             TreasuryDeltaWatchService.OnDailyTick();
 
             if (!DevToolsConfig.AutoRunGoldTestOnDailyTick || _hasRunGoldTest)
@@ -81,7 +84,7 @@ namespace BlacksmithGuild.Behaviors
             }
 
             var tickCostStartedAt = TickCostProfiler.Start();
-            GameSessionState.Refresh();
+            GameSessionState.RefreshForRealtimeTick();
             TickCostProfiler.Stop("GameSessionState.Refresh", tickCostStartedAt);
 
             if (!GameSessionState.IsMainHeroReady)

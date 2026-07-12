@@ -38,6 +38,11 @@ namespace BlacksmithGuild.DevTools
                 return;
             }
 
+            if (!TryGetPendingInboxWrite(out var writeTicks))
+            {
+                return;
+            }
+
             RuntimeTrace.RunSafe("DevCommandFileInbox", "SyncForgeStatus", () => GameSessionState.SyncForgeStatus());
 
             AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
@@ -62,17 +67,6 @@ namespace BlacksmithGuild.DevTools
 
             try
             {
-                if (!File.Exists(InboxPath))
-                {
-                    return;
-                }
-
-                var writeTicks = File.GetLastWriteTimeUtc(InboxPath).Ticks;
-                if (writeTicks == _lastSeenWriteTicks)
-                {
-                    return;
-                }
-
                 var json = File.ReadAllText(InboxPath);
                 if (!TryParseInbox(json, out var sequence, out var command, out var source))
                 {
@@ -99,6 +93,25 @@ namespace BlacksmithGuild.DevTools
             catch (Exception ex)
             {
                 GuildLog.Info($"[TBG INBOX] Failed to read command inbox: {ex.Message}", showInGame: false);
+            }
+        }
+
+        private static bool TryGetPendingInboxWrite(out long writeTicks)
+        {
+            writeTicks = -1;
+            try
+            {
+                if (!File.Exists(InboxPath))
+                {
+                    return false;
+                }
+
+                writeTicks = File.GetLastWriteTimeUtc(InboxPath).Ticks;
+                return writeTicks != _lastSeenWriteTicks;
+            }
+            catch
+            {
+                return false;
             }
         }
 

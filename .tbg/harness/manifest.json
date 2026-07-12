@@ -14,7 +14,9 @@
     "schemas": ".tbg/harness/schemas",
     "fixtures": ".tbg/harness/fixtures",
     "reportingPolicy": ".tbg/harness/policies/policy-reporting.policy.json",
-    "artifactsLatest": "artifacts/latest"
+    "retentionPolicy": ".tbg/harness/policies/evidence-retention.policy.json",
+    "artifactsLatest": "artifacts/latest",
+    "artifactsArchive": "artifacts/archive"
   },
   "runtime": {
     "bannerlordInstallPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord",

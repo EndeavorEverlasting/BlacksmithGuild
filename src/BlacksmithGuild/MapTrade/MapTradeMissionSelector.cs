@@ -24,8 +24,8 @@ namespace BlacksmithGuild.MapTrade
 
         public static MapTradeMission SelectBestMission()
         {
-            if (!MarketIntelligenceService.HasCachedScan
-                && !MarketIntelligenceService.RunScanNow("MapTradeMissionSelector"))
+            if (!MarketIntelligenceService.HasFreshCachedScan
+                && !MarketIntelligenceService.EnsureFreshScan("MapTradeMissionSelector"))
             {
                 return Blocked("market scan unavailable");
             }

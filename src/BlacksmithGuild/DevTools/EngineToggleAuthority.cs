@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.MapTrade;
@@ -42,6 +43,10 @@ namespace BlacksmithGuild.DevTools
         public const string SetEngineToggleManualCommand = "SetEngineToggleManual";
         public const string SetEngineToggleHybridCommand = "SetEngineToggleHybrid";
         public const string SetEngineToggleAutomationCommand = "SetEngineToggleAutomation";
+        public const string SetMapTradeManualCommand = "SetMapTradeManual";
+        public const string SetMapTradeHybridCommand = "SetMapTradeHybrid";
+        public const string SetMapTradeAutomationCommand = "SetMapTradeAutomation";
+        public const string EvidenceFileName = "BlacksmithGuild_EngineToggleAuthority.json";
 
         private static readonly EngineToggleKey[] KnownEngines =
         {
@@ -75,6 +80,7 @@ namespace BlacksmithGuild.DevTools
             EnsureInitialized();
             var summary = BuildSummary(source);
             DebugLogger.Test(summary, showInGame: false);
+            WriteEvidence(source);
             InGameNotice.Info($"Engines: {ModeLabel(_globalMode)}");
             return true;
         }
@@ -106,6 +112,33 @@ namespace BlacksmithGuild.DevTools
                 return SetGlobalMode(EngineToggleMode.Automation, source ?? commandName);
             }
 
+            if (commandName == SetMapTradeManualCommand)
+            {
+                return SetEngineMode(
+                    EngineToggleKey.MapTrade,
+                    EngineToggleMode.Manual,
+                    source ?? commandName,
+                    "targeted external operator command");
+            }
+
+            if (commandName == SetMapTradeHybridCommand)
+            {
+                return SetEngineMode(
+                    EngineToggleKey.MapTrade,
+                    EngineToggleMode.Hybrid,
+                    source ?? commandName,
+                    "targeted external operator command");
+            }
+
+            if (commandName == SetMapTradeAutomationCommand)
+            {
+                return SetEngineMode(
+                    EngineToggleKey.MapTrade,
+                    EngineToggleMode.Automation,
+                    source ?? commandName,
+                    "targeted external operator command");
+            }
+
             return false;
         }
 
@@ -126,6 +159,7 @@ namespace BlacksmithGuild.DevTools
 
             var detail = BuildSummary(source ?? "SetGlobalMode");
             DebugLogger.Test(detail, showInGame: false);
+            WriteEvidence(source ?? "SetGlobalMode");
             InGameNotice.Success($"Engines: {ModeLabel(mode)}");
             return true;
         }
@@ -149,12 +183,69 @@ namespace BlacksmithGuild.DevTools
             DebugLogger.Test(
                 $"[TBG ENGINES] {requestedBy ?? "unknown"} set {engine}={mode} reason={reason ?? "none"}",
                 showInGame: false);
+            WriteEvidence(requestedBy ?? "SetEngineMode");
             if (showNotice)
             {
                 InGameNotice.Info($"Engines: {engine} {ModeLabel(mode)}");
             }
 
             return true;
+        }
+
+        public static void ResetForNewCampaign()
+        {
+            EngineModes.Clear();
+            _initialized = true;
+            _globalMode = EngineToggleMode.Manual;
+            foreach (var engine in KnownEngines)
+            {
+                EngineModes[engine] = EngineToggleMode.Manual;
+                ApplyModeToConfig(engine, EngineToggleMode.Manual);
+            }
+
+            WriteEvidence("campaign_generation_reset");
+        }
+
+        public static void WriteEvidence(string source)
+        {
+            EnsureInitialized();
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("{");
+                sb.AppendLine("  \"schemaVersion\": \"TbgEngineToggleAuthority.v1\",");
+                sb.AppendLine("  \"updatedAtUtc\": \"" + DateTime.UtcNow.ToString("o") + "\",");
+                sb.AppendLine("  \"source\": \"" + Escape(source) + "\",");
+                sb.AppendLine("  \"runtimeSessionId\": \"" + Escape(RuntimeProofContext.RuntimeSessionId) + "\",");
+                sb.AppendLine("  \"runId\": " + NullableString(RuntimeProofContext.RunId) + ",");
+                sb.AppendLine("  \"headSha\": " + NullableString(RuntimeProofContext.ExpectedHeadSha) + ",");
+                sb.AppendLine("  \"activeSaveSlotName\": " + NullableString(RuntimeProofContext.ActiveSaveSlotName) + ",");
+                sb.AppendLine("  \"globalMode\": \"" + _globalMode + "\",");
+                sb.AppendLine("  \"engines\": {");
+                for (var index = 0; index < KnownEngines.Length; index++)
+                {
+                    var engine = KnownEngines[index];
+                    var mode = GetMode(engine);
+                    sb.Append("    \"").Append(engine).Append("\": { \"mode\": \"").Append(mode).Append("\" }");
+                    sb.AppendLine(index < KnownEngines.Length - 1 ? "," : string.Empty);
+                }
+
+                sb.AppendLine("  },");
+                sb.AppendLine("  \"mapTrade\": {");
+                sb.AppendLine("    \"isRunning\": " + Boolean(MapTradeAutonomousService.IsRunning) + ",");
+                sb.AppendLine("    \"lastTerminalState\": \"" + MapTradeAutonomousService.LastTerminalState + "\",");
+                sb.AppendLine("    \"lastTerminalVerdict\": " + NullableString(MapTradeAutonomousService.LastTerminalVerdict));
+                sb.AppendLine("  }");
+                sb.AppendLine("}");
+
+                RuntimeProofContext.WriteAllTextAtomic(
+                    Path.Combine(TaleWorlds.Library.BasePath.Name, EvidenceFileName),
+                    sb.ToString());
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test("[TBG ENGINES] authority evidence failed: " + ex.Message, showInGame: false);
+            }
         }
 
         public static EngineToggleMode GetMode(EngineToggleKey engine)
@@ -344,5 +435,10 @@ namespace BlacksmithGuild.DevTools
                     return "Hybrid";
             }
         }
+
+        private static string Boolean(bool value) => value ? "true" : "false";
+        private static string NullableString(string value) => value == null ? "null" : "\"" + Escape(value) + "\"";
+        private static string Escape(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }

@@ -107,6 +107,30 @@ namespace BlacksmithGuild.CampaignRuntime
                 detail);
         }
 
+        public static CampaignActivityResult CompletedReadOnly(CampaignActivityRequest request, string detail)
+        {
+            var result = new CampaignActivityResult
+            {
+                ActivityId = request?.ActivityId,
+                CompletedUtc = DateTime.UtcNow.ToString("o"),
+                SourceEngine = request?.TargetEngine,
+                Status = CampaignActivityStatus.Completed.ToString(),
+                Detail = detail,
+                MutationApplied = false,
+                InventoryDeltaObserved = false,
+                GoldDeltaObserved = false
+            };
+
+            CampaignActivityNarrativeFactory.AttachDefault(result, request, detail, null);
+            return CampaignActivityHandoffRecorder.RecordResult(
+                request,
+                result,
+                request?.TargetEngine,
+                CampaignActivityEngine.Governor.ToString(),
+                "adapter_completed_read_only",
+                detail);
+        }
+
         private static CampaignActivityResult Normalize(CampaignActivityRequest request, CampaignActivityResult result, string adapterName)
         {
             if (result == null)

@@ -1,11 +1,13 @@
 using System;
 using System.Reflection;
 using BlacksmithGuild.DevTools;
+using Helpers;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Core;
 
 namespace BlacksmithGuild.MapTrade
 {
@@ -80,6 +82,51 @@ namespace BlacksmithGuild.MapTrade
 
             detail = detail ?? "no market/trade menu option found";
             return false;
+        }
+
+        public static bool TryOpenVisibleTradeScreen(
+            out MapTradeTradeSurfaceEvidence evidence,
+            out string detail)
+        {
+            evidence = null;
+            detail = null;
+            if (!TryEnsureSettlementInterior(out detail))
+            {
+                return false;
+            }
+
+            var settlement = MobileParty.MainParty?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+            if (settlement == null || settlement.Town == null)
+            {
+                detail = "visible trade screen requires a town settlement";
+                return false;
+            }
+
+            try
+            {
+                InventoryScreenHelper.ActivateTradeWithCurrentSettlement();
+                var activeState = GameStateManager.Current?.ActiveState?.GetType().Name;
+                var visible = !string.IsNullOrWhiteSpace(activeState)
+                    && activeState.IndexOf("Inventory", StringComparison.OrdinalIgnoreCase) >= 0;
+                evidence = new MapTradeTradeSurfaceEvidence
+                {
+                    Surface = visible ? GameplaySurfaceKinds.Trading : GameplaySurfaceKinds.Unknown,
+                    Visible = visible,
+                    OpenedAtUtc = DateTime.UtcNow.ToString("o"),
+                    Settlement = settlement.Name?.ToString() ?? settlement.StringId,
+                    Method = "InventoryScreenHelper.ActivateTradeWithCurrentSettlement",
+                    ActiveState = activeState
+                };
+                detail = visible
+                    ? "vanilla settlement trade inventory is active"
+                    : "trade activation returned without an InventoryState";
+                return visible;
+            }
+            catch (Exception ex)
+            {
+                detail = "visible trade activation failed: " + ex.Message;
+                return false;
+            }
         }
 
         private static bool TryRunMenuOption(string hint, out string detail)

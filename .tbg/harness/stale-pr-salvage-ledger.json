@@ -1,0 +1,533 @@
+{
+  "schema": "tbg.stale-pr-salvage-ledger.v1",
+  "snapshotUtc": "2026-07-11T23:20:00Z",
+  "repository": "EndeavorEverlasting/BlacksmithGuild",
+  "baseline": {
+    "mainSha": "60daeb4c8472027ee7eda9d532b9fc01541605d0",
+    "activeReplacementPr": 43,
+    "activeReplacementBranch": "agent/route-automation-operator-plan",
+    "activeReplacementHeadAtSnapshot": "39b196e7ef2e4fa7bf29561441eaf34737b019c8",
+    "staleReplayDoctrinePr": 45,
+    "agentStatusRelay": {
+      "pr": 46,
+      "mergeSha": "60daeb4c8472027ee7eda9d532b9fc01541605d0",
+      "sourceHeadSha": "74b1df0c05e4a488d67ac3352f660d3d3ddd87bc",
+      "paths": [
+        "ForgeAgentStatus.cmd",
+        "scripts/tbg/New-TbgChatPacket.ps1",
+        "docs/handoff/local-agent-status-relay.md"
+      ],
+      "capabilities": [
+        "bounded Markdown and JSON packets",
+        "clipboard relay by default",
+        "optional GitHub PR comment",
+        "bounded selected artifact excerpts"
+      ]
+    }
+  },
+  "preservationPolicy": {
+    "principle": "A stale PR is a parts bin until every useful delta is replayed, replaced, rejected with evidence, or archived; stale age alone never authorizes deletion.",
+    "closeRequires": [
+      "this ledger is committed on a maintained lineage and linked from the source PR",
+      "every useful SHA has a replay SHA, a maintained replacement reference, or an explicit rejection rationale",
+      "current-context validators named by the entry pass",
+      "historical runtime evidence is labeled historical and is not reused as current PASS"
+    ],
+    "remoteBranchDeleteRequires": [
+      "the source PR is closed or merged",
+      "the replacement commit or rejection record is reachable from main",
+      "no worktree is attached to the source branch",
+      "ignored evidence has an archive manifest or an explicit discard decision",
+      "the source head remains reachable from the GitHub PR or a named archive tag/ref"
+    ]
+  },
+  "safeCloseOrder": [
+    {
+      "sequence": 1,
+      "prs": [9, 34],
+      "reason": "Historical evidence and a stale coordination map can close first after their durable replacements are linked; neither is a runtime implementation base."
+    },
+    {
+      "sequence": 2,
+      "prs": [8, 35, 33, 32, 31, 30, 29, 28],
+      "reason": "Close child lanes before roots after current harness/F7 replacements absorb or reject their utility."
+    },
+    {
+      "sequence": 3,
+      "prs": [38, 24, 20, 2],
+      "reason": "Close only after focused current-main replays land and their static/build checks pass."
+    },
+    {
+      "sequence": 4,
+      "prs": [6, 5],
+      "reason": "Close the child before the root only after sell-loop and second-leg behavior are replayed or explicitly rejected and fresh runtime proof is recorded."
+    }
+  ],
+  "entries": [
+    {
+      "number": 2,
+      "title": "Document identity/disposition schema and clarify doctrine wording",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/2",
+      "stateAtSnapshot": "OPEN",
+      "draft": false,
+      "sourceBase": "main",
+      "headBranch": "codex/design-identity-and-behavior-schema",
+      "headSha": "61090349037c89d4bcbc1c0e3fd4a3651333e7e6",
+      "usefulShas": ["61090349037c89d4bcbc1c0e3fd4a3651333e7e6"],
+      "utility": ["identity/disposition schema doctrine", "one decision-map wording correction"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["NEXT_STEPS.md", "src/BlacksmithGuild/DevTools/AutoCharacterBuild/AseraiTradeSmithDecisionMap.cs"],
+        "reason": "The schema is isolated, but the roadmap and decision-map source have moved hundreds of commits."
+      },
+      "replacement": {
+        "disposition": "selective-path-replay-on-current-main",
+        "status": "pending",
+        "refs": [],
+        "validation": ["git diff --check", "dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug"]
+      },
+      "retainBranchUntil": ["schema path is replayed or explicitly rejected", "the source PR links the replacement SHA"]
+    },
+    {
+      "number": 5,
+      "title": "feat(006c-4): vanilla sell driver + multi-cycle guild loop",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/5",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "main",
+      "headBranch": "feat/006c-4-sell-loop",
+      "headSha": "9ec17ac3fc4bbc6acc4f1f1d472b9e878a91f247",
+      "usefulShas": [
+        "aeb785af541637c4c416ce07ad3b727adbed5c03",
+        "1ede90fe49efccfa7d6080830f0501ac2dafd5c8"
+      ],
+      "utility": ["bounded vanilla sell reflection", "sell mission selection", "multi-cycle loop cap", "sell certificate runner"],
+      "collision": {
+        "risk": "high",
+        "paths": ["src/BlacksmithGuild/GuildLoop/AutonomousGuildLoopService.cs", "src/BlacksmithGuild/MapTrade", "src/BlacksmithGuild/Market/MarketIntelligenceService.cs"],
+        "reason": "Every runtime surface is high-churn and PR #43 changes the same worker, route, evidence, and command seams."
+      },
+      "replacement": {
+        "disposition": "reimplement-contract-first-on-current-lineage",
+        "status": "pending",
+        "refs": ["PR #43 supplies the maintained route/operator foundation, not sell proof"],
+        "validation": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-economic-loop-cert-contract.ps1", "fresh exact-head live sell delta proof"]
+      },
+      "retainBranchUntil": ["sell contract and reflection hunks are replayed or rejected independently", "fresh current-head sell proof exists", "PR #6 is disposed"]
+    },
+    {
+      "number": 6,
+      "title": "feat(006c-4b): second-leg auto-travel to sell town",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/6",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "feat/006c-4-sell-loop",
+      "headBranch": "feat/006c-4b-second-leg-travel",
+      "headSha": "2b5b7e104d1ac095cef9db738e0b56beec939643",
+      "usefulShas": ["6124fd9e11f7c8687f21c3c47e25744599fc4c89"],
+      "utility": ["buy-town to sell-town mission transition", "second-leg arrival evidence"],
+      "collision": {
+        "risk": "high",
+        "paths": ["src/BlacksmithGuild/GuildLoop/AutonomousGuildLoopService.cs", "src/BlacksmithGuild/MapTrade"],
+        "reason": "The delta depends on stale PR #5 and overlaps the maintained route state machine."
+      },
+      "replacement": {
+        "disposition": "replay-after-pr5-contract-reconstruction",
+        "status": "blocked-by-pr5-disposition",
+        "refs": ["PR #43 head-at-snapshot 39b196e7ef2e4fa7bf29561441eaf34737b019c8"],
+        "validation": ["fresh exact-head travel, arrival, sell-entry, and Manual-cleanup proof"]
+      },
+      "retainBranchUntil": ["PR #5 utility has a maintained disposition", "second-leg transition is replayed or explicitly rejected"]
+    },
+    {
+      "number": 8,
+      "title": "F7: Add Continue bisect tooling, em-dash grep safeguards, and agent handoff docs",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/8",
+      "stateAtSnapshot": "OPEN",
+      "draft": false,
+      "sourceBase": "fix/f7-gate-stability",
+      "headBranch": "codex/stabilize-f7-launch-tooling-and-open-pr",
+      "headSha": "d8a0e0e209846c230e129bb82f288978d8a757aa",
+      "usefulShas": [
+        "11f357d00c81b24193bb331825cc9dd044257010",
+        "bc0d033dc8d013f205cfb432001b84f38132e3f5",
+        "d8a0e0e209846c230e129bb82f288978d8a757aa"
+      ],
+      "utility": ["F7 bisect history", "fail-closed runner contract", "path and grep safeguards"],
+      "collision": {
+        "risk": "high",
+        "paths": ["scripts/run-f7-gate-continue.ps1", "scripts/bannerlord-paths.ps1", "scripts/write-launch-log.ps1"],
+        "reason": "Main contains a much newer runner lineage; wholesale replay would replace proven behavior with stale variants."
+      },
+      "replacement": {
+        "disposition": "supersede-with-maintained-f7-lineage",
+        "status": "replacement-present",
+        "refs": [
+          "2ad1d45 fail-closed manifest gate",
+          "8ae7afd runner evidence harvest",
+          "35b8dd5 shared launcher-hosted detection",
+          "be6c6c1 PowerShell encoding contract",
+          "docs/handoff/pr8-cherry-pick-bridge.md"
+        ],
+        "validation": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-f7-runner-contract.ps1", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-log-grep-patterns.ps1"]
+      },
+      "retainBranchUntil": ["replacement refs are linked from PR #8", "historical evidence summaries remain reachable"]
+    },
+    {
+      "number": 9,
+      "title": "docs(f7): add continue-gate bisect evidence and coordination log",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/9",
+      "stateAtSnapshot": "OPEN",
+      "draft": false,
+      "sourceBase": "main",
+      "headBranch": "codex/update-pr-with-bisect-session-details",
+      "headSha": "ef0c95ca4f541cca579efe81d039559c1724fb8c",
+      "usefulShas": ["ef0c95ca4f541cca579efe81d039559c1724fb8c"],
+      "utility": ["historical Continue bisect manifests and coordination notes"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["docs/evidence/live-cert", "docs/handoff"],
+        "reason": "Evidence is historical and must not overwrite latest pointers or be treated as current PASS."
+      },
+      "replacement": {
+        "disposition": "archive-as-historical-evidence",
+        "status": "ready-after-ledger-link",
+        "refs": ["maintained F7 history on main", "PR #8 replacement lineage"],
+        "validation": ["all retained manifest JSON parses", "no latest/current PASS pointer targets PR #9 evidence"]
+      },
+      "retainBranchUntil": ["evidence inventory is linked from PR #9", "archive reachability is recorded"]
+    },
+    {
+      "number": 20,
+      "title": "Codify governor activity handoff contract",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/20",
+      "stateAtSnapshot": "OPEN",
+      "draft": false,
+      "sourceBase": "main",
+      "headBranch": "sprint/governor-activity-contract",
+      "headSha": "2839b37e0ff6cd9eb24d649a5b6d17fb14c738b0",
+      "usefulShas": [
+        "6f5d9c1c9faa50c4720f74171634cf7fb2a3f2e2",
+        "56fcb4a826169a3e73b2acd65060fde3964afae6",
+        "fa99160ae8cbead1b531881292698af3d9889493",
+        "2839b37e0ff6cd9eb24d649a5b6d17fb14c738b0"
+      ],
+      "utility": ["typed governor-to-worker activity handoff", "branch proof for pack buys", "worker outcome semantics"],
+      "collision": {
+        "risk": "high",
+        "paths": ["src/BlacksmithGuild/GuildLoop/AutonomousGuildLoopService.cs"],
+        "reason": "The worker-bee service and governor contracts were substantially refactored after this PR."
+      },
+      "replacement": {
+        "disposition": "port-model-and-tests-not-stale-service-hunks",
+        "status": "pending",
+        "refs": ["docs/handoff/unified-activity-handoff-doctrine.md", "scripts/verify-campaign-activity-handoff-contract.ps1"],
+        "validation": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-campaign-activity-handoff-contract.ps1", "dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug"]
+      },
+      "retainBranchUntil": ["typed handoff model is ported or rejected field-by-field", "current worker-engine integration tests pass"]
+    },
+    {
+      "number": 24,
+      "title": "feat: add shared route/profile mode command contracts",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/24",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "main",
+      "headBranch": "feat/shared-route-profile-contracts",
+      "headSha": "e3c0b14ee3918c87f3e28824ac08a80e673a3bec",
+      "usefulShas": [
+        "f5dfe2baa77a344a72d0e09469cce21276b37a9d",
+        "8db4c5468c27301dfdde292697f478b472a1f748",
+        "20ad7561e692a3cb027b57ebbb9a30d8ea3198b7",
+        "26318f0f5e9cce3a984f8a1eeff88f14b410cc54",
+        "d1ab1e3775621cd35245baaa8fb40004baa0b22d",
+        "74788d79ddc7b196d16213e4a783c44fb6b625bc",
+        "c0d44036f14ddb1f8f22a8dcfbf2ca1afca51974",
+        "e3c0b14ee3918c87f3e28824ac08a80e673a3bec"
+      ],
+      "utility": ["automation profile helper", "route opportunity mode helper", "ForgeProfile and ForgeRouteMode wrappers", "profile/route/food contract tests"],
+      "collision": {
+        "risk": "high",
+        "paths": ["scripts/governor-operator-common.ps1", "scripts/run-reboot-iteration.ps1", "operator control semantics"],
+        "reason": "PR #43 now owns per-engine Manual/Hybrid/Automation controls and unattended route proof."
+      },
+      "replacement": {
+        "disposition": "reconcile-helpers-with-engine-toggle-authority",
+        "status": "partial-replacement-on-pr43",
+        "refs": ["PR #43 head-at-snapshot 39b196e7ef2e4fa7bf29561441eaf34737b019c8", ".tbg/operator/control-surface.json"],
+        "validation": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-engine-toggle-authority-contract.ps1", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-operator-control-surface.ps1"]
+      },
+      "retainBranchUntil": ["every wrapper/helper is mapped to keep, superseded, or reject", "PR #43 replacement is merged and exact-head validated"]
+    },
+    {
+      "number": 28,
+      "title": "docs(agent): add feedback harness doctrine",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/28",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "main",
+      "headBranch": "agent-feedback-harness",
+      "headSha": "1655925e5124c3e0b7a3567766cf3dd216da8eda",
+      "usefulShas": [
+        "3782e4408e337b0e39977dad2429e799da4500c3",
+        "888260b3a68ad7e625d1786a074d4050cda1b5a1",
+        "01b7044f75a1a78d55197af7ebd7bddfbf7418d5",
+        "1655925e5124c3e0b7a3567766cf3dd216da8eda"
+      ],
+      "utility": ["feedback manifest", "review-bottleneck doctrine", "contract verifier", "gap register"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["docs/handoff", "scripts/verify-agent-feedback-harness-contract.ps1"],
+        "reason": "Concepts overlap merged PR #39, PR #41 effective reporting, and PR #45 skill/replay doctrine."
+      },
+      "replacement": {
+        "disposition": "map-fields-into-current-harness-contracts",
+        "status": "pending-reconciliation",
+        "refs": ["809f054351fc2f98f21eee8ac7f8f85adb34f8d2", "5c20e95", "PR #45"],
+        "validation": ["Harness Policy Reports", "targeted feedback contract verifier after replay"]
+      },
+      "retainBranchUntil": ["PR #29-#35 child utilities are classified", "manifest fields are replayed or rejected"]
+    },
+    {
+      "number": 29,
+      "title": "feat(agent): add feedback summary writer",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/29",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-feedback-harness",
+      "headBranch": "agent-feedback-writer",
+      "headSha": "c8bab9873bfb5d6abe041b09040752dc2ff6f169",
+      "usefulShas": ["f070ba98c7e620d3beadb4fd5346d8433e0b48f4", "c8bab9873bfb5d6abe041b09040752dc2ff6f169"],
+      "utility": ["feedback summary writer", "writer contract verifier"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["scripts/write-agent-feedback-summary.ps1"],
+        "reason": "Output/reporting semantics overlap PR #41's versioned effective-policy renderer."
+      },
+      "replacement": {
+        "disposition": "adapt-as-effective-context-consumer",
+        "status": "pending",
+        "refs": ["5c20e95"],
+        "validation": ["Harness Policy Reports", "negative tests against JSON-shaped English output"]
+      },
+      "retainBranchUntil": ["writer behavior is ported onto the current reporting module or rejected"]
+    },
+    {
+      "number": 30,
+      "title": "feat(agent): add remediation planner",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/30",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-feedback-writer",
+      "headBranch": "agent-feedback-remediation-planner",
+      "headSha": "b6f126b24f296bb01afeec455204d29a3a53b088",
+      "usefulShas": [
+        "7734763f6836d2f21373cfe3810ae7e961eed865",
+        "c3f451ca626cc1b63b25e06d8cfaa1898903089d",
+        "b6f126b24f296bb01afeec455204d29a3a53b088"
+      ],
+      "utility": ["remediation plan model and writer", "planner verifier"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["scripts/write-agent-remediation-plan.ps1"],
+        "reason": "The writer predates effective policy context and current done-gate result schemas."
+      },
+      "replacement": {
+        "disposition": "port-pure-planner-behind-current-result-schema",
+        "status": "pending",
+        "refs": ["809f054351fc2f98f21eee8ac7f8f85adb34f8d2", "5c20e95"],
+        "validation": ["fixture replay through current harness result schema"]
+      },
+      "retainBranchUntil": ["planner inputs/outputs are mapped to current schemas"]
+    },
+    {
+      "number": 31,
+      "title": "feat(agent): add stop hook trigger contract",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/31",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-feedback-remediation-planner",
+      "headBranch": "agent-feedback-stop-hook",
+      "headSha": "c4a6c93e90bab382f3bbc58bf2d0b21623e59745",
+      "usefulShas": [
+        "d1ae3344f20b1891ebe792d34491337c31a6ca1e",
+        "fa790f8638d7a3e14282424a902cc6d72b8aa84f",
+        "f2027b99f70503aa15d5791ba4d1229e15addd08",
+        "c4a6c93e90bab382f3bbc58bf2d0b21623e59745"
+      ],
+      "utility": ["trigger map", "stop-hook output schema", "executable hook", "follow-through runbook"],
+      "collision": {
+        "risk": "high",
+        "paths": ["scripts/invoke-agent-stop-hook.ps1", "harness done-gate semantics"],
+        "reason": "Merged PR #39 and PR #41 now own hooks, results, effective policy, and done-gate rendering."
+      },
+      "replacement": {
+        "disposition": "reconcile-trigger-map-only",
+        "status": "pending-reconciliation",
+        "refs": ["809f054351fc2f98f21eee8ac7f8f85adb34f8d2", "5c20e95"],
+        "validation": ["scripts/harness/Test-TbgDoneGate.ps1", "scripts/harness/Test-TbgEnglishRenderer.ps1"]
+      },
+      "retainBranchUntil": ["stop-hook fields are mapped to current hook-result and policy-reporting schemas"]
+    },
+    {
+      "number": 32,
+      "title": "docs(guardrails): add default app guardrail map",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/32",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-feedback-stop-hook",
+      "headBranch": "agent-default-guardrail-map",
+      "headSha": "d004aead5b482005bf03e77e8b181a11680b6f46",
+      "usefulShas": [
+        "1c1ea7834d7b2b363f8e2745b0c665038eeceb14",
+        "c49b01714bef3a0b5bfe99b15d4c2d21f21de255",
+        "7d1f9b36acc3e8fb92d25922d3e392be4408a28b",
+        "95bd6e8d1efcdd97d647dc7694d3b190bcc0bc9f",
+        "1d1a148712477e6d9cfd13b2bdfa12bdd1f9514a",
+        "d004aead5b482005bf03e77e8b181a11680b6f46"
+      ],
+      "utility": ["default guardrail manifest", "proof-claim discipline", "runtime contamination rules", "campaign action evidence schema"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["docs/handoff", "guardrail policy semantics"],
+        "reason": "Current .tbg guardrails and policy reports cover the same boundary with newer schemas."
+      },
+      "replacement": {
+        "disposition": "field-level-merge-into-current-guardrails",
+        "status": "pending",
+        "refs": [".tbg/guardrails/runtime-state.guardrail.json", ".tbg/harness/policies/evidence-gates.policy.json"],
+        "validation": ["scripts/harness/Test-TbgFileSafety.ps1", "scripts/harness/Test-TbgDoneGate.ps1"]
+      },
+      "retainBranchUntil": ["PR #33 and #35 children are classified", "guardrail fields are replayed or rejected"]
+    },
+    {
+      "number": 33,
+      "title": "feat(guardrails): add default guardrail implementation scripts",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/33",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-default-guardrail-map",
+      "headBranch": "agent-default-guardrail-implementation",
+      "headSha": "340602946dee8eab4b4defd1e37e2be3a5569090",
+      "usefulShas": [
+        "eb77d765def89a03690e564c997e12d4799c96db",
+        "ee6efef68a813bad946060cafa4ff1529761fa99",
+        "01b16a117ad4865fb81f7489cd6c0884cb0132e2",
+        "340602946dee8eab4b4defd1e37e2be3a5569090"
+      ],
+      "utility": ["proof ladder verifier", "runtime contamination classifier", "byte-safe replacement helper", "campaign evidence stub writer"],
+      "collision": {
+        "risk": "medium",
+        "paths": ["scripts/classify-runtime-proof-contamination.ps1", "scripts/new-campaign-action-evidence-stub.ps1"],
+        "reason": "Implementations must emit current schemas and must not create stubs that can be mistaken for proof."
+      },
+      "replacement": {
+        "disposition": "replay-pure-tools-with-current-schema-adapters",
+        "status": "pending",
+        "refs": ["current .tbg harness schemas"],
+        "validation": ["fixture tests prove stubs cannot yield PASS", "PowerShell UTF-8 BOM contract"]
+      },
+      "retainBranchUntil": ["each tool has a current-schema test or rejection rationale"]
+    },
+    {
+      "number": 34,
+      "title": "docs(concurrent): add PR34 concurrent sprint map",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/34",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-default-guardrail-implementation",
+      "headBranch": "docs-concurrent-sprint-map",
+      "headSha": "63610beefdda0beef269ee4f3f8665cc04e0be5a",
+      "usefulShas": [
+        "b59fb09b482cb0d460e29ac07f9cad37a6ffa5da",
+        "caeeb79c714958e6954897bc1ce2c81733069224",
+        "192e8d88b440e703d20402909acdec0d26099223"
+      ],
+      "utility": ["worktree naming and protected-checkout rules"],
+      "collision": {
+        "risk": "low",
+        "paths": ["docs/concurrent-sprints/pr34-concurrent-sprint-map"],
+        "reason": "The factual sprint/PR map is stale; only timeless worktree rules remain useful."
+      },
+      "replacement": {
+        "disposition": "supersede-map-keep-timeless-rules",
+        "status": "replacement-present",
+        "refs": ["7417049f34a9de9daf05d0699b0afc3a1e00f175", "docs/handoff/post-pr41-repo-hygiene-map.md", "PR #44"],
+        "validation": ["current worktree map generated from git worktree list"]
+      },
+      "retainBranchUntil": ["PR #34 links the maintained map and records which timeless rules were kept"]
+    },
+    {
+      "number": 35,
+      "title": "feat(harness): add focused route proof lifecycle keeper",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/35",
+      "stateAtSnapshot": "OPEN",
+      "draft": true,
+      "sourceBase": "agent-default-guardrail-map",
+      "headBranch": "feat/harness-focused-route-proof",
+      "headSha": "4b291a96b2763988d6c4a37feabe473cd88978b3",
+      "usefulShas": [
+        "91e50ae69c73243cfe250daf2497c217f8ce3ec6",
+        "0197d1dba117c1113dfac25a37ad8b2de35d2bf7",
+        "fda2c25e23a0f2b5e838f5ff7f39f69d94908e12",
+        "f739e8be02ed2f0cc2a2933a07a41160486ef190",
+        "2fd9a1938b09b5da759efc6639695ec4e56bd87e",
+        "4b291a96b2763988d6c4a37feabe473cd88978b3"
+      ],
+      "utility": ["process detection reuse", "focused proof session lifecycle", "entrypoint ownership map", "focus keeper contract tests"],
+      "collision": {
+        "risk": "high",
+        "paths": ["scripts/run-reboot-iteration.ps1", "route proof entrypoints", "foreground/focus ownership"],
+        "reason": "The maintained direction is unattended agent proof; focus forcing must be optional and cannot be a human proof dependency."
+      },
+      "replacement": {
+        "disposition": "salvage-process-detection-and-ownership-only",
+        "status": "partial-replacement-on-pr43",
+        "refs": ["PR #43 unattended branch-autostart proof runner"],
+        "validation": ["agent-run exact-head proof without required human focus", "Manual-mode cleanup verified"]
+      },
+      "retainBranchUntil": ["unattended PR #43 proof is green", "optional focus utility is ported or rejected", "no runner depends on a human keypress"]
+    },
+    {
+      "number": 38,
+      "title": "docs(guardrails): codify worktree and runtime stop contracts",
+      "url": "https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/38",
+      "stateAtSnapshot": "OPEN",
+      "draft": false,
+      "sourceBase": "docs/agent-workflow-contracts",
+      "headBranch": "docs-worktree-stop-guardrails",
+      "headSha": "e618349b7575dc6379cb7a8b378df6ec5be4d282",
+      "usefulShas": [
+        "6c330045a65c8aad1fcbd3dfebfff212d3e6fee0",
+        "934ce95bb8ab0aac164c9c9ea9177e31f0f05749",
+        "962c0ab8c3c7b4f62741f0931b809f26ff4eb578",
+        "4436cd21f74e4d6621e2359adcfeee2f9fa61064",
+        "58bf7b74b56b31d9b2a5b2288429ef5fcb86738b",
+        "d043f969035c8f91544856870436de908eb6ecb5",
+        "0d32d65d034fb818a877a710c39f76b070327b46",
+        "5ab693b97f9245ef6d596609089eae09530d0433",
+        "5529b76a918b523a9df05d58c5239213aadf666f",
+        "e618349b7575dc6379cb7a8b378df6ec5be4d282"
+      ],
+      "utility": ["isolated worktree contract", "stop-before-runtime policy", "campaign activity ledger contract", "runtime proof validator", "harness plan-pack verifier"],
+      "collision": {
+        "risk": "high",
+        "paths": [".tbg/workflows", "scripts/tbg", "docs/architecture", "AGENTS.md"],
+        "reason": "The branch is conflicted and broadly overlaps merged PR #36, #39, #41, #46, open PR #45, and active PR #43."
+      },
+      "replacement": {
+        "disposition": "reconstruct-unique-guardrails-from-current-main",
+        "status": "partial-replacement-present",
+        "refs": [
+          "aa015a5 PR #36 route workflow contracts",
+          "809f054351fc2f98f21eee8ac7f8f85adb34f8d2 PR #39 harness",
+          "5c20e95 PR #41 reporting",
+          "60daeb4c8472027ee7eda9d532b9fc01541605d0 PR #46 status relay",
+          "PR #45 stale replay doctrine"
+        ],
+        "validation": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeGuardrail.ps1 -Intent static-review", "Harness Policy Reports"]
+      },
+      "retainBranchUntil": ["every unique guardrail commit is mapped to replacement or rejection", "runtime evidence retention is explicit", "the conflicting base is no longer needed for comparison"]
+    }
+  ]
+}

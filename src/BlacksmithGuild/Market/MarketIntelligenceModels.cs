@@ -75,7 +75,22 @@ namespace BlacksmithGuild.Market
     public sealed class MarketIntelReport
     {
         public string GeneratedUtc { get; set; }
+        public double GeneratedCampaignDay { get; set; }
         public string Source { get; set; }
+        public string CachePolicy { get; set; }
+        public int CacheMaxCampaignHours { get; set; }
+        public float CacheMaxMapDistance { get; set; }
+        public string ScanOriginSettlementId { get; set; }
+        public float ScanOriginX { get; set; }
+        public float ScanOriginY { get; set; }
+        public int ScanExecutionCount { get; set; }
+        public int CacheReuseCount { get; set; }
+        public double ScanElapsedMs { get; set; }
+        public int ScanPassCount { get; set; }
+        public int SettlementsEnumerated { get; set; }
+        public int TownsVisited { get; set; }
+        public int CandidateItemCount { get; set; }
+        public int PriceLookupCount { get; set; }
         public string NearestTown { get; set; }
         public float NearestDistance { get; set; }
         public int TownsScanned { get; set; }

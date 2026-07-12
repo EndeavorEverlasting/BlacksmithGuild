@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "contractId": "hostile-escape-vector/v1",
+  "purpose": "Provide one low-cost, machine-readable safety recommendation for any protected party facing one or many hostile parties.",
+  "runtimeBoundary": {
+    "recommendationOnly": true,
+    "movementMutationAllowed": false,
+    "teleportAllowed": false,
+    "rawPositionMutationAllowed": false,
+    "controllerMustRevalidateBeforeMovement": true
+  },
+  "snapshotContract": {
+    "enumerationOwner": "runtime_adapter",
+    "maximumCampaignEnumerationsPerDecision": 1,
+    "analyzerEnumeratesCampaignState": false,
+    "analyzerAcceptsImmutableSnapshot": true,
+    "algorithmicComplexity": "O(n)",
+    "accumulationPasses": 1,
+    "clearanceProjectionPasses": 1,
+    "cadenceOwner": "central_worker_cadence",
+    "perFrameScanningAllowed": false
+  },
+  "geometryContract": {
+    "algorithm": "strength_proximity_weighted_repulsion",
+    "usesEveryHostileInsideInfluenceRadius": true,
+    "supportsPredictedHostilePosition": true,
+    "supportsOrthogonalThreatDirections": true,
+    "reportsVectorCancellation": true,
+    "reportsSurroundedGeometry": true,
+    "reportsCurrentMinimumClearanceMargin": true,
+    "reportsProjectedMinimumClearanceMargin": true,
+    "degenerateFallback": "deterministic_away_from_highest_weight_threat"
+  },
+  "failureContract": {
+    "campaignSnapshotUnavailable": "hold_or_block",
+    "surroundedGeometry": "low_confidence_recommendation_only",
+    "projectedClearanceNotImproved": "do_not_issue_from_recommendation_alone",
+    "terrainOrSettlementCollisionUnknown": "controller_must_revalidate"
+  },
+  "evidenceContract": {
+    "file": "BlacksmithGuild_HostileEscapeAnalysis.json",
+    "writeTrigger": "explicit_route_safety_analysis",
+    "storageMode": "latest_snapshot_overwrite",
+    "campaignTickWritesAllowed": false,
+    "unboundedThreatArraysAllowed": false
+  },
+  "futureProtectedPartyRoles": [
+    "main_party",
+    "player_caravan",
+    "clan_companion_party",
+    "escorted_caravan"
+  ],
+  "futureEscortContract": {
+    "reuseSameAnalyzer": true,
+    "protectedPartyIsParameter": true,
+    "escortControllerOwnsMovement": true,
+    "escortControllerMustUseVanillaMovement": true,
+    "hostileSnapshotMayBeSharedAcrossProtectedParties": true,
+    "commandAuthorityRequiredForCompanionParty": true
+  }
+}

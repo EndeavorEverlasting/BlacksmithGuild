@@ -68,7 +68,7 @@ namespace BlacksmithGuild
 
                 MapTransitionGuard.TraceGuardCheck("CampaignTick");
 
-                GameSessionState.Refresh();
+                GameSessionState.RefreshForRealtimeTick();
                 _refreshGenerationAtCampaignTick = GameSessionState.RefreshGeneration;
 
                 AutoTravelService.OnRealtimeTick();

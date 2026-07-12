@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.Market;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Party;
@@ -24,6 +25,7 @@ namespace BlacksmithGuild.MapTrade
         public static bool LastPackAnimalProbeAvailable { get; private set; }
         public static bool LastSmeltProbeAvailable { get; private set; }
         public static MapTradeExecutionResult LastExecutionResult { get; private set; }
+        public static MapTradeTradeSurfaceEvidence LastTradeSurfaceEvidence { get; private set; }
 
         public static bool ProbeTradeApi(out string detail)
         {
@@ -72,6 +74,7 @@ namespace BlacksmithGuild.MapTrade
         {
             detail = null;
             LastExecutionResult = null;
+            LastTradeSurfaceEvidence = null;
 
             if (mission == null)
             {
@@ -105,7 +108,14 @@ namespace BlacksmithGuild.MapTrade
                 return false;
             }
 
-            SettlementNavigationHelper.TryOpenMarketMenu(out _);
+            if (!SettlementNavigationHelper.TryOpenVisibleTradeScreen(out var tradeSurface, out var surfaceDetail))
+            {
+                LastTradeSurfaceEvidence = tradeSurface;
+                detail = surfaceDetail ?? "visible trade surface did not open";
+                return false;
+            }
+
+            LastTradeSurfaceEvidence = tradeSurface;
 
             var item = MapTradeTradeActionReflection.ResolveItem(mission.ItemId);
             if (item == null)
@@ -137,6 +147,7 @@ namespace BlacksmithGuild.MapTrade
             if (MapTradeTradeActionReflection.TryExecuteBuy(settlement, item, 1, out var result, out detail))
             {
                 LastExecutionResult = result;
+                LastExecutionResult.FakeGameplayDelta = false;
                 if (mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade)
                 {
                     LastExecutionResult.ItemClassification = "PackAnimal";
@@ -145,6 +156,7 @@ namespace BlacksmithGuild.MapTrade
                 LastProbeMethod = result.ExecutionMethod;
                 LastProbeAvailable = true;
                 LastProbeDetail = detail;
+                MarketIntelligenceService.InvalidateCache("trade_completed");
                 return true;
             }
 

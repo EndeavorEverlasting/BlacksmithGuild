@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -28,6 +29,7 @@ namespace BlacksmithGuild.Market
         private const int MaxTownGoodsRows = 12;
         private const int MaxRouteRows = 5;
         private const int MaxActionPlanSteps = 4;
+        private const string CacheEvidenceCadenceWorker = "Market.CacheEvidence";
 
         private static readonly string ReportPath =
             Path.Combine(BasePath.Name, "BlacksmithGuild_MarketIntel.json");
@@ -35,14 +37,57 @@ namespace BlacksmithGuild.Market
         private static MarketIntelSummary _summary = new MarketIntelSummary();
         private static MarketIntelReport _cachedReport = new MarketIntelReport();
         private static bool _summaryRecorded;
+        private static bool _cacheInvalidated = true;
+        private static string _cacheInvalidationReason = "no_scan";
+        private static double _cacheOriginCampaignDay = -1d;
+        private static string _cacheOriginSettlementId = string.Empty;
+        private static Vec2 _cacheOriginPosition;
+        private static bool _cacheOriginPositionRecorded;
+        private static int _scanExecutionCount;
+        private static int _cacheReuseCount;
+        private static int _currentScanPassCount;
+        private static int _currentSettlementsEnumerated;
+        private static int _currentTownsVisited;
+        private static int _currentCandidateItemCount;
+        private static int _currentPriceLookupCount;
 
         public static MarketIntelSummary Summary => _summary;
 
         public static bool HasCachedScan => _summaryRecorded && _summary.HasScan;
 
+        public static bool HasFreshCachedScan => IsCachedScanReusable(out _);
+
+        public static string CacheStatusDetail
+        {
+            get
+            {
+                IsCachedScanReusable(out var detail);
+                return detail;
+            }
+        }
+
+        public static void ResetForNewCampaign()
+        {
+            _summary = new MarketIntelSummary();
+            _cachedReport = new MarketIntelReport();
+            _summaryRecorded = false;
+            _cacheInvalidated = true;
+            _cacheInvalidationReason = "campaign_generation_reset";
+            _cacheOriginCampaignDay = -1d;
+            _cacheOriginSettlementId = string.Empty;
+            _cacheOriginPositionRecorded = false;
+            _scanExecutionCount = 0;
+            _cacheReuseCount = 0;
+            _currentScanPassCount = 0;
+            _currentSettlementsEnumerated = 0;
+            _currentTownsVisited = 0;
+            _currentCandidateItemCount = 0;
+            _currentPriceLookupCount = 0;
+        }
+
         public static MarketAdvisorySnapshot GetAdvisorySnapshot()
         {
-            if (!HasCachedScan)
+            if (!HasFreshCachedScan)
             {
                 return new MarketAdvisorySnapshot();
             }
@@ -67,7 +112,7 @@ namespace BlacksmithGuild.Market
             buyPrice = 0;
             stock = 0;
 
-            if (!HasCachedScan)
+            if (!HasFreshCachedScan)
             {
                 return false;
             }
@@ -117,12 +162,29 @@ namespace BlacksmithGuild.Market
                 return false;
             }
 
+            var tickCostStartedAt = TickCostProfiler.Start();
+            var scanClock = Stopwatch.StartNew();
+            ResetCurrentScanMetrics();
             try
             {
                 var report = BuildReport(source);
+                scanClock.Stop();
+                report.ScanElapsedMs = scanClock.Elapsed.TotalMilliseconds;
+                report.ScanPassCount = _currentScanPassCount;
+                report.SettlementsEnumerated = _currentSettlementsEnumerated;
+                report.TownsVisited = _currentTownsVisited;
+                report.CandidateItemCount = _currentCandidateItemCount;
+                report.PriceLookupCount = _currentPriceLookupCount;
+                if (!WriteJsonReport(report))
+                {
+                    DebugLogger.Test("[TBG MARKET] scan data built but evidence persistence failed.", showInGame: false);
+                    return false;
+                }
+
+                _scanExecutionCount++;
+                RecordCacheOrigin(report);
                 _cachedReport = report;
                 UpdateSummary(report);
-                WriteJsonReport(report);
                 WriteMarketReport(source);
                 return true;
             }
@@ -131,6 +193,87 @@ namespace BlacksmithGuild.Market
                 DebugLogger.Test($"[TBG MARKET] scan failed: {ex.Message}", showInGame: false);
                 return false;
             }
+            finally
+            {
+                TickCostProfiler.Stop("MarketIntelligenceService.RunScanNow", tickCostStartedAt);
+            }
+        }
+
+        public static bool EnsureFreshScan(string source)
+        {
+            if (IsCachedScanReusable(out var detail))
+            {
+                _cacheReuseCount++;
+                _cachedReport.CacheReuseCount = _cacheReuseCount;
+                if (RuntimeCadenceGate.TryEnter(CacheEvidenceCadenceWorker, 30000, 5000))
+                {
+                    WriteJsonReport(_cachedReport);
+                }
+                DebugLogger.Test(
+                    $"[TBG MARKET] cached scan reused source={source} detail={detail}",
+                    showInGame: false);
+                return true;
+            }
+
+            return RunScanNow((source ?? "unknown") + "|cache_refresh:" + detail);
+        }
+
+        public static void InvalidateCache(string reason)
+        {
+            _cacheInvalidated = true;
+            _cacheInvalidationReason = string.IsNullOrWhiteSpace(reason) ? "unspecified" : reason;
+        }
+
+        public static void OnDailyTick()
+        {
+            InvalidateCache("campaign_daily_tick");
+        }
+
+        public static bool IsCachedScanReusable(out string detail)
+        {
+            if (!HasCachedScan)
+            {
+                detail = "no_cached_scan";
+                return false;
+            }
+
+            if (_cacheInvalidated)
+            {
+                detail = "invalidated:" + (_cacheInvalidationReason ?? "unspecified");
+                return false;
+            }
+
+            var currentCampaignDay = ReadCampaignDay();
+            if (_cacheOriginCampaignDay >= 0d && currentCampaignDay >= _cacheOriginCampaignDay)
+            {
+                var ageHours = (currentCampaignDay - _cacheOriginCampaignDay) * 24d;
+                if (ageHours >= Math.Max(1, DevToolsConfig.MarketIntelCacheMaxCampaignHours))
+                {
+                    detail = $"campaign_age_hours={ageHours:0.##}";
+                    return false;
+                }
+            }
+
+            var currentSettlementId = ReadCurrentSettlementId();
+            if (!string.Equals(currentSettlementId, _cacheOriginSettlementId, StringComparison.OrdinalIgnoreCase))
+            {
+                detail = $"settlement_changed:{_cacheOriginSettlementId}->{currentSettlementId}";
+                return false;
+            }
+
+            var party = MobileParty.MainParty;
+            if (_cacheOriginPositionRecorded && party != null)
+            {
+                var distance = party.GetPosition2D.Distance(_cacheOriginPosition);
+                if (distance >= Math.Max(1f, DevToolsConfig.MarketIntelCacheMaxMapDistance))
+                {
+                    detail = $"party_moved={distance:0.##}";
+                    return false;
+                }
+            }
+
+            detail = "fresh_on_demand_cache";
+            return true;
         }
 
         public static void AppendToReport(ReportFormatter report)
@@ -190,6 +333,7 @@ namespace BlacksmithGuild.Market
             bool expandedScanUsed)
         {
             var party = MobileParty.MainParty;
+            _currentScanPassCount++;
             var partyPosition = party.GetPosition2D;
             var nearbyTowns = ResolveNearbyTowns(partyPosition, maxTowns, maxDistance);
             if (nearbyTowns.Count == 0)
@@ -203,6 +347,8 @@ namespace BlacksmithGuild.Market
                 StringComparer.OrdinalIgnoreCase);
 
             var candidateItems = CollectCandidateItems(nearbyTowns, party.ItemRoster);
+            _currentTownsVisited += nearbyTowns.Count;
+            _currentCandidateItemCount += candidateItems.Count;
             var priceMatrix = BuildPriceMatrix(nearbyTowns, candidateItems, party);
             var inventoryRows = BuildInventoryRows(party.ItemRoster, priceMatrix);
             var spreadRows = BuildSpreadRows(priceMatrix);
@@ -241,6 +387,7 @@ namespace BlacksmithGuild.Market
                 })
                 .OrderBy(x => x.Distance)
                 .ToList();
+            _currentSettlementsEnumerated += towns.Count;
 
             var withinRange = towns
                 .Where(x => x.Distance <= maxDistance)
@@ -362,6 +509,7 @@ namespace BlacksmithGuild.Market
 
             try
             {
+                _currentPriceLookupCount += 2;
                 buyPrice = town.GetItemPrice(item, party, isSelling: false);
                 sellPrice = town.GetItemPrice(item, party, isSelling: true);
                 return buyPrice > 0 || sellPrice > 0;
@@ -370,6 +518,7 @@ namespace BlacksmithGuild.Market
             {
                 try
                 {
+                    _currentPriceLookupCount += 2;
                     var market = town.MarketData;
                     if (market == null)
                     {
@@ -876,15 +1025,17 @@ namespace BlacksmithGuild.Market
             }
         }
 
-        private static void WriteJsonReport(MarketIntelReport report)
+        private static bool WriteJsonReport(MarketIntelReport report)
         {
             try
             {
-                File.WriteAllText(ReportPath, SerializeReport(report));
+                RuntimeProofContext.WriteAllTextAtomic(ReportPath, SerializeReport(report));
+                return true;
             }
             catch (Exception ex)
             {
                 DebugLogger.Test($"[TBG MARKET] Failed to write JSON: {ex.Message}", showInGame: false);
+                return false;
             }
         }
 
@@ -893,7 +1044,22 @@ namespace BlacksmithGuild.Market
             var builder = new StringBuilder();
             builder.AppendLine("{");
             builder.AppendLine($"  \"generatedUtc\": \"{Escape(report.GeneratedUtc)}\",");
+            builder.AppendLine($"  \"generatedCampaignDay\": {Number(report.GeneratedCampaignDay)},");
             builder.AppendLine($"  \"source\": \"{Escape(report.Source)}\",");
+            builder.AppendLine($"  \"cachePolicy\": \"{Escape(report.CachePolicy)}\",");
+            builder.AppendLine($"  \"cacheMaxCampaignHours\": {report.CacheMaxCampaignHours},");
+            builder.AppendLine($"  \"cacheMaxMapDistance\": {Number(report.CacheMaxMapDistance)},");
+            builder.AppendLine($"  \"scanOriginSettlementId\": \"{Escape(report.ScanOriginSettlementId)}\",");
+            builder.AppendLine($"  \"scanOriginX\": {Number(report.ScanOriginX)},");
+            builder.AppendLine($"  \"scanOriginY\": {Number(report.ScanOriginY)},");
+            builder.AppendLine($"  \"scanExecutionCount\": {report.ScanExecutionCount},");
+            builder.AppendLine($"  \"cacheReuseCount\": {report.CacheReuseCount},");
+            builder.AppendLine($"  \"scanElapsedMs\": {Number(report.ScanElapsedMs)},");
+            builder.AppendLine($"  \"scanPassCount\": {report.ScanPassCount},");
+            builder.AppendLine($"  \"settlementsEnumerated\": {report.SettlementsEnumerated},");
+            builder.AppendLine($"  \"townsVisited\": {report.TownsVisited},");
+            builder.AppendLine($"  \"candidateItemCount\": {report.CandidateItemCount},");
+            builder.AppendLine($"  \"priceLookupCount\": {report.PriceLookupCount},");
             builder.AppendLine($"  \"nearestTown\": \"{Escape(report.NearestTown)}\",");
             builder.AppendLine($"  \"nearestDistance\": {report.NearestDistance:0.##},");
             builder.AppendLine($"  \"townsScanned\": {report.TownsScanned},");
@@ -915,6 +1081,69 @@ namespace BlacksmithGuild.Market
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static void RecordCacheOrigin(MarketIntelReport report)
+        {
+            var party = MobileParty.MainParty;
+            _cacheOriginCampaignDay = ReadCampaignDay();
+            _cacheOriginSettlementId = ReadCurrentSettlementId();
+            _cacheOriginPositionRecorded = party != null;
+            if (_cacheOriginPositionRecorded)
+            {
+                _cacheOriginPosition = party.GetPosition2D;
+            }
+
+            _cacheInvalidated = false;
+            _cacheInvalidationReason = null;
+
+            report.GeneratedCampaignDay = _cacheOriginCampaignDay;
+            report.CachePolicy = "on_demand_event_or_ttl";
+            report.CacheMaxCampaignHours = Math.Max(1, DevToolsConfig.MarketIntelCacheMaxCampaignHours);
+            report.CacheMaxMapDistance = Math.Max(1f, DevToolsConfig.MarketIntelCacheMaxMapDistance);
+            report.ScanOriginSettlementId = _cacheOriginSettlementId;
+            report.ScanOriginX = _cacheOriginPositionRecorded ? _cacheOriginPosition.x : 0f;
+            report.ScanOriginY = _cacheOriginPositionRecorded ? _cacheOriginPosition.y : 0f;
+            report.ScanExecutionCount = _scanExecutionCount;
+            report.CacheReuseCount = _cacheReuseCount;
+        }
+
+        private static void ResetCurrentScanMetrics()
+        {
+            _currentScanPassCount = 0;
+            _currentSettlementsEnumerated = 0;
+            _currentTownsVisited = 0;
+            _currentCandidateItemCount = 0;
+            _currentPriceLookupCount = 0;
+        }
+
+        private static double ReadCampaignDay()
+        {
+            try
+            {
+                return CampaignTime.Now.ToDays;
+            }
+            catch
+            {
+                return -1d;
+            }
+        }
+
+        private static string ReadCurrentSettlementId()
+        {
+            try
+            {
+                return MobileParty.MainParty?.CurrentSettlement?.StringId ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string Number(double value)
+        {
+            return value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private static void AppendRouteRows(StringBuilder builder, List<TradeRouteRow> rows)

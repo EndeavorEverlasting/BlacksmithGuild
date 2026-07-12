@@ -50,7 +50,7 @@ namespace BlacksmithGuild.DevTools
 
             RuntimeTrace.Run("DevHotkeyHandler", "NextOperation", () =>
             {
-                GameSessionState.Refresh();
+                GameSessionState.RefreshForRealtimeTick();
 
                 if (GameSessionState.CanPollHelpHotkeys)
                 {

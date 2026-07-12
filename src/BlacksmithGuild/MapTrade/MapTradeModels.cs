@@ -77,8 +77,19 @@ namespace BlacksmithGuild.MapTrade
         public int QuantityBought { get; set; }
         public int InventoryBefore { get; set; }
         public int InventoryAfter { get; set; }
+        public bool FakeGameplayDelta { get; set; }
         public string ExecutionMethod { get; set; }
         public string ItemClassification { get; set; }
+    }
+
+    public sealed class MapTradeTradeSurfaceEvidence
+    {
+        public string Surface { get; set; }
+        public bool Visible { get; set; }
+        public string OpenedAtUtc { get; set; }
+        public string Settlement { get; set; }
+        public string Method { get; set; }
+        public string ActiveState { get; set; }
     }
 
     public sealed class MapTradeRouteClockEvidence
@@ -98,6 +109,9 @@ namespace BlacksmithGuild.MapTrade
     }
     public sealed class MapTradeCertReport
     {
+        public string RunId { get; set; }
+        public string HeadSha { get; set; }
+        public string RuntimeSessionId { get; set; }
         public string GeneratedUtc { get; set; }
         public string Source { get; set; }
         public string StartedAtUtc { get; set; }
@@ -109,6 +123,12 @@ namespace BlacksmithGuild.MapTrade
         public bool AttemptedUnpause { get; set; }
         public bool TravelCommandIssued { get; set; }
         public bool RouteStarted { get; set; }
+        public bool AutoStartTickReturnObserved { get; set; }
+        public bool SameTickHoldObserved { get; set; }
+        public bool MovementObserved { get; set; }
+        public float PartyMovedDistance { get; set; }
+        public bool ArrivalObserved { get; set; }
+        public string ArrivedSettlement { get; set; }
         public string RuntimeProofClaim { get; set; }
         public bool VisibleModeEnabled { get; set; }
         public int DecisionPauseMs { get; set; }
@@ -121,6 +141,7 @@ namespace BlacksmithGuild.MapTrade
         public string TradeDriverMethod { get; set; }
         public bool TradeDriverAvailable { get; set; }
         public MapTradeExecutionResult TradeExecution { get; set; }
+        public MapTradeTradeSurfaceEvidence TradeSurface { get; set; }
         public string BlockedReason { get; set; }
         public string Verdict { get; set; }
     }

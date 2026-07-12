@@ -17,6 +17,12 @@ namespace BlacksmithGuild.Cohesion
 
         public static CohesionOpportunitiesReport LastReport => _lastReport;
 
+        public static void ResetForNewCampaign()
+        {
+            _lastReport = null;
+            CohesionPartyScanner.ResetForNewCampaign();
+        }
+
         public static bool AnalyzeNow(string source = AnalyzeCohesionOpportunitiesCommand, CohesionObjective objectiveOverride = null)
         {
             GameSessionState.Refresh();

@@ -1,4 +1,5 @@
 using System;
+using BlacksmithGuild.Market;
 
 namespace BlacksmithGuild.CampaignRuntime.Adapters
 {
@@ -25,9 +26,21 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
                 return blocked;
             }
 
-            var deferred = CampaignActivityDispatcher.Deferred(request, detail + "; market scan proposal recorded only");
-            deferred.NarrativeDetails.Add(CampaignActivityEngineNarratives.Market(request, "Use the market narrative to decide whether a read-only scan should be scheduled."));
-            return deferred;
+            if (!MarketIntelligenceService.EnsureFreshScan("governor_activity:" + request.ActivityId))
+            {
+                var blocked = CampaignActivityDispatcher.Blocked(
+                    request,
+                    detail + "; read-only market scan or its evidence persistence failed",
+                    "market_scan_failed");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Market(request, "The Governor requested a fresh read-only scan, but current machine evidence was not persisted."));
+                return blocked;
+            }
+
+            var completed = CampaignActivityDispatcher.CompletedReadOnly(
+                request,
+                detail + "; fresh read-only market evidence is available");
+            completed.NarrativeDetails.Add(CampaignActivityEngineNarratives.Market(request, "The market worker refreshed or reused a valid bounded cache and handed current evidence back to the Governor."));
+            return completed;
         }
     }
 }

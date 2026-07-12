@@ -14,7 +14,6 @@ namespace BlacksmithGuild.CampaignRuntime
         public const string PauseCampaignGovernorAutomationCommand = "PauseCampaignGovernorAutomation";
         public const string ResumeCampaignGovernorAutomationCommand = "ResumeCampaignGovernorAutomation";
 
-        private static DateTime _lastTickDecisionUtc = DateTime.MinValue;
         private static bool _paused;
 
         public static CampaignRuntimeDecision LastDecision { get; private set; }
@@ -28,13 +27,13 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
             }
 
-            var interval = Math.Max(1000, DevToolsConfig.CampaignRuntimeGovernorDecisionIntervalMs);
-            if ((DateTime.UtcNow - _lastTickDecisionUtc).TotalMilliseconds < interval)
+            if (!RuntimeCadenceGate.TryEnter(
+                "CampaignRuntimeGovernor.Decision",
+                DevToolsConfig.CampaignRuntimeGovernorDecisionIntervalMs,
+                hardMinimumMs: 1000))
             {
                 return;
             }
-
-            _lastTickDecisionUtc = DateTime.UtcNow;
             RunCycleNow("campaign_tick");
         }
 

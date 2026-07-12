@@ -41,6 +41,10 @@ jobs:
         shell: pwsh
         run: ./scripts/verify-tick-cost-profiler-contract.ps1
 
+      - name: Verify worker cadence and market refresh contract
+        shell: pwsh
+        run: ./scripts/verify-worker-cadence-contract.ps1
+
       - name: Verify clickable command surface
         shell: pwsh
         run: ./scripts/verify-clickable-command-surface.ps1
@@ -52,6 +56,10 @@ jobs:
       - name: Verify route branch autostart contract
         shell: pwsh
         run: ./scripts/verify-route-branch-autostart-contract.ps1
+
+      - name: Verify agent-run MapTrade branch proof contract
+        shell: pwsh
+        run: ./scripts/verify-maptrade-branch-autostart-proof-contract.ps1
 
       - name: Verify route-owned clock contract
         shell: pwsh

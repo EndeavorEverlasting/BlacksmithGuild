@@ -1,13 +1,20 @@
 ﻿param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("GetContext", "GetEffectivePolicy", "RenderEnglish", "ResolveWorkspace", "TestReadiness", "TestEnglishRenderer", "TestWorkspace", "ValidateCommand", "ValidateFile", "ValidateWorkflow", "ValidateDone")]
+    [ValidateSet("GetContext", "GetEffectivePolicy", "RenderEnglish", "ResolveWorkspace", "ManageRetention", "TestReadiness", "TestEnglishRenderer", "TestWorkspace", "ValidateCommand", "ValidateFile", "ValidateWorkflow", "ValidateDone")]
     [string]$Action,
     [string]$ContractId = "local-mcp-code-intelligence",
     [string]$CommandText = "",
     [string]$PathText = "",
     [string]$PrimaryRepo = "",
     [string]$TargetBranch = "",
-    [int]$FoundationPr = 0
+    [int]$FoundationPr = 0,
+    [string]$RetentionRepoRoot = "",
+    [string]$RetentionArchiveRepoRoot = "",
+    [string]$RetentionPolicyPath = "",
+    [string]$RetentionOutputPath = "",
+    [switch]$ApplyRetention,
+    [switch]$RetentionRetiredWorktree,
+    [datetime]$RetentionReferenceTimeUtc = [datetime]::UtcNow
 )
 
 Set-StrictMode -Version Latest
@@ -30,6 +37,16 @@ switch ($Action) {
             $TargetBranch = (& git branch --show-current).Trim()
         }
         & (Join-Path $scriptDir "Resolve-TbgSprintWorkspace.ps1") -PrimaryRepo $PrimaryRepo -TargetBranch $TargetBranch -FoundationPr $FoundationPr
+    }
+    "ManageRetention" {
+        & (Join-Path $scriptDir "Invoke-TbgEvidenceRetention.ps1") `
+            -RepoRoot $RetentionRepoRoot `
+            -ArchiveRepoRoot $RetentionArchiveRepoRoot `
+            -PolicyPath $RetentionPolicyPath `
+            -OutputPath $RetentionOutputPath `
+            -ReferenceTimeUtc $RetentionReferenceTimeUtc `
+            -RetiredWorktree:$RetentionRetiredWorktree `
+            -Apply:$ApplyRetention
     }
     "TestReadiness" {
         & (Join-Path $scriptDir "Test-TbgHarnessReadiness.ps1") -ContractId $ContractId

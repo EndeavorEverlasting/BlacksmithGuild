@@ -36,6 +36,7 @@ BlacksmithGuild_ProcessLifecycle.json
 BlacksmithGuild_CancelRun.json
 BlacksmithGuild_AssistToggle.json
 BlacksmithGuild_RuntimeLifecycle.json
+BlacksmithGuild_RuntimeCadence.json
 BlacksmithGuild_LaunchControlInstall.json
 BlacksmithGuild_LaunchControlStatus.json
 BlacksmithGuild_LaunchControlLastRun.json

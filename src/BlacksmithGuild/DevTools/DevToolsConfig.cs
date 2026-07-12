@@ -67,6 +67,20 @@ namespace BlacksmithGuild.DevTools
         public static bool MapTradeAutonomousMode = true;
         public static bool MapTradeVisibleMode = true;
         public static int MapTradeDecisionPauseMs = 500;
+        // Campaign TickEvent frequency varies with frame rate and time controls. These elapsed-time
+        // gates keep party scans and status-file reads bounded independently of rendering speed.
+        public static int GameSessionStateRealtimeRefreshIntervalMs = 100;
+        public static int RuntimeLifecycleHeartbeatWriteIntervalMs = 1000;
+        public static int RuntimeCadenceReportWriteIntervalMs = 30000;
+        public static int StabilizationStatusSyncIntervalMs = 1000;
+        public static int MapTradeBranchStatePollIntervalMs = 2000;
+        public static int MapTradeActiveMonitorIntervalMs = 250;
+        public static int AutoTravelHostileScanIntervalMs = 250;
+        public static int AssistMovementObservationIntervalMs = 250;
+        public static int AssistMovementEvidenceWriteIntervalMs = 1000;
+        public static int MovementProofMaxSamples = 64;
+        public static int GuildLoopActiveMonitorIntervalMs = 250;
+        public static int CohesionActiveMonitorIntervalMs = 250;
         public static int MapTradeMaxTradeHops = 3;
         public static int MapTradeMaxItemTypesPerHop = 2;
         public static float MapTradeMaxTravelDurationHours = 72f;
@@ -130,8 +144,13 @@ namespace BlacksmithGuild.DevTools
 
         // Governor spine ships disabled for autonomous takeover until live cert proves branch policy.
         public static bool CampaignRuntimeGovernorAutonomousMode = false;
-        public static int CampaignRuntimeGovernorDecisionIntervalMs = 4000;
+        public static int CampaignRuntimeGovernorDecisionIntervalMs = 10000;
         public static bool CampaignRuntimeGovernorAllowBoundedExecution = false;
+
+        // Market refresh timing is not assumed. Scans are on-demand, invalidated by observed
+        // lifecycle events, and capped by campaign-age / movement TTLs before reuse.
+        public static int MarketIntelCacheMaxCampaignHours = 24;
+        public static float MarketIntelCacheMaxMapDistance = 10f;
 
         // Low-noise campaign tick profiler. Writes JSON only after slow segments or optional periodic snapshots.
         public static bool TickCostProfilerEnabled = true;
@@ -143,6 +162,7 @@ namespace BlacksmithGuild.DevTools
         public static BlacksmithGuild.HorseMarket.HorseMarketAtlasMode HorseMarketAtlasMode =
             BlacksmithGuild.HorseMarket.HorseMarketAtlasMode.LayOfLandScan;
         public static int HorseMarketAtlasFreshnessHours = 24;
+        public static int HorseMarketAtlasMaxScanSettlementCount = 24;
         public static int HorseMarketAtlasMaxDestinationCount = 5;
         public static int HerdLedgerFreshnessHours = 6;
 
