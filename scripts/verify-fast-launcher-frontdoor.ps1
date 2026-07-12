@@ -68,9 +68,20 @@ foreach ($cmd in @('Forge.cmd', 'ForgeContinue.cmd')) {
     Need $cmd '-PhaseBudgetSec 5'
     Need $cmd '-MaxAttempts 2'
     Need $cmd 'artifacts\latest\launcher-frontdoor'
+    Need $cmd 'if not defined TBG_NO_PAUSE pause'
+    Need $cmd 'resolves RepoRoot from its own tracked location'
     Forbid $cmd 'launcher-frozen-context-nav.ps1'
     Forbid $cmd 'launcher-modal-aware-context-nav.ps1'
+    Forbid $cmd '-RepoRoot "%~dp0"'
+    Forbid $cmd '-RepoRoot ''%~dp0'''
 }
+
+$workhorseCmd = 'Run-LauncherValidationWorkhorse.cmd'
+Need $workhorseCmd 'run-launcher-validation-workhorse.ps1'
+Need $workhorseCmd 'if not defined TBG_NO_PAUSE pause'
+Need $workhorseCmd 'resolves RepoRoot from its own tracked location'
+Forbid $workhorseCmd '-RepoRoot "%~dp0"'
+Forbid $workhorseCmd '-RepoRoot ''%~dp0'''
 
 $frontdoorText = Read-RepoText $frontdoor
 $confirmIndex = $frontdoorText.IndexOf("Click-LauncherFraction -Window `$window -XFraction 0.55 -YFraction 0.88 -Label 'dependency_caution_confirm'", [StringComparison]::Ordinal)
@@ -90,5 +101,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host 'PASS: fast launcher frontdoor timing, DPI, Confirm-first, bounded retry, and local evidence contract verified.' -ForegroundColor Green
+Write-Host 'PASS: fast launcher frontdoor timing, DPI, Confirm-first, bounded retry, internal root resolution, and local evidence contract verified.' -ForegroundColor Green
 exit 0
