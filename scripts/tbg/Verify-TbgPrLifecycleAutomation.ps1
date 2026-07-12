@@ -36,9 +36,9 @@ try {
     Assert-Condition -Condition ([bool]$contract.mergeControl.automaticMerge) -Message 'Automatic merge is not enabled in the executable contract.'
     Assert-Condition -Condition ([bool]$contract.mergeControl.exactHeadRequired) -Message 'Exact-head merge is not required.'
     Assert-Condition -Condition ($contract.mergeControl.method -eq 'squash') -Message 'Merge method must be squash.'
-    foreach ($label in @('pr-lifecycle:hold-merge', 'pr-lifecycle:auto-merge-legacy', 'pr-lifecycle:auto-merge-stacked', 'pr-lifecycle:auto-merge-fork')) {
-        $mergeText = ($contract.mergeControl | ConvertTo-Json -Depth 8)
-        Assert-Condition -Condition ($mergeText.Contains($label)) -Message ("Merge-control label is missing: $label")
+    foreach ($label in @('pr-lifecycle:hold-draft', 'pr-lifecycle:hold-merge', 'pr-lifecycle:auto-merge-legacy', 'pr-lifecycle:auto-merge-stacked', 'pr-lifecycle:auto-merge-fork')) {
+        $policyText = (($contract | ConvertTo-Json -Depth 10) + ' ' + $workflow + ' ' + $doc)
+        Assert-Condition -Condition ($policyText.Contains($label)) -Message ("Lifecycle-control label is missing: $label")
     }
 
     $advisoryText = (($contract.advisoryValidation | ConvertTo-Json -Depth 8) + ' ' + $doc).ToLowerInvariant()
@@ -74,6 +74,7 @@ try {
 
     Assert-Condition -Condition ($workflow -match '(?m)^\s*pull-requests:\s*write\s*$') -Message 'Lifecycle workflow needs pull-request write permission.'
     Assert-Condition -Condition ($workflow -match '(?m)^\s*contents:\s*write\s*$') -Message 'Lifecycle workflow needs contents write permission for GitHub merge.'
+    Assert-Condition -Condition ($workflow -match '(?m)^\s*issues:\s*write\s*$') -Message 'Lifecycle workflow needs issues write permission to bootstrap policy labels.'
     Assert-Condition -Condition ($workflow -match 'pull_request_target') -Message 'Lifecycle workflow must use the trusted default-branch pull_request_target path.'
     Assert-Condition -Condition ($workflow -match 'workflow_run') -Message 'Lifecycle workflow must react to repo-owned workflow completion.'
     Assert-Condition -Condition ($workflow -match 'pull_request_review') -Message 'Lifecycle workflow must react to review-state changes.'
@@ -82,6 +83,9 @@ try {
     Assert-Condition -Condition ($workflow -match 'actions/upload-artifact@v4') -Message 'Lifecycle workflow does not publish its result artifact.'
     Assert-Condition -Condition ($workflow -match 'repository.default_branch') -Message 'Lifecycle workflow does not checkout the trusted default branch.'
     Assert-Condition -Condition ($workflow -notmatch '(?m)^\s*ref:\s*\$\{\{\s*github\.event\.pull_request\.head') -Message 'Lifecycle workflow must not checkout untrusted PR head code with a write token.'
+    Assert-Condition -Condition ($workflow -match 'Ensure lifecycle control labels') -Message 'Lifecycle workflow does not bootstrap control labels.'
+    Assert-Condition -Condition ($workflow -match '(?im)\bgh\s+label\s+create\b') -Message 'Lifecycle workflow does not create lifecycle labels through GitHub.'
+    Assert-Condition -Condition ($workflow -match '(?im)\b--force\b') -Message 'Lifecycle label bootstrap must be idempotent.'
 
     foreach ($caseName in @(
         'ready-exact-head-merge-eligible',
@@ -99,7 +103,7 @@ try {
     Assert-Condition -Condition ($doc -match 'pr-lifecycle:hold-merge') -Message 'Lifecycle documentation does not explain the merge hold label.'
     Assert-Condition -Condition ($doc -match 'exact-head') -Message 'Lifecycle documentation does not explain exact-head merge.'
 
-    Write-Host 'PASS: repository-wide lifecycle automation uses deterministic exact-head merge blockers, preserves cross-platform advisory validation, publishes evidence, and cannot close, force, rewrite, or delete.' -ForegroundColor Green
+    Write-Host 'PASS: lifecycle automation uses deterministic exact-head blockers, bootstraps its control labels, preserves cross-platform advisory validation, publishes evidence, and cannot close, force, rewrite, or delete.' -ForegroundColor Green
     exit 0
 } catch {
     Write-Host ('FAIL: PR lifecycle automation verifier: {0}' -f $_.Exception.Message) -ForegroundColor Red
