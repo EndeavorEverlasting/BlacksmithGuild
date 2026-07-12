@@ -71,36 +71,42 @@ try {
     if (-not (Test-Path -LiteralPath $contract)) { throw 'Lifecycle contract is missing.' }
     New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
 
-    $neutralPasses = @(
+    $alwaysRequiredPasses = @(
         (New-Check -Workflow 'Governor Contracts' -Name 'Governor contract verifiers' -Bucket 'pass'),
-        (New-Check -Workflow 'Harness Policy Reports' -Name 'Static harness policy report' -Bucket 'pass'),
-        (New-Check -Workflow 'Hostile Escape Contracts' -Name 'Pure hostile geometry contracts' -Bucket 'pass')
+        (New-Check -Workflow 'Harness Policy Reports' -Name 'Static harness policy report' -Bucket 'pass')
     )
+    $conditionalPass = New-Check -Workflow 'Hostile Escape Contracts' -Name 'Pure hostile geometry contracts' -Bucket 'pass'
 
     $promoted = Invoke-Case -Name 'advisory-platform-failures' -IsDraft $true -Checks @(
-        $neutralPasses +
+        $alwaysRequiredPasses +
+        $conditionalPass +
         (New-Check -Workflow 'Platform Game Advisory' -Name 'Windows PowerShell 5.1 installed-game validation' -Bucket 'fail') +
         (New-Check -Workflow 'Platform Game Advisory' -Name 'Linux installed-game runtime proof' -Bucket 'pending')
     ) -ExpectedAction 'ready_promoted'
-    Assert-Equal -Actual @($promoted.requiredChecks).Count -Expected 3 -Message 'Platform-neutral required check count is wrong.'
+    Assert-Equal -Actual @($promoted.requiredChecks).Count -Expected 3 -Message 'Required and present conditional check count is wrong.'
     Assert-Equal -Actual @($promoted.advisoryChecks).Count -Expected 2 -Message 'Advisory platform check count is wrong.'
     Assert-Equal -Actual $promoted.advisoryNotSuccessfulCount -Expected 2 -Message 'Advisory failures should be reported without blocking.'
 
-    [void](Invoke-Case -Name 'required-failure' -IsDraft $true -Checks @(
-        (New-Check -Workflow 'Governor Contracts' -Name 'Governor contract verifiers' -Bucket 'fail'),
-        (New-Check -Workflow 'Harness Policy Reports' -Name 'Static harness policy report' -Bucket 'pass'),
-        (New-Check -Workflow 'Hostile Escape Contracts' -Name 'Pure hostile geometry contracts' -Bucket 'pass')
+    [void](Invoke-Case -Name 'conditional-workflow-absent' -IsDraft $true -Checks $alwaysRequiredPasses -ExpectedAction 'ready_promoted')
+
+    [void](Invoke-Case -Name 'conditional-workflow-failure' -IsDraft $true -Checks @(
+        $alwaysRequiredPasses +
+        (New-Check -Workflow 'Hostile Escape Contracts' -Name 'Pure hostile geometry contracts' -Bucket 'fail')
     ) -ExpectedAction 'waiting_required_checks')
 
-    [void](Invoke-Case -Name 'missing-required-workflow' -IsDraft $true -Checks @(
-        (New-Check -Workflow 'Governor Contracts' -Name 'Governor contract verifiers' -Bucket 'pass'),
+    [void](Invoke-Case -Name 'required-failure' -IsDraft $true -Checks @(
+        (New-Check -Workflow 'Governor Contracts' -Name 'Governor contract verifiers' -Bucket 'fail'),
         (New-Check -Workflow 'Harness Policy Reports' -Name 'Static harness policy report' -Bucket 'pass')
+    ) -ExpectedAction 'waiting_required_checks')
+
+    [void](Invoke-Case -Name 'missing-always-required-workflow' -IsDraft $true -Checks @(
+        (New-Check -Workflow 'Governor Contracts' -Name 'Governor contract verifiers' -Bucket 'pass')
     ) -ExpectedAction 'waiting_required_workflows')
 
-    [void](Invoke-Case -Name 'explicit-hold' -IsDraft $true -Labels @('pr-lifecycle:hold-draft') -Checks $neutralPasses -ExpectedAction 'held_draft')
-    [void](Invoke-Case -Name 'already-ready' -IsDraft $false -Checks $neutralPasses -ExpectedAction 'already_ready')
+    [void](Invoke-Case -Name 'explicit-hold' -IsDraft $true -Labels @('pr-lifecycle:hold-draft') -Checks $alwaysRequiredPasses -ExpectedAction 'held_draft')
+    [void](Invoke-Case -Name 'already-ready' -IsDraft $false -Checks $alwaysRequiredPasses -ExpectedAction 'already_ready')
 
-    Write-Host 'PASS: PR lifecycle automation promotes green drafts, reports advisory OS/game checks, honors explicit holds, and waits for required platform-neutral workflows.' -ForegroundColor Green
+    Write-Host 'PASS: PR lifecycle automation promotes green drafts, tolerates absent conditional workflows, blocks failing present conditional checks, reports advisory OS/game checks, and honors explicit holds.' -ForegroundColor Green
     exit 0
 } catch {
     Write-Host ('FAIL: PR lifecycle automation test: {0}' -f $_.Exception.Message) -ForegroundColor Red
