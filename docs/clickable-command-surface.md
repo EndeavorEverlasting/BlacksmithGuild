@@ -36,7 +36,7 @@ Before telling a user to run a PowerShell inbox command directly:
 | `Run-FoodGovernorCheck.cmd` | compatibility alias to `Run-FoodAdvisory.cmd` | No | `BlacksmithGuild_FoodAdvisory.json` | Backward-compatible old Food wrapper name |
 | `Run-HorseMarketIntel.cmd` | `AnalyzeHorseMarket` | No | `BlacksmithGuild_HorseMarketIntel.json` | Read-only pack/horse/capacity intel |
 | `Run-GuildLoopAdvisory.cmd` | `RunGuildLoopNow` | No | `BlacksmithGuild_GuildLoopReport.json` | Advisory market + forge + crew plan |
-| `Run-AutonomousGuildLoop.cmd` | `RunAutonomousGuildLoopNow` | Yes / possible movement and supported vanilla actions | `BlacksmithGuild_AutonomousGuildLoop.json` | One bounded autonomous loop cycle; use disposable save unless accepted |
+| `Run-AutonomousGuildLoop.cmd` | `scripts/run-autonomous-guild-loop-operator.ps1` -> `RunAutonomousGuildLoopNow` | Yes / possible movement and supported vanilla actions | `BlacksmithGuild_AutonomousGuildLoop.json`, `artifacts/latest/autonomous-guild-loop-operator.json` | Crash-aware one-cycle operator runner; records when Bannerlord disappears or no ACK/status arrives |
 | `Run-CohesionAnalyze.cmd` | `AnalyzeCohesionOpportunities` | No | `BlacksmithGuild_CohesionOpportunities.json` | Read-only cohesion/safety opportunity scan |
 | `Run-CohesionMove.cmd` | `RunVisibleCohesionMoveNow` | Yes / movement | `BlacksmithGuild_CohesionMove.json` | Visible player-party cohesion move; disposable save unless accepted |
 | `Run-AutoTravelChoices.cmd` | `ShowAutoTravelChoices` | No | Phase1 `[TBG TRAVEL]` lines / status | Read-only ranked travel choices |
@@ -46,6 +46,20 @@ Before telling a user to run a PowerShell inbox command directly:
 | `CollectCertLogs.cmd` | cert/log collection path | No | cert/log bundle | Raw cert and troubleshooting bundle |
 | `CollectDiagnostics.cmd` | diagnostics collection path | No | diagnostics bundle | Crash/log diagnostics |
 | `BackupSaves.cmd` | save backup path | No | backup copy | Save protection before risky runs |
+
+---
+
+## Autonomous Guild Loop operator note
+
+`Run-AutonomousGuildLoop.cmd` is an operator/play wrapper, not a live certification harness. It now writes `artifacts/latest/autonomous-guild-loop-operator.json` and `.md` for terminal outcomes.
+
+Important outcomes:
+
+- `FAILED_game_disappeared_during_command`: Bannerlord existed when the command was sent and vanished before matching ACK/status.
+- `BLOCKED_no_ack`: the command inbox was written, but no matching ACK/status appeared before timeout.
+- `PASS_ack_success` / `PASS_status_success`: the game acknowledged or reported the command as successful.
+
+The wrapper tells the user that Bannerlord should stay foreground and unpaused for movement. It does not pretend alt-tab is safe for movement automation.
 
 ---
 
@@ -101,7 +115,7 @@ These areas either need more wrappers or should be made clearer before normal us
 | Character build catalog/matrix | Cert/matrix wrappers exist, but these are agent/test-save surfaces | Do not present as normal personal-save click paths |
 | Stage D rest/time mutation | Read-only rest plan exists; no wait/rest mutation | Do not add mutation wrapper until proof gate exists |
 | Headless safe craft mutation | Blocks with `CraftManual` until API proven | No craft wrapper until safe craft mutation is proven |
-| Multi-cycle guild loop | One cycle only | Do not imply continuous autonomous loop support |
+| Multi-cycle guild loop | One cycle only; operator wrapper is crash-aware but still requires foreground/unpaused movement | Add a focus/pause-aware watch mode before presenting this as continuous background play |
 
 ---
 
