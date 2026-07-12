@@ -66,6 +66,21 @@ function Write-TbgLauncherRecoveryState {
     return [pscustomobject]$result
 }
 
+function Read-TbgLauncherRecoveryState {
+    param([Parameter(Mandatory = $true)][string]$BannerlordRoot)
+
+    foreach ($path in @(Get-TbgLauncherRecoveryArtifactPaths -BannerlordRoot $BannerlordRoot)) {
+        if (-not (Test-Path -LiteralPath $path)) { continue }
+        try {
+            $state = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+            if ($state -and [string]$state.schema -eq 'TbgLauncherRecovery.v1') {
+                return $state
+            }
+        } catch { }
+    }
+    return $null
+}
+
 function ConvertTo-TbgLauncherSignatureToken {
     param([AllowNull()][string]$Value)
     if ([string]::IsNullOrWhiteSpace($Value)) { return 'none' }
@@ -250,8 +265,19 @@ function Invoke-TbgLauncherRecoveryRetry {
         return 0
     }
 
-    & $Log ('LAUNCH_STATE=launcher_recovery_retry_child_failed attempt={0} maxAttempts={1} childExitCode={2} terminalEvidence=BlacksmithGuild_LauncherRecovery.json runtimeProofClaim=false' -f `
-        $nextAttempt, $maxAttempts, $retryExit)
+    $childState = Read-TbgLauncherRecoveryState -BannerlordRoot $BannerlordRoot
+    if ($childState -and [string]$childState.state -eq 'dead_end') {
+        & $Log ('LAUNCH_STATE=launcher_recovery_retry_child_failed attempt={0} maxAttempts={1} childExitCode={2} sameFailureAsPrevious={3} finalFailureClass={4} finalFailureSignature="{5}" terminalEvidence=BlacksmithGuild_LauncherRecovery.json runtimeProofClaim=false' -f `
+            $nextAttempt, $maxAttempts, $retryExit, $childState.sameFailureAsPrevious, ([string]$childState.failureClass), ([string]$childState.failureSignature))
+    } else {
+        & $Log ('LAUNCH_STATE=launcher_recovery_retry_child_failed attempt={0} maxAttempts={1} childExitCode={2} terminalEvidence=BlacksmithGuild_LauncherRecovery.json runtimeProofClaim=false' -f `
+            $nextAttempt, $maxAttempts, $retryExit)
+        Write-TbgLauncherRecoveryState -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent `
+            -State 'dead_end' -Attempt $nextAttempt -MaxAttempts $maxAttempts -FailureClass 'launcher_retry_child_failed_without_terminal_state' `
+            -FailureSignature $FailureSignature -PreviousFailureSignature $PreviousFailureSignature `
+            -SameFailureAsPrevious $sameFailure -InnerExitCode $retryExit -Reason 'retry_child_failed_without_terminal_state' `
+            -TerminatedProcesses $terminated -LauncherContextPath $LauncherContextPath | Out-Null
+    }
     throw ('operator_action_required: launcher retry attempt {0}/{1} failed with exit {2}; see launcher_recovery_dead_end and BlacksmithGuild_LauncherRecovery.json' -f `
         $nextAttempt, $maxAttempts, $retryExit)
 }
