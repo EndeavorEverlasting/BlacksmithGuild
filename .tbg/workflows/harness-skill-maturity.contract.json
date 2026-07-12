@@ -1,0 +1,109 @@
+{
+  "id": "harness-skill-maturity",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "agent-skill-factoring",
+  "contextBanner": "[TBG | Harness Skill Maturity | coordinator/architecture | branch: docs/agent-skills-stale-pr-cherry-pick]",
+  "status": "contract_defined",
+  "purpose": "Decide whether a proposed change should thicken the harness, remain a narrow skill/domain behavior, or be rejected as ceremony.",
+  "allowedScope": [
+    "classifying cross-cutting plumbing such as config, dependency injection, capability routing, permission gates, evidence capture, retries, rollback, metrics, English/JSON reporting, UI shims, schemas, and adapters",
+    "moving repeated orchestration into workflow contracts or harness policy when current repo evidence shows duplication or drift",
+    "moving stateless transforms and domain decisions into narrow skills or domain modules",
+    "adding registries and manifests that let agents load narrow context instead of large prompt bodies",
+    "recording harness-maturity decisions in architecture docs without changing runtime behavior"
+  ],
+  "forbiddenScope": [
+    "moving domain behavior into harness solely to chase a percentage",
+    "rewriting runtime services while doing an architecture-only maturity sprint",
+    "claiming live runtime proof from static harness or skill changes",
+    "bypassing existing workflow contracts, operator catalogs, policy resolvers, or evidence rules",
+    "adding generic frameworks without a current duplication, safety, replay, or agent-load problem"
+  ],
+  "inputs": [
+    "proposedChange",
+    "ownedFiles",
+    "currentPainPoint",
+    "crossCuttingConcern",
+    "domainBehavior",
+    "runtimeRisk",
+    "validationCommands"
+  ],
+  "classification": [
+    {
+      "decision": "harness",
+      "when": [
+        "the logic applies across workflows, agents, runners, or engines",
+        "the logic enforces safety, permissions, evidence, retries, rollback, reporting, schemas, or adapter behavior",
+        "the logic reduces duplicated orchestration or stale prompt/context drift"
+      ]
+    },
+    {
+      "decision": "skill_or_domain",
+      "when": [
+        "the logic is stateless, side-effect-free, or domain-specific",
+        "the logic performs a game/economy/route/smithing decision rather than enforcing a cross-cutting guard",
+        "the logic can be tested as a small pure function or bounded service"
+      ]
+    },
+    {
+      "decision": "defer_or_reject",
+      "when": [
+        "the only reason is to increase the harness percentage",
+        "the change adds ceremony without a safety, replay, audit, or agent-load benefit",
+        "the proposed refactor crosses into forbidden runtime scope"
+      ]
+    }
+  ],
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "identify_pain_point",
+      "requiredEvidence": [
+        "duplicated orchestration, unsafe mutation path, stale prompt load, missing registry, missing evidence, missing rollback, or unclear ownership"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "classify_logic",
+      "requiredEvidence": [
+        "harness versus skill/domain decision",
+        "paths affected",
+        "proof that executable contracts or current source remain authoritative"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "choose_minimal_surface",
+      "requiredEvidence": [
+        "manifest, contract, policy, skill doc, validator, or domain file chosen intentionally",
+        "reason broader framework work is not required"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "validate_boundary",
+      "requiredEvidence": [
+        "no runtime claims from static work",
+        "no domain behavior hidden inside harness",
+        "validation commands or skipped checks recorded"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "pain point named",
+      "harness versus skill/domain classification recorded",
+      "minimal changed surface justified",
+      "authority chain preserved",
+      "JSON files parse",
+      "git diff --check passes or exact local blocker is recorded"
+    ]
+  },
+  "terminalStates": [
+    "PASS_harness_boundary_codified",
+    "PASS_skill_domain_boundary_preserved",
+    "BLOCKED_runtime_scope_required",
+    "BLOCKED_no_current_pain_point",
+    "REJECTED_percentage_chasing"
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "schema": "tbg.skills.manifest.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "purpose": "Targeted brush-up registry for agents. AGENTS.md remains the common denominator; skills carry conditional lane knowledge backed by executable contracts and current repo evidence.",
+  "authorityRules": [
+    "AGENTS.md defines root coordination rules.",
+    "Skills explain executable contracts, policies, manifests, source files, and current docs; they do not override them.",
+    "Load only the narrowest skill needed for the active lane.",
+    "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases.",
+    "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage.",
+    "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified.",
+    "External agent-operation tools coordinate above the repo; BlacksmithGuild retains authority over scope, proof levels, validators, artifacts, and runtime boundaries.",
+    "WezTerm and adjacent terminal/editor/session tools are operator-environment aids; BlacksmithGuild exposes clean commands and packets to them but does not vendor or require them."
+  ],
+  "skills": [
+    {
+      "id": "repo-floor-hygiene",
+      "path": ".tbg/skills/repo-floor-hygiene/SKILL.md",
+      "useWhen": [
+        "mapping PRs, branches, worktrees, conflicts, dirty state, stale generated artifacts, or safe bases",
+        "creating a sprint map before feature work"
+      ],
+      "doNotUseFor": [
+        "feature implementation",
+        "runtime proof",
+        "destructive cleanup without proof"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/harness/manifest.json",
+        "docs/handoff/post-pr41-repo-hygiene-map.md"
+      ]
+    },
+    {
+      "id": "agent-skill-factoring",
+      "path": ".tbg/skills/agent-skill-factoring/SKILL.md",
+      "useWhen": [
+        "editing AGENTS.md, CLAUDE.md, skill files, agent prompts, harness context docs, or skill manifests",
+        "deciding what belongs in common agent rules versus targeted skills"
+      ],
+      "doNotUseFor": [
+        "runtime product patches",
+        "launcher automation",
+        "route source changes"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        ".tbg/harness/manifest.json",
+        "docs/architecture/local-agent-harness.md",
+        "docs/architecture/effective-policy-english-reports.md"
+      ]
+    },
+    {
+      "id": "harness-maturity",
+      "path": ".tbg/skills/harness-maturity/SKILL.md",
+      "useWhen": [
+        "deciding whether logic belongs in harness plumbing, skill/domain code, workflow contracts, policy guards, registries, or evidence/reporting layers",
+        "reviewing a proposed refactor that claims to make the app more harness-driven"
+      ],
+      "doNotUseFor": [
+        "moving behavior solely to increase a harness percentage",
+        "runtime product patches",
+        "claiming runtime proof from static architecture changes"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/harness-skill-maturity.contract.json",
+        "docs/architecture/harness-skill-maturity.md",
+        "docs/architecture/local-agent-harness.md",
+        "docs/architecture/effective-policy-english-reports.md"
+      ]
+    },
+    {
+      "id": "compendium-preservation",
+      "path": ".tbg/skills/compendium-preservation/SKILL.md",
+      "useWhen": [
+        "preserving high-value chat annotations, stale snapshots, PR comments, and runtime lessons without losing provenance",
+        "choosing the most rewarding next sprint across repo hygiene, harness maturity, runtime proof automation, evidence retention, and agent operations"
+      ],
+      "doNotUseFor": [
+        "treating stale snapshots as current truth without verification",
+        "closing PRs or deleting evidence without replacement or archive rationale",
+        "claiming runtime proof from static documentation"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/compendium-preservation.contract.json",
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
+        "docs/architecture/harness-skill-maturity.md",
+        "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md"
+      ]
+    },
+    {
+      "id": "agentic-operations",
+      "path": ".tbg/skills/agentic-operations/SKILL.md",
+      "distribution": "repo_internal",
+      "useWhen": [
+        "adopting or evaluating Firstmate, Treehouse, no-mistakes, gnhf, AXI, Lavish, npx skills, or another external agent-operations tool around BlacksmithGuild",
+        "designing coordinator, worktree lease, generic gate, compact tool interface, visual review, or skill-distribution boundaries"
+      ],
+      "doNotUseFor": [
+        "runtime product patches",
+        "tool installation without an explicit install sprint",
+        "vendoring external coordinators or operator tools into BlacksmithGuild",
+        "claiming runtime proof from generic CI or visual review"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/agentic-operations-adoption.contract.json",
+        "docs/architecture/agentic-operations-layer.md",
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
+        "docs/handoff/agentic-toolchain-sprint-map.md",
+        "docs/handoff/local-agent-status-relay.md"
+      ]
+    },
+    {
+      "id": "operator-terminal-environment",
+      "path": ".tbg/skills/operator-terminal-environment/SKILL.md",
+      "useWhen": [
+        "designing local operator terminal, pane, session, shell, editor, or voice-input workflows around BlacksmithGuild commands",
+        "incorporating WezTerm, tmux, Neovim, or adjacent operator tools into the agentic operations layer without making them repo dependencies"
+      ],
+      "doNotUseFor": [
+        "runtime gameplay changes",
+        "tool installation sprints unless explicitly owned",
+        "committing personal terminal config, fonts, shell history, screenshots, or generated terminal logs",
+        "claiming runtime proof from terminal organization"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/operator-terminal-environment.contract.json",
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
+        "docs/handoff/local-agent-status-relay.md"
+      ]
+    },
+    {
+      "id": "stale-pr-cherry-pick",
+      "path": ".tbg/skills/stale-pr-cherry-pick/SKILL.md",
+      "useWhen": [
+        "recovering useful work from stale, conflicted, superseded, or stacked PRs",
+        "deciding whether to replay, replace, close, or preserve an old branch"
+      ],
+      "doNotUseFor": [
+        "blind deletion",
+        "blind squash merges",
+        "using stale PR heads as general bases",
+        "runtime proof claims"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/stale-pr-cherry-pick.contract.json",
+        "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md",
+        "docs/handoff/post-pr41-repo-hygiene-map.md"
+      ]
+    }
+  ]
+}
