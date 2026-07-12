@@ -60,6 +60,22 @@ Keep domain behavior narrow. Route, smithing, economy, trade, save identity, lau
 
 Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before any refactor that claims to make the app more harness-driven. The acceptable reason is a real safety, replay, audit, rollback, reporting, or agent-context-load problem. Reject percentage chasing.
 
+## Local artifact engine rule
+
+Local artifacts do not execute, interpret, validate, or route themselves. Use the repo-local artifact control plane when a workflow must turn ignored local output into bounded next decisions.
+
+Default posture:
+1. `ForgeArtifactEngine.cmd status` reports whether automatic parsing is enabled and whether the watcher is running;
+2. `ForgeArtifactEngine.cmd on`, `off`, and `toggle` change operator authority in `.local/tbg-artifact-engine/state.json`;
+3. `ForgeArtifactEngine.cmd run` performs an explicit manual pass even when automatic processing is off;
+4. successful producer wrappers may call `ForgeArtifactEngine.cmd trigger <producer-id>`, but a trigger is ignored while the toggle is off;
+5. the registry at `.tbg/harness/artifact-engines.registry.json` owns parser identity, declared downstream edges, input candidates, output stems, and read-only authority;
+6. automatic engines may parse local artifacts, classify blockers and proof boundaries, write ignored JSON/English packets, and enqueue declared downstream engines;
+7. automatic engines may not execute commands discovered inside artifacts, edit tracked source, mutate Git or PR state, launch Bannerlord, write a command inbox, mutate saves, or promote parser success into runtime proof;
+8. cycles, unregistered edges, cascade overflow, malformed required artifacts, and strict-mode blockers must fail closed.
+
+Use `.tbg/workflows/local-artifact-engine.contract.json`, `ForgeArtifactEngine.cmd`, and `scripts/tbg/Test-TbgArtifactEngine.ps1` as the executable authority.
+
 ## Continuum interoperability rule
 
 BlacksmithGuild may export proven cross-cutting harness capabilities to Continuum, but Continuum remains an optional development accelerator rather than a build, validation, launch, or runtime dependency.
