@@ -66,6 +66,13 @@ $watcherPid = 0
 New-Item -ItemType Directory -Force -Path $fixtureRoot, $outputRoot, $stateRoot | Out-Null
 
 try {
+    $baselinePath = Join-Path $fixtureRoot 'watcher-baseline.json'
+    [pscustomobject][ordered]@{
+        schema = 'TbgWatcherBaseline.v1'
+        status = 'baseline'
+        generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $baselinePath -Encoding UTF8
+
     $registry = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
     $registry.defaults.outputRoot = $outputRoot
     $registry.defaults.stateRoot = $stateRoot
@@ -100,6 +107,7 @@ try {
     Assert-Tbg -Condition (Test-Path -LiteralPath $resultPath -PathType Leaf) -Message 'The toggle-on pass did not write an aggregate result.'
     $initialResult = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
     Assert-Tbg -Condition ([string]$initialResult.source -eq 'toggle_on') -Message 'The initial automatic pass did not record toggle_on as its source.'
+    Assert-Tbg -Condition ([int]$initialResult.engineRunCount -eq 1) -Message 'The initial observe-mode pass did not run exactly the artifact-index engine.'
 
     $fixturePath = Join-Path $fixtureRoot 'watcher-smoke.json'
     [pscustomobject][ordered]@{
@@ -126,7 +134,8 @@ try {
     Assert-Tbg -Condition (Test-Path -LiteralPath $indexPacketPath -PathType Leaf) -Message 'The watcher pass did not write an artifact-index packet.'
     $indexPacket = Get-Content -LiteralPath $indexPacketPath -Raw | ConvertFrom-Json
     $observedPaths = @($indexPacket.payload.artifacts | ForEach-Object { [string]$_.path })
-    Assert-Tbg -Condition ($observedPaths -contains $fixturePath) -Message 'The artifact-index packet did not retain the explicitly configured external artifact path.'
+    Assert-Tbg -Condition ($observedPaths -contains $baselinePath) -Message 'The artifact-index packet did not preserve the baseline artifact.'
+    Assert-Tbg -Condition ($observedPaths -contains $fixturePath) -Message 'The artifact-index packet did not retain the newly written external artifact path.'
 
     $off = Invoke-TbgEngineChild -ScriptPath $engineScript -Arguments (@('off') + $common)
     Assert-Tbg -Condition ($off.exitCode -eq 0) -Message "The Windows watcher off action failed: $($off.output)"
