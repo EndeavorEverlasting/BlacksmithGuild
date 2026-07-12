@@ -39,7 +39,7 @@ scripts/tbg/Test-TbgRepoHygieneReport.ps1
 .github/workflows/repo-hygiene-report.yml
 ```
 
-PR #44 remains open and non-mergeable with an older 2026-07-11 map. This sprint creates a fresh replacement from current `main`; it does not close, retarget, or delete PR #44 or its branch.
+PR #44 remains open and non-mergeable with an older 2026-07-11 map. PR #50 is this fresh replacement from current `main`; it does not close, retarget, or delete PR #44 or its branch.
 
 ## Lane
 
@@ -65,12 +65,13 @@ PR #44 remains open and non-mergeable with an older 2026-07-11 map. This sprint 
 
 ## Remote PR Map
 
-There are 18 open PRs in the current remote inventory.
+The initial inventory contained 18 pre-existing open PRs. Opening this replacement map as PR #50 raised the current total to 19 open PRs.
 
 | PR | Head -> Base | Draft | Mergeable | Floor classification | Recommended action |
 | --- | --- | --- | --- | --- | --- |
+| #50 | `docs/repo-floor-sprint-map-20260712` -> `main` | yes | yes | Current coordinator replacement | Keep docs-only and isolated. Merge only after the remote policy checks remain green; local worktree verification is a separate follow-up. |
 | #43 | `agent/route-automation-operator-plan` -> `main` | yes | yes | Active route/harness lane | Keep isolated. Continue only from the exact PR head in a sibling worktree. Fresh Windows/Bannerlord proof remains outside this sprint. |
-| #44 | `docs/repo-floor-sprint-map-20260711` -> `main` | no | no | Stale coordinator map | Treat this 2026-07-12 map as the replacement candidate. Do not repair #44 in the primary worktree. |
+| #44 | `docs/repo-floor-sprint-map-20260711` -> `main` | no | no | Stale coordinator map | Treat PR #50 as the replacement candidate. Do not repair #44 in the primary worktree. |
 | #38 | `docs-worktree-stop-guardrails` -> `docs/agent-workflow-contracts` | no | no | Stale stacked guardrail lane | Compare unique value against current `main`, then selectively replay from a fresh recovery branch. |
 | #35 | `feat/harness-focused-route-proof` -> `agent-default-guardrail-map` | yes | yes | Old stacked runtime-harness lane | Do not use as a generic base. Reconcile against #43 before any continuation. |
 | #34 | `docs-concurrent-sprint-map` -> `agent-default-guardrail-implementation` | yes | yes | Old coordination stack | Likely superseded by newer repo-floor and agentic-operations maps; inspect before closure. |
@@ -91,11 +92,11 @@ There are 18 open PRs in the current remote inventory.
 ## PR Stack Map
 
 ```text
-Current active lane
-  #43 route automation / launcher-validation workhorse
+Current coordinator lane
+  #44 old map -> #50 current replacement map
 
-Coordinator replacement
-  #44 old map -> this 2026-07-12 replacement map
+Current active route lane
+  #43 route automation / launcher-validation workhorse
 
 Guardrail / feedback dependency chain
   #28 -> #29 -> #30 -> #31 -> #32 -> #33 -> #34
@@ -209,10 +210,12 @@ No artifact was deleted in this sprint.
 - Resolved the placeholder repo from established sprint context.
 - Verified repository metadata and default branch.
 - Verified PR #49 merged into `main` at `5efa144b82f703094d41600ce2e4cedc12583dbb`.
-- Retrieved the 18-open-PR inventory.
-- Verified current mergeability, draft state, head, and base for each open PR.
+- Retrieved and classified the 18 pre-existing open PRs.
+- Opened PR #50 for this replacement map, producing a current total of 19 open PRs.
+- Verified current mergeability, draft state, head, and base for each pre-existing PR and for PR #50.
 - Classified active, conflicted, stacked, historical-evidence, and legacy lanes.
 - Created this fresh map from current `main` instead of modifying non-mergeable PR #44.
+- Added a supersession comment to PR #44 without closing, retargeting, or deleting it.
 - Performed no feature, runtime, cleanup, deletion, retarget, or PR-close action.
 
 ## Changed Files
@@ -229,10 +232,13 @@ Remote validation completed:
 repository metadata: PASS
 main head lookup: PASS
 PR #49 merged-state check: PASS
-open PR inventory: PASS (18)
+pre-existing open PR inventory: PASS (18)
+current open PR total after PR #50: PASS (19)
 per-PR head/base/draft/mergeability classification: PASS
 branch created from current main: PASS
-scope review: one docs-only handoff file
+branch comparison: one docs-only file, zero unrelated paths
+Governor Contracts: PASS
+Harness Policy Reports: PASS
 ```
 
 Local validation unavailable in this coordinator environment:
@@ -252,6 +258,7 @@ git diff --check
 
 - Primary worktree safety remains unknown until the merged repo hygiene command runs locally.
 - Local branches, tracking refs, and worktree leases remain unknown.
+- PR #50 is mergeable but remains draft because local worktree evidence is intentionally deferred.
 - PR #43 is mergeable but still draft and runtime-gated; mergeability is not proof completion.
 - PR #44, #38, #28, #24, #20, #9, #8, #5, and #2 are currently non-mergeable.
 - PR #28 through #35 must be treated as a dependency stack even where individual PRs report mergeable.
@@ -306,8 +313,9 @@ git branch -vv
 
 Use these remote facts:
 - current main includes merged PR #49 at 5efa144b82f703094d41600ce2e4cedc12583dbb
+- PR #50 is the current mergeable draft repo-floor replacement map
 - PR #43 is the active mergeable draft route/harness lane
-- PR #44 is a non-mergeable stale map replaced by docs/handoff/20260712-repo-floor-sprint-map.md
+- PR #44 is a non-mergeable stale map superseded by PR #50
 - PR #38 is a non-mergeable stale guardrail stack
 - PR #28-#35 are a dependency chain requiring selective replay from current main
 - PR #8/#9 are historical evidence lanes
