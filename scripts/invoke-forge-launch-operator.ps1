@@ -3,7 +3,8 @@
     [string]$LaunchIntent = 'continue',
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path,
     [int]$TimeoutSec = 300,
-    [switch]$SkipSaveBackup
+    [switch]$SkipSaveBackup,
+    [switch]$AllowFocusSteal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,7 +15,7 @@ $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
 $focusHelper = Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1'
 
 try {
-    if (Test-Path -LiteralPath $focusHelper) {
+    if ($AllowFocusSteal -and (Test-Path -LiteralPath $focusHelper)) {
         & $focusHelper | Out-Null
     }
 } catch {
@@ -26,12 +27,10 @@ $oldTimeout = $env:TBG_OPERATOR_INTERACTIVE_FOCUS_TIMEOUT_SEC
 try {
     $env:TBG_OPERATOR_INTERACTIVE_FOCUS = '1'
     $env:TBG_OPERATOR_INTERACTIVE_FOCUS_TIMEOUT_SEC = [string]$TimeoutSec
-    if ($SkipSaveBackup) {
-        & (Join-Path $RepoRoot 'forge.ps1') -Launch -LaunchIntent $LaunchIntent -SkipSaveBackup
-    }
-    else {
-        & (Join-Path $RepoRoot 'forge.ps1') -Launch -LaunchIntent $LaunchIntent
-    }
+    $forgeParams = @{ Launch = $true; LaunchIntent = $LaunchIntent }
+    if ($SkipSaveBackup) { $forgeParams.SkipSaveBackup = $true }
+    if ($AllowFocusSteal) { $forgeParams.AllowFocusSteal = $true }
+    & (Join-Path $RepoRoot 'forge.ps1') @forgeParams
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 finally {

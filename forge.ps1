@@ -14,6 +14,7 @@ param(
     [ValidateSet('play', 'continue')]
     [string]$LaunchIntent,
     [switch]$LaunchManual,
+    [switch]$AllowFocusSteal,
     [switch]$Watch,
     [switch]$Check,
     [switch]$CollectDiagnostics,
@@ -116,6 +117,7 @@ if ($Check) { $installParams.CheckLog = $true }
 if ($SkipInstall) { $installParams.SkipInstall = $true }
 if ($Launch) { $installParams.LaunchIntent = $LaunchIntent }
 if ($LaunchManual) { $installParams.LaunchManual = $true }
+if ($AllowFocusSteal) { $installParams.AllowFocusSteal = $true }
 if ($SessionAuthorityMode) { $installParams.SessionAuthorityMode = $SessionAuthorityMode }
 
 & (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installParams

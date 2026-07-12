@@ -39,7 +39,14 @@
     "saveRoots": [
       "Documents\\Mount and Blade II Bannerlord\\Game Saves",
       "Documents\\Mount and Blade II Bannerlord\\Game Saves\\Native"
-    ]
+    ],
+    "launcherPolicy": {
+      "focusAuthority": "explicit AllowFocusSteal from unattended operator wrapper",
+      "requiresFrozenLauncherForegroundBeforeRealInput": true,
+      "launcherProcessIsGameRuntime": false,
+      "commandAuthorityRequiresSharedRuntimeDetection": true,
+      "failedSpawnCleanup": "close only the exact fresh PID/HWND absent from the S1 baseline and bound by this run's launcher context, after shared detection proves no live game runtime"
+    }
   },
   "orderedHandoffs": [
     {

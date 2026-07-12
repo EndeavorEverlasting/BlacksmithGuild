@@ -107,6 +107,10 @@ public static class FrozenLauncherNative
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
     [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
@@ -116,6 +120,7 @@ public static class FrozenLauncherNative
     public const int MK_LBUTTON = 0x0001;
     public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
     public const uint MOUSEEVENTF_LEFTUP = 0x0004;
+    public const int SW_RESTORE = 9;
 
     public static IntPtr MakeLParam(int x, int y)
     {
@@ -127,6 +132,37 @@ public static class FrozenLauncherNative
         var sb = new StringBuilder(512);
         GetWindowText(hwnd, sb, sb.Capacity);
         return sb.ToString();
+    }
+
+    public static bool ForceForegroundWindow(IntPtr hwnd)
+    {
+        if (hwnd == IntPtr.Zero || !IsWindow(hwnd)) return false;
+
+        var foreground = GetForegroundWindow();
+        uint ignored;
+        var foregroundThread = foreground == IntPtr.Zero ? 0 : GetWindowThreadProcessId(foreground, out ignored);
+        var targetThread = GetWindowThreadProcessId(hwnd, out ignored);
+        var currentThread = GetCurrentThreadId();
+        var foregroundAttached = false;
+        var targetAttached = false;
+        try
+        {
+            if (foregroundThread != 0 && foregroundThread != currentThread)
+                foregroundAttached = AttachThreadInput(currentThread, foregroundThread, true);
+            if (targetThread != 0 && targetThread != currentThread)
+                targetAttached = AttachThreadInput(currentThread, targetThread, true);
+
+            ShowWindow(hwnd, SW_RESTORE);
+            BringWindowToTop(hwnd);
+            SetForegroundWindow(hwnd);
+        }
+        finally
+        {
+            if (targetAttached) AttachThreadInput(currentThread, targetThread, false);
+            if (foregroundAttached) AttachThreadInput(currentThread, foregroundThread, false);
+        }
+
+        return GetForegroundWindow() == hwnd;
     }
 }
 '@
@@ -280,6 +316,7 @@ function Invoke-FrozenLauncherClick {
     $label = if ($Intent -eq 'continue') { 'launcher CONTINUE' } else { 'launcher PLAY' }
     $foreground = [FrozenLauncherNative]::GetForegroundWindow()
     $foregroundMatches = $foreground -eq $Hwnd
+    $foregroundInitiallyMatched = $foregroundMatches
     $useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)
 
     Write-FrozenLaunchLog ('CLICK "{0}" frozen attempt={1} hwnd={2} pid={3} title="{4}" client=({5},{6}) screen=({7},{8}) fractions=({9:F2},{10:F2}) foregroundMatches={11} operationMode={12}' -f `
@@ -287,14 +324,29 @@ function Invoke-FrozenLauncherClick {
 
     if ($useRealInput) {
         if (-not $foregroundMatches) {
-            [void][FrozenLauncherNative]::SetForegroundWindow($Hwnd)
+            $focusAcquired = [FrozenLauncherNative]::ForceForegroundWindow($Hwnd)
+            if (-not $focusAcquired) {
+                $shell = New-Object -ComObject WScript.Shell
+                [void]$shell.AppActivate($ExpectedPid)
+                Start-Sleep -Milliseconds 150
+                $focusAcquired = [FrozenLauncherNative]::ForceForegroundWindow($Hwnd)
+            }
             Start-Sleep -Milliseconds 120
+            $foregroundMatches = [FrozenLauncherNative]::GetForegroundWindow() -eq $Hwnd
+            Write-FrozenLaunchLog ('FOCUS launcher pid={0} hwnd={1} acquired={2} foregroundMatches={3} operationMode={4}' -f $ExpectedPid, $Hwnd.ToInt64(), $focusAcquired, $foregroundMatches, $operationMode)
+            if (-not $foregroundMatches) {
+                throw 'launcher_focus_acquisition_failed: refusing real-input click without the frozen launcher in foreground'
+            }
         }
         [void][FrozenLauncherNative]::SetCursorPos($point.screenX, $point.screenY)
         Start-Sleep -Milliseconds 40
+        if (-not (Test-FrozenHwndValid -Hwnd $Hwnd -ExpectedPid $ExpectedPid) -or
+                [FrozenLauncherNative]::GetForegroundWindow() -ne $Hwnd) {
+            throw 'launcher_focus_lost_before_click: refusing real input after frozen target or foreground changed'
+        }
         [FrozenLauncherNative]::mouse_event([FrozenLauncherNative]::MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
         [FrozenLauncherNative]::mouse_event([FrozenLauncherNative]::MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
-        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=real-input dispatched reason={1} operationMode={2}' -f $label, $(if ($foregroundMatches) { 'target_already_foreground' } elseif ($AllowFocusSteal) { 'AllowFocusSteal' } else { 'RespectUserForeground_false' }), $operationMode)
+        Write-FrozenLaunchLog ('CLICK "{0}" frozen method=real-input dispatched reason={1} operationMode={2}' -f $label, $(if ($foregroundInitiallyMatched) { 'target_already_foreground' } elseif ($AllowFocusSteal) { 'AllowFocusSteal' } else { 'RespectUserForeground_false' }), $operationMode)
     } else {
         $lParam = [FrozenLauncherNative]::MakeLParam($point.clientX, $point.clientY)
         [void][FrozenLauncherNative]::SendMessage($Hwnd, [FrozenLauncherNative]::WM_LBUTTONDOWN, [IntPtr][FrozenLauncherNative]::MK_LBUTTON, $lParam)

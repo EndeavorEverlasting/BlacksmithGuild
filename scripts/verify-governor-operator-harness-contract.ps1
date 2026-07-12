@@ -89,7 +89,11 @@ foreach ($cmdWrapper in @(
 }
 
 Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' 'TBG_OPERATOR_INTERACTIVE_FOCUS' 'interactive focus env gate'
-Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' '-LaunchIntent $LaunchIntent' 'forge launch must bind LaunchIntent by name'
+Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' 'AllowFocusSteal' 'operator wrapper must expose explicit focus authority'
+Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' '$forgeParams.AllowFocusSteal = $true' 'operator wrapper must forward focus authority only when bound'
+Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' '$AllowFocusSteal -and' 'initial focus helper must remain behind explicit authority'
+Assert-Contains 'scripts\install-mod.ps1' 'RespectUserForeground = -not $AllowFocusSteal' 'install layer must forward focus policy to frozen navigation'
+Assert-Contains 'scripts\invoke-forge-launch-operator.ps1' 'LaunchIntent = $LaunchIntent' 'forge launch must bind LaunchIntent by name'
 Assert-NotContains 'scripts\invoke-forge-launch-operator.ps1' "@('-Launch', '-LaunchIntent', `$LaunchIntent)" 'avoid positional array splatting into forge.ps1'
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'Invoke-OperatorInteractiveFocusPrompt' 'focus prompt hook'
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'guarded_click_denied' 'focus prompt trigger reason'

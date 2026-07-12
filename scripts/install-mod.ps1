@@ -10,6 +10,7 @@ param(
     [ValidateSet('play', 'continue')]
     [string]$LaunchIntent,
     [switch]$LaunchManual,
+    [switch]$AllowFocusSteal,
     [switch]$CheckLog,
     [switch]$SkipInstall,
     [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
@@ -186,7 +187,15 @@ try {
                 -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
                 $launcherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
-                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -LauncherContextPath $launcherContextPath -PollMs 250 -LaunchSetup
+                $frozenNavParams = @{
+                    LaunchIntent = $LaunchIntent
+                    BannerlordRoot = $BannerlordRoot
+                    LauncherContextPath = $launcherContextPath
+                    PollMs = 250
+                    RespectUserForeground = -not $AllowFocusSteal
+                }
+                if ($AllowFocusSteal) { $frozenNavParams.AllowFocusSteal = $true }
+                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') @frozenNavParams -LaunchSetup
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot

@@ -220,6 +220,8 @@ foreach ($sourceCheck in @(
     @{ file = $frozenNav; text = 'Emit-PostHandoffReadiness -Deadline $overallDeadline' },
     @{ file = $frozenNav; text = '$useRealInput = ($foregroundMatches -or $AllowFocusSteal -or -not $RespectUserForeground)' },
     @{ file = $frozenNav; text = 'if ($useRealInput)' },
+    @{ file = $frozenNav; text = 'ForceForegroundWindow' },
+    @{ file = $frozenNav; text = 'launcher_focus_acquisition_failed: refusing real-input click without the frozen launcher in foreground' },
     @{ file = $frozenNav; text = 'method=real-input dispatched' },
     @{ file = $frozenNav; text = 'method=hwnd SendMessage dispatched hwnd={1} reason=real_input_not_viable' },
     @{ file = 'forge.ps1'; text = 'LaunchIntent is required when -Launch is used.' },
@@ -232,6 +234,9 @@ foreach ($sourceCheck in @(
     @{ file = 'LaunchForgeContinue.cmd'; text = '-LaunchIntent continue' },
     @{ file = 'scripts\install-mod.ps1'; text = 'LaunchIntent is required when -Launch is used.' },
     @{ file = 'scripts\install-mod.ps1'; text = 'launcher-frozen-context-nav.ps1' },
+    @{ file = 'scripts\install-mod.ps1'; text = 'RespectUserForeground = -not $AllowFocusSteal' },
+    @{ file = 'scripts\invoke-forge-launch-operator.ps1'; text = '[switch]$AllowFocusSteal' },
+    @{ file = 'scripts\invoke-forge-launch-operator.ps1'; text = '$forgeParams.AllowFocusSteal = $true' },
     @{ file = 'scripts\install-mod.ps1'; text = 'classification=hotkeys_ready' },
     @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = '[Parameter(Mandatory = $true)]' },
     @{ file = 'scripts\open-bannerlord-launcher.ps1'; text = 'Ensure-TbgLauncherWindowContext' },
@@ -268,6 +273,14 @@ Assert-NotContains 'scripts\open-bannerlord-launcher.ps1' "[string]`$LaunchInten
 Assert-NotContains 'Forge.cmd' 'launcher-auto-nav.ps1' 'Forge front door must not call the legacy rescoring loop'
 Assert-NotContains 'ForgeContinue.cmd' 'launcher-auto-nav.ps1' 'ForgeContinue front door must not call the legacy rescoring loop'
 Assert-NotContains 'scripts\install-mod.ps1' 'launcher-auto-nav.ps1' 'raw forge.ps1 -Launch must not reach the legacy rescoring loop through install-mod.ps1'
+
+$frozenNavText = Read-RepoText -RelativePath $frozenNav
+$cursorIndex = $frozenNavText.IndexOf('SetCursorPos($point.screenX, $point.screenY)', [System.StringComparison]::Ordinal)
+$preClickValidationIndex = $frozenNavText.IndexOf('Test-FrozenHwndValid -Hwnd $Hwnd -ExpectedPid $ExpectedPid', $cursorIndex, [System.StringComparison]::Ordinal)
+$mouseDownIndex = $frozenNavText.IndexOf('mouse_event([FrozenLauncherNative]::MOUSEEVENTF_LEFTDOWN', $preClickValidationIndex, [System.StringComparison]::Ordinal)
+if ($cursorIndex -lt 0 -or $preClickValidationIndex -le $cursorIndex -or $mouseDownIndex -le $preClickValidationIndex) {
+    $failures.Add('real-input ordering must be SetCursorPos -> frozen HWND/foreground revalidation -> mouse_event') | Out-Null
+}
 
 Assert-Contains $operatorDoc 'This is currently a documented factoring plan, not a completed implementation refactor.' 'operator doc must not overclaim'
 

@@ -18,6 +18,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 Set-Location -LiteralPath $repoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'visible-trade-cycle-contract.ps1')
+. (Join-Path $PSScriptRoot 'visible-trade-launch-boundary.ps1')
 
 if ([string]::IsNullOrWhiteSpace($EvidenceRoot)) {
     $EvidenceRoot = Join-Path $repoRoot 'artifacts\latest'
@@ -79,13 +80,93 @@ function Read-JsonSafe {
     return $null
 }
 
-function Get-BannerlordProcesses {
+function Get-BannerlordRelatedProcesses {
     $names = @('Bannerlord', 'Bannerlord.Native', 'TaleWorlds.MountAndBlade', 'TaleWorlds.MountAndBlade.Launcher')
     $items = @()
     foreach ($name in $names) {
         $items += @(Get-Process -Name $name -ErrorAction SilentlyContinue)
     }
     return @($items | Sort-Object Id -Unique)
+}
+
+function Get-TbgBannerlordRuntimeDetection {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][datetime]$LaunchStartedAtUtc
+    )
+
+    return Get-BannerlordProcessDetection `
+        -BannerlordRoot $BannerlordRoot `
+        -Phase1Path (Get-Phase1LogPath -BannerlordRoot $BannerlordRoot) `
+        -StatusPath (Get-StatusJsonPath -BannerlordRoot $BannerlordRoot) `
+        -CrashContextPath (Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot) `
+        -LaunchStartedAtUtc $LaunchStartedAtUtc `
+        -CacheSec 0
+}
+
+function Test-TbgLiveRuntimeDetection {
+    param($Detection)
+
+    if ($null -eq $Detection -or $null -eq $Detection.gameProcessPid) { return $false }
+    $process = Get-Process -Id ([int]$Detection.gameProcessPid) -ErrorAction SilentlyContinue
+    if ($process) { try { $process.Refresh() } catch { } }
+    return Test-TbgLiveRuntimeAuthorityFacts `
+        -Confidence ([string]$Detection.gameAliveConfidence) `
+        -ProcessId ([int]$Detection.gameProcessPid) `
+        -ProcessExists ($null -ne $process) `
+        -WindowTitle $(if ($process) { [string]$process.MainWindowTitle } else { '' })
+}
+
+function Stop-TbgOwnedLauncherAfterFailedSpawn {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][datetime]$LaunchStartedAtUtc
+    )
+
+    $contextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
+    $context = Read-JsonSafe -Path $contextPath
+    if ($null -eq $context) { return @() }
+    $expectedBaselinePath = Join-Path $BannerlordRoot 'window-snapshot-S1-pre-launch.json'
+    if (-not [string]::Equals([string]$context.baselineSnapshotPath, $expectedBaselinePath, [System.StringComparison]::OrdinalIgnoreCase)) { return @() }
+    $baseline = Read-JsonSafe -Path $expectedBaselinePath
+    if ($null -eq $baseline) { return @() }
+    $launcherPid = [int]$context.processId
+    $launcher = Get-Process -Id $launcherPid -ErrorAction SilentlyContinue
+    if (-not $launcher) { return @() }
+    try { $launcher.Refresh() } catch { return @() }
+
+    $lastDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $BannerlordRoot -LaunchStartedAtUtc $LaunchStartedAtUtc
+    $runtimeLive = Test-TbgLiveRuntimeDetection -Detection $lastDetection
+    $processFacts = [PSCustomObject][ordered]@{
+        pid = [int]$launcher.Id
+        hwnd = [int64]$launcher.MainWindowHandle
+        name = [string]$launcher.ProcessName
+        path = Get-ProcessExecutablePathSafe -Process $launcher
+        windowTitle = [string]$launcher.MainWindowTitle
+        startedAtUtc = $launcher.StartTime.ToUniversalTime().ToString('o')
+    }
+    $decision = Test-TbgOwnedLauncherCleanupFacts `
+        -Context $context `
+        -Baseline $baseline `
+        -Process $processFacts `
+        -BannerlordRoot $BannerlordRoot `
+        -LaunchStartedAtUtc $LaunchStartedAtUtc `
+        -RuntimeLive $runtimeLive
+    if (-not $decision.eligible) { return @() }
+
+    $launcher = Get-Process -Id $launcherPid -ErrorAction SilentlyContinue
+    if (-not $launcher) { return @() }
+    try { $launcher.Refresh() } catch { return @() }
+    if (Test-LauncherSingleplayerHostedTitle -Title ([string]$launcher.MainWindowTitle)) { return @() }
+    if ([int64]$launcher.MainWindowHandle -ne [int64]$context.hwnd) { return @() }
+    $expectedPath = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe'
+    if (-not [string]::Equals((Get-ProcessExecutablePathSafe -Process $launcher), $expectedPath, [System.StringComparison]::OrdinalIgnoreCase)) { return @() }
+    $lastDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $BannerlordRoot -LaunchStartedAtUtc $LaunchStartedAtUtc
+    if (Test-TbgLiveRuntimeDetection -Detection $lastDetection) { return @() }
+
+    Stop-Process -Id $launcherPid -Force -ErrorAction Stop
+    Wait-Process -Id $launcherPid -Timeout 10 -ErrorAction SilentlyContinue
+    return @($launcherPid)
 }
 
 function Wait-TbgJsonEvidence {
@@ -258,6 +339,9 @@ $localDllPath = Join-Path $repoRoot 'Module\BlacksmithGuild\bin\Win64_Shipping_C
 $installedDllPath = Join-Path $bannerlordRoot 'Modules\BlacksmithGuild\bin\Win64_Shipping_Client\BlacksmithGuild.dll'
 
 $script:ownsLaunchedSession = $false
+$script:mapTradeAutomationAttempted = $false
+$launchAttemptUtc = $null
+$runtimeDetection = $null
 $saveIdentityRecord = $null
 $authorityBeforeRecord = $null
 $authorityAutomationRecord = $null
@@ -281,6 +365,8 @@ $preflightChecks = [ordered]@{
     releaseBuildInstalled = $false
     installedDllHashMatches = $false
     nativeContinueLaunched = $false
+    gameRuntimeObserved = $false
+    ownedLauncherCleanedAfterFailedSpawn = $false
     standardRouteCertFresh = $false
     standardTradeCertFresh = $false
 }
@@ -308,7 +394,7 @@ try {
     }
     $preflightChecks.cleanWorktree = $true
 
-    $preexisting = @(Get-BannerlordProcesses)
+    $preexisting = @(Get-BannerlordRelatedProcesses)
     if ($preexisting.Count -gt 0) {
         throw "FAILED_preflight:preexisting_bannerlord_process:$(@($preexisting.Id) -join ',')"
     }
@@ -339,7 +425,7 @@ try {
 
     & dotnet build (Join-Path $repoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj') --configuration Release
     if ($LASTEXITCODE -ne 0) { throw "FAILED_preflight:release_build_failed exit=$LASTEXITCODE" }
-    if (@(Get-BannerlordProcesses).Count -gt 0) { throw 'FAILED_preflight:bannerlord_started_during_build' }
+    if (@(Get-BannerlordRelatedProcesses).Count -gt 0) { throw 'FAILED_preflight:bannerlord_started_during_build' }
     & (Join-Path $PSScriptRoot 'install-mod.ps1')
     if ($LASTEXITCODE -ne 0) { throw "FAILED_preflight:install_failed exit=$LASTEXITCODE" }
     $preflightChecks.releaseBuildInstalled = $true
@@ -353,14 +439,28 @@ try {
     }
     $preflightChecks.installedDllHashMatches = $true
 
-    if (@(Get-BannerlordProcesses).Count -gt 0) { throw 'FAILED_preflight:preexisting_bannerlord_before_launch' }
+    if (@(Get-BannerlordRelatedProcesses).Count -gt 0) { throw 'FAILED_preflight:preexisting_bannerlord_before_launch' }
+    $launchAttemptUtc = (Get-Date).ToUniversalTime()
+    $launchFailure = $null
+    try {
+        & (Join-Path $PSScriptRoot 'invoke-forge-launch-operator.ps1') `
+            -RepoRoot $repoRoot `
+            -LaunchIntent continue `
+            -TimeoutSec $AttachTimeoutSec `
+            -AllowFocusSteal
+        if ($LASTEXITCODE -ne 0) { $launchFailure = "exit=$LASTEXITCODE" }
+    } catch {
+        $launchFailure = $_.Exception.Message
+    }
+
+    $runtimeDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $bannerlordRoot -LaunchStartedAtUtc $launchAttemptUtc
+    if (-not (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection)) {
+        $detail = if ([string]::IsNullOrWhiteSpace($launchFailure)) { 'no game runtime observed' } else { $launchFailure }
+        throw "FAILED_runtime:native_continue_launch_failed:$detail"
+    }
     $script:ownsLaunchedSession = $true
-    & (Join-Path $PSScriptRoot 'invoke-forge-launch-operator.ps1') `
-        -RepoRoot $repoRoot `
-        -LaunchIntent continue `
-        -TimeoutSec $AttachTimeoutSec
-    if ($LASTEXITCODE -ne 0) { throw "FAILED_runtime:native_continue_launch_failed exit=$LASTEXITCODE" }
     $preflightChecks.nativeContinueLaunched = $true
+    $preflightChecks.gameRuntimeObserved = $true
 
     Invoke-ForgeCommandChecked -Command 'ReportSaveIdentityNow' -TimeoutSec 45
     $saveIdentityRecord = Wait-TbgJsonEvidence `
@@ -393,6 +493,7 @@ try {
         }
 
     $automationCommandUtc = (Get-Date).ToUniversalTime()
+    $script:mapTradeAutomationAttempted = $true
     Invoke-ForgeCommandChecked -Command 'SetMapTradeAutomation' -TimeoutSec 45
     $authorityAutomationRecord = Wait-TbgJsonEvidence `
         -Candidates $authorityCandidates `
@@ -453,7 +554,15 @@ try {
 } catch {
     $failureDetail = $_.Exception.Message
 } finally {
-    if ($script:ownsLaunchedSession -and -not $diagnosticOnly -and @(Get-BannerlordProcesses).Count -gt 0) {
+    if ($launchAttemptUtc) {
+        $runtimeDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $bannerlordRoot -LaunchStartedAtUtc $launchAttemptUtc
+        if (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection) {
+            $script:ownsLaunchedSession = $true
+            $preflightChecks.gameRuntimeObserved = $true
+        }
+    }
+
+    if ($script:ownsLaunchedSession -and $script:mapTradeAutomationAttempted -and -not $diagnosticOnly -and (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection)) {
         try {
             $manualCommandUtc = (Get-Date).ToUniversalTime()
             Invoke-ForgeCommandChecked -Command 'SetMapTradeManual' -TimeoutSec 45
@@ -476,6 +585,17 @@ try {
                 $failureDetail = $_.Exception.Message
             } else {
                 $failureDetail += "; cleanup=$($_.Exception.Message)"
+            }
+        }
+    } elseif ($launchAttemptUtc -and -not $diagnosticOnly -and (-not (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection))) {
+        try {
+            $closedLaunchers = @(Stop-TbgOwnedLauncherAfterFailedSpawn -BannerlordRoot $bannerlordRoot -LaunchStartedAtUtc $launchAttemptUtc)
+            $preflightChecks.ownedLauncherCleanedAfterFailedSpawn = $closedLaunchers.Count -gt 0
+        } catch {
+            if ([string]::IsNullOrWhiteSpace($failureDetail)) {
+                $failureDetail = "launcher_cleanup=$($_.Exception.Message)"
+            } else {
+                $failureDetail += "; launcher_cleanup=$($_.Exception.Message)"
             }
         }
     }
@@ -524,6 +644,10 @@ $result = [ordered]@{
     terminalState = $terminalState
     failureDetail = $failureDetail
     preflight = $preflightChecks
+    launch = [ordered]@{
+        attemptedAtUtc = if ($launchAttemptUtc) { $launchAttemptUtc.ToString('o') } else { $null }
+        runtimeDetection = $runtimeDetection
+    }
     request = if ($request) { $request } else { [ordered]@{ requestedSaveId = $null } }
     dll = [ordered]@{
         localPath = $localDllPath

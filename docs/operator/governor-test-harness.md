@@ -147,6 +147,7 @@ Agents should update the plan and verifier before changing launcher PID/window b
 Approved disposable save names are:
 
 - `BlacksmithGuild_DevStart*.sav`
+- `BlacksmithGuildDevStart*.sav`
 - `BlacksmithGuild_Disposable_*.sav`
 - `TBG_Disposable_*.sav`
 
@@ -160,6 +161,13 @@ campaign session is ready and the target name uses the fixed
 The operator launch wrapper sets `TBG_OPERATOR_INTERACTIVE_FOCUS=1`. If launcher
 guarded clicks are repeatedly denied, `launcher-auto-nav.ps1` pauses and asks the
 operator to bring the Bannerlord launcher to the front. Press `C` to cancel.
+
+The unattended visible-trade runner is the explicit exception: its operator wrapper
+also forwards `-AllowFocusSteal` through Forge and install layers. Frozen navigation
+must prove that the bound launcher window is foreground before sending real mouse
+input. No human foreground action is required, and a launcher-only process never
+grants game command authority. If no game runtime spawns, only the launcher proven
+to have been created by that run is closed.
 
 This is transparent operator intent, not log suppression. Normal OS, endpoint,
 application, and audit logging may occur.
