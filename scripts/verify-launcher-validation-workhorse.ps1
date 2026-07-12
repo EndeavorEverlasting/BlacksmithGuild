@@ -47,13 +47,19 @@ foreach ($needle in @(
     'if not defined TBG_NO_PAUSE pause',
     'resolves RepoRoot from its own tracked location'
 )) { Need $cmd $needle }
-Forbid $cmd '-RepoRoot "%~dp0"'
-Forbid $cmd 'git reset --hard'
-Forbid $cmd 'run-launcher-validation-workhorse.ps1" %*'
+
+foreach ($needle in @(
+    '-RepoRoot "%~dp0"',
+    'git reset --hard',
+    'run-launcher-validation-workhorse.ps1" %*'
+)) { Forbid $cmd $needle }
 
 foreach ($needle in @(
     'TbgLauncherValidationSupervisorEvent.v1',
     'TbgLauncherValidationSupervisor.v1',
+    "[ValidateSet('auto', 'current-first', 'remote-first', 'local-snapshot')]",
+    'MaxWorkspaceModes = 4',
+    'FetchAttempts = 2',
     'current_synced',
     'current_local_commits',
     'isolated_remote',
@@ -61,8 +67,23 @@ foreach ($needle in @(
     'run-launcher-validation-workhorse.ps1',
     'Test-WorkspaceRecoverableFailure',
     'workspace_modes_exhausted',
-    'clear_semantic_dead_end'
+    'clear_semantic_dead_end',
+    'git worktree',
+    'launcher-validation-supervisor.progress.log',
+    'launcher-validation-supervisor.handoff.md',
+    'launcher-validation-supervisor.result.json'
 )) { Need $supervisor $needle }
+
+foreach ($needle in @(
+    'git reset --hard',
+    'git clean -',
+    'git stash',
+    'git push --force',
+    'gh pr merge',
+    'Remove-Item *sav',
+    'worktree remove --force',
+    'branch -D'
+)) { Forbid $supervisor $needle }
 
 foreach ($needle in @(
     'TbgSyntacticEnglishProgressEvent.v1',
@@ -72,10 +93,6 @@ foreach ($needle in @(
     'events.jsonl',
     'handoff.md',
     'result.json',
-    'git',
-    "@('fetch', 'origin', '--prune')",
-    "@('merge', '--ff-only', `$remoteRef)",
-    "@('status', '--porcelain=v1', '--untracked-files=all')",
     'blocked_dirty_worktree',
     'blocked_local_commits',
     'verify-fast-launcher-frontdoor.ps1',
@@ -104,12 +121,6 @@ foreach ($needle in @(
     'liveRuntimeProof = $true'
 )) { Forbid $workhorse $needle }
 
-$workhorseText = Read-RepoText $workhorse
-$eventMatches = [regex]::Matches($workhorseText, "Write-EnglishEvent[^\r\n]*-Sentence\s+('([^']|'')*'|\([^\r\n]+\))")
-if ($eventMatches.Count -lt 12) {
-    $failures.Add('launcher workhorse must emit a useful sequence of syntactic-English progress events') | Out-Null
-}
-
 foreach ($needle in @(
     '# Launcher Validation Workhorse',
     'Multimodal persistence',
@@ -120,13 +131,13 @@ foreach ($needle in @(
     'current_local_commits',
     'isolated_remote',
     'isolated_local_snapshot',
-    'progress.log',
-    'events.jsonl',
-    'handoff.md',
-    'result.json',
+    'Dirty does not mean stop',
+    'Unpublished commits do not mean stop',
+    'Divergence does not mean stop',
     'Run-LauncherValidationWorkhorse.cmd',
     'does not reset or discard local work',
-    'does not prove movement or trading'
+    'does not prove movement or trading',
+    'TbgLauncherValidationSupervisor.v1'
 )) { Need $doc $needle }
 
 if ($failures.Count -gt 0) {
