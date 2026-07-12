@@ -80,7 +80,7 @@ foreach ($needle in @(
 
 Need $leaf 'blocked_dirty_worktree'
 Need $leaf 'blocked_local_commits'
-Need $leaf 'git merge --ff-only'
+Need $leaf "@('merge', '--ff-only', `$remoteRef)"
 
 foreach ($needle in @(
     'run-launcher-validation-supervisor.ps1',
