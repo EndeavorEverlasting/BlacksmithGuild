@@ -155,10 +155,12 @@ foreach ($needle in @(
         'preexisting_bannerlord_process',
         'Get-BannerlordRelatedProcesses',
         'Get-TbgBannerlordRuntimeDetection',
+        'Wait-TbgLiveRuntimeDetection',
         'Test-TbgLiveRuntimeDetection',
         'Stop-TbgOwnedLauncherAfterFailedSpawn',
         'visible-trade-launch-boundary.ps1',
         '-AllowFocusSteal',
+        '& powershell.exe -NoProfile -ExecutionPolicy Bypass',
         'Get-BannerlordDevSaveCandidates',
         'Test-BannerlordRecognizedSavePath',
         'Get-TbgFileSha256',
@@ -192,9 +194,9 @@ Assert-True ($diagnosticGate -ge 0 -and $buildCall -gt $diagnosticGate) `
     'Diagnostic gate must terminate the certifying try before build, launch, or runtime commands'
 Assert-True (-not $runnerText.Contains("SetEngineToggleAutomation")) `
     'Visible-trade runner must never set global Automation; only MapTrade may be changed'
-$runtimeGuard = $runnerText.IndexOf('if (-not (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection))', [System.StringComparison]::Ordinal)
-$runtimeOwnership = $runnerText.IndexOf('$script:ownsLaunchedSession = $true', $runtimeGuard, [System.StringComparison]::Ordinal)
-Assert-True ($runtimeGuard -ge 0 -and $runtimeOwnership -gt $runtimeGuard) `
+$runtimeWait = $runnerText.IndexOf('$runtimeDetection = Wait-TbgLiveRuntimeDetection', [System.StringComparison]::Ordinal)
+$runtimeOwnership = if ($runtimeWait -ge 0) { $runnerText.IndexOf('$script:ownsLaunchedSession = $true', $runtimeWait, [System.StringComparison]::Ordinal) } else { -1 }
+Assert-True ($runtimeWait -ge 0 -and $runtimeOwnership -gt $runtimeWait) `
     'Runner may own a session only after shared detection proves a game runtime, never for launcher-only state'
 Assert-True (-not $runnerText.Contains('@(Get-BannerlordProcesses).Count')) `
     'Runner must not treat the launcher process list as runtime command authority'
@@ -213,6 +215,11 @@ foreach ($needle in @(
 }
 
 Assert-Contains 'Run-TbgVisibleTradeCycle.cmd' 'scripts\run-tbg-visible-trade-cycle.ps1'
+Assert-Contains 'scripts\bannerlord-paths.ps1' 'Get-Variable -Name BannerlordProcessDetectionCache'
+Assert-Contains 'src\BlacksmithGuild\DevTools\QuickStart\DevSaveResolver.cs' 'TryGetExactApproved'
+Assert-Contains 'src\BlacksmithGuild\DevTools\QuickStart\DevSaveResolver.cs' 'FlatDevSavePrefix'
+Assert-Contains 'src\BlacksmithGuild\DevTools\QuickStart\MainMenuAutoLauncher.cs' 'RuntimeProofContext.HasVisibleTradeCycleRequest'
+Assert-Contains 'src\BlacksmithGuild\DevTools\QuickStart\MainMenuAutoLauncher.cs' 'DevSaveResolver.TryGetExactApproved'
 Assert-Contains '.tbg\workflows\continue-visible-trade-cycle.contract.json' 'TbgVisibleTradeRuntimeEvidence.v1'
 Assert-Contains '.tbg\operator\control-surface.json' '.\\Run-TbgVisibleTradeCycle.cmd'
 Assert-Contains 'docs\operator\load-save-toggle-and-visible-trade-plan.md' '.\Run-TbgVisibleTradeCycle.cmd -ExpectedHead'
@@ -249,5 +256,12 @@ try {
 }
 
 Assert-True (-not $runnerText.Contains('Get-FileHash')) 'CMD runner must not depend on PowerShell module autoloading for SHA-256'
+
+$mainMenuText = Get-Content -LiteralPath (Join-Path $RepoRoot 'src\BlacksmithGuild\DevTools\QuickStart\MainMenuAutoLauncher.cs') -Raw
+$exactRequestIndex = $mainMenuText.IndexOf('RuntimeProofContext.HasVisibleTradeCycleRequest', [System.StringComparison]::Ordinal)
+$exactLoadIndex = $mainMenuText.IndexOf('DevSaveResolver.TryGetExactApproved', $exactRequestIndex, [System.StringComparison]::Ordinal)
+$genericContinueIndex = $mainMenuText.IndexOf('TryExecuteFirstAvailable(ContinueOptionIds', $exactLoadIndex, [System.StringComparison]::Ordinal)
+Assert-True ($exactRequestIndex -ge 0 -and $exactLoadIndex -gt $exactRequestIndex -and $genericContinueIndex -gt $exactLoadIndex) `
+    'Correlated exact-save load must be evaluated before generic Continue and may not silently fall back'
 
 Write-Host "Visible trade cycle contract: PASS ($(@($fixtures.cases).Count) fixtures)"

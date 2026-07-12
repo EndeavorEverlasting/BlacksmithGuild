@@ -2,6 +2,13 @@
 # C# writes Phase1/Forge/Status under BasePath.Name (usually Documents);
 # PS automation also reads Steam BannerlordRoot — check both.
 
+if ($null -eq (Get-Variable -Name BannerlordProcessDetectionCache -Scope Script -ErrorAction SilentlyContinue)) {
+    $script:BannerlordProcessDetectionCache = $null
+}
+if ($null -eq (Get-Variable -Name BannerlordProcessDetectionCacheUtc -Scope Script -ErrorAction SilentlyContinue)) {
+    $script:BannerlordProcessDetectionCacheUtc = $null
+}
+
 function Get-BannerlordDocsRoot {
     $docsRoot = Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord'
     if (-not (Test-Path -LiteralPath $docsRoot)) {

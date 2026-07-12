@@ -53,7 +53,7 @@ For fresh bootstrap cert, use **`Forge.cmd`** instead (auto PLAY → New Campaig
 
 | Path | Behavior (006C+) |
 |------|------------------|
-| **Continue** | Loads pinned dev save — daily dev loop |
+| **Continue** | Normal play loads Bannerlord's latest save; the unattended visible-trade workflow supplies and proves an exact approved dev-save request |
 | **New Campaign → SandBox** | Fresh bootstrap: intro skip + auto character creation + 006B auto-build |
 | **Play → SandBox** | Same as New Campaign (dev save **not** auto-loaded on `StartNewGame`) |
 

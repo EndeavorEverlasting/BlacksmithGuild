@@ -4,7 +4,7 @@
   "sprint": "unattended-visible-trade-cycle",
   "contextBanner": "[TBG | Continue Visible Trade Cycle | unattended harness | branch: agent/route-automation-operator-plan]",
   "status": "terminal_runner_implemented_runtime_evidence_gated",
-  "purpose": "Pin and prove one explicit development save, travel through Bannerlord movement, enter a town, perform one real buy, leave the Inventory or Trade surface visible to the user, and prove targeted Manual cleanup without cheats, fabricated deltas, or human hotkey input.",
+  "purpose": "Launch Bannerlord through its native Continue surface, load and prove one exact approved development save through MBSaveLoad, travel through Bannerlord movement, enter a town, perform one real buy, leave the Inventory or Trade surface visible to the user, and prove targeted Manual cleanup without cheats, fabricated deltas, or human hotkey input.",
   "allowedScope": [
     "native Bannerlord Continue launch path",
     "explicit BlacksmithGuild_DevStart save pinning and runtime identity verification",
@@ -45,6 +45,7 @@
       "requiresFrozenLauncherForegroundBeforeRealInput": true,
       "launcherProcessIsGameRuntime": false,
       "commandAuthorityRequiresSharedRuntimeDetection": true,
+      "loadingHandoffIsNotRuntimeProof": true,
       "failedSpawnCleanup": "close only the exact fresh PID/HWND absent from the S1 baseline and bound by this run's launcher context, after shared detection proves no live game runtime"
     }
   },
@@ -53,7 +54,7 @@
       "sequence": 1,
       "producer": "terminal runner",
       "consumer": "runtime save identity",
-      "input": "TbgVisibleTradeCycleRequest.v1 with runId, requestedSaveId, and headSha",
+      "input": "TbgVisibleTradeCycleRequest.v1 with runId, requestedSaveId, and headSha; native launcher handoff followed by exact approved MBSaveLoad resolution",
       "requiredOutput": "TbgSaveIdentityEvidence.v1 whose loadedSaveId and MBSaveLoad.ActiveSaveSlotName exactly equal requestedSaveId",
       "currentState": "runner_enforced"
     },

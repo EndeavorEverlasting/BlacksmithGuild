@@ -50,6 +50,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static List<string> _intentSourcePaths = new List<string>();
         private static bool _forwardLaunchInProgress;
         private static bool _forwardLaunchCompletedThisProcess;
+        private static bool _exactSaveLoadAttempted;
         private static readonly HashSet<string> LoggedBlockReasons = new HashSet<string>(StringComparer.Ordinal);
 
         private const float InitialStateWarmupSeconds = 1.0f;
@@ -74,6 +75,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _intentConsumed = false;
             _forwardLaunchInProgress = false;
             _forwardLaunchCompletedThisProcess = false;
+            _exactSaveLoadAttempted = false;
             _optionsProbed = false;
             _loggedMainMenuTimeout = false;
             _mainMenuWaitSeconds = 0f;
@@ -149,11 +151,33 @@ namespace BlacksmithGuild.DevTools.QuickStart
             var executed = false;
             if (string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
-                LogMainMenuIntentDecision("auto-select", "continue intent");
-                if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
+                if (RuntimeProofContext.HasVisibleTradeCycleRequest)
                 {
-                    CompleteIntent($"auto-selecting {selectedId} (Continue Campaign).");
-                    executed = true;
+                    var requestedSaveId = RuntimeProofContext.RequestedSaveId;
+                    if (!_exactSaveLoadAttempted)
+                    {
+                        _exactSaveLoadAttempted = true;
+                        LogMainMenuIntentDecision("auto-select", $"exact visible-trade save {requestedSaveId}");
+                        if (DevSaveResolver.TryGetExactApproved(requestedSaveId, out var requestedSave)
+                            && DevSaveAutoLoader.TryLoad(requestedSave))
+                        {
+                            CompleteIntent($"auto-loading exact requested dev save {requestedSaveId}.");
+                            executed = true;
+                        }
+                        else
+                        {
+                            LogMainMenuIntentDecision("block", $"exact requested dev save unavailable {requestedSaveId}");
+                        }
+                    }
+                }
+                else
+                {
+                    LogMainMenuIntentDecision("auto-select", "continue intent");
+                    if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
+                    {
+                        CompleteIntent($"auto-selecting {selectedId} (Continue Campaign).");
+                        executed = true;
+                    }
                 }
             }
             else if (TryExecuteFirstAvailable(PlayOptionIds, "SandBox", out var playId))

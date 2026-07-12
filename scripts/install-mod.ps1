@@ -205,6 +205,7 @@ try {
                     $launchText = ($launchTail -join [Environment]::NewLine)
                     $continueVerified = ($launchText -match 'LAUNCH_STATE=continue_clicked') -or
                         ($launchText -match 'LAUNCH_STATE=game_spawned') -or
+                        ($launchText -match 'LAUNCH_STATE=launcher_setup_handoff_observed') -or
                         ($launchText -match 'LAUNCH_STATE=hotkeys_ready') -or
                         ($launchText -match 'classification=hotkeys_ready')
                 }
@@ -223,6 +224,7 @@ try {
                     $launchText = ($launchTail -join [Environment]::NewLine)
                     $playVerified = ($launchText -match 'LAUNCH_STATE=play_clicked') -or
                         ($launchText -match 'LAUNCH_STATE=game_spawned') -or
+                        ($launchText -match 'LAUNCH_STATE=launcher_setup_handoff_observed') -or
                         ($launchText -match 'LAUNCH_STATE=hotkeys_ready') -or
                         ($launchText -match 'classification=hotkeys_ready')
                 }

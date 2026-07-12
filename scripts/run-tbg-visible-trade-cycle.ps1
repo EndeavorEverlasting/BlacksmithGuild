@@ -117,6 +117,22 @@ function Test-TbgLiveRuntimeDetection {
         -WindowTitle $(if ($process) { [string]$process.MainWindowTitle } else { '' })
 }
 
+function Wait-TbgLiveRuntimeDetection {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][datetime]$LaunchStartedAtUtc,
+        [Parameter(Mandatory = $true)][int]$TimeoutSec
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    do {
+        $detection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $BannerlordRoot -LaunchStartedAtUtc $LaunchStartedAtUtc
+        if (Test-TbgLiveRuntimeDetection -Detection $detection) { return $detection }
+        Start-Sleep -Milliseconds ([Math]::Max(250, $PollIntervalMs))
+    } while ((Get-Date) -lt $deadline)
+    throw "FAILED_runtime:game_runtime_attach_timeout after ${TimeoutSec}s"
+}
+
 function Stop-TbgOwnedLauncherAfterFailedSpawn {
     param(
         [Parameter(Mandatory = $true)][string]$BannerlordRoot,
@@ -443,19 +459,19 @@ try {
     $launchAttemptUtc = (Get-Date).ToUniversalTime()
     $launchFailure = $null
     try {
-        & (Join-Path $PSScriptRoot 'invoke-forge-launch-operator.ps1') `
-            -RepoRoot $repoRoot `
-            -LaunchIntent continue `
-            -TimeoutSec $AttachTimeoutSec `
-            -AllowFocusSteal
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass `
+            -File (Join-Path $PSScriptRoot 'invoke-forge-launch-operator.ps1') `
+            -RepoRoot $repoRoot -LaunchIntent continue -TimeoutSec $AttachTimeoutSec -AllowFocusSteal
         if ($LASTEXITCODE -ne 0) { $launchFailure = "exit=$LASTEXITCODE" }
     } catch {
         $launchFailure = $_.Exception.Message
     }
 
-    $runtimeDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $bannerlordRoot -LaunchStartedAtUtc $launchAttemptUtc
-    if (-not (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection)) {
-        $detail = if ([string]::IsNullOrWhiteSpace($launchFailure)) { 'no game runtime observed' } else { $launchFailure }
+    try {
+        $runtimeDetection = Wait-TbgLiveRuntimeDetection -BannerlordRoot $bannerlordRoot `
+            -LaunchStartedAtUtc $launchAttemptUtc -TimeoutSec $AttachTimeoutSec
+    } catch {
+        $detail = if ([string]::IsNullOrWhiteSpace($launchFailure)) { $_.Exception.Message } else { "$launchFailure; $($_.Exception.Message)" }
         throw "FAILED_runtime:native_continue_launch_failed:$detail"
     }
     $script:ownsLaunchedSession = $true
@@ -555,10 +571,18 @@ try {
     $failureDetail = $_.Exception.Message
 } finally {
     if ($launchAttemptUtc) {
-        $runtimeDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $bannerlordRoot -LaunchStartedAtUtc $launchAttemptUtc
-        if (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection) {
-            $script:ownsLaunchedSession = $true
-            $preflightChecks.gameRuntimeObserved = $true
+        try {
+            $runtimeDetection = Get-TbgBannerlordRuntimeDetection -BannerlordRoot $bannerlordRoot -LaunchStartedAtUtc $launchAttemptUtc
+            if (Test-TbgLiveRuntimeDetection -Detection $runtimeDetection) {
+                $script:ownsLaunchedSession = $true
+                $preflightChecks.gameRuntimeObserved = $true
+            }
+        } catch {
+            if ([string]::IsNullOrWhiteSpace($failureDetail)) {
+                $failureDetail = "runtime_detection=$($_.Exception.Message)"
+            } else {
+                $failureDetail += "; runtime_detection=$($_.Exception.Message)"
+            }
         }
     }
 

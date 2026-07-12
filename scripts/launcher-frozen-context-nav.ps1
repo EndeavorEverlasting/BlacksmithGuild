@@ -37,7 +37,7 @@ if (-not $LauncherContextPath) {
 
 $operationMode = if ($LaunchSetup) { 'launcher_setup' } else { 'frozen_navigation' }
 $runtimeProofClaim = $false
-$clickVerifyBudgetMs = 3000
+$clickVerifyBudgetMs = 30000
 
 $durationArgs = @{ Caller = "launcher-frozen-context-nav.ps1:$operationMode" }
 if ($PSBoundParameters.ContainsKey('TimeoutSec') -and $TimeoutSec -gt 0) {
@@ -191,6 +191,32 @@ function Test-GameSpawned {
         Select-Object -First 1
 
     return [bool]$singleplayerHost
+}
+
+function Test-FrozenLauncherHostedLoadingTransition {
+    param(
+        [Parameter(Mandatory = $true)][int]$ExpectedPid,
+        [Parameter(Mandatory = $true)][IntPtr]$OriginalHwnd,
+        [Parameter(Mandatory = $true)][int]$InitialClientWidth,
+        [Parameter(Mandatory = $true)][int]$InitialClientHeight
+    )
+
+    $process = Get-Process -Id $ExpectedPid -ErrorAction SilentlyContinue
+    if (-not $process) { return $false }
+    try { $process.Refresh() } catch { return $false }
+    $title = [string]$process.MainWindowTitle
+    if ($title -like '*Safe Mode*') { return $false }
+    if ($title -like 'Mount and Blade II Bannerlord - Singleplayer*') { return $true }
+
+    $currentHwnd = [IntPtr]$process.MainWindowHandle
+    if ($currentHwnd -eq [IntPtr]::Zero -or -not [FrozenLauncherNative]::IsWindow($currentHwnd)) { return $false }
+    $rect = New-Object FrozenLauncherNative+RECT
+    if (-not [FrozenLauncherNative]::GetClientRect($currentHwnd, [ref]$rect)) { return $false }
+    $width = $rect.Right - $rect.Left
+    $height = $rect.Bottom - $rect.Top
+    $expanded = $width -ge [Math]::Max(1200, [int]($InitialClientWidth * 1.20)) `
+        -and $height -ge [Math]::Max(700, [int]($InitialClientHeight * 1.20))
+    return $expanded -and $currentHwnd -ne $OriginalHwnd
 }
 
 function Get-FrozenLauncherProcessWindow {
@@ -360,10 +386,16 @@ function Wait-FrozenGameSpawnOrInvalidation {
     param(
         [Parameter(Mandatory = $true)][IntPtr]$Hwnd,
         [Parameter(Mandatory = $true)][int]$ExpectedPid,
-        [Parameter(Mandatory = $true)][datetime]$Deadline
+        [Parameter(Mandatory = $true)][datetime]$Deadline,
+        [Parameter(Mandatory = $true)][int]$InitialClientWidth,
+        [Parameter(Mandatory = $true)][int]$InitialClientHeight
     )
     while (-not (Test-TbgTestDurationExpired -Deadline $Deadline)) {
         if (Test-GameSpawned) { return 'game_spawned' }
+        if (Test-FrozenLauncherHostedLoadingTransition -ExpectedPid $ExpectedPid -OriginalHwnd $Hwnd `
+                -InitialClientWidth $InitialClientWidth -InitialClientHeight $InitialClientHeight) {
+            return 'launcher_hosted_loading_handoff'
+        }
         if (-not (Test-FrozenHwndValid -Hwnd $Hwnd -ExpectedPid $ExpectedPid)) { return 'frozen_target_invalidated' }
         Start-Sleep -Milliseconds $PollMs
     }
@@ -405,6 +437,12 @@ try {
     if (-not (Test-FrozenHwndValid -Hwnd $targetHwnd -ExpectedPid $targetPid)) {
         throw 'frozen launcher context target is invalid before click phase'
     }
+    $initialRect = New-Object FrozenLauncherNative+RECT
+    if (-not [FrozenLauncherNative]::GetClientRect($targetHwnd, [ref]$initialRect)) {
+        throw 'frozen launcher context client rectangle unavailable before click phase'
+    }
+    $initialClientWidth = $initialRect.Right - $initialRect.Left
+    $initialClientHeight = $initialRect.Bottom - $initialRect.Top
 
     $alreadyRunningProcess = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
     if ($alreadyRunningProcess) { try { $alreadyRunningProcess.Refresh() } catch { } }
@@ -420,6 +458,7 @@ try {
         Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned before_click=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
         if ($LaunchSetup) {
             Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+            exit 0
         }
         $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
         if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
@@ -427,19 +466,25 @@ try {
     }
 
     Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_click_phase selectionFrozen=true rescoring=disabled operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
-    $maxAttempts = 2
+    $maxAttempts = if ($AllowFocusSteal -or -not $RespectUserForeground) { 1 } else { 2 }
     for ($attempt = 0; $attempt -lt $maxAttempts; $attempt++) {
         if (Test-TbgTestDurationExpired -Deadline $overallDeadline) { break }
         Invoke-FrozenLauncherClick -Hwnd $targetHwnd -ExpectedPid $targetPid -Intent $LaunchIntent -Attempt $attempt
         $clickDeadline = New-FrozenClickDeadline -OverallDeadline $overallDeadline -BudgetMs $clickVerifyBudgetMs
         Write-FrozenLaunchLog ('CLICK_VERIFY_STARTED attempt={0} budgetMs={1} operationMode={2} runtimeProofClaim={3}' -f ($attempt + 1), $clickVerifyBudgetMs, $operationMode, $runtimeProofClaim)
-        $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $clickDeadline
+        $result = Wait-FrozenGameSpawnOrInvalidation -Hwnd $targetHwnd -ExpectedPid $targetPid -Deadline $clickDeadline `
+            -InitialClientWidth $initialClientWidth -InitialClientHeight $initialClientHeight
         Write-FrozenLaunchLog ('CLICK_VERIFY_RESULT attempt={0} result={1} operationMode={2} runtimeProofClaim={3}' -f ($attempt + 1), $result, $operationMode, $runtimeProofClaim)
-        if ($result -eq 'game_spawned') {
+        if ($result -in @('game_spawned', 'launcher_hosted_loading_handoff')) {
             Write-FrozenLaunchLog ('LAUNCH_STATE={0}_clicked selectedBy=frozen_context attempts={1} operationMode={2} runtimeProofClaim={3}' -f $LaunchIntent, ($attempt + 1), $operationMode, $runtimeProofClaim)
-            Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+            if ($result -eq 'game_spawned') {
+                Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+            } else {
+                Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_hosted_loading_handoff classification=launcher_hosted_loading_handoff runtimeProofClaim=false operationMode={0}' -f $operationMode)
+            }
             if ($LaunchSetup) {
                 Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+                exit 0
             }
             Write-FrozenLaunchLog ('LAUNCH_STATE=post_handoff_watch operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
             $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
