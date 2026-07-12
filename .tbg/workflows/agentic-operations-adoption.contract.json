@@ -1,0 +1,323 @@
+{
+  "id": "agentic-operations-adoption",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "agentic-operations-adoption",
+  "contextBanner": "[TBG | Agentic Operations Adoption | coordinator/toolchain | branch: docs/agent-skills-stale-pr-cherry-pick]",
+  "status": "contract_defined",
+  "purpose": "Expose BlacksmithGuild's repo-specific contracts, skills, compact evidence, and proof boundaries to external agent-operation tools without vendoring those tools or confusing coordination evidence with runtime proof.",
+  "layers": {
+    "agentOperations": [
+      "firstmate",
+      "treehouse",
+      "no-mistakes",
+      "gnhf",
+      "AXI",
+      "lavish-axi",
+      "npx skills",
+      "WezTerm",
+      "tmux",
+      "Neovim",
+      "voice input"
+    ],
+    "repoHarness": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      ".tbg/skills",
+      ".tbg/workflows",
+      ".tbg/harness",
+      "ForgeAgentStatus.cmd",
+      "artifacts/latest/*.json",
+      "runtime proof contracts and validators"
+    ]
+  },
+  "toolClassifications": [
+    {
+      "tool": "firstmate",
+      "category": "external_coordinator",
+      "installScope": "outside_repo",
+      "repoImpact": "reads repo rules, skills, workflows, compact packets, PR state, and dispatches bounded work",
+      "tokenSavingMechanism": "one coordinator consumes compact crewmate reports instead of full terminal transcripts",
+      "risk": "coordinator policy can drift from repo authority or dispatch into overlapping lanes",
+      "priority": 1
+    },
+    {
+      "tool": "treehouse",
+      "category": "worktree_pool_manager",
+      "installScope": "outside_repo",
+      "repoImpact": "leases reusable isolated worktrees while retaining dependencies and build caches",
+      "tokenSavingMechanism": "stable lane identity and cached workspaces reduce repeated setup and branch archaeology",
+      "risk": "a lease can outlive its PR or conceal evidence-retention obligations",
+      "priority": 2
+    },
+    {
+      "tool": "no-mistakes",
+      "category": "pr_validation_gate",
+      "installScope": "external_git_remote_or_operator_layer",
+      "repoImpact": "can gate docs, skills, validators, static contracts, lint, tests, push, PR creation, and CI",
+      "tokenSavingMechanism": "returns a bounded gate verdict instead of asking an agent to narrate every check",
+      "risk": "generic disposable-worktree gates cannot certify Bannerlord process, save, loaded-DLL, or gameplay state without a TBG adapter",
+      "priority": 4
+    },
+    {
+      "tool": "gnhf",
+      "category": "long_running_autonomous_loop",
+      "installScope": "outside_repo",
+      "repoImpact": "can iterate on static docs, classification, schemas, fixtures, and validators with commit/rollback boundaries",
+      "tokenSavingMechanism": "committed iterations and exit summaries replace chat-by-chat supervision",
+      "risk": "unsafe for live gameplay, launcher, command-inbox, or save mutation without explicit bounded stop conditions",
+      "priority": 6
+    },
+    {
+      "tool": "AXI",
+      "category": "agent_tool_interface_standard",
+      "installScope": "design_standard",
+      "repoImpact": "shapes a future Invoke-TbgAxi.ps1 while retaining ForgeAgentStatus.cmd as the compatibility wrapper",
+      "tokenSavingMechanism": "minimal defaults, aggregates, truncation, structured errors, exit codes, and contextual next commands",
+      "risk": "an overly terse interface can hide proof level, freshness, or blocker detail",
+      "priority": 3
+    },
+    {
+      "tool": "lavish-axi",
+      "category": "local_visual_review_surface",
+      "installScope": "outside_repo",
+      "repoImpact": "reviews generated sprint maps, PR topology, proof ladders, worker graphs, and operator guides",
+      "tokenSavingMechanism": "annotations target visual nodes or sections instead of repasting an entire plan",
+      "risk": "visual approval is not build, contract, or runtime proof",
+      "priority": 7
+    },
+    {
+      "tool": "npx skills",
+      "category": "skill_distribution",
+      "installScope": "project_or_global_agent_environment",
+      "repoImpact": "provides a future distribution path for explicitly public TBG skills",
+      "tokenSavingMechanism": "agents load one reusable skill package rather than long copied prompts",
+      "risk": "repo-internal skills may expose local paths or stale policy if published without packaging review",
+      "priority": 5
+    },
+    {
+      "tool": "WezTerm",
+      "category": "terminal_environment",
+      "installScope": "operator_machine",
+      "repoImpact": "hosts named sessions and terminal-agnostic TBG commands",
+      "tokenSavingMechanism": "durable panes keep commands and compact outputs visible outside chat",
+      "risk": "personal configuration or terminal layout can be mistaken for repo truth",
+      "priority": 8
+    },
+    {
+      "tool": "tmux",
+      "category": "persistent_session_backend",
+      "installScope": "operator_or_coordinator_environment",
+      "repoImpact": "backs persistent coordinator sessions where supported",
+      "tokenSavingMechanism": "agents resume named sessions rather than reconstructing shell state",
+      "risk": "native Windows availability must not be assumed",
+      "priority": 9
+    },
+    {
+      "tool": "Neovim",
+      "category": "terminal_editor",
+      "installScope": "operator_machine",
+      "repoImpact": "optional keyboard-first editor and review surface",
+      "tokenSavingMechanism": "keeps focused edits and diagnostics in the persistent terminal workspace",
+      "risk": "must not become a required repo dependency",
+      "priority": 10
+    },
+    {
+      "tool": "voice input",
+      "category": "prompt_throughput_aid",
+      "installScope": "operator_machine",
+      "repoImpact": "feeds structured sprint requests and packet annotations",
+      "tokenSavingMechanism": "dictation accelerates intent capture while the relay carries machine state",
+      "risk": "private dictated data, transcription errors, and OS-specific assumptions",
+      "priority": 11
+    }
+  ],
+  "cooperationModel": {
+    "externalCoordinatorReads": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      ".tbg/skills/manifest.json",
+      ".tbg/workflows/*.contract.json",
+      "artifacts/latest/tbg-chat-packet.json when locally available",
+      "GitHub PR and check state"
+    ],
+    "repoProvides": [
+      "owned and forbidden scope",
+      "proof-level boundaries",
+      "static validators and exact runtime commands",
+      "freshness and loaded-head identity requirements",
+      "compact Markdown and JSON packets",
+      "one contextual next command"
+    ],
+    "neverInfer": [
+      "runtime PASS from a PR being mergeable",
+      "loaded DLL identity from a built file alone",
+      "named save identity from native Continue",
+      "movement, arrival, trade delta, or visible UI from command ACK",
+      "permission for destructive cleanup from general write authority"
+    ]
+  },
+  "treehouseLeaseModel": [
+    {
+      "lease": "route-operator-live-proof",
+      "purpose": "exact-head route and operator-control proof",
+      "retention": "retain until proof artifacts are archived and PR disposition is recorded"
+    },
+    {
+      "lease": "docs-skills",
+      "purpose": "AGENTS, CLAUDE, skills, contracts, and compendium work",
+      "retention": "release after merged head and clean status are verified"
+    },
+    {
+      "lease": "relay-support",
+      "purpose": "ForgeAgentStatus and future AXI packet work",
+      "retention": "release after wrapper/script checks and merged PR"
+    },
+    {
+      "lease": "stale-pr-replay",
+      "purpose": "selective replay from one classified stale stack",
+      "retention": "release only after provenance and old-PR disposition are recorded"
+    },
+    {
+      "lease": "launcher-evidence",
+      "purpose": "retained launcher/runtime evidence",
+      "retention": "protect until a verified archive manifest and restore path exist"
+    }
+  ],
+  "axiInterface": {
+    "compatibilityWrapper": "ForgeAgentStatus.cmd",
+    "futureEntrypoint": "scripts/tbg/Invoke-TbgAxi.ps1",
+    "commands": [
+      "status",
+      "prs",
+      "worktrees",
+      "packet",
+      "proof",
+      "next"
+    ],
+    "outputRules": [
+      "minimal fields by default",
+      "full detail only behind an explicit full switch",
+      "definitive empty states",
+      "bounded text and artifact reads",
+      "structured errors and stable exit codes",
+      "freshness and proof level on every evidence verdict",
+      "one contextual next command",
+      "no raw huge JSON by default"
+    ]
+  },
+  "adoptionBoundaries": {
+    "noMistakesSafeNow": [
+      "documentation",
+      "skills",
+      "harness validators",
+      "static contracts",
+      "JSON schema checks",
+      "CI path filters"
+    ],
+    "noMistakesNeedsAdapter": [
+      "live Bannerlord proof",
+      "runtime gameplay mutation",
+      "command inbox writes",
+      "save mutation",
+      "loaded-DLL and foreground-window proof"
+    ],
+    "gnhfSafeNow": [
+      "stale PR classification",
+      "docs and handoff cleanup",
+      "skill registry linting",
+      "JSON schema validation",
+      "static renderer fixtures"
+    ],
+    "gnhfForbiddenWithoutRuntimeContract": [
+      "Bannerlord launches",
+      "ForgeReboot",
+      "live gameplay",
+      "command inbox or save mutation",
+      "tasks whose only success signal is human observation"
+    ]
+  },
+  "lavishArtifacts": [
+    "repo-floor sprint map",
+    "PR stack topology",
+    "route proof ladder",
+    "worker and engine handoff graph",
+    "operator-control guide",
+    "stale PR replay candidates"
+  ],
+  "skillDistribution": {
+    "currentStatus": "repo_internal",
+    "commonDenominator": "AGENTS.md",
+    "clientAdapter": "CLAUDE.md",
+    "registry": ".tbg/skills/manifest.json",
+    "packageRule": "A public installable skill must have standard SKILL.md frontmatter, no machine-local paths or secrets, explicit authority boundaries, and a versioned source contract. Repo-internal skills remain clearly marked and are not published by implication."
+  },
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "merge_doctrine_and_compendium",
+      "exitEvidence": [
+        "PR #45 static checks pass",
+        "skill registry and workflow JSON parse",
+        "agentic operations contract and skill are committed"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "close_route_proof_gap",
+      "exitEvidence": [
+        "PR #43 exact head built and loaded identity match",
+        "unattended route start and numeric movement evidence",
+        "Manual or hold cleanup state verified"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "ship_tbg_axi_surface",
+      "exitEvidence": [
+        "status, prs, worktrees, packet, proof, and next commands",
+        "bounded output and stable exit codes",
+        "ForgeAgentStatus compatibility retained"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "adopt_external_coordinator_in_inspection_mode",
+      "exitEvidence": [
+        "Firstmate and Treehouse verified outside the repo",
+        "one read-only or docs-only lease consumes TBG contracts and packet",
+        "no tool vendored into BlacksmithGuild"
+      ]
+    },
+    {
+      "sequence": 5,
+      "name": "replay_and_close_one_stale_stack",
+      "exitEvidence": [
+        "unique value ledger",
+        "selective replay provenance",
+        "current-base validation",
+        "old PR close or retention rationale"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "external tools and repo harness are kept as separate cooperating layers",
+      "every tool has category, install scope, repo impact, token-saving mechanism, risk, and priority",
+      "treehouse lease and evidence-retention boundaries are explicit",
+      "AXI commands and output rules are explicit",
+      "no-mistakes and gnhf runtime boundaries are explicit",
+      "skill distribution distinguishes repo-internal from public-installable packages",
+      "the most rewarding sprint order is recorded",
+      "JSON files parse",
+      "git diff --check passes or the exact environment blocker is recorded"
+    ]
+  },
+  "terminalStates": [
+    "PASS_adoption_map_committed",
+    "PASS_external_inspection_only",
+    "BLOCKED_needs_local_tool_verification",
+    "BLOCKED_needs_runtime_adapter",
+    "REJECTED_vendor_external_coordinator",
+    "REJECTED_claim_runtime_from_static_gate"
+  ]
+}

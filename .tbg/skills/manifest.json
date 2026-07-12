@@ -9,6 +9,7 @@
     "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases.",
     "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage.",
     "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified.",
+    "External agent-operation tools coordinate above the repo; BlacksmithGuild retains authority over scope, proof levels, validators, artifacts, and runtime boundaries.",
     "WezTerm and adjacent terminal/editor/session tools are operator-environment aids; BlacksmithGuild exposes clean commands and packets to them but does not vendor or require them."
   ],
   "skills": [
@@ -88,6 +89,29 @@
         "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
         "docs/architecture/harness-skill-maturity.md",
         "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md"
+      ]
+    },
+    {
+      "id": "agentic-operations",
+      "path": ".tbg/skills/agentic-operations/SKILL.md",
+      "distribution": "repo_internal",
+      "useWhen": [
+        "adopting or evaluating Firstmate, Treehouse, no-mistakes, gnhf, AXI, Lavish, npx skills, or another external agent-operations tool around BlacksmithGuild",
+        "designing coordinator, worktree lease, generic gate, compact tool interface, visual review, or skill-distribution boundaries"
+      ],
+      "doNotUseFor": [
+        "runtime product patches",
+        "tool installation without an explicit install sprint",
+        "vendoring external coordinators or operator tools into BlacksmithGuild",
+        "claiming runtime proof from generic CI or visual review"
+      ],
+      "primaryContracts": [
+        "AGENTS.md",
+        ".tbg/workflows/agentic-operations-adoption.contract.json",
+        "docs/architecture/agentic-operations-layer.md",
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
+        "docs/handoff/agentic-toolchain-sprint-map.md",
+        "docs/handoff/local-agent-status-relay.md"
       ]
     },
     {
