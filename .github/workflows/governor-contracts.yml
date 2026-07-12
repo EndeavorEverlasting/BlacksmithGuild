@@ -49,6 +49,10 @@ jobs:
         shell: pwsh
         run: ./scripts/verify-bannerlord-save-layout-contract.ps1
 
+      - name: Verify launcher dependency caution doctrine
+        shell: pwsh
+        run: ./scripts/verify-launcher-dependency-caution-doctrine.ps1
+
       - name: Verify clickable command surface
         shell: pwsh
         run: ./scripts/verify-clickable-command-surface.ps1
