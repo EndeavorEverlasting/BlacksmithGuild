@@ -1,13 +1,14 @@
 {
   "id": "pr-lifecycle-automation",
-  "schemaVersion": "TbgWorkflowContract.v1",
+  "schemaVersion": "TbgWorkflowContract.v2",
   "status": "implemented",
-  "purpose": "Automatically inspect pull-request checks and promote eligible draft pull requests to ready-for-review without routing routine lifecycle work through the operator.",
+  "purpose": "Automatically inspect pull-request evidence, promote eligible drafts, and merge eligible exact heads without routing routine lifecycle work through the operator.",
   "defaultBehavior": {
     "inspectChecks": "automatic",
     "updateReadiness": "automatic_when_required_checks_pass",
+    "merge": "automatic_when_deterministic_merge_gate_passes",
     "updateMetadata": "agent_owned_when_supported_by_repo_evidence",
-    "operatorHandoff": "not_required_for_read_only_queries_or_ready_for_review_promotion"
+    "operatorHandoff": "not_required_for_queries_readiness_or_eligible_merge"
   },
   "requiredWorkflowNames": [
     "Governor Contracts",
@@ -16,7 +17,7 @@
   "conditionalRequiredWorkflowNames": [
     "Hostile Escape Contracts"
   ],
-  "requiredGateDefinition": "Checks from requiredWorkflowNames must be present and successful. Checks from conditionalRequiredWorkflowNames block when present but their absence does not deadlock unrelated PRs. Unlisted external checks and advisory platform/game workflows are reported but do not block readiness.",
+  "requiredGateDefinition": "Checks from requiredWorkflowNames must be present and successful. Checks from conditionalRequiredWorkflowNames block when present but their absence does not deadlock unrelated PRs. Unlisted external checks and advisory platform/game workflows are reported but do not block readiness or automatic merge.",
   "advisoryValidation": {
     "alwaysAdvisoryByDefault": [
       "installed-game execution",
@@ -35,47 +36,91 @@
       "cross-platform builds where the project supports them",
       "policy and architecture verifiers"
     ],
-    "workflowRule": "Keep installed-game and OS-specific jobs in separately named advisory workflows. Do not place them in an always-required workflow whose completion controls readiness. Path-scoped platform-neutral workflows belong in conditionalRequiredWorkflowNames."
+    "workflowRule": "Keep installed-game and OS-specific jobs in separately named advisory workflows. Do not place them in an always-required workflow whose completion controls readiness or merge. Path-scoped platform-neutral workflows belong in conditionalRequiredWorkflowNames."
   },
   "draftControl": {
     "automaticPromotion": true,
     "holdLabel": "pr-lifecycle:hold-draft",
     "meaning": "An explicitly labeled PR remains draft even after all required workflows pass. Without this label, eligible draft PRs are promoted automatically."
   },
+  "mergeControl": {
+    "automaticMerge": true,
+    "method": "squash",
+    "exactHeadRequired": true,
+    "effectiveAfterUtc": "2026-07-12T18:00:00Z",
+    "defaultBaseBranch": "main",
+    "requireSameRepository": true,
+    "holdLabel": "pr-lifecycle:hold-merge",
+    "legacyOptInLabel": "pr-lifecycle:auto-merge-legacy",
+    "stackedOptInLabel": "pr-lifecycle:auto-merge-stacked",
+    "forkOptInLabel": "pr-lifecycle:auto-merge-fork",
+    "blockers": [
+      "pull request is closed or already merged",
+      "pull request is still draft or carries a lifecycle hold label",
+      "always-required workflow is missing",
+      "required or present conditional check is pending, cancelled, or failed",
+      "head SHA changed after evidence inspection",
+      "GitHub reports the head as conflicting or mergeability is unknown",
+      "branch is behind when repository rules require synchronization",
+      "required review is missing or changes are requested",
+      "an unresolved review thread exists or review-thread inspection is incomplete",
+      "pull request predates the policy without the legacy opt-in label",
+      "pull request targets a non-default base without the stacked opt-in label",
+      "pull request comes from another repository without the fork opt-in label",
+      "GitHub repository rules reject both auto-merge and direct exact-head merge"
+    ],
+    "githubFinalAuthority": "The controller first requests GitHub auto-merge for the inspected exact head. If repository auto-merge is unavailable and the current merge state is clean, it attempts a direct exact-head squash merge. GitHub branch protection, rulesets, merge queues, and server-side head matching remain authoritative."
+  },
   "allowedActions": [
     "query pull-request metadata",
-    "query checks and workflow conclusions",
+    "query checks, workflow conclusions, reviews, and review threads",
     "classify always-required, conditional-required, and advisory validation",
-    "write a lifecycle summary",
+    "write a lifecycle result artifact and English workflow summary",
     "mark an eligible draft pull request ready for review",
-    "leave an already-ready pull request unchanged"
+    "request GitHub auto-merge for an eligible exact head",
+    "perform a direct exact-head squash merge only when the deterministic gate passes and GitHub accepts it",
+    "leave an already-ready or already-merged pull request unchanged"
   ],
   "forbiddenActions": [
-    "merge a pull request",
-    "close a pull request",
+    "close a pull request without a separate closure disposition",
     "delete a branch",
     "force-push or rewrite history",
+    "merge a different head than the inspected head",
     "commit or push unrelated repository changes",
     "run untrusted pull-request code with a write-capable token",
-    "claim runtime or gameplay proof from readiness automation"
+    "claim runtime or gameplay proof from lifecycle automation"
   ],
-  "authorizationRule": "When a sprint explicitly authorizes repository changes, the agent executes its bounded commits and pushes. This lifecycle workflow itself never invents authorization for merge, close, branch deletion, force-push, history rewrite, or unrelated commits.",
+  "authorizationRule": "A repo-owned deterministic gate may authorize exact-head squash merge. Separate operator permission is not required after the gate passes. Closing, branch deletion, force-push, history rewrite, and unrelated commits remain outside this controller.",
   "terminalStates": [
     "ready_promoted",
+    "merge_eligible",
+    "auto_merge_enabled",
+    "merged",
+    "merge_blocked_by_github",
     "already_ready",
+    "already_merged",
     "held_draft",
+    "held_merge",
     "waiting_required_workflows",
     "waiting_required_checks",
+    "waiting_mergeable",
+    "waiting_merge_state",
+    "waiting_review",
+    "waiting_review_threads",
+    "blocked_legacy_pr",
+    "blocked_non_default_base",
+    "blocked_cross_repository",
     "closed_noop"
   ],
   "proofBoundary": {
     "reachedByAutomation": [
-      "current PR metadata inspection",
+      "current exact-head PR metadata inspection",
       "required workflow classification",
-      "ready-for-review state transition"
+      "review and unresolved-thread classification",
+      "ready-for-review state transition",
+      "exact-head automatic merge request and resulting GitHub state"
     ],
     "notReachedByAutomation": [
-      "merge readiness under every branch-protection rule",
       "build proof unless a required build workflow passed",
       "launcher proof",
       "command ACK proof",
