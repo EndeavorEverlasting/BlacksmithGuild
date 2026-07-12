@@ -2,39 +2,30 @@
 setlocal
 
 echo.
-echo The Blacksmith Guild - Forge Continue
+echo The Blacksmith Guild - One-Click Continue Campaign
 echo.
-echo Build + install + fast modal-aware CONTINUE until game handoff.
-echo Timing: 5-second phases, 30-second total cap, one bounded full-close retry.
-echo Evidence: artifacts\latest\launcher-frontdoor\ and launcher-frontdoor.result.json
-echo Watch mode: ForgeWatch.cmd or .\forge.ps1 -Watch
+echo Build and install the exact head, pass known launcher windows, load the pinned dev save,
+echo travel to a town, prove one real visible trade, then hand off to forge, horse, governor,
+echo and autonomous guild-loop engines with correlated JSON and English logs.
+echo.
+echo Latest result:   %~dp0artifacts\latest\forge-continue-campaign.result.json
+echo Latest report:   %~dp0artifacts\latest\forge-continue-campaign.report.md
+echo Latest progress: %~dp0artifacts\latest\forge-continue-campaign.progress.log
 echo.
 
-rem LaunchManual deliberately stops forge.ps1 before UI navigation.
-rem launcher-fast-frontdoor.ps1 resolves RepoRoot from its own tracked location.
-rem Do not pass %%~dp0 as RepoRoot because its trailing slash can escape the closing quote on Windows.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch -LaunchIntent continue -LaunchManual
+rem The PowerShell coordinator resolves the repo root from its own tracked location.
+rem It delegates launcher/save/travel/trade proof to run-tbg-visible-trade-cycle.ps1.
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-forge-continue-campaign.ps1" %*
 set FORGE_EXIT=%ERRORLEVEL%
-if %FORGE_EXIT% NEQ 0 (
-    echo.
-    echo Build or launcher-open phase failed. See Forge.log and Launch.log.
-    if not defined TBG_NO_PAUSE pause
-    exit /b %FORGE_EXIT%
-)
-
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\launcher-fast-frontdoor.ps1" -LaunchIntent continue -TotalBudgetSec 30 -PhaseBudgetSec 5 -MaxAttempts 2
-set FORGE_EXIT=%ERRORLEVEL%
-if %FORGE_EXIT% NEQ 0 (
-    echo.
-    echo Forge CONTINUE reached a bounded launcher dead end.
-    echo Local evidence: %~dp0artifacts\latest\launcher-frontdoor\
-    echo Latest result: %~dp0artifacts\latest\launcher-frontdoor.result.json
-    echo Run CollectDiagnostics.cmd only when a full diagnostic zip is also needed.
-    if not defined TBG_NO_PAUSE pause
-    exit /b %FORGE_EXIT%
-)
 
 echo.
-echo Launcher handoff observed. Runtime readiness remains a separate proof level.
-echo Local evidence: %~dp0artifacts\latest\launcher-frontdoor\
+if %FORGE_EXIT% EQU 0 (
+    echo Forge Continue completed the visible trade and downstream handoff pipeline.
+) else (
+    echo Forge Continue stopped at a bounded stage with exit code %FORGE_EXIT%.
+)
+echo Result:   %~dp0artifacts\latest\forge-continue-campaign.result.json
+echo Report:   %~dp0artifacts\latest\forge-continue-campaign.report.md
+echo Progress: %~dp0artifacts\latest\forge-continue-campaign.progress.log
 if not defined TBG_NO_PAUSE pause
+exit /b %FORGE_EXIT%

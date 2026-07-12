@@ -1,0 +1,92 @@
+{
+  "id": "forge-continue-campaign",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "one-click-campaign-handoff",
+  "contextBanner": "[TBG | Forge Continue Campaign | launcher/runtime/handoff | branch: feat/forge-continue-campaign-handoff]",
+  "status": "operator_entry_implemented_runtime_proof_required",
+  "purpose": "Make ForgeContinue.cmd the one-click entry that builds and installs the exact head, handles known native launcher windows, proves the pinned save, travels to town, performs a real visible trade, and hands fresh campaign state to forge, horse, governor, and guild-loop engines with bounded evidence.",
+  "operatorEntry": {
+    "command": ".\\ForgeContinue.cmd",
+    "script": "scripts/run-forge-continue-campaign.ps1",
+    "defaultBehavior": "full_pipeline",
+    "leavesGameOpen": true,
+    "requiresCleanCommittedHead": true,
+    "automaticallyResolvesExpectedHead": true
+  },
+  "ownedScope": [
+    "ForgeContinue command composition",
+    "known launcher modal traversal through the existing fast frontdoor",
+    "exact save identity through the existing visible-trade certifier",
+    "one route, arrival, real buy, and visible trade surface",
+    "post-trade forge and horse analysis",
+    "bounded pack-animal acquisition attempt",
+    "campaign governor decision and guild-loop handoff",
+    "per-stage JSON, JSONL, progress, command logs, and English reporting"
+  ],
+  "orderedStages": [
+    { "sequence": 1, "name": "visible-trade-cycle", "requiredProof": "exact head, loaded save, movement, arrival, real trade delta, visible surface, Manual cleanup" },
+    { "sequence": 2, "name": "forge-handoff", "requiredProof": "command transport; downstream completion remains separate" },
+    { "sequence": 3, "name": "horse-atlas", "requiredProof": "fresh BlacksmithGuild_HorseAtlas.json" },
+    { "sequence": 4, "name": "herd-ledger", "requiredProof": "fresh BlacksmithGuild_HerdLedger.json" },
+    { "sequence": 5, "name": "horse-recommendation", "requiredProof": "fresh BlacksmithGuild_HorseMarketIntel.json" },
+    { "sequence": 6, "name": "pack-animal-acquisition", "requiredProof": "fresh probe with explicit success delta or explicit blocked reason" },
+    { "sequence": 7, "name": "governor-decision", "requiredProof": "fresh BlacksmithGuild_CampaignGovernorDecision.json with proposed handoff" },
+    { "sequence": 8, "name": "guild-loop-handoff", "requiredProof": "fresh asynchronous guild-loop evidence or explicit bounded deferral" }
+  ],
+  "knownLauncherWindows": {
+    "owner": "scripts/run-tbg-visible-trade-cycle.ps1 via invoke-forge-launch-operator.ps1 and launcher-fast-frontdoor.ps1",
+    "handled": [
+      "native launcher play/continue surface",
+      "Safe Mode prompt",
+      "dependency mismatch caution",
+      "loading handoff",
+      "bounded full-close retry"
+    ],
+    "unknownWindowPolicy": "stop at a bounded launcher state, retain screenshots/logs/context, and do not fabricate runtime progress"
+  },
+  "runtimeArtifacts": [
+    "artifacts/latest/forge-continue-campaign.progress.log",
+    "artifacts/latest/forge-continue-campaign.result.json",
+    "artifacts/latest/forge-continue-campaign.report.md",
+    "artifacts/latest/forge-continue-campaign/<run-id>/events.jsonl",
+    "artifacts/latest/forge-continue-campaign/<run-id>/steps/*.log",
+    "artifacts/latest/visible-trade-cycle.result.json",
+    "BlacksmithGuild_HorseAtlas.json",
+    "BlacksmithGuild_HerdLedger.json",
+    "BlacksmithGuild_HorseMarketIntel.json",
+    "BlacksmithGuild_MapTradePackAnimalProbe.json",
+    "BlacksmithGuild_CampaignGovernorDecision.json",
+    "BlacksmithGuild_AutonomousGuildLoop.json"
+  ],
+  "proofBoundary": {
+    "launcherHandoffIsRuntimeProof": false,
+    "commandAckIsCompletion": false,
+    "blockedHorseAttemptIsAcquisition": false,
+    "horseAcquisitionRequiresFreshSuccessDelta": true,
+    "governorDecisionIsFutureObjectiveCompletion": false,
+    "guildLoopStartIsTerminalLoopCompletion": false
+  },
+  "forbiddenScope": [
+    "free gold, inventory, mounts, movement, XP, or stamina",
+    "stale or cross-head artifacts accepted as current proof",
+    "blocked horse attempt reported as acquisition",
+    "command acknowledgement reported as asynchronous completion",
+    "unknown launcher windows clicked without PID, HWND, foreground, and classification guards",
+    "destructive Git cleanup",
+    "save deletion or silent save mutation"
+  ],
+  "validationCommands": [
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-forge-continue-campaign-contract.ps1",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-visible-trade-cycle-contract.ps1",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-launcher-validation-supervisor.ps1",
+    "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\\verify-clickable-command-surface.ps1",
+    "dotnet build src\\BlacksmithGuild\\BlacksmithGuild.csproj --configuration Release --no-restore"
+  ],
+  "terminalStates": [
+    "PASS_campaign_handoff",
+    "FAILED_preflight",
+    "FAILED_visible_trade_cycle",
+    "FAILED_handoff",
+    "FAILED_runtime"
+  ]
+}
