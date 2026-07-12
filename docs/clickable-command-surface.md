@@ -36,7 +36,7 @@ Before telling a user to run a PowerShell inbox command directly:
 | `Run-FoodGovernorCheck.cmd` | compatibility alias to `Run-FoodAdvisory.cmd` | No | `BlacksmithGuild_FoodAdvisory.json` | Backward-compatible old Food wrapper name |
 | `Run-HorseMarketIntel.cmd` | `AnalyzeHorseMarket` | No | `BlacksmithGuild_HorseMarketIntel.json` | Read-only pack/horse/capacity intel |
 | `Run-GuildLoopAdvisory.cmd` | `RunGuildLoopNow` | No | `BlacksmithGuild_GuildLoopReport.json` | Advisory market + forge + crew plan |
-| `Run-AutonomousGuildLoop.cmd` | context controller -> `SetEngineToggleAutomation` -> `ResumeCampaignClock` -> `RunAutonomousGuildLoopNow` | Yes / movement, time, trade, forge actions | `BlacksmithGuild_AutonomousGuildLoop.json`, `artifacts/latest/autonomous-guild-loop-operator.json` | Five-second cancel gate, automatic foreground/mode/clock setup, active focus/pause correction, crash-aware bounded cycle |
+| `Run-AutonomousGuildLoop.cmd` | immediate context controller -> `SetEngineToggleAutomation` -> `ResumeCampaignClock` -> `RunAutonomousGuildLoopNow` | Yes / movement, time, trade, forge actions | `BlacksmithGuild_AutonomousGuildLoop.json`, `artifacts/latest/autonomous-guild-loop-operator.json` | Immediate foreground/mode/clock setup, active focus/pause correction, crash-aware bounded cycle; optional 3/4/5-second startup grace |
 | `Run-CohesionAnalyze.cmd` | `AnalyzeCohesionOpportunities` | No | `BlacksmithGuild_CohesionOpportunities.json` | Read-only cohesion/safety opportunity scan |
 | `Run-CohesionMove.cmd` | `RunVisibleCohesionMoveNow` | Yes / movement | `BlacksmithGuild_CohesionMove.json` | Visible player-party cohesion move; disposable save unless accepted |
 | `Run-AutoTravelChoices.cmd` | `ShowAutoTravelChoices` | No | Phase1 `[TBG TRAVEL]` lines / status | Read-only ranked travel choices |
@@ -51,24 +51,45 @@ Before telling a user to run a PowerShell inbox command directly:
 
 ## Context-aware Autonomous Guild Loop
 
-`Run-AutonomousGuildLoop.cmd` is the normal play/operator surface, not a live certification harness. Clicking it declares **Automation intent**.
+`Run-AutonomousGuildLoop.cmd` is the normal play/operator surface, not a live certification harness. Clicking it with no argument declares **immediate Automation intent**.
 
-The controller performs this sequence automatically:
+The immediate controller performs this sequence:
 
-1. Wait five seconds. Press **Q** or **Escape** to quit instead.
-2. Detect a live Bannerlord Singleplayer runtime.
-3. Bring the bound Bannerlord window to the foreground.
-4. Run `SetEngineToggleAutomation` unless the authority evidence already says `Automation`.
-5. Run `ResumeCampaignClock`.
-6. Run `RunAutonomousGuildLoopNow`.
-7. Keep watching the bounded cycle, reacquire Bannerlord focus when it is lost, and issue another `ResumeCampaignClock` when status reports a paused map.
-8. Write `artifacts/latest/autonomous-guild-loop-operator.json` and `.md` with every context transition.
+1. Detect a live Bannerlord Singleplayer runtime.
+2. Bring the bound Bannerlord window to the foreground.
+3. Run `SetEngineToggleAutomation`.
+4. Run `ResumeCampaignClock`.
+5. Run `RunAutonomousGuildLoopNow`.
+6. Keep watching the bounded cycle, reacquire Bannerlord focus when it is lost, and issue another `ResumeCampaignClock` when status reports a paused map.
+7. Write `artifacts/latest/autonomous-guild-loop-operator.json` and `.md` with context transitions.
 
-Context-sensitive quit behavior:
+There is no default startup delay. Timed startup cancellation is optional:
+
+```powershell
+.\Run-AutonomousGuildLoop.cmd 3
+.\Run-AutonomousGuildLoop.cmd 4
+.\Run-AutonomousGuildLoop.cmd 5
+```
+
+Those explicit forms use the timed controller and allow **Q** or **Escape** during the requested window.
+
+### In-game operator intent
+
+`Ctrl+Alt+T` is also actionable. When the cycle reaches **Automation**, `OperatorAutomationContextController`:
+
+- refreshes the current campaign context;
+- runs `ResumeCampaignClock` when the campaign map is ready;
+- starts `RunAutonomousGuildLoopNow`, or preserves it if already running;
+- writes `BlacksmithGuild_OperatorAutomationContext.json`;
+- shows a practical success or blocked notice instead of only displaying the mode label.
+
+Cycling to Manual still invokes the existing manual holds/aborts. Hybrid enables direct commands without automatically starting the bounded loop.
+
+### Quit behavior
 
 - `ForgeStop.cmd` declares **Quit intent** and defaults to a soft stop after a five-second Soft/Force/Cancel window.
-- A fresh ForgeStop sentinel is not silently overridden by the automation wrapper.
-- If the user starts the automation wrapper while a stop context is still active, the wrapper provides a five-second **C to cancel the quit** window. Otherwise it honors the stop and exits without focusing or unpausing the game.
+- A running external context controller watches the stop sentinel and exits when quit is requested.
+- `Ctrl+Alt+B` remains the in-game movement abort.
 
 Important terminal outcomes:
 
@@ -76,9 +97,9 @@ Important terminal outcomes:
 - `FAILED_game_disappeared_during_command`: Bannerlord vanished while setup or the loop was active.
 - `BLOCKED_no_ack`: a context command was written but no matching ACK/status arrived.
 - `BLOCKED_loop_not_terminal`: startup was acknowledged, but the guild-loop report did not become terminal before the bounded watch expired.
-- `USER_QUIT_REQUESTED` / `USER_QUIT_HONORED`: the timed quit context won, so automation did not continue.
+- `USER_QUIT_REQUESTED` / `USER_QUIT_HONORED`: an explicitly selected timed quit context won.
 
-The controller uses focus to prevent Bannerlord's focus-loss pause from silently blocking movement. This means the automation session may bring Bannerlord back to the foreground while its bounded cycle is active. Use `ForgeStop.cmd` to stop that behavior.
+The controller may bring Bannerlord back to the foreground while its bounded cycle is active because Bannerlord pauses campaign movement after focus loss. Use `ForgeStop.cmd` to stop that behavior.
 
 ---
 
@@ -123,54 +144,40 @@ Current limit: Food can analyze runway, diversity, candidates, read-only market 
 
 ## Still not click-clean enough
 
-These areas either need more wrappers or should be made clearer before normal users test them repeatedly.
-
 | Area | Current state | Next wrapper/doc action |
 |---|---|---|
 | Food provisioning | Direct Food advisory exists; automated food action is not built | No action wrapper until a real vanilla food action path exists |
-| Auto-travel movement choices | `Run-AutoTravelChoices.cmd` is read-only, but movement choices still require inbox commands like `AutoTravelChoice1-5` | Add separate `Run-AutoTravelChoice1.cmd` etc. only after save-impact warning is explicit |
-| Clan intel | `Run-ClanIntelCert.cmd` exists for cert, but everyday read-only wrappers for each clan-intel command are not root-level | Add `Run-ClanContext.cmd`, `Run-NobleNetwork.cmd`, etc. if the feature becomes user-facing |
-| Tavern hero commands | Cert wrappers exist; everyday wrappers are incomplete | Keep recruit wrapper disposable-save labeled; add read-only shortcuts if used often |
-| Character build catalog/matrix | Cert/matrix wrappers exist, but these are agent/test-save surfaces | Do not present as normal personal-save click paths |
-| Stage D rest/time mutation | Read-only rest plan exists; no wait/rest mutation | Do not add mutation wrapper until proof gate exists |
-| Headless safe craft mutation | Blocks with `CraftManual` until API proven | No craft wrapper until safe craft mutation is proven |
-| Multi-cycle guild loop | Context-aware one-cycle play mode exists | Add deliberate multi-cycle/session policy only after one-cycle runtime behavior is stable |
+| Auto-travel movement choices | `Run-AutoTravelChoices.cmd` is read-only, but movement choices still require inbox commands like `AutoTravelChoice1-5` | Add separate choice wrappers only after save-impact warning is explicit |
+| Clan intel | Cert commands exist; everyday read-only wrappers are incomplete | Add root wrappers if the feature becomes user-facing |
+| Tavern hero commands | Cert wrappers exist; everyday wrappers are incomplete | Keep recruit wrapper save-impact labeled |
+| Stage D rest/time mutation | Read-only rest plan exists; no wait/rest mutation | Do not add mutation wrapper until a real action path exists |
+| Multi-cycle guild loop | Immediate context-aware one-cycle play mode exists | Add deliberate multi-cycle/session policy after one-cycle runtime behavior is stable |
 
 ---
 
 ## Thin wrapper pattern
 
-For read-only inbox commands:
-
 ```bat
 @echo off
 setlocal
 cd /d "%~dp0"
-echo [TBG] <Feature Name> - read-only
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Command <CommandName> -Wait
+echo [TBG] <Feature Name>
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0<runner>.ps1"
 set "TBG_EXIT=%ERRORLEVEL%"
 pause
 exit /b %TBG_EXIT%
-```
-
-For save-impacting commands, add a visible warning before the PowerShell call:
-
-```bat
-echo WARNING: This can change campaign state. Use a disposable save unless accepted.
 ```
 
 ---
 
 ## Agent checklist
 
-When adding a new user-facing feature:
-
 - [ ] Is there a root-level `.cmd` wrapper?
-- [ ] Does the wrapper pause on failure so the user can read the result?
+- [ ] Does success return without unnecessarily blocking the game?
+- [ ] Does failure remain visible long enough to read?
 - [ ] Does the wrapper preserve the PowerShell exit code?
-- [ ] Does the wrapper state save impact clearly?
-- [ ] Is the output JSON named in the wrapper and docs?
-- [ ] Does a movement wrapper explicitly account for engine mode, focus, and campaign time?
-- [ ] Does a quit path have a bounded cancel/change-mind window rather than an indefinite prompt?
+- [ ] Does a movement wrapper account for engine mode, focus, and campaign time?
+- [ ] Is any startup grace optional unless the operation itself is Quit intent?
+- [ ] Does an in-game operator intent produce practical follow-through and evidence?
 - [ ] Is this file updated?
 - [ ] Is `scripts/verify-clickable-command-surface.ps1` updated?
