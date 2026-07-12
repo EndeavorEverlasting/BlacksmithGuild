@@ -89,8 +89,8 @@ try {
     Assert-Condition -Condition ($workflow -match '(?m)^\s*issues:\s*write\s*$') -Message 'Lifecycle workflow needs issues write permission to bootstrap policy labels.'
     Assert-Condition -Condition ($workflow -match 'pull_request_target') -Message 'Lifecycle workflow must use the trusted default-branch pull_request_target path.'
     Assert-Condition -Condition ($workflow -match 'workflow_run') -Message 'Lifecycle workflow must react to repo-owned workflow completion.'
-    Assert-Condition -Condition ($workflow -match 'pull_request_review') -Message 'Lifecycle workflow must react to review-state changes.'
-    Assert-Condition -Condition ($workflow -match 'pull_request_review_thread') -Message 'Lifecycle workflow must react to review-thread resolution.'
+    Assert-Condition -Condition ($workflow -match 'pull_request_review') -Message 'Lifecycle workflow must react to supported review-state changes.'
+    Assert-Condition -Condition ($workflow -notmatch '(?m)^\s*pull_request_review_thread:\s*$') -Message 'Lifecycle workflow contains unsupported pull_request_review_thread trigger; review-thread changes must reconcile through schedule or comment.'
     Assert-Condition -Condition ($workflow -match '(?m)^\s*issue_comment:\s*$') -Message 'Lifecycle workflow must support explicit reconciliation comments.'
     Assert-Condition -Condition ($workflow -match '/reconcile-pr-lifecycle') -Message 'Lifecycle workflow does not expose the reconciliation comment command.'
     Assert-Condition -Condition ($workflow -match "cron:\s*'\*/10 \* \* \* \*'") -Message 'Lifecycle workflow does not schedule missed-event reconciliation.'
@@ -119,7 +119,7 @@ try {
     Assert-Condition -Condition ($doc -match 'pr-lifecycle:hold-merge') -Message 'Lifecycle documentation does not explain the merge hold label.'
     Assert-Condition -Condition ($doc -match 'exact-head') -Message 'Lifecycle documentation does not explain exact-head merge.'
 
-    Write-Host 'PASS: lifecycle automation uses deterministic exact-head blockers, self-heals missed events, bootstraps control labels, preserves cross-platform advisory validation, publishes evidence, and cannot close, force, rewrite, or delete.' -ForegroundColor Green
+    Write-Host 'PASS: lifecycle automation uses only supported Actions triggers, deterministic exact-head blockers, scheduled and comment reconciliation, control-label bootstrap, cross-platform advisory validation, and bounded evidence reporting.' -ForegroundColor Green
     exit 0
 } catch {
     Write-Host ('FAIL: PR lifecycle automation verifier: {0}' -f $_.Exception.Message) -ForegroundColor Red

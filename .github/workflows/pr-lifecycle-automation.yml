@@ -15,10 +15,6 @@ on:
       - submitted
       - edited
       - dismissed
-  pull_request_review_thread:
-    types:
-      - resolved
-      - unresolved
   issue_comment:
     types:
       - created
@@ -97,7 +93,7 @@ jobs:
           $number = ''
           $mode = ''
 
-          if ($env:EVENT_NAME -in @('pull_request_target', 'pull_request_review', 'pull_request_review_thread')) {
+          if ($env:EVENT_NAME -in @('pull_request_target', 'pull_request_review')) {
             $number = [string]$event.pull_request.number
           } elseif ($env:EVENT_NAME -eq 'issue_comment') {
             $isPullRequest = $null -ne $event.issue.pull_request
