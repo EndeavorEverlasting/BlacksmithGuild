@@ -31,9 +31,15 @@ function Invoke-FixtureGit {
     } else {
         @('-C', $WorkingRoot) + $Arguments
     }
-    $global:LASTEXITCODE = 0
-    $output = & $gitPath @allArguments 2>&1
-    $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $global:LASTEXITCODE = 0
+        $output = & $gitPath @allArguments 2>&1
+        $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     if ($exitCode -ne 0) {
         throw ('git {0} returned exit code {1}: {2}' -f ($allArguments -join ' '), $exitCode, (($output | Out-String).Trim()))
     }
