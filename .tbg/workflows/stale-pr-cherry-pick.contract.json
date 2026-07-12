@@ -1,0 +1,111 @@
+{
+  "id": "stale-pr-cherry-pick",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "agent-skill-factoring",
+  "contextBanner": "[TBG | Stale PR Cherry-Pick | coordinator/cleanup | branch: docs/agent-skills-stale-pr-cherry-pick]",
+  "status": "contract_defined",
+  "purpose": "Recover selected value from stale or conflicted PRs without blind merge, blind squash, blind deletion, or stale-head base selection.",
+  "allowedScope": [
+    "PR metadata and diff inspection",
+    "commit range and path ownership mapping",
+    "unique-value classification",
+    "selective cherry-pick with -x when a commit is clean and still coherent",
+    "selective path/hunk replay when only part of a stale commit remains valid",
+    "replacement PRs based on current main or an explicit current foundation branch",
+    "closing stale PRs only after a replacement or rejection rationale is recorded"
+  ],
+  "forbiddenScope": [
+    "using a stale PR head as a general sprint base",
+    "blind squash of a stale stack",
+    "blind deletion of branches, worktrees, evidence, or PRs",
+    "claiming runtime proof from stale artifacts",
+    "collapsing command ACK, route start, arrival, trade delta, or visible UI proof levels",
+    "rewriting unrelated docs or source while replaying a stale delta"
+  ],
+  "inputs": [
+    "sourcePrNumber",
+    "sourceHeadSha",
+    "sourceBase",
+    "currentBaseSha",
+    "changedFiles",
+    "commitList",
+    "conflictState",
+    "semanticOverlap",
+    "validationCommands"
+  ],
+  "orderedSteps": [
+    {
+      "sequence": 1,
+      "name": "map_source",
+      "requiredEvidence": [
+        "gh pr view",
+        "gh pr diff or changed-file list",
+        "commit list",
+        "current mergeability/conflict state"
+      ]
+    },
+    {
+      "sequence": 2,
+      "name": "classify_value",
+      "requiredEvidence": [
+        "unique commits or hunks",
+        "superseded files",
+        "still-valid docs/tests/contracts",
+        "runtime evidence references that must be preserved but not reused as PASS"
+      ]
+    },
+    {
+      "sequence": 3,
+      "name": "select_base",
+      "requiredEvidence": [
+        "current origin/main or explicit current foundation branch",
+        "reason stale head is not being used as a base"
+      ]
+    },
+    {
+      "sequence": 4,
+      "name": "replay_delta",
+      "requiredEvidence": [
+        "cherry-pick -x commit list or hunk/path replay notes",
+        "files intentionally omitted",
+        "conflicts resolved or blocker recorded"
+      ]
+    },
+    {
+      "sequence": 5,
+      "name": "validate_current_context",
+      "requiredEvidence": [
+        "git diff --check",
+        "targeted validators",
+        "relevant build/static checks",
+        "skipped checks with exact later command"
+      ]
+    },
+    {
+      "sequence": 6,
+      "name": "supersede_or_close",
+      "requiredEvidence": [
+        "replacement PR link or rejection note",
+        "old PR disposition",
+        "branch/worktree/evidence retention decision"
+      ]
+    }
+  ],
+  "doneGate": {
+    "requires": [
+      "source PR classified",
+      "selected delta replayed or exact blocker recorded",
+      "replacement branch based on safe current base",
+      "validation run or skipped with exact commands",
+      "old PR not deleted/closed without recorded rationale"
+    ]
+  },
+  "terminalStates": [
+    "PASS_replayed_selected_delta",
+    "BLOCKED_conflict_requires_owner",
+    "BLOCKED_runtime_evidence_retention",
+    "BLOCKED_no_unique_value",
+    "SUPERSEDED_by_current_contract",
+    "REJECTED_with_rationale"
+  ]
+}

@@ -21,6 +21,98 @@ This file is the root coordination contract for Codex, Cursor, ChatGPT handoffs,
 - Do not ask the user to harvest logs manually.
 - Runner owns evidence capture.
 
+## Common denominator vs skills
+
+`AGENTS.md` is the common denominator. It should stay small enough for every agent to read at entry.
+
+Put repo-wide facts here:
+- agent ownership and routing rules;
+- non-negotiable safety boundaries;
+- proof and evidence discipline;
+- encoding rules;
+- where to find executable contracts and targeted skills.
+
+Put conditional brush-up material in `.tbg/skills/<skill-id>/SKILL.md`, not in this file. A skill may explain a workflow, proof ladder, stale-PR recovery path, operator control surface, launcher lifecycle, terminal environment, or MCP/LSP search pattern, but it must point back to executable contracts, policies, manifests, scripts, or current docs as the authority.
+
+If a skill disagrees with a workflow contract, harness policy, operator catalog, or current source file, the executable source wins and the skill must be corrected.
+
+## Skill selection rule
+
+Before substantial repo work, choose the narrowest matching skill from `.tbg/skills/manifest.json`.
+
+Required default skills:
+- `repo-floor-hygiene` for branch, PR, worktree, conflict, stale artifact, and safe-base mapping.
+- `agent-skill-factoring` for changing agent rules, skill docs, manifests, or prompt surfaces.
+- `harness-maturity` for deciding whether logic belongs in harness plumbing, a workflow contract, a registry, or narrow skill/domain code.
+- `compendium-preservation` for preserving high-value chat annotations, stale snapshots, and cross-sprint insights without treating stale context as current truth.
+- `operator-terminal-environment` for WezTerm, tmux, Neovim, voice-input, terminal-session, and local shell ergonomics around repo commands without making those tools repo dependencies.
+- `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
+
+Use `agentic-operations` when a sprint coordinates external agent tools, multi-worktree leases, clean branch completion, first-test-after-clone guidance, or implementation closeout across concurrent pushes.
+
+Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
+
+## Harness maturity rule
+
+Harness maturity is not a raw line-count target. A thick harness is useful when it moves cross-cutting plumbing out of domain behavior: config loading, dependency injection, capability routing, permission gates, policy guards, evidence capture, retries, rollback, metrics, English/JSON reporting, UI shims, schemas, fixtures, and adapters.
+
+Keep domain behavior narrow. Route, smithing, economy, trade, save identity, launcher lifecycle, and gameplay decisions should not be moved into harness merely to make the harness percentage look higher.
+
+Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before any refactor that claims to make the app more harness-driven. The acceptable reason is a real safety, replay, audit, rollback, reporting, or agent-context-load problem. Reject percentage chasing.
+
+## Compendium preservation rule
+
+Long chat annotations, stale PR descriptions, and operator comments can contain important design insight, but they are not automatically current repo truth.
+
+Default posture:
+1. capture the source and its approximate freshness;
+2. classify it as current truth, stale-but-useful principle, replay candidate, needs runtime proof, or rejected/superseded;
+3. route it to the narrowest owning skill or workflow;
+4. preserve provenance in a repo-owned doc, contract, PR body, or artifact index;
+5. verify against current source, contracts, PR state, or fresh artifacts before implementation or closeout.
+
+Use `.tbg/skills/compendium-preservation/SKILL.md` and `.tbg/workflows/compendium-preservation.contract.json` when a sprint needs to preserve a large set of insights without losing rigor.
+
+## Operator terminal environment rule
+
+WezTerm, tmux, Neovim, and voice-input tools belong to the operator environment layer above the repo. They help the operator and agents run, read, and organize BlacksmithGuild commands; they are not runtime proof and they are not required repo dependencies.
+
+Default posture:
+1. expose clean repo commands and compact packets that work in any terminal;
+2. document optional terminal/session topology as examples, not mandatory setup;
+3. keep long details in artifacts or PR comments instead of terminal scrollback;
+4. never commit personal terminal config, shell history, fonts, screenshots, tokens, or generated terminal logs;
+5. use `.tbg/skills/operator-terminal-environment/SKILL.md` and `.tbg/workflows/operator-terminal-environment.contract.json` before changing terminal/operator-environment doctrine.
+
+## Clean branch completion rule
+
+Implementation completion must survive concurrent pushes without turning `main` into a junk drawer.
+
+Default posture:
+1. fetch before branch, PR, merge, replay, cleanup, or proof decisions;
+2. use one branch and one worktree per active lane;
+3. keep `origin/main` as the default base unless the sprint explicitly owns an open PR branch;
+4. use `ForgeAgentStatus` or a future TBG AXI command to move local state into compact artifacts or PR comments;
+5. keep no-game first-user checks separate from runtime proof;
+6. close stale PRs only after selected value is replayed, rejected, or superseded with rationale;
+7. archive evidence with a manifest before removing runtime-evidence worktrees or ignored artifact lanes.
+
+Use `.tbg/workflows/implementation-completion-clean-branches.contract.json`, `docs/handoff/implementation-completion-clean-branches.md`, and `docs/first-test-after-clone.md` for implementation closeout and first-clone validation work.
+
+## Stale PR policy
+
+A stale PR is not disposable merely because it is behind, conflicted, old, or superseded in part.
+
+Default posture:
+1. map it;
+2. classify unique value;
+3. preserve useful commits, hunks, tests, docs, and evidence references;
+4. replay only the selected delta onto a safe current base;
+5. validate under current contracts;
+6. close or supersede the old PR only after the replacement path is recorded.
+
+Do not use stale PR heads as general bases. Do not delete stale branches or worktrees without proof and explicit operator authorization.
+
 ## Current strategic target
 
 One command should:

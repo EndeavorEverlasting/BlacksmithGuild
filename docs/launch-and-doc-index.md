@@ -2,7 +2,24 @@
 
 **Start here** if you are asking: *How do I launch? Where is that documented?*
 
-Repo root: `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild`
+Repo root: `<path-to-BlacksmithGuild>`
+
+---
+
+## First test after cloning `main`
+
+Before launching Bannerlord or testing hotkeys, run the safe no-game first test:
+
+```powershell
+git status --short
+git branch --show-current
+git log --oneline --decorate -5
+dotnet --version
+dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug
+git diff --check
+```
+
+Full guide: [first-test-after-clone.md](first-test-after-clone.md)
 
 ---
 
@@ -109,6 +126,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 
 | Question | Read this file |
 |----------|----------------|
+| What should I run first after cloning `main`? | [first-test-after-clone.md](first-test-after-clone.md) |
 | **How do I load, toggle Automation, travel, stop, and judge visible trading honestly?** | [operator/load-save-toggle-and-visible-trade-plan.md](operator/load-save-toggle-and-visible-trade-plan.md) |
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
 | Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
@@ -145,6 +163,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 ## One-line cheat sheet
 
 ```text
+First:    docs/first-test-after-clone.md
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
 Mode:     Ctrl+Alt+T → Manual | Hybrid | Automation (read the in-game notice)
