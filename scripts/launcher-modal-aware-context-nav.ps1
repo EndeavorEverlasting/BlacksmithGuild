@@ -1,10 +1,10 @@
 ﻿# Modal-aware launcher navigation wrapper for Forge/ForgeContinue.
 #
 # This wrapper delegates the primary PLAY/CONTINUE click to launcher-frozen-context-nav.ps1.
-# If that frozen navigator proves the bound launcher target was invalidated but no game handoff
-# was observed, this wrapper handles Bannerlord's dependency-mismatch CAUTION modal as a
-# first-class launcher handoff state. It confirms only the process/window that came from the
-# fresh LauncherWindowContext. It does not claim runtime proof.
+# If the frozen navigator cannot prove a game handoff, this wrapper inspects the bound
+# launcher PID/HWND from LauncherWindowContext and handles Bannerlord's dependency-mismatch
+# CAUTION modal as a first-class launcher handoff state. It confirms only the process/window
+# that came from the fresh LauncherWindowContext. It does not claim runtime proof.
 
 param(
     [Parameter(Mandatory = $true)]
@@ -138,6 +138,70 @@ function Test-TbgModalHwndPid {
     return ([int]$actualPid -eq $ExpectedPid)
 }
 
+function Get-TbgLauncherWindowSnapshot {
+    param(
+        [Parameter(Mandatory = $true)][int]$ExpectedPid,
+        [Parameter(Mandatory = $true)][IntPtr]$OriginalHwnd
+    )
+
+    $process = Get-Process -Id $ExpectedPid -ErrorAction SilentlyContinue
+    if (-not $process) {
+        return [pscustomobject][ordered]@{
+            processExists = $false
+            processId = $ExpectedPid
+            processName = $null
+            hwnd = 0
+            originalHwnd = $OriginalHwnd.ToInt64()
+            sameHwnd = $false
+            foregroundHwnd = [ModalAwareLauncherNative]::GetForegroundWindow().ToInt64()
+            foregroundMatches = $false
+            title = $null
+            width = 0
+            height = 0
+            expectedNextStates = 'game_spawned|dependency_caution_modal|safe_mode_modal|singleplayer_window|operator_action_required'
+        }
+    }
+
+    try { $process.Refresh() } catch { }
+    $hwnd = [IntPtr]$process.MainWindowHandle
+    $rect = New-Object ModalAwareLauncherNative+RECT
+    $width = 0
+    $height = 0
+    if ($hwnd -ne [IntPtr]::Zero -and [ModalAwareLauncherNative]::IsWindow($hwnd) -and [ModalAwareLauncherNative]::GetClientRect($hwnd, [ref]$rect)) {
+        $width = $rect.Right - $rect.Left
+        $height = $rect.Bottom - $rect.Top
+    }
+    $foreground = [ModalAwareLauncherNative]::GetForegroundWindow()
+
+    return [pscustomobject][ordered]@{
+        processExists = $true
+        processId = [int]$process.Id
+        processName = [string]$process.ProcessName
+        hwnd = $hwnd.ToInt64()
+        originalHwnd = $OriginalHwnd.ToInt64()
+        sameHwnd = ($hwnd.ToInt64() -eq $OriginalHwnd.ToInt64())
+        foregroundHwnd = $foreground.ToInt64()
+        foregroundMatches = ($foreground -eq $hwnd)
+        title = [string]$process.MainWindowTitle
+        width = [int]$width
+        height = [int]$height
+        expectedNextStates = 'game_spawned|dependency_caution_modal|safe_mode_modal|singleplayer_window|operator_action_required'
+    }
+}
+
+function Write-TbgLauncherWindowDelta {
+    param(
+        [Parameter(Mandatory = $true)][string]$After,
+        [Parameter(Mandatory = $true)][int]$ExpectedPid,
+        [Parameter(Mandatory = $true)][IntPtr]$OriginalHwnd
+    )
+
+    $snapshot = Get-TbgLauncherWindowSnapshot -ExpectedPid $ExpectedPid -OriginalHwnd $OriginalHwnd
+    Write-TbgModalNavLog ('WINDOW_DELTA after={0} expectedPid={1} processExists={2} processName="{3}" originalHwnd={4} currentHwnd={5} sameHwnd={6} foregroundHwnd={7} foregroundMatches={8} title="{9}" size={10}x{11} expectedNextStates={12} runtimeProofClaim=false' -f `
+        $After, $ExpectedPid, $snapshot.processExists, ([string]$snapshot.processName), $snapshot.originalHwnd, $snapshot.hwnd, $snapshot.sameHwnd, $snapshot.foregroundHwnd, $snapshot.foregroundMatches, ([string]$snapshot.title), $snapshot.width, $snapshot.height, $snapshot.expectedNextStates)
+    return $snapshot
+}
+
 function Test-TbgGameSpawnedFromModal {
     if (Get-Process -Name 'Bannerlord' -ErrorAction SilentlyContinue) { return $true }
     $singleplayerHost = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue |
@@ -261,24 +325,36 @@ if ($navExit -eq 0) { exit 0 }
 
 $tailText = ''
 if (Test-Path -LiteralPath $launchLogPath) {
-    $tailText = ((Get-Content -LiteralPath $launchLogPath -Tail 160 -ErrorAction SilentlyContinue) -join [Environment]::NewLine)
+    $tailText = ((Get-Content -LiteralPath $launchLogPath -Tail 200 -ErrorAction SilentlyContinue) -join [Environment]::NewLine)
 }
 
 $wasFrozenInvalidation = ($tailText -match 'frozen_target_invalidated') -or
     ($tailText -match 'frozen launcher target invalidated before game spawned')
-if (-not $wasFrozenInvalidation) {
+$wasFrozenClickFailure = ($tailText -match 'click_unverified_timeout') -or
+    ($tailText -match 'operator_action_required') -or
+    ($tailText -match 'frozen CONTINUE/PLAY click did not spawn game')
+
+if (-not $wasFrozenInvalidation -and -not $wasFrozenClickFailure) {
     exit $navExit
 }
 
 $context = Read-TbgLauncherContext
 $expectedPid = [int]$context.processId
 $originalHwnd = [IntPtr]([int64]$context.hwnd)
+$afterReason = if ($wasFrozenInvalidation) { 'frozen_target_invalidated' } else { 'frozen_click_unverified_or_operator_action' }
+Write-TbgModalNavLog ('LAUNCH_STATE=modal_probe_started after={0} navExit={1} launchIntent={2} expectedPid={3} originalHwnd={4} expectedWindowChange=game_spawned|dependency_caution_modal|safe_mode_modal|singleplayer_window runtimeProofClaim=false' -f `
+    $afterReason, $navExit, $LaunchIntent, $expectedPid, $originalHwnd.ToInt64())
+$snapshot = Write-TbgLauncherWindowDelta -After $afterReason -ExpectedPid $expectedPid -OriginalHwnd $originalHwnd
+
 $candidate = Get-TbgDependencyCautionCandidate -ExpectedPid $expectedPid -OriginalHwnd $originalHwnd
 if (-not $candidate) {
-    Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_not_detected classification=no_dependency_caution_candidate after=frozen_target_invalidated pid={0} runtimeProofClaim=false' -f $expectedPid)
+    Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_not_detected classification=no_dependency_caution_candidate after={0} pid={1} processExists={2} processName="{3}" title="{4}" hwnd={5} size={6}x{7} runtimeProofClaim=false' -f `
+        $afterReason, $expectedPid, $snapshot.processExists, ([string]$snapshot.processName), ([string]$snapshot.title), $snapshot.hwnd, $snapshot.width, $snapshot.height)
     exit $navExit
 }
 
+Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_modal_detected classification=dependency_mismatch_caution_modal hwnd={0} pid={1} processName="{2}" title="{3}" size={4}x{5} action=confirm_dependency_caution_required defaultAction=confirm after={6} dependencyMismatchHandled=pending runtimeProofClaim=false' -f `
+    ([IntPtr]$candidate.hwnd).ToInt64(), $expectedPid, ([string]$candidate.processName), ([string]$candidate.title), $candidate.width, $candidate.height, $afterReason)
 Write-TbgModalNavLog ('LAUNCH_STATE=dependency_caution_detected classification=dependency_mismatch_caution_modal hwnd={0} pid={1} title="{2}" size={3}x{4} action=confirm_dependency_caution_required defaultAction=confirm runtimeProofClaim=false' -f `
     ([IntPtr]$candidate.hwnd).ToInt64(), $expectedPid, ([string]$candidate.title), $candidate.width, $candidate.height)
 
