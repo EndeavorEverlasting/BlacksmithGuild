@@ -24,6 +24,7 @@ function Assert-TbgFileContains {
 }
 
 $scriptPath = Join-Path $RepoRoot 'scripts/tbg/Invoke-TbgGameCompatibility.ps1'
+$gateTestPath = Join-Path $RepoRoot 'scripts/tbg/Test-TbgGameCompatibilityGate.ps1'
 $wrapperPath = Join-Path $RepoRoot 'ForgeGameUpdate.cmd'
 $registryPath = Join-Path $RepoRoot '.tbg/state/game-compatibility.registry.json'
 $schemaPath = Join-Path $RepoRoot '.tbg/harness/schemas/game-compatibility-result.schema.json'
@@ -32,7 +33,7 @@ $manifestFixture = Join-Path $RepoRoot '.tbg/harness/fixtures/game-compatibility
 $upToDateFixture = Join-Path $RepoRoot '.tbg/harness/fixtures/game-compatibility/up-to-date.fixture.json'
 $updateFixture = Join-Path $RepoRoot '.tbg/harness/fixtures/game-compatibility/update-available.fixture.json'
 
-foreach ($required in @($scriptPath, $wrapperPath, $registryPath, $schemaPath, $contractPath, $manifestFixture, $upToDateFixture, $updateFixture)) {
+foreach ($required in @($scriptPath, $gateTestPath, $wrapperPath, $registryPath, $schemaPath, $contractPath, $manifestFixture, $upToDateFixture, $updateFixture)) {
     Assert-Tbg -Condition (Test-Path -LiteralPath $required -PathType Leaf) -Message "Required compatibility surface is missing: $required"
 }
 
@@ -91,4 +92,5 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
+& $gateTestPath -RepoRoot $RepoRoot
 Write-Host 'Bannerlord game compatibility updater contract: PASS'
