@@ -24,7 +24,7 @@ Use this skill when a sprint contains valuable insights from chat annotations, s
 4. `docs/architecture/compendium-preservation-and-rewarding-sprint.md`
 5. `docs/architecture/harness-skill-maturity.md`
 6. `docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md`
-7. `docs/handoff/post-pr41-repo-hygiene-map.md`
+7. `docs/handoff/20260712-post-pr59-repo-floor-map.md`
 
 ## Owned scope
 

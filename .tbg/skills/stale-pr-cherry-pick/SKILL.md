@@ -22,7 +22,7 @@ This skill exists because stale PRs are often valuable. They may contain useful 
 
 1. `AGENTS.md`
 2. `.tbg/workflows/stale-pr-cherry-pick.contract.json`
-3. `docs/handoff/post-pr41-repo-hygiene-map.md`
+3. `docs/handoff/20260712-post-pr59-repo-floor-map.md`
 4. The source PR body, changed files, commits, and checks.
 5. Any current workflow contract that now owns the same behavior.
 

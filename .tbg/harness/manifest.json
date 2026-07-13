@@ -3,7 +3,7 @@
   "appId": "blacksmith-guild",
   "displayName": "The Blacksmith Guild",
   "defaultContractId": "local-mcp-code-intelligence",
-  "contextBanner": "[TBG | Sprint 037A | Local Agent Harness Foundation | branch: sprint/037a-local-agent-harness]",
+  "contextBanner": "[TBG | Local Agent Harness | current main]",
   "repo": {
     "remote": "EndeavorEverlasting/BlacksmithGuild",
     "protectedLocalPath": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild"
@@ -15,6 +15,11 @@
     "fixtures": ".tbg/harness/fixtures",
     "skills": ".tbg/skills",
     "skillsManifest": ".tbg/skills/manifest.json",
+    "skillsManifestSchema": ".tbg/harness/schemas/skill-manifest.schema.json",
+    "skillRouterContract": ".tbg/workflows/agent-skill-router.contract.json",
+    "skillRoutingValidator": "scripts/tbg/Test-TbgSkillRouting.ps1",
+    "skillRoutingOutput": "artifacts/latest/skill-routing",
+    "currentChatPacket": "artifacts/latest/tbg-chat-packet.json",
     "reportingPolicy": ".tbg/harness/policies/policy-reporting.policy.json",
     "interoperabilityContract": ".tbg/workflows/continuum-interoperability.contract.json",
     "continuumCapabilitySchema": ".tbg/harness/schemas/continuum-capability-packet.schema.json",
@@ -39,15 +44,13 @@
     "No game launch unless the active contract explicitly allows it.",
     "If a command assumes Bannerlord should not be running, run ForgeStop first.",
     "Do not commit real local secrets, tokens, saves, or machine-specific config.",
-    "AGENTS.md is the common denominator; targeted skills live under .tbg/skills.",
-    "Harness maturity means cross-cutting plumbing moves into contracts, policies, registries, guards, evidence, and reporting; domain behavior remains visible in skills or source modules.",
+    "AGENTS.md is the safe bootloader; the v2 skill manifest routes conditional lane knowledge.",
+    "Select one primary skill and only declared required or composed skills.",
+    "Every skill declares entry authority, validators, expected artifacts, proof ceiling, risk class, freshness source, owned paths, and forbidden paths.",
+    "Mutable PR restrictions and active targets belong in current-state packets rather than AGENTS.md.",
     "Local artifacts are evidence-bearing events. They do not parse, route, validate, or trigger themselves.",
-    "The artifact engine registry owns parser identity and trigger edges, while the ignored local state file owns the operator's automatic-processing toggle.",
-    "Automatic artifact engines remain deterministic and read-only; they may produce packets and next decisions but may not execute commands found inside artifacts.",
-    "Producer wrappers may trigger the artifact router only after the producer succeeds, and parser success may not be promoted into build, behavior, or runtime proof.",
+    "Automatic artifact engines remain deterministic and read-only; parser success may not be promoted into build, behavior, or runtime proof.",
     "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases.",
-    "Stale PR recovery instructions must pair structured JSON with complete syntactic-English sentences before an agent may act automatically.",
-    "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency.",
-    "Generic harness capabilities may move to Continuum only after parity tests, an app-owned adapter, standalone fallback proof, and an explicit extraction sprint."
+    "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency."
   ]
 }

@@ -1,0 +1,77 @@
+{
+  "id": "agent-skill-router",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "skill-router-v2-root-bootloader-compaction",
+  "contextBanner": "[TBG | Skill Router v2 | harness/agent-routing | current main]",
+  "purpose": "Select the narrowest primary skill from request intent, touched paths, commands, artifacts, proof request, and risk; enforce declared authority, validation, artifact, freshness, and proof boundaries before work begins.",
+  "lane": "harness/agent-routing",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "proofLevel": "static_test",
+  "validationMode": "offline_cross_platform",
+  "manifestPath": ".tbg/skills/manifest.json",
+  "schemaPath": ".tbg/harness/schemas/skill-manifest.schema.json",
+  "validatorPath": "scripts/tbg/Test-TbgSkillRouting.ps1",
+  "resultPath": "artifacts/latest/skill-routing/skill-routing.result.json",
+  "requiredArtifacts": [
+    "artifacts/latest/skill-routing/skill-routing.result.json",
+    "artifacts/latest/skill-routing/skill-routing.report.md"
+  ],
+  "selectionOrder": [
+    "request intent",
+    "touched paths",
+    "invoked commands",
+    "consumed or produced artifacts",
+    "requested proof level",
+    "risk class"
+  ],
+  "rules": [
+    "Read AGENTS.md before selecting a skill.",
+    "Select exactly one primary skill unless the request is too ambiguous to perform safely.",
+    "Load every requiresSkills entry and no unrelated skill.",
+    "Load composesWith entries only when the request genuinely crosses that boundary.",
+    "Reject an exclusiveWith combination unless a higher-authority workflow partitions the work into separate lanes.",
+    "Do not exceed the primary skill's proofCeiling.",
+    "Do not write outside ownedPaths or inside forbiddenPaths.",
+    "Resolve mutable state from freshnessSource and currentStateSources rather than historical prose.",
+    "Run every practical validator registered for the changed lane.",
+    "Produce or explicitly account for every expected artifact before closeout."
+  ],
+  "allowedScope": [
+    "edit root agent routing rules",
+    "edit skill cards, manifest, schema, router contract, and routing validator",
+    "read current source and current generated state for route classification",
+    "write ignored routing validation artifacts"
+  ],
+  "forbiddenScope": [
+    "edit product or gameplay source",
+    "launch Bannerlord",
+    "write command inbox files",
+    "mutate saves or runtime state",
+    "claim launcher, behavior, or live runtime proof from routing validation",
+    "delete branches, worktrees, pull requests, or evidence"
+  ],
+  "doneGate": {
+    "requires": [
+      "AGENTS.md contains only universal boot, safety, proof, routing, current-state pointer, encoding, and closeout rules",
+      "mutable pull request restrictions and the current strategic target are absent from AGENTS.md",
+      "the manifest uses schema tbg.skills.manifest.v2",
+      "every skill declares match signals, dependencies, composition, exclusion, entry contract, authorities, validators, artifacts, proof ceiling, risk, freshness, owned paths, and forbidden paths",
+      "every registered skill file exists and contains the standard routing sections",
+      "the manifest does not route through the superseded post-PR41 floor snapshot",
+      "JSON files parse",
+      "the PowerShell routing validator carries a UTF-8 BOM and parses under Windows PowerShell 5.1",
+      "git diff --check passes"
+    ]
+  },
+  "terminalStates": [
+    "PASS_skill_router_valid",
+    "FAIL_manifest_invalid",
+    "FAIL_registered_path_missing",
+    "FAIL_skill_structure_invalid",
+    "FAIL_root_contract_overloaded",
+    "FAIL_stale_routing_reference",
+    "FAIL_proof_or_scope_boundary_missing"
+  ]
+}
