@@ -42,7 +42,7 @@
     },
     {
       "id": "capability:game-compatibility-observation",
-      "providedBy": ["skill:harness-maturity", "skill:runtime-evidence-certification"],
+      "providedBy": ["skill:harness-maturity"],
       "consumes": [],
       "produces": ["TbgObservation.v1", "TbgEvidenceRecord.v1"],
       "maxProofLevel": "harness",
