@@ -26,9 +26,20 @@ function Get-BannerlordRootFromRepo {
     throw 'Bannerlord install not found. Set GameFolder in BlacksmithGuild.csproj.'
 }
 
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $BannerlordRoot) {
-    $RepoRoot = Split-Path -Parent $PSScriptRoot
     $BannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
+}
+
+$compatibilityGatePath = Join-Path $RepoRoot 'scripts\tbg\Assert-TbgGameCompatibilityGate.ps1'
+if (-not (Test-Path -LiteralPath $compatibilityGatePath -PathType Leaf)) {
+    throw "BLOCKED_GAME_BUILD_UNVALIDATED: compatibility gate is missing at $compatibilityGatePath"
+}
+$compatibilityGate = & $compatibilityGatePath -Gate launcher -RepoRoot $RepoRoot -BannerlordRoot $BannerlordRoot -NoExit -PassThru
+if (-not $compatibilityGate -or -not [bool]$compatibilityGate.allowed) {
+    $terminalState = if ($compatibilityGate) { [string]$compatibilityGate.terminalState } else { 'BLOCKED_game_compatibility_result_missing' }
+    $nextCommand = if ($compatibilityGate -and $compatibilityGate.nextCommand) { [string]$compatibilityGate.nextCommand } else { '.\ForgeGameUpdate.cmd check' }
+    throw "BLOCKED_GAME_BUILD_UNVALIDATED: launcher gate returned $terminalState. Next: $nextCommand"
 }
 
 $result = Ensure-TbgLauncherWindowContext -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent `
