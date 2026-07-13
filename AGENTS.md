@@ -49,6 +49,71 @@ contract -> harness -> static test -> build -> launcher -> command ACK -> behavi
 
 Do not claim a higher level from a lower one. A stale `Status.json`, parser success, command ACK, route assignment, checkpoint, or launcher handoff is not product completion. Every claim must name freshness, exact head when relevant, evidence paths, and the highest level actually reached.
 
+## Green-light execution policy
+
+When the operator asks for the current, best, strongest, or most capable way to test the application, prefer the best available operational workflow across current branches and open pull requests. Do not restrict the recommendation to merged `main` unless the operator explicitly asks for the stable or released path.
+
+An open pull request is not an execution prohibition.
+
+A workflow may be recommended or run when:
+
+- its repository and branch are identified;
+- its command surface exists;
+- its owned scope includes the requested action;
+- its safety boundaries are explicit;
+- it preserves unrelated dirty work or selects an isolated worktree;
+- it does not require destructive repository operations;
+- the operator has requested the corresponding test or runtime action.
+
+Separate execution authority from proof authority.
+
+Missing exact-head CI, missing local runtime evidence, or an open pull request may lower the proof level that can be claimed. Those conditions do not automatically prohibit a bounded local test.
+
+Use this decision rule:
+
+```text
+green execution authority + incomplete proof
+    = run the workflow and collect fresh proof
+
+missing execution authority or unsafe mutation
+    = block and name the exact missing gate
+```
+
+Do not convert:
+
+```text
+"This run cannot yet prove gameplay completion."
+```
+
+into:
+
+```text
+"Do not run the available launcher or runtime harness."
+```
+
+For every application test, report gates independently:
+
+- build;
+- deploy;
+- launcher;
+- process handoff;
+- runtime attach;
+- campaign readiness;
+- command acknowledgement;
+- behavior observed;
+- live product result.
+
+Failure or absence at a higher gate must not erase successful lower gates.
+
+When multiple test paths exist, present them in this order:
+
+1. strongest current operational path;
+2. exact proof ceiling and any current-head gap;
+3. merged-main fallback;
+4. narrow manual fallback.
+
+Avoid permission theater. A request to test, launch, validate, exercise, or certify the application grants authority to use the repository workflow designed for that purpose, subject to its existing safety boundaries.
+
 ## Lane router
 
 | Request or touched surface | Primary skill |
