@@ -1,6 +1,8 @@
 ﻿# Shared launcher PID/window context helper.
 # This script owns the launcher-context baseline for launch-adjacent entry points.
 # It does not click PLAY/CONTINUE and it does not claim runtime proof.
+# It starts the metadata-first modal watcher so known windows are classified and
+# handled before coordinate or image fallbacks are considered.
 
 $ErrorActionPreference = 'Stop'
 
@@ -129,6 +131,90 @@ function New-TbgLauncherWindowContextObject {
     }
 }
 
+function Get-TbgWindowIntelligencePowerShell {
+    $pwsh = Get-Command pwsh.exe -ErrorAction SilentlyContinue
+    if ($pwsh) { return [string]$pwsh.Source }
+    $windowsPowerShell = Get-Command powershell.exe -ErrorAction SilentlyContinue
+    if ($windowsPowerShell) { return [string]$windowsPowerShell.Source }
+    return $null
+}
+
+function Start-TbgWindowIntelligenceWatcher {
+    param(
+        [Parameter(Mandatory = $true)][int]$LauncherProcessId,
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][string]$ContextPath
+    )
+
+    if ($env:TBG_WINDOW_INTELLIGENCE_DISABLE -eq '1') {
+        return [pscustomobject][ordered]@{
+            started = $false
+            reason = 'disabled_by_environment'
+            watcherProcessId = 0
+        }
+    }
+
+    $repoRoot = Split-Path -Parent $PSScriptRoot
+    $watcherScript = Join-Path $repoRoot 'scripts\tbg\Invoke-TbgWindowIntelligence.ps1'
+    if (-not (Test-Path -LiteralPath $watcherScript -PathType Leaf)) {
+        return [pscustomobject][ordered]@{
+            started = $false
+            reason = 'window_intelligence_script_missing'
+            watcherProcessId = 0
+        }
+    }
+
+    $localRoot = Join-Path $repoRoot '.local\tbg-window-intelligence'
+    $leasePath = Join-Path $localRoot 'watcher.json'
+    if (Test-Path -LiteralPath $leasePath -PathType Leaf) {
+        try {
+            $lease = Get-Content -LiteralPath $leasePath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $existingWatcher = Get-Process -Id ([int]$lease.processId) -ErrorAction SilentlyContinue
+            if ($existingWatcher) {
+                return [pscustomobject][ordered]@{
+                    started = $false
+                    reason = 'existing_window_intelligence_watcher_alive'
+                    watcherProcessId = [int]$lease.processId
+                    leasePath = $leasePath
+                }
+            }
+        } catch { }
+        Remove-Item -LiteralPath $leasePath -Force -ErrorAction SilentlyContinue
+    }
+
+    $powerShellExe = Get-TbgWindowIntelligencePowerShell
+    if ([string]::IsNullOrWhiteSpace($powerShellExe)) {
+        return [pscustomobject][ordered]@{
+            started = $false
+            reason = 'powershell_executable_not_found'
+            watcherProcessId = 0
+        }
+    }
+
+    $argumentLine = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Command watch -Mode auto -ProcessId {1} -BannerlordRoot "{2}" -ContextPath "{3}" -DurationSeconds 90 -PollMilliseconds 100 -AllowKnownActions' -f `
+        $watcherScript, $LauncherProcessId, $BannerlordRoot, $ContextPath
+
+    try {
+        $watcher = Start-Process -FilePath $powerShellExe -ArgumentList $argumentLine -WindowStyle Hidden -PassThru
+        return [pscustomobject][ordered]@{
+            started = $true
+            reason = 'metadata_first_modal_watcher_started'
+            watcherProcessId = [int]$watcher.Id
+            targetProcessId = $LauncherProcessId
+            leasePath = $leasePath
+            resultPath = Join-Path $repoRoot 'artifacts\latest\window-intelligence\window-intelligence.result.json'
+            reportPath = Join-Path $repoRoot 'artifacts\latest\window-intelligence\window-intelligence.report.md'
+        }
+    } catch {
+        return [pscustomobject][ordered]@{
+            started = $false
+            reason = 'window_intelligence_watcher_start_failed'
+            watcherProcessId = 0
+            error = $_.Exception.Message
+        }
+    }
+}
+
 function Ensure-TbgLauncherWindowContext {
     param(
         [Parameter(Mandatory = $true)][string]$BannerlordRoot,
@@ -200,6 +286,14 @@ function Ensure-TbgLauncherWindowContext {
         -LauncherProcess $launcher -CreatedBy $CreatedBy
 
     Save-TbgLauncherWindowContextJson -Context $context -Path $contextPath | Out-Null
+
+    if ($Mode -eq 'LaunchSetup' -and [int]$context.processId -gt 0) {
+        $windowIntelligence = Start-TbgWindowIntelligenceWatcher -LauncherProcessId ([int]$context.processId) `
+            -BannerlordRoot $BannerlordRoot -ContextPath $contextPath
+        $context | Add-Member -NotePropertyName windowIntelligence -NotePropertyValue $windowIntelligence -Force
+        Save-TbgLauncherWindowContextJson -Context $context -Path $contextPath | Out-Null
+    }
+
     return [pscustomobject][ordered]@{
         path = $contextPath
         context = $context
