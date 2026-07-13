@@ -25,6 +25,11 @@
     "continuumCapabilitySchema": ".tbg/harness/schemas/continuum-capability-packet.schema.json",
     "stalePrRecoveryContract": ".tbg/workflows/stale-pr-recovery-automation.contract.json",
     "stalePrRecoveryPlan": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
+    "stalePrRecoveryProgressLedger": ".tbg/plans/stale-pr-recovery-20260712/progress.json",
+    "stalePrRecoveryProgressDashboard": "docs/handoff/stale-pr-cherry-pick-progress.md",
+    "stalePrRecoveryProgressCommand": "ForgeStalePrProgress.cmd",
+    "stalePrRecoveryProgressValidator": "scripts/tbg/Test-TbgStalePrRecoveryProgress.ps1",
+    "stalePrRecoveryProgressOutput": "artifacts/latest/stale-pr-recovery/stale-pr-recovery.progress.json",
     "artifactEngineContract": ".tbg/workflows/local-artifact-engine.contract.json",
     "artifactEngineRegistry": ".tbg/harness/artifact-engines.registry.json",
     "artifactEngineState": ".local/tbg-artifact-engine/state.json",
@@ -59,6 +64,7 @@
     "Local artifacts are evidence-bearing events. They do not parse, route, validate, or trigger themselves.",
     "Automatic artifact engines remain deterministic and read-only; parser success may not be promoted into build, behavior, or runtime proof.",
     "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases.",
+    "Stale PR recovery is complete only when every planned source PR has an evidence-backed terminal disposition in the canonical progress ledger.",
     "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency."
   ]
 }
