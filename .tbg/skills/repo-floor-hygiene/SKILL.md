@@ -22,7 +22,7 @@ Use this skill when the sprint is a coordinator or cleanup lane that must map re
 1. `AGENTS.md`
 2. `.tbg/harness/manifest.json`
 3. `.tbg/skills/manifest.json`
-4. `docs/handoff/post-pr41-repo-hygiene-map.md`
+4. `docs/handoff/20260712-post-pr59-repo-floor-map.md`
 5. Current `gh pr list` and `git worktree list` output.
 
 ## Required preflight
