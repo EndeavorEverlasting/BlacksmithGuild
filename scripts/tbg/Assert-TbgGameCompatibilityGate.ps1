@@ -62,10 +62,10 @@ $gateResult = [pscustomobject][ordered]@{
 }
 
 if ($allowed) {
-    Write-Host "Game compatibility gate PASS for $Gate: $terminalState" -ForegroundColor Green
+    Write-Host "Game compatibility gate PASS for ${Gate}: $terminalState" -ForegroundColor Green
 }
 else {
-    Write-Host "BLOCKED_GAME_BUILD_UNVALIDATED for $Gate: $terminalState" -ForegroundColor Red
+    Write-Host "BLOCKED_GAME_BUILD_UNVALIDATED for ${Gate}: $terminalState" -ForegroundColor Red
     Write-Host "Next: $nextCommand" -ForegroundColor Yellow
 }
 
