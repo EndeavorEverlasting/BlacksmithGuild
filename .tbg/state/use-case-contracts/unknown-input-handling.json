@@ -1,0 +1,11 @@
+{
+  "schema": "TbgUseCaseContract.v1",
+  "id": "unknown-input-handling",
+  "acceptedInputs": ["event.unrecognized"],
+  "requiredCapabilities": [],
+  "preconditions": [],
+  "constraints": [],
+  "terminalStates": ["SUCCEEDED", "REJECTED"],
+  "requiredEvidence": [],
+  "fallbackProvider": "provider:universal-intake-governor"
+}

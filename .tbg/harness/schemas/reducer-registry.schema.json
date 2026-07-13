@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/reducer-registry.schema.json",
+  "title": "TBG Reducer Registry v1",
+  "description": "Registry of deterministic reducers that transform journal events into projections.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "repo", "generatedUtc", "reducers"],
+  "properties": {
+    "schema": { "const": "TbgReducerRegistry.v1" },
+    "repo": { "type": "string", "minLength": 1 },
+    "generatedUtc": { "type": "string", "format": "date-time" },
+    "reducers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "eventTypes", "consumedObjectTypes", "producedObjectTypes", "scriptPath"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^reducer:[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "eventTypes": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "consumedObjectTypes": { "type": "array", "items": { "type": "string" } },
+          "producedObjectTypes": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "scriptPath": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

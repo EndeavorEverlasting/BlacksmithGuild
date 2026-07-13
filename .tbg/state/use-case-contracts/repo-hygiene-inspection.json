@@ -1,0 +1,11 @@
+{
+  "schema": "TbgUseCaseContract.v1",
+  "id": "repo-hygiene-inspection",
+  "acceptedInputs": ["user.request", "git.state.captured", "hygiene.report"],
+  "requiredCapabilities": ["capability:repo-floor-inspection"],
+  "preconditions": [],
+  "constraints": [],
+  "terminalStates": ["SUCCEEDED", "FAILED", "REJECTED", "BLOCKED"],
+  "requiredEvidence": [],
+  "fallbackProvider": "provider:universal-intake-governor"
+}

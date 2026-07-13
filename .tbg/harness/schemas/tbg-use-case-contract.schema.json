@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/tbg-use-case-contract.schema.json",
+  "title": "TBG Use Case Contract v1",
+  "description": "Declares what inputs a use case accepts, what capabilities it requires, and how it terminates.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "acceptedInputs", "requiredCapabilities", "terminalStates", "fallbackProvider"],
+  "properties": {
+    "schema": { "const": "TbgUseCaseContract.v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "acceptedInputs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "requiredCapabilities": { "type": "array", "items": { "type": "string" } },
+    "preconditions": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "terminalStates": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "requiredEvidence": { "type": "array", "items": { "type": "string" } },
+    "fallbackProvider": { "type": "string", "default": "provider:universal-intake-governor" }
+  }
+}

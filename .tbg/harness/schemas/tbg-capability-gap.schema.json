@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/tbg-capability-gap.schema.json",
+  "title": "TBG Capability Gap v1",
+  "description": "A documented, owned gap when no provider can satisfy a request.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "requestedBy", "missingCapabilities", "status", "blocking", "acceptanceNeeded"],
+  "properties": {
+    "schema": { "const": "TbgCapabilityGap.v1" },
+    "id": { "type": "string", "pattern": "^gap:[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "requestedBy": { "type": "string", "minLength": 1 },
+    "missingCapabilities": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "nearestProviders": { "type": "array", "items": { "type": "string" } },
+    "owner": { "type": "string", "default": "provider:universal-intake-governor" },
+    "status": { "enum": ["OPEN", "IN_PROGRESS", "RESOLVED", "REJECTED"] },
+    "blocking": { "type": "boolean", "default": true },
+    "acceptanceNeeded": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "producedUtc": { "type": "string", "format": "date-time" }
+  }
+}
