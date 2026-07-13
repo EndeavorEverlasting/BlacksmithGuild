@@ -21,6 +21,7 @@ on:
       - 'ForgeStalePrRecovery.cmd'
       - 'ForgeState.cmd'
       - 'ForgeStalePrProgress.cmd'
+      - 'ForgeWindowIntel.cmd'
       - 'AGENTS.md'
       - 'CLAUDE.md'
   push:
@@ -43,6 +44,7 @@ on:
       - 'ForgeStalePrRecovery.cmd'
       - 'ForgeState.cmd'
       - 'ForgeStalePrProgress.cmd'
+      - 'ForgeWindowIntel.cmd'
       - 'AGENTS.md'
       - 'CLAUDE.md'
   workflow_dispatch:
@@ -102,6 +104,30 @@ jobs:
       - name: Verify effective-policy English reports
         shell: pwsh
         run: ./scripts/harness/Test-TbgEnglishRenderer.ps1
+
+      - name: Verify metadata-first window intelligence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/window-intelligence-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgWindowIntelligence.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload window intelligence validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: window-intelligence-validator-${{ github.run_id }}
+          path: artifacts/latest/window-intelligence-ci/validator.log
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Verify stale PR recovery instructions and progress
         shell: pwsh
@@ -204,13 +230,13 @@ jobs:
           retention-days: 14
 
   windows-artifact-watcher:
-    name: Windows PowerShell skill router and artifact watcher smoke
+    name: Windows PowerShell routing, window intelligence, and artifact watcher smoke
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify Windows PowerShell routing, recovery progress, engine, and watcher
+      - name: Verify Windows PowerShell routing, window intelligence, recovery progress, engine, and watcher
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -219,6 +245,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
           try {
             .\scripts\tbg\Test-TbgSkillRouting.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+            .\scripts\tbg\Test-TbgWindowIntelligence.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgStalePrRecoveryProgress.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgArtifactEngine.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgArtifactWatcher.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
