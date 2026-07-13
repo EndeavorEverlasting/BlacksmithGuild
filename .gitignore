@@ -15,6 +15,30 @@ obj/
 .DS_Store
 Thumbs.db
 
+# Temp / crash / swap
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+*.dmp
+*.hdmp
+*.crash
+core
+
+# Secrets / credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+credentials.json
+secrets.json
+
+# Agent tool caches
+.codex/
+.gemini/
+
 # Local operator/session outputs
 .local/
 
