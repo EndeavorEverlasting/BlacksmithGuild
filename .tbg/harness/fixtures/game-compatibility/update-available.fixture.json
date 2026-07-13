@@ -1,0 +1,9 @@
+{
+  "response": {
+    "success": true,
+    "up_to_date": false,
+    "version_is_listable": true,
+    "required_version": 12345679,
+    "message": "fixture update available"
+  }
+}

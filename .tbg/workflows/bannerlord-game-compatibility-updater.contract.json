@@ -1,0 +1,54 @@
+{
+  "id": "bannerlord-game-compatibility-updater",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "bannerlord-game-compatibility-updater-v1",
+  "lane": "harness/game-version-observation",
+  "operatorEntry": ".\\ForgeGameUpdate.cmd",
+  "purpose": "Observe and compare upstream, installed, supported, source, built-DLL, and installed-DLL identities before launcher or runtime proof.",
+  "proofLevel": "harness",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "writesRuntimeState": false,
+  "trackedIdentities": [
+    "upstream available build",
+    "locally installed build",
+    "repo-supported build",
+    "source commit",
+    "built mod DLL",
+    "installed mod DLL"
+  ],
+  "stateSpine": {
+    "journalEvent": "game.compatibility.observed",
+    "observationSchema": "TbgObservation.v1",
+    "evidenceSchema": "TbgEvidenceRecord.v1",
+    "resultSchema": "TbgGameCompatibilityResult.v1"
+  },
+  "allowedScope": [
+    "read Git metadata",
+    "read the Steam appmanifest and local game/module metadata",
+    "query the public Steam UpToDateCheck endpoint with a bounded timeout",
+    "hash built and installed mod DLLs",
+    "write gitignored reports, journal events, observations, evidence records, and state envelopes"
+  ],
+  "forbiddenScope": [
+    "launch Bannerlord",
+    "run ForgeReboot.cmd or Run-VisibleTradeProof.cmd",
+    "install or update Bannerlord",
+    "build or install the mod",
+    "write command inbox files",
+    "mutate saves",
+    "claim loaded-assembly, behavior, visible-trade, or live-runtime proof"
+  ],
+  "terminalStates": [
+    "PASS_compatibility_metadata_aligned",
+    "ATTENTION_local_installation_metadata_incomplete",
+    "ATTENTION_upstream_build_unavailable",
+    "ATTENTION_built_mod_dll_missing",
+    "ATTENTION_installed_mod_dll_missing",
+    "BLOCKED_game_update_available",
+    "BLOCKED_repo_support_baseline_mismatch",
+    "BLOCKED_repo_support_registry_drift",
+    "BLOCKED_built_installed_dll_drift"
+  ]
+}

@@ -5,7 +5,7 @@
   "reducers": [
     {
       "id": "reducer:observation",
-      "eventTypes": ["artifact.observed", "git.state.captured", "hygiene.report", "chat.packet", "skill.routed"],
+      "eventTypes": ["artifact.observed", "git.state.captured", "hygiene.report", "chat.packet", "skill.routed", "game.compatibility.observed"],
       "consumedObjectTypes": [],
       "producedObjectTypes": ["TbgObservation.v1"],
       "scriptPath": "scripts/tbg/Reduce-TbgObservation.ps1"

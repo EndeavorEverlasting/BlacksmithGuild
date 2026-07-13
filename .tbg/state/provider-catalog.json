@@ -41,7 +41,7 @@
       "id": "provider:harness-maturity",
       "type": "skill",
       "displayName": "Harness Maturity",
-      "capabilities": ["capability:harness-maturity-classification"],
+      "capabilities": ["capability:harness-maturity-classification", "capability:game-compatibility-observation"],
       "inputSchemas": [],
       "outputSchemas": ["TbgObservation.v1", "TbgClaim.v1"],
       "maxProofLevel": "contract",
