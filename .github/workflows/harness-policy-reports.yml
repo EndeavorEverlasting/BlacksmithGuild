@@ -18,6 +18,7 @@ on:
       - 'ForgeArtifactEngine.cmd'
       - 'ForgeRepoHygiene.cmd'
       - 'ForgeStalePrRecovery.cmd'
+      - 'ForgeStalePrProgress.cmd'
       - 'AGENTS.md'
       - 'CLAUDE.md'
   push:
@@ -37,6 +38,7 @@ on:
       - 'ForgeArtifactEngine.cmd'
       - 'ForgeRepoHygiene.cmd'
       - 'ForgeStalePrRecovery.cmd'
+      - 'ForgeStalePrProgress.cmd'
       - 'AGENTS.md'
       - 'CLAUDE.md'
   workflow_dispatch:
@@ -97,7 +99,7 @@ jobs:
         shell: pwsh
         run: ./scripts/harness/Test-TbgEnglishRenderer.ps1
 
-      - name: Verify stale PR recovery English instructions
+      - name: Verify stale PR recovery instructions and progress
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -106,6 +108,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
           try {
             ./scripts/tbg/Test-TbgStalePrRecovery.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+            ./scripts/tbg/Test-TbgStalePrRecoveryProgress.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
           }
           catch {
             $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
@@ -168,7 +171,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify Windows PowerShell routing, engine, and watcher
+      - name: Verify Windows PowerShell routing, recovery progress, engine, and watcher
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -177,6 +180,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
           try {
             .\scripts\tbg\Test-TbgSkillRouting.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+            .\scripts\tbg\Test-TbgStalePrRecoveryProgress.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgArtifactEngine.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgArtifactWatcher.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
           }
