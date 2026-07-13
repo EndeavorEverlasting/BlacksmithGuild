@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$EventType,
     [Parameter(Mandatory = $true)][string]$SourceKind,

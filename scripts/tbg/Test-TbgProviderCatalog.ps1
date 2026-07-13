@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$RepoRoot,
     [string]$OutputRoot = 'artifacts/latest/provider-catalog'

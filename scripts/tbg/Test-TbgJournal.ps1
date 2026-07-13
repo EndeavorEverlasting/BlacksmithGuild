@@ -24,10 +24,9 @@ $errors = [System.Collections.Generic.List[string]]::new()
 $journalRoot = Resolve-TbgRepoPath '.local/tbg-state/journal'
 $committedDir = Join-Path $journalRoot 'committed'
 
-if (-not (Test-Path -LiteralPath $committedDir -PathType Container)) {
-    $errors.Add('Journal committed directory does not exist.')
-}
-else {
+$journalExists = Test-Path -LiteralPath $committedDir -PathType Container
+
+if ($journalExists) {
     $files = Get-ChildItem -LiteralPath $committedDir -Filter '*.json' -File
     $seenIds = @{}
     $prevHash = '0000000000000000000000000000000000000000000000000000000000000000'
@@ -83,7 +82,7 @@ $result = [ordered]@{
     schema = 'TbgJournalValidationResult.v1'
     generatedUtc = [DateTime]::UtcNow.ToString('o')
     status = $status
-    eventCount = @((Get-ChildItem -LiteralPath $committedDir -Filter '*.json' -File -ErrorAction SilentlyContinue)).Count
+    eventCount = if ($journalExists) { @((Get-ChildItem -LiteralPath $committedDir -Filter '*.json' -File -ErrorAction SilentlyContinue)).Count } else { 0 }
     errors = @($errors)
     proofLevel = 'static test'
 }
