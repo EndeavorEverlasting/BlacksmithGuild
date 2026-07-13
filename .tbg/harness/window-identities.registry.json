@@ -1,6 +1,6 @@
 {
   "schema": "TbgWindowIdentityRegistry.v1",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
   "purpose": "Classify Bannerlord and launcher windows from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
   "defaultPolicy": {
@@ -118,6 +118,8 @@
       "match": {
         "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
         "titleRegex": ["(?i)bannerlord.*singleplayer"],
+        "allTextRegex": ["(?i)bannerlord.*singleplayer"],
+        "anyTextRegex": ["(?i)singleplayer"],
         "minimumDirectSignals": 2
       },
       "actionPolicy": {
