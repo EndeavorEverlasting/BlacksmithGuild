@@ -1,11 +1,18 @@
 ﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$SkillId,
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    [string]$RepoRoot
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+}
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Get-Location).Path
+}
 
 function Resolve-TbgRepoPath {
     param([Parameter(Mandatory = $true)][string]$RelativePath)
@@ -37,7 +44,7 @@ $readyWorkItems = @()
 
 if ($envelope.objectRefs.evidence) {
     foreach ($eId in $envelope.objectRefs.evidence) {
-        $eFile = Join-Path (Resolve-TbgRepoPath 'artifacts/state/objects/evidence') ($eId -replace '[:/\\]', '_') + '.json'
+        $eFile = Join-Path (Resolve-TbgRepoPath 'artifacts/state/objects/evidence') (($eId -replace '[:/\\]', '_') + '.json')
         if (Test-Path -LiteralPath $eFile -PathType Leaf) {
             $relevantEvidence += $eId
         }

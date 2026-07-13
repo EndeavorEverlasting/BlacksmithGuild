@@ -1,10 +1,17 @@
 ﻿[CmdletBinding()]
 param(
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    [string]$RepoRoot
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+}
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Get-Location).Path
+}
 
 function Resolve-TbgRepoPath {
     param([Parameter(Mandatory = $true)][string]$RelativePath)
@@ -49,7 +56,7 @@ $capabilityIds = @(Collect-ObjectIds 'capabilities')
 
 $activeConstraints = @()
 foreach ($cId in $constraintIds) {
-    $cFile = Join-Path (Join-Path $objectStore 'constraints') ($cId -replace '[:/\\]', '_') + '.json'
+    $cFile = Join-Path (Join-Path $objectStore 'constraints') (($cId -replace '[:/\\]', '_') + '.json')
     if (Test-Path -LiteralPath $cFile -PathType Leaf) {
         $cObj = Get-Content -LiteralPath $cFile -Raw | ConvertFrom-Json
         if ($cObj.status -eq 'active' -or (-not $cObj.PSObject.Properties.Name -contains 'status')) {

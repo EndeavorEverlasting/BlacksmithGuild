@@ -3,12 +3,19 @@ param(
     [Parameter(Mandatory = $true)][string]$ObjectPath,
     [Parameter(Mandatory = $true)][string]$SupersedesId,
     [string]$NewStatus,
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
+    [string]$RepoRoot,
     [switch]$PassThru
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+}
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $RepoRoot = (Get-Location).Path
+}
 
 if (-not (Test-Path -LiteralPath $ObjectPath -PathType Leaf)) {
     throw "Object file not found: $ObjectPath"
