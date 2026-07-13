@@ -1008,7 +1008,7 @@ function Write-TbgOutputs {
     }
     $markdown.Add('## Proof boundary')
     $markdown.Add('')
-    $markdown.Add('This report proves metadata collection, identity resolution, and any recorded action dispatch only. It does not prove game acceptance, campaign readiness, command acknowledgement, movement, arrival, trading, or live product completion.')
+    $markdown.Add('This report proves metadata collection, identity resolution, and any recorded action dispatch only. It does not prove that the game accepted an action, campaign readiness, command acknowledgement, movement, arrival, trading, or live product completion.')
     $markdown | Set-Content -LiteralPath $reportPath -Encoding UTF8
 
     $handoff = New-Object System.Collections.Generic.List[string]
