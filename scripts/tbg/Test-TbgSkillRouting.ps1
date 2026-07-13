@@ -116,6 +116,9 @@ if ($null -ne $manifest) {
                     Add-TbgIssue -List $errors -Message "Skill '$($skill.id)' is missing section '$section'."
                 }
             }
+            if ($skillText -match 'post-pr41-repo-hygiene-map\.md') {
+                Add-TbgIssue -List $errors -Message "Skill '$($skill.id)' still routes through the superseded post-PR41 floor snapshot."
+            }
         }
 
         if (-not (Test-Path -LiteralPath $entryContractPath -PathType Leaf)) {
@@ -161,7 +164,8 @@ if ($null -ne $manifest) {
     }
 
     foreach ($skill in @($manifest.skills)) {
-        foreach ($dependency in @($skill.requiresSkills + $skill.composesWith + $skill.exclusiveWith)) {
+        $dependencies = @($skill.requiresSkills) + @($skill.composesWith) + @($skill.exclusiveWith)
+        foreach ($dependency in $dependencies) {
             if ($skillIds -notcontains [string]$dependency) {
                 Add-TbgIssue -List $errors -Message "Skill '$($skill.id)' references unregistered skill '$dependency'."
             }
