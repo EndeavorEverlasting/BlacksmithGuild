@@ -39,13 +39,13 @@ function Collect-ObjectIds {
     return $ids
 }
 
-$obsIds = Collect-ObjectIds 'observations'
-$evidenceIds = Collect-ObjectIds 'evidence'
-$claimIds = Collect-ObjectIds 'claims'
-$constraintIds = Collect-ObjectIds 'constraints'
-$objectiveIds = Collect-ObjectIds 'objectives'
-$workItemIds = Collect-ObjectIds 'work-items'
-$capabilityIds = Collect-ObjectIds 'capabilities'
+$obsIds = @(Collect-ObjectIds 'observations')
+$evidenceIds = @(Collect-ObjectIds 'evidence')
+$claimIds = @(Collect-ObjectIds 'claims')
+$constraintIds = @(Collect-ObjectIds 'constraints')
+$objectiveIds = @(Collect-ObjectIds 'objectives')
+$workItemIds = @(Collect-ObjectIds 'work-items')
+$capabilityIds = @(Collect-ObjectIds 'capabilities')
 
 $activeConstraints = @()
 foreach ($cId in $constraintIds) {
@@ -82,19 +82,26 @@ foreach ($wiId in $workItemIds) {
 }
 
 $blockers = @()
-foreach ($wiId in $readyWorkItems) {
+foreach ($wiId in @($readyWorkItems)) {
     $wiFile = Join-Path (Join-Path $objectStore 'work-items') ($wiId -replace '[:/\\]', '_') + '.json'
-    $wiObj = Get-Content -LiteralPath $wiFile -Raw | ConvertFrom-Json
-    if ($wiObj.PSObject.Properties.Name -contains 'blockedBy' -and $wiObj.blockedBy.Count -gt 0) {
-        $blockers += $wiObj.blockedBy
+    if (Test-Path -LiteralPath $wiFile -PathType Leaf) {
+        $wiObj = Get-Content -LiteralPath $wiFile -Raw | ConvertFrom-Json
+        if ($wiObj.PSObject.Properties.Name -contains 'blockedBy') {
+            $blocked = @($wiObj.blockedBy)
+            if ($blocked.Count -gt 0) {
+                $blockers += $blocked
+            }
+        }
     }
 }
 
-$terminalStatus = if ($blockers.Count -gt 0) { 'BLOCKED' }
-    elseif ($readyWorkItems.Count -gt 0) { 'READY_FOR_ROUTING' }
+$readyArr = @($readyWorkItems)
+$blockersArr = @($blockers)
+$terminalStatus = if ($blockersArr.Count -gt 0) { 'BLOCKED' }
+    elseif ($readyArr.Count -gt 0) { 'READY_FOR_ROUTING' }
     else { 'READY_FOR_ROUTING' }
 
-$nextDecision = if ($readyWorkItems.Count -gt 0) { "select from $($readyWorkItems.Count) ready work items" }
+$nextDecision = if ($readyArr.Count -gt 0) { "select from $($readyArr.Count) ready work items" }
     else { 'no work items registered' }
 
 $envelope = [ordered]@{
