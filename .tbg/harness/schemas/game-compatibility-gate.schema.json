@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/game-compatibility-gate.schema.json",
+  "title": "TBG Game Compatibility Gate v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "gate",
+    "allowed",
+    "terminalState",
+    "sourceCommit",
+    "compatibilityResultPath",
+    "nextCommand",
+    "proofLevel"
+  ],
+  "properties": {
+    "schema": { "const": "TbgGameCompatibilityGate.v1" },
+    "gate": { "enum": ["launcher", "runtime-proof"] },
+    "allowed": { "type": "boolean" },
+    "terminalState": { "type": "string", "minLength": 1 },
+    "sourceCommit": { "type": ["object", "null"] },
+    "compatibilityResultPath": { "type": ["string", "null"] },
+    "nextCommand": { "type": "string", "minLength": 1 },
+    "proofLevel": { "const": "harness" }
+  }
+}
