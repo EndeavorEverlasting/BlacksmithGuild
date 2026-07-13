@@ -1,11 +1,11 @@
-# Stale branch cherry-pick progress
+﻿# Stale branch cherry-pick progress
 
 > **Overall: INCOMPLETE**
-> **0 of 16 stale pull requests are complete (0%).**
-> **Current distribution: 2 in progress, 4 blocked, and 10 not started.**
-> **Next: Wave A, PR #9: Validate and merge pull request 65, then record the final historical-retention or supersession disposition for pull request 9.**
+> **2 of 16 stale pull requests are complete (12.5%).**
+> **Current distribution: 0 in progress, 4 blocked, and 10 not started.**
+> **Next: Wave B, PR #2: Inspect pull request 2 against current main and decide whether to replay its coherent identity-schema delta or record a rejection.**
 
-The authoritative machine-readable ledger is `.tbg/plans/stale-pr-recovery-20260712/progress.json`. This Markdown file is generated from that ledger and the committed recovery plan.
+The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
 
 ## Completion rule
 
@@ -15,8 +15,8 @@ The stale-branch cherry-pick process is finished only when every planned source 
 
 | Wave | Source PR | Status | Replacement PR | Blocked by | Disposition or evidence | Next action |
 |---|---:|---|---:|---|---|---|
-| A | #9 | 🟡 replacement pr open | #65 | — | Historical coordination value replayed in pull request 65; final disposition remains pending until the replacement is merged and the source record is updated. | Validate and merge pull request 65, then record the final historical-retention or supersession disposition for pull request 9. |
-| A | #34 | 🟡 replacement pr open | #65 | — | The concurrent sprint map was replayed in pull request 65; final supersession remains pending until the replacement is merged and the source record is updated. | Validate and merge pull request 65, then record pull request 34 as superseded by the maintained current-main copy. |
+| A | #9 | ✅ historical retained | #65 | — | The maintained replacement PR #65 merged and the original PR remains as historical provenance. Final disposition: all unique evidence and coordination value is now on current main. | No further replay work remains for PR #9. |
+| A | #34 | ✅ superseded recorded | #65 | — | The concurrent sprint map was replayed onto current main via PR #65 and supersedes the stale branch copy entirely. | No further replay work remains for PR #34. |
 | B | #2 | ⬜ not started | — | — | — | Inspect pull request 2 against current main and decide whether to replay its coherent identity-schema delta or record a rejection. |
 | C | #8 | ⬜ not started | — | — | — | Map every unresolved F7 review lesson to current code, current tests, or an explicit rejection. |
 | D1 | #28 | ⬜ not started | — | — | — | Map the feedback-harness manifest fields into the current harness or record explicit rejections. |
@@ -62,7 +62,7 @@ Record a terminal disposition only after its gate is satisfied:
 ## Exact next command
 
 ```powershell
-gh pr view 65 --json number,title,state,isDraft,mergeable,headRefOid,baseRefName,checks
+.\ForgeStalePrRecovery.cmd -Wave B -PrNumber 2 -LocalFloorVerified
 ```
 
 ## Proof boundary
