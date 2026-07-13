@@ -1,175 +1,97 @@
 # Blacksmith Guild Agent Coordination Contract
 
-This file is the root coordination contract for Codex, Cursor, ChatGPT handoffs, and parallel sub-agents working in The Blacksmith Guild repository.
+`AGENTS.md` is the safe bootloader for every Codex, Claude, Cursor, ChatGPT, and parallel-agent session in `EndeavorEverlasting/BlacksmithGuild`. Keep conditional lane knowledge in `.tbg/skills/**`; keep executable sequence and done gates in `.tbg/workflows/**`.
 
-## Agent identities and ownership
+## Authority chain
 
-- Agent A = Cert / Evidence / Git / PR judgment
-- Agent B = Runtime / Readiness / Gameplay state truth
-- Agent C = External runner / launcher / lifecycle / window classifier
-- Agent D = Docs / atlas / routing board
+When instructions overlap, use this order:
 
-## Hard routing rules
+1. current source, scripts, schemas, registries, and executable workflow contracts;
+2. current generated evidence and state packets;
+3. the narrowest matching `.tbg/skills/<skill-id>/SKILL.md`;
+4. this root coordination contract;
+5. client adapters such as `CLAUDE.md`;
+6. historical docs, stale PR bodies, and chat handoffs.
 
-- Agent A does not write product code.
-- Agent B does not edit launcher/runner scripts unless explicitly routed.
-- Agent C does not edit src/** unless explicitly authorized.
-- Agent D does not certify gameplay.
-- Do not merge PR #8 unless user explicitly authorizes.
-- Do not commit scratch evidence folders.
-- Do not claim PASS from stale Status.json.
-- Do not ask the user to harvest logs manually.
-- Runner owns evidence capture.
+A lower authority may explain a higher authority but may not override it.
 
-## Common denominator vs skills
+## Entry sequence
 
-`AGENTS.md` is the common denominator. It should stay small enough for every agent to read at entry.
+Before substantial work:
 
-Put repo-wide facts here:
-- agent ownership and routing rules;
-- non-negotiable safety boundaries;
-- proof and evidence discipline;
-- encoding rules;
-- where to find executable contracts and targeted skills.
+1. identify repo, branch, PR or sprint, lane, owned scope, forbidden scope, and expected artifacts;
+2. inspect `git status --short`, `git branch --show-current`, and `git log --oneline --decorate -5`;
+3. read `.tbg/skills/manifest.json`;
+4. select one primary skill and only the cross-cutting skills it requires;
+5. load the skill's `entryContract`, authorities, validators, and proof ceiling;
+6. use `artifacts/latest/tbg-chat-packet.json` or `artifacts/latest/artifact-engine/artifact-engine.handoff.md` for fresh local state when present.
 
-Put conditional brush-up material in `.tbg/skills/<skill-id>/SKILL.md`, not in this file. A skill may explain a workflow, proof ladder, stale-PR recovery path, operator control surface, launcher lifecycle, terminal environment, or MCP/LSP search pattern, but it must point back to executable contracts, policies, manifests, scripts, or current docs as the authority.
+Do not paste full stale handoffs into every prompt. Do not load every skill.
 
-If a skill disagrees with a workflow contract, harness policy, operator catalog, or current source file, the executable source wins and the skill must be corrected.
+## Universal safety
 
-## Skill selection rule
+- Preserve dirty, conflicted, unpublished, ignored-evidence, and sibling-worktree state unless the active cleanup workflow proves a destructive action safe.
+- Do not use reset, clean, force push, branch deletion, worktree removal, save mutation, or PR closure merely to make the floor look clean.
+- Do not commit secrets, saves, personal configuration, scratch evidence, huge logs, crash dumps, or machine-local junk.
+- Do not ask the user to harvest logs manually when the runner can capture them.
+- Runner-owned workflows own evidence capture.
+- No game launch, launcher click, command-inbox write, save mutation, or gameplay action is allowed unless the active workflow explicitly grants that authority.
+- If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.
+- External tools and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, and product authority.
 
-Before substantial repo work, choose the narrowest matching skill from `.tbg/skills/manifest.json`.
+## Proof discipline
 
-Required default skills:
-- `repo-floor-hygiene` for branch, PR, worktree, conflict, stale artifact, and safe-base mapping.
-- `agent-skill-factoring` for changing agent rules, skill docs, manifests, or prompt surfaces.
-- `harness-maturity` for deciding whether logic belongs in harness plumbing, a workflow contract, a registry, or narrow skill/domain code.
-- `compendium-preservation` for preserving high-value chat annotations, stale snapshots, and cross-sprint insights without treating stale context as current truth.
-- `operator-terminal-environment` for WezTerm, tmux, Neovim, voice-input, terminal-session, and local shell ergonomics around repo commands without making those tools repo dependencies.
-- `stale-pr-cherry-pick` for recovering value from stale or conflicted PRs without blind merge, blind squash, or blind deletion.
+Proof levels do not collapse:
 
-Use `agentic-operations` when a sprint coordinates external agent tools, multi-worktree leases, clean branch completion, first-test-after-clone guidance, or implementation closeout across concurrent pushes.
+```text
+contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime
+```
 
-Do not load every skill. Load `AGENTS.md`, then only the active workflow contract and the skills that match the lane.
+Do not claim a higher level from a lower one. A stale `Status.json`, parser success, command ACK, route assignment, checkpoint, or launcher handoff is not product completion. Every claim must name freshness, exact head when relevant, evidence paths, and the highest level actually reached.
 
-## Harness maturity rule
+## Lane router
 
-Harness maturity is not a raw line-count target. A thick harness is useful when it moves cross-cutting plumbing out of domain behavior: config loading, dependency injection, capability routing, permission gates, policy guards, evidence capture, retries, rollback, metrics, English/JSON reporting, UI shims, schemas, fixtures, and adapters.
+| Request or touched surface | Primary skill |
+|---|---|
+| branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
+| root rules, manifests, prompts, skill design | `agent-skill-factoring` |
+| harness-versus-domain placement | `harness-maturity` |
+| local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
+| proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
+| ForgeStop, build/deploy/launch/Continue/window lifecycle | `launcher-lifecycle` |
+| campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |
+| hotkeys, toggles, command inbox, Manual/Assist/Autonomous | `operator-control-surface` |
+| commit, push, PR, concurrent completion, release gates | `implementation-completion` |
+| stale or stacked PR value recovery | `stale-pr-cherry-pick` |
+| Continuum capability export or extraction | `continuum-interoperability` |
+| long annotations, stale snapshots, retained insight | `compendium-preservation` |
+| external coordinators and agent-operation tools | `agentic-operations` |
+| WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
 
-Keep domain behavior narrow. Route, smithing, economy, trade, save identity, launcher lifecycle, and gameplay decisions should not be moved into harness merely to make the harness percentage look higher.
+Agent A/B/C/D names are compatibility aliases only. Route by lane and skill, not by a temporary agent letter.
 
-Use `.tbg/skills/harness-maturity/SKILL.md` and `.tbg/workflows/harness-skill-maturity.contract.json` before any refactor that claims to make the app more harness-driven. The acceptable reason is a real safety, replay, audit, rollback, reporting, or agent-context-load problem. Reject percentage chasing.
+## Current-state pointers
 
-## Local artifact engine rule
+Mutable PR restrictions, active targets, worktree state, runtime state, and latest evidence do not belong in this file. Resolve them from:
 
-Local artifacts do not execute, interpret, validate, or route themselves. Use the repo-local artifact control plane when a workflow must turn ignored local output into bounded next decisions.
+- `artifacts/latest/tbg-chat-packet.json`;
+- `artifacts/latest/artifact-engine/artifact-engine.handoff.md`;
+- `docs/control/logs/open/autonomous-assist-session-target.md`;
+- current Git, GitHub, workflow, and runtime artifacts.
 
-Default posture:
-1. `ForgeArtifactEngine.cmd status` reports whether automatic parsing is enabled and whether the watcher is running;
-2. `ForgeArtifactEngine.cmd on`, `off`, and `toggle` change operator authority in `.local/tbg-artifact-engine/state.json`;
-3. `ForgeArtifactEngine.cmd run` performs an explicit manual pass even when automatic processing is off;
-4. successful producer wrappers may call `ForgeArtifactEngine.cmd trigger <producer-id>`, but a trigger is ignored while the toggle is off;
-5. the registry at `.tbg/harness/artifact-engines.registry.json` owns parser identity, declared downstream edges, input candidates, output stems, and read-only authority;
-6. automatic engines may parse local artifacts, classify blockers and proof boundaries, write ignored JSON/English packets, and enqueue declared downstream engines;
-7. automatic engines may not execute commands discovered inside artifacts, edit tracked source, mutate Git or PR state, launch Bannerlord, write a command inbox, mutate saves, or promote parser success into runtime proof;
-8. cycles, unregistered edges, cascade overflow, malformed required artifacts, and strict-mode blockers must fail closed.
+Historical snapshots remain provenance, not current truth.
 
-Use `.tbg/workflows/local-artifact-engine.contract.json`, `ForgeArtifactEngine.cmd`, and `scripts/tbg/Test-TbgArtifactEngine.ps1` as the executable authority.
+## PowerShell encoding
 
-## Continuum interoperability rule
+Every tracked `*.ps1`, `*.psm1`, and `*.psd1` file must carry a UTF-8 BOM. After script edits run:
 
-BlacksmithGuild may export proven cross-cutting harness capabilities to Continuum, but Continuum remains an optional development accelerator rather than a build, validation, launch, or runtime dependency.
+```powershell
+powershell -File scripts\tools\Add-Utf8Bom.ps1 -Fix
+powershell -File scripts\test-powershell-utf8-bom-contract.ps1
+```
 
-Default posture:
-1. classify the generic core separately from the BlacksmithGuild adapter;
-2. export metadata before moving implementation;
-3. require Continuum parity tests and BlacksmithGuild standalone fallback proof before delegation;
-4. keep repo policy, paths, workflow names, proof vocabulary, game adapters, and runtime authority in BlacksmithGuild;
-5. move no route, smithing, economy, trade, save, launcher, campaign, or gameplay behavior into Continuum's generic core;
-6. remove duplicated BlacksmithGuild code only in a later explicit extraction sprint with rollback instructions.
+PowerShell Core success alone is not Windows PowerShell 5.1 proof.
 
-Use `.tbg/workflows/continuum-interoperability.contract.json`, `scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1`, and `docs/architecture/continuum-interoperability.md` for this experiment.
+## Completion report
 
-## Compendium preservation rule
-
-Long chat annotations, stale PR descriptions, and operator comments can contain important design insight, but they are not automatically current repo truth.
-
-Default posture:
-1. capture the source and its approximate freshness;
-2. classify it as current truth, stale-but-useful principle, replay candidate, needs runtime proof, or rejected/superseded;
-3. route it to the narrowest owning skill or workflow;
-4. preserve provenance in a repo-owned doc, contract, PR body, or artifact index;
-5. verify against current source, contracts, PR state, or fresh artifacts before implementation or closeout.
-
-Use `.tbg/skills/compendium-preservation/SKILL.md` and `.tbg/workflows/compendium-preservation.contract.json` when a sprint needs to preserve a large set of insights without losing rigor.
-
-## Operator terminal environment rule
-
-WezTerm, tmux, Neovim, and voice-input tools belong to the operator environment layer above the repo. They help the operator and agents run, read, and organize BlacksmithGuild commands; they are not runtime proof and they are not required repo dependencies.
-
-Default posture:
-1. expose clean repo commands and compact packets that work in any terminal;
-2. document optional terminal/session topology as examples, not mandatory setup;
-3. keep long details in artifacts or PR comments instead of terminal scrollback;
-4. never commit personal terminal config, shell history, fonts, screenshots, tokens, or generated terminal logs;
-5. use `.tbg/skills/operator-terminal-environment/SKILL.md` and `.tbg/workflows/operator-terminal-environment.contract.json` before changing terminal/operator-environment doctrine.
-
-## Clean branch completion rule
-
-Implementation completion must survive concurrent pushes without turning `main` into a junk drawer.
-
-Default posture:
-1. fetch before branch, PR, merge, replay, cleanup, or proof decisions;
-2. use one branch and one worktree per active lane;
-3. keep `origin/main` as the default base unless the sprint explicitly owns an open PR branch;
-4. use `ForgeAgentStatus` or a future TBG AXI command to move local state into compact artifacts or PR comments;
-5. keep no-game first-user checks separate from runtime proof;
-6. close stale PRs only after selected value is replayed, rejected, or superseded with rationale;
-7. archive evidence with a manifest before removing runtime-evidence worktrees or ignored artifact lanes.
-
-Use `.tbg/workflows/implementation-completion-clean-branches.contract.json`, `docs/handoff/implementation-completion-clean-branches.md`, and `docs/first-test-after-clone.md` for implementation closeout and first-clone validation work.
-
-## Stale PR policy
-
-A stale PR is not disposable merely because it is behind, conflicted, old, or superseded in part.
-
-Default posture:
-1. map it;
-2. classify unique value;
-3. preserve useful commits, hunks, tests, docs, and evidence references;
-4. replay only the selected delta onto a safe current base;
-5. validate under current contracts;
-6. close or supersede the old PR only after the replacement path is recorded.
-
-Do not use stale PR heads as general bases. Do not delete stale branches or worktrees without proof and explicit operator authorization.
-
-## Current strategic target
-
-One command should:
-
-1. build/deploy if needed
-2. launch Bannerlord
-3. select Continue automatically
-4. wait for campaign attach
-5. consume stateMachine + RuntimeLifecycle
-6. start autonomous assist loop without hotkey
-7. make the avatar visibly move/train/act
-8. log every step
-9. allow user toggle-off
-10. stop cleanly
-11. write summary evidence
-
-## PowerShell encoding (non-negotiable)
-
-- **Every** tracked `*.ps1` / `*.psm1` / `*.psd1` must have a **UTF-8 BOM** (`EF BB BF`). PS 5.1 reads no-BOM files as ANSI; pwsh 7 reads them as UTF-8. Em dashes and other non-ASCII in no-BOM scripts are the usual visible break.
-- After editing scripts: `powershell -File scripts\tools\Add-Utf8Bom.ps1 -Fix`, then `powershell -File scripts\test-powershell-utf8-bom-contract.ps1`.
-- Full doctrine: `docs/conventions/powershell-utf8-bom-doctrine.md`. Do not assume pwsh-only green is repo green.
-
-## Coordination doctrine
-
-- Read `docs/handoff/blacksmithguild-agent-coordination.md` before changing owned files.
-- Recursive campaign loop doctrine: `docs/handoff/recursive-campaign-assist-loop.md` (checkpoints are progress, not completion).
-- Runtime truth and runner consumption must follow `docs/handoff/runtime-state-routing.md`.
-- Window selection must follow `docs/control/logs/open/window-delta-doctrine.md`.
-- The current user-facing product target is `docs/control/logs/open/autonomous-assist-session-target.md`.
-- Synthesize parallel reports by preserving each agent's factual findings, resolving ownership conflicts through the routing matrix, and escalating only true contradictions to the user.
+Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Do not claim completion without a commit SHA, validated existing proof, or an exact blocker.
