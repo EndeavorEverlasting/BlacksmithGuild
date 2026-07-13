@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 
 function Add-TbgIssue {
     param(
-        [Parameter(Mandatory = $true)][System.Collections.Generic.List[string]]$List,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][System.Collections.Generic.List[string]]$List,
         [Parameter(Mandatory = $true)][string]$Message
     )
     $List.Add($Message)
