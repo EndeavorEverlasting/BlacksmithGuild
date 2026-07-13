@@ -53,17 +53,27 @@ $ledger = Read-TbgJson -Path $ledgerPath
 $contract = Read-TbgJson -Path $contractPath
 $planPrs = @($plan.entries | ForEach-Object { [int]$_.pr } | Sort-Object)
 $ledgerPrs = @($ledger.entries | ForEach-Object { [int]$_.pr } | Sort-Object)
+$terminalStatuses = @($ledger.terminalCompleteStatuses | ForEach-Object { [string]$_ })
+$inProgressStatuses = @('replacement_pr_open', 'replay_in_progress', 'validation_pending', 'disposition_pending')
+$blockedStatuses = @('blocked_dependency', 'blocked_runtime_proof')
 
 Assert-TbgTrue ($planPrs.Count -eq 16) 'The committed recovery plan must contain the 16 mapped stale pull requests.'
 Assert-TbgTrue (($planPrs -join ',') -eq ($ledgerPrs -join ',')) 'The progress ledger must contain exactly the same pull requests as the recovery plan.'
 Assert-TbgTrue (@($ledger.entries | Group-Object pr | Where-Object { $_.Count -ne 1 }).Count -eq 0) 'Every stale pull request must appear exactly once in the progress ledger.'
-Assert-TbgTrue (@($ledger.terminalCompleteStatuses).Count -eq 4) 'The progress ledger must define four terminal completion statuses.'
+Assert-TbgTrue ($terminalStatuses.Count -eq 4) 'The progress ledger must define four terminal completion statuses.'
+
+$expectedComplete = @($ledger.entries | Where-Object { $terminalStatuses -contains [string]$_.status }).Count
+$expectedInProgress = @($ledger.entries | Where-Object { $inProgressStatuses -contains [string]$_.status }).Count
+$expectedBlocked = @($ledger.entries | Where-Object { $blockedStatuses -contains [string]$_.status }).Count
+$expectedNotStarted = @($ledger.entries).Count - $expectedComplete - $expectedInProgress - $expectedBlocked
+$expectedOverall = if ($expectedComplete -eq @($ledger.entries).Count) { 'COMPLETE' } else { 'INCOMPLETE' }
 
 $dashboardText = Get-Content -LiteralPath $dashboardPath -Raw
-Assert-TbgTrue ($dashboardText.Contains('**Overall: INCOMPLETE**')) 'The tracked dashboard must display the current incomplete state.'
-Assert-TbgTrue ($dashboardText.Contains('0 of 16 stale pull requests are complete')) 'The tracked dashboard must display the initial completion count.'
-Assert-TbgTrue ($dashboardText.Contains('PR #65')) 'The tracked dashboard must show the active Wave A replacement pull request.'
+Assert-TbgTrue ($dashboardText.Contains("**Overall: $expectedOverall**")) 'The tracked dashboard must display the state derived from the canonical ledger.'
+Assert-TbgTrue ($dashboardText.Contains("$expectedComplete of 16 stale pull requests are complete")) 'The tracked dashboard must display the completion count derived from the canonical ledger.'
+Assert-TbgTrue ($dashboardText.Contains("$expectedInProgress in progress, $expectedBlocked blocked, and $expectedNotStarted not started")) 'The tracked dashboard must display the status distribution derived from the canonical ledger.'
 Assert-TbgTrue ($dashboardText.Contains('An open replacement pull request is progress, not completion.')) 'The tracked dashboard must distinguish progress from completion.'
+Assert-TbgTrue ($dashboardText.Contains('replayed_and_merged')) 'The tracked dashboard must name the terminal completion statuses.'
 
 $wrapperText = Get-Content -LiteralPath $wrapperPath -Raw
 $recoveryWrapperText = Get-Content -LiteralPath $recoveryWrapperPath -Raw
@@ -84,33 +94,39 @@ try {
     Copy-Item -LiteralPath $ledgerPath -Destination $tempLedgerPath
 
     & $generatorPath status -PlanPath $planPath -LedgerPath $tempLedgerPath -MarkdownPath $tempMarkdownPath -OutputDirectory $tempOutputPath | Out-Null
-    $initialResult = Read-TbgJson -Path (Join-Path $tempOutputPath 'stale-pr-recovery.progress.json')
-    Assert-TbgTrue ([string]$initialResult.status -eq 'INCOMPLETE') 'The initial dashboard fixture must be incomplete.'
-    Assert-TbgTrue (-not [bool]$initialResult.allComplete) 'The initial dashboard fixture must not claim completion.'
-    Assert-TbgTrue ([int]$initialResult.total -eq 16) 'The initial dashboard fixture must account for 16 planned pull requests.'
-    Assert-TbgTrue ([int]$initialResult.complete -eq 0) 'The initial dashboard fixture must begin with zero completed pull requests.'
-    Assert-TbgTrue ([int]$initialResult.inProgress -eq 2) 'The initial dashboard fixture must identify the two Wave A entries as in progress.'
-    Assert-TbgTrue ([int]$initialResult.blocked -eq 4) 'The initial dashboard fixture must identify four dependency-blocked entries.'
-    Assert-TbgTrue ([int]$initialResult.notStarted -eq 10) 'The initial dashboard fixture must identify ten not-started entries.'
-    Assert-TbgTrue ([int]$initialResult.nextPr -eq 9) 'The initial dashboard fixture must route the next decision through PR #9 and replacement PR #65.'
-    Assert-TbgTrue ([string]$initialResult.nextCommand -match '^gh pr view 65 ') 'The initial dashboard fixture must name PR #65 inspection as the next command.'
+    $currentResult = Read-TbgJson -Path (Join-Path $tempOutputPath 'stale-pr-recovery.progress.json')
+    Assert-TbgTrue ([string]$currentResult.status -eq $expectedOverall) 'The generated dashboard fixture must match the ledger-derived overall state.'
+    Assert-TbgTrue ([bool]$currentResult.allComplete -eq ($expectedOverall -eq 'COMPLETE')) 'The generated dashboard fixture has the wrong allComplete value.'
+    Assert-TbgTrue ([int]$currentResult.total -eq 16) 'The generated dashboard fixture must account for 16 planned pull requests.'
+    Assert-TbgTrue ([int]$currentResult.complete -eq $expectedComplete) 'The generated dashboard fixture has the wrong complete count.'
+    Assert-TbgTrue ([int]$currentResult.inProgress -eq $expectedInProgress) 'The generated dashboard fixture has the wrong in-progress count.'
+    Assert-TbgTrue ([int]$currentResult.blocked -eq $expectedBlocked) 'The generated dashboard fixture has the wrong blocked count.'
+    Assert-TbgTrue ([int]$currentResult.notStarted -eq $expectedNotStarted) 'The generated dashboard fixture has the wrong not-started count.'
+    if ($expectedOverall -ne 'COMPLETE') {
+        Assert-TbgTrue ([int]$currentResult.nextPr -gt 0) 'An incomplete ledger must name one exact next pull request.'
+        Assert-TbgTrue (-not [string]::IsNullOrWhiteSpace([string]$currentResult.nextCommand)) 'An incomplete ledger must name one exact next command.'
+    }
+
+    $testEntry = @($ledger.entries | Where-Object { $terminalStatuses -notcontains [string]$_.status } | Select-Object -First 1)
+    Assert-TbgTrue ($testEntry.Count -eq 1) 'The evidence-gate fixture requires at least one nonterminal ledger entry.'
+    $testPr = [int]$testEntry[0].pr
 
     $terminalWithoutEvidenceFailed = $false
     try {
-        & $generatorPath set -PlanPath $planPath -LedgerPath $tempLedgerPath -MarkdownPath $tempMarkdownPath -OutputDirectory $tempOutputPath -PrNumber 2 -Status rejected_recorded -Disposition 'Rejected.' | Out-Null
+        & $generatorPath set -PlanPath $planPath -LedgerPath $tempLedgerPath -MarkdownPath $tempMarkdownPath -OutputDirectory $tempOutputPath -PrNumber $testPr -Status rejected_recorded -Disposition 'Rejected.' | Out-Null
     }
     catch {
         $terminalWithoutEvidenceFailed = $true
     }
     Assert-TbgTrue $terminalWithoutEvidenceFailed 'A terminal disposition without evidence must fail closed.'
 
-    & $generatorPath set -PlanPath $planPath -LedgerPath $tempLedgerPath -MarkdownPath $tempMarkdownPath -OutputDirectory $tempOutputPath -PrNumber 2 -Status rejected_recorded -Disposition 'Current main supersedes the stale identity wording change.' -Evidence 'replacement analysis; rejection record' -NextAction 'No further replay work remains for PR #2.' | Out-Null
+    & $generatorPath set -PlanPath $planPath -LedgerPath $tempLedgerPath -MarkdownPath $tempMarkdownPath -OutputDirectory $tempOutputPath -PrNumber $testPr -Status rejected_recorded -Disposition 'The fixture records a bounded terminal rejection.' -Evidence 'replacement analysis; rejection record' -NextAction "No further replay work remains for PR #$testPr." | Out-Null
     $updatedLedger = Read-TbgJson -Path $tempLedgerPath
-    $updatedEntry = @($updatedLedger.entries | Where-Object { [int]$_.pr -eq 2 })[0]
+    $updatedEntry = @($updatedLedger.entries | Where-Object { [int]$_.pr -eq $testPr })[0]
     Assert-TbgTrue ([string]$updatedEntry.status -eq 'rejected_recorded') 'The set action must update the selected pull-request status.'
     Assert-TbgTrue (@($updatedEntry.evidence).Count -eq 2) 'The set action must split semicolon-delimited evidence into two retained records.'
     $updatedResult = Read-TbgJson -Path (Join-Path $tempOutputPath 'stale-pr-recovery.progress.json')
-    Assert-TbgTrue ([int]$updatedResult.complete -eq 1) 'One terminal disposition must increase the complete count to one.'
+    Assert-TbgTrue ([int]$updatedResult.complete -eq ($expectedComplete + 1)) 'One new terminal disposition must increase the complete count by one.'
 
     foreach ($entry in @($updatedLedger.entries)) {
         $entry.status = 'historical_retained'
@@ -134,4 +150,4 @@ finally {
     }
 }
 
-Write-Host 'PASS: stale PR recovery now has a canonical per-PR ledger, an enforced Markdown completion dashboard, evidence-required terminal dispositions, and an aggregate COMPLETE gate.'
+Write-Host 'PASS: stale PR recovery derives its current counts from the canonical ledger, enforces evidence-backed terminal dispositions, and proves the aggregate COMPLETE gate without hard-coded historical progress.'
