@@ -1,162 +1,908 @@
 {
-  "schema": "tbg.skills.manifest.v1",
+  "schema": "tbg.skills.manifest.v2",
   "repo": "EndeavorEverlasting/BlacksmithGuild",
-  "purpose": "Targeted brush-up registry for agents. AGENTS.md remains the common denominator; skills carry conditional lane knowledge backed by executable contracts and current repo evidence.",
+  "purpose": "Deterministic lane router for targeted agent brush-up. AGENTS.md is the safe bootloader; this manifest selects the narrowest skill, executable authority, validators, expected artifacts, proof ceiling, and path boundary.",
+  "routerContract": ".tbg/workflows/agent-skill-router.contract.json",
+  "schemaPath": ".tbg/harness/schemas/skill-manifest.schema.json",
+  "currentStateSources": [
+    "artifacts/latest/tbg-chat-packet.json",
+    "artifacts/latest/artifact-engine/artifact-engine.handoff.md",
+    "docs/control/logs/open/autonomous-assist-session-target.md",
+    "current Git and GitHub state"
+  ],
   "authorityRules": [
-    "AGENTS.md defines root coordination rules.",
-    "Skills explain executable contracts, policies, manifests, source files, and current docs; they do not override them.",
-    "Load only the narrowest skill needed for the active lane.",
-    "Stale PRs are classified and selectively replayed; they are not blindly merged, squashed, deleted, or used as general bases.",
-    "Harness maturity is raised by moving cross-cutting plumbing into contracts, policies, registries, guards, evidence, and reporting; do not move domain behavior into harness just to chase a percentage.",
-    "Long chat annotations and stale snapshots must be preserved as classified insight, not treated as current truth until verified.",
-    "External agent-operation tools coordinate above the repo; BlacksmithGuild retains authority over scope, proof levels, validators, artifacts, and runtime boundaries.",
-    "WezTerm and adjacent terminal/editor/session tools are operator-environment aids; BlacksmithGuild exposes clean commands and packets to them but does not vendor or require them.",
-    "Implementation completion across concurrent pushes requires one lane per worktree, current main as the default base, and explicit replay/archive/proof disposition before PR or branch cleanup."
+    "Current source, scripts, schemas, registries, and executable workflow contracts outrank explanatory prose.",
+    "Generated state and evidence must be fresh enough for the claim being made.",
+    "Select one primary skill and only its required or explicitly composed cross-cutting skills.",
+    "A skill may narrow authority but may not exceed its proof ceiling, risk class, owned paths, or forbidden paths.",
+    "Mutable pull request restrictions and active targets belong in current-state surfaces, not AGENTS.md.",
+    "Stale PRs and historical artifacts preserve provenance but are not current proof."
   ],
   "skills": [
     {
       "id": "repo-floor-hygiene",
       "path": ".tbg/skills/repo-floor-hygiene/SKILL.md",
-      "useWhen": [
-        "mapping PRs, branches, worktrees, conflicts, dirty state, stale generated artifacts, or safe bases",
-        "creating a sprint map before feature work"
+      "distribution": "repo_internal",
+      "lane": "coordinator/repo-floor",
+      "match": {
+        "intents": [
+          "map repository state",
+          "inspect branches",
+          "inspect pull requests",
+          "inspect worktrees",
+          "find safe base",
+          "classify dirty or conflicted state"
+        ],
+        "paths": [
+          ".git/**",
+          "docs/handoff/*repo-floor*",
+          "artifacts/latest/repo-hygiene*"
+        ],
+        "commands": [
+          "git status",
+          "git worktree list",
+          "gh pr list",
+          "ForgeRepoHygiene.cmd"
+        ],
+        "artifacts": [
+          "repo-hygiene-report.json",
+          "repo-hygiene-report.md"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "implementation-completion",
+        "stale-pr-cherry-pick",
+        "compendium-preservation"
       ],
-      "doNotUseFor": [
-        "feature implementation",
-        "runtime proof",
-        "destructive cleanup without proof"
+      "exclusiveWith": [
+        "launcher-lifecycle",
+        "route-visible-trade"
       ],
-      "primaryContracts": [
-        "AGENTS.md",
-        ".tbg/harness/manifest.json",
-        "docs/handoff/post-pr41-repo-hygiene-map.md"
+      "entryContract": ".tbg/workflows/agent-skill-router.contract.json",
+      "primaryAuthorities": [
+        "ForgeRepoHygiene.cmd",
+        "docs/handoff/20260712-post-pr59-repo-floor-map.md",
+        ".tbg/harness/manifest.json"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/repo-hygiene-report.json",
+        "artifacts/latest/repo-hygiene-report.md"
+      ],
+      "proofCeiling": "contract",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/repo-hygiene-report.json",
+      "ownedPaths": [
+        "docs/handoff/**",
+        ".tbg/plans/**",
+        "artifacts/latest/repo-hygiene*"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        "docs/evidence/**"
       ]
     },
     {
       "id": "agent-skill-factoring",
       "path": ".tbg/skills/agent-skill-factoring/SKILL.md",
-      "useWhen": [
-        "editing AGENTS.md, CLAUDE.md, skill files, agent prompts, harness context docs, or skill manifests",
-        "deciding what belongs in common agent rules versus targeted skills"
+      "distribution": "repo_internal",
+      "lane": "harness/agent-routing",
+      "match": {
+        "intents": [
+          "edit AGENTS.md",
+          "edit CLAUDE.md",
+          "add a skill",
+          "change skill manifest",
+          "change agent prompt",
+          "factor common denominator"
+        ],
+        "paths": [
+          "AGENTS.md",
+          "CLAUDE.md",
+          ".tbg/skills/**",
+          ".tbg/harness/schemas/skill-manifest.schema.json"
+        ],
+        "commands": [
+          "Test-TbgSkillRouting.ps1"
+        ],
+        "artifacts": [
+          "skill-routing.result.json",
+          "skill-routing.report.md"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "harness-maturity",
+        "compendium-preservation"
       ],
-      "doNotUseFor": [
-        "runtime product patches",
-        "launcher automation",
-        "route source changes"
+      "exclusiveWith": [
+        "launcher-lifecycle",
+        "route-visible-trade"
       ],
-      "primaryContracts": [
+      "entryContract": ".tbg/workflows/agent-skill-router.contract.json",
+      "primaryAuthorities": [
         "AGENTS.md",
         "CLAUDE.md",
-        ".tbg/harness/manifest.json",
-        "docs/architecture/local-agent-harness.md",
-        "docs/architecture/effective-policy-english-reports.md"
+        ".tbg/skills/manifest.json",
+        ".tbg/harness/manifest.json"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/skill-routing/skill-routing.result.json",
+        "artifacts/latest/skill-routing/skill-routing.report.md"
+      ],
+      "proofCeiling": "static test",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/skill-routing/skill-routing.result.json",
+      "ownedPaths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        ".tbg/skills/**",
+        ".tbg/harness/schemas/skill-manifest.schema.json",
+        ".tbg/workflows/agent-skill-router.contract.json",
+        "scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        "docs/evidence/**"
       ]
     },
     {
       "id": "harness-maturity",
       "path": ".tbg/skills/harness-maturity/SKILL.md",
-      "useWhen": [
-        "deciding whether logic belongs in harness plumbing, skill/domain code, workflow contracts, policy guards, registries, or evidence/reporting layers",
-        "reviewing a proposed refactor that claims to make the app more harness-driven"
+      "distribution": "repo_internal",
+      "lane": "architecture/harness-boundary",
+      "match": {
+        "intents": [
+          "decide harness versus domain",
+          "review harness percentage",
+          "move cross-cutting plumbing",
+          "classify policy evidence reporting adapters"
+        ],
+        "paths": [
+          ".tbg/harness/**",
+          ".tbg/workflows/**",
+          "scripts/harness/**",
+          "scripts/tbg/**"
+        ],
+        "commands": [],
+        "artifacts": [
+          "harness-maturity classification"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "agent-skill-factoring",
+        "runtime-evidence-certification"
       ],
-      "doNotUseFor": [
-        "moving behavior solely to increase a harness percentage",
-        "runtime product patches",
-        "claiming runtime proof from static architecture changes"
+      "exclusiveWith": [
+        "route-visible-trade"
       ],
-      "primaryContracts": [
-        "AGENTS.md",
+      "entryContract": ".tbg/workflows/harness-skill-maturity.contract.json",
+      "primaryAuthorities": [
         ".tbg/workflows/harness-skill-maturity.contract.json",
-        "docs/architecture/harness-skill-maturity.md",
-        "docs/architecture/local-agent-harness.md",
-        "docs/architecture/effective-policy-english-reports.md"
+        "docs/architecture/harness-skill-maturity.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/harness-maturity.result.json"
+      ],
+      "proofCeiling": "contract",
+      "riskClass": "static",
+      "freshnessSource": ".tbg/workflows/harness-skill-maturity.contract.json",
+      "ownedPaths": [
+        ".tbg/harness/**",
+        ".tbg/workflows/**",
+        "docs/architecture/**"
+      ],
+      "forbiddenPaths": [
+        "src/BlacksmithGuild/MapTrade/**",
+        "src/BlacksmithGuild/Smithing/**"
       ]
     },
     {
       "id": "compendium-preservation",
       "path": ".tbg/skills/compendium-preservation/SKILL.md",
-      "useWhen": [
-        "preserving high-value chat annotations, stale snapshots, PR comments, and runtime lessons without losing provenance",
-        "choosing the most rewarding next sprint across repo hygiene, harness maturity, runtime proof automation, evidence retention, and agent operations"
+      "distribution": "repo_internal",
+      "lane": "coordination/knowledge-retention",
+      "match": {
+        "intents": [
+          "preserve chat insight",
+          "classify stale snapshot",
+          "retain PR comment",
+          "inventory historical evidence",
+          "preserve provenance"
+        ],
+        "paths": [
+          "docs/control/logs/**",
+          "docs/evidence/**",
+          "docs/architecture/**",
+          "docs/handoff/**"
+        ],
+        "commands": [],
+        "artifacts": [
+          "compendium inventory",
+          "provenance record"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "repo-floor-hygiene",
+        "stale-pr-cherry-pick"
       ],
-      "doNotUseFor": [
-        "treating stale snapshots as current truth without verification",
-        "closing PRs or deleting evidence without replacement or archive rationale",
-        "claiming runtime proof from static documentation"
+      "exclusiveWith": [
+        "launcher-lifecycle"
       ],
-      "primaryContracts": [
-        "AGENTS.md",
+      "entryContract": ".tbg/workflows/compendium-preservation.contract.json",
+      "primaryAuthorities": [
         ".tbg/workflows/compendium-preservation.contract.json",
-        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
-        "docs/architecture/harness-skill-maturity.md",
-        "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md"
+        "docs/architecture/compendium-preservation-and-rewarding-sprint.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/compendium-preservation.result.json"
+      ],
+      "proofCeiling": "contract",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/artifact-engine/artifact-engine.handoff.md",
+      "ownedPaths": [
+        "docs/**",
+        ".tbg/plans/**"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**"
       ]
     },
     {
       "id": "agentic-operations",
       "path": ".tbg/skills/agentic-operations/SKILL.md",
       "distribution": "repo_internal",
-      "useWhen": [
-        "adopting or evaluating Firstmate, Treehouse, no-mistakes, gnhf, AXI, Lavish, npx skills, or another external agent-operations tool around BlacksmithGuild",
-        "designing coordinator, worktree lease, generic gate, compact tool interface, visual review, or skill-distribution boundaries",
-        "finishing implementation across concurrent pushes while keeping branches, worktrees, stale PR replay, evidence retention, and first-user tests clean"
+      "lane": "coordination/external-agent-tools",
+      "match": {
+        "intents": [
+          "adopt external coordinator",
+          "use AXI",
+          "use Treehouse",
+          "use Firstmate",
+          "design worktree leases",
+          "distribute skills"
+        ],
+        "paths": [
+          ".tbg/workflows/agentic-operations-adoption.contract.json",
+          "docs/architecture/agentic-operations-layer.md"
+        ],
+        "commands": [],
+        "artifacts": [
+          "agent operation packet"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "implementation-completion",
+        "operator-terminal-environment"
       ],
-      "doNotUseFor": [
-        "runtime product patches",
-        "tool installation without an explicit install sprint",
-        "vendoring external coordinators or operator tools into BlacksmithGuild",
-        "claiming runtime proof from generic CI or visual review"
+      "exclusiveWith": [
+        "route-visible-trade"
       ],
-      "primaryContracts": [
-        "AGENTS.md",
+      "entryContract": ".tbg/workflows/agentic-operations-adoption.contract.json",
+      "primaryAuthorities": [
         ".tbg/workflows/agentic-operations-adoption.contract.json",
-        ".tbg/workflows/implementation-completion-clean-branches.contract.json",
+        "docs/architecture/agentic-operations-layer.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/tbg-chat-packet.json"
+      ],
+      "proofCeiling": "contract",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/tbg-chat-packet.json",
+      "ownedPaths": [
+        ".tbg/workflows/agentic-operations-adoption.contract.json",
         "docs/architecture/agentic-operations-layer.md",
-        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
-        "docs/handoff/agentic-toolchain-sprint-map.md",
-        "docs/handoff/implementation-completion-clean-branches.md",
-        "docs/first-test-after-clone.md",
-        "docs/handoff/local-agent-status-relay.md"
+        "docs/handoff/agentic-toolchain-sprint-map.md"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        ".local/**"
       ]
     },
     {
       "id": "operator-terminal-environment",
       "path": ".tbg/skills/operator-terminal-environment/SKILL.md",
-      "useWhen": [
-        "designing local operator terminal, pane, session, shell, editor, or voice-input workflows around BlacksmithGuild commands",
-        "incorporating WezTerm, tmux, Neovim, or adjacent operator tools into the agentic operations layer without making them repo dependencies"
+      "distribution": "repo_internal",
+      "lane": "operator/environment",
+      "match": {
+        "intents": [
+          "configure terminal workflow",
+          "configure tmux workflow",
+          "configure Neovim workflow",
+          "voice input workflow",
+          "pane layout"
+        ],
+        "paths": [
+          "docs/examples/wezterm/**",
+          "docs/handoff/*terminal*",
+          "docs/handoff/*wezterm*"
+        ],
+        "commands": [],
+        "artifacts": [
+          "operator guide"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "agentic-operations"
       ],
-      "doNotUseFor": [
-        "runtime gameplay changes",
-        "tool installation sprints unless explicitly owned",
-        "committing personal terminal config, fonts, shell history, screenshots, or generated terminal logs",
-        "claiming runtime proof from terminal organization"
+      "exclusiveWith": [
+        "launcher-lifecycle",
+        "route-visible-trade"
       ],
-      "primaryContracts": [
-        "AGENTS.md",
+      "entryContract": ".tbg/workflows/operator-terminal-environment.contract.json",
+      "primaryAuthorities": [
         ".tbg/workflows/operator-terminal-environment.contract.json",
-        "docs/architecture/compendium-preservation-and-rewarding-sprint.md",
-        "docs/handoff/local-agent-status-relay.md"
+        "docs/handoff/wezterm-operator-profile.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "docs/handoff/wezterm-operator-profile.md"
+      ],
+      "proofCeiling": "contract",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/tbg-chat-packet.json",
+      "ownedPaths": [
+        "docs/examples/**",
+        "docs/handoff/**",
+        ".tbg/skills/operator-terminal-environment/SKILL.md"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        ".cursor/**"
       ]
     },
     {
       "id": "stale-pr-cherry-pick",
       "path": ".tbg/skills/stale-pr-cherry-pick/SKILL.md",
-      "useWhen": [
-        "recovering useful work from stale, conflicted, superseded, or stacked PRs",
-        "deciding whether to replay, replace, close, or preserve an old branch"
+      "distribution": "repo_internal",
+      "lane": "coordinator/selective-replay",
+      "match": {
+        "intents": [
+          "recover stale PR value",
+          "replay selected commit",
+          "classify stacked PR",
+          "supersede old branch",
+          "preserve stale review requirement"
+        ],
+        "paths": [
+          ".tbg/plans/stale-pr-recovery-*/**",
+          "docs/handoff/*stale-pr*"
+        ],
+        "commands": [
+          "ForgeStalePrRecovery.cmd",
+          "git cherry-pick"
+        ],
+        "artifacts": [
+          "stale-pr-recovery.result.json",
+          "stale-pr-recovery.report.md"
+        ]
+      },
+      "requiresSkills": [
+        "repo-floor-hygiene"
       ],
-      "doNotUseFor": [
-        "blind deletion",
-        "blind squash merges",
-        "using stale PR heads as general bases",
-        "runtime proof claims"
+      "composesWith": [
+        "implementation-completion",
+        "compendium-preservation"
       ],
-      "primaryContracts": [
-        "AGENTS.md",
+      "exclusiveWith": [
+        "launcher-lifecycle"
+      ],
+      "entryContract": ".tbg/workflows/stale-pr-cherry-pick.contract.json",
+      "primaryAuthorities": [
         ".tbg/workflows/stale-pr-cherry-pick.contract.json",
-        "docs/architecture/agent-skill-factoring-and-stale-pr-cherry-pick.md",
-        "docs/handoff/post-pr41-repo-hygiene-map.md"
+        ".tbg/workflows/stale-pr-recovery-automation.contract.json",
+        "ForgeStalePrRecovery.cmd"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1",
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgStalePrRecovery.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+        "artifacts/latest/stale-pr-recovery/stale-pr-recovery.report.md"
+      ],
+      "proofCeiling": "static test",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+      "ownedPaths": [
+        ".tbg/plans/stale-pr-recovery-*/**",
+        "docs/handoff/**"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        "docs/evidence/**"
+      ]
+    },
+    {
+      "id": "local-artifact-engine",
+      "path": ".tbg/skills/local-artifact-engine/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "harness/local-artifact-control-plane",
+      "match": {
+        "intents": [
+          "parse local artifacts",
+          "toggle artifact watcher",
+          "run artifact engine",
+          "route artifact output",
+          "classify artifact blockers"
+        ],
+        "paths": [
+          ".tbg/harness/artifact-engines.registry.json",
+          ".tbg/workflows/local-artifact-engine.contract.json",
+          "scripts/tbg/*ArtifactEngine*",
+          "ForgeArtifactEngine.cmd"
+        ],
+        "commands": [
+          "ForgeArtifactEngine.cmd status",
+          "ForgeArtifactEngine.cmd on",
+          "ForgeArtifactEngine.cmd off",
+          "ForgeArtifactEngine.cmd run"
+        ],
+        "artifacts": [
+          "artifact-engine.result.json",
+          "artifact-engine.report.md",
+          "artifact-engine.handoff.md"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "runtime-evidence-certification",
+        "repo-floor-hygiene"
+      ],
+      "exclusiveWith": [
+        "launcher-lifecycle",
+        "route-visible-trade"
+      ],
+      "entryContract": ".tbg/workflows/local-artifact-engine.contract.json",
+      "primaryAuthorities": [
+        ".tbg/workflows/local-artifact-engine.contract.json",
+        ".tbg/harness/artifact-engines.registry.json",
+        "ForgeArtifactEngine.cmd"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1",
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgArtifactEngine.ps1",
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgArtifactWatcher.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/artifact-engine/artifact-engine.result.json",
+        "artifacts/latest/artifact-engine/artifact-engine.report.md",
+        "artifacts/latest/artifact-engine/artifact-engine.handoff.md"
+      ],
+      "proofCeiling": "windows watcher harness",
+      "riskClass": "local_read_write",
+      "freshnessSource": ".local/tbg-artifact-engine/state.json",
+      "ownedPaths": [
+        ".tbg/harness/artifact-engines.registry.json",
+        ".tbg/workflows/local-artifact-engine.contract.json",
+        "scripts/tbg/*ArtifactEngine*",
+        "ForgeArtifactEngine.cmd"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        "docs/evidence/**"
+      ]
+    },
+    {
+      "id": "continuum-interoperability",
+      "path": ".tbg/skills/continuum-interoperability/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "architecture/continuum-export",
+      "match": {
+        "intents": [
+          "export capability to Continuum",
+          "evaluate Continuum extraction",
+          "classify generic harness core",
+          "verify standalone fallback"
+        ],
+        "paths": [
+          ".tbg/workflows/continuum-interoperability.contract.json",
+          "scripts/tbg/*Continuum*",
+          "docs/architecture/continuum-interoperability.md"
+        ],
+        "commands": [
+          "Export-TbgContinuumCapabilityPacket.ps1",
+          "Verify-TbgContinuumInteroperability.ps1"
+        ],
+        "artifacts": [
+          "continuum capability packet"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "harness-maturity",
+        "implementation-completion"
+      ],
+      "exclusiveWith": [
+        "route-visible-trade"
+      ],
+      "entryContract": ".tbg/workflows/continuum-interoperability.contract.json",
+      "primaryAuthorities": [
+        ".tbg/workflows/continuum-interoperability.contract.json",
+        "scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1",
+        "docs/architecture/continuum-interoperability.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1",
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Verify-TbgContinuumInteroperability.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/continuum-capability-packet.json"
+      ],
+      "proofCeiling": "static test",
+      "riskClass": "external_read_only",
+      "freshnessSource": ".tbg/workflows/continuum-interoperability.contract.json",
+      "ownedPaths": [
+        ".tbg/workflows/continuum-interoperability.contract.json",
+        "scripts/tbg/*Continuum*",
+        "docs/architecture/continuum-interoperability.md"
+      ],
+      "forbiddenPaths": [
+        "src/BlacksmithGuild/MapTrade/**",
+        "src/BlacksmithGuild/Smithing/**",
+        "Module/**"
+      ]
+    },
+    {
+      "id": "runtime-evidence-certification",
+      "path": ".tbg/skills/runtime-evidence-certification/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "evidence/runtime-certification",
+      "match": {
+        "intents": [
+          "prove runtime behavior",
+          "certify loaded DLL",
+          "verify exact head",
+          "classify proof",
+          "inspect freshness",
+          "validate command correlation"
+        ],
+        "paths": [
+          "artifacts/**",
+          "docs/evidence/**",
+          "BlacksmithGuild_*Status*.json",
+          "BlacksmithGuild_*Lifecycle*.json"
+        ],
+        "commands": [
+          "ForgeAgentStatus.cmd",
+          "ForgeArtifactEngine.cmd run"
+        ],
+        "artifacts": [
+          "RuntimeLifecycle",
+          "Status.json",
+          "CommandAck.json",
+          "campaign action evidence"
+        ]
+      },
+      "requiresSkills": [],
+      "composesWith": [
+        "launcher-lifecycle",
+        "route-visible-trade",
+        "local-artifact-engine"
+      ],
+      "exclusiveWith": [],
+      "entryContract": ".tbg/workflows/agent-skill-router.contract.json",
+      "primaryAuthorities": [
+        "docs/handoff/runtime-state-routing.md",
+        "ForgeAgentStatus.cmd",
+        ".tbg/harness/artifact-engines.registry.json"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/tbg-chat-packet.json",
+        "artifacts/latest/artifact-engine/runtime-proof-boundary.result.json"
+      ],
+      "proofCeiling": "live runtime",
+      "riskClass": "runtime_read",
+      "freshnessSource": "artifacts/latest/artifact-engine/runtime-proof-boundary.result.json",
+      "ownedPaths": [
+        "docs/evidence/**",
+        "docs/handoff/runtime-state-routing.md",
+        ".tbg/skills/runtime-evidence-certification/SKILL.md"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**"
+      ]
+    },
+    {
+      "id": "launcher-lifecycle",
+      "path": ".tbg/skills/launcher-lifecycle/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "runtime/launcher-lifecycle",
+      "match": {
+        "intents": [
+          "launch Bannerlord",
+          "select Continue",
+          "supervise launcher",
+          "classify window",
+          "stop runtime",
+          "build and deploy before launch"
+        ],
+        "paths": [
+          "ForgeStop.cmd",
+          "ForgeReboot.cmd",
+          "scripts/*launcher*",
+          "scripts/*reboot*",
+          "docs/control/logs/open/window-delta-doctrine.md"
+        ],
+        "commands": [
+          "ForgeStop.cmd",
+          "ForgeReboot.cmd"
+        ],
+        "artifacts": [
+          "launch log",
+          "process snapshot",
+          "RuntimeLifecycle"
+        ]
+      },
+      "requiresSkills": [
+        "runtime-evidence-certification"
+      ],
+      "composesWith": [
+        "operator-control-surface"
+      ],
+      "exclusiveWith": [
+        "repo-floor-hygiene"
+      ],
+      "entryContract": ".tbg/workflows/agent-skill-router.contract.json",
+      "primaryAuthorities": [
+        "ForgeStop.cmd",
+        "docs/control/logs/open/window-delta-doctrine.md",
+        "docs/handoff/runtime-state-routing.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1",
+        "powershell -File scripts/test-powershell-utf8-bom-contract.ps1"
+      ],
+      "expectedArtifacts": [
+        "BlacksmithGuild_Launch.log",
+        "BlacksmithGuild_RuntimeLifecycle.json"
+      ],
+      "proofCeiling": "launcher",
+      "riskClass": "runtime_write",
+      "freshnessSource": "BlacksmithGuild_RuntimeLifecycle.json",
+      "ownedPaths": [
+        "ForgeStop.cmd",
+        "ForgeReboot.cmd",
+        "scripts/*launcher*",
+        "scripts/*reboot*",
+        "docs/control/logs/open/window-delta-doctrine.md"
+      ],
+      "forbiddenPaths": [
+        "src/BlacksmithGuild/MapTrade/**",
+        "docs/evidence/**"
+      ]
+    },
+    {
+      "id": "route-visible-trade",
+      "path": ".tbg/skills/route-visible-trade/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "runtime/route-visible-trade",
+      "match": {
+        "intents": [
+          "start route",
+          "observe movement",
+          "verify arrival",
+          "execute buy",
+          "execute sell",
+          "prove visible trade",
+          "route-owned clock"
+        ],
+        "paths": [
+          "src/BlacksmithGuild/MapTrade/**",
+          "docs/handoff/recursive-campaign-assist-loop.md",
+          "docs/control/logs/open/autonomous-assist-session-target.md"
+        ],
+        "commands": [],
+        "artifacts": [
+          "route cert",
+          "position checkpoints",
+          "buy delta",
+          "sell delta",
+          "campaign action evidence"
+        ]
+      },
+      "requiresSkills": [
+        "runtime-evidence-certification"
+      ],
+      "composesWith": [
+        "launcher-lifecycle",
+        "operator-control-surface"
+      ],
+      "exclusiveWith": [
+        "repo-floor-hygiene"
+      ],
+      "entryContract": ".tbg/workflows/agent-skill-router.contract.json",
+      "primaryAuthorities": [
+        "docs/handoff/recursive-campaign-assist-loop.md",
+        "docs/control/logs/open/autonomous-assist-session-target.md",
+        "src/BlacksmithGuild/MapTrade"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "BlacksmithGuild_RouteCert.json",
+        "BlacksmithGuild_CampaignActionEvidence.json"
+      ],
+      "proofCeiling": "live runtime",
+      "riskClass": "runtime_write",
+      "freshnessSource": "BlacksmithGuild_RouteCert.json",
+      "ownedPaths": [
+        "src/BlacksmithGuild/MapTrade/**",
+        "docs/handoff/recursive-campaign-assist-loop.md",
+        ".tbg/skills/route-visible-trade/SKILL.md"
+      ],
+      "forbiddenPaths": [
+        "scripts/*launcher*",
+        ".tbg/skills/**"
+      ]
+    },
+    {
+      "id": "operator-control-surface",
+      "path": ".tbg/skills/operator-control-surface/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "runtime/operator-control",
+      "match": {
+        "intents": [
+          "add hotkey",
+          "change toggle",
+          "write command inbox",
+          "change Manual Assist Autonomous mode",
+          "handle Ctrl Alt T",
+          "distinguish ACK from action",
+          "stop or hold"
+        ],
+        "paths": [
+          "Forge*.cmd",
+          "scripts/**",
+          "src/BlacksmithGuild/DevTools/**",
+          "BlacksmithGuild_CommandInbox.json"
+        ],
+        "commands": [
+          "ForgeArtifactEngine.cmd toggle",
+          "ForgeStop.cmd"
+        ],
+        "artifacts": [
+          "CommandAck.json",
+          "operator status",
+          "mode state"
+        ]
+      },
+      "requiresSkills": [
+        "runtime-evidence-certification"
+      ],
+      "composesWith": [
+        "launcher-lifecycle",
+        "route-visible-trade"
+      ],
+      "exclusiveWith": [
+        "repo-floor-hygiene"
+      ],
+      "entryContract": ".tbg/workflows/agent-skill-router.contract.json",
+      "primaryAuthorities": [
+        "docs/handoff/runtime-state-routing.md",
+        "ForgeStop.cmd",
+        "ForgeArtifactEngine.cmd"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "BlacksmithGuild_CommandAck.json",
+        "BlacksmithGuild_Status.json"
+      ],
+      "proofCeiling": "command ACK",
+      "riskClass": "runtime_write",
+      "freshnessSource": "BlacksmithGuild_CommandAck.json",
+      "ownedPaths": [
+        "Forge*.cmd",
+        "src/BlacksmithGuild/DevTools/**",
+        "docs/handoff/runtime-state-routing.md",
+        ".tbg/skills/operator-control-surface/SKILL.md"
+      ],
+      "forbiddenPaths": [
+        "src/BlacksmithGuild/MapTrade/**",
+        "docs/evidence/**"
+      ]
+    },
+    {
+      "id": "implementation-completion",
+      "path": ".tbg/skills/implementation-completion/SKILL.md",
+      "distribution": "repo_internal",
+      "lane": "delivery/implementation-closeout",
+      "match": {
+        "intents": [
+          "finish implementation",
+          "commit and push",
+          "open pull request",
+          "complete concurrent lane",
+          "release worktree",
+          "archive evidence before cleanup"
+        ],
+        "paths": [
+          ".tbg/workflows/implementation-completion-clean-branches.contract.json",
+          "docs/handoff/implementation-completion-clean-branches.md",
+          "docs/first-test-after-clone.md"
+        ],
+        "commands": [
+          "git diff --check",
+          "git commit",
+          "git push",
+          "gh pr create"
+        ],
+        "artifacts": [
+          "commit SHA",
+          "pull request",
+          "validation report"
+        ]
+      },
+      "requiresSkills": [
+        "repo-floor-hygiene"
+      ],
+      "composesWith": [
+        "stale-pr-cherry-pick",
+        "agentic-operations",
+        "runtime-evidence-certification"
+      ],
+      "exclusiveWith": [
+        "route-visible-trade"
+      ],
+      "entryContract": ".tbg/workflows/implementation-completion-clean-branches.contract.json",
+      "primaryAuthorities": [
+        ".tbg/workflows/implementation-completion-clean-branches.contract.json",
+        "docs/handoff/implementation-completion-clean-branches.md",
+        "docs/first-test-after-clone.md"
+      ],
+      "validators": [
+        "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+      ],
+      "expectedArtifacts": [
+        "artifacts/latest/tbg-chat-packet.json"
+      ],
+      "proofCeiling": "build",
+      "riskClass": "static",
+      "freshnessSource": "artifacts/latest/tbg-chat-packet.json",
+      "ownedPaths": [
+        ".tbg/workflows/implementation-completion-clean-branches.contract.json",
+        "docs/handoff/implementation-completion-clean-branches.md",
+        "docs/first-test-after-clone.md"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        "docs/evidence/**"
       ]
     }
   ]
