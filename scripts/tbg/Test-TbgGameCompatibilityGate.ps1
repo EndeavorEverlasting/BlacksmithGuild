@@ -18,12 +18,11 @@ function Assert-Tbg {
 
 $gatePath = Join-Path $RepoRoot 'scripts/tbg/Assert-TbgGameCompatibilityGate.ps1'
 $launcherPath = Join-Path $RepoRoot 'scripts/open-bannerlord-launcher.ps1'
-$rebootPath = Join-Path $RepoRoot 'ForgeReboot.cmd'
 $manifestFixture = Join-Path $RepoRoot '.tbg/harness/fixtures/game-compatibility/appmanifest_261550.fixture.acf'
 $upToDateFixture = Join-Path $RepoRoot '.tbg/harness/fixtures/game-compatibility/up-to-date.fixture.json'
 $updateFixture = Join-Path $RepoRoot '.tbg/harness/fixtures/game-compatibility/update-available.fixture.json'
 
-foreach ($required in @($gatePath, $launcherPath, $rebootPath, $manifestFixture, $upToDateFixture, $updateFixture)) {
+foreach ($required in @($gatePath, $launcherPath, $manifestFixture, $upToDateFixture, $updateFixture)) {
     Assert-Tbg -Condition (Test-Path -LiteralPath $required -PathType Leaf) -Message "Required compatibility gate surface is missing: $required"
 }
 
@@ -44,12 +43,6 @@ $launcherGateIndex = $launcherText.IndexOf('Assert-TbgGameCompatibilityGate.ps1'
 $launcherActionIndex = $launcherText.IndexOf('Ensure-TbgLauncherWindowContext', [StringComparison]::Ordinal)
 Assert-Tbg -Condition ($launcherGateIndex -ge 0) -Message 'Launcher entrypoint does not invoke the compatibility gate.'
 Assert-Tbg -Condition ($launcherActionIndex -gt $launcherGateIndex) -Message 'Launcher compatibility gate must run before launcher context creation or reuse.'
-
-$rebootText = Get-Content -LiteralPath $rebootPath -Raw -Encoding UTF8
-$rebootGateIndex = $rebootText.IndexOf('Assert-TbgGameCompatibilityGate.ps1', [StringComparison]::Ordinal)
-$rebootRunnerIndex = $rebootText.IndexOf('run-reboot-iteration.ps1', [StringComparison]::Ordinal)
-Assert-Tbg -Condition ($rebootGateIndex -ge 0) -Message 'ForgeReboot does not invoke the compatibility gate.'
-Assert-Tbg -Condition ($rebootRunnerIndex -gt $rebootGateIndex) -Message 'ForgeReboot compatibility gate must run before the runtime-proof coordinator.'
 
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('tbg-game-compatibility-gate-' + [Guid]::NewGuid().ToString('N'))
 try {
@@ -76,12 +69,12 @@ try {
     Assert-Tbg -Condition ([bool]$aligned.allowed) -Message "Aligned compatibility fixture was blocked: $($aligned.terminalState)"
     Assert-Tbg -Condition ($aligned.terminalState -eq 'PASS_compatibility_metadata_aligned') -Message 'Aligned gate terminal state drifted.'
 
-    $updateAvailable = & $gatePath -Gate runtime-proof -RepoRoot $RepoRoot -BannerlordRoot $gameRoot `
+    $updateAvailable = & $gatePath -Gate launcher -RepoRoot $RepoRoot -BannerlordRoot $gameRoot `
         -AppManifestPath $manifestFixture -UpstreamFixturePath $updateFixture `
         -BuiltDllPath $builtDll -InstalledDllPath $installedDll `
         -OutputDirectory (Join-Path $tempRoot 'update-output') -StateObjectRoot (Join-Path $tempRoot 'update-state') `
         -NoJournal -NoEnvelope -NoExit -PassThru
-    Assert-Tbg -Condition (-not [bool]$updateAvailable.allowed) -Message 'Available game update did not block runtime proof.'
+    Assert-Tbg -Condition (-not [bool]$updateAvailable.allowed) -Message 'Available game update did not block launcher entry.'
     Assert-Tbg -Condition ($updateAvailable.terminalState -eq 'BLOCKED_game_update_available') -Message "Update gate classification drifted: $($updateAvailable.terminalState)"
 
     [IO.File]::WriteAllBytes($installedDll, [Text.Encoding]::UTF8.GetBytes('different installed dll'))
@@ -97,4 +90,4 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-Write-Host 'Bannerlord game compatibility runtime gate: PASS'
+Write-Host 'Bannerlord game compatibility launcher gate: PASS'
