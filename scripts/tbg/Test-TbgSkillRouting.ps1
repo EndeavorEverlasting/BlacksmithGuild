@@ -1,8 +1,13 @@
 ﻿[CmdletBinding()]
 param(
-    [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path,
+    [string]$RepoRoot = '',
     [string]$OutputRoot = 'artifacts/latest/skill-routing'
 )
+
+if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
+    $callerDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
+    $RepoRoot = (Resolve-Path (Join-Path $callerDir '..\..')).Path
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
