@@ -53,7 +53,7 @@ if ($envelope.objectRefs.evidence) {
 
 if ($envelope.objectRefs.claims) {
     foreach ($cId in $envelope.objectRefs.claims) {
-        $cFile = Join-Path (Resolve-TbgRepoPath 'artifacts/state/objects/claims') ($cId -replace '[:/\\]', '_') + '.json'
+        $cFile = Join-Path (Resolve-TbgRepoPath 'artifacts/state/objects/claims') (($cId -replace '[:/\\]', '_') + '.json')
         if (Test-Path -LiteralPath $cFile -PathType Leaf) {
             $cObj = Get-Content -LiteralPath $cFile -Raw | ConvertFrom-Json
             if ($cObj.status -eq 'supported') {
@@ -69,7 +69,7 @@ if ($envelope.objectRefs.objectives) {
 
 if ($envelope.objectRefs.workItems) {
     foreach ($wiId in $envelope.objectRefs.workItems) {
-        $wiFile = Join-Path (Resolve-TbgRepoPath 'artifacts/state/objects/work-items') ($wiId -replace '[:/\\]', '_') + '.json'
+        $wiFile = Join-Path (Resolve-TbgRepoPath 'artifacts/state/objects/work-items') (($wiId -replace '[:/\\]', '_') + '.json')
         if (Test-Path -LiteralPath $wiFile -PathType Leaf) {
             $wiObj = Get-Content -LiteralPath $wiFile -Raw | ConvertFrom-Json
             if ($wiObj.status -eq 'ready') {

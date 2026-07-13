@@ -67,7 +67,7 @@ foreach ($cId in $constraintIds) {
 
 $currentObjective = $null
 foreach ($oId in $objectiveIds) {
-    $oFile = Join-Path (Join-Path $objectStore 'objectives') ($oId -replace '[:/\\]', '_') + '.json'
+    $oFile = Join-Path (Join-Path $objectStore 'objectives') (($oId -replace '[:/\\]', '_') + '.json')
     if (Test-Path -LiteralPath $oFile -PathType Leaf) {
         $oObj = Get-Content -LiteralPath $oFile -Raw | ConvertFrom-Json
         if ($oObj.status -eq 'active') {
@@ -79,7 +79,7 @@ foreach ($oId in $objectiveIds) {
 
 $readyWorkItems = @()
 foreach ($wiId in $workItemIds) {
-    $wiFile = Join-Path (Join-Path $objectStore 'work-items') ($wiId -replace '[:/\\]', '_') + '.json'
+    $wiFile = Join-Path (Join-Path $objectStore 'work-items') (($wiId -replace '[:/\\]', '_') + '.json')
     if (Test-Path -LiteralPath $wiFile -PathType Leaf) {
         $wiObj = Get-Content -LiteralPath $wiFile -Raw | ConvertFrom-Json
         if ($wiObj.status -eq 'ready') {
@@ -90,7 +90,7 @@ foreach ($wiId in $workItemIds) {
 
 $blockers = @()
 foreach ($wiId in @($readyWorkItems)) {
-    $wiFile = Join-Path (Join-Path $objectStore 'work-items') ($wiId -replace '[:/\\]', '_') + '.json'
+    $wiFile = Join-Path (Join-Path $objectStore 'work-items') (($wiId -replace '[:/\\]', '_') + '.json')
     if (Test-Path -LiteralPath $wiFile -PathType Leaf) {
         $wiObj = Get-Content -LiteralPath $wiFile -Raw | ConvertFrom-Json
         if ($wiObj.PSObject.Properties.Name -contains 'blockedBy') {
