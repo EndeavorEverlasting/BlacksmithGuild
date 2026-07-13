@@ -264,8 +264,8 @@ function Add-TbgEvent {
 
 Add-TbgEvent -EventType 'inspection.started' -Sentence 'The compatibility updater started a metadata-only inspection without launching or modifying Bannerlord.' -Data @{ command = $Command }
 
-$sourceCommit = [string](& git -C $RepoRoot rev-parse HEAD 2>$null | Select-Object -First 1)
-$sourceBranch = [string](& git -C $RepoRoot branch --show-current 2>$null | Select-Object -First 1)
+$sourceCommit = @(& git -C $RepoRoot rev-parse HEAD 2>$null | Select-Object -First 1) -join ''
+$sourceBranch = @(& git -C $RepoRoot branch --show-current 2>$null | Select-Object -First 1) -join ''
 $sourceCommit = $sourceCommit.Trim()
 $sourceBranch = $sourceBranch.Trim()
 if ([string]::IsNullOrWhiteSpace($sourceBranch)) { $sourceBranch = 'detached' }
