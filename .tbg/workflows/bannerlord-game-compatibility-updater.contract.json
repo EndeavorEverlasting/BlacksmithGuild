@@ -24,6 +24,20 @@
     "evidenceSchema": "TbgEvidenceRecord.v1",
     "resultSchema": "TbgGameCompatibilityResult.v1"
   },
+  "consumerGate": {
+    "script": "scripts/tbg/Assert-TbgGameCompatibilityGate.ps1",
+    "validator": "scripts/tbg/Test-TbgGameCompatibilityGate.ps1",
+    "schema": ".tbg/harness/schemas/game-compatibility-gate.schema.json",
+    "requiredPassState": "PASS_compatibility_metadata_aligned",
+    "blockedClassification": "BLOCKED_GAME_BUILD_UNVALIDATED",
+    "enforcedEntrypoints": [
+      "scripts/open-bannerlord-launcher.ps1"
+    ],
+    "pendingEntrypoints": [
+      "scripts/run-autonomous-assist-session.ps1 existing-session attach path",
+      "Run-VisibleTradeProof.cmd on PR #69"
+    ]
+  },
   "allowedScope": [
     "read Git metadata",
     "read the Steam appmanifest and local game/module metadata",
