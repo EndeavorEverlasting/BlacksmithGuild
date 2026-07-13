@@ -100,6 +100,19 @@ if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
     }
 }
 
+if ($null -ne $capabilities) {
+    $seenCapIds = @{}
+    foreach ($cap in @($capabilities.capabilities)) {
+        $capId = [string]$cap.id
+        if ($seenCapIds.ContainsKey($capId)) {
+            Add-TbgIssue -List $errors -Message "Duplicate capability id '$capId' found in capabilities registry."
+        }
+        else {
+            $seenCapIds[$capId] = $true
+        }
+    }
+}
+
 if ($null -ne $capabilities -and $null -ne $manifest) {
     $skillIds = @($manifest.skills | ForEach-Object { [string]$_.id })
     foreach ($cap in @($capabilities.capabilities)) {

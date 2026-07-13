@@ -32,15 +32,6 @@
       "authorityRequirements": []
     },
     {
-      "id": "capability:repo-floor-inspection",
-      "providedBy": ["skill:repo-floor-hygiene"],
-      "consumes": [],
-      "produces": ["TbgObservation.v1"],
-      "maxProofLevel": "contract",
-      "riskClasses": ["static"],
-      "authorityRequirements": ["git", "gh"]
-    },
-    {
       "id": "capability:local-artifact-parsing",
       "providedBy": ["skill:local-artifact-engine"],
       "consumes": ["TbgObservation.v1"],
