@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Writes a read-only repository hygiene report.
 

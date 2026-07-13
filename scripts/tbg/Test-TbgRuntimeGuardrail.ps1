@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('docs', 'static-review', 'patch', 'build', 'install', 'launch', 'live-cert', 'route-visible-start')]
     [string]$Intent,

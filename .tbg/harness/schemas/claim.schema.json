@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/claim.schema.json",
+  "title": "TBG Claim v1",
+  "description": "A conclusion derived from identified evidence.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "subject",
+    "statement",
+    "status",
+    "proofLevel",
+    "supportedBy",
+    "validForHead",
+    "freshness"
+  ],
+  "properties": {
+    "schema": {
+      "const": "TbgClaim.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^claim:[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "statement": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": ["supported", "invalidated", "superseded", "stale"]
+    },
+    "proofLevel": {
+      "enum": [
+        "contract",
+        "harness",
+        "windows watcher harness",
+        "static test",
+        "build",
+        "launcher",
+        "command ACK",
+        "behavior observed",
+        "live runtime"
+      ]
+    },
+    "supportedBy": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^evidence:"
+      }
+    },
+    "validForHead": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "invalidatedBy": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^claim:"
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "enum": ["head_bound", "time_bound", "permanent"]
+        },
+        "expiresAfterSeconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "supersedes": {
+      "type": "string"
+    },
+    "producedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

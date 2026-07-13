@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/state-object.schema.json",
+  "title": "TBG State Object v1",
+  "description": "Discriminated union of all durable state object types. The state-envelope references objects by id; this schema validates any single object in the append-only store.",
+  "oneOf": [
+    { "$ref": "observation.schema.json" },
+    { "$ref": "evidence-record.schema.json" },
+    { "$ref": "claim.schema.json" },
+    { "$ref": "constraint.schema.json" },
+    { "$ref": "objective.schema.json" },
+    { "$ref": "work-item.schema.json" },
+    { "$ref": "capability.schema.json" }
+  ]
+}

@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$ContractId = "mcp-symbol-smoke",
     [string]$McpCommand = "",
     [int]$TimeoutSeconds = 30

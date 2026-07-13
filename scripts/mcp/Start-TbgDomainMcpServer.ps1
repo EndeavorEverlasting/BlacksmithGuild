@@ -1,4 +1,4 @@
-param(
+﻿param(
     [ValidateSet("readonly")][string]$Mode = "readonly"
 )
 

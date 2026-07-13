@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory=$true)][string]$AppId,
     [Parameter(Mandatory=$true)][string]$AppSlug,
     [Parameter(Mandatory=$true)][string]$OutputPath,

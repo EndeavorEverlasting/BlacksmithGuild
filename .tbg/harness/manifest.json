@@ -29,7 +29,15 @@
     "artifactEngineRegistry": ".tbg/harness/artifact-engines.registry.json",
     "artifactEngineState": ".local/tbg-artifact-engine/state.json",
     "artifactEngineOutput": "artifacts/latest/artifact-engine",
-    "artifactsLatest": "artifacts/latest"
+    "artifactsLatest": "artifacts/latest",
+    "stateEnvelopeSchemas": ".tbg/harness/schemas",
+    "stateCapabilitiesRegistry": ".tbg/state/capabilities.registry.json",
+    "stateInvariantConstraintsRegistry": ".tbg/state/invariant-constraints.registry.json",
+    "stateEnvelopeContract": ".tbg/workflows/state-envelope.contract.json",
+    "stateEnvelopeValidator": "scripts/tbg/Test-TbgStateEnvelope.ps1",
+    "stateEnvelopeOutput": "artifacts/latest/state-envelope",
+    "stateObjectStore": "artifacts/state/objects",
+    "stateViews": "artifacts/latest/state/views"
   },
   "runtime": {
     "bannerlordInstallPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord",

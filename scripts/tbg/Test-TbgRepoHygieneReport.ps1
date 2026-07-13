@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Runs an isolated integration test for Get-TbgRepoHygieneReport.ps1.
 #>

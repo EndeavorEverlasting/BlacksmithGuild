@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/evidence-record.schema.json",
+  "title": "TBG Evidence Record v1",
+  "description": "A retained artifact or check result that supports possible claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "kind",
+    "subject",
+    "headSha",
+    "result",
+    "proofLevel",
+    "producedUtc"
+  ],
+  "properties": {
+    "schema": {
+      "const": "TbgEvidenceRecord.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^evidence:[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "kind": {
+      "enum": [
+        "workflow_run",
+        "local_validator",
+        "static_test",
+        "build",
+        "launcher_check",
+        "command_ack",
+        "behavior_observation",
+        "manual_artifact"
+      ]
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "headSha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "result": {
+      "enum": ["success", "failure", "skipped", "inconclusive"]
+    },
+    "proofLevel": {
+      "enum": [
+        "contract",
+        "harness",
+        "windows watcher harness",
+        "static test",
+        "build",
+        "launcher",
+        "command ACK",
+        "behavior observed",
+        "live runtime"
+      ]
+    },
+    "producedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "artifactRefs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "allowedClaims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "forbiddenClaims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "supersedes": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
