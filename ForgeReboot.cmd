@@ -27,3 +27,4 @@ if %FORGE_EXIT% NEQ 0 (
 
 echo.
 echo Forge Reboot complete. See latest docs\evidence\reboot*-reboot-session\reboot-summary.md.
+if not defined FORGE_NO_PAUSE pause
