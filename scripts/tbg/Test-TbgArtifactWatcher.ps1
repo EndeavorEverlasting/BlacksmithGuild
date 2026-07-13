@@ -137,6 +137,13 @@ try {
     Assert-Tbg -Condition ($observedPaths -contains $baselinePath) -Message 'The artifact-index packet did not preserve the baseline artifact.'
     Assert-Tbg -Condition ($observedPaths -contains $fixturePath) -Message 'The artifact-index packet did not retain the newly written external artifact path.'
 
+    $preservedRunCount = [int]$watcherResult.engineRunCount
+    $preservedSource = [string]$watcherResult.source
+    Start-Sleep -Seconds 3
+    $afterNoChange = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
+    Assert-Tbg -Condition ([int]$afterNoChange.engineRunCount -eq $preservedRunCount) -Message "The no-change watcher pass overwrote engineRunCount from $preservedRunCount to $($afterNoChange.engineRunCount)."
+    Assert-Tbg -Condition ([string]$afterNoChange.source -eq $preservedSource) -Message "The no-change watcher pass overwrote source from '$preservedSource' to '$($afterNoChange.source)'."
+
     $off = Invoke-TbgEngineChild -ScriptPath $engineScript -Arguments (@('off') + $common)
     Assert-Tbg -Condition ($off.exitCode -eq 0) -Message "The Windows watcher off action failed: $($off.output)"
     $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
@@ -146,7 +153,7 @@ try {
     Assert-Tbg -Condition $watcherStopped -Message 'The off action did not stop the recorded Windows watcher process.'
     Assert-Tbg -Condition (-not (Test-Path -LiteralPath $watcherPath)) -Message 'The off action did not remove the watcher lease.'
 
-    Write-Host 'PASS: Windows PowerShell started the artifact watcher, detected a local artifact change without a producer command, wrote an observe-mode packet, and stopped through the operator toggle.'
+    Write-Host 'PASS: Windows PowerShell started the artifact watcher, detected a local artifact change without a producer command, wrote an observe-mode packet, preserved the result across no-change watcher cycles, and stopped through the operator toggle.'
 }
 finally {
     if ($watcherPid -gt 0) {
