@@ -1,0 +1,189 @@
+name: Window Intelligence Review Repair
+
+on:
+  push:
+    branches:
+      - feat/window-metadata-intelligence
+    paths:
+      - '.github/workflows/window-intelligence-review-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/window-metadata-intelligence
+          fetch-depth: 0
+
+      - name: Harden fixture process isolation and Safe Mode proof
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('scripts/tbg/Test-TbgWindowIntelligence.ps1')
+          text = path.read_text(encoding='utf-8-sig')
+
+          old_helper = r'''function Invoke-TbgFixtureRun {
+              param(
+                  [Parameter(Mandatory = $true)][string]$FixturePath,
+                  [Parameter(Mandatory = $true)][string]$OutputDirectory,
+                  [Parameter(Mandatory = $true)][string]$CachePath,
+                  [ValidateSet('observe','auto','strict')][string]$Mode = 'auto',
+                  [switch]$AllowKnownActions
+              )
+              $arguments = @{
+                  Command = 'scan'
+                  Mode = $Mode
+                  FixturePath = $FixturePath
+                  RegistryPath = $script:registryPath
+                  PolicyPath = $script:policyPath
+                  CachePath = $CachePath
+                  OutputDirectory = $OutputDirectory
+                  NoJournal = $true
+              }
+              if ($AllowKnownActions) { $arguments.AllowKnownActions = $true }
+              & $script:invokePath @arguments | Out-Null
+              $exitCode = $LASTEXITCODE
+              $global:LASTEXITCODE = 0
+              return [pscustomobject][ordered]@{
+                  exitCode = $exitCode
+                  result = Read-TbgJson -Path (Join-Path $OutputDirectory 'window-intelligence.result.json')
+                  reportPath = Join-Path $OutputDirectory 'window-intelligence.report.md'
+                  eventsPath = Join-Path $OutputDirectory 'window-intelligence.events.jsonl'
+                  progressPath = Join-Path $OutputDirectory 'window-intelligence.progress.log'
+                  handoffPath = Join-Path $OutputDirectory 'window-intelligence.handoff.md'
+                  learningPath = Join-Path $OutputDirectory 'window-intelligence.learning-candidates.json'
+              }
+          }'''
+
+          new_helper = r'''function Invoke-TbgFixtureRun {
+              param(
+                  [Parameter(Mandatory = $true)][string]$FixturePath,
+                  [Parameter(Mandatory = $true)][string]$OutputDirectory,
+                  [Parameter(Mandatory = $true)][string]$CachePath,
+                  [ValidateSet('observe','auto','strict')][string]$Mode = 'auto',
+                  [switch]$AllowKnownActions
+              )
+
+              $powerShellExe = $null
+              try { $powerShellExe = [string](Get-Process -Id $PID -ErrorAction Stop).Path } catch { }
+              if ([string]::IsNullOrWhiteSpace($powerShellExe)) {
+                  $candidate = Get-Command pwsh -ErrorAction SilentlyContinue
+                  if (-not $candidate) { $candidate = Get-Command powershell -ErrorAction SilentlyContinue }
+                  if ($candidate) { $powerShellExe = [string]$candidate.Source }
+              }
+              Assert-TbgTrue (-not [string]::IsNullOrWhiteSpace($powerShellExe)) 'The fixture runner could not resolve the current PowerShell executable.'
+
+              $childArguments = @(
+                  '-NoProfile',
+                  '-ExecutionPolicy', 'Bypass',
+                  '-File', $script:invokePath,
+                  '-Command', 'scan',
+                  '-Mode', $Mode,
+                  '-FixturePath', $FixturePath,
+                  '-RegistryPath', $script:registryPath,
+                  '-PolicyPath', $script:policyPath,
+                  '-CachePath', $CachePath,
+                  '-OutputDirectory', $OutputDirectory,
+                  '-NoJournal'
+              )
+              if ($AllowKnownActions) { $childArguments += '-AllowKnownActions' }
+
+              & $powerShellExe @childArguments | Out-Null
+              $exitCode = $LASTEXITCODE
+              $global:LASTEXITCODE = 0
+              return [pscustomobject][ordered]@{
+                  exitCode = $exitCode
+                  result = Read-TbgJson -Path (Join-Path $OutputDirectory 'window-intelligence.result.json')
+                  reportPath = Join-Path $OutputDirectory 'window-intelligence.report.md'
+                  eventsPath = Join-Path $OutputDirectory 'window-intelligence.events.jsonl'
+                  progressPath = Join-Path $OutputDirectory 'window-intelligence.progress.log'
+                  handoffPath = Join-Path $OutputDirectory 'window-intelligence.handoff.md'
+                  learningPath = Join-Path $OutputDirectory 'window-intelligence.learning-candidates.json'
+              }
+          }'''
+
+          if old_helper not in text:
+              raise SystemExit('The fixture helper repair target was not found.')
+          text = text.replace(old_helper, new_helper)
+
+          score_anchor = "Assert-TbgTrue (-not (@($safeModeIdentity.actionPolicy.fallbackKeys) -contains 'ALT+C')) 'Safe Mode must never use Alt+C.'"
+          score_insert = score_anchor + "\nAssert-TbgEqual $safeModeIdentity.actionPolicy.minimumScore 70 'Safe Mode must use the reachable 70-point threshold while retaining direct-signal gates.'"
+          if score_anchor not in text:
+              raise SystemExit('The Safe Mode threshold assertion anchor was not found.')
+          text = text.replace(score_anchor, score_insert)
+
+          fixture_anchor = """    Assert-TbgEqual $secondWindow.resolution.score 100 'The exact cached fingerprint did not receive a deterministic score of 100.'
+
+    $predictionOnlyPath = Join-Path $tempRoot 'prediction-only.fixture.json'"""
+          fixture_insert = """    Assert-TbgEqual $secondWindow.resolution.score 100 'The exact cached fingerprint did not receive a deterministic score of 100.'
+
+    $safeModePath = Join-Path $tempRoot 'safe-mode.fixture.json'
+    $safeMode = $fixture | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+    $safeMode.fixtureId = 'safe-mode-direct-action'
+    $safeMode.window.title = 'Safe Mode'
+    $safeMode.win32Texts = @('Safe Mode', 'Launch in Safe Mode?', 'No', 'Yes')
+    $safeMode.uiaElements = @(
+        [pscustomobject][ordered]@{
+            name = 'Safe Mode'
+            automationId = ''
+            className = ''
+            controlType = 'Text'
+            enabled = $true
+            offscreen = $false
+        },
+        [pscustomobject][ordered]@{
+            name = 'No'
+            automationId = 'No'
+            className = ''
+            controlType = 'Button'
+            enabled = $true
+            offscreen = $false
+        },
+        [pscustomobject][ordered]@{
+            name = 'Yes'
+            automationId = 'Yes'
+            className = ''
+            controlType = 'Button'
+            enabled = $true
+            offscreen = $false
+        }
+    )
+    $safeMode.dependencyComparison = @()
+    Write-TbgJson -Value $safeMode -Path $safeModePath
+    $safeModeRun = Invoke-TbgFixtureRun -FixturePath $safeModePath -OutputDirectory (Join-Path $tempRoot 'safe-mode') -CachePath (Join-Path $tempRoot 'safe-mode-cache.json') -Mode auto -AllowKnownActions
+    Assert-TbgEqual $safeModeRun.exitCode 0 'The Safe Mode fixture failed.'
+    $safeModeWindow = @($safeModeRun.result.windowResults)[0]
+    Assert-TbgEqual $safeModeWindow.resolution.identityId 'bannerlord.safe-mode' 'The Safe Mode fixture resolved to the wrong identity.'
+    Assert-TbgEqual $safeModeWindow.resolution.score 70 'The Safe Mode fixture must reach the registered 70-point action threshold.'
+    Assert-TbgTrue ([bool]$safeModeWindow.actionDecision.allowed) 'The direct Safe Mode signals must authorize the registered decline action.'
+    Assert-TbgEqual $safeModeWindow.actionDecision.actionId 'decline_safe_mode' 'The Safe Mode fixture selected the wrong action.'
+    Assert-TbgTrue ([bool]$safeModeWindow.actionResult.wouldDispatch) 'The Safe Mode fixture must prove the exact No action is ready without mutating a real window.'
+
+    $predictionOnlyPath = Join-Path $tempRoot 'prediction-only.fixture.json'"""
+          if fixture_anchor not in text:
+              raise SystemExit('The Safe Mode fixture insertion anchor was not found.')
+          text = text.replace(fixture_anchor, fixture_insert)
+
+          old_pass = "Write-Host 'PASS: window intelligence classified the dependency CAUTION from metadata, parsed four version mismatches, proved exact Confirm action gating, reused a learned fingerprint, rejected prediction-only action authority, and quarantined unknown windows behind one-time delta discovery.'"
+          new_pass = "Write-Host 'PASS: window intelligence ran every fixture in a child PowerShell process, classified dependency CAUTION and Safe Mode from metadata, proved exact Confirm and No action gates, reused a learned fingerprint, rejected prediction-only action authority, and quarantined unknown windows behind one-time delta discovery.'"
+          if old_pass not in text:
+              raise SystemExit('The final PASS wording anchor was not found.')
+          text = text.replace(old_pass, new_pass)
+
+          path.write_text(text, encoding='utf-8-sig', newline='')
+
+      - name: Commit review hardening
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/tbg/Test-TbgWindowIntelligence.ps1
+          git commit -m 'test(window-intel): isolate CLI fixtures and prove Safe Mode action'
+          git push origin HEAD:feat/window-metadata-intelligence
