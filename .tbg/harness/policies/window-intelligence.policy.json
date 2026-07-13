@@ -1,0 +1,68 @@
+{
+  "schema": "TbgWindowIntelligencePolicy.v1",
+  "status": "implementation_active",
+  "authority": "launcher-lifecycle",
+  "goal": "Recognize and handle known Bannerlord windows from stable metadata faster than a human can react, while preserving exact-window action safety and proof boundaries.",
+  "decisionOrder": [
+    {
+      "order": 1,
+      "method": "exact_cached_fingerprint",
+      "description": "Use an exact learned fingerprint for process, HWND class, normalized title, controls, and semantic text when the cache still agrees with the tracked registry."
+    },
+    {
+      "order": 2,
+      "method": "tracked_registry_metadata_match",
+      "description": "Match process name, title aliases, Win32 child text, UI Automation names and identifiers, and dependency-version metadata against the tracked registry."
+    },
+    {
+      "order": 3,
+      "method": "context_owned_launch_intent",
+      "description": "Use launcher-window-context.json as the sole authority for PLAY versus CONTINUE. Never infer launch intent from stale artifacts or a window image."
+    },
+    {
+      "order": 4,
+      "method": "module_dependency_prediction",
+      "description": "Compare Blacksmith Guild dependency declarations with installed TaleWorlds module versions so the harness expects a dependency caution before it appears. Prediction accelerates recognition but does not itself authorize a click."
+    },
+    {
+      "order": 5,
+      "method": "s1_s2_delta_discovery",
+      "description": "For an unknown window, capture the known-fast before/after PID and window delta once, collect its metadata, and write a learning candidate."
+    },
+    {
+      "order": 6,
+      "method": "image_or_manual_diagnostic",
+      "description": "Use a screenshot or operator description only when process, Win32, UI Automation, dependency, context, and delta evidence cannot identify the window. Image evidence is diagnostic and does not silently expand action authority."
+    }
+  ],
+  "automaticActionRules": [
+    "The exact target PID and HWND must still exist when the action is dispatched.",
+    "The tracked identity score must meet or exceed the identity action minimum.",
+    "Every required direct signal must be present. A predicted modal is not a visible modal.",
+    "InvokePattern on an exact named control is preferred over keyboard or coordinates.",
+    "Keyboard fallback requires foreground authority and a still-matching identity immediately before dispatch.",
+    "Coordinates are not a primary action method and may not be learned as semantic identity.",
+    "An action lease prevents duplicate dispatch against the same window fingerprint.",
+    "Unknown windows remain observed or quarantined; they are never clicked automatically."
+  ],
+  "legacyRules": [
+    "launcher-auto-nav.ps1 is a compatibility fallback, not the current best strategy.",
+    "Repeated PLAY-versus-CONTINUE rescoring is forbidden after launcher-window-context.json has frozen the launch intent.",
+    "A spawned Singleplayer host must never be promoted back into launcher-menu selection.",
+    "Safe Mode and dependency CAUTION are first-class modal identities, not timeout noise.",
+    "Agents must inspect window-intelligence artifacts before proposing another launcher collector, longer wait, or screenshot parser."
+  ],
+  "cacheRules": [
+    "Tracked identities may automatically cache a new alias only after a high-confidence direct metadata match.",
+    "The local cache is ignored machine state and may not override the tracked registry's action policy.",
+    "Unknown fingerprints are written as learning candidates and require an explicit identity assignment before automatic use.",
+    "Every cache record stores first seen, last seen, hit count, source identity, normalized title, class, control names, and fingerprint hash.",
+    "A registry version change invalidates action authority for stale cache records until they are revalidated."
+  ],
+  "proofBoundary": [
+    "Window recognition proves a launcher or modal observation only.",
+    "A dispatched modal action proves dispatch, not that the game accepted it.",
+    "Game process handoff is distinct from campaign readiness, command acknowledgement, movement, arrival, trade, and live product success.",
+    "Screenshot text supplied by an operator may seed a fixture, but live success requires fresh machine evidence."
+  ]
+}
