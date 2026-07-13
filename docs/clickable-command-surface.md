@@ -28,6 +28,7 @@ Before telling a user to run a PowerShell inbox command directly:
 
 | Wrapper | Underlying command/path | Save impact | Primary output | Purpose |
 |---|---|---:|---|---|
+| `ForgeGameUpdate.cmd` | metadata-only compatibility updater | No | `artifacts/latest/game-compatibility/game-compatibility.result.json` | Compare upstream, installed, supported, source, built-DLL, and installed-DLL identities before launch proof |
 | `ForgeContinue.cmd` | launch Continue path | Loads game | `BlacksmithGuild_Launch.log`, status JSON | Daily dev/play launch path |
 | `Forge.cmd` | launch New/Play path | Creates/loads test path | launch + character/build JSON | Fresh bootstrap / visible character creation |
 | `ForgeStop.cmd` | stop game process | Unsaved progress risk | process state | Emergency/cleanup stop |

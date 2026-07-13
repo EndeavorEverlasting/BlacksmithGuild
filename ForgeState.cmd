@@ -8,6 +8,7 @@ if "%SUBCOMMAND%"=="" (
     echo.
     echo Subcommands:
     echo   status      Show current state summary
+    echo   compatibility Show latest Bannerlord compatibility state
     echo   ingest      Ingest sample events into the journal
     echo   route       Resolve actions for pending events
     echo   run         Run reducers and update projections
@@ -21,6 +22,11 @@ if "%SUBCOMMAND%"=="" (
 
 if "%SUBCOMMAND%"=="status" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%scripts\tbg\Read-TbgJournal.ps1"
+    goto :done
+)
+
+if "%SUBCOMMAND%"=="compatibility" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%SCRIPT_DIR%scripts\tbg\Invoke-TbgGameCompatibility.ps1" -Command status
     goto :done
 )
 

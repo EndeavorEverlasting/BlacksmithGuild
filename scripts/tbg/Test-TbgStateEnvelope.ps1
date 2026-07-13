@@ -46,7 +46,8 @@ $requiredSchemas = @(
     'capability.schema.json',
     'state-envelope.schema.json',
     'state-view.schema.json',
-    'state-object.schema.json'
+    'state-object.schema.json',
+    'game-compatibility-result.schema.json'
 )
 
 foreach ($s in $requiredSchemas) {

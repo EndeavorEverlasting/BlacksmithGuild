@@ -28,6 +28,7 @@ function Assert-Contains {
 }
 
 $wrappers = @(
+    'ForgeGameUpdate.cmd',
     'Run-MarketIntel.cmd',
     'Run-FoodAdvisory.cmd',
     'Run-FoodGovernorCheck.cmd',
@@ -52,6 +53,9 @@ foreach ($wrapper in $wrappers | Where-Object { $_ -ne 'Run-FoodGovernorCheck.cm
 }
 
 Assert-Contains -Path 'Run-MarketIntel.cmd' -Pattern 'MarketSnapshotNow'
+Assert-Contains -Path 'ForgeGameUpdate.cmd' -Pattern 'Invoke-TbgGameCompatibility.ps1'
+Assert-Contains -Path 'ForgeGameUpdate.cmd' -Pattern 'metadata-only'
+Assert-Contains -Path 'ForgeGameUpdate.cmd' -Pattern 'game-compatibility.result.json'
 Assert-Contains -Path 'Run-FoodAdvisory.cmd' -Pattern 'AnalyzeFood'
 Assert-Contains -Path 'Run-FoodAdvisory.cmd' -Pattern 'This does NOT buy food'
 Assert-Contains -Path 'Run-FoodAdvisory.cmd' -Pattern 'BlacksmithGuild_FoodAdvisory.json'
@@ -83,6 +87,7 @@ Assert-Contains -Path 'scripts/dev-command-names.ps1' -Pattern "'AnalyzeFood'"
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Clickable Command Surface'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'prefer a root-level `.cmd` wrapper'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Run-MarketIntel.cmd'
+Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'ForgeGameUpdate.cmd'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Run-FoodAdvisory.cmd'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'AnalyzeFood'
 Assert-Contains -Path 'docs/clickable-command-surface.md' -Pattern 'Food-specific note'
@@ -94,6 +99,7 @@ Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'clickable-command
 Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Run-FoodAdvisory.cmd'
 Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'AnalyzeFood'
 Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Food check'
+Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Game compatibility check'
 Assert-Contains -Path 'docs/launch-and-doc-index.md' -Pattern 'Click:'
 
 Write-Host 'Clickable command surface contract: PASS'

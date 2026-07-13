@@ -25,6 +25,18 @@ Full guide: [first-test-after-clone.md](first-test-after-clone.md)
 
 ## How to launch (pick one path)
 
+### Game compatibility check
+
+Before any launcher or runtime proof, double-click:
+
+```powershell
+.\ForgeGameUpdate.cmd
+```
+
+This metadata-only gate compares the upstream Steam build, locally installed build, repo-supported baseline, exact source commit, built mod DLL, and installed mod DLL. It does not launch or update Bannerlord, build or install the mod, touch saves, or establish runtime proof. Inspect `artifacts/latest/game-compatibility/game-compatibility.result.json`; a changed game build invalidates older runtime evidence until the runtime chain is recertified.
+
+Design and proof boundaries: [architecture/bannerlord-game-compatibility-updater.md](architecture/bannerlord-game-compatibility-updater.md)
+
 ### Path A — Daily dev (most common)
 
 ```powershell
@@ -128,6 +140,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 | What should I run first after cloning `main`? | [first-test-after-clone.md](first-test-after-clone.md) |
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
 | Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
+| Is Steam, the installed game, the repo baseline, and the mod DLL aligned? | [architecture/bannerlord-game-compatibility-updater.md](architecture/bannerlord-game-compatibility-updater.md) |
 | What is the plan to finish the root CMD / click wrapper surface? | [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md) |
 | Food status / runway / provisioning gap? | [clickable-command-surface.md](clickable-command-surface.md) § Food-specific note |
 | `Forge.cmd` vs `ForgeContinue.cmd` | [dev-disposable-save.md](dev-disposable-save.md) |
@@ -162,6 +175,7 @@ Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast
 
 ```text
 First:    docs/first-test-after-clone.md
+Compat:   ForgeGameUpdate.cmd (metadata-only; required before fresh runtime proof)
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
 Click:    Run-MarketIntel.cmd | Run-FoodAdvisory.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd

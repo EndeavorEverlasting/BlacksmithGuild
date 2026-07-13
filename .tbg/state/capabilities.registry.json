@@ -41,6 +41,15 @@
       "authorityRequirements": ["fresh_artifacts"]
     },
     {
+      "id": "capability:game-compatibility-observation",
+      "providedBy": ["skill:harness-maturity", "skill:runtime-evidence-certification"],
+      "consumes": [],
+      "produces": ["TbgObservation.v1", "TbgEvidenceRecord.v1"],
+      "maxProofLevel": "harness",
+      "riskClasses": ["local_read_write", "external_read_only"],
+      "authorityRequirements": ["exact_head", "metadata_fresh", "no_runtime_launch"]
+    },
+    {
       "id": "capability:runtime-evidence-certification",
       "providedBy": ["skill:runtime-evidence-certification"],
       "consumes": ["TbgEvidenceRecord.v1", "TbgObservation.v1"],

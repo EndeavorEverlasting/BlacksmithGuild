@@ -59,6 +59,18 @@
       "version": 1
     },
     {
+      "id": "constraint:game-build-change-invalidates-runtime-proof",
+      "appliesWhen": {
+        "requestedProofAtLeast": "launcher"
+      },
+      "rule": "A changed or unknown upstream, installed, or repo-supported Bannerlord build invalidates earlier launcher and runtime proof until exact-head compatibility metadata is current and the runtime chain is recertified.",
+      "authority": ".tbg/workflows/bannerlord-game-compatibility-updater.contract.json",
+      "severity": "blocking",
+      "scope": ["launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    },
+    {
       "id": "constraint:forge-stop-before-bannerlord-assumption",
       "appliesWhen": {
         "requestedProofAtLeast": "launcher"

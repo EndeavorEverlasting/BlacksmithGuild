@@ -22,6 +22,7 @@ on:
       - 'ForgeState.cmd'
       - 'ForgeStalePrProgress.cmd'
       - 'ForgeWindowIntel.cmd'
+      - 'ForgeGameUpdate.cmd'
       - 'AGENTS.md'
       - 'CLAUDE.md'
   push:
@@ -45,6 +46,7 @@ on:
       - 'ForgeState.cmd'
       - 'ForgeStalePrProgress.cmd'
       - 'ForgeWindowIntel.cmd'
+      - 'ForgeGameUpdate.cmd'
       - 'AGENTS.md'
       - 'CLAUDE.md'
   workflow_dispatch:
@@ -119,6 +121,10 @@ jobs:
             $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
             throw
           }
+
+      - name: Verify Bannerlord game compatibility updater
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgGameCompatibility.ps1
 
       - name: Upload window intelligence validator diagnostics
         if: always()
@@ -236,7 +242,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify Windows PowerShell routing, window intelligence, recovery progress, engine, and watcher
+      - name: Verify Windows PowerShell routing, compatibility, window intelligence, recovery progress, engine, and watcher
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
@@ -245,6 +251,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
           try {
             .\scripts\tbg\Test-TbgSkillRouting.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+            .\scripts\tbg\Test-TbgGameCompatibility.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgWindowIntelligence.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgStalePrRecoveryProgress.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
             .\scripts\tbg\Test-TbgArtifactEngine.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
