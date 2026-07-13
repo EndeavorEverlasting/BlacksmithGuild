@@ -8,6 +8,8 @@ param(
     [string]$UpstreamFixturePath,
     [string]$BuiltDllPath,
     [string]$InstalledDllPath,
+    [string]$OutputDirectory,
+    [string]$StateObjectRoot,
     [switch]$NoJournal,
     [switch]$NoEnvelope,
     [switch]$NoExit,
@@ -37,6 +39,8 @@ if (-not [string]::IsNullOrWhiteSpace($AppManifestPath)) { $invoke.AppManifestPa
 if (-not [string]::IsNullOrWhiteSpace($UpstreamFixturePath)) { $invoke.UpstreamFixturePath = $UpstreamFixturePath }
 if (-not [string]::IsNullOrWhiteSpace($BuiltDllPath)) { $invoke.BuiltDllPath = $BuiltDllPath }
 if (-not [string]::IsNullOrWhiteSpace($InstalledDllPath)) { $invoke.InstalledDllPath = $InstalledDllPath }
+if (-not [string]::IsNullOrWhiteSpace($OutputDirectory)) { $invoke.OutputDirectory = $OutputDirectory }
+if (-not [string]::IsNullOrWhiteSpace($StateObjectRoot)) { $invoke.StateObjectRoot = $StateObjectRoot }
 if ($NoJournal) { $invoke.NoJournal = $true }
 if ($NoEnvelope) { $invoke.NoEnvelope = $true }
 
