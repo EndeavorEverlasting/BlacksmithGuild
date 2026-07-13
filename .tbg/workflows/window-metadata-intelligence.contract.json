@@ -1,0 +1,87 @@
+{
+  "id": "window-metadata-intelligence",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "metadata-first-window-identity-and-action",
+  "contextBanner": "[TBG | Window Metadata Intelligence | launcher/harness | metadata before pixels]",
+  "purpose": "Collect process, PID, HWND, Win32, UI Automation, dependency-version, launch-context, and first-seen delta metadata; resolve each window through a tracked identity registry and learned alias cache; write syntactic-English evidence; and dispatch only exact registered modal actions.",
+  "lane": "launcher-lifecycle/window-intelligence",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "proofLevel": "window_metadata_harness",
+  "validationMode": "offline_fixture_plus_windows_metadata_smoke",
+  "entryCommand": ".\\ForgeWindowIntel.cmd scan",
+  "watchCommand": ".\\ForgeWindowIntel.cmd watch -Mode auto -AllowKnownActions -DurationSeconds 90",
+  "statusCommand": ".\\ForgeWindowIntel.cmd status",
+  "registryPath": ".tbg/harness/window-identities.registry.json",
+  "policyPath": ".tbg/harness/policies/window-intelligence.policy.json",
+  "fixturePath": ".tbg/harness/fixtures/window-intelligence/dependency-version-caution.fixture.json",
+  "localCachePath": ".local/tbg-window-intelligence/learned-window-aliases.json",
+  "resultPath": "artifacts/latest/window-intelligence/window-intelligence.result.json",
+  "requiredArtifacts": [
+    "artifacts/latest/window-intelligence/window-intelligence.result.json",
+    "artifacts/latest/window-intelligence/window-intelligence.report.md",
+    "artifacts/latest/window-intelligence/window-intelligence.events.jsonl",
+    "artifacts/latest/window-intelligence/window-intelligence.progress.log",
+    "artifacts/latest/window-intelligence/window-intelligence.handoff.md"
+  ],
+  "operatingLoop": [
+    "collect_process_and_window_metadata",
+    "read_launch_context_and_dependency_metadata",
+    "resolve_exact_cached_fingerprint",
+    "resolve_tracked_registry_identity",
+    "dispatch_only_registered_exact_action",
+    "cache_high_confidence_alias",
+    "write_state_event_and_english_artifacts",
+    "fall_back_to_one_time_delta_discovery_for_unknown_windows"
+  ],
+  "currentBestStrategy": [
+    "launcher-window-context.json owns PLAY versus CONTINUE and freezes the target PID and HWND",
+    "the window-intelligence watcher starts beside LaunchSetup and polls at 100 milliseconds",
+    "known CAUTION and Safe Mode windows are identified from direct metadata and acted on through exact named controls",
+    "module XML comparison predicts dependency cautions before they appear but prediction alone never authorizes a click",
+    "unknown windows use the existing S1/S2 snapshot delta once to produce a learning candidate",
+    "images and OCR remain diagnostic fallback only"
+  ],
+  "allowedScope": [
+    "read process and window metadata",
+    "read UI Automation names, automation identifiers, control types, enabled state, and bounding metadata",
+    "read module dependency declarations and installed module versions",
+    "read launcher-window-context.json",
+    "write ignored cache, result, report, event, progress, handoff, lease, and learning-candidate artifacts",
+    "invoke an exact registered named modal control when all direct action signals are present",
+    "write window observations into the universal state journal"
+  ],
+  "forbiddenScope": [
+    "guess PLAY versus CONTINUE outside launcher-window-context.json",
+    "automatically click an unknown window",
+    "use prediction alone as click authority",
+    "learn coordinate positions as semantic identity",
+    "promote a spawned Singleplayer host back into launcher-menu selection",
+    "treat screenshot parsing as the primary strategy",
+    "inspect arbitrary process memory",
+    "claim campaign readiness, command acknowledgement, movement, arrival, trade, or live product success from window recognition"
+  ],
+  "terminalStates": [
+    "PASS_no_relevant_windows",
+    "PASS_known_windows_classified",
+    "PASS_known_window_action_dispatched",
+    "ATTENTION_unknown_window_delta_discovery_required",
+    "BLOCKED_unknown_window_in_strict_mode"
+  ],
+  "doneGate": {
+    "requires": [
+      "the registry and policy parse",
+      "the screenshot-derived fixture resolves to bannerlord.dependency-version-caution",
+      "all four dependencies and both versions are parsed",
+      "Confirm is the only automatic action for the dependency caution",
+      "Safe Mode maps to No and never Cancel",
+      "a predicted mismatch without direct modal signals cannot dispatch",
+      "an unknown window produces a learning candidate and no action",
+      "the launcher context starts the metadata watcher",
+      "the watcher uses a 100 millisecond default poll",
+      "the result and English report preserve the proof boundary",
+      "PowerShell Core and Windows PowerShell validators pass"
+    ]
+  }
+}
