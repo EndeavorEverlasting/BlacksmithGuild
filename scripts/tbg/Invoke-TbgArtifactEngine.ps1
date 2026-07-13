@@ -106,7 +106,7 @@ function Write-TbgText {
 }
 
 function Get-TbgHash {
-    param([Parameter(Mandatory = $true)][string]$Text)
+    param([Parameter(Mandatory = $true)][AllowEmptyString()][string]$Text)
 
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
@@ -330,7 +330,9 @@ function Get-TbgFingerprint {
     $parts = @($Files | Sort-Object FullName | ForEach-Object {
         "$(Get-TbgRelativePath -RepoRoot $RepoRoot -Path $_.FullName)|$($_.Length)|$($_.LastWriteTimeUtc.Ticks)"
     })
-    return Get-TbgHash -Text ($parts -join "`n")
+    $text = ($parts -join "`n")
+    if ([string]::IsNullOrEmpty($text)) { $text = 'empty' }
+    return Get-TbgHash -Text $text
 }
 
 function ConvertFrom-TbgArtifact {

@@ -705,3 +705,96 @@ powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\Users\Cheex\Desktop\dev\
 # Next implementation lane: selective replay of 037a 6 unique commits
 git worktree add -b feat/route-travel-replay "$env:USERPROFILE\Desktop\dev\Mods\Bannerlord\BlacksmithGuild-route-travel-replay" origin/main
 ```
+
+---
+
+## Wave 0 Sprint Update (2026-07-12) — PRs #61/#62 Merged
+
+### Context
+
+PRs #61 (`feat/local-artifact-engine-control-plane`) and #62 (`test/local-artifact-engine-windows-watcher`) merged into `origin/main`, advancing to `0a990d743d1faa33b63ce4a0da2acab5aced9076`. The merged surface includes:
+
+- `ForgeArtifactEngine.cmd` — toggle-able control surface: `status`, `on`, `off`, `toggle`, `run`, `trigger <engine>`
+- `Invoke-TbgArtifactEngine.ps1` (1052 lines) — full engine with 5 registered engines: artifact-index, repo-floor-context, stale-pr-next-action, runtime-proof-boundary, handoff-compressor
+- `Test-TbgArtifactEngine.ps1` — static harness validator
+- `Test-TbgArtifactWatcher.ps1` — Windows PowerShell watcher lifecycle validator
+- Local state: `.local/tbg-artifact-engine/state.json`, `fingerprints.json`, `watcher.json`
+- Aggregate output: `artifacts/latest/artifact-engine/`
+
+Proof reached: contract, static harness, PowerShell Core, Windows PowerShell 5.1, producer trigger, automatic cascade, watcher start, unprompted change detection, packet generation, toggle-controlled stop.
+
+Proof not reached: operator-machine persistence, reboot persistence, build, launcher, behavior-observed, live-runtime proof.
+
+### Changes from this sprint
+
+1. **Bug fix:** `Get-TbgFingerprint` in `Invoke-TbgArtifactEngine.ps1` failed on an empty file list (empty SHA-256 input). Added `AllowEmptyString()` to `Get-TbgHash` and an `'empty'` fallback in `Get-TbgFingerprint` when no files are provided.
+2. **Engine activation:** `.\ForgeArtifactEngine.cmd on -Mode auto` ran successfully. The engine completed READY_auto_cascade_complete across all 5 engines.
+3. **Hygiene re-run:** `.\ForgeRepoHygiene.cmd` re-executed, catching the tracked change. Report updated to HEAD `0a990d7`.
+4. **Repo-floor context updated:** The artifact engine's repo-floor-context engine now reads the current hygiene report.
+5. **Validators confirmed:** `Test-TbgArtifactEngine.ps1` and `Test-TbgArtifactWatcher.ps1` both PASS.
+
+### Validation
+
+```text
+git fetch origin --prune:              PASS (main -> 0a990d7, +3 new remote branches)
+git merge --ff-only origin/main:       PASS (12 new tracked files)
+ForgeArtifactEngine.cmd status:        PASS (enabled=false)
+ForgeArtifactEngine.cmd on -Mode auto: PASS (terminal: READY_auto_cascade_complete)
+ForgeArtifactEngine.cmd run:           PASS (idempotent - no changes after cascade)
+ForgeRepoHygiene.cmd -NoGitHub:        PASS (verdict: ATTENTION, 1 dirty path)
+Scripts\tbg\Test-TbgArtifactEngine.ps1: PASS
+Scripts\tbg\Test-TbgArtifactWatcher.ps1: PASS
+git diff --check:                      PASS
+git status --short:                    1 modified (Invoke-TbgArtifactEngine.ps1)
+```
+
+### Updated worktree state after PRs #61/#62
+
+| # | Worktree | Branch | HEAD | Status |
+|---|---|---|---|---|
+| 1 | Primary | `main` | `0a990d7` | Clean (1 tracked change staged below) |
+| 2 | 037a-validation | `feat/route-branch-state-runtime-start` | `91704e6` | 6 unique commits, upstream gone |
+| 3 | agent-status-relay | detached | `74b1df0` | 0 unique commits |
+| 4 | pr25-launcher-evidence | detached | `b9e901c` | 0 unique commits |
+| 5 | route-operator-plan | `agent/route-automation-operator-plan` | `ddf8663` | 22 ahead (main merge only), PR #52 fetched |
+
+PR #52 (`fix/launcher-supervisor-empty-list` at `2bb7077`) remains fetched but unmerged into the route-operator worktree.
+
+### New remote branches (post-fetch)
+
+| Branch | PR | Purpose |
+|---|---|---|
+| `feat/forge-continue-campaign-handoff` | — | Continue-campaign handoff (new) |
+| `feat/local-artifact-engine-control-plane` | #61 | Merged |
+| `test/local-artifact-engine-windows-watcher` | #62 | Merged |
+| `agent/route-automation-operator-plan` updated | #43 | Advanced from `2fd964a` to `2cbe33f` |
+
+### Proof boundaries
+
+- **Contract proof:** reached for artifact engine, watcher lifecycle
+- **Harness proof:** reached for both PR #61 and #62
+- **Windows PowerShell 5.1 proof:** reached for watcher lifecycle, change detection, toggle control
+- **Build proof:** not reached (no `.csproj` changes in PR #61/#62)
+- **Launcher proof:** not reached
+- **Live runtime proof:** not reached
+
+### Updated safe bases
+
+| Lane | Base | Worktree | Status |
+|---|---|---|---|
+| Artifact engine development | Fresh branch from `origin/main` (`0a990d7`) | New sibling | Engine is now on main |
+| PR #43 continuation | `agent/route-automation-operator-plan` | route-operator | Upstream now `2cbe33f`, worktree `ddf8663` is stale |
+| PR #52 validation | `fix/launcher-supervisor-empty-list` | route-operator | Fetched, not merged; upstream `2bb7077` |
+| 037a feature replay | Fresh branch from `origin/main` | New worktree | 6 unique commits on stale branch |
+| Stale PR recovery | Fresh branch from `origin/main` | Per PR #58 manifest | Script ready |
+| Continue-campaign handoff | `feat/forge-continue-campaign-handoff` | New worktree | Fresh remote branch, not inspected |
+
+### Remaining gaps
+
+| Gap | Status |
+|---|---|
+| PR #52 into route-operator merge | Not started — next bounded lane |
+| 037a 6-commit selective replay | Not started — after PR #52 |
+| Detached worktree cleanup | Not started — requires evidence archiving |
+| Phase1.log de-duplication | Not started — 1 GB duplicate identified |
+| ForgeContinueCampaign handoff inspection | New — `feat/forge-continue-campaign-handoff` branch appeared |
