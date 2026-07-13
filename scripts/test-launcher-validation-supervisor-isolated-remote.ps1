@@ -1,4 +1,4 @@
-# Windows PowerShell 5.1 regression for informational Git stderr during isolated-remote selection.
+﻿# Windows PowerShell 5.1 regression for informational Git stderr during isolated-remote selection.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'

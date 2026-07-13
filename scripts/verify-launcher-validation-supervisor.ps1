@@ -1,4 +1,4 @@
-# Static contract for the persistent multimodal launcher-validation supervisor.
+﻿# Static contract for the persistent multimodal launcher-validation supervisor.
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $failures = [System.Collections.Generic.List[string]]::new()

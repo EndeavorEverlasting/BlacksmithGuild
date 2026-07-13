@@ -1,4 +1,4 @@
-# Local workhorse for the recurring launcher validation command chain.
+﻿# Local workhorse for the recurring launcher validation command chain.
 # It preserves local work, fast-forwards only, runs static contracts, stops the process family,
 # launches through ForgeContinue/Forge, and writes structured plus syntactic-English evidence.
 

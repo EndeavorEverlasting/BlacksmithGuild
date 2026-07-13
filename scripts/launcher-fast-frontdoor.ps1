@@ -1,4 +1,4 @@
-# Fast root-command launcher state machine for Forge.cmd and ForgeContinue.cmd.
+﻿# Fast root-command launcher state machine for Forge.cmd and ForgeContinue.cmd.
 # Owns the launcher UI after forge.ps1 -LaunchManual opens a fresh launcher context.
 # Budget: 30 seconds total, 5 seconds per attempt phase, one bounded full-close retry.
 

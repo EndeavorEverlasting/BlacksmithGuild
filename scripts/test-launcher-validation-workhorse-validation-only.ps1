@@ -1,4 +1,4 @@
-# Windows PowerShell 5.1 regression for the real workhorse validation-only result path.
+﻿# Windows PowerShell 5.1 regression for the real workhorse validation-only result path.
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
