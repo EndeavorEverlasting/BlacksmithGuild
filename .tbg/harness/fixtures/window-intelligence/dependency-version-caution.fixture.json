@@ -1,0 +1,49 @@
+{
+  "schema": "TbgWindowObservation.v1",
+  "fixtureId": "dependency-version-caution-screenshot-20260713",
+  "source": "operator_supplied_screenshot_transcribed_to_metadata_fixture",
+  "capturedAtUtc": "2026-07-13T00:00:00Z",
+  "process": {
+    "pid": 117484,
+    "processName": "TaleWorlds.MountAndBlade.Launcher",
+    "executablePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe"
+  },
+  "window": {
+    "hwnd": 140001,
+    "title": "Mount and Blade II Bannerlord - Singleplayer",
+    "className": "TaleWorlds.MountAndBlade.Launcher",
+    "visible": true,
+    "enabled": true,
+    "rect": {"left": 0, "top": 0, "right": 927, "bottom": 563, "width": 927, "height": 563}
+  },
+  "win32Texts": [
+    "CAUTION",
+    "The Blacksmith Guild depends on Native(v1.4.6.0), current version is Native(v1.4.7.117484)",
+    "The Blacksmith Guild depends on SandBoxCore(v1.4.6.0), current version is SandBoxCore(v1.4.7.117484)",
+    "The Blacksmith Guild depends on Sandbox(v1.4.6.0), current version is Sandbox(v1.4.7.117484)",
+    "The Blacksmith Guild depends on StoryMode(v1.4.6.0), current version is StoryMode(v1.4.7.117484)",
+    "TaleWorlds is not responsible for an unstable experience if it occurs.",
+    "Are you sure?",
+    "Cancel",
+    "Confirm"
+  ],
+  "uiaElements": [
+    {"name": "CAUTION", "automationId": "", "className": "", "controlType": "Text", "enabled": true, "offscreen": false},
+    {"name": "Cancel", "automationId": "Cancel", "className": "", "controlType": "Button", "enabled": true, "offscreen": false},
+    {"name": "Confirm", "automationId": "Confirm", "className": "", "controlType": "Button", "enabled": true, "offscreen": false}
+  ],
+  "dependencyComparison": [
+    {"module": "Native", "expectedVersion": "1.4.6.0", "currentVersion": "1.4.7.117484", "mismatch": true},
+    {"module": "SandBoxCore", "expectedVersion": "1.4.6.0", "currentVersion": "1.4.7.117484", "mismatch": true},
+    {"module": "Sandbox", "expectedVersion": "1.4.6.0", "currentVersion": "1.4.7.117484", "mismatch": true},
+    {"module": "StoryMode", "expectedVersion": "1.4.6.0", "currentVersion": "1.4.7.117484", "mismatch": true}
+  ],
+  "expectedResolution": {
+    "identityId": "bannerlord.dependency-version-caution",
+    "minimumScore": 90,
+    "actionId": "confirm_dependency_version_caution",
+    "semanticAction": "confirm",
+    "dependencyCount": 4,
+    "automaticActionAllowed": true
+  }
+}
