@@ -9,6 +9,17 @@ echo collect evidence, compare normalized context, and write a next-gap handoff.
 echo AI tokens are for patches, not babysitting repeated retries.
 echo.
 
+echo Checking current Bannerlord compatibility metadata before runtime proof...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tbg\Assert-TbgGameCompatibilityGate.ps1" -Gate runtime-proof
+set TBG_COMPAT_EXIT=%ERRORLEVEL%
+if %TBG_COMPAT_EXIT% NEQ 0 (
+    echo.
+    echo Forge Reboot blocked because the installed game, supported baseline, or mod DLL identities are not currently aligned.
+    echo Run ForgeGameUpdate.cmd and follow its exact next action before retrying runtime proof.
+    if not defined FORGE_NO_PAUSE pause
+    exit /b %TBG_COMPAT_EXIT%
+)
+
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\run-reboot-iteration.ps1" %*
 set FORGE_EXIT=%ERRORLEVEL%
 if %FORGE_EXIT% EQU 2 (
@@ -27,4 +38,3 @@ if %FORGE_EXIT% NEQ 0 (
 
 echo.
 echo Forge Reboot complete. See latest docs\evidence\reboot*-reboot-session\reboot-summary.md.
-if not defined FORGE_NO_PAUSE pause
