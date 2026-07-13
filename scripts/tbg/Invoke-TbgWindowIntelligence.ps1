@@ -669,7 +669,10 @@ function Invoke-TbgUiaNamedControl {
         $root = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$TargetHwnd)
         if (-not $root) { return $false }
         foreach ($name in @($Names)) {
-            $condition = New-Object System.Windows.Automation.PropertyCondition([System.Windows.Automation.AutomationElement]::NameProperty, [string]$name)
+            $condition = New-Object -TypeName System.Windows.Automation.PropertyCondition -ArgumentList @(
+            [System.Windows.Automation.AutomationElement]::NameProperty,
+            [string]$name
+        )
             $element = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
             if (-not $element) { continue }
             if (-not [bool]$element.Current.IsEnabled) { continue }
@@ -985,14 +988,14 @@ function Write-TbgOutputs {
         $identityText = if ($item.resolution.recognized) { [string]$item.resolution.displayName } else { 'Unknown window' }
         $markdown.Add("### $identityText")
         $markdown.Add('')
-        $markdown.Add("- Process: `$($item.observation.process.processName)` PID $($item.observation.process.pid)")
-        $markdown.Add("- HWND: `$($item.observation.window.hwnd)`")
-        $markdown.Add("- Title: `$($item.observation.window.title)`")
-        $markdown.Add("- Class: `$($item.observation.window.className)`")
-        $markdown.Add("- Recognition: `$($item.resolution.basis)` at score $($item.resolution.score)")
-        $markdown.Add("- Fingerprint: `$($item.resolution.fingerprint.hash)`")
-        $markdown.Add("- Action decision: `$($item.actionDecision.reason)`")
-        $markdown.Add("- Action result: `$($item.actionResult.reason)`")
+        $markdown.Add(('- Process: `{0}` PID {1}' -f [string]$item.observation.process.processName, [int]$item.observation.process.pid))
+        $markdown.Add(('- HWND: `{0}`' -f [Int64]$item.observation.window.hwnd))
+        $markdown.Add(('- Title: `{0}`' -f [string]$item.observation.window.title))
+        $markdown.Add(('- Class: `{0}`' -f [string]$item.observation.window.className))
+        $markdown.Add(('- Recognition: `{0}` at score {1}' -f [string]$item.resolution.basis, [int]$item.resolution.score))
+        $markdown.Add(('- Fingerprint: `{0}`' -f [string]$item.resolution.fingerprint.hash))
+        $markdown.Add(('- Action decision: `{0}`' -f [string]$item.actionDecision.reason))
+        $markdown.Add(('- Action result: `{0}`' -f [string]$item.actionResult.reason))
         if (@($item.parsedDependencies).Count -gt 0) {
             $markdown.Add('')
             $markdown.Add('| Dependency | Expected | Current | Source |')
@@ -1011,7 +1014,7 @@ function Write-TbgOutputs {
     $handoff = New-Object System.Collections.Generic.List[string]
     $handoff.Add('# Window intelligence handoff')
     $handoff.Add('')
-    $handoff.Add("The latest terminal state is `$terminalState`.")
+    $handoff.Add(('The latest terminal state is `{0}`.' -f $terminalState))
     $handoff.Add('')
     if ($unknown.Count -gt 0) {
         $handoff.Add('At least one window remains unknown. Capture the fast S1/S2 PID/window delta once, inspect the learning candidate, and assign a tracked identity before allowing an automatic action.')
