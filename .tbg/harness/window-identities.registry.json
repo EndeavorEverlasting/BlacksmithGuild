@@ -1,6 +1,6 @@
 {
   "schema": "TbgWindowIdentityRegistry.v1",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
   "purpose": "Classify Bannerlord and launcher windows from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
   "defaultPolicy": {
@@ -32,13 +32,20 @@
         "processNames": ["TaleWorlds.MountAndBlade.Launcher"],
         "titleRegex": ["(?i)bannerlord"],
         "anyControlNames": ["PLAY", "CONTINUE"],
+        "allTextRegex": [],
         "anyTextRegex": ["(?i)play", "(?i)continue"],
+        "dependencyMismatch": false,
         "minimumDirectSignals": 2
       },
       "actionPolicy": {
         "kind": "context_owned",
         "description": "The launch intent comes from launcher-window-context.json. Window intelligence must not guess PLAY versus CONTINUE.",
         "automatic": false,
+        "minimumScore": 0,
+        "preferredControlNames": [],
+        "fallbackKeys": [],
+        "fallbackRequiresForegroundAuthority": false,
+        "requiredDirectSignals": [],
         "forbiddenFallbacks": ["rescore spawned game as launcher", "infer continue from stale evidence", "blind coordinate click"]
       }
     },
@@ -54,6 +61,7 @@
       ],
       "match": {
         "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
+        "titleRegex": [],
         "anyControlNames": ["Confirm", "Cancel"],
         "allTextRegex": [
           "(?i)the blacksmith guild depends on",
@@ -91,7 +99,9 @@
         "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
         "titleRegex": ["(?i)^safe mode$", "(?i)safe mode"],
         "anyControlNames": ["No", "Yes"],
+        "allTextRegex": [],
         "anyTextRegex": ["(?i)safe mode"],
+        "dependencyMismatch": false,
         "minimumDirectSignals": 2
       },
       "actionPolicy": {
@@ -118,13 +128,20 @@
       "match": {
         "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
         "titleRegex": ["(?i)bannerlord.*singleplayer"],
+        "anyControlNames": [],
         "allTextRegex": ["(?i)bannerlord.*singleplayer"],
         "anyTextRegex": ["(?i)singleplayer"],
+        "dependencyMismatch": false,
         "minimumDirectSignals": 2
       },
       "actionPolicy": {
         "kind": "terminal_observation",
         "automatic": false,
+        "minimumScore": 0,
+        "preferredControlNames": [],
+        "fallbackKeys": [],
+        "fallbackRequiresForegroundAuthority": false,
+        "requiredDirectSignals": [],
         "description": "Stop launcher clicking. This window is a game-host handoff, not a launcher menu."
       }
     }
