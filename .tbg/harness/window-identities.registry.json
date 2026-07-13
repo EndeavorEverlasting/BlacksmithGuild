@@ -1,6 +1,6 @@
 {
   "schema": "TbgWindowIdentityRegistry.v1",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
   "purpose": "Classify Bannerlord and launcher windows from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
   "defaultPolicy": {
@@ -109,12 +109,12 @@
         "actionId": "decline_safe_mode",
         "semanticAction": "decline",
         "automatic": true,
-        "minimumScore": 90,
+        "minimumScore": 70,
         "preferredControlNames": ["No"],
         "fallbackKeys": ["ALT+N"],
         "fallbackRequiresForegroundAuthority": true,
         "requiredDirectSignals": ["safe_mode_title_or_text", "no_control"],
-        "description": "Decline Safe Mode and continue the normal launch path. Do not use Cancel or Alt+C."
+        "description": "Decline Safe Mode and continue the normal launch path only when the Safe Mode text and exact No control are present. Do not use Cancel or Alt+C."
       }
     },
     {
