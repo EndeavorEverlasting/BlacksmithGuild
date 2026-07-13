@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "id": "universal-state-spine-zero-remainder",
+  "sprint": "Universal State Spine / Zero-Remainder Orchestration",
+  "contextBanner": "[TBG | Universal State Spine | feat/universal-state-spine-zero-remainder]",
+  "purpose": "Close the operating loop: every accepted input ends in a recorded, owned, explainable disposition. No request may silently disappear, remain unclassified, or depend on a future agent remembering it.",
+  "allowedScope": [
+    ".tbg/state/**",
+    ".tbg/harness/schemas/*state*",
+    ".tbg/harness/schemas/tbg-event*",
+    ".tbg/harness/schemas/tbg-action*",
+    ".tbg/harness/schemas/tbg-capability-gap*",
+    ".tbg/harness/schemas/tbg-use-case*",
+    ".tbg/harness/schemas/reducer-registry*",
+    ".tbg/workflows/state-*",
+    ".tbg/workflows/universal-state-spine*",
+    ".tbg/skills/manifest.json provider references",
+    ".tbg/harness/artifact-engines.registry.json",
+    "scripts/tbg/*TbgState*",
+    "scripts/tbg/*TbgProvider*",
+    "scripts/tbg/*TbgReconcile*",
+    "scripts/tbg/*TbgReducer*",
+    "scripts/tbg/*TbgJournal*",
+    "scripts/tbg/*TbgAction*",
+    "scripts/tbg/Write-Tbg*",
+    "scripts/tbg/Read-Tbg*",
+    "scripts/tbg/Invoke-Tbg*",
+    "scripts/tbg/Build-Tbg*",
+    "scripts/tbg/Test-Tbg*",
+    "scripts/tbg/Resolve-Tbg*",
+    "ForgeState.cmd",
+    ".github/workflows/harness-policy-reports.yml",
+    ".github/workflows/governor-contracts.yml"
+  ],
+  "forbiddenScope": [
+    "no gameplay behavior changes",
+    "no route algorithm changes",
+    "no save mutation",
+    "no Bannerlord launch for this architecture sprint",
+    "no destructive branch/worktree cleanup",
+    "no claim of runtime behavior proof"
+  ],
+  "requiredArtifacts": [
+    ".tbg/harness/schemas/tbg-event.schema.json",
+    ".tbg/state/reducer-registry.json",
+    ".tbg/state/provider-catalog.json",
+    "ForgeState.cmd"
+  ],
+  "validationCommands": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgJournal.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgProviderCatalog.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Build-TbgProjections.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Invoke-TbgReconciler.ps1"
+  ],
+  "terminalStates": ["SUCCEEDED", "FAILED", "BLOCKED", "REJECTED", "CANCELLED"],
+  "stateIntegration": {
+    "acceptedEventTypes": ["user.request", "system.generated", "reconciler.scan"],
+    "producedEventTypes": ["event.quarantined", "projection.rebuilt", "reconciler.scan"],
+    "consumedObjectTypes": [],
+    "producedObjectTypes": ["TbgObservation.v1"],
+    "requiredCapabilities": [],
+    "providedCapabilities": ["capability:state-spine-orchestration"],
+    "terminalStates": ["SUCCEEDED", "FAILED"],
+    "fallbackProvider": "provider:universal-intake-governor"
+  },
+  "doneGate": {
+    "allMustPass": [
+      "Journal events validate with zero corruption",
+      "Provider catalog has no drift from capabilities registry",
+      "Projection rebuild produces identical hashes",
+      "Reconciler returns PASS_ZERO_REMAINDERS"
+    ]
+  }
+}
