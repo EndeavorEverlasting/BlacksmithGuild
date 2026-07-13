@@ -1,0 +1,130 @@
+{
+  "schema": "TbgWindowIdentityRegistry.v1",
+  "version": "1.0.0",
+  "repository": "EndeavorEverlasting/BlacksmithGuild",
+  "purpose": "Classify Bannerlord and launcher windows from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
+  "defaultPolicy": {
+    "minimumRecognitionScore": 70,
+    "minimumAutomaticActionScore": 90,
+    "pollMilliseconds": 100,
+    "maximumControls": 256,
+    "cacheHighConfidenceMatches": true,
+    "unknownWindowDisposition": "delta_discovery_required",
+    "imageFallbackDisposition": "diagnostic_only"
+  },
+  "normalization": {
+    "caseInsensitive": true,
+    "collapseWhitespace": true,
+    "stripVersionBuildNoise": false,
+    "versionSegments": 4
+  },
+  "identities": [
+    {
+      "id": "bannerlord.launcher.menu",
+      "displayName": "Bannerlord launcher menu",
+      "aliases": [
+        "Mount & Blade II: Bannerlord",
+        "Mount and Blade II Bannerlord",
+        "M&B II: Bannerlord",
+        "TaleWorlds.MountAndBlade.Launcher"
+      ],
+      "match": {
+        "processNames": ["TaleWorlds.MountAndBlade.Launcher"],
+        "titleRegex": ["(?i)bannerlord"],
+        "anyControlNames": ["PLAY", "CONTINUE"],
+        "anyTextRegex": ["(?i)play", "(?i)continue"],
+        "minimumDirectSignals": 2
+      },
+      "actionPolicy": {
+        "kind": "context_owned",
+        "description": "The launch intent comes from launcher-window-context.json. Window intelligence must not guess PLAY versus CONTINUE.",
+        "automatic": false,
+        "forbiddenFallbacks": ["rescore spawned game as launcher", "infer continue from stale evidence", "blind coordinate click"]
+      }
+    },
+    {
+      "id": "bannerlord.dependency-version-caution",
+      "displayName": "Blacksmith Guild dependency-version caution",
+      "aliases": [
+        "CAUTION",
+        "Caution",
+        "Dependency Warning",
+        "Module version warning",
+        "Version mismatch caution"
+      ],
+      "match": {
+        "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
+        "anyControlNames": ["Confirm", "Cancel"],
+        "allTextRegex": [
+          "(?i)the blacksmith guild depends on",
+          "(?i)current version is",
+          "(?i)are you sure"
+        ],
+        "anyTextRegex": ["(?i)caution", "(?i)native", "(?i)sandboxcore", "(?i)storymode"],
+        "dependencyMismatch": true,
+        "minimumDirectSignals": 3
+      },
+      "extractors": [
+        {
+          "id": "dependency-version-lines",
+          "regex": "(?i)(?<module>Native|SandBoxCore|Sandbox|StoryMode).*?depends on.*?v(?<expected>[0-9.]+).*?current version is.*?v(?<current>[0-9.]+)"
+        }
+      ],
+      "actionPolicy": {
+        "kind": "known_modal_action",
+        "actionId": "confirm_dependency_version_caution",
+        "semanticAction": "confirm",
+        "automatic": true,
+        "minimumScore": 90,
+        "preferredControlNames": ["Confirm"],
+        "fallbackKeys": ["ENTER"],
+        "fallbackRequiresForegroundAuthority": true,
+        "requiredDirectSignals": ["caution_text_or_control", "confirm_control", "dependency_mismatch"],
+        "description": "Confirm the known Blacksmith Guild dependency-version caution only after the exact modal identity and Confirm control are present. A predicted mismatch without a visible modal is not action authority."
+      }
+    },
+    {
+      "id": "bannerlord.safe-mode",
+      "displayName": "Bannerlord Safe Mode prompt",
+      "aliases": ["Safe Mode", "Bannerlord Safe Mode", "Launch in Safe Mode"],
+      "match": {
+        "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
+        "titleRegex": ["(?i)^safe mode$", "(?i)safe mode"],
+        "anyControlNames": ["No", "Yes"],
+        "anyTextRegex": ["(?i)safe mode"],
+        "minimumDirectSignals": 2
+      },
+      "actionPolicy": {
+        "kind": "known_modal_action",
+        "actionId": "decline_safe_mode",
+        "semanticAction": "decline",
+        "automatic": true,
+        "minimumScore": 90,
+        "preferredControlNames": ["No"],
+        "fallbackKeys": ["ALT+N"],
+        "fallbackRequiresForegroundAuthority": true,
+        "requiredDirectSignals": ["safe_mode_title_or_text", "no_control"],
+        "description": "Decline Safe Mode and continue the normal launch path. Do not use Cancel or Alt+C."
+      }
+    },
+    {
+      "id": "bannerlord.singleplayer-host",
+      "displayName": "Bannerlord Singleplayer host",
+      "aliases": [
+        "Mount and Blade II Bannerlord - Singleplayer",
+        "Mount & Blade II: Bannerlord - Singleplayer",
+        "Bannerlord Singleplayer"
+      ],
+      "match": {
+        "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
+        "titleRegex": ["(?i)bannerlord.*singleplayer"],
+        "minimumDirectSignals": 2
+      },
+      "actionPolicy": {
+        "kind": "terminal_observation",
+        "automatic": false,
+        "description": "Stop launcher clicking. This window is a game-host handoff, not a launcher menu."
+      }
+    }
+  ]
+}
