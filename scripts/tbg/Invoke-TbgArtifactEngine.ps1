@@ -865,6 +865,9 @@ function Invoke-TbgPass {
 
         Write-TbgJson -Path $FingerprintPath -Value ([pscustomobject]$fingerprints
         )
+        if ($runs.Count -eq 0) {
+            return [pscustomobject]@{ exitCode = 0; result = $null }
+        }
         $blockingRuns = @($runs.ToArray() | Where-Object { $_.blocking })
         $parseRuns = @($runs.ToArray() | Where-Object { $_.terminalState -match 'parse_error|parse_errors' })
         $strictFailure = ($StateMode -eq 'strict' -and ($blockingRuns.Count -gt 0 -or $parseRuns.Count -gt 0))
