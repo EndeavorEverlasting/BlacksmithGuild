@@ -239,16 +239,18 @@
                     {
                         "wave":  "E",
                         "pr":  38,
-                        "status":  "not_started",
+                        "status":  "superseded_recorded",
                         "replacementPr":  null,
                         "blockedBy":  [
 
                                       ],
-                        "disposition":  "",
+                        "disposition":  "PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its guardrail, worktree, harness, and proof-discipline intent has been replaced by maintained mainline contracts, while source head e618349b7575dc6379cb7a8b378df6ec5be4d282 remains retained as provenance.",
                         "evidence":  [
-
+                                         "PR #38 closed without merge; source head e618349b7575dc6379cb7a8b378df6ec5be4d282 retained",
+                                         "Local rebase aborted after add/add conflicts against main b1975f523dd7fe088e17e013127b0f0e73d2be34; no force rewrite or branch deletion",
+                                         "PR #38 terminal disposition comment 4964827437"
                                      ],
-                        "nextAction":  "Map each unique guardrail to a maintained replacement or an explicit rejection and retain provenance."
+                        "nextAction":  "No further replay work remains for PR #38."
                     }
                 ]
 }
