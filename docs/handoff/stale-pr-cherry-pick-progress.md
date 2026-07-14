@@ -1,8 +1,8 @@
 ﻿# Stale branch cherry-pick progress
 
 > **Overall: INCOMPLETE**
-> **2 of 16 stale pull requests are complete (12.5%).**
-> **Current distribution: 0 in progress, 4 blocked, and 10 not started.**
+> **3 of 16 stale pull requests are complete (18.75%).**
+> **Current distribution: 0 in progress, 4 blocked, and 9 not started.**
 > **Next: Wave B, PR #2: Inspect pull request 2 against current main and decide whether to replay its coherent identity-schema delta or record a rejection.**
 
 The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
@@ -28,7 +28,7 @@ The stale-branch cherry-pick process is finished only when every planned source 
 | D3 | #35 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value. |
 | E | #20 | ⬜ not started | — | — | — | Reconstruct the useful governor handoff model, tests, and review requirements against current main. |
 | E | #24 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject. |
-| E | #38 | ⬜ not started | — | — | — | Map each unique guardrail to a maintained replacement or an explicit rejection and retain provenance. |
+| E | #38 | ✅ superseded recorded | — | — | PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its maintained intent now lives in evolved mainline guardrail, worktree, harness, and proof-discipline contracts; source head `e618349b7575dc6379cb7a8b378df6ec5be4d282` remains provenance. | No further replay work remains for PR #38. |
 | F | #5 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof. |
 | F | #6 | ⛔ blocked dependency | — | #43, #52 | — | Wait for pull request 5 value to be reconstructed and for the maintained route lineage to settle. |
 
