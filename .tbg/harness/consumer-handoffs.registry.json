@@ -1,0 +1,26 @@
+{
+  "schema": "tbg.consumer-handoffs.v1",
+  "producer": "EndeavorEverlasting/BlacksmithGuild",
+  "capsuleSchema": ".tbg/harness/schemas/tbg-sprint-capsule.schema.json",
+  "consumers": [
+    {
+      "id": "agent-switchboard",
+      "repository": "EndeavorEverlasting/AgentSwitchboard",
+      "authority": "coordination-only",
+      "readyWhen": ["clean committed head", "no declared blockers", "valid capsule", "proof ceiling present"],
+      "forbiddenAuthority": ["gameplay behavior", "save mutation", "runtime certification", "merge or release acceptance"]
+    },
+    {
+      "id": "sysadminsuite",
+      "repository": "EndeavorEverlasting/SysAdminSuite",
+      "authority": "explicit-tandem-consumer-only",
+      "readyWhen": ["explicit tandem authorization", "clean committed head", "no declared blockers", "valid capsule", "operation id supplied"],
+      "forbiddenAuthority": ["Bannerlord installation mutation", "save mutation", "game command issue", "BlacksmithGuild proof promotion"]
+    }
+  ],
+  "receivingRules": [
+    "Reinspect Git, worktree, runtime, and artifact freshness before mutation.",
+    "Do not treat structural validity as execution authorization.",
+    "Do not exceed the producer proof ceiling."
+  ]
+}

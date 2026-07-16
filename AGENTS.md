@@ -21,10 +21,10 @@ Before substantial work:
 
 1. identify repo, branch, PR or sprint, lane, owned scope, forbidden scope, and expected artifacts;
 2. inspect `git status --short`, `git branch --show-current`, and `git log --oneline --decorate -5`;
-3. read `.tbg/skills/manifest.json`;
-4. select one primary skill and only the cross-cutting skills it requires;
-5. load the skill's `entryContract`, authorities, validators, and proof ceiling;
-6. use `artifacts/latest/tbg-chat-packet.json` or `artifacts/latest/artifact-engine/artifact-engine.handoff.md` for fresh local state when present.
+3. use `CODEBASE_MAP.md` to load the smallest relevant product, harness, runtime, or evidence surface;
+4. read `.tbg/skills/manifest.json` and select one primary skill plus only required cross-cutting skills;
+5. load the skill's `entryContract`, authorities, validators, expected artifacts, and proof ceiling;
+6. use `artifacts/latest/tbg-chat-packet.json`, `artifacts/latest/tbg-sprint-capsule.json`, or the artifact-engine handoff for fresh local state when present.
 
 Do not paste full stale handoffs into every prompt. Do not load every skill.
 
@@ -33,11 +33,10 @@ Do not paste full stale handoffs into every prompt. Do not load every skill.
 - Preserve dirty, conflicted, unpublished, ignored-evidence, and sibling-worktree state unless the active cleanup workflow proves a destructive action safe.
 - Do not use reset, clean, force push, branch deletion, worktree removal, save mutation, or PR closure merely to make the floor look clean.
 - Do not commit secrets, saves, personal configuration, scratch evidence, huge logs, crash dumps, or machine-local junk.
-- Do not ask the user to harvest logs manually when the runner can capture them.
-- Runner-owned workflows own evidence capture.
+- Do not ask the user to harvest logs manually when the runner can capture them. Runner-owned workflows own evidence capture.
 - No game launch, launcher click, command-inbox write, save mutation, or gameplay action is allowed unless the active workflow explicitly grants that authority.
 - If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.
-- External tools and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, and product authority.
+- External tools, AgentSwitchboard, SysAdminSuite, and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, save-safety, and product authority.
 
 ## Proof and execution discipline
 
@@ -49,7 +48,7 @@ contract -> harness -> static test -> build -> launcher -> command ACK -> behavi
 
 Do not claim a higher level from a lower one. A stale `Status.json`, parser success, command ACK, route assignment, checkpoint, or launcher handoff is not product completion. Every claim must name freshness, exact head when relevant, evidence paths, and the highest level actually reached.
 
-Incomplete proof is not automatically an execution prohibition. Prefer the strongest bounded workflow whose authority and safety boundary match the operator's request, including current open-PR workflows when appropriate. Report each reached gate separately and use `docs/architecture/green-light-execution-policy.md` for the full decision rule.
+Incomplete proof is not automatically an execution prohibition. Prefer the strongest bounded workflow whose authority and safety boundary match the operator's request. Use `.tbg/workflows/end-to-end-validation.contract.json` for composed proof and `.tbg/workflows/tbg-sprint-capsule.contract.json` for machine-readable continuation.
 
 ## Lane router
 
@@ -57,7 +56,7 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 |---|---|
 | branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
 | root rules, manifests, prompts, skill design | `agent-skill-factoring` |
-| harness-versus-domain placement | `harness-maturity` |
+| harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
 | local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
 | proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
 | ForgeStop, build/deploy/launch/Continue/window lifecycle | `launcher-lifecycle` |
@@ -77,6 +76,7 @@ Agent A/B/C/D names are compatibility aliases only. Route by lane and skill, not
 Mutable PR restrictions, active targets, worktree state, runtime state, and latest evidence do not belong in this file. Resolve them from:
 
 - `artifacts/latest/tbg-chat-packet.json`;
+- `artifacts/latest/tbg-sprint-capsule.json`;
 - `artifacts/latest/artifact-engine/artifact-engine.handoff.md`;
 - `docs/control/logs/open/autonomous-assist-session-target.md`;
 - current Git, GitHub, workflow, and runtime artifacts.
@@ -96,4 +96,4 @@ PowerShell Core success alone is not Windows PowerShell 5.1 proof.
 
 ## Completion report
 
-Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Do not claim completion without a commit SHA, validated existing proof, or an exact blocker.
+Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Use a schema-backed sprint capsule for cross-agent or cross-repository continuation; do not claim completion without a commit SHA, validated existing proof, or an exact blocker.

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/e2e-validation-profiles.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schemaPath", "defaultProfile", "posture", "journeys", "profiles"],
+  "properties": {
+    "schema": {"const": "tbg.e2e-profiles.v1"},
+    "schemaPath": {"type": "string"},
+    "defaultProfile": {"const": "default-static"},
+    "posture": {"type": "object"},
+    "journeys": {"type": "array", "minItems": 6},
+    "profiles": {"type": "array", "minItems": 4}
+  }
+}

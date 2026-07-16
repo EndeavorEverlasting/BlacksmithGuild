@@ -1,0 +1,13 @@
+{
+  "schema": "tbg.e2e-artifact-types.v1",
+  "runtimeRoot": ".local/tbg-e2e-runs",
+  "trackedRuntimeEvidenceAllowed": false,
+  "types": [
+    {"id": "run-context", "fileName": "run-context.json", "tracked": false},
+    {"id": "artifact-registry", "fileName": "artifact-registry.json", "tracked": false},
+    {"id": "e2e-result", "fileName": "result.json", "tracked": false},
+    {"id": "operator-report", "fileName": "operator-report.md", "tracked": false},
+    {"id": "sprint-capsule", "fileName": "sprint-capsule.json", "tracked": false},
+    {"id": "current-sprint-capsule", "fileName": "artifacts/latest/tbg-sprint-capsule.json", "tracked": false}
+  ]
+}

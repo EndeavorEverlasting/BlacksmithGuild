@@ -1,0 +1,26 @@
+{
+  "schema": "tbg.e2e-profiles.v1",
+  "schemaPath": ".tbg/harness/schemas/e2e-validation-profiles.schema.json",
+  "defaultProfile": "default-static",
+  "posture": {
+    "endToEndDefaultRequired": true,
+    "unitTestsSufficientForMerge": false,
+    "externalNetworkDefault": false,
+    "gameMutationDefault": false,
+    "trackedRuntimeEvidenceAllowed": false
+  },
+  "journeys": [
+    {"id": "python-e2e-contracts", "kind": "python", "script": "tests/harness/test_tbg_end_to_end_harness.py", "proofLevel": "static test", "required": true},
+    {"id": "powershell-e2e-contracts", "kind": "powershell", "script": "scripts/tbg/Test-TbgEndToEndHarness.ps1", "proofLevel": "static test", "required": true},
+    {"id": "skill-router-contracts", "kind": "skill-router", "script": "scripts/tbg/Test-TbgSkillRouting.ps1", "proofLevel": "static test", "required": true},
+    {"id": "debug-build", "kind": "dotnet-debug-build", "script": "src/BlacksmithGuild/BlacksmithGuild.csproj", "proofLevel": "build", "required": true},
+    {"id": "read-only-runtime-refresh", "kind": "read-only-runtime", "script": "ForgeAgentStatus.cmd", "expectedArtifact": "artifacts/latest/tbg-chat-packet.json", "proofLevel": "harness", "required": true},
+    {"id": "disposable-save-live-cert", "kind": "workflow-specific-live-runtime", "script": null, "proofLevel": "live runtime", "required": true}
+  ],
+  "profiles": [
+    {"id": "default-static", "proofClass": "composed-static-e2e", "journeyIds": ["python-e2e-contracts", "powershell-e2e-contracts", "skill-router-contracts"]},
+    {"id": "local-build", "proofClass": "local-build-e2e", "journeyIds": ["python-e2e-contracts", "powershell-e2e-contracts", "skill-router-contracts", "debug-build"]},
+    {"id": "read-only-runtime", "proofClass": "read-only-runtime-e2e", "journeyIds": ["python-e2e-contracts", "powershell-e2e-contracts", "skill-router-contracts", "read-only-runtime-refresh"]},
+    {"id": "disposable-save-live-cert", "proofClass": "workflow-specific-live-runtime", "journeyIds": ["python-e2e-contracts", "powershell-e2e-contracts", "skill-router-contracts", "debug-build", "disposable-save-live-cert"]}
+  ]
+}

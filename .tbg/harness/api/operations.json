@@ -1,0 +1,26 @@
+{
+  "schema": "tbg.harness.operations.v1",
+  "operations": [
+    {
+      "id": "validate-end-to-end-harness",
+      "entrypoint": "scripts/tbg/Test-TbgEndToEndHarness.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "proofCeiling": "static test"
+    },
+    {
+      "id": "run-end-to-end-profile",
+      "entrypoint": "scripts/tbg/Invoke-TbgEndToEndValidation.ps1",
+      "mode": "profile-gated",
+      "requiredInputs": ["profile"],
+      "proofCeiling": "profile-dependent"
+    },
+    {
+      "id": "generate-sprint-capsule",
+      "entrypoint": "scripts/tbg/New-TbgSprintCapsule.ps1",
+      "mode": "local-transform",
+      "requiredInputs": ["sprintId", "lane", "mission", "proofLevel", "proofCeiling", "nextCommand"],
+      "proofCeiling": "contract"
+    }
+  ]
+}
