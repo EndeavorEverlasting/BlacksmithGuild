@@ -45,6 +45,6 @@ foreach($property in @('endToEndProfiles','endToEndContract','endToEndEntrypoint
 $agentLines=@((Get-Content (RepoPath 'AGENTS.md'))).Count;Add-Check ($agentLines -le 110) 'agents/compact' "AGENTS.md has $agentLines lines"
 $agents=Get-Content (RepoPath 'AGENTS.md') -Raw;foreach($token in @('CODEBASE_MAP.md','end-to-end-validation.contract.json','tbg-sprint-capsule.contract.json','SysAdminSuite')){Add-Check ($agents -match [regex]::Escape($token)) "agents/$token"}
 $newFiles=$required|Where-Object{$_ -notin @('.tbg/harness/manifest.json','.tbg/skills/manifest.json','scripts/tbg/Test-TbgSkillRouting.ps1')};$text=($newFiles|ForEach-Object{Get-Content (RepoPath $_) -Raw})-join "`n";foreach($token in @(('OPENAI_'+'API_KEY'),('ANTHROPIC_'+'API_KEY'),('C:\'+'Users\Cheex'),('/home/'+'cheex'))){Add-Check (-not $text.Contains($token)) "forbidden/$token"}
-$output=RepoPath $OutputRoot;New-Item -ItemType Directory -Force -Path $output|Out-Null;$status=if($errors.Count){'FAIL'}else{'PASS'}
+$output=if([IO.Path]::IsPathRooted($OutputRoot)){[IO.Path]::GetFullPath($OutputRoot)}else{RepoPath $OutputRoot};New-Item -ItemType Directory -Force -Path $output|Out-Null;$status=if($errors.Count){'FAIL'}else{'PASS'}
 [ordered]@{schema='tbg.e2e-contract-result.v1';generatedUtc=[DateTime]::UtcNow.ToString('o');status=$status;passes=$passes;errors=@($errors)}|ConvertTo-Json -Depth 10|Set-Content (Join-Path $output 'validation-result.json') -Encoding UTF8
 Write-Host "Result: $passes passed / $($errors.Count) failed";if($errors.Count){throw ($errors -join [Environment]::NewLine)}
