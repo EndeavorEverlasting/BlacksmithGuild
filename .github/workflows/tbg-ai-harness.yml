@@ -29,7 +29,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run dependency-free E2E contracts
-        run: python3 tests/harness/test_tbg_end_to_end_harness.py
+        id: python_contracts
+        shell: bash
+        run: |
+          set +e
+          python3 tests/harness/test_tbg_end_to_end_harness.py > "$RUNNER_TEMP/tbg-python-contracts.log" 2>&1
+          code=$?
+          cat "$RUNNER_TEMP/tbg-python-contracts.log"
+          exit "$code"
       - name: Parse new JSON contracts
         run: |
           python3 - <<'PY'
@@ -38,6 +45,12 @@ jobs:
           paths=[Path('.tbg/harness/api/operations.json'),Path('.tbg/harness/e2e/profiles.json'),Path('.tbg/harness/consumer-handoffs.registry.json'),Path('.tbg/harness/e2e-artifact-types.registry.json'),Path('.tbg/workflows/end-to-end-validation.contract.json'),Path('.tbg/workflows/tbg-sprint-capsule.contract.json')]+list(Path('.tbg/harness/schemas').glob('*tbg-*.schema.json'))+[Path('.tbg/harness/schemas/e2e-validation-profiles.schema.json')]
           for path in paths: json.loads(path.read_text(encoding='utf-8-sig'))
           PY
+      - name: Upload Linux contract diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbg-linux-contract-diagnostics
+          path: ${{ runner.temp }}/tbg-python-contracts.log
       - name: Check repository hygiene
         run: |
           git diff --check
@@ -58,20 +71,35 @@ jobs:
           }
       - name: Run E2E harness contracts
         shell: powershell
-        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgEndToEndHarness.ps1 -OutputRoot "$env:RUNNER_TEMP\tbg-contracts"
+        run: |
+          $output="$env:RUNNER_TEMP\tbg-contracts"
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgEndToEndHarness.ps1 -OutputRoot $output *> "$env:RUNNER_TEMP\tbg-powershell-contracts.log"
+          $code=$LASTEXITCODE
+          Get-Content "$env:RUNNER_TEMP\tbg-powershell-contracts.log"
+          if(Test-Path "$output\validation-result.json"){Get-Content "$output\validation-result.json"}
+          exit $code
       - name: Run composed default profile
         shell: powershell
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Invoke-TbgEndToEndValidation.ps1 -Profile default-static -OutputRoot "$env:RUNNER_TEMP\tbg-e2e"
           $result=Get-Content "$env:RUNNER_TEMP\tbg-e2e\result.json" -Raw|ConvertFrom-Json
           if($result.status -ne 'completed' -or $result.proofLevel -ne 'static test'){throw 'Unexpected composed E2E result.'}
+      - name: Upload Windows contract diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbg-windows-contract-diagnostics
+          path: |
+            ${{ runner.temp }}\tbg-powershell-contracts.log
+            ${{ runner.temp }}\tbg-contracts
       - name: Upload E2E evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tbg-e2e-default-static
           path: ${{ runner.temp }}\tbg-e2e
+          if-no-files-found: ignore
       - name: Verify clean checkout
-        shell: powershell
         run: |
           git diff --check
           if(git status --short){throw 'Checkout dirty after validation.'}
@@ -82,4 +110,18 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run contracts under PowerShell 7
         shell: pwsh
-        run: ./scripts/tbg/Test-TbgEndToEndHarness.ps1 -OutputRoot "$env:RUNNER_TEMP\tbg-pwsh7"
+        run: |
+          $output="$env:RUNNER_TEMP\tbg-pwsh7"
+          ./scripts/tbg/Test-TbgEndToEndHarness.ps1 -OutputRoot $output *> "$env:RUNNER_TEMP\tbg-pwsh7.log"
+          $code=$LASTEXITCODE
+          Get-Content "$env:RUNNER_TEMP\tbg-pwsh7.log"
+          if(Test-Path "$output\validation-result.json"){Get-Content "$output\validation-result.json"}
+          exit $code
+      - name: Upload PowerShell 7 diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbg-pwsh7-contract-diagnostics
+          path: |
+            ${{ runner.temp }}\tbg-pwsh7.log
+            ${{ runner.temp }}\tbg-pwsh7
