@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/schemas/harness/tbg-sprint-capsule.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "created_at", "repository", "sprint", "git_state", "scope", "validation", "proof", "handoff", "consumers", "next_command"],
+  "properties": {
+    "schema_version": {"const": "tbg-sprint-capsule/v1"},
+    "created_at": {"type": "string"},
+    "repository": {"const": "EndeavorEverlasting/BlacksmithGuild"},
+    "sprint": {"type": "object"}, "git_state": {"type": "object"}, "scope": {"type": "object"}, "validation": {"type": "object"}, "proof": {"type": "object"}, "handoff": {"type": "object"},
+    "consumers": {"type": "object", "required": ["agent_switchboard", "sysadminsuite"], "properties": {"agent_switchboard": {"type": "object"}, "sysadminsuite": {"type": "object"}}},
+    "next_command": {"type": "string", "minLength": 1}
+  }
+}

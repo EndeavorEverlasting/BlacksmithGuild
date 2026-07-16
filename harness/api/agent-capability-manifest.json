@@ -1,0 +1,79 @@
+{
+  "schema_version": "tbg-agent-capability-manifest/v1",
+  "schema_path": "schemas/harness/agent-capability-manifest.schema.json",
+  "authority": {
+    "root_instruction": "AGENTS.md",
+    "codebase_map": "CODEBASE_MAP.md",
+    "skill_root": ".claude/skills",
+    "capability_root": ".claude/capabilities",
+    "harness_api": "harness/api/tbg-harness-api.json"
+  },
+  "posture": {
+    "progressive_disclosure_required": true,
+    "end_to_end_default_required": true,
+    "unit_tests_sufficient_for_merge": false,
+    "external_network_activity_default": false,
+    "game_mutation_default": false,
+    "tracked_runtime_evidence_allowed": false
+  },
+  "capabilities": [
+    {
+      "id": "repository-evidence",
+      "version": "1.0.0",
+      "path": ".claude/capabilities/repository-evidence.md",
+      "lanes": ["repository", "cleanup", "validation", "release-pr-hygiene"],
+      "default_game_mutation": false,
+      "validators": ["tests/harness/test_tbg_harness_contracts.py", "scripts/Test-TbgAiHarness.ps1"]
+    },
+    {
+      "id": "bannerlord-runtime-safety",
+      "version": "1.0.0",
+      "path": ".claude/capabilities/bannerlord-runtime-safety.md",
+      "lanes": ["build", "install", "launcher", "runtime-proof", "save-safety"],
+      "default_game_mutation": false,
+      "validators": ["tests/harness/test_tbg_harness_contracts.py"]
+    },
+    {
+      "id": "proof-and-checkpointing",
+      "version": "1.0.0",
+      "path": ".claude/capabilities/proof-and-checkpointing.md",
+      "lanes": ["validation", "runtime-proof", "release-pr-hygiene"],
+      "default_game_mutation": false,
+      "validators": ["tests/harness/test_tbg_harness_contracts.py"]
+    },
+    {
+      "id": "end-to-end-testing",
+      "version": "1.0.0",
+      "path": ".claude/capabilities/end-to-end-testing.md",
+      "lanes": ["validation", "harness", "runtime-proof", "release-pr-hygiene"],
+      "default_game_mutation": false,
+      "validators": ["tests/harness/test_tbg_harness_contracts.py", "scripts/Invoke-TbgHarnessE2E.ps1"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "repository-sprint",
+      "version": "1.0.0",
+      "path": ".claude/skills/repository-sprint/SKILL.md",
+      "capability_dependencies": ["repository-evidence", "proof-and-checkpointing"]
+    },
+    {
+      "id": "scoped-validation",
+      "version": "1.0.0",
+      "path": ".claude/skills/scoped-validation/SKILL.md",
+      "capability_dependencies": ["repository-evidence", "proof-and-checkpointing", "bannerlord-runtime-safety"]
+    },
+    {
+      "id": "end-to-end-validation",
+      "version": "1.0.0",
+      "path": ".claude/skills/end-to-end-validation/SKILL.md",
+      "capability_dependencies": ["repository-evidence", "proof-and-checkpointing", "end-to-end-testing", "bannerlord-runtime-safety"]
+    },
+    {
+      "id": "bannerlord-runtime-proof",
+      "version": "1.0.0",
+      "path": ".claude/skills/bannerlord-runtime-proof/SKILL.md",
+      "capability_dependencies": ["repository-evidence", "proof-and-checkpointing", "bannerlord-runtime-safety", "end-to-end-testing"]
+    }
+  ]
+}

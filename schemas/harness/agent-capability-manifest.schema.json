@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/schemas/harness/agent-capability-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "schema_path", "authority", "posture", "capabilities", "skills"],
+  "properties": {"schema_version": {"const": "tbg-agent-capability-manifest/v1"}, "schema_path": {"type": "string", "minLength": 1}, "authority": {"type": "object"}, "posture": {"type": "object"}, "capabilities": {"type": "array", "minItems": 4}, "skills": {"type": "array", "minItems": 4}}
+}

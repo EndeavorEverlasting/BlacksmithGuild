@@ -1,0 +1,9 @@
+{
+  "schema_version": "tbg-harness-api/v1",
+  "repository": "EndeavorEverlasting/BlacksmithGuild",
+  "operations": [
+    {"id": "validate-harness", "entrypoint": "scripts/Test-TbgAiHarness.ps1", "mode": "read-only", "required_inputs": [], "artifacts": ["validation-result"], "proof_ceiling": "contract-proof"},
+    {"id": "run-e2e", "entrypoint": "scripts/Invoke-TbgHarnessE2E.ps1", "mode": "profile-gated", "required_inputs": ["profile"], "artifacts": ["run-context", "artifact-registry", "e2e-result", "operator-report", "sprint-capsule"], "proof_ceiling": "profile-dependent"},
+    {"id": "generate-sprint-capsule", "entrypoint": "scripts/New-TbgSprintCapsule.ps1", "mode": "local-transform", "required_inputs": ["sprint_id", "title", "lane", "mission", "proof_level", "proof_ceiling", "next_command"], "artifacts": ["sprint-capsule"], "proof_ceiling": "handoff-contract"}
+  ]
+}

@@ -1,99 +1,83 @@
-# Blacksmith Guild Agent Coordination Contract
+# Agent Instructions for The Blacksmith Guild
 
-`AGENTS.md` is the safe bootloader for every Codex, Claude, Cursor, ChatGPT, and parallel-agent session in `EndeavorEverlasting/BlacksmithGuild`. Keep conditional lane knowledge in `.tbg/skills/**`; keep executable sequence and done gates in `.tbg/workflows/**`.
+`AGENTS.md` is the compact, agent-agnostic entrypoint. It contains universal invariants and routing only. Detailed workflows live under `.claude/skills/`; reusable rules live under `.claude/capabilities/`.
 
-## Authority chain
+## Required loading sequence
 
-When instructions overlap, use this order:
+1. Read this file.
+2. Use `CODEBASE_MAP.md` to locate the smallest relevant product, launcher, evidence, or harness surface.
+3. Use `harness/api/agent-routing-manifest.json` for deterministic task routing. Unknown, ambiguous, or conflicting signals fail closed to the repository-sprint skill.
+4. Load only the selected skill and its declared capability dependencies.
+5. For a harness operation, collect its declared required inputs before invoking the repo-owned entrypoint.
+6. Read deeper product plans, live-cert records, or historical handoffs only when the selected workflow requires them.
 
-1. current source, scripts, schemas, registries, and executable workflow contracts;
-2. current generated evidence and state packets;
-3. the narrowest matching `.tbg/skills/<skill-id>/SKILL.md`;
-4. this root coordination contract;
-5. client adapters such as `CLAUDE.md`;
-6. historical docs, stale PR bodies, and chat handoffs.
+Triggers route work only. They never authorize game launch, save mutation, command-inbox writes, process termination, install/copy actions, Git history rewriting, or elevated proof claims.
 
-A lower authority may explain a higher authority but may not override it.
+## Universal invariants
 
-## Entry sequence
+- Treat the repository, current Git state, and current runtime artifacts as the source of truth over remembered chat context.
+- Preserve existing work. Inspect dirty files, worktrees, branches, and open PRs before switching, restoring, cleaning, rebasing, or deleting.
+- State repository, branch/PR, sprint, lane, owned scope, forbidden scope, dependencies, expected artifacts, and proof ceiling before mutation.
+- Reuse Forge, Launch Control, command-bus, status, certification, evidence, and validator contracts before inventing parallel mechanisms.
+- End-to-end proof is the default merge target for executable, launcher, command-bus, persistence, or integration changes. Unit and contract tests are diagnostics, not runtime proof.
+- Static checks, build proof, install proof, launcher/session attach, command ACK, observed behavior, save-safe mutation, and live runtime certification are distinct proof levels.
+- Never use a personal or legacy save for mutation proof. Tier-3 mutation requires an explicitly disposable campaign and the repository's save-safety doctrine.
+- Stop Bannerlord before DLL install or runtime-replacement work unless the selected workflow explicitly owns a read-only observation lane.
+- Do not rely on terminal or game-window focus when a repo-owned command inbox, ACK, status, or log surface exists.
+- Bound every wait, retry, polling loop, child process, and runtime observation window.
+- Never commit credentials, personal save data, machine-local paths, raw runtime JSON, unredacted logs, binaries, generated diagnostics, or local game files.
+- Runtime evidence stays under approved ignored roots. Only sanitized manifests, tails, fixtures, or explicitly reviewed evidence snapshots may be tracked.
+- A process exit code, visible window, log line, or command issue is insufficient when a stronger repo-owned ACK or behavior artifact exists.
+- A receiving agent must re-inspect Git and runtime state. Machine-readable handoffs compress evidence; they do not transfer authority.
 
-Before substantial work:
+## Skill router
 
-1. identify repo, branch, PR or sprint, lane, owned scope, forbidden scope, and expected artifacts;
-2. inspect `git status --short`, `git branch --show-current`, and `git log --oneline --decorate -5`;
-3. read `.tbg/skills/manifest.json`;
-4. select one primary skill and only the cross-cutting skills it requires;
-5. load the skill's `entryContract`, authorities, validators, and proof ceiling;
-6. use `artifacts/latest/tbg-chat-packet.json` or `artifacts/latest/artifact-engine/artifact-engine.handoff.md` for fresh local state when present.
-
-Do not paste full stale handoffs into every prompt. Do not load every skill.
-
-## Universal safety
-
-- Preserve dirty, conflicted, unpublished, ignored-evidence, and sibling-worktree state unless the active cleanup workflow proves a destructive action safe.
-- Do not use reset, clean, force push, branch deletion, worktree removal, save mutation, or PR closure merely to make the floor look clean.
-- Do not commit secrets, saves, personal configuration, scratch evidence, huge logs, crash dumps, or machine-local junk.
-- Do not ask the user to harvest logs manually when the runner can capture them.
-- Runner-owned workflows own evidence capture.
-- No game launch, launcher click, command-inbox write, save mutation, or gameplay action is allowed unless the active workflow explicitly grants that authority.
-- If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.
-- External tools and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, and product authority.
-
-## Proof and execution discipline
-
-Proof levels do not collapse:
-
-```text
-contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime
-```
-
-Do not claim a higher level from a lower one. A stale `Status.json`, parser success, command ACK, route assignment, checkpoint, or launcher handoff is not product completion. Every claim must name freshness, exact head when relevant, evidence paths, and the highest level actually reached.
-
-Incomplete proof is not automatically an execution prohibition. Prefer the strongest bounded workflow whose authority and safety boundary match the operator's request, including current open-PR workflows when appropriate. Report each reached gate separately and use `docs/architecture/green-light-execution-policy.md` for the full decision rule.
-
-## Lane router
-
-| Request or touched surface | Primary skill |
+| Task signal | Load this skill |
 |---|---|
-| branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
-| root rules, manifests, prompts, skill design | `agent-skill-factoring` |
-| harness-versus-domain placement | `harness-maturity` |
-| local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
-| proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
-| ForgeStop, build/deploy/launch/Continue/window lifecycle | `launcher-lifecycle` |
-| campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |
-| hotkeys, toggles, command inbox, Manual/Assist/Autonomous | `operator-control-surface` |
-| commit, push, PR, concurrent completion, release gates | `implementation-completion` |
-| stale or stacked PR value recovery | `stale-pr-cherry-pick` |
-| Continuum capability export or extraction | `continuum-interoperability` |
-| long annotations, stale snapshots, retained insight | `compendium-preservation` |
-| external coordinators and agent-operation tools | `agentic-operations` |
-| WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
+| Repository intake, sprint selection, interrupted work, Git/worktree/PR lifecycle | [Repository Sprint](.claude/skills/repository-sprint/SKILL.md) |
+| Contracts, schemas, validators, build gates, or bounded checks | [Scoped Validation](.claude/skills/scoped-validation/SKILL.md) |
+| Composed journeys, merge/release gates, or harness verification | [End-to-End Validation](.claude/skills/end-to-end-validation/SKILL.md) |
+| Bannerlord launch, command inbox, ACK, status, behavior, route cert, or live certification | [Bannerlord Runtime Proof](.claude/skills/bannerlord-runtime-proof/SKILL.md) |
 
-Agent A/B/C/D names are compatibility aliases only. Route by lane and skill, not by a temporary agent letter.
+Load multiple skills only when the task genuinely crosses lanes.
 
-## Current-state pointers
+## Source-of-truth precedence
 
-Mutable PR restrictions, active targets, worktree state, runtime state, and latest evidence do not belong in this file. Resolve them from:
+1. Explicit user scope and safety constraints.
+2. This file's universal invariants.
+3. The selected skill.
+4. Capability dependencies declared by that skill.
+5. Canonical machine-readable manifests, schemas, workflows, and artifact registries.
+6. Current product code, launcher code, and validation entrypoints.
+7. Current operational docs and certification doctrine.
+8. Historical plans, handoffs, PR prose, screenshots, and chat memory.
 
-- `artifacts/latest/tbg-chat-packet.json`;
-- `artifacts/latest/artifact-engine/artifact-engine.handoff.md`;
-- `docs/control/logs/open/autonomous-assist-session-target.md`;
-- current Git, GitHub, workflow, and runtime artifacts.
+When same-level authorities conflict, stop expansion, cite both paths, and make the smallest correction that restores one authority.
 
-Historical snapshots remain provenance, not current truth.
+## Canonical authorities
 
-## PowerShell encoding
+- `CODEBASE_MAP.md` — minimal-context routing.
+- `docs/AI_HARNESS_ENTRYPOINT.md` — fresh-agent inspection and execution sequence.
+- `docs/END_TO_END_TESTING_POSTURE.md` — proof ladder and E2E defaults.
+- `docs/MACHINE_READABLE_HANDOFF.md` — AgentSwitchboard and SysAdminSuite handoff boundary.
+- `harness/api/tbg-harness-api.json` — supported harness operations.
+- `harness/api/agent-capability-manifest.json` — skill/capability dependency graph.
+- `harness/api/agent-routing-manifest.json` — deterministic trigger routing.
+- `harness/api/artifact-types.json` — closed artifact role registry.
+- `harness/e2e/e2e-profiles.json` — safe journey catalog.
+- `harness/workflows/tbg-sprint-capsule.yaml` — final handoff compression workflow.
+- `scripts/Test-TbgAiHarness.ps1` — PowerShell harness validator.
+- `scripts/Invoke-TbgHarnessE2E.ps1` — one-command safe E2E entrypoint.
+- `scripts/New-TbgSprintCapsule.ps1` — schema-backed handoff generator.
 
-Every tracked `*.ps1`, `*.psm1`, and `*.psd1` file must carry a UTF-8 BOM. After script edits run:
+## Delivery floor
 
-```powershell
-powershell -File scripts\tools\Add-Utf8Bom.ps1 -Fix
-powershell -File scripts\test-powershell-utf8-bom-contract.ps1
-```
+Before reporting completion:
 
-PowerShell Core success alone is not Windows PowerShell 5.1 proof.
+1. Review `git diff --check`, `git status --short`, `git diff --stat`, and the final diff when locally available.
+2. Run targeted validators, then the applicable E2E profile, then broader checks.
+3. Report exact passes, failures, and skips.
+4. Report files, commit SHA, push/PR state, remaining gaps, proof level, proof ceiling, and one exact next command.
+5. Generate a sprint capsule when another agent, AgentSwitchboard lane, SysAdminSuite tandem lane, or later chat must continue.
 
-## Completion report
-
-Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Do not claim completion without a commit SHA, validated existing proof, or an exact blocker.
+A clean commit and green static contract do not automatically prove the game launched, a command was acknowledged, behavior changed, or a save-safe live runtime journey passed.

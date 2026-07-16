@@ -1,0 +1,76 @@
+name: BlacksmithGuild AI harness
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "CLAUDE.md"
+      - "CODEBASE_MAP.md"
+      - ".ai/**"
+      - ".claude/**"
+      - "harness/**"
+      - "schemas/harness/**"
+      - "scripts/Test-TbgAiHarness.ps1"
+      - "scripts/Invoke-TbgHarnessE2E.ps1"
+      - "scripts/New-TbgSprintCapsule.ps1"
+      - "tests/harness/**"
+      - "docs/AI_HARNESS_ENTRYPOINT.md"
+      - "docs/END_TO_END_TESTING_POSTURE.md"
+      - "docs/MACHINE_READABLE_HANDOFF.md"
+      - ".github/workflows/tbg-ai-harness.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run dependency-free contracts
+        run: python3 tests/harness/test_tbg_harness_contracts.py
+      - name: Parse JSON authorities
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          paths=list(Path('schemas/harness').glob('*.json'))+list(Path('harness/api').glob('*.json'))+[Path('harness/e2e/e2e-profiles.json'),Path('.ai/agent-contract.json')]
+          for path in paths: json.loads(path.read_text(encoding='utf-8'))
+          PY
+      - name: Check repository hygiene
+        run: |
+          git diff --check
+          test -z "$(git status --short)"
+
+  windows-contracts:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          foreach ($file in @('scripts/Test-TbgAiHarness.ps1','scripts/Invoke-TbgHarnessE2E.ps1','scripts/New-TbgSprintCapsule.ps1')) {
+            $tokens=$null; $errors=$null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)
+            if ($errors.Count) { $errors | ForEach-Object { Write-Error "${file}: $($_.Message)" }; exit 1 }
+          }
+      - name: Run PowerShell contracts
+        shell: pwsh
+        run: ./scripts/Test-TbgAiHarness.ps1
+      - name: Run composed static E2E
+        shell: pwsh
+        run: |
+          ./scripts/Invoke-TbgHarnessE2E.ps1 -Profile default-static -OutputRoot "$env:RUNNER_TEMP\tbg-harness-e2e"
+          $result=Get-Content "$env:RUNNER_TEMP\tbg-harness-e2e\result.json" -Raw | ConvertFrom-Json
+          if($result.status -ne 'completed' -or $result.proof_level -ne 'contract-proof'){throw 'Unexpected E2E result.'}
+      - name: Upload harness result
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbg-harness-e2e
+          path: ${{ runner.temp }}\tbg-harness-e2e
+      - name: Verify clean checkout
+        shell: pwsh
+        run: |
+          git diff --check
+          if(git status --short){throw 'Checkout dirty after validation.'}

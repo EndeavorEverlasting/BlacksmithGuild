@@ -1,0 +1,14 @@
+{
+  "schema_version": "tbg-agent-routing-manifest/v1",
+  "schema_path": "schemas/harness/agent-routing-manifest.schema.json",
+  "default_route": {"kind": "skill", "id": "repository-sprint"},
+  "ambiguity_policy": "fail-closed-to-repository-sprint",
+  "routes": [
+    {"id": "repository-intake", "signals": ["analyze repository", "repo sprint", "recover work", "open pull request", "worktree", "branch hygiene"], "target": {"kind": "skill", "id": "repository-sprint"}},
+    {"id": "scoped-validation", "signals": ["validate", "schema", "contract", "parser", "build check", "static check"], "target": {"kind": "skill", "id": "scoped-validation"}},
+    {"id": "end-to-end-validation", "signals": ["end-to-end", "e2e", "merge gate", "release proof", "harness validation"], "target": {"kind": "skill", "id": "end-to-end-validation"}},
+    {"id": "bannerlord-runtime-proof", "signals": ["launch bannerlord", "command ack", "route cert", "live cert", "campaign tick", "behavior observed", "save mutation"], "target": {"kind": "skill", "id": "bannerlord-runtime-proof"}},
+    {"id": "validate-harness-operation", "signals": ["validate ai harness", "harness contract"], "target": {"kind": "harness_operation", "id": "validate-harness"}},
+    {"id": "sprint-capsule-operation", "signals": ["machine-readable handoff", "sprint capsule", "agentswitchboard handoff", "sysadminsuite handoff"], "target": {"kind": "harness_operation", "id": "generate-sprint-capsule"}}
+  ]
+}

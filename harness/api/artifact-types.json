@@ -1,0 +1,14 @@
+{
+  "schema_version": "tbg-artifact-types/v1",
+  "runtime_root": ".local/harness-runs",
+  "tracked_runtime_evidence_allowed": false,
+  "types": [
+    {"id": "run-context", "file_name": "run-context.json", "tracked": false},
+    {"id": "artifact-registry", "file_name": "artifact-registry.json", "tracked": false},
+    {"id": "validation-result", "file_name": "validation-result.json", "tracked": false},
+    {"id": "e2e-result", "file_name": "result.json", "tracked": false},
+    {"id": "operator-report", "file_name": "operator-report.md", "tracked": false},
+    {"id": "sprint-capsule", "file_name": "sprint-capsule.json", "tracked": false},
+    {"id": "sanitized-evidence-manifest", "file_name": "manifest.json", "tracked": true, "allowed_root": "docs/evidence"}
+  ]
+}

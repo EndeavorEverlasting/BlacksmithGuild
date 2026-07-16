@@ -1,0 +1,39 @@
+name: tbg-sprint-capsule
+description: Compress a completed or checkpointed BlacksmithGuild sprint into a machine-local-path-free handoff for a later agent, AgentSwitchboard, or an explicitly authorized SysAdminSuite tandem lane.
+mode: local_transform
+network_activity: false
+game_mutation: false
+inputs:
+  - sprint identity
+  - repository Git state
+  - owned and forbidden scope
+  - selected skills
+  - expected artifacts
+  - validation results and skipped checks
+  - proof level and ceiling
+  - completed, remaining, and blocked work
+  - next command
+phases:
+  - id: inspect-repository
+    action: Read current branch, HEAD, dirty state, and remote identity.
+  - id: validate-routing
+    action: Resolve skills and capabilities from the canonical manifests.
+  - id: create-capsule
+    action: Emit tbg-sprint-capsule/v1 without absolute repository, home, game, save, or output paths.
+  - id: register-consumers
+    action: Record readiness and authority boundaries for AgentSwitchboard and SysAdminSuite.
+  - id: render-operator-summary
+    action: Write a concise English handoff beside the capsule.
+guardrails:
+  - Local_only
+  - No_machine_local_paths
+  - No_credentials
+  - No_save_or_runtime_payloads
+  - No_trigger_authorizes_mutation
+  - Receiving_agent_reinspects_state
+artifacts:
+  - sprint-capsule.json
+  - operator-handoff.md
+validation:
+  - python3 tests/harness/test_tbg_harness_contracts.py
+  - pwsh -NoProfile -File scripts/Test-TbgAiHarness.ps1
