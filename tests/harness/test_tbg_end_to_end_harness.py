@@ -17,7 +17,8 @@ def main()->int:
       'ps_test':ROOT/'scripts/tbg/Test-TbgEndToEndHarness.ps1','ps_run':ROOT/'scripts/tbg/Invoke-TbgEndToEndValidation.ps1','ps_capsule':ROOT/'scripts/tbg/New-TbgSprintCapsule.ps1','skill_test':ROOT/'scripts/tbg/Test-TbgSkillRouting.ps1',
       'entry':ROOT/'docs/AI_HARNESS_ENTRYPOINT.md','posture':ROOT/'docs/END_TO_END_TESTING_POSTURE.md','handoff':ROOT/'docs/MACHINE_READABLE_HANDOFF.md','project':ROOT/'src/BlacksmithGuild/BlacksmithGuild.csproj','status_cmd':ROOT/'ForgeAgentStatus.cmd'}
     for name,path in paths.items(): require(path.is_file(),f'missing {name}: {path.relative_to(ROOT)}')
-    require(not (ROOT/'.claude').exists(),'client-specific .claude tree must not compete with .tbg router')
+    require('.tbg/skills/manifest.json' in read(paths['agents']),'AGENTS must route through canonical .tbg skill manifest')
+    require('.tbg/skills/manifest.json' in read(paths['claude']),'CLAUDE adapter must route through canonical .tbg skill manifest')
     manifest=load(paths['manifest']);profiles=load(paths['profiles']);operations=load(paths['operations']);consumers=load(paths['consumers']);artifacts=load(paths['artifacts'])
     require(manifest['schema']=='tbg.harness.manifest.v1','harness manifest version')
     for key in ('endToEndProfiles','endToEndContract','endToEndEntrypoint','sprintCapsuleContract','consumerHandoffRegistry'): require(key in manifest['paths'],f'manifest missing {key}')
