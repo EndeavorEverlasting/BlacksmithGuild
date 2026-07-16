@@ -1,4 +1,4 @@
-name: BlacksmithGuild AI harness
+name: BlacksmithGuild E2E harness
 
 on:
   pull_request:
@@ -6,13 +6,13 @@ on:
       - "AGENTS.md"
       - "CLAUDE.md"
       - "CODEBASE_MAP.md"
-      - ".ai/**"
-      - ".claude/**"
-      - "harness/**"
-      - "schemas/harness/**"
-      - "scripts/Test-TbgAiHarness.ps1"
-      - "scripts/Invoke-TbgHarnessE2E.ps1"
-      - "scripts/New-TbgSprintCapsule.ps1"
+      - ".tbg/harness/**"
+      - ".tbg/skills/harness-maturity/SKILL.md"
+      - ".tbg/workflows/end-to-end-validation.contract.json"
+      - ".tbg/workflows/tbg-sprint-capsule.contract.json"
+      - "scripts/tbg/Test-TbgEndToEndHarness.ps1"
+      - "scripts/tbg/Invoke-TbgEndToEndValidation.ps1"
+      - "scripts/tbg/New-TbgSprintCapsule.ps1"
       - "tests/harness/**"
       - "docs/AI_HARNESS_ENTRYPOINT.md"
       - "docs/END_TO_END_TESTING_POSTURE.md"
@@ -28,49 +28,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run dependency-free contracts
-        run: python3 tests/harness/test_tbg_harness_contracts.py
-      - name: Parse JSON authorities
+      - name: Run dependency-free E2E contracts
+        run: python3 tests/harness/test_tbg_end_to_end_harness.py
+      - name: Parse new JSON contracts
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
-          paths=list(Path('schemas/harness').glob('*.json'))+list(Path('harness/api').glob('*.json'))+[Path('harness/e2e/e2e-profiles.json'),Path('.ai/agent-contract.json')]
-          for path in paths: json.loads(path.read_text(encoding='utf-8'))
+          paths=[Path('.tbg/harness/api/operations.json'),Path('.tbg/harness/e2e/profiles.json'),Path('.tbg/harness/consumer-handoffs.registry.json'),Path('.tbg/harness/e2e-artifact-types.registry.json'),Path('.tbg/workflows/end-to-end-validation.contract.json'),Path('.tbg/workflows/tbg-sprint-capsule.contract.json')]+list(Path('.tbg/harness/schemas').glob('*tbg-*.schema.json'))+[Path('.tbg/harness/schemas/e2e-validation-profiles.schema.json')]
+          for path in paths: json.loads(path.read_text(encoding='utf-8-sig'))
           PY
       - name: Check repository hygiene
         run: |
           git diff --check
           test -z "$(git status --short)"
 
-  windows-contracts:
+  windows-powershell-51:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Parse PowerShell
-        shell: pwsh
+      - name: Parse PowerShell and prove BOM
+        shell: powershell
         run: |
-          foreach ($file in @('scripts/Test-TbgAiHarness.ps1','scripts/Invoke-TbgHarnessE2E.ps1','scripts/New-TbgSprintCapsule.ps1')) {
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
+          foreach ($file in @('scripts/tbg/Test-TbgEndToEndHarness.ps1','scripts/tbg/Invoke-TbgEndToEndValidation.ps1','scripts/tbg/New-TbgSprintCapsule.ps1')) {
             $tokens=$null; $errors=$null
             [void][System.Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)
-            if ($errors.Count) { $errors | ForEach-Object { Write-Error "${file}: $($_.Message)" }; exit 1 }
+            if($errors.Count){$errors|ForEach-Object{Write-Error "${file}: $($_.Message)"};exit 1}
           }
-      - name: Run PowerShell contracts
-        shell: pwsh
-        run: ./scripts/Test-TbgAiHarness.ps1
-      - name: Run composed static E2E
-        shell: pwsh
+      - name: Run E2E harness contracts
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Test-TbgEndToEndHarness.ps1 -OutputRoot "$env:RUNNER_TEMP\tbg-contracts"
+      - name: Run composed default profile
+        shell: powershell
         run: |
-          ./scripts/Invoke-TbgHarnessE2E.ps1 -Profile default-static -OutputRoot "$env:RUNNER_TEMP\tbg-harness-e2e"
-          $result=Get-Content "$env:RUNNER_TEMP\tbg-harness-e2e\result.json" -Raw | ConvertFrom-Json
-          if($result.status -ne 'completed' -or $result.proof_level -ne 'contract-proof'){throw 'Unexpected E2E result.'}
-      - name: Upload harness result
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Invoke-TbgEndToEndValidation.ps1 -Profile default-static -OutputRoot "$env:RUNNER_TEMP\tbg-e2e"
+          $result=Get-Content "$env:RUNNER_TEMP\tbg-e2e\result.json" -Raw|ConvertFrom-Json
+          if($result.status -ne 'completed' -or $result.proofLevel -ne 'static test'){throw 'Unexpected composed E2E result.'}
+      - name: Upload E2E evidence
         uses: actions/upload-artifact@v4
         with:
-          name: tbg-harness-e2e
-          path: ${{ runner.temp }}\tbg-harness-e2e
+          name: tbg-e2e-default-static
+          path: ${{ runner.temp }}\tbg-e2e
       - name: Verify clean checkout
-        shell: pwsh
+        shell: powershell
         run: |
           git diff --check
           if(git status --short){throw 'Checkout dirty after validation.'}
+
+  powershell-7-compatibility:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run contracts under PowerShell 7
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgEndToEndHarness.ps1 -OutputRoot "$env:RUNNER_TEMP\tbg-pwsh7"

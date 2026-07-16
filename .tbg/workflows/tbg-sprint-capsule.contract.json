@@ -1,0 +1,17 @@
+{
+  "schema": "tbg.workflow.sprint-capsule.v1",
+  "entrypoint": "scripts/tbg/New-TbgSprintCapsule.ps1",
+  "outputSchema": ".tbg/harness/schemas/tbg-sprint-capsule.schema.json",
+  "consumerRegistry": ".tbg/harness/consumer-handoffs.registry.json",
+  "mode": "local-transform",
+  "networkActivity": false,
+  "gameMutation": false,
+  "requiredInputs": ["sprint identity", "Git state", "scope", "validation", "proof", "handoff state", "next command"],
+  "forbiddenContent": ["absolute home path", "absolute game path", "save path or payload", "credentials", "raw logs", "generated binaries"],
+  "rules": [
+    "The receiving consumer reinspects current state.",
+    "AgentSwitchboard has coordination authority only.",
+    "SysAdminSuite requires explicit tandem authorization.",
+    "Neither consumer may promote BlacksmithGuild proof."
+  ]
+}

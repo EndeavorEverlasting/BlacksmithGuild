@@ -9,6 +9,7 @@
     "protectedLocalPath": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild"
   },
   "paths": {
+    "codebaseMap": "CODEBASE_MAP.md",
     "contracts": ".tbg/workflows",
     "policies": ".tbg/harness/policies",
     "schemas": ".tbg/harness/schemas",
@@ -20,9 +21,21 @@
     "skillRoutingValidator": "scripts/tbg/Test-TbgSkillRouting.ps1",
     "skillRoutingOutput": "artifacts/latest/skill-routing",
     "currentChatPacket": "artifacts/latest/tbg-chat-packet.json",
+    "currentSprintCapsule": "artifacts/latest/tbg-sprint-capsule.json",
     "reportingPolicy": ".tbg/harness/policies/policy-reporting.policy.json",
     "interoperabilityContract": ".tbg/workflows/continuum-interoperability.contract.json",
     "continuumCapabilitySchema": ".tbg/harness/schemas/continuum-capability-packet.schema.json",
+    "endToEndProfiles": ".tbg/harness/e2e/profiles.json",
+    "endToEndContract": ".tbg/workflows/end-to-end-validation.contract.json",
+    "endToEndOperations": ".tbg/harness/api/operations.json",
+    "endToEndArtifactTypes": ".tbg/harness/e2e-artifact-types.registry.json",
+    "endToEndValidator": "scripts/tbg/Test-TbgEndToEndHarness.ps1",
+    "endToEndEntrypoint": "scripts/tbg/Invoke-TbgEndToEndValidation.ps1",
+    "endToEndOutput": ".local/tbg-e2e-runs",
+    "sprintCapsuleContract": ".tbg/workflows/tbg-sprint-capsule.contract.json",
+    "sprintCapsuleSchema": ".tbg/harness/schemas/tbg-sprint-capsule.schema.json",
+    "sprintCapsuleGenerator": "scripts/tbg/New-TbgSprintCapsule.ps1",
+    "consumerHandoffRegistry": ".tbg/harness/consumer-handoffs.registry.json",
     "stalePrRecoveryContract": ".tbg/workflows/stale-pr-recovery-automation.contract.json",
     "stalePrRecoveryPlan": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
     "stalePrRecoveryProgressLedger": ".tbg/plans/stale-pr-recovery-20260712/progress.json",
@@ -83,6 +96,8 @@
     "The S1/S2 PID and window delta is a first-seen learning fallback, while image parsing remains diagnostic only.",
     "Stale PRs are classified and selectively replayed, not blindly deleted, squashed, or used as bases.",
     "Stale PR recovery is complete only when every planned source PR has an evidence-backed terminal disposition in the canonical progress ledger.",
-    "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency."
+    "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency.",
+    "Composed end-to-end proof is the default merge target for executable, launcher, command, persistence, and integration changes.",
+    "AgentSwitchboard and SysAdminSuite may consume a sprint capsule only within the registered authority boundary and may not promote BlacksmithGuild proof."
   ]
 }

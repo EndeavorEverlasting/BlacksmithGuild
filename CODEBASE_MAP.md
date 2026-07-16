@@ -1,94 +1,62 @@
 # The Blacksmith Guild Codebase Map
 
-Use this map to load only the files needed for a task.
+Load only the smallest surface required by the active `.tbg` skill and workflow contract.
 
-## Agent and harness architecture
+## Root coordination
 
-- `AGENTS.md` — compact universal invariants and task router.
-- `CLAUDE.md` — Claude-compatible progressive-disclosure adapter.
-- `.claude/skills/*/SKILL.md` — bounded task workflows.
-- `.claude/capabilities/*.md` — reusable safety, evidence, and proof rules.
-- `.ai/agent-contract.json` — repository-family inheritance and consumer boundary.
-- `harness/api/tbg-harness-api.json` — supported operations and entrypoints.
-- `harness/api/agent-capability-manifest.json` — skill/capability dependency graph.
-- `harness/api/agent-routing-manifest.json` — deterministic task routing.
-- `harness/api/artifact-types.json` — closed artifact role registry.
-- `schemas/harness/` — fail-closed manifest, profile, result, and handoff schemas.
-- `scripts/Test-TbgAiHarness.ps1` — PowerShell validator.
-- `tests/harness/test_tbg_harness_contracts.py` — dependency-free contract suite.
-- `.github/workflows/tbg-ai-harness.yml` — Linux and Windows harness CI.
+- `AGENTS.md` — safe bootloader, universal safety, proof ladder, and lane router.
+- `CLAUDE.md` — Claude adapter subordinate to `AGENTS.md`.
+- `.tbg/skills/manifest.json` — canonical v2 skill router, ownership, validators, artifacts, and proof ceilings.
+- `.tbg/harness/manifest.json` — central path registry and harness doctrine.
+- `.tbg/workflows/` — executable workflow contracts.
+- `artifacts/latest/` — generated current-state and handoff surfaces; freshness must be proven.
 
-## One-command E2E and handoff
+## E2E and machine-readable continuation
 
-- `harness/e2e/e2e-profiles.json` — safe E2E profiles and journey requirements.
-- `scripts/Invoke-TbgHarnessE2E.ps1` — profile runner and evidence emitter.
-- `scripts/New-TbgSprintCapsule.ps1` — machine-readable handoff generator.
-- `harness/workflows/tbg-sprint-capsule.yaml` — handoff workflow contract.
-- `.local/harness-runs/` — ignored run contexts and runtime artifacts.
-- `docs/END_TO_END_TESTING_POSTURE.md` — proof classes and merge posture.
-- `docs/MACHINE_READABLE_HANDOFF.md` — AgentSwitchboard/SysAdminSuite consumption rules.
+- `.tbg/harness/e2e/profiles.json` — static, build, read-only runtime, and disposable-save profiles.
+- `.tbg/workflows/end-to-end-validation.contract.json` — composed validation sequence and proof promotion rules.
+- `.tbg/workflows/tbg-sprint-capsule.contract.json` — handoff compression contract.
+- `.tbg/harness/consumer-handoffs.registry.json` — AgentSwitchboard and SysAdminSuite authority/readiness rules.
+- `.tbg/harness/e2e-artifact-types.registry.json` — closed run artifact roles.
+- `scripts/tbg/Invoke-TbgEndToEndValidation.ps1` — one-command profile runner.
+- `scripts/tbg/Test-TbgEndToEndHarness.ps1` — PowerShell contract validator.
+- `scripts/tbg/New-TbgSprintCapsule.ps1` — path-free machine-readable handoff generator.
+- `tests/harness/test_tbg_end_to_end_harness.py` — dependency-free Linux/static contract.
+- `.local/tbg-e2e-runs/` — ignored run contexts and raw harness outputs.
 
-## Product entrypoints
+## Existing harness and state systems
 
-- `src/BlacksmithGuild/BlacksmithGuild.csproj` — net472 module build, Bannerlord references, output, and Release install seam.
-- `src/BlacksmithGuild/SubModule.cs` — module load entry.
-- `src/BlacksmithGuild/Behaviors/` — campaign behaviors.
-- `src/BlacksmithGuild/DevTools/` — command bus, inbox, status, lifecycle, and runtime safety.
-- `src/BlacksmithGuild/MapTrade/` — autonomous map-trade route and route evidence.
-- `Module/BlacksmithGuild/SubModule.xml` — module metadata and version.
+- `.tbg/harness/artifact-engines.registry.json` and `.tbg/workflows/local-artifact-engine.contract.json` — deterministic artifact parsing/routing.
+- `.tbg/state/` and `.tbg/workflows/state-envelope.contract.json` — state capabilities, constraints, and views.
+- `.tbg/harness/window-identities.registry.json` — launcher/window identity policy.
+- `.tbg/state/game-compatibility.registry.json` — Bannerlord compatibility gate.
+- `scripts/tbg/Test-TbgSkillRouting.ps1` — canonical skill/router validator.
+- `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
+
+## Product and build
+
+- `src/BlacksmithGuild/` — gameplay/module source.
+- `src/BlacksmithGuild/BlacksmithGuild.csproj` — net472 build; Release invokes install, Debug is build-only.
+- `Module/BlacksmithGuild/SubModule.xml` — module identity/version.
 - `Module/BlacksmithGuild/bin/` — generated binaries; never commit.
+- `forge.ps1`, `Forge.cmd`, `ForgeContinue.cmd`, `ForgeReboot.cmd`, `ForgeStop.cmd` — build/install/launch lifecycle.
+- `tools/LaunchControl/` — launcher/session lifecycle UI.
 
-## Build, install, and launcher surfaces
+## Runtime command and evidence seams
 
-- `Forge.cmd`, `ForgeContinue.cmd`, `ForgeAndLaunch.cmd`, `LaunchForge.cmd` — technician entrypoints.
-- `forge.ps1` — build/install/check/certification composition.
-- `scripts/copy-client-dll.ps1` and `scripts/install-mod.ps1` — install seams.
-- `tools/LaunchControl/` — launcher/session lifecycle UI and runtime state.
-- `.vscode/tasks.json` — editor build/install task.
-
-Release builds may install to the game. Use Debug or an explicitly isolated output for build-only validation unless the task owns installation.
-
-## Runtime command and evidence surfaces
-
-- `BlacksmithGuild_CommandInbox.json` — command request surface.
-- `BlacksmithGuild_CommandAck.json` — command ACK surface.
-- `BlacksmithGuild_Status.json` — current status/certification summary.
-- `BlacksmithGuild_Phase1.log` — canonical behavior log.
+- `BlacksmithGuild_CommandInbox.json` — command request.
+- `BlacksmithGuild_CommandAck.json` — exact command ACK.
+- `BlacksmithGuild_Status.json` — status/certification summary.
 - `BlacksmithGuild_RuntimeLifecycle.json` and `BlacksmithGuild_ProcessLifecycle.json` — lifecycle evidence.
-- `BlacksmithGuild_MapTradeRouteCert.json` and related route artifacts — route proof.
-- `docs/evidence/` — sanitized tracked evidence only.
-- `artifacts/` and `.local/` — ignored runtime evidence.
+- `BlacksmithGuild_Phase1.log` — canonical behavior log.
+- route, map-trade, smithing, governor, and regent JSON artifacts — workflow-specific behavior proof.
+- `docs/certification-doctrine.md` and `docs/dev-disposable-save.md` — live proof and save-safety authority.
 
-These runtime files live outside the repository or under ignored roots. Do not fabricate or commit them.
+## Proof-safe validation
 
-## Safety and doctrine
+- Static harness: `powershell -NoProfile -File scripts/tbg/Invoke-TbgEndToEndValidation.ps1 -Profile default-static`.
+- Local build: use the `local-build` profile with a real game root; it invokes Debug, not Release install.
+- Read-only runtime: explicit `-AllowLiveRuntime`; refreshes current artifacts without save mutation.
+- Disposable-save mutation: profile exists but fails closed until a specific live workflow and disposable save are explicitly supplied.
 
-- `docs/certification-doctrine.md` — certification tiers.
-- `docs/dev-disposable-save.md` — disposable-save policy.
-- `docs/in-game-surfaces.md` — visible and file-based surfaces.
-- `docs/forge-zero-click-contract.md` — launcher expectations.
-- `docs/test-plan.md` — product acceptance journeys.
-- `.gitignore` — local evidence, binary, save, credential, and generated-output boundaries.
-
-## Validation surface
-
-- `tests/harness/test_tbg_harness_contracts.py` — harness structure, routing, schema, and handoff checks.
-- `scripts/Test-TbgAiHarness.ps1` — Windows parser and contract validation.
-- `scripts/Invoke-TbgHarnessE2E.ps1 -Profile default-static` — default composed harness journey.
-- `dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug -p:GameFolder=<path>` — local build without the Release install target.
-- Existing `scripts/verify-*.ps1`, cert helpers, and Forge checks — task-specific product validation.
-
-## Local data boundary
-
-Never commit:
-
-- game saves or save backups;
-- TaleWorlds/Bannerlord DLLs;
-- generated module binaries;
-- raw status, ACK, lifecycle, route, or command JSON;
-- full Phase1/Forge logs;
-- diagnostic archives;
-- credentials or authentication state;
-- machine-local absolute paths.
-
-Tracked evidence must be sanitized, minimal, and explicitly allowed by `.gitignore` and the selected workflow.
+Never infer build, install, launcher, ACK, behavior, or live-runtime proof from a lower surface.

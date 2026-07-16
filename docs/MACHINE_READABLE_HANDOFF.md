@@ -1,49 +1,34 @@
 # Machine-Readable Handoff
 
-BlacksmithGuild emits `tbg-sprint-capsule/v1` for bounded continuation.
+BlacksmithGuild emits `tbg.sprint-capsule.v1` for bounded continuation without transferring product authority.
 
-## Consumers
+## AgentSwitchboard
 
-### AgentSwitchboard
+AgentSwitchboard may schedule and coordinate the next lane, preserve branch/worktree/commit dependencies, select a compatible agent, and consume the validation/proof ceiling.
 
-AgentSwitchboard may:
+It may not override gameplay behavior, save safety, launcher doctrine, runtime certification, merge acceptance, or release authority.
 
-- schedule or coordinate the next bounded repository lane;
-- preserve branch/worktree/commit dependencies;
-- use the capsule's validation and proof ceiling;
-- route a compatible agent.
+## SysAdminSuite
 
-It may not override BlacksmithGuild save safety, gameplay behavior, launcher doctrine, certification, or merge authority.
+SysAdminSuite may consume a capsule only for an explicitly authorized tandem operation such as workstation integration, shared harness validation, or evidence transport.
 
-### SysAdminSuite
+Structural validity alone does not grant readiness. The capsule contains `consumers.sysAdminSuite.ready`, the requested operation, and a reason. SysAdminSuite may not mutate Bannerlord, the module installation, game commands, or saves unless a separate cross-repository workflow grants that exact scope.
 
-SysAdminSuite may consume a capsule only for an explicitly authorized tandem workflow, such as workstation/runtime integration or shared harness validation.
+## Portability and privacy
 
-A capsule being structurally valid does not mean SysAdminSuite is automatically ready. The `consumers.sysadminsuite` record contains readiness and reason.
+The capsule excludes absolute repository, home, game, save, and run-output paths; credentials; provider state; raw logs; save payloads; and generated binaries.
 
-SysAdminSuite may not mutate the game, saves, Bannerlord installation, or BlacksmithGuild runtime unless the selected cross-repository workflow explicitly grants that scope.
+The receiving process must re-inspect Git, worktree, runtime, and artifact freshness before mutation and may not exceed the capsule proof ceiling.
 
-## Privacy and portability
-
-The capsule excludes:
-
-- absolute repository, home, game, save, and output paths;
-- credentials and provider state;
-- raw logs and runtime JSON;
-- personal save names or contents;
-- generated binaries.
-
-The receiving process must re-inspect current Git and runtime state before mutation.
-
-## Generate
+## Generation
 
 ```powershell
-pwsh -NoProfile -File .\scripts\New-TbgSprintCapsule.ps1 `
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\tbg\New-TbgSprintCapsule.ps1 `
   -SprintId harness-foundation `
-  -Title 'BlacksmithGuild AI harness foundation' `
-  -Lane harness `
-  -Mission 'Create schema-backed routing, E2E, and handoff contracts.' `
-  -ProofLevel contract-proof `
-  -ProofCeiling 'Repository and CI contract proof only.' `
+  -Title 'BlacksmithGuild E2E and handoff foundation' `
+  -Lane harness-maturity `
+  -Mission 'Add composed validation and machine-readable continuation.' `
+  -ProofLevel 'static test' `
+  -ProofCeiling 'Repository and CI static-test proof only.' `
   -NextCommand 'git status --short'
 ```

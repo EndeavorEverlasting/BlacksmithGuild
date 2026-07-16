@@ -1,44 +1,41 @@
 # End-to-End Testing Posture
 
-## Default posture
+## Default merge posture
 
-End-to-end proof is the default merge target for changes that affect executable behavior, launchers, command routing, evidence generation, persistence, or integration boundaries.
+Executable, launcher, command-bus, persistence, evidence, and integration changes should target the strongest safe composed journey available. Unit, parser, and contract tests are fast diagnostics; they are not automatically sufficient for merge or release.
 
-Unit tests and static contracts remain valuable fast diagnostics. They are not automatically merge readiness.
+## Native proof ladder
 
-## Proof ladder
+```text
+contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime
+```
 
-| Level | Meaning |
-|---|---|
-| `contract-proof` | Manifests, schemas, scripts, routing, and policy contracts passed. |
-| `build-proof` | The module compiled against a real local Bannerlord reference root without install. |
-| `install-proof` | Repo-owned install completed and installed artifacts were verified. |
-| `launcher-session-attach` | The intended launcher/session attached to the target runtime surface. |
-| `command-issued` | An exact bounded command request was written or triggered. |
-| `command-ack` | The matching ACK was observed. |
-| `behavior-observed` | Status/log/evidence proved the requested behavior. |
-| `save-safe-mutation-observed` | A disposable-save mutation and expected delta were observed. |
-| `live-runtime-certified` | The full required chain passed with final repository/save hygiene. |
+Each level must preserve the dependencies owned by the journey. Process exit zero is insufficient when the workflow requires a fresh artifact, ACK, behavior delta, loaded identity, or clean final state.
 
 ## Profiles
 
-- `default-static` — CI-safe composed harness journey.
-- `local-build` — contract proof plus Debug build using real local game references.
-- `read-only-runtime` — operator-gated observation lane; no save mutation.
-- `disposable-save-live-cert` — explicit Tier-3 mutation lane using a disposable campaign.
+- `default-static` — dependency-free contracts, PowerShell contracts, and the existing skill router.
+- `local-build` — static profile plus Debug build against real local Bannerlord references; no install.
+- `read-only-runtime` — explicit bounded `ForgeAgentStatus.cmd` refresh plus fresh chat-packet proof; no save mutation.
+- `disposable-save-live-cert` — registered fail-closed lane requiring a specific workflow and disposable-save authority.
 
-## Safety rules
+## Safety
 
-- Release build can install to the game; build-only validation uses Debug.
-- Live profiles require exact save classification.
+- Release build may install to the game; build-only proof uses Debug.
+- Runtime profiles require explicit authority.
+- Save mutation requires a classified disposable campaign and a workflow-specific contract.
 - Stop Bannerlord before DLL replacement.
-- Prefer command inbox/ACK over focus.
-- Every wait and child process is bounded.
-- Runtime outputs stay ignored.
-- CI cannot claim Bannerlord launch, ACK, behavior, or live certification.
+- Prefer command inbox/ACK and generated artifacts over terminal or game-window focus.
+- Bound every wait and child process.
+- Raw run evidence stays under `.local/tbg-e2e-runs/`.
+- CI cannot claim Bannerlord launch, command ACK, gameplay behavior, or live runtime.
 
-## Merge guidance
+## Harness-only PRs
 
-A harness-only PR may merge at `contract-proof` when it changes no runtime implementation and its composed static journey is green.
+A harness-only PR that changes no gameplay, launcher, install, command, or save behavior may close at `static test` when:
 
-A product, launcher, command, persistence, or save-affecting PR should name the required higher profile and must not claim completion before that journey is observed.
+- the composed default profile passes on Windows PowerShell 5.1;
+- the dependency-free Linux contract passes;
+- existing skill routing remains green;
+- generated run artifacts remain ignored;
+- the final capsule names higher claims not made.

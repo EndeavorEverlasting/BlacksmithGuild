@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/tbg-harness-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "runId", "profile", "status", "proofLevel", "proofCeiling", "journeys", "artifacts", "finalGit"],
+  "properties": {
+    "schema": {"const": "tbg.e2e-result.v1"},
+    "runId": {"type": "string", "minLength": 1},
+    "profile": {"type": "string", "minLength": 1},
+    "status": {"enum": ["completed", "blocked", "failed"]},
+    "proofLevel": {"enum": ["contract", "harness", "static test", "build", "launcher", "command ACK", "behavior observed", "live runtime"]},
+    "proofCeiling": {"type": "string", "minLength": 1},
+    "journeys": {"type": "array"},
+    "artifacts": {"type": "array"},
+    "finalGit": {"type": "object"}
+  }
+}
