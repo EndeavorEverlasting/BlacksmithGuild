@@ -11,6 +11,7 @@ on:
       - ".tbg/workflows/end-to-end-validation.contract.json"
       - ".tbg/workflows/tbg-sprint-capsule.contract.json"
       - "scripts/tbg/Test-TbgEndToEndHarness.ps1"
+      - "scripts/tbg/Test-TbgSkillRouting.ps1"
       - "scripts/tbg/Invoke-TbgEndToEndValidation.ps1"
       - "scripts/tbg/New-TbgSprintCapsule.ps1"
       - "tests/harness/**"
@@ -64,7 +65,7 @@ jobs:
         shell: powershell
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
-          foreach ($file in @('scripts/tbg/Test-TbgEndToEndHarness.ps1','scripts/tbg/Invoke-TbgEndToEndValidation.ps1','scripts/tbg/New-TbgSprintCapsule.ps1')) {
+          foreach ($file in @('scripts/tbg/Test-TbgEndToEndHarness.ps1','scripts/tbg/Test-TbgSkillRouting.ps1','scripts/tbg/Invoke-TbgEndToEndValidation.ps1','scripts/tbg/New-TbgSprintCapsule.ps1')) {
             $tokens=$null; $errors=$null
             [void][System.Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)
             if($errors.Count){$errors|ForEach-Object{Write-Error "${file}: $($_.Message)"};exit 1}
