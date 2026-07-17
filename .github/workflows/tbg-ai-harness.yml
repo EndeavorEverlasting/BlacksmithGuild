@@ -82,8 +82,13 @@ jobs:
       - name: Run composed default profile
         shell: powershell
         run: |
-          powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Invoke-TbgEndToEndValidation.ps1 -Profile default-static -OutputRoot "$env:RUNNER_TEMP\tbg-e2e"
-          $result=Get-Content "$env:RUNNER_TEMP\tbg-e2e\result.json" -Raw|ConvertFrom-Json
+          $output="$env:RUNNER_TEMP\tbg-e2e"
+          $log="$env:RUNNER_TEMP\tbg-e2e-run.log"
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tbg\Invoke-TbgEndToEndValidation.ps1 -Profile default-static -OutputRoot $output *> $log
+          $code=$LASTEXITCODE
+          Get-Content $log
+          if($code -ne 0){exit $code}
+          $result=Get-Content "$output\result.json" -Raw|ConvertFrom-Json
           if($result.status -ne 'completed' -or $result.proofLevel -ne 'static test'){throw 'Unexpected composed E2E result.'}
       - name: Upload Windows contract diagnostics
         if: always()
@@ -98,7 +103,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tbg-e2e-default-static
-          path: ${{ runner.temp }}\tbg-e2e
+          path: |
+            ${{ runner.temp }}\tbg-e2e-run.log
+            ${{ runner.temp }}\tbg-e2e
           if-no-files-found: ignore
       - name: Verify clean checkout
         run: |
