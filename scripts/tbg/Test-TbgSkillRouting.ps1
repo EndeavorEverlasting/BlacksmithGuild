@@ -206,7 +206,7 @@ else {
     $agentLineCount = 0
 }
 
-$outputPath = Resolve-TbgRepoPath $OutputRoot
+$outputPath = if ([IO.Path]::IsPathRooted($OutputRoot)) { [IO.Path]::GetFullPath($OutputRoot) } else { Resolve-TbgRepoPath $OutputRoot }
 New-Item -ItemType Directory -Force -Path $outputPath | Out-Null
 $status = if ($errors.Count -eq 0) { 'PASS_skill_router_valid' } else { 'FAIL_skill_router_invalid' }
 $result = [ordered]@{
