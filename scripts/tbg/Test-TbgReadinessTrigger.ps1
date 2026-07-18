@@ -11,6 +11,8 @@ param(
     [string]$BannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord',
     [ValidateSet('map_surface','town_surface','settlement_menu','any')]
     [string]$RequiredSurface = 'map_surface',
+    [ValidateSet('Human','Runner','FreshTestLaunch','UserSession','RunnerCleanup','unknown')]
+    [string]$SessionMode = 'unknown',
     [switch]$PassThru
 )
 
@@ -32,7 +34,7 @@ function Write-Event($msg) {
     $events.Add($entry)
 }
 
-Write-Event "TRIGGER START command=$Command pollMs=$PollMs readyTimeout=${ReadyTimeoutSec}s ackTimeout=${AckTimeoutSec}s"
+Write-Event "TRIGGER START command=$Command pollMs=$PollMs readyTimeout=${ReadyTimeoutSec}s ackTimeout=${AckTimeoutSec}s sessionMode=$SessionMode"
 
 # Phase 1: wait for campaign map readiness
 Write-Event "PHASE 1: waiting for campaign map readiness..."
@@ -162,6 +164,7 @@ Write-Event "ACKED: $acked  RESULT: $ackResult"
 $result = [pscustomobject]@{
     schema = 'tbg.readiness-trigger.v1'
     generatedUtc = [DateTime]::UtcNow.ToString('o')
+    sessionMode = $SessionMode
     command = $Command
     sequence = $newSeq
     verdict = if ($acked) { 'ACK' } else { 'NO_ACK' }

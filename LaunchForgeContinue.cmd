@@ -5,9 +5,12 @@ echo.
 echo The Blacksmith Guild - Launch Forge Continue
 echo.
 echo Build + install + open launcher + auto CONTINUE intent (Sprint 006I-5).
-echo Use when you need launcher mod checkboxes before continuing a save.
-echo Daily dev loop: ForgeContinue.cmd (no launcher) or Forge.cmd (new game).
-echo.
+
+rem Session mode: Runner (AI agent) or Human (manual click). Default Human.
+if not defined TBG_SESSION_MODE (
+    set "TBG_SESSION_MODE=Human"
+)
+echo Session: %TBG_SESSION_MODE%
 
 rem Phase 1: build, install, launch, navigate launcher (play/continue/safe mode/calibration)
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch -LaunchIntent continue
@@ -29,11 +32,20 @@ if %ERRORLEVEL% NEQ 0 (
     rem Continue anyway - readiness trigger will detect if game is dead
 )
 
+rem Phase 2: check DLL identity before trusting runtime
+echo.
+echo Checking DLL identity...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tbg\Test-TbgDllIdentity.ps1"
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo WARN: DLL identity check failed. Runtime proof may be from stale DLL.
+)
+
 echo.
 echo Launcher nav complete. Waiting for campaign map readiness...
 
-rem Phase 2: wait for campaign map, resume clock
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tbg\Test-TbgReadinessTrigger.ps1" -Command ResumeCampaignClock -ReadyTimeoutSec 180 -AckTimeoutSec 60
+rem Phase 3: wait for campaign map, resume clock (session-aware)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tbg\Test-TbgReadinessTrigger.ps1" -Command ResumeCampaignClock -RequiredSurface map_surface -SessionMode %TBG_SESSION_MODE% -ReadyTimeoutSec 180 -AckTimeoutSec 60
 set TRIGGER_EXIT=%ERRORLEVEL%
 
 rem Heartbeat check after clock resume
@@ -45,11 +57,11 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 3
 )
 
-rem Phase 3: if clock resumed, dispatch trade route
+rem Phase 5: if clock resumed, dispatch trade route (session-aware)
 if %TRIGGER_EXIT% EQU 0 (
     echo.
     echo Clock resumed. Dispatching visible trade route...
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tbg\Test-TbgReadinessTrigger.ps1" -Command RunAutonomousVisibleTradeRouteNow -ReadyTimeoutSec 10 -AckTimeoutSec 120
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tbg\Test-TbgReadinessTrigger.ps1" -Command RunAutonomousVisibleTradeRouteNow -RequiredSurface map_surface -SessionMode %TBG_SESSION_MODE% -ReadyTimeoutSec 10 -AckTimeoutSec 120
     set TRADE_EXIT=%ERRORLEVEL%
 
     rem Final heartbeat check after trade

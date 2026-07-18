@@ -79,6 +79,8 @@
     "engineHeartbeatOutput": "artifacts/latest/engine-heartbeat.result.json",
     "readinessTrigger": "scripts/tbg/Test-TbgReadinessTrigger.ps1",
     "readinessTriggerOutput": "artifacts/latest/readiness-trigger.result.json",
+    "dllIdentityValidator": "scripts/tbg/Test-TbgDllIdentity.ps1",
+    "dllIdentityOutput": "artifacts/latest/dll-identity.result.json",
     "artifactsLatest": "artifacts/latest",
     "stateEnvelopeSchemas": ".tbg/harness/schemas",
     "stateCapabilitiesRegistry": ".tbg/state/capabilities.registry.json",
@@ -127,6 +129,8 @@
     "Vanilla mechanics over code injection: trade menus, taverns, horse markets, villages, and recruitment should follow in-game UI mechanics visually. Background analysis is fine; on-screen navigation must use game surfaces, not direct mutations.",
     "Pause is not pause: escape menu (GUI overlay) blocks input and freezes automation. Time pause (campaign clock stopped) keeps the map open but stops time. Engines must distinguish the two: dismiss escape menu via keybd_event; resume time pause via TimeControlMode = StoppablePlay. Never assume one implies the other.",
     "Travel before trade: market intel may be gathered anywhere, but settlement interior navigation (trade menu, tavern, horse market, smithy, recruitment) requires arrival at the target settlement. Do not probe settlement-specific APIs or InGameNotice the player about buy/sell before arrival. Route order: travel -> arrive -> enter settlement -> open trade menu -> execute trade.",
-    "Surface validation before dispatch: every command has a required game surface (map_surface, town_surface, settlement_menu, etc.). Dispatchers must verify the current surface before issuing commands. A travel command on a settlement menu or a trade command on the campaign map is a surface mismatch and must be rejected with machine-readable evidence. Test-TbgReadinessTrigger.ps1 enforces this with -RequiredSurface parameter."
+    "Surface validation before dispatch: every command has a required game surface (map_surface, town_surface, settlement_menu, etc.). Dispatchers must verify the current surface before issuing commands. A travel command on a settlement menu or a trade command on the campaign map is a surface mismatch and must be rejected with machine-readable evidence. Test-TbgReadinessTrigger.ps1 enforces this with -RequiredSurface parameter.",
+    "DLL identity before runtime proof: the built DLL (Module/bin) and installed DLL (Modules/bin) sha256 must match. A running game may have loaded a stale DLL even if files match on disk. Test-TbgDllIdentity.ps1 checks file hashes and deploy timing. Runtime proof from a stale DLL is invalid.",
+    "Session context is machine-readable: every harness run declares -SessionMode (Human/Runner/FreshTestLaunch/UserSession/RunnerCleanup). A human playing the game differs from an automated test run. The session mode is recorded in the sprint capsule, readiness trigger output, and DLL identity check. Context distinguishes human observation from automated validation."
   ]
 }
