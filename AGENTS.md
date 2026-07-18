@@ -19,7 +19,7 @@ A lower authority may explain a higher authority but may not override it.
 
 Before substantial work:
 
-1. identify repo, branch, PR or sprint, lane, owned scope, forbidden scope, and expected artifacts;
+1. identify repo, branch or worktree, PR or sprint, lane, owned scope, forbidden scope, expected artifacts, and any user-specified validation order;
 2. inspect `git status --short`, `git branch --show-current`, and `git log --oneline --decorate -5`;
 3. use `CODEBASE_MAP.md` to load the smallest relevant product, harness, runtime, or evidence surface;
 4. read `.tbg/skills/manifest.json` and select one primary skill plus only required cross-cutting skills;
@@ -35,6 +35,8 @@ Do not paste full stale handoffs into every prompt. Do not load every skill.
 - Do not commit secrets, saves, personal configuration, scratch evidence, huge logs, crash dumps, or machine-local junk.
 - Do not ask the user to harvest logs manually when the runner can capture them. Runner-owned workflows own evidence capture.
 - No game launch, launcher click, command-inbox write, save mutation, or gameplay action is allowed unless the active workflow explicitly grants that authority.
+- A trigger, available tool, external coordinator, or prompt may route work, but it does not grant destructive, runtime, deployment, merge, secret, or live-target authority.
+- Checkpoint coherent tracked progress before broad validation, long diagnostics, runtime proof, refactoring expansion, or switching agents, models, worktrees, or environments. Include owned untracked files; a checkpoint proves preservation only.
 - If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.
 - External tools, AgentSwitchboard, SysAdminSuite, and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, save-safety, and product authority.
 
@@ -48,14 +50,14 @@ contract -> harness -> static test -> build -> launcher -> command ACK -> behavi
 
 Do not claim a higher level from a lower one. A stale `Status.json`, parser success, command ACK, route assignment, checkpoint, or launcher handoff is not product completion. Every claim must name freshness, exact head when relevant, evidence paths, and the highest level actually reached.
 
-Incomplete proof is not automatically an execution prohibition. Prefer the strongest bounded workflow whose authority and safety boundary match the operator's request. Use `.tbg/workflows/end-to-end-validation.contract.json` for composed proof and `.tbg/workflows/tbg-sprint-capsule.contract.json` for machine-readable continuation.
+Incomplete proof is not automatically an execution prohibition. Prefer the strongest bounded workflow whose authority and safety boundary match the operator's request. Use `.tbg/workflows/end-to-end-validation.contract.json` for composed proof, `.tbg/workflows/checkpoint-discipline.contract.json` for recoverable expansion, and `.tbg/workflows/tbg-sprint-capsule.contract.json` for machine-readable continuation.
 
 ## Lane router
 
 | Request or touched surface | Primary skill |
 |---|---|
 | branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
-| root rules, manifests, prompts, skill design | `agent-skill-factoring` |
+| root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
 | harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
 | local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
 | proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
@@ -96,4 +98,4 @@ PowerShell Core success alone is not Windows PowerShell 5.1 proof.
 
 ## Completion report
 
-Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Use a schema-backed sprint capsule for cross-agent or cross-repository continuation; do not claim completion without a commit SHA, validated existing proof, or an exact blocker.
+Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Interrupted or resumed work must also name the checkpoint SHA or artifact, preserved and excluded files, last completed validation, first pending validation, and exact resume command. Use a schema-backed sprint capsule for cross-agent or cross-repository continuation; do not claim completion without a commit SHA, validated existing proof, or an exact blocker.
