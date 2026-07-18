@@ -633,8 +633,11 @@ namespace BlacksmithGuild.MapTrade
                 return;
             }
 
+            // Never Thread.Sleep on the campaign tick — freezes inbox ACK / Status flush.
             InGameNotice.Info($"TBG MAP TRADE: {label}...");
-            Thread.Sleep(DevToolsConfig.MapTradeDecisionPauseMs);
+            DebugLogger.Test(
+                $"[TBG MAP TRADE] visible pause skipped (no Thread.Sleep) label={label} configuredMs={DevToolsConfig.MapTradeDecisionPauseMs}",
+                showInGame: false);
         }
     }
 }

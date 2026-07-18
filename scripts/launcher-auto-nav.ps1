@@ -304,7 +304,7 @@ public static class UIAHelper
 {
     private const string LauncherProcessName = "TaleWorlds.MountAndBlade.Launcher";
     private const string GameProcessName = "Bannerlord";
-    private const string CrashReporterTitle = "* _*";
+    private const string CrashReporterTitle = "*_*";
     private const string ModuleMismatchTitle = "Module Mismatch";
 
     public static Action<string> Log;
@@ -1420,10 +1420,34 @@ public static class UIAHelper
     public static bool ClickCrashReporterNo()
     {
         var crashRoot = FindCrashReporterRoot();
-        if (crashRoot == null) return false;
+        if (crashRoot != null)
+        {
+            FocusScope(crashRoot, "crash reporter");
+            if (TryClickButtonInScope(crashRoot, "No", false, "crash reporter No"))
+                return true;
+        }
 
-        FocusScope(crashRoot, "crash reporter");
-        return TryClickButtonInScope(crashRoot, "No", false, "crash reporter No");
+        // Fallback: native Win32 close when UIA cannot see the dialog
+        return NativeCloseCrashDialog();
+    }
+
+    private static bool NativeCloseCrashDialog()
+    {
+        var hwnd = FindWindow(null, CrashReporterTitle);
+        if (hwnd == IntPtr.Zero)
+        {
+            // Try alternate title patterns
+            hwnd = FindWindow(null, "*_*");
+        }
+        if (hwnd == IntPtr.Zero) return false;
+
+        LogLine(string.Format("NATIVE CRASH CLOSE hwnd=0x{0:X8}", (long)hwnd));
+        SetForegroundWindow(hwnd);
+        Thread.Sleep(100);
+        SendMessage(hwnd, 0x0111, (IntPtr)7, IntPtr.Zero);   // WM_COMMAND IDNO
+        SendMessage(hwnd, 0x0010, IntPtr.Zero, IntPtr.Zero);  // WM_CLOSE
+        PostMessage(hwnd, 0x0010, IntPtr.Zero, IntPtr.Zero);  // WM_CLOSE
+        return true;
     }
 
     public static string LogVisibleLauncherButtons()
@@ -1755,7 +1779,7 @@ public static class UIAHelper
             try { return AutomationElement.FromHandle(hwnd); } catch { }
         }
 
-        return FindWindowRootByTitle("* _*");
+        return FindWindowRootByTitle("*_*");
     }
 
     private static AutomationElement FindCautionDialogRoot()
@@ -2389,10 +2413,23 @@ public static class UIAHelper
 [UIAHelper]::Log = [Action[string]]{ param($m) Write-LaunchLog "UIA: $m" }
 [UIAHelper]::RespectUserForeground = $RespectUserForeground
 # Pre-launch PID baseline: lets the game-host window be identified by what is NEW after launch,
-# not by process name, which Steam in-launcher hosting makes unreliable.
-[UIAHelper]::CaptureBaselineProcessIds()
+    # not by process name, which Steam in-launcher hosting makes unreliable.
+    [UIAHelper]::CaptureBaselineProcessIds()
 
-Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms respectUserForeground=$RespectUserForeground"
+    # Pre-flight: scan and close any stale crash reporter / assertion / safe mode dialogs from prior runs.
+    # These modal dialogs persist across restarts and block new launches.
+    if ([UIAHelper]::HasCrashReporterDialog()) {
+        Write-LaunchLog 'PREFLIGHT: stale crash reporter dialog detected — closing'
+        [UIAHelper]::ClickCrashReporterNo() | Out-Null
+        Start-Sleep -Milliseconds 500
+    }
+    if ([UIAHelper]::HasSafeModeDialog()) {
+        Write-LaunchLog 'PREFLIGHT: stale safe mode dialog detected — closing'
+        [UIAHelper]::ClickSafeModeNo() | Out-Null
+        Start-Sleep -Milliseconds 500
+    }
+
+    Write-LaunchLog "session pid=$PID log=$logPath intent=$LaunchIntent timeout=${TimeoutSec}s poll=${PollMs}ms respectUserForeground=$RespectUserForeground"
 Write-LaunchLog ([UIAHelper]::DescribeEnvironment())
 [UIAHelper]::LogTopLevelWindows() | Out-Null
 

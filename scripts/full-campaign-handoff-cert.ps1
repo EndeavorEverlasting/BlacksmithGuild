@@ -542,11 +542,16 @@ function Get-FullCampaignHandoffNextCommand {
         [string]$Surface
     )
 
-    if (-not $MovementObserved -or -not $ArrivalObserved -or -not $TownEntryObserved) {
+    # Once movement is proven near the target gate, drive the trade probe which enters settlement
+    # and opens market — do not wait forever for a passive town-menu observation.
+    if ($MovementObserved -and (-not $ArrivalObserved -or -not $TownEntryObserved)) {
+        return [pscustomobject][ordered]@{ phase = 'town_entry'; commandSent = 'ProbeVanillaTradeExecutionNow'; reason = 'drive_town_entry_via_trade_probe' }
+    }
+    if (-not $MovementObserved) {
         return [pscustomobject][ordered]@{ phase = 'travel_arrival'; commandSent = $null; reason = 'await_arrival_or_town_entry' }
     }
-    if ($Surface -notin @('trading', 'settlement_menu', 'town_management')) {
-        return [pscustomobject][ordered]@{ phase = 'await_settlement_surface'; commandSent = $null; reason = 'town_surface_not_ready' }
+    if ($Surface -notin @('trading', 'settlement_menu', 'town_management', 'settlement_interior', 'settlement_city')) {
+        return [pscustomobject][ordered]@{ phase = 'await_settlement_surface'; commandSent = 'ProbeVanillaTradeExecutionNow'; reason = 'drive_settlement_surface_via_trade_probe' }
     }
     if (-not $OrdinaryTradeDone) {
         return [pscustomobject][ordered]@{ phase = 'ordinary_trade'; commandSent = 'ProbeVanillaTradeExecutionNow'; reason = 'drive_ordinary_trade' }

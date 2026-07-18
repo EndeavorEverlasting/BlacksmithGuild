@@ -124,6 +124,13 @@ namespace BlacksmithGuild.DevTools.Assistive
                 MovementIntentSet = ledger.ExecuteRequested && ledger.ExecuteAllowed && ledger.TravelApiCallSucceeded
             };
 
+            // Cap samples so a stuck gate observation cannot grow multi-MB ledgers.
+            const int maxSamples = 64;
+            if (ledger.Samples.Count >= maxSamples)
+            {
+                ledger.Samples.RemoveAt(0);
+            }
+
             ledger.Samples.Add(sample);
             return sample;
         }

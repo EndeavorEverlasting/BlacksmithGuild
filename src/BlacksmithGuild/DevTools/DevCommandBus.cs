@@ -103,7 +103,27 @@ namespace BlacksmithGuild.DevTools
             RuntimeLifecycleWriter.RecordCommandStarted(commandName, sequence);
             EmitCommandEvent(AutomationRuntimeEventEmitter.CommandStarted, commandId, commandName);
 
-            var result = Execute(commandName, payload);
+            DevCommandResult result;
+            try
+            {
+                result = Execute(commandName, payload);
+            }
+            catch (System.Exception ex)
+            {
+                result = DevCommandResult.Failed;
+                DebugLogger.Test($"Command exception: {commandName}: {ex.Message}", showInGame: false);
+                ForgeStatus.RecordCommand(commandName, source, "FAIL", ex.Message, sequence);
+                ForgeStatus.SetTest(commandName, "FAIL", ex.Message);
+                RuntimeLifecycleWriter.RecordCommandFinished(commandName, sequence, "Failed", ex.Message);
+                EmitCommandEvent(AutomationRuntimeEventEmitter.CommandFailed, commandId, commandName, result);
+                CertificationTracker.OnCommandResult(commandName, result, ex.Message);
+                Sprint002CertificationTracker.OnCommandResult(commandName, result, ex.Message);
+                NotifyResult(commandName, hotkeyLabel, result);
+                TraceCommandResult(hotkeyLabel, commandName, result, ex.Message);
+                return result;
+            }
+
+            RuntimeLifecycleWriter.RecordCommandFinished(commandName, sequence, result.ToString(), null);
             EmitCommandEvent(
                 result == DevCommandResult.Success
                     ? AutomationRuntimeEventEmitter.CommandCompleted
