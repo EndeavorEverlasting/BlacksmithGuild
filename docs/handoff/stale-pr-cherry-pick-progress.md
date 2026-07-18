@@ -2,7 +2,7 @@
 
 > **Overall: INCOMPLETE**
 > **4 of 16 stale pull requests are complete (25.0%).**
-> **Current distribution: 0 in progress, 4 blocked, and 11 not started.**
+> **Current distribution: 0 in progress, 4 blocked, and 8 not started.**
 > **Next: Wave C, PR #8: Map every unresolved F7 review lesson to current code, current tests, or an explicit rejection.**
 
 The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
