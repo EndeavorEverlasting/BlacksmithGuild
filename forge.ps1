@@ -7,6 +7,7 @@
 #   .\forge.ps1 -Command AdvanceOneDay -Wait
 #   .\forge.ps1 -Certify -Wait     full Sprint 001 cert via file inbox
 #   .\forge.ps1 -CertifyProgression -Wait   Sprint 002 progression cert
+#   .\forge.ps1 -VerifyLogPatterns     run ASCII-hyphen ready-line grep guard (no launch)
 #   .\forge.ps1 -Watch                 auto rebuild on source changes (ForgeWatch.cmd)
 
 param(
@@ -24,6 +25,7 @@ param(
     [switch]$Wait,
     [switch]$Certify,
     [switch]$CertifyProgression,
+    [switch]$VerifyLogPatterns,
     [ValidateSet('AutoLoop', 'Manual')]
     [string]$IterationMode,
     [string]$Command,
@@ -32,6 +34,12 @@ param(
     [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
     [string]$SessionAuthorityMode
 )
+
+# PR #8 lesson: expose the ready-line grep guard from the root forge entrypoint.
+if ($VerifyLogPatterns) {
+    & (Join-Path $PSScriptRoot 'scripts\verify-log-grep-patterns.ps1')
+    exit $LASTEXITCODE
+}
 
 if ($Launch -and -not $LaunchIntent) {
     throw 'LaunchIntent is required when -Launch is used. Pass -LaunchIntent play or -LaunchIntent continue.'
