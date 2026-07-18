@@ -191,8 +191,10 @@ function Start-TbgWindowIntelligenceWatcher {
         }
     }
 
-    $argumentLine = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Command watch -Mode auto -ProcessId {1} -BannerlordRoot "{2}" -ContextPath "{3}" -DurationSeconds 90 -PollMilliseconds 100 -AllowKnownActions' -f `
-        $watcherScript, $LauncherProcessId, $BannerlordRoot, $ContextPath
+    $lifecycleRunId = 'wl-{0}-{1}' -f ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')), ([Guid]::NewGuid().ToString('N').Substring(0, 8))
+    $lifecycleCorrelationId = 'wl-corr-{0}' -f ([Guid]::NewGuid().ToString('N').Substring(0, 12))
+    $argumentLine = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Command watch -Mode auto -ProcessId {1} -BannerlordRoot "{2}" -ContextPath "{3}" -LifecycleRunId "{4}" -LifecycleCorrelationId "{5}" -DurationSeconds 90 -PollMilliseconds 100 -AllowKnownActions' -f `
+        $watcherScript, $LauncherProcessId, $BannerlordRoot, $ContextPath, $lifecycleRunId, $lifecycleCorrelationId
 
     try {
         $watcher = Start-Process -FilePath $powerShellExe -ArgumentList $argumentLine -WindowStyle Hidden -PassThru
@@ -202,8 +204,12 @@ function Start-TbgWindowIntelligenceWatcher {
             watcherProcessId = [int]$watcher.Id
             targetProcessId = $LauncherProcessId
             leasePath = $leasePath
+            lifecycleRunId = $lifecycleRunId
+            lifecycleCorrelationId = $lifecycleCorrelationId
             resultPath = Join-Path $repoRoot 'artifacts\latest\window-intelligence\window-intelligence.result.json'
             reportPath = Join-Path $repoRoot 'artifacts\latest\window-intelligence\window-intelligence.report.md'
+            lifecycleResultPath = Join-Path $repoRoot 'artifacts\latest\window-lifecycle\window-lifecycle.result.json'
+            lifecycleReportPath = Join-Path $repoRoot 'artifacts\latest\window-lifecycle\window-lifecycle.report.md'
         }
     } catch {
         return [pscustomobject][ordered]@{

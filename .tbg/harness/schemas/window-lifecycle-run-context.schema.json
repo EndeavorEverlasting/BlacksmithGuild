@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/window-lifecycle-run-context.schema.json",
+  "title": "TBG Window Lifecycle Run Context v1",
+  "description": "Canonical authority for one window-lifecycle runtime reduction run. Records correlation, source identity, launch intent, and output roots without credentials, save paths, or mutable proof claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "runId",
+    "correlationId",
+    "sourceCommit",
+    "branch",
+    "mode",
+    "startedUtc",
+    "proofCeiling",
+    "outputRoot",
+    "latestOutputDirectory"
+  ],
+  "properties": {
+    "schema": { "const": "TbgWindowLifecycleRunContext.v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "sourceCommit": { "type": "string", "minLength": 7 },
+    "branch": { "type": "string", "minLength": 1 },
+    "launcherContextPath": { "type": ["string", "null"] },
+    "targetProcessId": { "type": ["integer", "null"], "minimum": 0 },
+    "targetHwnd": { "type": ["integer", "null"] },
+    "launchIntent": {
+      "type": ["string", "null"],
+      "enum": ["play", "continue", "fixture", "unknown", null]
+    },
+    "mode": { "enum": ["fixture", "live"] },
+    "startedUtc": { "type": "string", "minLength": 1 },
+    "proofCeiling": {
+      "const": "launcher_lifecycle_harness",
+      "description": "Highest claim this runtime adapter may support. Live modal acceptance, campaign readiness, and gameplay remain outside this ceiling."
+    },
+    "outputRoot": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative run root under .local/tbg-window-lifecycle/<run-id>."
+    },
+    "latestOutputDirectory": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repo-relative materialized latest view under artifacts/latest/window-lifecycle."
+    },
+    "fixturePath": { "type": ["string", "null"] },
+    "createdBy": { "type": ["string", "null"] }
+  }
+}

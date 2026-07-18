@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/window-lifecycle-runtime-event.schema.json",
+  "title": "TBG Window Lifecycle Runtime Event v1",
+  "description": "One ordered runtime observation or action-authority event mapped into the P18 pure lifecycle reducer. Observation, action authority, dispatch, successor observation, and product acceptance remain distinct.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "runId",
+    "correlationId",
+    "windowKey",
+    "sequence",
+    "eventType",
+    "observedUtc",
+    "source"
+  ],
+  "properties": {
+    "schema": { "const": "TbgWindowLifecycleRuntimeEvent.v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "windowKey": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "eventType": {
+      "enum": [
+        "window_observed",
+        "identity_resolved",
+        "unknown_detected",
+        "action_authorized",
+        "action_dispatched",
+        "action_rejected",
+        "host_handoff_observed",
+        "window_disappeared",
+        "identity_invalidated"
+      ]
+    },
+    "identityId": { "type": ["string", "null"] },
+    "actionId": { "type": ["string", "null"] },
+    "reason": { "type": ["string", "null"] },
+    "observedUtc": { "type": "string", "minLength": 1 },
+    "source": {
+      "enum": [
+        "window-intelligence",
+        "fixture-replay",
+        "operator-status"
+      ]
+    },
+    "sentence": {
+      "type": ["string", "null"],
+      "description": "Optional complete English sentence describing the observation without claiming product acceptance."
+    }
+  }
+}

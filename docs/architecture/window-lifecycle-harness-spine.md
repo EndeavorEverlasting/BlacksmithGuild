@@ -148,6 +148,20 @@ The committed fixture proves four paths:
 
 The lifecycle validator parses both schemas, checks the reducer for forbidden runtime and pixel primitives, executes every fixture case, verifies deterministic transition IDs, confirms rejected-transition immutability, and enforces the action-dispatch proof boundary.
 
-## Deferred integration
+## Runtime integration
 
-P18 establishes the pure harness spine only. Runtime event wiring belongs to P19. Skill, trigger, and routing adoption belongs to P20. Live clicking, gameplay automation, image/OCR identity, and coordinate-learning identity remain outside this sprint.
+P18 established the pure harness spine. P19 wires runtime events through:
+
+```text
+scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1
+scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1
+.tbg/harness/schemas/window-lifecycle-run-context.schema.json
+.tbg/harness/schemas/window-lifecycle-runtime-event.schema.json
+.tbg/harness/fixtures/window-intelligence/window-lifecycle-runtime.fixture.json
+ForgeWindowLifecycle.cmd
+docs/architecture/window-lifecycle-runtime-wiring.md
+```
+
+The metadata watcher remains the recognizer. The runtime adapter imports this reducer, materializes run-context/state/result/report/handoff artifacts, and never clicks, focuses, launches, sleeps, OCRs, or inspects pixels.
+
+Skill, trigger, and routing adoption belongs to P20. Live clicking, gameplay automation, image/OCR identity, and coordinate-learning identity remain outside the reducer and runtime adapter.
