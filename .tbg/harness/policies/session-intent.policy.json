@@ -1,0 +1,102 @@
+{
+  "schema": "tbg.session-intent.policy.v1",
+  "description": "Session intent policy - governs how the runtime game behavior adjusts based on who is driving the session.",
+  "drivenBy": {
+    "human_player": {
+      "governorMode": "Manual",
+      "description": "A human is playing normally. The governor observes but does not execute mutations. Automation is disabled.",
+      "priorityEngine": "observe_only",
+      "autonomousDriversBlocked": true,
+      "engineToggleDefaults": {
+        "Governor": "Manual",
+        "MapTrade": "Manual",
+        "GuildLoop": "Manual",
+        "Cohesion": "Manual",
+        "HorseMarket": "Manual",
+        "Smithing": "Manual",
+        "Companion": "Manual",
+        "Assistive": "Hybrid"
+      }
+    },
+    "automation_script": {
+      "governorMode": "Hybrid",
+      "description": "A script or automation runner is driving. The governor runs the priority cascade but execution is gated behind bounded execution. Explicit commands via dev command bus are accepted.",
+      "priorityEngine": "normal",
+      "autonomousDriversBlocked": false,
+      "engineToggleDefaults": {
+        "Governor": "Hybrid",
+        "MapTrade": "Automation",
+        "GuildLoop": "Automation",
+        "Cohesion": "Automation",
+        "HorseMarket": "Hybrid",
+        "Smithing": "Hybrid",
+        "Companion": "Hybrid",
+        "Assistive": "Automation"
+      }
+    },
+    "ai_agent": {
+      "governorMode": "Automation",
+      "description": "An AI agent is driving autonomously. Full automation including bounded execution is permitted. All engines default to Automation mode.",
+      "priorityEngine": "normal",
+      "autonomousDriversBlocked": false,
+      "engineToggleDefaults": {
+        "Governor": "Automation",
+        "MapTrade": "Automation",
+        "GuildLoop": "Automation",
+        "Cohesion": "Automation",
+        "HorseMarket": "Automation",
+        "Smithing": "Automation",
+        "Companion": "Automation",
+        "Assistive": "Automation"
+      }
+    },
+    "ci_cd": {
+      "governorMode": "Automation",
+      "description": "CI/CD pipeline is driving. Aggressive proof collection. No human interactivity expected.",
+      "priorityEngine": "aggressive_proof",
+      "autonomousDriversBlocked": false,
+      "engineToggleDefaults": {
+        "Governor": "Automation",
+        "MapTrade": "Automation",
+        "GuildLoop": "Automation",
+        "Cohesion": "Automation",
+        "HorseMarket": "Automation",
+        "Smithing": "Automation",
+        "Companion": "Automation",
+        "Assistive": "Automation"
+      }
+    },
+    "unknown": {
+      "governorMode": "Manual",
+      "description": "Unknown driver. Conservative defaults: all engines manual, observe only.",
+      "priorityEngine": "observe_only",
+      "autonomousDriversBlocked": true,
+      "engineToggleDefaults": {
+        "Governor": "Manual",
+        "MapTrade": "Manual",
+        "GuildLoop": "Manual",
+        "Cohesion": "Manual",
+        "HorseMarket": "Manual",
+        "Smithing": "Manual",
+        "Companion": "Manual",
+        "Assistive": "Manual"
+      }
+    }
+  },
+  "priorityEngineModes": {
+    "conserve_resources": "Minimum automation for survival (food, safety). Do not trade or travel.",
+    "observe_only": "Read state only. No mutations. Log observations.",
+    "normal": "Full priority cascade with bounded execution gating. Balance survival and profit.",
+    "aggressive_proof": "Maximize proof throughput. Acquire all three proof types (ordinary trade, horse, food) as fast as possible."
+  },
+  "agentVisibilityRules": {
+    "description": "When the session intent file exists, other agents inspecting the repo can determine:",
+    "rules": [
+      "drivenBy: who is controlling the game right now",
+      "sprint: what the active sprint is (prevents parallel conflicting sprints)",
+      "agentRole: which agent lane is active (A/B/C/D)",
+      "priorityEngineMode: how aggressive the automation can be",
+      "branch/comitSha: what code is being tested"
+    ]
+  }
+}

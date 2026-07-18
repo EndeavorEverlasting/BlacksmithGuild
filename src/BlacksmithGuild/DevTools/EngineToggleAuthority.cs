@@ -181,6 +181,16 @@ namespace BlacksmithGuild.DevTools
                    && DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution;
         }
 
+        public static bool IsRuntimeAutomationAllowed()
+        {
+            var intent = SessionIntent.SessionIntentReader.ReadFromDisk();
+            if (intent.IsHuman)
+            {
+                return false;
+            }
+            return true;
+        }
+
         public static string BuildSummary(string source = null)
         {
             EnsureInitialized();

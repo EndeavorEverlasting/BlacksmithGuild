@@ -30,6 +30,12 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
             }
 
+            var sessionIntent = DevTools.SessionIntent.SessionIntentReader.ReadFromDisk();
+            if (sessionIntent.IsHuman && !DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution)
+            {
+                return;
+            }
+
             var interval = Math.Max(1000, DevToolsConfig.CampaignRuntimeGovernorDecisionIntervalMs);
             if ((DateTime.UtcNow - _lastTickDecisionUtc).TotalMilliseconds < interval)
             {
