@@ -1,0 +1,30 @@
+{
+  "schema": "TbgDisposableSavePolicy.v1",
+  "description": "Tracked disposable-save discovery rules for Bannerlord automation. Year-cohort authority is never a shipped default.",
+  "saveRootRelativeSegments": [
+    ["Mount and Blade II Bannerlord", "Game Saves"],
+    ["Mount and Blade II Bannerlord", "Game Saves", "Native"]
+  ],
+  "namePatterns": [
+    "BlacksmithGuild_DevStart*.sav",
+    "BlacksmithGuildDevStart*.sav",
+    "BlacksmithGuild_Disposable_*.sav",
+    "TBG_Disposable_*.sav",
+    "Disposable*.sav",
+    "DISPOSABLE*.sav"
+  ],
+  "preferredLeafNames": [
+    "BlacksmithGuildDevStart.sav",
+    "BlacksmithGuild_DevStart.sav",
+    "DISPOSABLECandidate002.sav",
+    "DisposableCharcoalTest001.sav"
+  ],
+  "activePinRelativePath": ".local/disposable-save.active.json",
+  "operatorAuthorityRelativePath": ".local/disposable-save.operator.json",
+  "shippedDefaults": {
+    "yearFloorEnabled": false,
+    "mutateUnnamedSaves": false,
+    "treatCalendarYearAsDisposable": false
+  },
+  "proofBoundary": "Selecting a disposable save authorizes automation mutation of that save only. It is not launcher, campaign-ready, movement, or trade proof. End-user campaign saves must never become disposable merely because of their calendar year."
+}
