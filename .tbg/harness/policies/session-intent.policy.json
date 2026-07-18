@@ -18,6 +18,26 @@
         "Assistive": "Hybrid"
       }
     },
+    "multitasking": {
+      "governorMode": "Hybrid",
+      "description": "The user's attention is on another window but the game is still running. The game retains focus and autonomous drivers handle survival (food, safety, capacity). Agents CAN glom onto the ongoing session to extract insights or sprint a new avenue in parallel. Manual commands are accepted. The priority engine runs autonomously but conservatively — only survival-critical actions (food acquisition, threat avoidance), not discretionary trade or recruitment.",
+      "priorityEngine": "conserve_resources",
+      "autonomousDriversBlocked": false,
+      "agentBehaviorRules": {
+        "glom": "Read-only. Extract insights, collect market data, log observations. Do not mutate.",
+        "parallel_sprint": "Sprint a new avenue in the interim. Use disposable state only. Do not conflict with the active session."
+      },
+      "engineToggleDefaults": {
+        "Governor": "Hybrid",
+        "MapTrade": "Hybrid",
+        "GuildLoop": "Hybrid",
+        "Cohesion": "Hybrid",
+        "HorseMarket": "Hybrid",
+        "Smithing": "Manual",
+        "Companion": "Manual",
+        "Assistive": "Automation"
+      }
+    },
     "automation_script": {
       "governorMode": "Hybrid",
       "description": "A script or automation runner is driving. The governor runs the priority cascade but execution is gated behind bounded execution. Explicit commands via dev command bus are accepted.",

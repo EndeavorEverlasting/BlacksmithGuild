@@ -7,7 +7,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$BannerlordRoot,
 
-    [ValidateSet('human_player', 'automation_script', 'ai_agent', 'ci_cd', 'unknown')]
+    [ValidateSet('human_player', 'multitasking', 'automation_script', 'ai_agent', 'ci_cd', 'unknown')]
     [string]$DrivenBy = 'automation_script',
 
     [string]$SessionId = $null,
