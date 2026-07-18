@@ -13,7 +13,8 @@ param(
     [switch]$CheckLog,
     [switch]$SkipInstall,
     [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
-    [string]$SessionAuthorityMode
+    [string]$SessionAuthorityMode,
+    [switch]$AllowFocusSteal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -186,7 +187,18 @@ try {
                 -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
                 $launcherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
-                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $BannerlordRoot -LauncherContextPath $launcherContextPath -PollMs 250 -LaunchSetup
+                $navParams = @{
+                    LaunchIntent = $LaunchIntent
+                    BannerlordRoot = $BannerlordRoot
+                    LauncherContextPath = $launcherContextPath
+                    PollMs = 250
+                    LaunchSetup = $true
+                    TimeoutSec = 180
+                    AllowLongRun = $true
+                    LongRunReason = "Safe Mode decline and slow game spawn wait"
+                }
+                if ($AllowFocusSteal) { $navParams.AllowFocusSteal = $true }
+                & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') @navParams
             }
             if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
