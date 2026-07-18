@@ -2,7 +2,7 @@
     "schema":  "TbgStalePrRecoveryProgress.v1",
     "repository":  "EndeavorEverlasting/BlacksmithGuild",
     "planPath":  ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
-    "updatedDate":  "2026-07-13",
+    "updatedDate":  "2026-07-18",
     "terminalCompleteStatuses":  [
                                      "replayed_and_merged",
                                      "superseded_recorded",
@@ -25,16 +25,16 @@
                     {
                         "wave":  "B",
                         "pr":  2,
-                        "status":  "not_started",
-                        "replacementPr":  null,
+                        "status":  "replayed_and_merged",
+                        "replacementPr":  66,
                         "blockedBy":  [
 
                                       ],
-                        "disposition":  "",
+                        "disposition":  "Superseded by PR #66, which replays the same three files from PR #2 head 61090349037c89d4bcbc1c0e3fd4a3651333e7e6 onto current main. Source branch and original commit remain as historical provenance.",
                         "evidence":  [
-
+                                         "PR #66 merged commit 96a182a2fba4646855a92f6e1118d368d8183005"
                                      ],
-                        "nextAction":  "Inspect pull request 2 against current main and decide whether to replay its coherent identity-schema delta or record a rejection."
+                        "nextAction":  "No further replay work remains for PR #2."
                     },
                     {
                         "wave":  "F",

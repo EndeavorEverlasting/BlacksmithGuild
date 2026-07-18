@@ -1,9 +1,9 @@
-﻿# Stale branch cherry-pick progress
+# Stale branch cherry-pick progress
 
 > **Overall: INCOMPLETE**
-> **3 of 16 stale pull requests are complete (18.75%).**
-> **Current distribution: 0 in progress, 4 blocked, and 9 not started.**
-> **Next: Wave B, PR #2: Inspect pull request 2 against current main and decide whether to replay its coherent identity-schema delta or record a rejection.**
+> **4 of 16 stale pull requests are complete (25.0%).**
+> **Current distribution: 0 in progress, 4 blocked, and 11 not started.**
+> **Next: Wave C, PR #8: Map every unresolved F7 review lesson to current code, current tests, or an explicit rejection.**
 
 The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
 
@@ -17,7 +17,7 @@ The stale-branch cherry-pick process is finished only when every planned source 
 |---|---:|---|---:|---|---|---|
 | A | #9 | ✅ historical retained | #65 | — | The maintained replacement PR #65 merged and the original PR remains as historical provenance. Final disposition: all unique evidence and coordination value is now on current main. | No further replay work remains for PR #9. |
 | A | #34 | ✅ superseded recorded | #65 | — | The concurrent sprint map was replayed onto current main via PR #65 and supersedes the stale branch copy entirely. | No further replay work remains for PR #34. |
-| B | #2 | ⬜ not started | — | — | — | Inspect pull request 2 against current main and decide whether to replay its coherent identity-schema delta or record a rejection. |
+| B | #2 | ✅ replayed and merged | #66 | — | Superseded by PR #66, which replays the same three files from PR #2 head 61090349037c89d4bcbc1c0e3fd4a3651333e7e6 onto current main. Source branch and original commit remain as historical provenance. | No further replay work remains for PR #2. |
 | C | #8 | ⬜ not started | — | — | — | Map every unresolved F7 review lesson to current code, current tests, or an explicit rejection. |
 | D1 | #28 | ⬜ not started | — | — | — | Map the feedback-harness manifest fields into the current harness or record explicit rejections. |
 | D1 | #29 | ⬜ not started | — | — | — | Adapt or reject the feedback writer against the current effective-context schema. |
@@ -28,7 +28,7 @@ The stale-branch cherry-pick process is finished only when every planned source 
 | D3 | #35 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value. |
 | E | #20 | ⬜ not started | — | — | — | Reconstruct the useful governor handoff model, tests, and review requirements against current main. |
 | E | #24 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject. |
-| E | #38 | ✅ superseded recorded | — | — | PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its maintained intent now lives in evolved mainline guardrail, worktree, harness, and proof-discipline contracts; source head `e618349b7575dc6379cb7a8b378df6ec5be4d282` remains provenance. | No further replay work remains for PR #38. |
+| E | #38 | ✅ superseded recorded | — | — | PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its guardrail, worktree, harness, and proof-discipline intent has been replaced by maintained mainline contracts, while source head e618349b7575dc6379cb7a8b378df6ec5be4d282 remains retained as provenance. | No further replay work remains for PR #38. |
 | F | #5 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof. |
 | F | #6 | ⛔ blocked dependency | — | #43, #52 | — | Wait for pull request 5 value to be reconstructed and for the maintained route lineage to settle. |
 
@@ -62,7 +62,7 @@ Record a terminal disposition only after its gate is satisfied:
 ## Exact next command
 
 ```powershell
-.\ForgeStalePrRecovery.cmd -Wave B -PrNumber 2 -LocalFloorVerified
+.\ForgeStalePrRecovery.cmd -Wave C -PrNumber 8 -LocalFloorVerified
 ```
 
 ## Proof boundary
