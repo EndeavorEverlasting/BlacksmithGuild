@@ -28,6 +28,7 @@ Set-Location -LiteralPath $RepoRoot
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'visible-trade-proof-helpers.ps1')
 . (Join-Path $PSScriptRoot 'visible-trade-proof-event-schema.ps1')
+. (Join-Path $PSScriptRoot 'visible-trade-lifecycle-gate.ps1')
 . (Join-Path $PSScriptRoot 'visible-trade-proof-capsule.ps1')
 . (Join-Path $PSScriptRoot 'publish-visible-trade-proof-evidence.ps1')
 
@@ -95,6 +96,8 @@ $terminalReason = 'The coordinator has not reached a terminal state.'
 $failureDetail = $null
 $highestProofReached = 'none'
 $exitCode = 0
+$lifecycleGate = $null
+$lifecycleArtifactPaths = $null
 
 function Write-Event {
     param(
@@ -158,12 +161,34 @@ function Write-AtomicUtf8Text {
 
 function Set-HighestProof {
     param([string]$Level)
-    $proofLevels = @('none','contract','harness','static','build','launcher','command-ack','movement','checkpoint','arrival','buy','sell','complete')
+    $proofLevels = @('none','contract','harness','static','build','launcher','lifecycle','modal-transition','launcher-handoff','command-ack','movement','checkpoint','arrival','buy','sell','complete')
     $currentIdx = $proofLevels.IndexOf($highestProofReached)
     $newIdx = $proofLevels.IndexOf($Level)
     if ($newIdx -gt $currentIdx) {
         $script:highestProofReached = $Level
     }
+}
+
+function Get-FailureTerminalState {
+    param([string]$Detail)
+
+    if ([string]::IsNullOrWhiteSpace($Detail)) { return 'FAIL_EVIDENCE_INCOMPLETE' }
+    $known = @(Get-TbgVisibleTradeProofTerminalStates)
+    foreach ($state in $known) {
+        if ($Detail -like "$state*") { return $state }
+    }
+    if ($Detail -match 'FAIL_SOURCE_BUILD_INSTALL_MISMATCH|hash') { return 'FAIL_SOURCE_BUILD_INSTALL_MISMATCH' }
+    if ($Detail -match 'BLOCKED_WINDOW_LIFECYCLE_QUARANTINED') { return 'BLOCKED_WINDOW_LIFECYCLE_QUARANTINED' }
+    if ($Detail -match 'BLOCKED_WINDOW_LIFECYCLE_STALE') { return 'BLOCKED_WINDOW_LIFECYCLE_STALE' }
+    if ($Detail -match 'BLOCKED_WINDOW_LIFECYCLE_REQUIRED_ARTIFACTS_MISSING') { return 'BLOCKED_WINDOW_LIFECYCLE_REQUIRED_ARTIFACTS_MISSING' }
+    if ($Detail -match 'FAIL_MODAL_TRANSITION_NOT_OBSERVED') { return 'FAIL_MODAL_TRANSITION_NOT_OBSERVED' }
+    if ($Detail -match 'FAIL_WINDOW_LIFECYCLE') { return 'FAIL_WINDOW_LIFECYCLE_GATE' }
+    if ($Detail -match 'FAIL_LAUNCHER_HANDOFF|launcher') { return 'FAIL_LAUNCHER_HANDOFF' }
+    if ($Detail -match 'FAIL_COMMAND_NOT_ACKNOWLEDGED|command.ack') { return 'FAIL_COMMAND_NOT_ACKNOWLEDGED' }
+    if ($Detail -match 'BLOCKED_CAMPAIGN_NOT_READY') { return 'BLOCKED_CAMPAIGN_NOT_READY' }
+    if ($Detail -match 'BLOCKED_RUNTIME_ENVIRONMENT_UNAVAILABLE') { return 'BLOCKED_RUNTIME_ENVIRONMENT_UNAVAILABLE' }
+    if ($Detail -match 'CANCELLED_SAFE_STOP') { return 'CANCELLED_SAFE_STOP' }
+    return 'FAIL_EVIDENCE_INCOMPLETE'
 }
 
 function Invoke-GitSafe {
@@ -481,15 +506,89 @@ try {
     }
 
     # ═══════════════════════════════════════════════════════════════
+    # STAGE: window-lifecycle / modal-transition / launcher-handoff
+    # Consume P19 lifecycle artifacts. Never invent alternate shapes.
+    # ═══════════════════════════════════════════════════════════════
+    $lifecycleArtifactPaths = Get-TbgVisibleTradeLifecycleArtifactPaths -RepoRoot $RepoRoot
+    foreach ($lifecyclePath in @($lifecycleArtifactPaths.runContext, $lifecycleArtifactPaths.state, $lifecycleArtifactPaths.result, $lifecycleArtifactPaths.report, $lifecycleArtifactPaths.handoff)) {
+        if (Test-Path -LiteralPath $lifecyclePath -PathType Leaf) {
+            $artifacts.Add($lifecyclePath) | Out-Null
+        }
+    }
+
+    Write-Event -Stage window-lifecycle -Status started -Subject 'coordinator' -Action 'inspect-lifecycle' -Object 'window-lifecycle' `
+        -Sentence 'The coordinator is inspecting registered P19 window-lifecycle artifacts as an upstream launcher gate.'
+
+    $lifecycleGate = Resolve-TbgVisibleTradeLifecycleGate `
+        -RepoRoot $RepoRoot `
+        -ExpectedCorrelationId '' `
+        -MaxAgeHours 24 `
+        -RequireFresh:(-not $diagnosticOnly)
+
+    Write-Event -Stage window-lifecycle -Status info -Subject 'lifecycle-gate' -Action 'classify' -Object ([string]$lifecycleGate.gate) `
+        -Evidence ([string]$lifecycleGate.terminalState) `
+        -Sentence ([string]$lifecycleGate.sentence)
+    Set-HighestProof -Level 'lifecycle'
+
+    if ($diagnosticOnly) {
+        Write-Event -Stage window-lifecycle -Status skipped -Subject 'coordinator' -Action 'lifecycle-gate' -Object 'window-lifecycle' `
+            -Sentence 'Lifecycle gate enforcement is observational in diagnostic/dry-run mode.'
+        Write-Event -Stage modal-transition -Status skipped -Subject 'coordinator' -Action 'observe-modal' -Object 'modal' `
+            -Sentence 'Modal-transition enforcement skipped in diagnostic/dry-run mode.'
+        Write-Event -Stage launcher-handoff -Status skipped -Subject 'coordinator' -Action 'observe-handoff' -Object 'singleplayer-host' `
+            -Sentence 'Launcher-handoff enforcement skipped in diagnostic/dry-run mode.'
+    }
+    else {
+        if ($lifecycleGate.gate -in @('missing', 'stale', 'parse_error', 'correlation_mismatch', 'quarantined', 'insufficient', 'action_dispatch_only')) {
+            Write-Event -Stage window-lifecycle -Status failed -Subject 'lifecycle-gate' -Action 'fail-closed' -Object ([string]$lifecycleGate.gate) `
+                -Evidence ([string]$lifecycleGate.terminalState) `
+                -Sentence ([string]$lifecycleGate.sentence)
+            if ($lifecycleGate.gate -eq 'action_dispatch_only') {
+                Write-Event -Stage modal-transition -Status failed -Subject 'lifecycle-gate' -Action 'require-successor' -Object 'modal' `
+                    -Sentence 'Action dispatch alone is not modal acceptance.'
+            }
+            throw ([string]$lifecycleGate.terminalState + ':' + [string]$lifecycleGate.sentence)
+        }
+
+        Write-Event -Stage window-lifecycle -Status passed -Subject 'lifecycle-gate' -Action 'classify' -Object ([string]$lifecycleGate.gate) `
+            -Sentence ([string]$lifecycleGate.sentence)
+
+        if ([bool]$lifecycleGate.modalTransitionObserved -or [bool]$lifecycleGate.hostHandoffObserved) {
+            Write-Event -Stage modal-transition -Status passed -Subject 'lifecycle-gate' -Action 'observe-modal' -Object 'modal' `
+                -Sentence 'Correlated modal transition evidence was accepted from window-lifecycle state.'
+            Set-HighestProof -Level 'modal-transition'
+        }
+        else {
+            Write-Event -Stage modal-transition -Status failed -Subject 'lifecycle-gate' -Action 'observe-modal' -Object 'modal' `
+                -Sentence 'No correlated modal successor was observed after action dispatch.'
+            throw 'FAIL_MODAL_TRANSITION_NOT_OBSERVED:modal successor missing'
+        }
+
+        if ([bool]$lifecycleGate.hostHandoffObserved) {
+            Write-Event -Stage launcher-handoff -Status passed -Subject 'lifecycle-gate' -Action 'observe-handoff' -Object 'bannerlord.singleplayer-host' `
+                -Sentence 'Singleplayer host handoff was observed. Campaign readiness remains a separate gate.'
+            Set-HighestProof -Level 'launcher-handoff'
+        }
+        else {
+            Write-Event -Stage launcher-handoff -Status failed -Subject 'lifecycle-gate' -Action 'observe-handoff' -Object 'bannerlord.singleplayer-host' `
+                -Sentence 'Modal transition was observed without Singleplayer host handoff.'
+            throw 'FAIL_LAUNCHER_HANDOFF:singleplayer host handoff missing'
+        }
+    }
+
+    # ═══════════════════════════════════════════════════════════════
     # STAGE: campaign-ready
     # ═══════════════════════════════════════════════════════════════
     $campaignReadyUtc = $null
     if ($ownsLaunchedSession -and -not $diagnosticOnly) {
+        if ($null -eq $lifecycleGate -or -not [bool]$lifecycleGate.hostHandoffObserved) {
+            throw 'BLOCKED_CAMPAIGN_NOT_READY:host handoff required before campaign readiness'
+        }
         Write-Event -Stage campaign-ready -Status started -Subject 'coordinator' -Action 'wait-campaign-ready' -Object 'bannerlord' `
-            -Sentence 'The coordinator is waiting for the campaign to become ready.'
+            -Sentence 'The coordinator is waiting for the campaign to become ready after launcher handoff.'
         $campaignReadyUtc = (Get-Date).ToUniversalTime()
         Write-Event -Stage campaign-ready -Status passed -Subject 'coordinator' -Action 'campaign-ready' -Object 'bannerlord' `
-            -Sentence 'The campaign-ready wait completed.'
+            -Sentence 'The campaign-ready wait completed. Lifecycle handoff remains distinct from campaign readiness proof.'
     } else {
         Write-Event -Stage campaign-ready -Status skipped -Subject 'coordinator' -Action 'wait-campaign-ready' -Object 'bannerlord' `
             -Sentence 'Campaign-ready wait skipped.'
@@ -817,6 +916,14 @@ try {
             travel = $travelResult
             sell = $sellResult
             publication = if ($Publication) { $Publication } else { [ordered]@{ published = $false } }
+            windowLifecycle = [ordered]@{
+                gate = if ($lifecycleGate) { [string]$lifecycleGate.gate } else { $null }
+                terminalState = if ($lifecycleGate) { [string]$lifecycleGate.terminalState } else { $null }
+                hostHandoffObserved = if ($lifecycleGate) { [bool]$lifecycleGate.hostHandoffObserved } else { $false }
+                modalTransitionObserved = if ($lifecycleGate) { [bool]$lifecycleGate.modalTransitionObserved } else { $false }
+                actionDispatched = if ($lifecycleGate) { [bool]$lifecycleGate.actionDispatched } else { $false }
+                artifactPaths = $lifecycleArtifactPaths
+            }
             allowedClaims = if ($passFail -eq 'PASS') {
                 @('This exact committed head, DLL, and save moved through Bannerlord, arrived at a settlement, bought a real visible item, and published sanitized evidence remotely.')
             } else {
@@ -826,7 +933,9 @@ try {
                 'A command acknowledgement is not terminal workflow proof.',
                 'Diagnostic and skip modes can never certify gameplay.',
                 'The runner does not grant gold, inventory, movement, or other gameplay outcomes.',
-                'A local-only run without remote publication does not achieve PASS_VISIBLE_TRADE_PROVEN.'
+                'A local-only run without remote publication does not achieve PASS_VISIBLE_TRADE_PROVEN.',
+                'Window-lifecycle action dispatch is not modal acceptance, host handoff, or campaign readiness.',
+                'A READY window-lifecycle-boundary packet is artifact interpretation, not live runtime proof.'
             )
             eventCount = $events.Count
         }

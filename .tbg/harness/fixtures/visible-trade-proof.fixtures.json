@@ -185,6 +185,51 @@
       "expectedTerminalState": "FAIL_EVIDENCE_INCOMPLETE",
       "expectedPassFail": "FAIL",
       "expectedHighestProof": "complete"
+    },
+    {
+      "id": "lifecycle_dispatch_without_successor_fails",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false },
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "checks.remotePublished", "value": false },
+        { "path": "publication.published", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_MODAL_TRANSITION_NOT_OBSERVED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher",
+      "notes": "Action dispatch without correlated modal successor must fail closed before campaign readiness."
+    },
+    {
+      "id": "lifecycle_host_handoff_without_campaign_is_not_complete",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false },
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "checks.remotePublished", "value": false },
+        { "path": "publication.published", "value": false }
+      ],
+      "expectedTerminalState": "BLOCKED_CAMPAIGN_NOT_READY",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher-handoff",
+      "notes": "Host handoff is not campaign readiness or visible-trade completion."
+    },
+    {
+      "id": "lifecycle_quarantine_blocks",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false },
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "checks.remotePublished", "value": false },
+        { "path": "publication.published", "value": false }
+      ],
+      "expectedTerminalState": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher",
+      "notes": "Unknown/quarantined lifecycle state grants no click authority."
     }
   ]
 }
