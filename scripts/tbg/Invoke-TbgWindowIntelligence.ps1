@@ -1146,6 +1146,7 @@ function Write-TbgOutputs {
     param(
         [Parameter(Mandatory = $true)]$Registry,
         [Parameter(Mandatory = $true)]$Policy,
+        [AllowEmptyCollection()]
         [Parameter(Mandatory = $true)][object[]]$WindowResults,
         [Parameter(Mandatory = $true)][string]$CorrelationId,
         [Parameter(Mandatory = $true)][string]$StartedUtc

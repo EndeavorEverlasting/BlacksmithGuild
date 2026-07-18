@@ -37,7 +37,7 @@ if (-not $LauncherContextPath) {
 
 $operationMode = if ($LaunchSetup) { 'launcher_setup' } else { 'frozen_navigation' }
 $runtimeProofClaim = $false
-$clickVerifyBudgetMs = 3000
+$clickVerifyBudgetMs = 12000
 
 $durationArgs = @{ Caller = "launcher-frozen-context-nav.ps1:$operationMode" }
 if ($PSBoundParameters.ContainsKey('TimeoutSec') -and $TimeoutSec -gt 0) {
@@ -197,6 +197,10 @@ function Invoke-FrozenSafeModeDecline {
         throw 'safe mode decline requested without a usable hwnd'
     }
 
+    try {
+        & (Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1') | Out-Null
+        Start-Sleep -Milliseconds 200
+    } catch {}
     [void][FrozenLauncherNative]::SetForegroundWindow($Hwnd)
     Start-Sleep -Milliseconds 200
 
@@ -228,9 +232,9 @@ function Get-FrozenClickPoint {
         [Parameter(Mandatory = $true)][string]$Intent,
         [Parameter(Mandatory = $true)][int]$Attempt
     )
-    $continueFractions = @(0.55, 0.58)
-    $playFractions = @(0.34, 0.38)
-    $yFractions = @(0.90, 0.88)
+    $continueFractions = @(0.25, 0.55, 0.58)
+    $playFractions = @(0.11, 0.34, 0.38)
+    $yFractions = @(0.92, 0.90, 0.88)
     $xFrac = if ($Intent -eq 'continue') { $continueFractions[$Attempt % $continueFractions.Count] } else { $playFractions[$Attempt % $playFractions.Count] }
     $yFrac = $yFractions[$Attempt % $yFractions.Count]
 
@@ -287,8 +291,14 @@ function Invoke-FrozenLauncherClick {
 
     if ($useRealInput) {
         if (-not $foregroundMatches) {
+            try {
+                & (Join-Path $PSScriptRoot 'focus-bannerlord-window.ps1') | Out-Null
+                Start-Sleep -Milliseconds 200
+            } catch {}
             [void][FrozenLauncherNative]::SetForegroundWindow($Hwnd)
-            Start-Sleep -Milliseconds 120
+            Start-Sleep -Milliseconds 150
+            $foreground = [FrozenLauncherNative]::GetForegroundWindow()
+            $foregroundMatches = $foreground -eq $Hwnd
         }
         [void][FrozenLauncherNative]::SetCursorPos($point.screenX, $point.screenY)
         Start-Sleep -Milliseconds 40
@@ -373,6 +383,9 @@ try {
         if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
         exit 0
     }
+
+    Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_load_wait waiting_for_ui_ready sleepSec=6'
+    Start-Sleep -Seconds 6
 
     Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_click_phase selectionFrozen=true rescoring=disabled operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
     $maxAttempts = 2

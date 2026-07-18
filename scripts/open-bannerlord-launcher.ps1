@@ -14,6 +14,25 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'launcher-window-context.ps1')
 
+function Set-TbgBrightnessCalibrated {
+    try {
+        $documents = [Environment]::GetFolderPath('MyDocuments')
+        $configPath = Join-Path $documents 'Mount and Blade II Bannerlord\Configs\engine_config.txt'
+        if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+            $content = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
+            if ($content -match 'brightness_calibrated\s*=\s*0') {
+                $newContent = $content -replace 'brightness_calibrated\s*=\s*0', 'brightness_calibrated = 1'
+                $newContent | Set-Content -LiteralPath $configPath -Encoding UTF8 -Force
+                Write-Host "Set-TbgBrightnessCalibrated: Updated brightness_calibrated to 1 in engine_config.txt" -ForegroundColor Green
+            }
+        }
+    } catch {
+        Write-Warning "Set-TbgBrightnessCalibrated failed: $_"
+    }
+}
+
+Set-TbgBrightnessCalibrated
+
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot)
     $csproj = Join-Path $RepoRoot 'src\BlacksmithGuild\BlacksmithGuild.csproj'
