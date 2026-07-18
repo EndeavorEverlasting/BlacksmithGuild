@@ -1,0 +1,65 @@
+name: Runtime Context Continuity
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - ".tbg/harness/manifest.json"
+      - ".tbg/harness/fixtures/runtime-context-continuity.fixtures.json"
+      - ".tbg/harness/schemas/runtime-context-capsule.schema.json"
+      - ".tbg/workflows/runtime-context-continuity.contract.json"
+      - ".tbg/skills/launcher-lifecycle/SKILL.md"
+      - ".tbg/skills/runtime-evidence-certification/SKILL.md"
+      - "docs/evidence/runtime-context/**"
+      - "scripts/preflight-cleanup.ps1"
+      - "scripts/test-agent-coordination-contract.ps1"
+      - "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1"
+  push:
+    branches:
+      - main
+    paths:
+      - "AGENTS.md"
+      - ".tbg/harness/manifest.json"
+      - ".tbg/harness/fixtures/runtime-context-continuity.fixtures.json"
+      - ".tbg/harness/schemas/runtime-context-capsule.schema.json"
+      - ".tbg/workflows/runtime-context-continuity.contract.json"
+      - ".tbg/skills/launcher-lifecycle/SKILL.md"
+      - ".tbg/skills/runtime-evidence-certification/SKILL.md"
+      - "docs/evidence/runtime-context/**"
+      - "scripts/preflight-cleanup.ps1"
+      - "scripts/test-agent-coordination-contract.ps1"
+      - "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1"
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-core:
+    name: PowerShell Core doctrine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate runtime context continuity
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgRuntimeContextContinuity.ps1
+      - name: Validate agent coordination
+        shell: pwsh
+        run: ./scripts/test-agent-coordination-contract.ps1
+      - name: Validate skill routing
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgSkillRouting.ps1
+
+  windows-powershell:
+    name: Windows PowerShell doctrine
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate runtime context continuity
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgRuntimeContextContinuity.ps1
+      - name: Validate agent coordination
+        shell: powershell
+        run: .\scripts\test-agent-coordination-contract.ps1
+      - name: Validate PowerShell encoding
+        shell: powershell
+        run: .\scripts\test-powershell-utf8-bom-contract.ps1

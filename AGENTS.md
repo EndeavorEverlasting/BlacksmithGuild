@@ -24,7 +24,8 @@ Before substantial work:
 3. use `CODEBASE_MAP.md` to load the smallest relevant product, harness, runtime, or evidence surface;
 4. read `.tbg/skills/manifest.json` and select one primary skill plus only required cross-cutting skills;
 5. load the skill's `entryContract`, authorities, validators, expected artifacts, and proof ceiling;
-6. use `artifacts/latest/tbg-chat-packet.json`, `artifacts/latest/tbg-sprint-capsule.json`, or the artifact-engine handoff for fresh local state when present.
+6. use `artifacts/latest/tbg-chat-packet.json`, `artifacts/latest/tbg-sprint-capsule.json`, or the artifact-engine handoff for fresh local state when present;
+7. when a request claims install, set up, build, execute, repair, configure, upgrade, deploy, merge, or release, require the corresponding mutation and proof; a plan-only closeout is invalid unless an exact blocker prevents safe work.
 
 Do not paste full stale handoffs into every prompt. Do not load every skill.
 
@@ -37,7 +38,8 @@ Do not paste full stale handoffs into every prompt. Do not load every skill.
 - No game launch, launcher click, command-inbox write, save mutation, or gameplay action is allowed unless the active workflow explicitly grants that authority.
 - A trigger, available tool, external coordinator, or prompt may route work, but it does not grant destructive, runtime, deployment, merge, secret, or live-target authority.
 - Checkpoint coherent tracked progress before broad validation, long diagnostics, runtime proof, refactoring expansion, or switching agents, models, worktrees, or environments. Include owned untracked files; a checkpoint proves preservation only.
-- If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.
+- Before launch, stop, build, install, or cleanup, classify existing Bannerlord processes through `.tbg/workflows/runtime-context-continuity.contract.json`; process presence is context, not zombie proof, and an active human, foreign, or ambiguous session must not be terminated.
+- Raw runtime evidence stays ignored; cross-agent or remote diagnosis uses a sanitized bounded runtime-context capsule registered by that contract.
 - External tools, AgentSwitchboard, SysAdminSuite, and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, save-safety, and product authority.
 
 ## Proof and execution discipline

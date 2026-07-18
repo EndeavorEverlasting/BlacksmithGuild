@@ -1,0 +1,240 @@
+{
+  "schema": "tbg.runtime-context-continuity.contract.v1",
+  "id": "runtime-context-continuity",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "purpose": "Preserve live Bannerlord session context across parallel agents, scripts, engine handoffs, token exhaustion, and remote review without killing an owned-by-someone-else or ambiguous game process.",
+  "authority": {
+    "bootloader": "AGENTS.md",
+    "primarySkills": [
+      ".tbg/skills/launcher-lifecycle/SKILL.md",
+      ".tbg/skills/runtime-evidence-certification/SKILL.md"
+    ],
+    "supportingContracts": [
+      ".tbg/workflows/window-metadata-intelligence.contract.json",
+      ".tbg/workflows/end-to-end-validation.contract.json",
+      ".tbg/workflows/checkpoint-discipline.contract.json"
+    ],
+    "taskSpecificRulesOverrideGenericCloseout": true
+  },
+  "requiredRequestContext": [
+    "repo",
+    "branchOrWorktree",
+    "prOrSprint",
+    "lane",
+    "ownedScope",
+    "forbiddenScope",
+    "expectedArtifacts",
+    "validationOrderWhenSpecified"
+  ],
+  "executionLoop": [
+    "request",
+    "evidence_review",
+    "bounded_decision",
+    "repo_or_git_or_github_mutation",
+    "artifacts",
+    "validation",
+    "report",
+    "next_decision"
+  ],
+  "actionCommitment": {
+    "actionVerbs": [
+      "install",
+      "set up",
+      "build",
+      "execute",
+      "repair",
+      "configure",
+      "upgrade",
+      "deploy",
+      "merge",
+      "release"
+    ],
+    "requireMutation": true,
+    "requireProof": true,
+    "validNoMutationOutcome": "exact_blocker_with_smallest_useful_patch_or_diff_and_one_safe_next_command",
+    "invalidCloseouts": [
+      "acknowledgment_only",
+      "summary_only",
+      "rewritten_prompt_only",
+      "plan_only",
+      "handoff_only",
+      "preflight_only"
+    ]
+  },
+  "processIdentity": {
+    "canonicalProcessNames": [
+      "Bannerlord",
+      "Bannerlord.Native",
+      "TaleWorlds.MountAndBlade",
+      "TaleWorlds.MountAndBlade.Launcher"
+    ],
+    "primaryRule": "Use codified process names plus fresh repository runtime artifacts to classify the existing session before launch, stop, build, install, cleanup, or process mutation.",
+    "pidDeltaRole": "secondary_correlation_only_for_a_child_launched_by_the_current_owned_workflow",
+    "pidDeltaForbiddenAsPrimaryIdentity": true,
+    "evidenceOrder": [
+      "BlacksmithGuild_SessionIntent.json_when_present",
+      "BlacksmithGuild_ProcessLifecycle.json",
+      "BlacksmithGuild_RuntimeLifecycle.json",
+      "BlacksmithGuild_Status.json",
+      "launcher-window-context.json",
+      "command_correlation_and_action_lease",
+      "canonical_process_and_window_metadata"
+    ],
+    "classifications": [
+      "absent",
+      "active_owned",
+      "active_human",
+      "active_foreign",
+      "stale_or_zombie_proven",
+      "ambiguous"
+    ],
+    "decisionRules": [
+      {
+        "classification": "absent",
+        "allowed": ["launch_when_active_workflow_grants_authority"],
+        "forbidden": ["claim_runtime_state"]
+      },
+      {
+        "classification": "active_owned",
+        "allowed": ["attach", "observe", "continue_owned_workflow", "stop_when_owned_workflow_or_operator_requires"],
+        "forbidden": ["relaunch_duplicate_session"]
+      },
+      {
+        "classification": "active_human",
+        "allowed": ["observe_read_only", "report_blocked"],
+        "forbidden": ["kill", "stop", "focus_steal", "command_write", "save_mutation"]
+      },
+      {
+        "classification": "active_foreign",
+        "allowed": ["observe_read_only", "report_owner_and_blocked"],
+        "forbidden": ["kill", "stop", "focus_steal", "command_write", "save_mutation"]
+      },
+      {
+        "classification": "stale_or_zombie_proven",
+        "allowed": ["bounded_cleanup_with_evidence_and_workflow_authority"],
+        "forbidden": ["cleanup_without_preserved_pre_mutation_context"]
+      },
+      {
+        "classification": "ambiguous",
+        "allowed": ["observe_read_only", "refresh_context_once", "report_blocked"],
+        "forbidden": ["kill", "stop", "launch_duplicate_session", "command_write", "save_mutation"]
+      }
+    ]
+  },
+  "mutationAuthority": {
+    "processPresenceAloneIsNotZombieProof": true,
+    "stopOrKillAllowedOnlyWhen": [
+      "active_owned_and_stop_is_required_by_the_owned_workflow",
+      "stale_or_zombie_proven",
+      "explicit_operator_stop"
+    ],
+    "preserveBeforeMutation": [
+      "run_id",
+      "session_owner_or_intent",
+      "classification",
+      "process_names_and_pids",
+      "window_identity",
+      "freshness",
+      "branch_and_exact_head",
+      "loaded_assembly_hash_when_available",
+      "last_completed_handoff",
+      "next_intended_handoff",
+      "evidence_paths"
+    ],
+    "foreignHumanOrAmbiguousDefault": "fail_closed_without_process_mutation"
+  },
+  "handoffContinuity": {
+    "requiredForEveryEngineHandoff": [
+      "runId",
+      "sourceEngine",
+      "targetEngine",
+      "branch",
+      "phase",
+      "authority",
+      "correlationId",
+      "startedAtUtc",
+      "completedAtUtcOrNull",
+      "status",
+      "failureClassOrNull",
+      "evidenceRefs",
+      "nextEngineHint",
+      "exactHead",
+      "loadedAssemblyHashWhenAvailable"
+    ],
+    "terminalStatuses": ["completed", "blocked", "failed", "aborted"],
+    "crashRule": "A crash or process disappearance between engines must preserve the last completed handoff, active handoff, intended next engine, failure class, and bounded evidence references before finalization.",
+    "orphanDispatchForbidden": true,
+    "ackIsNotCompletion": true
+  },
+  "parallelCoordination": {
+    "contextPacketSources": [
+      "artifacts/latest/tbg-chat-packet.json",
+      "artifacts/latest/tbg-sprint-capsule.json",
+      "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+      "artifacts/latest/artifact-engine/artifact-engine.handoff.md",
+      "runtime-context capsule for the current run"
+    ],
+    "requiredBeforeRuntimeMutation": [
+      "classify existing session",
+      "identify runtime owner",
+      "confirm workflow authority",
+      "confirm exact head and worktree",
+      "record collision risk"
+    ],
+    "singleProcessMutationOwner": true,
+    "readOnlyParallelObserversAllowed": true
+  },
+  "remoteEvidence": {
+    "trackedRoot": "docs/evidence/runtime-context",
+    "capsuleSchema": ".tbg/harness/schemas/runtime-context-capsule.schema.json",
+    "rawEvidencePolicy": "local_ignored_only",
+    "publishRule": "Commit a sanitized bounded capsule when a runtime failure, engine-handoff crash, interrupted agent run, or token-exhaustion handoff needs remote analysis.",
+    "maxCapsuleBytes": 65536,
+    "maxExcerptLines": 80,
+    "requiredRedactions": [
+      "secrets_and_tokens",
+      "save_contents",
+      "absolute_personal_paths",
+      "personally_identifying_window_text",
+      "raw_crash_dumps",
+      "unbounded_logs"
+    ],
+    "allowedTrackedContent": [
+      "normalized_context",
+      "exact_head",
+      "loaded_hash",
+      "process_classification",
+      "bounded_sanitized_excerpts",
+      "artifact_hashes",
+      "handoff_state",
+      "failure_class",
+      "proof_level",
+      "next_decision"
+    ],
+    "forbiddenTrackedContent": [
+      "raw_logs",
+      "saves",
+      "crash_dumps",
+      "credentials",
+      "tokens",
+      "private_configuration",
+      "machine_local_junk"
+    ]
+  },
+  "validation": {
+    "validator": "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1",
+    "fixtures": ".tbg/harness/fixtures/runtime-context-continuity.fixtures.json",
+    "agentCoordinationValidator": "scripts/test-agent-coordination-contract.ps1",
+    "skillRouterValidator": "scripts/tbg/Test-TbgSkillRouting.ps1",
+    "bomValidator": "scripts/test-powershell-utf8-bom-contract.ps1",
+    "output": "artifacts/latest/runtime-context-continuity/runtime-context-continuity.result.json"
+  },
+  "proofCeiling": "static_test",
+  "nonEquivalences": [
+    "process_name_match_is_not_session_ownership",
+    "pid_delta_is_not_primary_identity",
+    "command_ack_is_not_engine_handoff_completion",
+    "sanitized_capsule_is_not_live_runtime_proof",
+    "launcher_handoff_is_not_gameplay_completion"
+  ]
+}

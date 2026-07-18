@@ -23,12 +23,14 @@ description: Classify freshness, exact-head identity, installed and loaded assem
 
 1. `AGENTS.md`
 2. `.tbg/skills/manifest.json`
-3. `docs/handoff/runtime-state-routing.md`
-4. `.tbg/harness/artifact-engines.registry.json`
-5. `ForgeAgentStatus.cmd`
-6. the fresh runtime and artifact-engine packets named by the active workflow
-7. `artifacts/latest/window-lifecycle/window-lifecycle.result.json` when present
-8. `artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json` when present
+3. `.tbg/workflows/runtime-context-continuity.contract.json`
+4. `.tbg/harness/schemas/runtime-context-capsule.schema.json`
+5. `docs/handoff/runtime-state-routing.md`
+6. `.tbg/harness/artifact-engines.registry.json`
+7. `ForgeAgentStatus.cmd`
+8. the fresh runtime and artifact-engine packets named by the active workflow
+9. `artifacts/latest/window-lifecycle/window-lifecycle.result.json` when present
+10. `artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json` when present
 
 ## Proof ladder
 
@@ -36,7 +38,7 @@ description: Classify freshness, exact-head identity, installed and loaded assem
 contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime
 ```
 
-Every result must state freshness, branch or exact head when relevant, evidence paths, allowed claims, forbidden claims, and the proof ceiling actually reached. Window-lifecycle artifacts and the `window-lifecycle-boundary` packet are correlation inputs only; they never replace live runtime evidence or promote action dispatch into product proof.
+Every result must state freshness, branch or exact head when relevant, evidence paths, allowed claims, forbidden claims, and the proof ceiling actually reached. Raw logs, saves, crash dumps, secrets, and personal paths remain ignored; remote analysis uses a bounded sanitized `TbgRuntimeContextCapsule.v1` under `docs/evidence/runtime-context`. Window-lifecycle artifacts and the `window-lifecycle-boundary` packet are correlation inputs only; they never replace live runtime evidence or promote action dispatch into product proof.
 
 ## Owned scope
 
@@ -46,6 +48,7 @@ Every result must state freshness, branch or exact head when relevant, evidence 
 - proof-boundary reports
 - evidence retention decisions
 - runtime-evidence documentation and validators
+- sanitized remote runtime-context capsules and their retention policy
 
 ## Forbidden scope
 
@@ -54,10 +57,12 @@ Every result must state freshness, branch or exact head when relevant, evidence 
 - save or command-inbox mutation
 - claim promotion without evidence
 - evidence deletion without archive or supersession proof
+- committing raw logs, saves, crash dumps, credentials, tokens, private configuration, or absolute personal paths
 
 ## Validation
 
 ```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeContextContinuity.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1
 .\ForgeAgentStatus.cmd
 .\ForgeArtifactEngine.cmd run -Mode observe
@@ -72,5 +77,5 @@ Run workflow-specific build, launcher, command, movement, arrival, and trade val
 - Freshness and identity are explicit.
 - Every evidence path exists or is reported missing.
 - Allowed and forbidden claims are recorded.
-- Retention or deletion disposition is recorded.
+- Retention or deletion disposition is recorded; failures needing remote review have a schema-valid sanitized capsule or an explicit reason none is required.
 - No higher proof level is inferred from a lower one.
