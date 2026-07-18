@@ -60,11 +60,11 @@ $contract = Get-Content -LiteralPath $contractPath -Raw | ConvertFrom-Json
 $registry = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
 Assert-Tbg -Condition ($contract.id -eq 'local-artifact-engine') -Message 'The workflow contract has the wrong id.'
 Assert-Tbg -Condition ($registry.schema -eq 'TbgArtifactEngineRegistry.v1') -Message 'The registry has the wrong schema.'
-Assert-Tbg -Condition (@($registry.engines).Count -eq 5) -Message 'The registry must contain exactly five initial engines.'
+Assert-Tbg -Condition (@($registry.engines).Count -eq 6) -Message 'The registry must contain exactly six engines including window-lifecycle-boundary.'
 Assert-Tbg -Condition (@($registry.engines | Where-Object { $_.authority -ne 'read_only' }).Count -eq 0) -Message 'Every artifact engine must remain read-only.'
 
 $engineIds = @($registry.engines.id)
-foreach ($requiredId in @('artifact-index', 'repo-floor-context', 'stale-pr-next-action', 'runtime-proof-boundary', 'handoff-compressor')) {
+foreach ($requiredId in @('artifact-index', 'repo-floor-context', 'stale-pr-next-action', 'window-lifecycle-boundary', 'runtime-proof-boundary', 'handoff-compressor')) {
     Assert-Tbg -Condition ($engineIds -contains $requiredId) -Message "Required engine '$requiredId' is missing."
 }
 
@@ -88,6 +88,11 @@ try {
     $staleResultPath = Join-Path $fixtureRoot 'stale-pr-recovery.result.json'
     $staleReportPath = Join-Path $fixtureRoot 'stale-pr-recovery.report.md'
     $commandAckPath = Join-Path $fixtureRoot 'BlacksmithGuild_CommandAck.json'
+    $lifecycleRoot = Join-Path $fixtureRoot 'window-lifecycle'
+    New-Item -ItemType Directory -Force -Path $lifecycleRoot | Out-Null
+    $lifecycleStatePath = Join-Path $lifecycleRoot 'window-lifecycle.state.json'
+    $lifecycleResultPath = Join-Path $lifecycleRoot 'window-lifecycle.result.json'
+    $lifecycleReportPath = Join-Path $lifecycleRoot 'window-lifecycle.report.md'
 
     [pscustomobject][ordered]@{
         schema = 'TbgRepoHygieneReport.v1'
@@ -118,6 +123,18 @@ try {
         verdict = 'ACK'
     } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $commandAckPath -Encoding UTF8
 
+    [pscustomobject][ordered]@{
+        schema = 'TbgWindowLifecycleMaterializedState.v1'
+        windows = @([pscustomobject]@{ windowKey = 'pid:1|hwnd:1'; phase = 'action_dispatch'; identityId = 'bannerlord.launcher' })
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $lifecycleStatePath -Encoding UTF8
+    [pscustomobject][ordered]@{
+        schema = 'TbgWindowLifecycleRuntimeResult.v1'
+        status = 'ready'
+        proofLevel = 'runtime_adapter_harness'
+        proofCeiling = 'launcher_lifecycle_harness'
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $lifecycleResultPath -Encoding UTF8
+    '# Fixture Window Lifecycle Report' | Set-Content -LiteralPath $lifecycleReportPath -Encoding UTF8
+
     $fixtureRegistry = Get-Content -LiteralPath $registryPath -Raw | ConvertFrom-Json
     $fixtureRegistry.defaults.outputRoot = $outputRoot
     $fixtureRegistry.defaults.stateRoot = $stateRoot
@@ -130,7 +147,8 @@ try {
             }
             'repo-floor-context' { $engine.candidatePaths = @($repoHygienePath, $repoHygieneMarkdownPath) }
             'stale-pr-next-action' { $engine.candidatePaths = @($staleResultPath, $staleReportPath) }
-            'runtime-proof-boundary' { $engine.candidatePaths = @($commandAckPath) }
+            'window-lifecycle-boundary' { $engine.candidatePaths = @($lifecycleStatePath, $lifecycleResultPath, $lifecycleReportPath) }
+            'runtime-proof-boundary' { $engine.candidatePaths = @($commandAckPath, $lifecycleResultPath) }
         }
     }
     $fixtureRegistry | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $tempRegistryPath -Encoding UTF8
@@ -154,12 +172,13 @@ try {
     Assert-Tbg -Condition ($auto.exitCode -eq 0) -Message "Auto mode failed: $($auto.output)"
     $autoResult = Get-Content -LiteralPath (Join-Path $outputRoot 'artifact-engine.result.json') -Raw | ConvertFrom-Json
     Assert-Tbg -Condition ($autoResult.terminalState -eq 'READY_auto_cascade_complete') -Message 'Auto mode reported the wrong terminal state.'
-    Assert-Tbg -Condition ([int]$autoResult.engineRunCount -eq 5) -Message 'Auto mode did not run all five engines.'
+    Assert-Tbg -Condition ([int]$autoResult.engineRunCount -eq 6) -Message 'Auto mode did not run all six engines.'
 
     foreach ($requiredOutput in @(
         'artifact-index.result.json',
         'repo-floor-context.result.json',
         'stale-pr-next-action.result.json',
+        'window-lifecycle-boundary.result.json',
         'runtime-proof-boundary.result.json',
         'handoff-compressor.result.json',
         'artifact-engine.result.json',
@@ -173,9 +192,12 @@ try {
 
     $floorPacket = Get-Content -LiteralPath (Join-Path $outputRoot 'repo-floor-context.result.json') -Raw | ConvertFrom-Json
     $recoveryPacket = Get-Content -LiteralPath (Join-Path $outputRoot 'stale-pr-next-action.result.json') -Raw | ConvertFrom-Json
+    $lifecyclePacket = Get-Content -LiteralPath (Join-Path $outputRoot 'window-lifecycle-boundary.result.json') -Raw | ConvertFrom-Json
     $proofPacket = Get-Content -LiteralPath (Join-Path $outputRoot 'runtime-proof-boundary.result.json') -Raw | ConvertFrom-Json
     Assert-Tbg -Condition ($floorPacket.terminalState -eq 'READY_repo_floor_clean') -Message 'The floor engine did not classify the clean fixture.'
     Assert-Tbg -Condition ($recoveryPacket.terminalState -eq 'READY_bounded_recovery_instruction') -Message 'The recovery engine did not consume clean floor context.'
+    Assert-Tbg -Condition ($lifecyclePacket.terminalState -eq 'READY_window_lifecycle_boundary_classified') -Message 'The lifecycle boundary engine did not classify fresh lifecycle fixtures.'
+    Assert-Tbg -Condition ($lifecyclePacket.payload.actionAuthority -eq 'none') -Message 'The lifecycle boundary engine must never authorize actions.'
     Assert-Tbg -Condition ($proofPacket.payload.parserProofLevel -eq 'artifact_inspection') -Message 'The proof engine overclaimed parser proof.'
 
     $events = @(Get-Content -LiteralPath (Join-Path $outputRoot 'artifact-engine.events.jsonl') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -208,7 +230,45 @@ try {
     $strictResult = Get-Content -LiteralPath (Join-Path $outputRoot 'artifact-engine.result.json') -Raw | ConvertFrom-Json
     Assert-Tbg -Condition ($strictResult.terminalState -eq 'BLOCKED_artifact_engine_strict') -Message 'Strict mode reported the wrong terminal state.'
 
-    Write-Host 'PASS: the local artifact engine exposes a persistent toggle, manual action, producer triggers, an automatic read-only cascade, conservative proof boundaries, paired artifacts, and strict fail-closed validation.'
+    '{ malformed lifecycle' | Set-Content -LiteralPath $lifecycleResultPath -Encoding UTF8
+    Remove-Item -LiteralPath $outputRoot -Recurse -Force
+    New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+    [pscustomobject][ordered]@{
+        schema = 'TbgRepoHygieneReport.v1'
+        branch = 'fixture/main'
+        head = '1111111111111111111111111111111111111111'
+        upstream = 'origin/main'
+        verdict = 'CLEAN'
+        nextCommand = 'git log --oneline --decorate -5'
+        dirtyPaths = @()
+        conflictedFiles = @()
+        operations = @()
+        worktrees = @([pscustomobject]@{ path = $repoRoot; branch = 'main' })
+    } | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $repoHygienePath -Encoding UTF8
+    $malformedLifecycle = Invoke-TbgChild -ScriptPath $scriptPath -Arguments (@('run', '-Mode', 'strict') + $common)
+    Assert-Tbg -Condition ($malformedLifecycle.exitCode -eq 2) -Message "Malformed lifecycle artifacts did not fail closed: $($malformedLifecycle.output)"
+    $malformedLifecyclePacket = Get-Content -LiteralPath (Join-Path $outputRoot 'window-lifecycle-boundary.result.json') -Raw | ConvertFrom-Json
+    Assert-Tbg -Condition ($malformedLifecyclePacket.terminalState -eq 'BLOCKED_window_lifecycle_parse_error') -Message 'Malformed lifecycle artifacts did not block the lifecycle boundary engine.'
+
+    [pscustomobject][ordered]@{
+        schema = 'TbgWindowLifecycleMaterializedState.v1'
+        windows = @([pscustomobject]@{ windowKey = 'pid:2|hwnd:2'; phase = 'unknown_quarantined'; identityId = 'unknown' })
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $lifecycleStatePath -Encoding UTF8
+    [pscustomobject][ordered]@{
+        schema = 'TbgWindowLifecycleRuntimeResult.v1'
+        status = 'ready'
+        proofLevel = 'runtime_adapter_harness'
+        proofCeiling = 'launcher_lifecycle_harness'
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $lifecycleResultPath -Encoding UTF8
+    Remove-Item -LiteralPath $outputRoot -Recurse -Force
+    New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+    $quarantine = Invoke-TbgChild -ScriptPath $scriptPath -Arguments (@('run', '-Mode', 'auto') + $common)
+    Assert-Tbg -Condition ($quarantine.exitCode -eq 0) -Message "Quarantine lifecycle fixture failed: $($quarantine.output)"
+    $quarantinePacket = Get-Content -LiteralPath (Join-Path $outputRoot 'window-lifecycle-boundary.result.json') -Raw | ConvertFrom-Json
+    Assert-Tbg -Condition ($quarantinePacket.terminalState -eq 'WAITING_window_lifecycle_quarantined') -Message 'Unknown quarantine did not wait without action authority.'
+    Assert-Tbg -Condition ($quarantinePacket.payload.actionAuthority -eq 'none') -Message 'Quarantine must never authorize a click.'
+
+    Write-Host 'PASS: the local artifact engine exposes a persistent toggle, manual action, producer triggers, an automatic read-only cascade, window-lifecycle boundary classification, conservative proof boundaries, paired artifacts, and strict fail-closed validation.'
 }
 finally {
     Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue

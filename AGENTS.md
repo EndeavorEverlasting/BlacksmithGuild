@@ -61,7 +61,8 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 | harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
 | local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
 | proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
-| ForgeStop, build/deploy/launch/Continue/window lifecycle | `launcher-lifecycle` |
+| ForgeStop, build/deploy/launch/Continue | `launcher-lifecycle` |
+| window lifecycle reduce/replay/quarantine | `window-lifecycle-runtime` |
 | campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |
 | hotkeys, toggles, command inbox, Manual/Assist/Autonomous | `operator-control-surface` |
 | commit, push, PR, concurrent completion, release gates | `implementation-completion` |
@@ -71,17 +72,7 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 | external coordinators and agent-operation tools | `agentic-operations` |
 | WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
 
-Agent A/B/C/D names are compatibility aliases only. Route by lane and skill, not by a temporary agent letter. When a handoff still uses letter names, map them as:
-
-- Agent A = Cert / Evidence / Git / PR judgment
-- Agent B = Runtime / Readiness / Gameplay state truth
-- Agent C = External runner / launcher / lifecycle / window classifier
-- Agent D = Docs / atlas / routing board
-
-Living coordination board: [`docs/handoff/blacksmithguild-agent-coordination.md`](docs/handoff/blacksmithguild-agent-coordination.md).
-Runtime state routing: [`docs/handoff/runtime-state-routing.md`](docs/handoff/runtime-state-routing.md).
-
-Runner owns evidence capture. Do not ask the operator to harvest logs manually when a runner-owned workflow can capture them.
+Agent A/B/C/D names are compatibility aliases only. Route by lane and skill. Map: A=Cert/Evidence/Git/PR; B=Runtime/Readiness; C=Launcher/lifecycle/window; D=Docs/atlas. Living boards: [`docs/handoff/blacksmithguild-agent-coordination.md`](docs/handoff/blacksmithguild-agent-coordination.md), [`docs/handoff/runtime-state-routing.md`](docs/handoff/runtime-state-routing.md). Runner owns evidence capture.
 
 ## Current-state pointers
 

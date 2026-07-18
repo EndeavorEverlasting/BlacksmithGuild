@@ -76,11 +76,11 @@
       "type": "skill",
       "displayName": "Runtime Evidence Certification",
       "capabilities": ["capability:runtime-evidence-certification"],
-      "inputSchemas": ["TbgEvidenceRecord.v1", "TbgObservation.v1"],
+      "inputSchemas": ["TbgEvidenceRecord.v1", "TbgObservation.v1", "TbgWindowLifecycleRuntimeResult.v1"],
       "outputSchemas": ["TbgClaim.v1"],
       "maxProofLevel": "live runtime",
       "riskClasses": ["runtime_read"],
-      "authorityRequirements": ["exact_head", "fresh_artifacts", "command_correlation"],
+      "authorityRequirements": ["exact_head", "fresh_artifacts", "command_correlation", "lifecycle_correlation"],
       "preconditions": [],
       "ownedPaths": [],
       "forbiddenPaths": [],
@@ -89,15 +89,58 @@
       "terminalStates": ["SUCCEEDED", "FAILED", "REJECTED"]
     },
     {
+      "id": "provider:window-lifecycle-runtime",
+      "type": "skill",
+      "displayName": "Window Lifecycle Runtime",
+      "capabilities": [
+        "capability:window-lifecycle-reduction",
+        "capability:window-lifecycle-runtime-observation"
+      ],
+      "inputSchemas": [
+        "TbgWindowLifecycleRuntimeEvent.v1",
+        "TbgWindowLifecycleRuntimeResult.v1",
+        "TbgWindowLifecycleMaterializedState.v1"
+      ],
+      "outputSchemas": [
+        "TbgWindowLifecycleMaterializedState.v1",
+        "TbgWindowLifecycleTransition.v1",
+        "TbgObservation.v1",
+        "TbgEvidenceRecord.v1"
+      ],
+      "maxProofLevel": "harness",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["manifest_valid", "fresh_artifacts", "lifecycle_correlation"],
+      "preconditions": [],
+      "ownedPaths": [
+        ".tbg/skills/window-lifecycle-runtime/**",
+        "docs/architecture/window-lifecycle-agent-routing.md"
+      ],
+      "forbiddenPaths": [
+        "src/BlacksmithGuild/MapTrade/**",
+        "scripts/tbg/Resolve-TbgWindowLifecycle.ps1",
+        "scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1"
+      ],
+      "commands": [
+        "ForgeWindowLifecycle.cmd",
+        "ForgeWindowLifecycle.cmd replay",
+        "ForgeWindowLifecycle.cmd status"
+      ],
+      "validators": [
+        "scripts/tbg/Test-TbgSkillRouting.ps1",
+        "scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1"
+      ],
+      "terminalStates": ["SUCCEEDED", "FAILED", "REJECTED"]
+    },
+    {
       "id": "provider:launcher-lifecycle",
       "type": "skill",
       "displayName": "Launcher Lifecycle",
       "capabilities": ["capability:launcher-control"],
-      "inputSchemas": ["TbgObservation.v1"],
+      "inputSchemas": ["TbgObservation.v1", "TbgWindowLifecycleMaterializedState.v1"],
       "outputSchemas": ["TbgEvidenceRecord.v1"],
       "maxProofLevel": "launcher",
       "riskClasses": ["runtime_write"],
-      "authorityRequirements": ["forge_stop_first"],
+      "authorityRequirements": ["forge_stop_first", "exact_launcher_context", "lifecycle_identity_authority"],
       "preconditions": [],
       "ownedPaths": [],
       "forbiddenPaths": [],

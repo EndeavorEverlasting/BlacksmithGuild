@@ -1,6 +1,6 @@
 {
   "schema": "TbgArtifactEngineRegistry.v1",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "defaults": {
     "outputRoot": "artifacts/latest/artifact-engine",
     "stateRoot": ".local/tbg-artifact-engine",
@@ -40,6 +40,7 @@
       "downstream": [
         "repo-floor-context",
         "stale-pr-next-action",
+        "window-lifecycle-boundary",
         "runtime-proof-boundary"
       ]
     },
@@ -81,6 +82,26 @@
       ]
     },
     {
+      "id": "window-lifecycle-boundary",
+      "order": 35,
+      "implementation": "window_lifecycle_boundary",
+      "authority": "read_only",
+      "required": false,
+      "candidatePaths": [
+        "artifacts/latest/window-lifecycle/window-lifecycle.state.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.report.md"
+      ],
+      "outputStem": "window-lifecycle-boundary",
+      "emits": [
+        "window.lifecycle.updated"
+      ],
+      "downstream": [
+        "runtime-proof-boundary",
+        "handoff-compressor"
+      ]
+    },
+    {
       "id": "runtime-proof-boundary",
       "order": 40,
       "implementation": "proof_boundary",
@@ -90,6 +111,9 @@
         "artifacts/latest/launcher-validation-supervisor.result.json",
         "artifacts/latest/launcher-validation-workhorse/result.json",
         "artifacts/latest/launcher-frontdoor/result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.state.json",
+        "artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json",
         "BlacksmithGuild_CommandAck.json",
         "BlacksmithGuild_Status.json",
         "BlacksmithGuild_RuntimeLifecycle.json",
@@ -115,6 +139,7 @@
         "artifact-index",
         "repo-floor-context",
         "stale-pr-next-action",
+        "window-lifecycle-boundary",
         "runtime-proof-boundary"
       ],
       "outputStem": "artifact-engine-handoff",

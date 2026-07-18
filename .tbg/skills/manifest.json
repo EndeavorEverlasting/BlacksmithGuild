@@ -517,6 +517,7 @@
                                           ],
                        "composesWith":  [
                                             "runtime-evidence-certification",
+                                            "window-lifecycle-runtime",
                                             "repo-floor-hygiene"
                                         ],
                        "exclusiveWith":  [
@@ -650,7 +651,8 @@
                                                        "RuntimeLifecycle",
                                                        "Status.json",
                                                        "CommandAck.json",
-                                                       "campaign action evidence"
+                                                       "campaign action evidence",
+                                                       "window-lifecycle.result.json"
                                                    ]
                                  },
                        "requiresSkills":  [
@@ -658,6 +660,7 @@
                                           ],
                        "composesWith":  [
                                             "launcher-lifecycle",
+                                            "window-lifecycle-runtime",
                                             "route-visible-trade",
                                             "local-artifact-engine"
                                         ],
@@ -703,7 +706,6 @@
                                                      "launch Bannerlord",
                                                      "select Continue",
                                                      "supervise launcher",
-                                                     "classify window",
                                                      "stop runtime",
                                                      "build and deploy before launch"
                                                  ],
@@ -721,14 +723,16 @@
                                      "artifacts":  [
                                                        "launch log",
                                                        "process snapshot",
-                                                       "RuntimeLifecycle"
+                                                       "RuntimeLifecycle",
+                                                       "launcher-window-context.json"
                                                    ]
                                  },
                        "requiresSkills":  [
                                               "runtime-evidence-certification"
                                           ],
                        "composesWith":  [
-                                            "operator-control-surface"
+                                            "operator-control-surface",
+                                            "window-lifecycle-runtime"
                                         ],
                        "exclusiveWith":  [
                                              "repo-floor-hygiene"
@@ -763,6 +767,83 @@
                                           ],
                        "providerRefs":  [
                                             "provider:launcher-lifecycle"
+                                        ]
+                   },
+                   {
+                       "id":  "window-lifecycle-runtime",
+                       "path":  ".tbg/skills/window-lifecycle-runtime/SKILL.md",
+                       "distribution":  "repo_internal",
+                       "lane":  "harness/window-lifecycle-runtime",
+                       "match":  {
+                                     "intents":  [
+                                                     "inspect window lifecycle",
+                                                     "replay window lifecycle fixture",
+                                                     "reduce window lifecycle events",
+                                                     "interpret lifecycle quarantine",
+                                                     "classify unknown window lifecycle state",
+                                                     "inspect window lifecycle status"
+                                                 ],
+                                     "paths":  [
+                                                   "artifacts/latest/window-lifecycle/**",
+                                                   ".local/tbg-window-lifecycle/**",
+                                                   ".tbg/harness/schemas/window-lifecycle-*.schema.json",
+                                                   "docs/architecture/window-lifecycle-*.md",
+                                                   "ForgeWindowLifecycle.cmd"
+                                               ],
+                                     "commands":  [
+                                                      "ForgeWindowLifecycle.cmd",
+                                                      "ForgeWindowLifecycle.cmd replay",
+                                                      "ForgeWindowLifecycle.cmd status"
+                                                  ],
+                                     "artifacts":  [
+                                                       "window-lifecycle.run-context.json",
+                                                       "window-lifecycle.state.json",
+                                                       "window-lifecycle.result.json",
+                                                       "window-lifecycle.report.md",
+                                                       "window-lifecycle.handoff.md"
+                                                   ]
+                                 },
+                       "requiresSkills":  [
+
+                                          ],
+                       "composesWith":  [
+                                            "launcher-lifecycle",
+                                            "runtime-evidence-certification",
+                                            "local-artifact-engine"
+                                        ],
+                       "exclusiveWith":  [
+                                             "repo-floor-hygiene"
+                                         ],
+                       "entryContract":  ".tbg/workflows/agent-skill-router.contract.json",
+                       "primaryAuthorities":  [
+                                                  "docs/architecture/window-lifecycle-runtime-wiring.md",
+                                                  "docs/architecture/window-lifecycle-agent-routing.md",
+                                                  "ForgeWindowLifecycle.cmd"
+                                              ],
+                       "validators":  [
+                                          "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1",
+                                          "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1"
+                                      ],
+                       "expectedArtifacts":  [
+                                                 "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+                                                 "artifacts/latest/skill-routing/skill-routing.result.json"
+                                             ],
+                       "proofCeiling":  "harness",
+                       "riskClass":  "static",
+                       "freshnessSource":  "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+                       "ownedPaths":  [
+                                          ".tbg/skills/window-lifecycle-runtime/**",
+                                          "docs/architecture/window-lifecycle-agent-routing.md"
+                                      ],
+                       "forbiddenPaths":  [
+                                              "src/BlacksmithGuild/MapTrade/**",
+                                              "scripts/tbg/Resolve-TbgWindowLifecycle.ps1",
+                                              "scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1",
+                                              "scripts/tbg/Invoke-TbgWindowIntelligence.ps1",
+                                              "scripts/launcher-window-context.ps1"
+                                          ],
+                       "providerRefs":  [
+                                            "provider:window-lifecycle-runtime"
                                         ]
                    },
                    {
@@ -801,6 +882,7 @@
                                           ],
                        "composesWith":  [
                                             "launcher-lifecycle",
+                                            "window-lifecycle-runtime",
                                             "operator-control-surface"
                                         ],
                        "exclusiveWith":  [

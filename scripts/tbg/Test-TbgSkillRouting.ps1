@@ -30,6 +30,65 @@ function Test-TbgNonEmptyCollection {
     return $null -ne $Value -and @($Value).Count -gt 0
 }
 
+function Resolve-TbgPrimarySkill {
+    param(
+        [Parameter(Mandatory = $true)]$Manifest,
+        [string]$Intent = '',
+        [string]$Path = '',
+        [string]$Command = '',
+        [string]$Artifact = ''
+    )
+
+    $scores = @{}
+    foreach ($skill in @($Manifest.skills)) {
+        $score = 0
+        $id = [string]$skill.id
+        if (-not [string]::IsNullOrWhiteSpace($Intent)) {
+            foreach ($candidate in @($skill.match.intents)) {
+                if ([string]$candidate -eq $Intent -or $Intent -like "*$candidate*" -or [string]$candidate -like "*$Intent*") {
+                    $score += 8
+                    break
+                }
+            }
+        }
+        if (-not [string]::IsNullOrWhiteSpace($Path)) {
+            foreach ($candidate in @($skill.match.paths)) {
+                $pattern = [string]$candidate
+                if ($Path -eq $pattern -or $Path -like $pattern -or $Path -like ($pattern -replace '\*\*', '*')) {
+                    $score += 4
+                    break
+                }
+            }
+        }
+        if (-not [string]::IsNullOrWhiteSpace($Command)) {
+            foreach ($candidate in @($skill.match.commands)) {
+                if ([string]$candidate -eq $Command -or $Command -like "$candidate*") {
+                    $score += 6
+                    break
+                }
+            }
+        }
+        if (-not [string]::IsNullOrWhiteSpace($Artifact)) {
+            foreach ($candidate in @($skill.match.artifacts)) {
+                if ([string]$candidate -eq $Artifact -or $Artifact -like "*$candidate*" -or [string]$candidate -like "*$Artifact*") {
+                    $score += 5
+                    break
+                }
+            }
+        }
+        if ($score -gt 0) {
+            $scores[$id] = $score
+        }
+    }
+
+    if ($scores.Count -eq 0) {
+        return $null
+    }
+
+    $ranked = @($scores.GetEnumerator() | Sort-Object -Property Value -Descending)
+    return [string]$ranked[0].Key
+}
+
 $errors = [System.Collections.Generic.List[string]]::new()
 $warnings = [System.Collections.Generic.List[string]]::new()
 $manifestRelative = '.tbg/skills/manifest.json'
@@ -201,9 +260,56 @@ if (Test-Path -LiteralPath $agentsPath -PathType Leaf) {
     if ($agentText -notmatch 'artifacts/latest/tbg-chat-packet\.json') {
         Add-TbgIssue -List $errors -Message 'AGENTS.md does not point to the current chat packet.'
     }
+    if ($agentText -notmatch 'window-lifecycle-runtime') {
+        Add-TbgIssue -List $errors -Message 'AGENTS.md lane router does not include window-lifecycle-runtime.'
+    }
 }
 else {
     $agentLineCount = 0
+}
+
+$routingCases = @()
+if ($null -ne $manifest -and $errors.Count -eq 0) {
+    if ($skillIds -notcontains 'window-lifecycle-runtime') {
+        Add-TbgIssue -List $errors -Message "Skill 'window-lifecycle-runtime' must be registered for P20 routing."
+    }
+
+    $fixtures = @(
+        [pscustomobject]@{ name = 'lifecycle-artifact'; intent = 'inspect window lifecycle'; path = 'artifacts/latest/window-lifecycle/window-lifecycle.result.json'; command = ''; artifact = 'window-lifecycle.result.json'; expected = 'window-lifecycle-runtime' },
+        [pscustomobject]@{ name = 'lifecycle-command'; intent = ''; path = ''; command = 'ForgeWindowLifecycle.cmd status'; artifact = ''; expected = 'window-lifecycle-runtime' },
+        [pscustomobject]@{ name = 'unknown-quarantine'; intent = 'classify unknown window lifecycle state'; path = ''; command = ''; artifact = 'window-lifecycle.state.json'; expected = 'window-lifecycle-runtime' },
+        [pscustomobject]@{ name = 'launcher-command'; intent = 'launch Bannerlord'; path = ''; command = 'ForgeReboot.cmd'; artifact = ''; expected = 'launcher-lifecycle' },
+        [pscustomobject]@{ name = 'command-ack'; intent = 'distinguish ACK from action'; path = ''; command = ''; artifact = 'CommandAck.json'; expected = 'operator-control-surface' },
+        [pscustomobject]@{ name = 'movement-trade'; intent = 'prove visible trade'; path = 'src/BlacksmithGuild/MapTrade/**'; command = ''; artifact = 'buy delta'; expected = 'route-visible-trade' },
+        [pscustomobject]@{ name = 'runtime-cert-compose'; intent = 'classify proof'; path = ''; command = 'ForgeAgentStatus.cmd'; artifact = 'window-lifecycle.result.json'; expected = 'runtime-evidence-certification' }
+    )
+
+    foreach ($fixture in $fixtures) {
+        $selected = Resolve-TbgPrimarySkill -Manifest $manifest -Intent $fixture.intent -Path $fixture.path -Command $fixture.command -Artifact $fixture.artifact
+        $routingCases += [ordered]@{
+            name = [string]$fixture.name
+            expected = [string]$fixture.expected
+            selected = $selected
+            pass = ($selected -eq [string]$fixture.expected)
+        }
+        if ($selected -ne [string]$fixture.expected) {
+            Add-TbgIssue -List $errors -Message "Routing fixture '$($fixture.name)' selected '$selected' but expected '$($fixture.expected)'."
+        }
+    }
+
+    $lifecycleSkill = @($manifest.skills | Where-Object { $_.id -eq 'window-lifecycle-runtime' } | Select-Object -First 1)
+    if ($lifecycleSkill.Count -eq 1) {
+        $owned = @($lifecycleSkill[0].ownedPaths)
+        $forbidden = @($lifecycleSkill[0].forbiddenPaths)
+        foreach ($path in $owned) {
+            if ($forbidden -contains [string]$path) {
+                Add-TbgIssue -List $errors -Message "Skill 'window-lifecycle-runtime' owns and forbids the same path '$path'."
+            }
+        }
+        if ([string]$lifecycleSkill[0].proofCeiling -notin @('contract', 'harness', 'static test', 'launcher')) {
+            Add-TbgIssue -List $errors -Message "Skill 'window-lifecycle-runtime' proof ceiling must stay at or below launcher observation."
+        }
+    }
 }
 
 $outputPath = if ([IO.Path]::IsPathRooted($OutputRoot)) { [IO.Path]::GetFullPath($OutputRoot) } else { Resolve-TbgRepoPath $OutputRoot }
@@ -217,16 +323,19 @@ $result = [ordered]@{
     schemaPath = $schemaRelative
     skillCount = @($skillIds).Count
     agentLineCount = $agentLineCount
+    routingFixtures = @($routingCases)
     errors = @($errors)
     warnings = @($warnings)
     proofLevel = 'static test'
     allowedClaims = @(
         'The skill manifest parses and satisfies the repo routing contract.',
         'Registered skill, contract, and authority paths exist.',
+        'Deterministic intent/path/command/artifact fixtures select one primary skill.',
         'The root agent contract remains within the compact line ceiling.'
     )
     forbiddenClaims = @(
-        'No build, launcher, command ACK, behavior, movement, trade, or live runtime proof is established.'
+        'No build, launcher, command ACK, behavior, movement, trade, or live runtime proof is established.',
+        'Skill selection is not capability execution or live runtime proof.'
     )
 }
 $resultJson = $result | ConvertTo-Json -Depth 10
@@ -239,6 +348,7 @@ $reportLines = @(
     '',
     "- The manifest registered $(@($skillIds).Count) skills.",
     "- The root AGENTS.md file contains $agentLineCount lines.",
+    "- The validator exercised $(@($routingCases).Count) deterministic routing fixtures.",
     "- The validator found $($errors.Count) errors and $($warnings.Count) warnings.",
     '- The highest proof level reached is static test proof.',
     ''

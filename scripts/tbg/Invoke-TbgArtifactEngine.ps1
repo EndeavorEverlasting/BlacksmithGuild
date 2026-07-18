@@ -576,6 +576,152 @@ function Invoke-TbgStalePr {
     ) -Blocking $blocking
 }
 
+function Invoke-TbgWindowLifecycleBoundary {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][object]$Engine
+    )
+
+    $files = @(Get-TbgCandidates -RepoRoot $RepoRoot -Engine $Engine)
+    $jsonFiles = @($files | Where-Object { $_.Extension -eq '.json' })
+    $reportFiles = @($files | Where-Object { $_.Extension -eq '.md' })
+    if ($files.Count -eq 0) {
+        return New-TbgPacket -EngineId $Engine.id -Schema 'TbgWindowLifecycleBoundary.v1' -TerminalState 'UNAVAILABLE_window_lifecycle_artifacts_missing' -NextCommand '.\ForgeWindowLifecycle.cmd replay' -Payload ([pscustomobject][ordered]@{
+            artifactFound = $false
+            parserProofLevel = 'artifact_inspection'
+            freshnessVerified = $false
+            independentlyValidated = $false
+            actionAuthority = 'none'
+        }) -Sentences @(
+            'The window-lifecycle-boundary engine did not find registered P19 lifecycle state, result, or report artifacts.',
+            "The operator should run '.\ForgeWindowLifecycle.cmd replay' before treating lifecycle routing as fresh."
+        )
+    }
+
+    $claims = New-Object System.Collections.Generic.List[object]
+    $blocking = $false
+    $quarantined = $false
+    $parseError = $false
+    $freshnessVerified = $true
+    $maxAgeHours = 24
+    $now = [DateTime]::UtcNow
+
+    foreach ($file in $jsonFiles) {
+        $ageHours = ($now - $file.LastWriteTimeUtc).TotalHours
+        $fileFresh = ($ageHours -le $maxAgeHours)
+        if (-not $fileFresh) { $freshnessVerified = $false }
+        try {
+            $value = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json -ErrorAction Stop
+            $schema = [string](Get-TbgValue -Object $value -Name 'schema' -Default '')
+            $status = [string](Get-TbgValue -Object $value -Name 'status' -Default '')
+            $proofLevel = [string](Get-TbgValue -Object $value -Name 'proofLevel' -Default '')
+            $proofCeiling = [string](Get-TbgValue -Object $value -Name 'proofCeiling' -Default '')
+            $windows = @(Get-TbgValue -Object $value -Name 'windows' -Default @())
+            if ($windows.Count -eq 0) {
+                $state = Get-TbgValue -Object $value -Name 'state' -Default $null
+                $windows = @(Get-TbgValue -Object $state -Name 'windows' -Default @())
+            }
+            foreach ($window in $windows) {
+                $phase = [string](Get-TbgValue -Object $window -Name 'phase' -Default '')
+                $identity = [string](Get-TbgValue -Object $window -Name 'identity' -Default (Get-TbgValue -Object $window -Name 'identityId' -Default ''))
+                if ($phase -match 'unknown|quarantine' -or $identity -match 'unknown|quarantine') {
+                    $quarantined = $true
+                }
+            }
+            if ($proofLevel -match 'live runtime|behavior observed|campaign' -or $status -match 'live_runtime|gameplay_pass') {
+                $blocking = $true
+                $claims.Add([pscustomobject][ordered]@{
+                    path = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $file.FullName
+                    schema = $schema
+                    status = $status
+                    proofLevel = $proofLevel
+                    proofCeiling = $proofCeiling
+                    candidateClassification = 'blocked_overclaim'
+                    freshnessVerified = $fileFresh
+                    independentlyValidated = $false
+                }) | Out-Null
+            }
+            else {
+                $claims.Add([pscustomobject][ordered]@{
+                    path = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $file.FullName
+                    schema = $schema
+                    status = $status
+                    proofLevel = $proofLevel
+                    proofCeiling = $proofCeiling
+                    candidateClassification = if ($quarantined) { 'quarantine_or_unknown' } else { 'lifecycle_harness_observation' }
+                    freshnessVerified = $fileFresh
+                    independentlyValidated = $false
+                }) | Out-Null
+            }
+        }
+        catch {
+            $parseError = $true
+            $blocking = $true
+            $freshnessVerified = $false
+            $claims.Add([pscustomobject][ordered]@{
+                path = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $file.FullName
+                schema = ''
+                status = ''
+                proofLevel = ''
+                proofCeiling = ''
+                candidateClassification = 'parse_error'
+                freshnessVerified = $false
+                independentlyValidated = $false
+            }) | Out-Null
+        }
+    }
+
+    foreach ($file in $reportFiles) {
+        $claims.Add([pscustomobject][ordered]@{
+            path = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $file.FullName
+            schema = 'markdown-report'
+            status = ''
+            proofLevel = ''
+            proofCeiling = ''
+            candidateClassification = 'report_present'
+            freshnessVerified = (($now - $file.LastWriteTimeUtc).TotalHours -le $maxAgeHours)
+            independentlyValidated = $false
+        }) | Out-Null
+    }
+
+    if ($parseError) {
+        $terminal = 'BLOCKED_window_lifecycle_parse_error'
+        $next = '.\ForgeWindowLifecycle.cmd validate'
+    }
+    elseif ($blocking) {
+        $terminal = 'BLOCKED_window_lifecycle_proof_overclaim'
+        $next = '.\ForgeWindowLifecycle.cmd status'
+    }
+    elseif (-not $freshnessVerified) {
+        $terminal = 'BLOCKED_window_lifecycle_stale'
+        $next = '.\ForgeWindowLifecycle.cmd replay'
+        $blocking = $true
+    }
+    elseif ($quarantined) {
+        $terminal = 'WAITING_window_lifecycle_quarantined'
+        $next = '.\ForgeWindowLifecycle.cmd status'
+    }
+    else {
+        $terminal = 'READY_window_lifecycle_boundary_classified'
+        $next = '.\ForgeArtifactEngine.cmd run -Mode observe'
+    }
+
+    return New-TbgPacket -EngineId $Engine.id -Schema 'TbgWindowLifecycleBoundary.v1' -TerminalState $terminal -NextCommand $next -Payload ([pscustomobject][ordered]@{
+        artifactFound = $true
+        artifactCount = $files.Count
+        parserProofLevel = 'artifact_inspection'
+        freshnessVerified = $freshnessVerified
+        independentlyValidated = $false
+        actionAuthority = 'none'
+        claims = @($claims.ToArray())
+    }) -Sentences @(
+        "The window-lifecycle-boundary engine inspected $($files.Count) registered P19 lifecycle artifact(s).",
+        'The engine remains read-only and never authorizes clicks, launches, or gameplay mutation.',
+        "The window-lifecycle-boundary engine classified the current boundary as '$terminal'.",
+        "The operator should run '$next' as the next command."
+    ) -Blocking $blocking
+}
+
 function Invoke-TbgProofBoundary {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
@@ -819,6 +965,7 @@ function Invoke-TbgPass {
                 'inventory' { Invoke-TbgInventory -RepoRoot $RepoRoot -Engine $engine -Registry $Registry -ExtraRoots $ExtraRoots }
                 'repo_floor' { Invoke-TbgRepoFloor -RepoRoot $RepoRoot -Engine $engine }
                 'stale_pr' { Invoke-TbgStalePr -RepoRoot $RepoRoot -OutputRoot $OutputRoot -Engine $engine }
+                'window_lifecycle_boundary' { Invoke-TbgWindowLifecycleBoundary -RepoRoot $RepoRoot -Engine $engine }
                 'proof_boundary' { Invoke-TbgProofBoundary -RepoRoot $RepoRoot -Engine $engine }
                 'handoff' { Invoke-TbgHandoff -OutputRoot $OutputRoot -Engine $engine }
                 default { throw "The artifact engine implementation '$implementation' is not supported." }
