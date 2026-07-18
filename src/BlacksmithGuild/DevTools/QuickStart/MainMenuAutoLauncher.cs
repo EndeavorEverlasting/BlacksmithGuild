@@ -16,6 +16,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
     internal static class MainMenuAutoLauncher
     {
         private const string IntentFileName = "BlacksmithGuild_LaunchIntent.json";
+        private const string SessionIntentFileName = "BlacksmithGuild_SessionIntent.json";
         private const float MainMenuTimeoutSeconds = 30f;
 
         private static readonly string[] PlayOptionIds =
@@ -528,9 +529,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (!string.IsNullOrEmpty(fromDll))
             {
                 paths.Add(Path.Combine(fromDll, IntentFileName));
+                paths.Add(Path.Combine(fromDll, SessionIntentFileName));
             }
 
             paths.Add(Path.Combine(BasePath.Name, IntentFileName));
+            paths.Add(Path.Combine(BasePath.Name, SessionIntentFileName));
             return paths.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         }
 
