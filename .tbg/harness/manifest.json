@@ -125,6 +125,7 @@
     "Escape menu (pause menu) is auto-dismissed by ClockResumeHelper via Win32 keybd_event. Operator intervention is no longer required for pause-menu recovery.",
     "Engine health heartbeat: every engine that performs autonomous work must log a start token, periodic progress heartbeats, and a stop token (success or failure). A silent engine exit (Phase1.log stops without a stop token) is a crash until proven otherwise.",
     "Vanilla mechanics over code injection: trade menus, taverns, horse markets, villages, and recruitment should follow in-game UI mechanics visually. Background analysis is fine; on-screen navigation must use game surfaces, not direct mutations.",
-    "Pause is not pause: escape menu (GUI overlay) blocks input and freezes automation. Time pause (campaign clock stopped) keeps the map open but stops time. Engines must distinguish the two: dismiss escape menu via keybd_event; resume time pause via TimeControlMode = StoppablePlay. Never assume one implies the other."
+    "Pause is not pause: escape menu (GUI overlay) blocks input and freezes automation. Time pause (campaign clock stopped) keeps the map open but stops time. Engines must distinguish the two: dismiss escape menu via keybd_event; resume time pause via TimeControlMode = StoppablePlay. Never assume one implies the other.",
+    "Travel before trade: market intel may be gathered anywhere, but settlement interior navigation (trade menu, tavern, horse market, smithy, recruitment) requires arrival at the target settlement. Do not probe settlement-specific APIs or InGameNotice the player about buy/sell before arrival. Route order: travel -> arrive -> enter settlement -> open trade menu -> execute trade."
   ]
 }
