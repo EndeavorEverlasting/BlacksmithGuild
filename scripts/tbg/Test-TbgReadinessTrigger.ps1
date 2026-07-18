@@ -37,16 +37,24 @@ function Write-Event($msg) {
 
 Write-Event "TRIGGER START command=$Command pollMs=$PollMs readyTimeout=${ReadyTimeoutSec}s ackTimeout=${AckTimeoutSec}s sessionMode=$SessionMode launchId=$LaunchId"
 
-# Phase 1: wait for campaign map readiness
+# Phase 1: wait for campaign map readiness with escalating poll interval
+# 30s -> 10s -> 5s -> 2.5s as time passes, catching map ready faster
 Write-Event "PHASE 1: waiting for campaign map readiness..."
 $readyDeadline = $startedAt.AddSeconds($ReadyTimeoutSec)
 $mapReady = $false
 $lastSurface = ''
 $lastSyncSeq = 0
+$escalatingPolls = @(30000, 10000, 5000, 2500)
 
 while ((Get-Date) -lt $readyDeadline) {
+    $elapsed = [Math]::Round(((Get-Date) - $startedAt).TotalSeconds, 1)
+    $currentPoll = if ($elapsed -lt 30) { $escalatingPolls[0] }
+                   elseif ($elapsed -lt 90) { $escalatingPolls[1] }
+                   elseif ($elapsed -lt 180) { $escalatingPolls[2] }
+                   else { $escalatingPolls[3] }
+
     if (-not (Test-Path -LiteralPath $phase1Path -PathType Leaf)) {
-        Start-Sleep -Milliseconds $PollMs
+        Start-Sleep -Milliseconds $currentPoll
         continue
     }
     $tail = Get-Content -LiteralPath $phase1Path -Tail 30 -Encoding UTF8
@@ -68,7 +76,7 @@ while ((Get-Date) -lt $readyDeadline) {
         else { Write-Event "SURFACE: $lastSurface" }
     }
 
-    Start-Sleep -Milliseconds $PollMs
+    Start-Sleep -Milliseconds $currentPoll
 }
 
 if (-not $mapReady) {
