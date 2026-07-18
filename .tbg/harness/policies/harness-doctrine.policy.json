@@ -1,0 +1,134 @@
+{
+  "schema": "tbg.harness-doctrine.policy.v1",
+  "title": "Harness Doctrine Enforcement",
+  "authority": "docs/harness-doctrine.md",
+  "requiredFields": [
+    "repo",
+    "branch_or_worktree",
+    "pr_or_sprint",
+    "lane",
+    "owned_scope",
+    "forbidden_scope",
+    "expected_artifacts",
+    "validation_order_when_specified"
+  ],
+  "executionLoop": [
+    "request",
+    "evidence_review",
+    "bounded_decision",
+    "repo_or_git_or_github_mutation",
+    "artifacts",
+    "validation",
+    "report",
+    "next_decision"
+  ],
+  "actionCommitment": {
+    "verbs": [
+      "install",
+      "set up",
+      "build",
+      "execute",
+      "repair",
+      "configure",
+      "upgrade",
+      "deploy",
+      "merge",
+      "release"
+    ],
+    "requiresMutation": true,
+    "requiresProof": true,
+    "blockedOutcomeRequires": [
+      "exact_blocker",
+      "smallest_useful_patch_or_file_content",
+      "one_safest_next_command"
+    ]
+  },
+  "rules": [
+    {
+      "id": "HD-001",
+      "name": "identity-declaration",
+      "requirement": "Name repo, branch/worktree, PR/sprint, lane, owned scope, forbidden scope, expected artifacts, and specified validation order."
+    },
+    {
+      "id": "HD-002",
+      "name": "evidence-before-confidence",
+      "requirement": "Inspect repository evidence before concluding or inventing."
+    },
+    {
+      "id": "HD-003",
+      "name": "existing-authority-before-invention",
+      "requirement": "Reuse current rules, maps, workflows, registries, schemas, helpers, validators, and generated-output policy."
+    },
+    {
+      "id": "HD-004",
+      "name": "preservation-before-cleanup",
+      "requirement": "Preserve unrelated or unpublished state and checkpoint coherent owned work before broad or risky operations."
+    },
+    {
+      "id": "HD-005",
+      "name": "bounded-mutation-before-completion",
+      "requirement": "Requested repository work requires an authorized repository, Git, GitHub, runtime, deployment, merge, or release mutation plus proof."
+    },
+    {
+      "id": "HD-006",
+      "name": "task-specific-override",
+      "requirement": "The narrowest task-specific execution and validation rules override generic closeout behavior."
+    },
+    {
+      "id": "HD-007",
+      "name": "proof-level-separation",
+      "requirement": "contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime"
+    },
+    {
+      "id": "HD-008",
+      "name": "artifact-backed-report",
+      "requirement": "Completion claims name paths, freshness, exact head when relevant, checks, commit or GitHub evidence, gaps, and one next command."
+    },
+    {
+      "id": "HD-009",
+      "name": "runtime-context-specialization",
+      "requirement": "Runtime mutation around Bannerlord must consume .tbg/workflows/runtime-context-continuity.contract.json."
+    },
+    {
+      "id": "HD-010",
+      "name": "raw-evidence-boundary",
+      "requirement": "Raw logs, saves, crash dumps, credentials, private configuration, and machine-local junk remain local and ignored."
+    }
+  ],
+  "invalidCloseouts": [
+    "acknowledgment_only",
+    "summary_only",
+    "rewritten_prompt_only",
+    "plan_only",
+    "handoff_only",
+    "preflight_only",
+    "request_for_permission_when_bounded_mutation_is_safe"
+  ],
+  "requiredHarnessComponents": {
+    "agentRules": "AGENTS.md",
+    "codebaseMap": "CODEBASE_MAP.md",
+    "workflowDirectory": ".tbg/workflows",
+    "runContext": "artifacts/latest/tbg-sprint-capsule.json",
+    "artifactRegistry": ".tbg/harness/e2e-artifact-types.registry.json",
+    "validatorDirectory": "scripts/tbg",
+    "skillManifest": ".tbg/skills/manifest.json",
+    "codeIntelligenceContract": ".tbg/workflows/local-mcp-code-intelligence.contract.json",
+    "operatorReports": "docs/handoff",
+    "handoffCompressionContract": ".tbg/workflows/tbg-sprint-capsule.contract.json"
+  },
+  "requiredArtifacts": {
+    "doctrine": "docs/harness-doctrine.md",
+    "policy": ".tbg/harness/policies/harness-doctrine.policy.json",
+    "validator": "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "runtimeContinuityContract": ".tbg/workflows/runtime-context-continuity.contract.json",
+    "runtimeCapsuleSchema": ".tbg/harness/schemas/runtime-context-capsule.schema.json"
+  },
+  "validationOrder": [
+    "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1",
+    "scripts/test-agent-coordination-contract.ps1",
+    "scripts/tbg/Test-TbgSkillRouting.ps1",
+    "scripts/test-powershell-utf8-bom-contract.ps1",
+    "git diff --check"
+  ]
+}
