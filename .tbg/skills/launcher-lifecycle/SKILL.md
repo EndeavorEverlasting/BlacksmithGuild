@@ -11,6 +11,7 @@ description: Own ForgeStop-first conditions, build and deploy handoff, Bannerlor
 - Running ForgeStop, ForgeReboot, Continue selection, launcher supervision, process classification, or window selection.
 - Changing launcher scripts, lifecycle timeouts, modal handling, metadata parsing, learned window aliases, or clean-stop behavior.
 - Producing launcher-specific evidence.
+- Compose with `window-lifecycle-runtime` when interpreting reduced lifecycle state, quarantine, or action-dispatch proof boundaries.
 
 ## Do not use when
 
@@ -57,7 +58,7 @@ Before proposing another launcher collector, longer timeout, coordinate map, or 
 
 ## Lifecycle boundary
 
-Use the repo's ForgeStop path before operations that assume Bannerlord is not running. Preserve process, PID, HWND, title, class, control, semantic text, dependency, timeout, modal, launch-log, action-lease, and lifecycle evidence. Hand off to runtime or route skills only after the launcher-specific terminal state is explicit.
+Use the repo's ForgeStop path before operations that assume Bannerlord is not running. Preserve process, PID, HWND, title, class, control, semantic text, dependency, timeout, modal, launch-log, and action-lease evidence. Interpret reduced window-lifecycle artifacts through `window-lifecycle-runtime`. Hand off to runtime or route skills only after the launcher-specific terminal state is explicit.
 
 ## Owned scope
 
@@ -70,8 +71,9 @@ Use the repo's ForgeStop path before operations that assume Bannerlord is not ru
 - first-seen window delta learning
 - exact registered modal actions
 - lifecycle timeouts and clean stop
-- launcher logs, state-journal observations, and lifecycle artifacts
+- launcher logs and state-journal observations
 - launcher-specific validators
+- composition with `window-lifecycle-runtime` for reduced lifecycle state
 
 ## Forbidden scope
 

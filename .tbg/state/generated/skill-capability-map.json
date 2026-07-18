@@ -1,6 +1,6 @@
 ﻿{
     "schema":  "TbgSkillCapabilityMap.v1",
-    "generatedUtc":  "2026-07-13T05:15:43.5158849Z",
+    "generatedUtc":  "2026-07-18T08:54:45.3021774Z",
     "mappings":  [
                      {
                          "skillId":  "repo-floor-hygiene",
@@ -21,7 +21,8 @@
                          "skillId":  "harness-maturity",
                          "providerId":  "provider:harness-maturity",
                          "capabilities":  [
-                                              "capability:harness-maturity-classification"
+                                              "capability:harness-maturity-classification",
+                                              "capability:game-compatibility-observation"
                                           ]
                      },
                      {
@@ -36,6 +37,14 @@
                          "providerId":  "provider:runtime-evidence-certification",
                          "capabilities":  [
                                               "capability:runtime-evidence-certification"
+                                          ]
+                     },
+                     {
+                         "skillId":  "window-lifecycle-runtime",
+                         "providerId":  "provider:window-lifecycle-runtime",
+                         "capabilities":  [
+                                              "capability:window-lifecycle-reduction",
+                                              "capability:window-lifecycle-runtime-observation"
                                           ]
                      },
                      {

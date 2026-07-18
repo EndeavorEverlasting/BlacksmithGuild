@@ -27,6 +27,8 @@ description: Classify freshness, exact-head identity, installed and loaded assem
 4. `.tbg/harness/artifact-engines.registry.json`
 5. `ForgeAgentStatus.cmd`
 6. the fresh runtime and artifact-engine packets named by the active workflow
+7. `artifacts/latest/window-lifecycle/window-lifecycle.result.json` when present
+8. `artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json` when present
 
 ## Proof ladder
 
@@ -34,7 +36,7 @@ description: Classify freshness, exact-head identity, installed and loaded assem
 contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime
 ```
 
-Every result must state freshness, branch or exact head when relevant, evidence paths, allowed claims, forbidden claims, and the proof ceiling actually reached.
+Every result must state freshness, branch or exact head when relevant, evidence paths, allowed claims, forbidden claims, and the proof ceiling actually reached. Window-lifecycle artifacts and the `window-lifecycle-boundary` packet are correlation inputs only; they never replace live runtime evidence or promote action dispatch into product proof.
 
 ## Owned scope
 

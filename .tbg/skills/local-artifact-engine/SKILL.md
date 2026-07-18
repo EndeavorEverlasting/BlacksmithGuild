@@ -11,6 +11,7 @@ description: Operate and change the repo-local artifact parser, watcher, toggle,
 - Editing the artifact registry, watcher, parser, trigger cascade, or artifact-engine contract.
 - Converting ignored JSON, JSONL, Markdown, text, or log output into bounded next decisions.
 - Investigating why a producer trigger or automatic watcher pass did not route.
+- Interpreting the `window-lifecycle-boundary` engine as a read-only freshness and proof-boundary classifier for P19 lifecycle artifacts.
 
 ## Do not use when
 
