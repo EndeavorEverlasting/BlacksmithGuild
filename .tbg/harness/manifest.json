@@ -75,6 +75,8 @@
     "gameCompatibilityGateValidator": "scripts/tbg/Test-TbgGameCompatibilityGate.ps1",
     "gameCompatibilityGateSchema": ".tbg/harness/schemas/game-compatibility-gate.schema.json",
     "gameCompatibilityOutput": "artifacts/latest/game-compatibility",
+    "engineHeartbeatValidator": "scripts/tbg/Test-TbgEngineHeartbeat.ps1",
+    "engineHeartbeatOutput": "artifacts/latest/engine-heartbeat.result.json",
     "artifactsLatest": "artifacts/latest",
     "stateEnvelopeSchemas": ".tbg/harness/schemas",
     "stateCapabilitiesRegistry": ".tbg/state/capabilities.registry.json",
