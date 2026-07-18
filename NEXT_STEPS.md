@@ -91,7 +91,7 @@ Optional: rerun `RunStageCCharcoalCert.cmd` after actor fix for clean JSON with 
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (HEAD `dceb6b1`) |
+| Branch | `main` (HEAD `f90207f`) |
 | Remote | in sync with `origin/main` |
-| Open PRs | #43 (stale/conflicting visible trade), #20 (governor activity contract), + 8 stale drafts |
+| Open PRs | #20 (governor activity handoff contract — MERGEABLE, needs compile test) |
 | Recent merges | #99 launcher lifecycle, #97 P21 disposition, #96 visible trade proof, #95 window lifecycle skills |
