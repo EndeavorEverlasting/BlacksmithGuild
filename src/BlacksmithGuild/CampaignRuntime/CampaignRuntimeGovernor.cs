@@ -5,6 +5,7 @@ using BlacksmithGuild.DevTools.Diagnostics;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Food;
 using BlacksmithGuild.HorseMarket;
+using TaleWorlds.CampaignSystem.Party;
 
 namespace BlacksmithGuild.CampaignRuntime
 {
