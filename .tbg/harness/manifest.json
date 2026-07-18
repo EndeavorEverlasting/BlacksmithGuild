@@ -77,6 +77,8 @@
     "gameCompatibilityOutput": "artifacts/latest/game-compatibility",
     "engineHeartbeatValidator": "scripts/tbg/Test-TbgEngineHeartbeat.ps1",
     "engineHeartbeatOutput": "artifacts/latest/engine-heartbeat.result.json",
+    "readinessTrigger": "scripts/tbg/Test-TbgReadinessTrigger.ps1",
+    "readinessTriggerOutput": "artifacts/latest/readiness-trigger.result.json",
     "artifactsLatest": "artifacts/latest",
     "stateEnvelopeSchemas": ".tbg/harness/schemas",
     "stateCapabilitiesRegistry": ".tbg/state/capabilities.registry.json",
