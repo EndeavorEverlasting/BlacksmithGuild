@@ -65,5 +65,33 @@ namespace BlacksmithGuild.DevTools
 
             return CampaignClockResumeHelper.EnsureClockRunning("ResumeCampaignClock");
         }
+
+        public static bool DismissEscapeMenu()
+        {
+            LastFailReason = null;
+            if (Campaign.Current == null)
+            {
+                LastFailReason = "no active campaign";
+                DebugLogger.Test("DismissEscapeMenu: FAIL — no active campaign.");
+                return false;
+            }
+
+            var (wasOpen, attempted, clockResumed) = EscapeMenuHelper.DismissAndResume("TimeDevTools");
+            if (!wasOpen)
+            {
+                DebugLogger.Test("DismissEscapeMenu: no escape menu open.");
+                return true;
+            }
+
+            if (!attempted)
+            {
+                LastFailReason = "dismiss throttled or failed";
+                DebugLogger.Test("DismissEscapeMenu: dismiss attempted=false (throttled).");
+                return false;
+            }
+
+            DebugLogger.Test($"DismissEscapeMenu: wasOpen=true clockResumed={clockResumed.ToString().ToLowerInvariant()}");
+            return clockResumed;
+        }
     }
 }
