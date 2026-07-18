@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/window-lifecycle-transition.schema.json",
+  "title": "TBG Window Lifecycle Transition v1",
+  "description": "One accepted or rejected pure transition between window lifecycle states.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "transitionId",
+    "windowKey",
+    "sequence",
+    "eventType",
+    "fromState",
+    "toState",
+    "accepted",
+    "reason",
+    "proofBoundary"
+  ],
+  "properties": {
+    "schema": { "const": "TbgWindowLifecycleTransition.v1" },
+    "transitionId": { "type": "string", "pattern": "^window-transition:" },
+    "windowKey": { "type": "string", "minLength": 1 },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "eventType": {
+      "enum": [
+        "window_observed",
+        "identity_resolved",
+        "unknown_detected",
+        "action_authorized",
+        "action_dispatched",
+        "action_rejected",
+        "host_handoff_observed",
+        "window_disappeared",
+        "identity_invalidated"
+      ]
+    },
+    "fromState": {
+      "enum": [
+        "unseen",
+        "observed",
+        "recognized",
+        "action_ready",
+        "action_dispatched",
+        "terminal_observation",
+        "unknown_quarantined",
+        "disappeared",
+        "blocked"
+      ]
+    },
+    "toState": {
+      "enum": [
+        "unseen",
+        "observed",
+        "recognized",
+        "action_ready",
+        "action_dispatched",
+        "terminal_observation",
+        "unknown_quarantined",
+        "disappeared",
+        "blocked"
+      ]
+    },
+    "accepted": { "type": "boolean" },
+    "reason": { "type": "string", "minLength": 1 },
+    "identityId": { "type": ["string", "null"] },
+    "actionId": { "type": ["string", "null"] },
+    "proofBoundary": { "type": "string", "minLength": 1 }
+  }
+}

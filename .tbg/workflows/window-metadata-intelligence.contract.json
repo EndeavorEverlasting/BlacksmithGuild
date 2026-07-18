@@ -2,13 +2,13 @@
   "id": "window-metadata-intelligence",
   "schemaVersion": "TbgWorkflowContract.v1",
   "status": "implementation_active",
-  "sprint": "metadata-first-window-identity-and-action",
-  "contextBanner": "[TBG | Window Metadata Intelligence | launcher/harness | metadata before pixels]",
-  "purpose": "Collect process, PID, HWND, Win32, UI Automation, dependency-version, launch-context, and first-seen delta metadata; resolve each window through a tracked identity registry and learned alias cache; write syntactic-English evidence; and dispatch only exact registered modal actions.",
+  "sprint": "window-lifecycle-harness-spine",
+  "contextBanner": "[TBG | Window Metadata Intelligence | launcher/harness | metadata before pixels | pure lifecycle reduction]",
+  "purpose": "Collect process, PID, HWND, Win32, UI Automation, dependency-version, launch-context, and first-seen delta metadata; resolve each window through a tracked identity registry and learned alias cache; reduce observations through a deterministic lifecycle state machine; write syntactic-English evidence; and dispatch only exact registered modal actions.",
   "lane": "launcher-lifecycle/window-intelligence",
   "requiresInactiveRuntime": false,
   "requiresForgeStopFirst": false,
-  "proofLevel": "window_metadata_harness",
+  "proofLevel": "window_metadata_and_lifecycle_harness",
   "validationMode": "offline_fixture_plus_windows_metadata_smoke",
   "entryCommand": ".\\ForgeWindowIntel.cmd scan",
   "watchCommand": ".\\ForgeWindowIntel.cmd watch -Mode auto -AllowKnownActions -DurationSeconds 90",
@@ -16,6 +16,12 @@
   "registryPath": ".tbg/harness/window-identities.registry.json",
   "policyPath": ".tbg/harness/policies/window-intelligence.policy.json",
   "fixturePath": ".tbg/harness/fixtures/window-intelligence/dependency-version-caution.fixture.json",
+  "lifecycleFixturePath": ".tbg/harness/fixtures/window-intelligence/window-lifecycle-sequences.fixture.json",
+  "lifecycleStateSchemaPath": ".tbg/harness/schemas/window-lifecycle-state.schema.json",
+  "lifecycleTransitionSchemaPath": ".tbg/harness/schemas/window-lifecycle-transition.schema.json",
+  "lifecycleReducerPath": "scripts/tbg/Resolve-TbgWindowLifecycle.ps1",
+  "lifecycleValidatorPath": "scripts/tbg/Test-TbgWindowLifecycle.ps1",
+  "lifecycleArchitecturePath": "docs/architecture/window-lifecycle-harness-spine.md",
   "localCachePath": ".local/tbg-window-intelligence/learned-window-aliases.json",
   "resultPath": "artifacts/latest/window-intelligence/window-intelligence.result.json",
   "requiredArtifacts": [
@@ -30,7 +36,9 @@
     "read_launch_context_and_dependency_metadata",
     "resolve_exact_cached_fingerprint",
     "resolve_tracked_registry_identity",
+    "reduce_window_observation_through_pure_lifecycle_state",
     "dispatch_only_registered_exact_action",
+    "record_action_dispatch_without_promoting_application_acceptance",
     "cache_high_confidence_alias",
     "write_state_event_and_english_artifacts",
     "fall_back_to_one_time_delta_discovery_for_unknown_windows"
@@ -39,8 +47,9 @@
     "launcher-window-context.json owns PLAY versus CONTINUE and freezes the target PID and HWND",
     "the window-intelligence watcher starts beside LaunchSetup and polls at 100 milliseconds",
     "known CAUTION and Safe Mode windows are identified from direct metadata and acted on through exact named controls",
+    "each observation is reduced through a pure lifecycle state machine before any downstream interpretation",
     "module XML comparison predicts dependency cautions before they appear but prediction alone never authorizes a click",
-    "unknown windows use the existing S1/S2 snapshot delta once to produce a learning candidate",
+    "unknown windows enter unknown_quarantined and use the existing S1/S2 snapshot delta once to produce a learning candidate",
     "images and OCR remain diagnostic fallback only"
   ],
   "allowedScope": [
@@ -48,6 +57,7 @@
     "read UI Automation names, automation identifiers, control types, enabled state, and bounding metadata",
     "read module dependency declarations and installed module versions",
     "read launcher-window-context.json",
+    "reduce supplied events into deterministic lifecycle state and transition objects without side effects",
     "write ignored cache, result, report, event, progress, handoff, lease, and learning-candidate artifacts",
     "invoke an exact registered named modal control when all direct action signals are present",
     "write window observations into the universal state journal"
@@ -59,8 +69,10 @@
     "learn coordinate positions as semantic identity",
     "promote a spawned Singleplayer host back into launcher-menu selection",
     "treat screenshot parsing as the primary strategy",
+    "perform live clicking, process launch, focus mutation, sleeps, or runtime file writes inside the lifecycle reducer",
+    "promote action dispatch or window disappearance into application acceptance",
     "inspect arbitrary process memory",
-    "claim campaign readiness, command acknowledgement, movement, arrival, trade, or live product success from window recognition"
+    "claim campaign readiness, command acknowledgement, movement, arrival, trade, or live product success from window recognition or lifecycle reduction"
   ],
   "terminalStates": [
     "PASS_no_relevant_windows",
@@ -69,9 +81,27 @@
     "ATTENTION_unknown_window_delta_discovery_required",
     "BLOCKED_unknown_window_in_strict_mode"
   ],
+  "lifecycleStates": [
+    "unseen",
+    "observed",
+    "recognized",
+    "action_ready",
+    "action_dispatched",
+    "terminal_observation",
+    "unknown_quarantined",
+    "disappeared",
+    "blocked"
+  ],
   "doneGate": {
     "requires": [
       "the registry and policy parse",
+      "the lifecycle state and transition schemas parse",
+      "the lifecycle reducer contains no launch, click, focus, sleep, coordinate, image, or OCR primitive",
+      "known modal fixture events reduce from unseen through action_ready and action_dispatched",
+      "window disappearance preserves action_dispatch as the proof ceiling",
+      "the Singleplayer host reduces to terminal_observation only after canonical identity resolution",
+      "an unknown window enters unknown_quarantined and rejects action authority",
+      "an illegal dispatch from unseen is rejected without state mutation",
       "the screenshot-derived fixture resolves to bannerlord.dependency-version-caution",
       "all four dependencies and both versions are parsed",
       "Confirm is the only automatic action for the dependency caution",

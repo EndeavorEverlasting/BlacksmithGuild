@@ -4,36 +4,12 @@
   "authority": "launcher-lifecycle",
   "goal": "Recognize and handle known Bannerlord windows from stable metadata faster than a human can react, while preserving exact-window action safety and proof boundaries.",
   "decisionOrder": [
-    {
-      "order": 1,
-      "method": "exact_cached_fingerprint",
-      "description": "Use an exact learned fingerprint for process, HWND class, normalized title, controls, and semantic text when the cache still agrees with the tracked registry."
-    },
-    {
-      "order": 2,
-      "method": "tracked_registry_metadata_match",
-      "description": "Match process name, title aliases, Win32 child text, UI Automation names and identifiers, and dependency-version metadata against the tracked registry."
-    },
-    {
-      "order": 3,
-      "method": "context_owned_launch_intent",
-      "description": "Use launcher-window-context.json as the sole authority for PLAY versus CONTINUE. Never infer launch intent from stale artifacts or a window image."
-    },
-    {
-      "order": 4,
-      "method": "module_dependency_prediction",
-      "description": "Compare Blacksmith Guild dependency declarations with installed TaleWorlds module versions so the harness expects a dependency caution before it appears. Prediction accelerates recognition but does not itself authorize a click."
-    },
-    {
-      "order": 5,
-      "method": "s1_s2_delta_discovery",
-      "description": "For an unknown window, capture the known-fast before/after PID and window delta once, collect its metadata, and write a learning candidate."
-    },
-    {
-      "order": 6,
-      "method": "image_or_manual_diagnostic",
-      "description": "Use a screenshot or operator description only when process, Win32, UI Automation, dependency, context, and delta evidence cannot identify the window. Image evidence is diagnostic and does not silently expand action authority."
-    }
+    {"order": 1, "method": "exact_cached_fingerprint", "description": "Use an exact learned fingerprint for process, HWND class, normalized title, controls, and semantic text when the cache still agrees with the tracked registry."},
+    {"order": 2, "method": "tracked_registry_metadata_match", "description": "Match process name, title aliases, Win32 child text, UI Automation names and identifiers, and dependency-version metadata against the tracked registry."},
+    {"order": 3, "method": "context_owned_launch_intent", "description": "Use launcher-window-context.json as the sole authority for PLAY versus CONTINUE. Never infer launch intent from stale artifacts or a window image."},
+    {"order": 4, "method": "module_dependency_prediction", "description": "Compare Blacksmith Guild dependency declarations with installed TaleWorlds module versions so the harness expects a dependency caution before it appears. Prediction accelerates recognition but does not itself authorize a click."},
+    {"order": 5, "method": "s1_s2_delta_discovery", "description": "For an unknown window, capture the known-fast before/after PID and window delta once, collect its metadata, and write a learning candidate."},
+    {"order": 6, "method": "image_or_manual_diagnostic", "description": "Use a screenshot or operator description only when process, Win32, UI Automation, dependency, context, and delta evidence cannot identify the window. Image evidence is diagnostic and does not silently expand action authority."}
   ],
   "automaticActionRules": [
     "The exact target PID and HWND must still exist when the action is dispatched.",
@@ -44,6 +20,16 @@
     "Coordinates are not a primary action method and may not be learned as semantic identity.",
     "An action lease prevents duplicate dispatch against the same window fingerprint.",
     "Unknown windows remain observed or quarantined; they are never clicked automatically."
+  ],
+  "lifecycleRules": [
+    "Every window begins at unseen and advances only through an allowed event transition.",
+    "Observation, identity resolution, action authority, action dispatch, terminal handoff, quarantine, disappearance, and blocking are distinct states.",
+    "An unknown window transitions to unknown_quarantined and cannot receive action authority until an explicit tracked identity is resolved.",
+    "A Singleplayer host may become terminal_observation only after the canonical bannerlord.singleplayer-host identity is resolved.",
+    "A modal action may be dispatched only after action_authorized for the same window key and action identifier.",
+    "Window disappearance after dispatch preserves action_dispatch as the proof ceiling and never creates application-acceptance proof.",
+    "The reducer is pure: it does not click, focus, launch, sleep, inspect pixels, write runtime state, or infer timestamps.",
+    "Rejected transitions remain recorded as rejected transition objects and do not mutate the prior materialized state."
   ],
   "legacyRules": [
     "launcher-auto-nav.ps1 is a compatibility fallback, not the current best strategy.",
@@ -62,6 +48,7 @@
   "proofBoundary": [
     "Window recognition proves a launcher or modal observation only.",
     "A dispatched modal action proves dispatch, not that the game accepted it.",
+    "A lifecycle terminal state proves only that the reducer reached a terminal harness disposition for that window key.",
     "Game process handoff is distinct from campaign readiness, command acknowledgement, movement, arrival, trade, and live product success.",
     "Screenshot text supplied by an operator may seed a fixture, but live success requires fresh machine evidence."
   ]

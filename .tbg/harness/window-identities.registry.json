@@ -1,6 +1,6 @@
 {
   "schema": "TbgWindowIdentityRegistry.v1",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
   "purpose": "Classify Bannerlord and launcher windows from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
   "defaultPolicy": {
@@ -12,6 +12,15 @@
     "unknownWindowDisposition": "delta_discovery_required",
     "imageFallbackDisposition": "diagnostic_only"
   },
+  "lifecycle": {
+    "stateSchema": ".tbg/harness/schemas/window-lifecycle-state.schema.json",
+    "transitionSchema": ".tbg/harness/schemas/window-lifecycle-transition.schema.json",
+    "reducer": "scripts/tbg/Resolve-TbgWindowLifecycle.ps1",
+    "fixture": ".tbg/harness/fixtures/window-intelligence/window-lifecycle-sequences.fixture.json",
+    "initialState": "unseen",
+    "terminalStates": ["terminal_observation", "disappeared", "blocked"],
+    "unknownState": "unknown_quarantined"
+  },
   "normalization": {
     "caseInsensitive": true,
     "collapseWhitespace": true,
@@ -22,6 +31,7 @@
     {
       "id": "bannerlord.launcher.menu",
       "displayName": "Bannerlord launcher menu",
+      "lifecycleRole": "context_owned_interactive",
       "aliases": [
         "Mount & Blade II: Bannerlord",
         "Mount and Blade II Bannerlord",
@@ -52,6 +62,7 @@
     {
       "id": "bannerlord.dependency-version-caution",
       "displayName": "Blacksmith Guild dependency-version caution",
+      "lifecycleRole": "known_modal",
       "aliases": [
         "CAUTION",
         "Caution",
@@ -94,6 +105,7 @@
     {
       "id": "bannerlord.safe-mode",
       "displayName": "Bannerlord Safe Mode prompt",
+      "lifecycleRole": "known_modal",
       "aliases": ["Safe Mode", "Bannerlord Safe Mode", "Launch in Safe Mode"],
       "match": {
         "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
@@ -120,6 +132,7 @@
     {
       "id": "bannerlord.singleplayer-host",
       "displayName": "Bannerlord Singleplayer host",
+      "lifecycleRole": "terminal_handoff",
       "aliases": [
         "Mount and Blade II Bannerlord - Singleplayer",
         "Mount & Blade II: Bannerlord - Singleplayer",
