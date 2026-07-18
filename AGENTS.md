@@ -13,7 +13,7 @@ When instructions overlap, use this order:
 5. client adapters such as `CLAUDE.md`;
 6. historical docs, stale PR bodies, and chat handoffs.
 
-A lower authority may explain a higher authority but may not override it.
+A lower authority may explain a higher authority but may not override it. Canonical execution doctrine: [`docs/harness-doctrine.md`](docs/harness-doctrine.md), enforced by `.tbg/harness/policies/harness-doctrine.policy.json` and `scripts/tbg/Test-TbgHarnessDoctrine.ps1`.
 
 ## Entry sequence
 
@@ -58,9 +58,9 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 
 | Request or touched surface | Primary skill |
 |---|---|
+| harness doctrine, placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
 | branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
 | root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
-| harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
 | local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
 | proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
 | ForgeStop, build/deploy/launch/Continue | `launcher-lifecycle` |
