@@ -16,11 +16,14 @@ param(
     [string]$CachePath,
     [string]$OutputDirectory,
     [string]$ContextPath,
+    [string]$LifecycleRunId,
+    [string]$LifecycleCorrelationId,
     [int]$DurationSeconds = 30,
     [int]$PollMilliseconds = 100,
     [switch]$AllowKnownActions,
     [switch]$AllowFocusSteal,
-    [switch]$NoJournal
+    [switch]$NoJournal,
+    [switch]$NoLifecycle
 )
 
 Set-StrictMode -Version Latest
@@ -783,6 +786,235 @@ function Write-TbgJournalObservation {
     } catch { }
 }
 
+function Get-TbgWindowLifecycleKey {
+    param([Parameter(Mandatory = $true)]$Observation)
+    return 'pid:{0}|hwnd:{1}' -f [int]$Observation.process.pid, [Int64]$Observation.window.hwnd
+}
+
+function Initialize-TbgWindowLifecycleRuntimeSession {
+    param([Parameter(Mandatory = $true)][string]$CorrelationId)
+
+    if ($NoLifecycle) { return $null }
+    if ([string]::IsNullOrWhiteSpace($script:lifecycleRunId)) {
+        $script:lifecycleRunId = if ([string]::IsNullOrWhiteSpace($LifecycleRunId)) {
+            'wl-{0}-{1}' -f ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')), ([Guid]::NewGuid().ToString('N').Substring(0, 8))
+        } else {
+            $LifecycleRunId
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($script:lifecycleCorrelationId)) {
+        $script:lifecycleCorrelationId = if ([string]::IsNullOrWhiteSpace($LifecycleCorrelationId)) { $CorrelationId } else { $LifecycleCorrelationId }
+    }
+    if ($null -eq $script:lifecycleSequenceByWindow) {
+        $script:lifecycleSequenceByWindow = @{}
+    }
+    if ($null -eq $script:lifecycleKnownWindows) {
+        $script:lifecycleKnownWindows = @{}
+    }
+    if ($null -eq $script:lifecycleRuntimePath) {
+        $script:lifecycleRuntimePath = Join-Path $repoRoot 'scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1'
+    }
+    return [pscustomobject][ordered]@{
+        runId = [string]$script:lifecycleRunId
+        correlationId = [string]$script:lifecycleCorrelationId
+        runtimePath = [string]$script:lifecycleRuntimePath
+    }
+}
+
+function Get-TbgNextLifecycleSequence {
+    param([Parameter(Mandatory = $true)][string]$WindowKey)
+    if (-not $script:lifecycleSequenceByWindow.ContainsKey($WindowKey)) {
+        $script:lifecycleSequenceByWindow[$WindowKey] = 0
+    }
+    $script:lifecycleSequenceByWindow[$WindowKey] = [int]$script:lifecycleSequenceByWindow[$WindowKey] + 1
+    return [int]$script:lifecycleSequenceByWindow[$WindowKey]
+}
+
+function Publish-TbgWindowLifecycleRuntimeEvents {
+    param(
+        [Parameter(Mandatory = $true)][object[]]$WindowResults,
+        [Parameter(Mandatory = $true)][string]$CorrelationId,
+        [switch]$EmitDisappearances
+    )
+
+    $session = Initialize-TbgWindowLifecycleRuntimeSession -CorrelationId $CorrelationId
+    if ($null -eq $session) { return $null }
+    if (-not (Test-Path -LiteralPath $session.runtimePath -PathType Leaf)) { return $null }
+
+    $events = New-Object System.Collections.Generic.List[object]
+    $currentKeys = @{}
+    foreach ($item in @($WindowResults)) {
+        $windowKey = Get-TbgWindowLifecycleKey -Observation $item.observation
+        $currentKeys[$windowKey] = $true
+        $isNewWindow = -not $script:lifecycleKnownWindows.ContainsKey($windowKey)
+        $previous = if ($isNewWindow) { $null } else { $script:lifecycleKnownWindows[$windowKey] }
+
+        if ($isNewWindow) {
+            $events.Add([pscustomobject][ordered]@{
+                    windowKey = $windowKey
+                    sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                    eventType = 'window_observed'
+                    sentence = 'The window intelligence harness observed a launcher or game window and forwarded it to the lifecycle runtime adapter.'
+                }) | Out-Null
+        }
+
+        if ([bool]$item.resolution.recognized) {
+            $alreadyRecognized = ($null -ne $previous) -and [bool]$previous.recognized -and ([string]$previous.identityId -eq [string]$item.resolution.identityId)
+            if (-not $alreadyRecognized) {
+                $events.Add([pscustomobject][ordered]@{
+                        windowKey = $windowKey
+                        sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                        eventType = 'identity_resolved'
+                        identityId = [string]$item.resolution.identityId
+                        sentence = ("The window intelligence harness resolved identity '{0}' and forwarded that recognition into the lifecycle reducer." -f [string]$item.resolution.identityId)
+                    }) | Out-Null
+                if ([string]$item.resolution.identityId -eq 'bannerlord.singleplayer-host') {
+                    $events.Add([pscustomobject][ordered]@{
+                            windowKey = $windowKey
+                            sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                            eventType = 'host_handoff_observed'
+                            identityId = 'bannerlord.singleplayer-host'
+                            sentence = 'The window intelligence harness observed the canonical Singleplayer host and recorded a host handoff observation without claiming campaign readiness.'
+                        }) | Out-Null
+                }
+            }
+            $script:lifecycleKnownWindows[$windowKey] = [pscustomobject][ordered]@{
+                identityId = [string]$item.resolution.identityId
+                recognized = $true
+            }
+        }
+        elseif ($isNewWindow) {
+            $events.Add([pscustomobject][ordered]@{
+                    windowKey = $windowKey
+                    sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                    eventType = 'unknown_detected'
+                    sentence = 'The window intelligence harness could not identify the observed window, so the lifecycle runtime adapter quarantined it.'
+                }) | Out-Null
+            $script:lifecycleKnownWindows[$windowKey] = [pscustomobject][ordered]@{
+                identityId = $null
+                recognized = $false
+            }
+        }
+        else {
+            $script:lifecycleKnownWindows[$windowKey] = [pscustomobject][ordered]@{
+                identityId = $null
+                recognized = $false
+            }
+        }
+
+        if ([bool]$item.actionDecision.allowed) {
+            $authorityKey = '{0}|authorized|{1}' -f $windowKey, [string]$item.actionDecision.actionId
+            if (-not $script:lifecycleSequenceByWindow.ContainsKey($authorityKey)) {
+                $events.Add([pscustomobject][ordered]@{
+                        windowKey = $windowKey
+                        sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                        eventType = 'action_authorized'
+                        identityId = [string]$item.resolution.identityId
+                        actionId = [string]$item.actionDecision.actionId
+                        sentence = ("The window intelligence harness authorized action '{0}' from exact direct signals without claiming application acceptance." -f [string]$item.actionDecision.actionId)
+                    }) | Out-Null
+                $script:lifecycleSequenceByWindow[$authorityKey] = 1
+            }
+        }
+        elseif ([bool]$item.resolution.recognized -and -not [bool]$item.actionDecision.allowed -and [string]$item.actionDecision.reason -match 'reject|invalid|missing') {
+            $rejectKey = '{0}|rejected|{1}' -f $windowKey, [string]$item.actionDecision.reason
+            if (-not $script:lifecycleSequenceByWindow.ContainsKey($rejectKey)) {
+                $events.Add([pscustomobject][ordered]@{
+                        windowKey = $windowKey
+                        sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                        eventType = 'action_rejected'
+                        identityId = [string]$item.resolution.identityId
+                        actionId = [string]$item.actionDecision.actionId
+                        reason = [string]$item.actionDecision.reason
+                        sentence = ("The window intelligence harness rejected action authority because '{0}'." -f [string]$item.actionDecision.reason)
+                    }) | Out-Null
+                $script:lifecycleSequenceByWindow[$rejectKey] = 1
+            }
+        }
+
+        if ([bool]$item.actionResult.dispatched) {
+            $dispatchKey = '{0}|dispatched|{1}' -f $windowKey, [string]$item.actionDecision.actionId
+            if (-not $script:lifecycleSequenceByWindow.ContainsKey($dispatchKey)) {
+                $events.Add([pscustomobject][ordered]@{
+                        windowKey = $windowKey
+                        sequence = (Get-TbgNextLifecycleSequence -WindowKey $windowKey)
+                        eventType = 'action_dispatched'
+                        identityId = [string]$item.resolution.identityId
+                        actionId = [string]$item.actionDecision.actionId
+                        sentence = ("The window intelligence harness recorded action dispatch '{0}' through an exact registered control and did not promote that dispatch into application acceptance." -f [string]$item.actionDecision.actionId)
+                    }) | Out-Null
+                $script:lifecycleSequenceByWindow[$dispatchKey] = 1
+            }
+        }
+        elseif ($FixturePath -and $item.actionResult.PSObject.Properties['wouldDispatch'] -and [bool]$item.actionResult.wouldDispatch) {
+            # Fixture simulation proves authority only. Never emit action_dispatched for fixture runs.
+        }
+    }
+
+    if ($EmitDisappearances) {
+        foreach ($knownKey in @($script:lifecycleKnownWindows.Keys)) {
+            if ($currentKeys.ContainsKey([string]$knownKey)) { continue }
+            $disappearKey = '{0}|disappeared' -f [string]$knownKey
+            if ($script:lifecycleSequenceByWindow.ContainsKey($disappearKey)) { continue }
+            $events.Add([pscustomobject][ordered]@{
+                    windowKey = [string]$knownKey
+                    sequence = (Get-TbgNextLifecycleSequence -WindowKey ([string]$knownKey))
+                    eventType = 'window_disappeared'
+                    sentence = 'The window intelligence harness observed that a previously tracked window disappeared and recorded disappearance without treating it as application acceptance.'
+                }) | Out-Null
+            $script:lifecycleSequenceByWindow[$disappearKey] = 1
+            $script:lifecycleKnownWindows.Remove([string]$knownKey)
+        }
+    }
+
+    if ($events.Count -eq 0) { return $null }
+
+    $launchIntent = 'unknown'
+    $targetPid = $null
+    $targetHwnd = $null
+    if (-not [string]::IsNullOrWhiteSpace($ContextPath) -and (Test-Path -LiteralPath $ContextPath -PathType Leaf)) {
+        try {
+            $context = Read-TbgJson -Path $ContextPath
+            if ($null -ne $context) {
+                if ($context.PSObject.Properties['launchIntent']) { $launchIntent = [string]$context.launchIntent }
+                if ($context.PSObject.Properties['processId']) { $targetPid = [int]$context.processId }
+                if ($context.PSObject.Properties['hwnd']) { $targetHwnd = [Int64]$context.hwnd }
+            }
+        } catch { }
+    }
+
+    $mode = if ($FixturePath) { 'fixture' } else { 'live' }
+    $eventJson = (@($events.ToArray()) | ConvertTo-Json -Depth 12 -Compress)
+    if (-not $eventJson.StartsWith('[')) { $eventJson = "[$eventJson]" }
+    $normalizedIntent = switch -Regex ([string]$launchIntent) {
+        '^(?i)play$' { 'play' }
+        '^(?i)continue$' { 'continue' }
+        '^(?i)fixture$' { 'fixture' }
+        default { 'unknown' }
+    }
+
+    try {
+        $reduceArgs = @{
+            Command = 'reduce'
+            RunId = [string]$session.runId
+            CorrelationId = [string]$session.correlationId
+            EventJson = $eventJson
+            Mode = $mode
+            LaunchIntent = $normalizedIntent
+            CreatedBy = 'Invoke-TbgWindowIntelligence.ps1'
+            PassThru = $true
+        }
+        if (-not [string]::IsNullOrWhiteSpace($ContextPath)) { $reduceArgs.LauncherContextPath = $ContextPath }
+        if ($null -ne $targetPid) { $reduceArgs.TargetProcessId = [int]$targetPid }
+        if ($null -ne $targetHwnd) { $reduceArgs.TargetHwnd = [Int64]$targetHwnd }
+        return & $session.runtimePath @reduceArgs
+    }
+    catch {
+        Add-TbgProgress -Sentence ("The window intelligence harness could not publish lifecycle runtime events because {0}." -f $_.Exception.Message)
+        return $null
+    }
+}
+
 function Get-TbgNativeObservations {
     param([Parameter(Mandatory = $true)]$Registry)
     if (-not (Test-TbgWindowsHost)) { return @() }
@@ -905,6 +1137,8 @@ function Invoke-TbgScan {
             actionResult = $actionResult
         }) | Out-Null
     }
+
+    Publish-TbgWindowLifecycleRuntimeEvents -WindowResults @($windowResults.ToArray()) -CorrelationId $CorrelationId -EmitDisappearances:($Command -eq 'watch') | Out-Null
     return @($windowResults.ToArray())
 }
 
@@ -1055,8 +1289,18 @@ if (-not $registry) { throw "The window identity registry is missing or invalid:
 $policy = Read-TbgJson -Path $PolicyPath
 if (-not $policy) { throw "The window intelligence policy is missing or invalid: $PolicyPath" }
 $cache = Read-TbgCache -Registry $registry
-$correlationId = 'window-intel-{0}-{1}' -f ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')), ([Guid]::NewGuid().ToString('N').Substring(0,8))
+$correlationId = if (-not [string]::IsNullOrWhiteSpace($LifecycleCorrelationId)) {
+    $LifecycleCorrelationId
+} else {
+    'window-intel-{0}-{1}' -f ([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')), ([Guid]::NewGuid().ToString('N').Substring(0,8))
+}
+$script:lifecycleRunId = $LifecycleRunId
+$script:lifecycleCorrelationId = $LifecycleCorrelationId
+$script:lifecycleSequenceByWindow = @{}
+$script:lifecycleKnownWindows = @{}
+$script:lifecycleRuntimePath = $null
 $startedUtc = [DateTime]::UtcNow.ToString('o')
+Initialize-TbgWindowLifecycleRuntimeSession -CorrelationId $correlationId | Out-Null
 
 $allResults = New-Object System.Collections.Generic.List[object]
 if ($Command -eq 'watch') {
@@ -1070,6 +1314,8 @@ if ($Command -eq 'watch') {
         mode = $Mode
         allowKnownActions = [bool]$AllowKnownActions
         correlationId = $correlationId
+        lifecycleRunId = [string]$script:lifecycleRunId
+        lifecycleCorrelationId = [string]$script:lifecycleCorrelationId
     }
     Write-TbgJson -Value $lease -Path $leasePath -Depth 10
     try {

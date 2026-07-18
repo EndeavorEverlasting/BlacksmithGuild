@@ -1,6 +1,8 @@
 {
   "schema": "tbg.e2e-artifact-types.v1",
   "runtimeRoot": ".local/tbg-e2e-runs",
+  "windowLifecycleRuntimeRoot": ".local/tbg-window-lifecycle",
+  "windowLifecycleLatestRoot": "artifacts/latest/window-lifecycle",
   "trackedRuntimeEvidenceAllowed": false,
   "types": [
     {"id": "run-context", "fileName": "run-context.json", "tracked": false},
@@ -8,6 +10,13 @@
     {"id": "e2e-result", "fileName": "result.json", "tracked": false},
     {"id": "operator-report", "fileName": "operator-report.md", "tracked": false},
     {"id": "sprint-capsule", "fileName": "sprint-capsule.json", "tracked": false},
-    {"id": "current-sprint-capsule", "fileName": "artifacts/latest/tbg-sprint-capsule.json", "tracked": false}
+    {"id": "current-sprint-capsule", "fileName": "artifacts/latest/tbg-sprint-capsule.json", "tracked": false},
+    {"id": "window-lifecycle-run-context", "fileName": "run-context.json", "tracked": false},
+    {"id": "window-lifecycle-artifact-registry", "fileName": "artifact-registry.json", "tracked": false},
+    {"id": "window-lifecycle-events", "fileName": "events.jsonl", "tracked": false},
+    {"id": "window-lifecycle-state", "fileName": "state.json", "tracked": false},
+    {"id": "window-lifecycle-result", "fileName": "result.json", "tracked": false},
+    {"id": "window-lifecycle-operator-report", "fileName": "operator-report.md", "tracked": false},
+    {"id": "window-lifecycle-handoff", "fileName": "handoff.md", "tracked": false}
   ]
 }

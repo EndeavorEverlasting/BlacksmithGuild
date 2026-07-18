@@ -1,0 +1,159 @@
+{
+  "schema": "TbgWindowLifecycleRuntimeFixture.v1",
+  "purpose": "Prove deterministic runtime adaptation of ordered window-intelligence observations into P18 lifecycle artifacts, including quarantine, duplicate and out-of-order rejection, unauthorized dispatch, and disappearance without application-acceptance promotion.",
+  "baseCommitHint": "6eda01ada78778b0f8fb9cca70f3b4afb1d77f70",
+  "cases": [
+    {
+      "caseId": "dependency-caution-progression",
+      "windowKey": "pid:201001|hwnd:300001",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the dependency caution window." },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.dependency-version-caution", "sentence": "The runtime adapter resolved the dependency caution identity." },
+        { "sequence": 3, "eventType": "action_authorized", "actionId": "confirm_dependency_version_caution", "sentence": "The runtime adapter authorized the Confirm action for the dependency caution." },
+        { "sequence": 4, "eventType": "action_dispatched", "actionId": "confirm_dependency_version_caution", "sentence": "The runtime adapter recorded an exact Confirm dispatch without claiming application acceptance." },
+        { "sequence": 5, "eventType": "window_disappeared", "sentence": "The runtime adapter observed that the dependency caution window disappeared after dispatch." }
+      ],
+      "expected": {
+        "phase": "disappeared",
+        "identityId": "bannerlord.dependency-version-caution",
+        "actionId": "confirm_dependency_version_caution",
+        "proofLevel": "action_dispatch",
+        "terminal": true,
+        "acceptedTransitions": 5,
+        "rejectedTransitions": 0
+      }
+    },
+    {
+      "caseId": "safe-mode-progression",
+      "windowKey": "pid:201002|hwnd:300002",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the Safe Mode window." },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.safe-mode", "sentence": "The runtime adapter resolved the Safe Mode identity." },
+        { "sequence": 3, "eventType": "action_authorized", "actionId": "decline_safe_mode", "sentence": "The runtime adapter authorized the No action for Safe Mode." },
+        { "sequence": 4, "eventType": "action_dispatched", "actionId": "decline_safe_mode", "sentence": "The runtime adapter recorded an exact No dispatch without claiming application acceptance." },
+        { "sequence": 5, "eventType": "window_disappeared", "sentence": "The runtime adapter observed that the Safe Mode window disappeared after dispatch." }
+      ],
+      "expected": {
+        "phase": "disappeared",
+        "identityId": "bannerlord.safe-mode",
+        "actionId": "decline_safe_mode",
+        "proofLevel": "action_dispatch",
+        "terminal": true,
+        "acceptedTransitions": 5,
+        "rejectedTransitions": 0
+      }
+    },
+    {
+      "caseId": "singleplayer-terminal-handoff",
+      "windowKey": "pid:201003|hwnd:300003",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the Singleplayer host window." },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.singleplayer-host", "sentence": "The runtime adapter resolved the canonical Singleplayer host identity." },
+        { "sequence": 3, "eventType": "host_handoff_observed", "identityId": "bannerlord.singleplayer-host", "sentence": "The runtime adapter recorded a Singleplayer host handoff observation." }
+      ],
+      "expected": {
+        "phase": "terminal_observation",
+        "identityId": "bannerlord.singleplayer-host",
+        "actionId": null,
+        "proofLevel": "terminal_observation",
+        "terminal": true,
+        "acceptedTransitions": 3,
+        "rejectedTransitions": 0
+      }
+    },
+    {
+      "caseId": "unknown-quarantine",
+      "windowKey": "pid:201004|hwnd:300004",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed an unrecognized window." },
+        { "sequence": 2, "eventType": "unknown_detected", "sentence": "The runtime adapter quarantined the unrecognized window." },
+        { "sequence": 3, "eventType": "action_authorized", "actionId": "proceed", "sentence": "The runtime adapter rejected action authority while the window remained quarantined." }
+      ],
+      "expected": {
+        "phase": "unknown_quarantined",
+        "identityId": null,
+        "actionId": null,
+        "proofLevel": "quarantine",
+        "terminal": false,
+        "acceptedTransitions": 2,
+        "rejectedTransitions": 1
+      }
+    },
+    {
+      "caseId": "duplicate-event-rejected",
+      "windowKey": "pid:201005|hwnd:300005",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the window once." },
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter rejected a duplicate observation sequence." }
+      ],
+      "expected": {
+        "phase": "observed",
+        "identityId": null,
+        "actionId": null,
+        "proofLevel": "observation",
+        "terminal": false,
+        "acceptedTransitions": 1,
+        "rejectedTransitions": 1,
+        "rejectedReasons": ["duplicate_sequence"]
+      }
+    },
+    {
+      "caseId": "out-of-order-event-rejected",
+      "windowKey": "pid:201006|hwnd:300006",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the window." },
+        { "sequence": 3, "eventType": "identity_resolved", "identityId": "bannerlord.safe-mode", "sentence": "The runtime adapter rejected an out-of-order identity event." }
+      ],
+      "expected": {
+        "phase": "observed",
+        "identityId": null,
+        "actionId": null,
+        "proofLevel": "observation",
+        "terminal": false,
+        "acceptedTransitions": 1,
+        "rejectedTransitions": 1,
+        "rejectedReasons": ["out_of_order_sequence"]
+      }
+    },
+    {
+      "caseId": "dispatch-without-authority-rejected",
+      "windowKey": "pid:201007|hwnd:300007",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the window." },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.dependency-version-caution", "sentence": "The runtime adapter resolved the dependency caution identity." },
+        { "sequence": 3, "eventType": "action_dispatched", "actionId": "confirm_dependency_version_caution", "sentence": "The runtime adapter rejected dispatch without prior action authority." }
+      ],
+      "expected": {
+        "phase": "recognized",
+        "identityId": "bannerlord.dependency-version-caution",
+        "actionId": null,
+        "proofLevel": "identity",
+        "terminal": false,
+        "acceptedTransitions": 2,
+        "rejectedTransitions": 1,
+        "rejectedReasons": ["invalid_transition:recognized->action_dispatched"]
+      }
+    },
+    {
+      "caseId": "disappearance-after-dispatch-keeps-action-dispatch-ceiling",
+      "windowKey": "pid:201008|hwnd:300008",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed", "sentence": "The runtime adapter observed the modal window." },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.dependency-version-caution", "sentence": "The runtime adapter resolved the modal identity." },
+        { "sequence": 3, "eventType": "action_authorized", "actionId": "confirm_dependency_version_caution", "sentence": "The runtime adapter authorized the modal action." },
+        { "sequence": 4, "eventType": "action_dispatched", "actionId": "confirm_dependency_version_caution", "sentence": "The runtime adapter recorded dispatch without application acceptance." },
+        { "sequence": 5, "eventType": "window_disappeared", "sentence": "The runtime adapter observed disappearance and retained the action-dispatch proof ceiling." }
+      ],
+      "expected": {
+        "phase": "disappeared",
+        "identityId": "bannerlord.dependency-version-caution",
+        "actionId": "confirm_dependency_version_caution",
+        "proofLevel": "action_dispatch",
+        "terminal": true,
+        "acceptedTransitions": 5,
+        "rejectedTransitions": 0,
+        "forbidFields": ["acceptedByApplication"]
+      }
+    }
+  ]
+}
