@@ -6,6 +6,7 @@ using System.Threading;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.Market;
+using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Library;
@@ -98,6 +99,14 @@ namespace BlacksmithGuild.MapTrade
             }
 
             PauseIfVisible("starting map trade route");
+
+            if (Campaign.Current?.TimeControlMode == CampaignTimeControlMode.Stop)
+            {
+                DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=ResumeClockBeforeTrade", showInGame: false);
+                CampaignClockResumeHelper.EnsureClockRunning("MapTradeAutonomousService");
+                DebugLogger.Test("[TBG ENGINE DONE] engine=MapTrade step=ResumeClockBeforeTrade", showInGame: false);
+            }
+
             _activeReport = new MapTradeCertReport
             {
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
