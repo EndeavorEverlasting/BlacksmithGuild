@@ -71,31 +71,13 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 | external coordinators and agent-operation tools | `agentic-operations` |
 | WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
 
-Agent A/B/C/D names are compatibility aliases only. Route by lane and skill, not by a temporary agent letter. When a handoff still uses letter names, map them as:
-
-- Agent A = Cert / Evidence / Git / PR judgment
-- Agent B = Runtime / Readiness / Gameplay state truth
-- Agent C = External runner / launcher / lifecycle / window classifier
-- Agent D = Docs / atlas / routing board
-
-Living coordination board: [`docs/handoff/blacksmithguild-agent-coordination.md`](docs/handoff/blacksmithguild-agent-coordination.md).
-Runtime state routing: [`docs/handoff/runtime-state-routing.md`](docs/handoff/runtime-state-routing.md).
-
-Runner owns evidence capture. Do not ask the operator to harvest logs manually when a runner-owned workflow can capture them.
+Agent A/B/C/D names are compatibility aliases only. Route by lane and skill, not by a temporary agent letter.
+Agent A = Cert / Evidence / Git / PR judgment; Agent B = Runtime / Readiness / Gameplay state truth; Agent C = External runner / launcher / lifecycle / window classifier; Agent D = Docs / atlas / routing board.
+Living board: `docs/handoff/blacksmithguild-agent-coordination.md`. Runtime routing: `docs/handoff/runtime-state-routing.md`. Runner owns evidence capture.
 
 ## Current-state pointers
 
-Mutable PR restrictions, active targets, worktree state, runtime state, and latest evidence do not belong in this file. Resolve them from:
-
-- `artifacts/latest/tbg-chat-packet.json`;
-- `artifacts/latest/tbg-sprint-capsule.json`;
-- `artifacts/latest/artifact-engine/artifact-engine.handoff.md`;
-- `docs/control/logs/open/autonomous-assist-session-target.md`;
-- `docs/handoff/blacksmithguild-agent-coordination.md`;
-- `docs/handoff/runtime-state-routing.md`;
-- current Git, GitHub, workflow, and runtime artifacts.
-
-Historical snapshots remain provenance, not current truth.
+Mutable PR restrictions, active targets, worktree state, runtime state, and latest evidence do not belong in this file. Resolve them from `artifacts/latest/tbg-chat-packet.json`, `artifacts/latest/tbg-sprint-capsule.json`, `artifacts/latest/artifact-engine/artifact-engine.handoff.md`, `docs/control/logs/open/autonomous-assist-session-target.md`, and current Git/GitHub/workflow/runtime artifacts. Historical snapshots remain provenance, not current truth.
 
 ## PowerShell encoding
 
