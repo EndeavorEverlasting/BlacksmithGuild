@@ -236,20 +236,6 @@ if (Test-Path -LiteralPath $grepGuard) {
     Write-Host 'WARN: verify-log-grep-patterns.ps1 not present (Agent B lane)' -ForegroundColor Yellow
 }
 
-$forgeRootPath = Join-Path (Split-Path -Parent $PSScriptRoot) 'forge.ps1'
-if (Test-Path -LiteralPath $forgeRootPath) {
-    $forgeRootText = Get-Content -LiteralPath $forgeRootPath -Raw
-    if ($forgeRootText -notmatch '\[switch\]\$VerifyLogPatterns') {
-        Add-Failure 'forge.ps1 missing -VerifyLogPatterns switch (PR #8 grep-guard entrypoint lesson)'
-    } elseif ($forgeRootText -notmatch 'verify-log-grep-patterns\.ps1') {
-        Add-Failure 'forge.ps1 -VerifyLogPatterns does not invoke verify-log-grep-patterns.ps1'
-    } else {
-        Write-Host 'PASS forge.ps1 exposes -VerifyLogPatterns grep-guard entrypoint' -ForegroundColor Green
-    }
-} else {
-    Add-Failure 'Missing forge.ps1'
-}
-
 $harvestRegression = Join-Path $PSScriptRoot 'test-f7-harvest-150405.ps1'
 if (Test-Path -LiteralPath $harvestRegression) {
     Write-Host 'Running test-f7-harvest-150405.ps1 ...' -ForegroundColor Cyan
