@@ -1,0 +1,103 @@
+{
+  "schema": "TbgCheckpointDisciplineFixtures.v1",
+  "cases": [
+    {
+      "name": "bounded commit before broad validation",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": false,
+      "checkpointType": "bounded_commit",
+      "checkpointIncludesOwnedUntrackedFiles": true,
+      "broadValidationStarted": true,
+      "refactoringExpansionStarted": false,
+      "agentOrEnvironmentSwitchPlanned": false,
+      "resumedWork": false,
+      "smallestPendingValidationFirst": true,
+      "checkpointClaimedAsCompletion": false,
+      "expectedStatus": "PASS_CHECKPOINT_DISCIPLINE"
+    },
+    {
+      "name": "plain diff omits newly created owned files",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": true,
+      "checkpointType": "complete_patch_or_bundle",
+      "checkpointIncludesOwnedUntrackedFiles": false,
+      "broadValidationStarted": true,
+      "refactoringExpansionStarted": false,
+      "agentOrEnvironmentSwitchPlanned": false,
+      "resumedWork": false,
+      "smallestPendingValidationFirst": true,
+      "checkpointClaimedAsCompletion": false,
+      "expectedStatus": "FAIL_UNTRACKED_NOT_PRESERVED"
+    },
+    {
+      "name": "broad validation starts without checkpoint",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": false,
+      "checkpointType": "",
+      "checkpointIncludesOwnedUntrackedFiles": false,
+      "broadValidationStarted": true,
+      "refactoringExpansionStarted": false,
+      "agentOrEnvironmentSwitchPlanned": false,
+      "resumedWork": false,
+      "smallestPendingValidationFirst": true,
+      "checkpointClaimedAsCompletion": false,
+      "expectedStatus": "FAIL_CHECKPOINT_MISSING"
+    },
+    {
+      "name": "refactoring expands before checkpoint",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": false,
+      "checkpointType": "",
+      "checkpointIncludesOwnedUntrackedFiles": false,
+      "broadValidationStarted": false,
+      "refactoringExpansionStarted": true,
+      "agentOrEnvironmentSwitchPlanned": false,
+      "resumedWork": false,
+      "smallestPendingValidationFirst": true,
+      "checkpointClaimedAsCompletion": false,
+      "expectedStatus": "FAIL_CHECKPOINT_MISSING"
+    },
+    {
+      "name": "agent switch after complete bundle",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": true,
+      "checkpointType": "complete_patch_or_bundle",
+      "checkpointIncludesOwnedUntrackedFiles": true,
+      "broadValidationStarted": false,
+      "refactoringExpansionStarted": false,
+      "agentOrEnvironmentSwitchPlanned": true,
+      "resumedWork": false,
+      "smallestPendingValidationFirst": true,
+      "checkpointClaimedAsCompletion": false,
+      "expectedStatus": "PASS_CHECKPOINT_DISCIPLINE"
+    },
+    {
+      "name": "resumed agent repeats broad discovery before pending test",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": false,
+      "checkpointType": "bounded_commit",
+      "checkpointIncludesOwnedUntrackedFiles": true,
+      "broadValidationStarted": false,
+      "refactoringExpansionStarted": false,
+      "agentOrEnvironmentSwitchPlanned": false,
+      "resumedWork": true,
+      "smallestPendingValidationFirst": false,
+      "checkpointClaimedAsCompletion": false,
+      "expectedStatus": "FAIL_RESUME_SCOPE_EXPANSION"
+    },
+    {
+      "name": "checkpoint is reported as completed proof",
+      "coherentTrackedChange": true,
+      "hasOwnedUntrackedFiles": false,
+      "checkpointType": "bounded_commit",
+      "checkpointIncludesOwnedUntrackedFiles": true,
+      "broadValidationStarted": false,
+      "refactoringExpansionStarted": false,
+      "agentOrEnvironmentSwitchPlanned": false,
+      "resumedWork": false,
+      "smallestPendingValidationFirst": true,
+      "checkpointClaimedAsCompletion": true,
+      "expectedStatus": "FAIL_CHECKPOINT_OVERCLAIM"
+    }
+  ]
+}

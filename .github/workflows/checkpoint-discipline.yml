@@ -1,0 +1,84 @@
+name: Checkpoint Discipline
+
+on:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - '.tbg/skills/**'
+      - '.tbg/workflows/checkpoint-discipline.contract.json'
+      - '.tbg/harness/fixtures/checkpoint-discipline.fixtures.json'
+      - 'docs/architecture/checkpointed-harness-discipline.md'
+      - 'scripts/tbg/Test-TbgCheckpointDiscipline.ps1'
+      - '.github/workflows/checkpoint-discipline.yml'
+  push:
+    paths:
+      - 'AGENTS.md'
+      - '.tbg/skills/**'
+      - '.tbg/workflows/checkpoint-discipline.contract.json'
+      - '.tbg/harness/fixtures/checkpoint-discipline.fixtures.json'
+      - 'docs/architecture/checkpointed-harness-discipline.md'
+      - 'scripts/tbg/Test-TbgCheckpointDiscipline.ps1'
+      - '.github/workflows/checkpoint-discipline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-core:
+    name: PowerShell Core checkpoint contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse checkpoint JSON
+        shell: pwsh
+        run: |
+          Get-Content -LiteralPath '.tbg/workflows/checkpoint-discipline.contract.json' -Raw | ConvertFrom-Json | Out-Null
+          Get-Content -LiteralPath '.tbg/harness/fixtures/checkpoint-discipline.fixtures.json' -Raw | ConvertFrom-Json | Out-Null
+
+      - name: Verify checkpoint discipline
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgCheckpointDiscipline.ps1
+
+      - name: Verify skill routing
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgSkillRouting.ps1
+
+      - name: Upload checkpoint diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkpoint-discipline-core-${{ github.run_id }}
+          path: |
+            artifacts/latest/checkpoint-discipline/checkpoint-discipline.result.json
+            artifacts/latest/checkpoint-discipline/checkpoint-discipline.report.md
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-powershell:
+    name: Windows PowerShell 5.1 checkpoint contracts
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify checkpoint discipline and encoding
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\scripts\tbg\Test-TbgCheckpointDiscipline.ps1
+          .\scripts\tbg\Test-TbgSkillRouting.ps1
+          .\scripts\test-powershell-utf8-bom-contract.ps1
+
+      - name: Upload Windows checkpoint diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkpoint-discipline-windows-${{ github.run_id }}
+          path: |
+            artifacts/latest/checkpoint-discipline/checkpoint-discipline.result.json
+            artifacts/latest/checkpoint-discipline/checkpoint-discipline.report.md
+          if-no-files-found: error
+          retention-days: 14
