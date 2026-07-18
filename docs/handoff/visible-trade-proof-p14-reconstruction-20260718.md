@@ -45,3 +45,21 @@
 ## Proof boundary
 
 P14 proves reconstruction and harness/static validation only until a live runtime run is collected. Launcher/command-ack/movement/buy/sell claims require a separate runtime proof chain.
+
+## Runtime attempt (2026-07-18 Windows)
+
+| Step | Result |
+|---|---|
+| Soft stop via `scripts/stop-tbg-runtime-proof.ps1` | PASS (no Bannerlord processes) |
+| Release build + install | PASS; built/installed SHA256 match `C9E645F6...` |
+| Disposable save inventory | **BLOCKED** — 0 approved disposable saves |
+| Live certify launch | Not started — would use `LaunchIntent continue` and risk personal-save mutation |
+
+Replacement PR: https://github.com/EndeavorEverlasting/BlacksmithGuild/pull/86  
+Commit: `22a535cdfbaf3a00ff90ae488c3ee71ac9483ff2`
+
+### Exact next command
+
+```powershell
+$env:TBG_NO_PAUSE='1'; .\Run-Governor-Ensure-DevSave.cmd
+```
