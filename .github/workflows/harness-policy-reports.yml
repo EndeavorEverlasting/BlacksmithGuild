@@ -1,0 +1,275 @@
+name: Harness Policy Reports
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/harness/**'
+      - '.tbg/skills/**'
+      - '.tbg/workflows/**'
+      - '.tbg/state/**'
+      - '.tbg/plans/**'
+      - '.tbg/guardrails/**'
+      - '.claude/hooks/**'
+      - 'scripts/harness/**'
+      - 'scripts/mcp/**'
+      - 'scripts/tbg/**'
+      - 'docs/architecture/**'
+      - 'docs/handoff/**'
+      - '.github/workflows/**'
+      - 'ForgeArtifactEngine.cmd'
+      - 'ForgeRepoHygiene.cmd'
+      - 'ForgeStalePrRecovery.cmd'
+      - 'ForgeState.cmd'
+      - 'ForgeStalePrProgress.cmd'
+      - 'ForgeWindowIntel.cmd'
+      - 'ForgeGameUpdate.cmd'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+  push:
+    paths:
+      - '.tbg/harness/**'
+      - '.tbg/skills/**'
+      - '.tbg/workflows/**'
+      - '.tbg/state/**'
+      - '.tbg/plans/**'
+      - '.tbg/guardrails/**'
+      - '.claude/hooks/**'
+      - 'scripts/harness/**'
+      - 'scripts/mcp/**'
+      - 'scripts/tbg/**'
+      - 'docs/architecture/**'
+      - 'docs/handoff/**'
+      - '.github/workflows/**'
+      - 'ForgeArtifactEngine.cmd'
+      - 'ForgeRepoHygiene.cmd'
+      - 'ForgeStalePrRecovery.cmd'
+      - 'ForgeState.cmd'
+      - 'ForgeStalePrProgress.cmd'
+      - 'ForgeWindowIntel.cmd'
+      - 'ForgeGameUpdate.cmd'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-policy-reports:
+    name: Static harness policy and report checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse TBG JSON
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jsonFiles = @(Get-ChildItem -LiteralPath '.tbg' -Recurse -File -Filter '*.json')
+          if ($jsonFiles.Count -eq 0) {
+            throw 'No JSON files were found under .tbg.'
+          }
+
+          foreach ($jsonFile in $jsonFiles) {
+            Get-Content -LiteralPath $jsonFile.FullName -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "JSON OK: $($jsonFile.FullName)"
+          }
+
+      - name: Verify skill routing contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/skill-routing-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgSkillRouting.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload skill routing validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skill-routing-validator-${{ github.run_id }}
+          path: |
+            artifacts/latest/skill-routing-ci/validator.log
+            artifacts/latest/skill-routing/skill-routing.result.json
+            artifacts/latest/skill-routing/skill-routing.report.md
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify effective-policy English reports
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgEnglishRenderer.ps1
+
+      - name: Verify metadata-first window intelligence
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/window-intelligence-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgWindowIntelligence.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Verify Bannerlord game compatibility updater
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgGameCompatibility.ps1
+
+      - name: Upload window intelligence validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: window-intelligence-validator-${{ github.run_id }}
+          path: artifacts/latest/window-intelligence-ci/validator.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify stale PR recovery instructions and progress
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/stale-pr-recovery-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgStalePrRecovery.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+            ./scripts/tbg/Test-TbgStalePrRecoveryProgress.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload stale PR recovery validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stale-pr-recovery-validator-${{ github.run_id }}
+          path: artifacts/latest/stale-pr-recovery-ci/validator.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify local artifact engine control plane
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/artifact-engine-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgArtifactEngine.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload local artifact engine validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-engine-validator-${{ github.run_id }}
+          path: artifacts/latest/artifact-engine-ci/validator.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Verify safe sprint workspace resolution
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgSprintWorkspace.ps1
+
+      - name: Verify project AI layer readiness
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgHarnessReadiness.ps1 -ContractId 'project-ai-layer'
+
+      - name: Verify local MCP harness readiness
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgHarnessReadiness.ps1 -ContractId 'local-mcp-code-intelligence'
+
+      - name: Verify local MCP done gate
+        shell: pwsh
+        run: ./scripts/harness/Test-TbgDoneGate.ps1 -ContractId 'local-mcp-code-intelligence'
+
+      - name: Verify state envelope validation
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgStateEnvelope.ps1
+
+      - name: Verify state spine journal validation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = './artifacts/latest/state-spine-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            ./scripts/tbg/Test-TbgJournal.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Verify provider catalog drift
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgProviderCatalog.ps1
+
+      - name: Upload state spine validator diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: state-spine-validator-${{ github.run_id }}
+          path: |
+            artifacts/latest/state-spine-ci/validator.log
+            artifacts/latest/journal/journal-validation.result.json
+            artifacts/latest/provider-catalog/provider-catalog.result.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-artifact-watcher:
+    name: Windows PowerShell routing, window intelligence, and artifact watcher smoke
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Windows PowerShell routing, compatibility, window intelligence, recovery progress, engine, and watcher
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDirectory = '.\artifacts\latest\artifact-watcher-windows-ci'
+          $diagnosticPath = Join-Path $diagnosticDirectory 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDirectory | Out-Null
+          try {
+            .\scripts\tbg\Test-TbgSkillRouting.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath
+            .\scripts\tbg\Test-TbgGameCompatibility.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
+            .\scripts\tbg\Test-TbgWindowIntelligence.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
+            .\scripts\tbg\Test-TbgStalePrRecoveryProgress.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
+            .\scripts\tbg\Test-TbgArtifactEngine.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
+            .\scripts\tbg\Test-TbgArtifactWatcher.ps1 *>&1 | Tee-Object -FilePath $diagnosticPath -Append
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $diagnosticPath -Append | Write-Host
+            throw
+          }
+
+      - name: Upload Windows artifact watcher diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-watcher-windows-${{ github.run_id }}
+          path: |
+            artifacts/latest/artifact-watcher-windows-ci/validator.log
+            artifacts/latest/skill-routing/skill-routing.result.json
+            artifacts/latest/skill-routing/skill-routing.report.md
+          if-no-files-found: error
+          retention-days: 14

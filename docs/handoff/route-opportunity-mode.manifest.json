@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "modeName": "route_opportunity_mode",
+  "doctrinePath": "docs/operator/route-opportunity-mode-doctrine.md",
+  "purpose": "Define modal route behavior for direct travel versus opt-in village opportunity exploration.",
+  "coreRule": "Direct travel is the default. Exploration is opt-in and must be explicit, modal, and evidence-backed.",
+  "supportedModes": [
+    "direct",
+    "exploring"
+  ],
+  "defaultMode": "direct",
+  "resolutionPriority": [
+    "explicitCommandLineRouteMode",
+    "sharedRouteOpportunityModeJson",
+    "fallbackDirect"
+  ],
+  "futureCmdSurface": [
+    "ForgeRouteMode.cmd status",
+    "ForgeRouteMode.cmd direct",
+    "ForgeRouteMode.cmd exploring",
+    "ForgeRouteMode.cmd toggle"
+  ],
+  "sharedStateFile": "BlacksmithGuild_RouteOpportunityMode.json",
+  "modeFields": [
+    "mode",
+    "requestedBy",
+    "reason",
+    "origin",
+    "destination",
+    "allowVillageStops",
+    "allowRecruitmentStops",
+    "allowHorseStops",
+    "allowGoodsStops",
+    "updatedAtUtc"
+  ],
+  "directModeAllowedBehavior": [
+    "continueTowardTarget",
+    "avoidDanger",
+    "handleManualIntervention",
+    "arriveAtDestination",
+    "runTownUtilityHierarchy"
+  ],
+  "directModeDisallowedByDefault": [
+    "detourToVillages",
+    "opportunisticRecruitment",
+    "villageHorseShopping",
+    "villageGoodsShopping",
+    "exploratorySettlementScanning"
+  ],
+  "exploringModeAllowedOpportunities": [
+    "recruits",
+    "horses",
+    "packAnimals",
+    "usefulGoods",
+    "foodOrEmergencyProvisioning",
+    "routeImprovingOpportunities"
+  ],
+  "modalDecisions": [
+    "continue_direct_route",
+    "inspect_village_opportunity",
+    "stop_for_recruitment",
+    "stop_for_horses",
+    "stop_for_goods",
+    "stop_for_food_emergency",
+    "skip_opportunity_low_value",
+    "skip_opportunity_route_risk",
+    "skip_opportunity_insufficient_gold",
+    "skip_opportunity_insufficient_capacity",
+    "manual_intervention_required"
+  ],
+  "decisionInputs": [
+    "routeMode",
+    "origin",
+    "destination",
+    "routeDeviationCost",
+    "nearbyVillageOpportunityScore",
+    "foodState",
+    "goldState",
+    "horseCapacityState",
+    "partySize",
+    "recruitmentNeed",
+    "riskLevel",
+    "routeImpact"
+  ],
+  "engines": {
+    "recruitment": {
+      "priority": "low",
+      "allowedInModes": ["exploring"],
+      "evaluates": [
+        "availableRecruits",
+        "recruitTier",
+        "recruitType",
+        "factionOrCulture",
+        "cost",
+        "partySizeLimit",
+        "wageBurden",
+        "tacticalValue",
+        "longTermUpgradePath",
+        "routeSafetyImpact",
+        "strategyFit"
+      ],
+      "outputs": [
+        "recruitment_not_needed",
+        "recruitment_available",
+        "recruitment_recommended",
+        "recruitment_blocked_party_full",
+        "recruitment_blocked_insufficient_gold",
+        "recruitment_executed_and_verified",
+        "recruitment_failed"
+      ],
+      "evidenceFiles": [
+        "BlacksmithGuild_RecruitmentDecision.json",
+        "BlacksmithGuild_RecruitmentExecution.json"
+      ]
+    },
+    "horseAcquisition": {
+      "priority": "low",
+      "allowedInModes": ["exploring"],
+      "evaluates": [
+        "availableHorses",
+        "availablePackAnimals",
+        "price",
+        "carryingCapacityBenefit",
+        "partySpeedImpact",
+        "herdPenaltyRisk",
+        "goldAfterPurchase",
+        "routeUtility",
+        "nextTradeLegBenefit"
+      ],
+      "outputs": [
+        "horses_not_needed",
+        "horse_opportunity_available",
+        "horse_purchase_recommended",
+        "horse_purchase_blocked_insufficient_gold",
+        "horse_purchase_blocked_capacity_or_speed_penalty",
+        "horse_purchase_executed_and_verified",
+        "horse_purchase_failed"
+      ],
+      "evidenceFiles": [
+        "BlacksmithGuild_HorseOpportunityDecision.json",
+        "BlacksmithGuild_HorseOpportunityExecution.json"
+      ]
+    },
+    "villageGoods": {
+      "priority": "low",
+      "allowedInModes": ["exploring"],
+      "evaluates": [
+        "localGoods",
+        "foodAvailability",
+        "tradeGoods",
+        "price",
+        "weight",
+        "expectedDestinationValue",
+        "routeDeviationCost",
+        "priorityConflict"
+      ],
+      "outputs": [
+        "goods_not_needed",
+        "goods_opportunity_available",
+        "goods_purchase_recommended",
+        "goods_purchase_blocked_insufficient_gold",
+        "goods_purchase_blocked_capacity",
+        "goods_purchase_executed_and_verified",
+        "goods_purchase_failed"
+      ],
+      "evidenceFiles": [
+        "BlacksmithGuild_VillageGoodsDecision.json",
+        "BlacksmithGuild_VillageGoodsExecution.json"
+      ]
+    }
+  },
+  "evidenceFiles": [
+    "BlacksmithGuild_RouteOpportunityMode.json",
+    "BlacksmithGuild_VillageOpportunityScan.json",
+    "BlacksmithGuild_RecruitmentDecision.json",
+    "BlacksmithGuild_RecruitmentExecution.json",
+    "BlacksmithGuild_HorseOpportunityDecision.json",
+    "BlacksmithGuild_HorseOpportunityExecution.json",
+    "BlacksmithGuild_VillageGoodsDecision.json",
+    "BlacksmithGuild_VillageGoodsExecution.json"
+  ],
+  "villageScanFields": [
+    "origin",
+    "destination",
+    "currentRoute",
+    "nearbyVillages",
+    "villagesAlongRoute",
+    "deviationCost",
+    "risk",
+    "foodState",
+    "gold",
+    "capacity",
+    "recruitmentNeed",
+    "horseNeed",
+    "goodsOpportunity",
+    "recommendedStop",
+    "decision",
+    "reason",
+    "updatedAtUtc"
+  ],
+  "recruitmentDecisionFields": [
+    "village",
+    "availableRecruits",
+    "recommendedRecruits",
+    "estimatedCost",
+    "partySizeBefore",
+    "partyLimit",
+    "wageImpact",
+    "strategyFit",
+    "decision",
+    "reason",
+    "departureAllowedAfter",
+    "updatedAtUtc"
+  ],
+  "recruitmentExecutionFields": [
+    "village",
+    "attempted",
+    "success",
+    "recruitsBefore",
+    "recruitsAfter",
+    "goldBefore",
+    "goldAfter",
+    "partySizeBefore",
+    "partySizeAfter",
+    "itemsOrTroopsAcquired",
+    "failureClass",
+    "updatedAtUtc"
+  ],
+  "horseDecisionFields": [
+    "village",
+    "availableHorses",
+    "availablePackAnimals",
+    "recommendedPurchases",
+    "estimatedCost",
+    "capacityBenefit",
+    "speedImpact",
+    "herdPenaltyRisk",
+    "goldReserveAfterPurchase",
+    "decision",
+    "reason",
+    "updatedAtUtc"
+  ],
+  "horseExecutionFields": [
+    "village",
+    "attempted",
+    "success",
+    "goldBefore",
+    "goldAfter",
+    "horsesBefore",
+    "horsesAfter",
+    "packAnimalsBefore",
+    "packAnimalsAfter",
+    "itemsBought",
+    "failureClass",
+    "updatedAtUtc"
+  ],
+  "relationshipToTownUtility": {
+    "operatesDuringTravelBetweenTowns": true,
+    "doesNotReplaceTownUtilityHierarchy": true,
+    "townUtilityOrderReference": "docs/handoff/travel-logistics-circuit.manifest.json"
+  },
+  "relationshipToTravel": {
+    "travelStillComesFirst": true,
+    "routeMustBeStableBeforeOptionalStops": true,
+    "directModeNoDetoursUnlessEmergency": true,
+    "exploringModeMayStopWhenOpportunityScoreJustifiesDeviation": true
+  },
+  "priority": "low",
+  "mustNotBlock": [
+    "direct travel proof",
+    "manual intervention resume",
+    "arrival detection",
+    "town utility ordering",
+    "food provisioning action path"
+  ],
+  "integrityRules": [
+    "routeModeMustBeExplicitForExploration",
+    "directModeMustRemainDestinationToDestination",
+    "villageStopsMustBeClassified",
+    "recruitmentMustUseGameMechanics",
+    "horsePurchasesMustVerifyGoldAndInventoryChanges",
+    "goodsPurchasesMustVerifyGoldAndInventoryChanges",
+    "exploringModeMustNotReplaceReliableTravel"
+  ],
+  "recommendedTests": [
+    "scripts/verify-route-opportunity-mode-contract.ps1",
+    "scripts/test-route-opportunity-mode-contract.ps1"
+  ],
+  "knownGaps": [
+    {
+      "gap": "route_mode_cmd_not_built",
+      "reason": "ForgeRouteMode.cmd is needed to set status, direct, exploring, and toggle."
+    },
+    {
+      "gap": "shared_route_mode_state_not_built",
+      "reason": "Route opportunity mode should be shared state, not a per-script hidden default."
+    },
+    {
+      "gap": "recruitment_engine_not_built",
+      "reason": "Village and settlement recruitment opportunities are required but low priority."
+    },
+    {
+      "gap": "village_horse_engine_not_built",
+      "reason": "Village horse and pack animal opportunities are required but low priority."
+    },
+    {
+      "gap": "village_goods_engine_not_built",
+      "reason": "Village goods opportunities are required but low priority."
+    }
+  ]
+}

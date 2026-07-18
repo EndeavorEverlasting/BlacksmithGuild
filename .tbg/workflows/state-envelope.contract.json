@@ -1,0 +1,85 @@
+{
+  "id": "state-envelope",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "state-envelope-capability-router-v1",
+  "contextBanner": "[TBG | State Envelope / Capability Router v1 | harness/state-management | current main]",
+  "purpose": "Introduce durable typed state objects and a compact current-state envelope. Lanes become consumers of materialized views over shared facts instead of carriers of mutable prose.",
+  "lane": "harness/state-management",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "proofLevel": "static test",
+  "validationMode": "offline_cross_platform",
+  "schemasPath": ".tbg/harness/schemas",
+  "registriesPath": ".tbg/state",
+  "objectStorePath": "artifacts/state/objects",
+  "envelopePath": "artifacts/latest/state/tbg-state-envelope.json",
+  "viewsPath": "artifacts/latest/state/views",
+  "eventsPath": "artifacts/latest/state/state-events.jsonl",
+  "validatorPath": "scripts/tbg/Test-TbgStateEnvelope.ps1",
+  "resultPath": "artifacts/latest/state-envelope/state-envelope.result.json",
+  "requiredArtifacts": [
+    "artifacts/latest/state-envelope/state-envelope.result.json",
+    "artifacts/latest/state-envelope/state-envelope.report.md"
+  ],
+  "objectFamilies": [
+    "observation",
+    "evidence",
+    "claim",
+    "constraint",
+    "objective",
+    "work-item",
+    "capability"
+  ],
+  "designRules": [
+    "Facts, constraints, evidence, objectives, and authority become durable typed objects.",
+    "Skills and lanes become consumers of those objects, not carriers of state.",
+    "Lanes may annotate state but may not redefine shared facts.",
+    "Append-only stores for observations and evidence; supersede-or-invalidate for claims.",
+    "The envelope is a regenerated materialized snapshot, never hand-edited.",
+    "Each lane receives a filtered view of the envelope, not the entire world."
+  ],
+  "mergeSemantics": {
+    "observation": "Append; never rewrite history",
+    "evidence": "Append; immutable once hashed",
+    "claim": "Supersede or invalidate with a new object",
+    "constraint": "Version and activate/deactivate",
+    "objective": "Version status and acceptance state",
+    "work-item": "State-machine transition",
+    "capability": "Versioned tracked definition"
+  },
+  "allowedScope": [
+    "create and validate state object schemas",
+    "create and update capability and constraint registries",
+    "create, merge, and materialize state envelopes",
+    "resolve lane-specific state views",
+    "write state envelope validation artifacts"
+  ],
+  "forbiddenScope": [
+    "edit product or gameplay source",
+    "launch Bannerlord",
+    "write command inbox files",
+    "mutate saves or runtime state",
+    "claim launcher, behavior, or live runtime proof from envelope validation",
+    "silently edit existing state objects instead of superseding them"
+  ],
+  "doneGate": {
+    "requires": [
+      "all state object schemas exist and parse",
+      "the capabilities registry references existing skill ids from the skill manifest",
+      "the invariant constraints registry covers the universal safety rules from AGENTS.md",
+      "the state envelope schema enforces typed object references",
+      "the state view schema enforces lane-scoped materialized views",
+      "Test-TbgStateEnvelope.ps1 passes under PowerShell Core and Windows PowerShell 5.1",
+      "git diff --check passes"
+    ]
+  },
+  "terminalStates": [
+    "PASS_state_envelope_valid",
+    "FAIL_schema_missing",
+    "FAIL_registry_invalid",
+    "FAIL_envelope_invalid",
+    "FAIL_view_invalid",
+    "FAIL_skill_reference_missing"
+  ]
+}

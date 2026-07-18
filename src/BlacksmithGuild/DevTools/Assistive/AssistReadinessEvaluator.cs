@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.Reporting;
 using TaleWorlds.Library;
@@ -99,6 +100,12 @@ namespace BlacksmithGuild.DevTools.Assistive
         private static bool IsAssistCommandBlocked(out string reason)
         {
             reason = null;
+
+            if (!EngineToggleAuthority.IsEngineEnabled(EngineToggleKey.Assistive))
+            {
+                reason = "engine_toggle_manual:Assistive";
+                return true;
+            }
 
             if (GameSessionState.IsMissionActiveForTrace())
             {

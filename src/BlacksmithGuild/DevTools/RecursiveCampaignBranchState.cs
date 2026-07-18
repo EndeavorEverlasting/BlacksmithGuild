@@ -1,5 +1,7 @@
 using System;
 using System.Text;
+using BlacksmithGuild.CampaignRuntime;
+using BlacksmithGuild.DevTools.Assistive;
 
 namespace BlacksmithGuild.DevTools
 {
@@ -13,10 +15,15 @@ namespace BlacksmithGuild.DevTools
         public static string BuildJsonBlock(GameplaySurfaceSnapshot snapshot)
         {
             snapshot = snapshot ?? new GameplaySurfaceSnapshot();
-            var next = SelectNextBranch(snapshot);
-            var reason = ExplainNextBranch(snapshot, next);
+            var travelTarget = ResolveTravelTarget(snapshot);
+            var next = SelectNextBranch(snapshot, travelTarget);
+            var reason = ExplainNextBranch(snapshot, next, travelTarget);
             var updatedAt = snapshot.UpdatedAtUtc.ToString("o");
             var settlementLike = IsSettlementLike(snapshot);
+            var travelGateState = snapshot.SafeToExecuteTravel && !string.IsNullOrWhiteSpace(travelTarget) ? "available" : "blocked";
+            var travelGateReason = snapshot.SafeToExecuteTravel
+                ? (!string.IsNullOrWhiteSpace(travelTarget) ? "surface_allows_travel_target_resolved" : "engine_destination_missing")
+                : snapshot.BlockReason ?? "travel_surface_blocked";
 
             var sb = new StringBuilder();
             sb.AppendLine("  \"recursiveBranchState\": {");
@@ -25,14 +32,14 @@ namespace BlacksmithGuild.DevTools
             sb.AppendLine($"    \"currentTown\": {JsonString(snapshot.SettlementName)},");
             sb.AppendLine($"    \"currentSettlementId\": {JsonString(snapshot.SettlementId)},");
             sb.AppendLine($"    \"gameplaySurface\": {JsonString(snapshot.GameplaySurface)},");
+            sb.AppendLine($"    \"targetSettlement\": {JsonString(travelTarget)},");
             sb.AppendLine("    \"terminal\": false,");
             sb.AppendLine("    \"nextActionRequired\": true,");
             sb.AppendLine($"    \"nextPlannedBranch\": {JsonString(next)},");
             sb.AppendLine($"    \"nextActionReason\": {JsonString(reason)},");
             sb.AppendLine("    \"branches\": {");
-            AppendBranch(sb, "travel", snapshot.SafeToExecuteTravel ? "available" : "blocked",
-                snapshot.SafeToExecuteTravel ? "surface_allows_travel" : snapshot.BlockReason ?? "travel_surface_blocked",
-                "status", "map_traversal", updatedAt, comma: true);
+            AppendBranch(sb, "travel", travelGateState, travelGateReason,
+                "governor_route_council", "map_traversal", updatedAt, comma: true, targetSettlement: travelTarget);
             AppendBranch(sb, "trade", snapshot.SafeToExecuteTrade ? "unknown" : "blocked",
                 snapshot.SafeToExecuteTrade ? "market_profitability_not_evaluated" : "trade_surface_not_open",
                 "map_trade", "execute_trade_iteration", updatedAt, comma: true);
@@ -71,7 +78,7 @@ namespace BlacksmithGuild.DevTools
             var settlementLike = IsSettlementLike(snapshot);
             return string.Join("|", new[]
             {
-                "next=" + SelectNextBranch(snapshot),
+                "next=" + SelectNextBranch(snapshot, ResolveTravelTarget(snapshot)),
                 "surface=" + (snapshot.GameplaySurface ?? "null"),
                 "travel=" + (snapshot.SafeToExecuteTravel ? "1" : "0"),
                 "trade=" + (snapshot.SafeToExecuteTrade ? "1" : "0"),
@@ -82,9 +89,9 @@ namespace BlacksmithGuild.DevTools
             });
         }
 
-        private static string SelectNextBranch(GameplaySurfaceSnapshot snapshot)
+        private static string SelectNextBranch(GameplaySurfaceSnapshot snapshot, string travelTarget)
         {
-            if (snapshot.SafeToExecuteTravel)
+            if (snapshot.SafeToExecuteTravel && !string.IsNullOrWhiteSpace(travelTarget))
             {
                 return "travel";
             }
@@ -102,17 +109,72 @@ namespace BlacksmithGuild.DevTools
             return "observe_only";
         }
 
-        private static string ExplainNextBranch(GameplaySurfaceSnapshot snapshot, string branch)
+        private static string ExplainNextBranch(GameplaySurfaceSnapshot snapshot, string branch, string travelTarget)
         {
             switch (branch)
             {
                 case "travel":
-                    return "surface_allows_travel_recompute_destination_from_fresh_state";
+                    return "engine_selected_destination:" + travelTarget;
                 case "rest_wait":
                     return "productive_branch_blocked_wait_is_safe";
                 default:
+                    if (snapshot.SafeToExecuteTravel && string.IsNullOrWhiteSpace(travelTarget))
+                    {
+                        return "travel_target_missing_run_governor_or_route_council";
+                    }
+
                     return snapshot.BlockReason ?? "branch_truth_requires_fresh_observation";
             }
+        }
+
+        private static string ResolveTravelTarget(GameplaySurfaceSnapshot snapshot)
+        {
+            var decision = CampaignRuntimeGovernor.LastDecision;
+            var handoff = FirstNonEmpty(
+                decision?.ProposedActivity?.TargetTown,
+                decision?.RouteCouncilRecommendedDestination,
+                decision?.DestinationCandidate,
+                CampaignRouteCouncil.LastResult?.RecommendedDestination,
+                CampaignRuntimeRegent.LastSnapshot?.RouteCouncilRecommendedDestination);
+            if (!string.IsNullOrWhiteSpace(handoff))
+            {
+                return handoff;
+            }
+
+            // Cold-session seed: when no upstream selector has produced a destination yet, a travel-safe
+            // surface would otherwise starve the handoff and block the travel branch. Fall back to the
+            // assistive nearest-town resolver instead of inventing a parallel heuristic here.
+            if (snapshot != null && snapshot.SafeToExecuteTravel)
+            {
+                return ResolveNearestSettlementFallback();
+            }
+
+            return null;
+        }
+
+        private static string ResolveNearestSettlementFallback()
+        {
+            try
+            {
+                return AssistiveLeaveTownTravelService.ResolveRecommendedTarget();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
+            return null;
         }
 
         private static bool IsSettlementLike(GameplaySurfaceSnapshot snapshot)
@@ -132,7 +194,8 @@ namespace BlacksmithGuild.DevTools
             string evidenceSource,
             string boundaryName,
             string updatedAtUtc,
-            bool comma)
+            bool comma,
+            string targetSettlement = null)
         {
             sb.Append("      \"").Append(Escape(name)).Append("\": { ");
             sb.Append("\"state\": \"").Append(Escape(state)).Append("\", ");
@@ -140,6 +203,10 @@ namespace BlacksmithGuild.DevTools
             sb.Append("\"evidenceSource\": \"").Append(Escape(evidenceSource)).Append("\", ");
             sb.Append("\"updatedAtUtc\": \"").Append(Escape(updatedAtUtc)).Append("\", ");
             sb.Append("\"boundaryName\": \"").Append(Escape(boundaryName)).Append("\", ");
+            if (!string.IsNullOrWhiteSpace(targetSettlement))
+            {
+                sb.Append("\"targetSettlement\": \"").Append(Escape(targetSettlement)).Append("\", ");
+            }
             sb.Append("\"failureClass\": null }");
             sb.AppendLine(comma ? "," : string.Empty);
         }

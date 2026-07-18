@@ -2,6 +2,17 @@
 
 Use a **bundled dev save** to skip New Campaign character creation during daily development.
 
+## Disposable authority (critical)
+
+Tracked harness policy (`.tbg/harness/policies/disposable-save.policy.json`) approves saves only by:
+
+1. explicit disposable/dev name patterns, or
+2. a machine-local active pin under `.local/disposable-save.active.json`
+
+**Calendar year alone is never a shipped product default.** A workstation may optionally enable a gitignored year-floor cohort in `.local/disposable-save.operator.json` for local development only. That file must be disabled or deleted before treating this harness as player-facing save safety.
+
+Preferred sprint pin on this workstation: `BlacksmithGuildDevStart.sav` (also mirrored to `Native\BlacksmithGuild_DevStart.sav` when present).
+
 ## Zero-click launch contract (006E)
 
 | Forge entry | Launcher (auto) | In-game (auto) | Use |

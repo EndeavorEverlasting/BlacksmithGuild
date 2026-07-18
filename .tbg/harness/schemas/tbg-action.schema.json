@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/tbg-action.schema.json",
+  "title": "TBG Action v1",
+  "description": "Tracks an authorized action through its lifecycle from resolution to disposition.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "sourceEventId", "status", "riskClass", "provider", "terminalStates"],
+  "properties": {
+    "schema": { "const": "TbgAction.v1" },
+    "id": { "type": "string", "pattern": "^action:[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "sourceEventId": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["resolved", "authorized", "invoked", "observed", "verifying", "completed", "failed", "blocked", "dead-letter"]
+    },
+    "riskClass": {
+      "enum": ["static", "local_read_write", "external_read_only", "runtime_read", "runtime_write", "destructive"]
+    },
+    "provider": { "type": "string", "minLength": 1 },
+    "requiredAuthorization": { "type": "string" },
+    "terminalStates": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "producedEventId": { "type": "string" },
+    "error": { "type": "string" },
+    "producedUtc": { "type": "string", "format": "date-time" }
+  }
+}

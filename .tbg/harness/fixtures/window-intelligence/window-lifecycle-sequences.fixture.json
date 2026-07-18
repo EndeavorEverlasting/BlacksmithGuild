@@ -1,0 +1,79 @@
+{
+  "schema": "TbgWindowLifecycleFixture.v1",
+  "purpose": "Prove deterministic state reduction for known modal, terminal handoff, unknown quarantine, and illegal-transition paths without live window mutation.",
+  "cases": [
+    {
+      "caseId": "dependency-caution-dispatch-does-not-prove-acceptance",
+      "windowKey": "pid:117484|hwnd:140001",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed" },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.dependency-version-caution" },
+        { "sequence": 3, "eventType": "action_authorized", "actionId": "confirm_dependency_version_caution" },
+        { "sequence": 4, "eventType": "action_dispatched", "actionId": "confirm_dependency_version_caution" },
+        { "sequence": 5, "eventType": "window_disappeared" }
+      ],
+      "expected": {
+        "phase": "disappeared",
+        "identityId": "bannerlord.dependency-version-caution",
+        "actionId": "confirm_dependency_version_caution",
+        "proofLevel": "action_dispatch",
+        "terminal": true,
+        "acceptedTransitions": 5,
+        "rejectedTransitions": 0
+      }
+    },
+    {
+      "caseId": "singleplayer-host-is-terminal-observation",
+      "windowKey": "pid:117485|hwnd:140002",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed" },
+        { "sequence": 2, "eventType": "identity_resolved", "identityId": "bannerlord.singleplayer-host" },
+        { "sequence": 3, "eventType": "host_handoff_observed", "identityId": "bannerlord.singleplayer-host" }
+      ],
+      "expected": {
+        "phase": "terminal_observation",
+        "identityId": "bannerlord.singleplayer-host",
+        "actionId": null,
+        "proofLevel": "terminal_observation",
+        "terminal": true,
+        "acceptedTransitions": 3,
+        "rejectedTransitions": 0
+      }
+    },
+    {
+      "caseId": "unknown-window-requires-explicit-identity-resolution",
+      "windowKey": "pid:117486|hwnd:140003",
+      "events": [
+        { "sequence": 1, "eventType": "window_observed" },
+        { "sequence": 2, "eventType": "unknown_detected" },
+        { "sequence": 3, "eventType": "action_authorized", "actionId": "proceed" },
+        { "sequence": 4, "eventType": "identity_resolved", "identityId": "bannerlord.safe-mode" }
+      ],
+      "expected": {
+        "phase": "recognized",
+        "identityId": "bannerlord.safe-mode",
+        "actionId": null,
+        "proofLevel": "quarantine",
+        "terminal": false,
+        "acceptedTransitions": 3,
+        "rejectedTransitions": 1
+      }
+    },
+    {
+      "caseId": "dispatch-from-unseen-is-rejected",
+      "windowKey": "pid:117487|hwnd:140004",
+      "events": [
+        { "sequence": 1, "eventType": "action_dispatched", "actionId": "confirm_dependency_version_caution" }
+      ],
+      "expected": {
+        "phase": "unseen",
+        "identityId": null,
+        "actionId": null,
+        "proofLevel": "none",
+        "terminal": false,
+        "acceptedTransitions": 0,
+        "rejectedTransitions": 1
+      }
+    }
+  ]
+}

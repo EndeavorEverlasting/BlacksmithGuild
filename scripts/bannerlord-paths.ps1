@@ -129,7 +129,11 @@ function Find-NewestExistingPath {
     $newestTime = [datetime]::MinValue
     foreach ($path in $Candidates) {
         if (-not (Test-Path -LiteralPath $path)) { continue }
-        $mtime = (Get-Item -LiteralPath $path).LastWriteTime
+        try {
+            $mtime = (Get-Item -LiteralPath $path -ErrorAction Stop).LastWriteTime
+        } catch {
+            continue
+        }
         if ($mtime -gt $newestTime) {
             $newestTime = $mtime
             $newest = $path

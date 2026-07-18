@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
@@ -833,6 +834,10 @@ namespace BlacksmithGuild
 
             RuntimeLifecycleWriter.AppendStateMachine(builder, snapshot);
             builder.Append(RecursiveCampaignBranchState.BuildJsonBlock(snapshot));
+            RuntimeTrace.RunSafe("ForgeStatus", "write_runtime_regent", () =>
+            {
+                CampaignRuntimeRegent.Write(CampaignRuntimeRegent.BuildSnapshot(snapshot));
+            });
             AutomationRuntimeEventEmitter.EmitRecursiveBranchStateChanged(
                 RecursiveCampaignBranchState.BuildSignature(snapshot));
             if (!_stateMachineCheckpointEmitted)
@@ -851,6 +856,16 @@ namespace BlacksmithGuild
 
         private static void AppendFactionPowerPosture(StringBuilder builder)
         {
+            if (!DevToolsConfig.FactionPowerPostureStatusScanEnabled)
+            {
+                RuntimeTrace.LogDeferOnce(
+                    "faction-posture-status-scan-disabled",
+                    "ForgeStatus",
+                    "FactionPowerPostureScan",
+                    "diagnostic disabled");
+                return;
+            }
+
             // The posture block is diagnostic. Scanning every ~0.5s status flush across all nearby
             // parties while the campaign clock runs is what exposed the native crash during travel.
             // Skip entirely during active assistive travel, and otherwise rate-limit the scan,

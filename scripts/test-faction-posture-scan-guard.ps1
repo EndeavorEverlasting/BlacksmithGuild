@@ -30,6 +30,12 @@ if ($scanner -notmatch 'new List<MobileParty>\(MobileParty\.All\)') {
 }
 
 $forge = Read-Source 'src/BlacksmithGuild/ForgeStatus.cs'
+if ($forge -notmatch 'FactionPowerPostureStatusScanEnabled') {
+    throw 'AppendFactionPowerPosture must be gated by the diagnostic status scan switch'
+}
+if ($forge -notmatch 'faction-posture-status-scan-disabled') {
+    throw 'AppendFactionPowerPosture must log the disabled diagnostic scan gate'
+}
 if ($forge -notmatch 'IsAssistTravelActive') {
     throw 'AppendFactionPowerPosture must skip while assistive travel is active'
 }
@@ -45,30 +51,42 @@ if ($travel -notmatch 'public static bool IsAssistTravelActive') {
     throw 'AutoTravelService must expose IsAssistTravelActive'
 }
 
+$config = Read-Source 'src/BlacksmithGuild/DevTools/DevToolsConfig.cs'
+if ($config -notmatch 'FactionPowerPostureStatusScanEnabled\s*=\s*false') {
+    throw 'FactionPowerPostureStatusScanEnabled must default false for live attach proof safety'
+}
+
 # --- Layer 2: logic mirror ---------------------------------------------------
 
 function Test-ShouldScanPosture {
     param(
+        [bool]$StatusScanEnabled,
         [bool]$AssistTravelActive,
         [double]$SecondsSinceLastScan,
         [double]$MinIntervalSec = 5.0
     )
+    if (-not $StatusScanEnabled) { return $false }
     if ($AssistTravelActive) { return $false }
     return $SecondsSinceLastScan -ge $MinIntervalSec
 }
 
+# Diagnostic disabled: never scan during live attach proof.
+if (Test-ShouldScanPosture -StatusScanEnabled $false -AssistTravelActive $false -SecondsSinceLastScan 999) {
+    throw 'disabled diagnostic status scan must not run'
+}
+
 # Active travel: never scan (reuse cache), regardless of elapsed time.
-if (Test-ShouldScanPosture -AssistTravelActive $true -SecondsSinceLastScan 999) {
+if (Test-ShouldScanPosture -StatusScanEnabled $true -AssistTravelActive $true -SecondsSinceLastScan 999) {
     throw 'must not scan posture during active assistive travel'
 }
 
 # Stationary but within interval: reuse cache, do not scan.
-if (Test-ShouldScanPosture -AssistTravelActive $false -SecondsSinceLastScan 1.0) {
+if (Test-ShouldScanPosture -StatusScanEnabled $true -AssistTravelActive $false -SecondsSinceLastScan 1.0) {
     throw 'must not re-scan within the throttle interval'
 }
 
 # Stationary and interval elapsed: scan.
-if (-not (Test-ShouldScanPosture -AssistTravelActive $false -SecondsSinceLastScan 6.0)) {
+if (-not (Test-ShouldScanPosture -StatusScanEnabled $true -AssistTravelActive $false -SecondsSinceLastScan 6.0)) {
     throw 'must scan posture once interval has elapsed and not travelling'
 }
 

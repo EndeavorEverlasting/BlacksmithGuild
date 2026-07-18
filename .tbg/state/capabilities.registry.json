@@ -1,0 +1,152 @@
+{
+  "schema": "TbgCapabilitiesRegistry.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "description": "Tracks what each registered skill can produce. The router selects capabilities, not phrases.",
+  "generatedUtc": "2026-07-13T00:00:00Z",
+  "capabilities": [
+    {
+      "id": "capability:repo-floor-inspection",
+      "providedBy": ["skill:repo-floor-hygiene"],
+      "consumes": [],
+      "produces": ["TbgObservation.v1"],
+      "maxProofLevel": "contract",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["git", "gh"]
+    },
+    {
+      "id": "capability:skill-routing-validation",
+      "providedBy": ["skill:agent-skill-factoring"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgEvidenceRecord.v1", "TbgClaim.v1"],
+      "maxProofLevel": "static test",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["exact_head", "manifest_valid"]
+    },
+    {
+      "id": "capability:harness-maturity-classification",
+      "providedBy": ["skill:harness-maturity"],
+      "consumes": [],
+      "produces": ["TbgObservation.v1", "TbgClaim.v1"],
+      "maxProofLevel": "contract",
+      "riskClasses": ["static"],
+      "authorityRequirements": []
+    },
+    {
+      "id": "capability:local-artifact-parsing",
+      "providedBy": ["skill:local-artifact-engine"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgEvidenceRecord.v1"],
+      "maxProofLevel": "windows watcher harness",
+      "riskClasses": ["local_read_write"],
+      "authorityRequirements": ["fresh_artifacts"]
+    },
+    {
+      "id": "capability:game-compatibility-observation",
+      "providedBy": ["skill:harness-maturity"],
+      "consumes": [],
+      "produces": ["TbgObservation.v1", "TbgEvidenceRecord.v1"],
+      "maxProofLevel": "harness",
+      "riskClasses": ["local_read_write", "external_read_only"],
+      "authorityRequirements": ["exact_head", "metadata_fresh", "no_runtime_launch"]
+    },
+    {
+      "id": "capability:runtime-evidence-certification",
+      "providedBy": ["skill:runtime-evidence-certification"],
+      "consumes": ["TbgEvidenceRecord.v1", "TbgObservation.v1", "TbgWindowLifecycleRuntimeResult.v1"],
+      "produces": ["TbgClaim.v1"],
+      "maxProofLevel": "live runtime",
+      "riskClasses": ["runtime_read"],
+      "authorityRequirements": ["exact_head", "fresh_artifacts", "command_correlation", "lifecycle_correlation"]
+    },
+    {
+      "id": "capability:window-lifecycle-reduction",
+      "providedBy": ["skill:window-lifecycle-runtime"],
+      "consumes": ["TbgWindowLifecycleRuntimeEvent.v1"],
+      "produces": ["TbgWindowLifecycleMaterializedState.v1", "TbgWindowLifecycleTransition.v1"],
+      "maxProofLevel": "harness",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["manifest_valid"]
+    },
+    {
+      "id": "capability:window-lifecycle-runtime-observation",
+      "providedBy": ["skill:window-lifecycle-runtime"],
+      "consumes": ["TbgWindowLifecycleRuntimeResult.v1", "TbgWindowLifecycleMaterializedState.v1"],
+      "produces": ["TbgObservation.v1", "TbgEvidenceRecord.v1"],
+      "maxProofLevel": "launcher",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["fresh_artifacts", "lifecycle_correlation"]
+    },
+    {
+      "id": "capability:launcher-control",
+      "providedBy": ["skill:launcher-lifecycle"],
+      "consumes": ["TbgObservation.v1", "TbgWindowLifecycleMaterializedState.v1"],
+      "produces": ["TbgEvidenceRecord.v1"],
+      "maxProofLevel": "launcher",
+      "riskClasses": ["runtime_write"],
+      "authorityRequirements": ["forge_stop_first", "exact_launcher_context", "lifecycle_identity_authority"]
+    },
+    {
+      "id": "capability:stale-value-replay",
+      "providedBy": ["skill:stale-pr-cherry-pick"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgEvidenceRecord.v1", "TbgClaim.v1"],
+      "maxProofLevel": "static test",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["stale_pr_classified"]
+    },
+    {
+      "id": "capability:route-source-edit",
+      "providedBy": ["skill:route-visible-trade"],
+      "consumes": ["TbgObservation.v1", "TbgEvidenceRecord.v1"],
+      "produces": ["TbgEvidenceRecord.v1", "TbgClaim.v1"],
+      "maxProofLevel": "live runtime",
+      "riskClasses": ["runtime_write"],
+      "authorityRequirements": ["exact_head", "runtime_proof_chain"]
+    },
+    {
+      "id": "capability:operator-control",
+      "providedBy": ["skill:operator-control-surface"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgEvidenceRecord.v1"],
+      "maxProofLevel": "command ACK",
+      "riskClasses": ["runtime_write"],
+      "authorityRequirements": ["command_correlation"]
+    },
+    {
+      "id": "capability:commit-push-pr",
+      "providedBy": ["skill:implementation-completion"],
+      "consumes": ["TbgEvidenceRecord.v1", "TbgClaim.v1"],
+      "produces": ["TbgClaim.v1", "TbgWorkItem.v1"],
+      "maxProofLevel": "build",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["git_diff_clean", "validation_pass"]
+    },
+    {
+      "id": "capability:continuum-export",
+      "providedBy": ["skill:continuum-interoperability"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgEvidenceRecord.v1"],
+      "maxProofLevel": "static test",
+      "riskClasses": ["external_read_only"],
+      "authorityRequirements": ["capability_packet_valid"]
+    },
+    {
+      "id": "capability:compendium-classification",
+      "providedBy": ["skill:compendium-preservation"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgObservation.v1"],
+      "maxProofLevel": "contract",
+      "riskClasses": ["static"],
+      "authorityRequirements": []
+    },
+    {
+      "id": "capability:static-validation",
+      "providedBy": ["skill:agent-skill-factoring", "skill:harness-maturity"],
+      "consumes": ["TbgObservation.v1"],
+      "produces": ["TbgEvidenceRecord.v1", "TbgClaim.v1"],
+      "maxProofLevel": "static test",
+      "riskClasses": ["static"],
+      "authorityRequirements": ["test_pass"]
+    }
+  ]
+}

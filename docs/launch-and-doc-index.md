@@ -2,11 +2,40 @@
 
 **Start here** if you are asking: *How do I launch? Where is that documented?*
 
-Repo root: `C:\Users\Cheex\Desktop\dev\Mods\Bannerlord\BlacksmithGuild`
+Repo root: `<path-to-BlacksmithGuild>`
+
+---
+
+## First test after cloning `main`
+
+Before launching Bannerlord or testing hotkeys, run the safe no-game first test:
+
+```powershell
+git status --short
+git branch --show-current
+git log --oneline --decorate -5
+dotnet --version
+dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug
+git diff --check
+```
+
+Full guide: [first-test-after-clone.md](first-test-after-clone.md)
 
 ---
 
 ## How to launch (pick one path)
+
+### Game compatibility check
+
+Before any launcher or runtime proof, double-click:
+
+```powershell
+.\ForgeGameUpdate.cmd
+```
+
+This metadata-only gate compares the upstream Steam build, locally installed build, repo-supported baseline, exact source commit, built mod DLL, and installed mod DLL. It does not launch or update Bannerlord, build or install the mod, touch saves, or establish runtime proof. Inspect `artifacts/latest/game-compatibility/game-compatibility.result.json`; a changed game build invalidates older runtime evidence until the runtime chain is recertified.
+
+Design and proof boundaries: [architecture/bannerlord-game-compatibility-updater.md](architecture/bannerlord-game-compatibility-updater.md)
 
 ### Path A — Daily dev (most common)
 
@@ -45,18 +74,62 @@ Menu wraps **New** → `Forge.cmd`, **Continue** → `ForgeContinue.cmd`. Detail
 
 ---
 
+## After launch — click-first command wrappers
+
+Prefer root `.cmd` files for repeat human/operator tests. Do not ask the user to type `forge.ps1 -Command ...` when an equivalent root wrapper exists.
+
+Common wrappers:
+
+```powershell
+.\Run-MarketIntel.cmd
+.\Run-FoodAdvisory.cmd
+.\Run-HorseMarketIntel.cmd
+.\Run-GuildLoopAdvisory.cmd
+.\Run-AutonomousGuildLoop.cmd
+.\Run-CohesionAnalyze.cmd
+.\Run-CohesionMove.cmd
+.\Run-AutoTravelChoices.cmd
+.\Run-TickCostProfilerSmoke.cmd
+.\Run-ExportEvidence.cmd
+```
+
+Full matrix and agent rules: [clickable-command-surface.md](clickable-command-surface.md)
+
+Implementation roadmap: [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md)
+
+---
+
 ## After launch — autonomous guild loop (006B)
 
 Only when **campaign map is ready** (`F7` → `campaignReady: true`):
 
 ```powershell
-.\forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
-.\ExportTbgEvidence.cmd
+.\Run-AutonomousGuildLoop.cmd
+.\Run-ExportEvidence.cmd
 ```
 
 Primary JSON: `docs/evidence/latest/BlacksmithGuild_AutonomousGuildLoop.json`
 
-Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [player-command-guide.md](player-command-guide.md).
+Commands and hotkeys: [automation-playbook.md](automation-playbook.md), [player-command-guide.md](player-command-guide.md), and [clickable-command-surface.md](clickable-command-surface.md).
+
+---
+
+## Food check
+
+Food now has a direct read-only command:
+
+```powershell
+.\Run-FoodAdvisory.cmd
+.\Run-ExportEvidence.cmd
+```
+
+Underlying inbox command:
+
+```powershell
+.\forge.ps1 -Command AnalyzeFood -Wait
+```
+
+Inspect `BlacksmithGuild_FoodAdvisory.json` for food runway, diversity, forecast, candidate planning, read-only market stock, market matches, execution gate, and `buyFoodSupported`. Automated food acquisition is not active yet.
 
 ---
 
@@ -64,7 +137,12 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 
 | Question | Read this file |
 |----------|----------------|
+| What should I run first after cloning `main`? | [first-test-after-clone.md](first-test-after-clone.md) |
 | How do I launch? Play vs Continue? | [player-command-guide.md](player-command-guide.md) § Play now + Launch Control |
+| Which root `.cmd` file should a human click? | [clickable-command-surface.md](clickable-command-surface.md) |
+| Is Steam, the installed game, the repo baseline, and the mod DLL aligned? | [architecture/bannerlord-game-compatibility-updater.md](architecture/bannerlord-game-compatibility-updater.md) |
+| What is the plan to finish the root CMD / click wrapper surface? | [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md) |
+| Food status / runway / provisioning gap? | [clickable-command-surface.md](clickable-command-surface.md) § Food-specific note |
 | `Forge.cmd` vs `ForgeContinue.cmd` | [dev-disposable-save.md](dev-disposable-save.md) |
 | Zero-click pipeline internals | [forge-zero-click-contract.md](forge-zero-click-contract.md) |
 | Desktop shortcut / Launch Control | [../tools/LaunchControl/README.md](../tools/LaunchControl/README.md) |
@@ -80,7 +158,7 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 | F7 control index (open/successful) | [control/indexes/f7-recovery-index.md](control/indexes/f7-recovery-index.md) |
 | F7 launch commands / Layer A vs B | [handoff/agent-launch-and-load-playbook.md](handoff/agent-launch-and-load-playbook.md) |
 | Build / install mod | [../README.md](../README.md) § Two environments |
-| Export JSON evidence | `.\ExportTbgEvidence.cmd` → [evidence/latest/README.md](evidence/latest/README.md) |
+| Export JSON evidence | `.\Run-ExportEvidence.cmd` → [evidence/latest/README.md](evidence/latest/README.md) |
 | Sprint history | [../README.md](../README.md) sprint table |
 
 ### Human “start here”
@@ -89,16 +167,19 @@ Commands and hotkeys: [automation-playbook.md](automation-playbook.md) and [play
 
 ### AI agent “start here”
 
-[handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)
+[clickable-command-surface.md](clickable-command-surface.md), [plans/click-first-command-surface.plan.md](plans/click-first-command-surface.plan.md), then [handoff/006b-map-trade-cohesion-agent-handoff.md](handoff/006b-map-trade-cohesion-agent-handoff.md)
 
 ---
 
 ## One-line cheat sheet
 
 ```text
+First:    docs/first-test-after-clone.md
+Compat:   ForgeGameUpdate.cmd (metadata-only; required before fresh runtime proof)
 Launch:   ForgeContinue.cmd (daily) | Forge.cmd (new) | tools/LaunchControl/Launch-Control.cmd
 Ready:    F7 → campaignReady: true
-Loop:     forge.ps1 -Command RunAutonomousGuildLoopNow -Wait
-Evidence: ExportTbgEvidence.cmd → docs/evidence/latest/
-Docs:     docs/automation-playbook.md | docs/launch-and-doc-index.md | docs/handoff/006b-map-trade-cohesion-agent-handoff.md (AI)
+Click:    Run-MarketIntel.cmd | Run-FoodAdvisory.cmd | Run-HorseMarketIntel.cmd | Run-GuildLoopAdvisory.cmd
+Plan:     docs/plans/click-first-command-surface.plan.md
+Evidence: Run-ExportEvidence.cmd → docs/evidence/latest/
+Docs:     docs/clickable-command-surface.md | docs/automation-playbook.md | docs/launch-and-doc-index.md
 ```

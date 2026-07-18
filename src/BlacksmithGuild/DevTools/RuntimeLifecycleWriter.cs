@@ -164,11 +164,25 @@ namespace BlacksmithGuild.DevTools
                 builder.AppendLine($"  \"shutdownObservedAtUtc\": {JsonString(_shutdownObservedAtUtc?.ToString("o"))},");
                 builder.AppendLine($"  \"shutdownReason\": {JsonString(_shutdownReason)}");
                 builder.AppendLine("}");
-                File.WriteAllText(LifecyclePath, builder.ToString());
+                WriteAllTextAtomic(LifecyclePath, builder.ToString());
             }
             catch (Exception ex)
             {
                 DebugLogger.Test($"[TBG LIFECYCLE] write failed: {ex.Message}", showInGame: false);
+            }
+        }
+
+        private static void WriteAllTextAtomic(string path, string content)
+        {
+            var tempPath = path + ".tmp";
+            File.WriteAllText(tempPath, content);
+            if (File.Exists(path))
+            {
+                File.Replace(tempPath, path, null);
+            }
+            else
+            {
+                File.Move(tempPath, path);
             }
         }
 

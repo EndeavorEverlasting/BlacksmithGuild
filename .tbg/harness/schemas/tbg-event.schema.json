@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/tbg-event.schema.json",
+  "title": "TBG Event v1",
+  "description": "Canonical ingress envelope. Every accepted input enters the system through this shape.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "eventId", "correlationId", "causationId", "eventType",
+    "source", "receivedUtc", "contentHash", "payloadSchema", "payload", "requestedDisposition"
+  ],
+  "properties": {
+    "schema": { "const": "TbgEvent.v1" },
+    "eventId": { "type": "string", "pattern": "^evt-[0-9T\\-:Z]+-[a-f0-9]+$" },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "causationId": { "type": "string", "minLength": 1 },
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "user.request", "artifact.observed", "artifact.parsed",
+        "git.state.captured", "pr.lifecycle.result", "build.result",
+        "validator.result", "launcher.result", "command.ack",
+        "runtime.evidence", "hygiene.report", "stale.pr.recovery",
+        "continuum.packet", "operator.control", "worktree.lease",
+        "chat.packet", "skill.routed", "action.completed",
+        "action.failed", "capability.gap.detected", "work.item.created",
+        "work.item.transitioned", "constraint.violation", "contradiction.detected",
+        "reconciler.scan", "event.unrecognized", "event.quarantined",
+        "projection.rebuilt", "registry.drift.detected", "system.generated"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["workflow", "skill", "engine", "script", "command", "runtime adapter", "external adapter", "operator", "reconciler", "system"]
+        },
+        "id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "receivedUtc": { "type": "string", "format": "date-time" },
+    "contentHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "payloadSchema": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" },
+    "requestedDisposition": {
+      "type": "string",
+      "enum": ["process", "observe", "quarantine", "reject"]
+    },
+    "sequence": { "type": "integer", "minimum": 0 },
+    "previousHash": { "type": "string" },
+    "ingestionStatus": {
+      "type": "string",
+      "enum": ["pending", "committed", "quarantined", "rejected", "duplicate"]
+    },
+    "processingAttempts": { "type": "integer", "minimum": 0, "default": 0 },
+    "idempotencyKey": { "type": "string", "minLength": 1 }
+  }
+}

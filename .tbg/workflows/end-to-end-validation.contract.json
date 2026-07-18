@@ -1,0 +1,18 @@
+{
+  "schema": "tbg.workflow.end-to-end-validation.v1",
+  "entrypoint": "scripts/tbg/Invoke-TbgEndToEndValidation.ps1",
+  "profileRegistry": ".tbg/harness/e2e/profiles.json",
+  "artifactRegistry": ".tbg/harness/e2e-artifact-types.registry.json",
+  "defaultProfile": "default-static",
+  "phases": ["repo-floor", "route-profile", "run-required-journeys", "classify-proof", "register-artifacts", "emit-report", "emit-sprint-capsule", "final-git-hygiene"],
+  "proofOrder": ["contract", "harness", "static test", "build", "launcher", "command ACK", "behavior observed", "live runtime"],
+  "guardrails": [
+    "Default profile cannot launch Bannerlord or mutate saves.",
+    "Release build and install are excluded from build-only proof.",
+    "Read-only runtime requires explicit authority and a fresh expected artifact.",
+    "Disposable-save live proof requires a specific workflow contract and explicit mutation authority.",
+    "All waits and child processes are bounded.",
+    "Process exit zero cannot substitute for required artifacts.",
+    "Raw run evidence stays under the ignored run root."
+  ]
+}

@@ -1,0 +1,55 @@
+name: tbg-route-visible-start
+
+description: |
+  Product proof workflow for The Blacksmith Guild route engine.
+
+  Use when the objective is to prove visible campaign-map travel start under mod control.
+  This workflow is Windows-runtime aware. If Archon runs under WSL, use this workflow as a planning wrapper only and run the PowerShell entrypoint from native Windows.
+
+provider: claude
+
+nodes:
+  - id: read-contract
+    bash: |
+      echo "=== TBG ROUTE VISIBLE START CONTRACT ==="
+      cat .tbg/workflows/route-visible-start.contract.json
+
+  - id: run-native-workflow
+    depends_on: [read-contract]
+    bash: |
+      echo "Run this from native Windows PowerShell, not WSL, when Bannerlord runtime proof is required:"
+      echo "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Invoke-TbgWorkflow.ps1 -Workflow route-visible-start -TargetSettlement Quyaz"
+      echo ""
+      echo "If this Archon runner is already native Windows with PowerShell access, execute the command manually or adapt this node to the local shell."
+
+  - id: analyze-result
+    depends_on: [run-native-workflow]
+    prompt: |
+      You are reviewing The Blacksmith Guild route-visible-start workflow result.
+
+      Read artifacts/latest/route-visible-start.result.json if it exists.
+
+      Rules:
+      - Do not request a full collector run.
+      - Do not rely on terminal focus as proof.
+      - If verdict is PASS, summarize the product behavior proven.
+      - If verdict is BLOCKED, identify the single blocker and patch only that seam.
+      - If commands assume Bannerlord should not be running, include ForgeStop first.
+      - Prefer app behavior gates over harness existence checks.
+
+      Output:
+      - verdict
+      - blocker, if any
+      - exact files to patch
+      - one runnable next command
+
+  - id: create-pr
+    depends_on: [analyze-result]
+    prompt: |
+      Create or update a pull request with:
+      - summary of workflow contract changes
+      - product acceptance criteria
+      - validation result from artifacts/latest/route-visible-start.result.json, if present
+      - exact next blocker if not passing
+
+      Do not claim runtime movement was proven unless route.travelCommandIssued and route.routeStarted are true.

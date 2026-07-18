@@ -1,18 +1,21 @@
 ﻿# One-click entry point from repo root.
 #   .\forge.ps1                  build + install (+ auto save backup)
-#   .\forge.ps1 -Launch          build + install + open launcher
+#   .\forge.ps1 -Launch -LaunchIntent play       build + install + open/navigate launcher
+#   .\forge.ps1 -Launch -LaunchIntent continue   build + install + open/navigate launcher
 #   .\forge.ps1 -Check           build + install + scan status JSON + log
 #   .\forge.ps1 -Check -SkipInstall   scan only (game may stay open)
 #   .\forge.ps1 -Command AdvanceOneDay -Wait
 #   .\forge.ps1 -Certify -Wait     full Sprint 001 cert via file inbox
 #   .\forge.ps1 -CertifyProgression -Wait   Sprint 002 progression cert
+#   .\forge.ps1 -VerifyLogPatterns     run ASCII-hyphen ready-line grep guard (no launch)
 #   .\forge.ps1 -Watch                 auto rebuild on source changes (ForgeWatch.cmd)
 
 param(
     [switch]$Launch,
     [ValidateSet('play', 'continue')]
-    [string]$LaunchIntent = 'play',
+    [string]$LaunchIntent,
     [switch]$LaunchManual,
+    [switch]$AllowFocusSteal,
     [switch]$Watch,
     [switch]$Check,
     [switch]$CollectDiagnostics,
@@ -23,6 +26,7 @@ param(
     [switch]$Wait,
     [switch]$Certify,
     [switch]$CertifyProgression,
+    [switch]$VerifyLogPatterns,
     [ValidateSet('AutoLoop', 'Manual')]
     [string]$IterationMode,
     [string]$Command,
@@ -31,6 +35,16 @@ param(
     [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
     [string]$SessionAuthorityMode
 )
+
+# PR #8 lesson: expose the ready-line grep guard from the root forge entrypoint.
+if ($VerifyLogPatterns) {
+    & (Join-Path $PSScriptRoot 'scripts\verify-log-grep-patterns.ps1')
+    exit $LASTEXITCODE
+}
+
+if ($Launch -and -not $LaunchIntent) {
+    throw 'LaunchIntent is required when -Launch is used. Pass -LaunchIntent play or -LaunchIntent continue.'
+}
 
 function Invoke-SaveBackupIfNeeded {
     if ($SkipSaveBackup) {
@@ -112,6 +126,7 @@ if ($SkipInstall) { $installParams.SkipInstall = $true }
 if ($Launch) { $installParams.LaunchIntent = $LaunchIntent }
 if ($LaunchManual) { $installParams.LaunchManual = $true }
 if ($SessionAuthorityMode) { $installParams.SessionAuthorityMode = $SessionAuthorityMode }
+if ($AllowFocusSteal) { $installParams.AllowFocusSteal = $true }
 
 & (Join-Path $PSScriptRoot 'scripts\install-mod.ps1') @installParams
 

@@ -16,7 +16,11 @@ param(
     [int]$CertRetryAttempt = 0,
     [string]$ExternalStateTimelinePath = $null,
     [switch]$LaunchSetup,
-    [int]$LauncherSelectionMaxMs = 30000
+    [int]$LauncherSelectionMaxMs = 30000,
+    # Focus policy: by default the launcher respects the user's foreground window and never steals
+    # focus. Aggressive focus-steal escalation (real foreground clicks) only happens when the
+    # operator explicitly opts in with -AllowFocusSteal.
+    [switch]$AllowFocusSteal
 )
 
 $ErrorActionPreference = 'Stop'
@@ -24,12 +28,29 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'f7-launch-contract.ps1')
 . (Join-Path $PSScriptRoot 'f7-external-state-classifier.ps1')
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
+. (Join-Path $PSScriptRoot 'pr11-process-window-classifier.ps1')
 $lockPath = Get-NavLockPath -BannerlordRoot $BannerlordRoot
 $lockMaxAgeMin = 10
 $script:navLockHeld = $false
+$script:operatorGuardedClickDeniedCount = 0
+
+function Get-NavLockOwnerPid {
+    if (-not (Test-Path -LiteralPath $lockPath)) { return 0 }
+    try {
+        $text = Get-Content -LiteralPath $lockPath -Raw -ErrorAction Stop
+        $match = [regex]::Match($text, '(?m)^pid=([0-9]+)\s*$')
+        if ($match.Success) { return [int]$match.Groups[1].Value }
+    } catch { }
+    return 0
+}
 
 function Test-NavLockActive {
     if (-not (Test-Path -LiteralPath $lockPath)) { return $false }
+    $ownerPid = Get-NavLockOwnerPid
+    if ($ownerPid -gt 0 -and -not (Get-Process -Id $ownerPid -ErrorAction SilentlyContinue)) {
+        Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
+        return $false
+    }
     $age = (Get-Date) - (Get-Item -LiteralPath $lockPath).LastWriteTime
     if ($age.TotalMinutes -ge $lockMaxAgeMin) {
         Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
@@ -58,12 +79,152 @@ Acquire-NavLock
 $logPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
 $launcherExeName = 'TaleWorlds.MountAndBlade.Launcher'
 $gameExeName = 'Bannerlord'
+$windowSnapshotS1Path = Join-Path $BannerlordRoot 'window-snapshot-S1-pre-launch.json'
+$windowSnapshotS2Path = Join-Path $BannerlordRoot 'window-snapshot-S2-post-launch.json'
+$windowDeltaCandidatesPath = Join-Path $BannerlordRoot 'window-delta-candidates.json'
+$chosenLaunchWindowPath = Join-Path $BannerlordRoot 'chosen-launch-window.json'
+$launchSelectionArtifactPath = Join-Path $BannerlordRoot 'launch-selection.json'
+$script:launcherSelectionBaselineSnapshot = $null
+$script:lastLauncherWindowDeltaDecision = $null
+$script:lastLauncherWindowCandidates = @()
+$script:lastLauncherWindowDeltaRefreshUtc = $null
 
 function Write-LaunchLog {
     param([string]$Message)
     $line = "[{0}] launcher-auto: {1}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $Message
     Add-Content -LiteralPath $logPath -Value $line -Encoding UTF8
     Write-Host $line -ForegroundColor DarkGray
+}
+
+function Save-TbgLauncherWindowArtifact {
+    param(
+        [AllowNull()]$Object,
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+
+    if (Get-Command Save-Pr11JsonArtifact -ErrorAction SilentlyContinue) {
+        Save-Pr11JsonArtifact -Object $Object -Path $Path | Out-Null
+        return
+    }
+
+    $dir = Split-Path -Parent $Path
+    if ($dir -and -not (Test-Path -LiteralPath $dir)) {
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    }
+
+    if ($null -eq $Object) {
+        'null' | Set-Content -LiteralPath $Path -Encoding UTF8
+    }
+    elseif ($Object -is [System.Array] -and $Object.Count -eq 0) {
+        '[]' | Set-Content -LiteralPath $Path -Encoding UTF8
+    }
+    else {
+        $Object | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $Path -Encoding UTF8
+    }
+}
+
+function Write-TbgLauncherSelectionDecisionArtifact {
+    param(
+        $Decision,
+        $ChosenWindow = $null
+    )
+
+    $payload = [ordered]@{
+        updatedAtUtc   = (Get-Date).ToUniversalTime().ToString('o')
+        intent         = [string]$LaunchIntent
+        selectionBasis = 'S1_to_S2_window_delta'
+        allowed        = [bool]($Decision -and $Decision.allowed)
+        reason         = if ($Decision) { [string]$Decision.reason } else { 'no_decision' }
+        candidateCount = @($script:lastLauncherWindowCandidates).Count
+        chosenWindow   = $ChosenWindow
+    }
+    Save-TbgLauncherWindowArtifact -Object $payload -Path $launchSelectionArtifactPath
+}
+
+function Test-TbgLauncherDeltaMenuReady {
+    param($Decision = $script:lastLauncherWindowDeltaDecision)
+
+    if (-not $Decision -or -not $Decision.allowed -or -not $Decision.winner) { return $false }
+    if ([int64]$Decision.winner.hwnd -eq 0) { return $false }
+    if ([int]$Decision.winner.score -lt $script:Pr11ClickConfidenceThreshold) { return $false }
+    return ([string]$Decision.winner.processName -match 'Bannerlord|TaleWorlds')
+}
+
+function Update-TbgLauncherWindowDeltaSelection {
+    param([switch]$Force)
+
+    if (-not $script:launcherSelectionBaselineSnapshot) {
+        return $null
+    }
+
+    if (-not [UIAHelper]::HasLauncherRoot()) {
+        $script:lastLauncherWindowCandidates = @()
+        $script:lastLauncherWindowDeltaDecision = [pscustomobject][ordered]@{
+            allowed = $false
+            reason  = 'no_launcher_root'
+            winner  = $null
+            tied    = @()
+        }
+        [UIAHelper]::ClearPreferredLauncherWindow()
+        Save-TbgLauncherWindowArtifact -Object @() -Path $windowDeltaCandidatesPath
+        Save-TbgLauncherWindowArtifact -Object $null -Path $chosenLaunchWindowPath
+        Write-TbgLauncherSelectionDecisionArtifact -Decision $script:lastLauncherWindowDeltaDecision -ChosenWindow $null
+        return $script:lastLauncherWindowDeltaDecision
+    }
+
+    if (-not $Force -and $script:lastLauncherWindowDeltaRefreshUtc -and (((Get-Date) - $script:lastLauncherWindowDeltaRefreshUtc).TotalSeconds -lt 1)) {
+        return $script:lastLauncherWindowDeltaDecision
+    }
+
+    $s2 = Get-Pr11ProcessSnapshot -Label 'S2_post_launch' -BannerlordRoot $BannerlordRoot
+    $script:lastLauncherWindowDeltaRefreshUtc = Get-Date
+    Save-TbgLauncherWindowArtifact -Object $s2 -Path $windowSnapshotS2Path
+
+    $delta = Compare-Pr11ProcessSnapshots -BaselineSnapshot $script:launcherSelectionBaselineSnapshot -AfterSnapshot $s2
+    $candidates = @(Get-Pr11WindowCandidates -Delta $delta -BannerlordRoot $BannerlordRoot `
+        -LaunchRequestedUtc $startTime.ToUniversalTime() `
+        -UiaPlayVisible ([UIAHelper]::IsLauncherPlayOnlyVisible()) `
+        -UiaContinueVisible ([UIAHelper]::IsLauncherContinueVisible()))
+
+    $script:lastLauncherWindowCandidates = $candidates
+    Save-TbgLauncherWindowArtifact -Object $candidates -Path $windowDeltaCandidatesPath
+
+    $decision = Test-Pr11ClickAllowed -Candidates $candidates
+    $script:lastLauncherWindowDeltaDecision = $decision
+
+    if ($decision.allowed -and $decision.winner -and [int64]$decision.winner.hwnd -ne 0) {
+        [UIAHelper]::SetPreferredLauncherWindow([int64]$decision.winner.hwnd, [int]$decision.winner.pid, [int]$decision.winner.score, [string]$decision.reason)
+        Save-TbgLauncherWindowArtifact -Object $decision.winner -Path $chosenLaunchWindowPath
+        Write-TbgLauncherSelectionDecisionArtifact -Decision $decision -ChosenWindow $decision.winner
+        $winnerLine = 'AUDIT launcher delta winner: pid={0} hwnd={1} score={2} title={3} reason={4}' -f $decision.winner.pid, $decision.winner.hwnd, $decision.winner.score, $decision.winner.windowTitle, $decision.reason
+        Write-LaunchLog $winnerLine
+    }
+    else {
+        [UIAHelper]::ClearPreferredLauncherWindow()
+        Save-TbgLauncherWindowArtifact -Object $null -Path $chosenLaunchWindowPath
+        Write-TbgLauncherSelectionDecisionArtifact -Decision $decision -ChosenWindow $null
+        $blockedLine = 'AUDIT launcher delta blocked: reason={0} candidates={1}' -f $decision.reason, @($candidates).Count
+        Write-LaunchLog $blockedLine
+    }
+
+    return $decision
+}
+
+function Invoke-OperatorInteractiveFocusPrompt {
+    param([string]$Reason)
+    if ($env:TBG_OPERATOR_INTERACTIVE_FOCUS -ne '1') { return $false }
+    Write-LaunchLog "LAUNCH_STATE=operator_focus_required reason=$Reason"
+    Write-Host ''
+    Write-Host 'Launcher focus required.' -ForegroundColor Yellow
+    Write-Host 'Bring the Bannerlord launcher to the front, then press Enter to continue.' -ForegroundColor Yellow
+    Write-Host 'Press C to cancel.' -ForegroundColor Yellow
+    $answer = Read-Host 'Continue or C'
+    if ($answer -and $answer.Trim().ToUpperInvariant() -eq 'C') {
+        Write-LaunchLog 'LAUNCH_STATE=user_cancelled operator focus prompt'
+        throw 'USER CANCELLED: launcher focus unavailable'
+    }
+    $script:operatorGuardedClickDeniedCount = 0
+    return $true
 }
 
 function Get-NavExternalStateMode {
@@ -103,11 +264,18 @@ function Test-NavGuardedLauncherClick {
 
     $action = if ($Intent -eq 'continue') { 'click_launcher_continue' } else { 'click_launcher_play' }
     $mode = Get-NavExternalStateMode
+    $hasLauncherRoot = [UIAHelper]::HasLauncherRoot()
+    $deltaDecision = $null
+    if ($hasLauncherRoot) {
+        $deltaDecision = Update-TbgLauncherWindowDeltaSelection
+    }
 
     $classifiedState = 'UnknownWindowState'
     if ([UIAHelper]::IsLauncherPlayContinueVisible()) {
         $classifiedState = 'LauncherMenu'
-    } elseif ([UIAHelper]::HasLauncherRoot()) {
+    } elseif (Test-TbgLauncherDeltaMenuReady -Decision $deltaDecision) {
+        $classifiedState = 'LauncherMenu'
+    } elseif ($hasLauncherRoot) {
         $classifiedState = 'LauncherOpening'
     } else {
         $det = Get-LaunchNavProcessDetection
@@ -160,6 +328,10 @@ public static class UIAHelper
     private static bool _moduleMismatchAuditDone;
     private static int _moduleMismatchCoordAttemptIndex;
     private static HashSet<int> _baselineProcessIds = null;
+    private static IntPtr _preferredLauncherWindowHwnd = IntPtr.Zero;
+    private static int _preferredLauncherWindowPid = 0;
+    private static int _preferredLauncherWindowScore = 0;
+    private static string _preferredLauncherWindowReason = null;
 
     // Before/after PID diff: snapshot the launcher/game-family process IDs that exist BEFORE we
     // trigger a launch, so the genuinely NEW game-hosting process can be identified afterward
@@ -205,6 +377,88 @@ public static class UIAHelper
         return newIds;
     }
 
+    public static void SetPreferredLauncherWindow(long hwnd, int pid = 0, int score = 0, string reason = null)
+    {
+        _preferredLauncherWindowHwnd = hwnd == 0 ? IntPtr.Zero : new IntPtr(hwnd);
+        _preferredLauncherWindowPid = pid;
+        _preferredLauncherWindowScore = score;
+        _preferredLauncherWindowReason = reason ?? string.Empty;
+        LogLine(string.Format(
+            "AUDIT preferred launcher window set hwnd={0} pid={1} score={2} reason={3}",
+            hwnd, pid, score, _preferredLauncherWindowReason));
+    }
+
+    public static void ClearPreferredLauncherWindow()
+    {
+        if (_preferredLauncherWindowHwnd != IntPtr.Zero || _preferredLauncherWindowPid != 0)
+        {
+            LogLine(string.Format(
+                "AUDIT preferred launcher window cleared hwnd={0} pid={1}",
+                _preferredLauncherWindowHwnd, _preferredLauncherWindowPid));
+        }
+        _preferredLauncherWindowHwnd = IntPtr.Zero;
+        _preferredLauncherWindowPid = 0;
+        _preferredLauncherWindowScore = 0;
+        _preferredLauncherWindowReason = null;
+    }
+
+    private static bool MatchesPreferredLauncherWindow(AutomationElement window)
+    {
+        if (window == null) return false;
+        try
+        {
+            var hwnd = new IntPtr(window.Current.NativeWindowHandle);
+            if (_preferredLauncherWindowHwnd != IntPtr.Zero && hwnd == _preferredLauncherWindowHwnd)
+            {
+                return true;
+            }
+            if (_preferredLauncherWindowPid > 0 && window.Current.ProcessId == _preferredLauncherWindowPid)
+            {
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    private static AutomationElement FindPreferredLauncherWindow(List<AutomationElement> windows)
+    {
+        if (windows == null || windows.Count == 0) return null;
+        foreach (var window in windows)
+        {
+            if (MatchesPreferredLauncherWindow(window))
+            {
+                return window;
+            }
+        }
+        return null;
+    }
+
+    private static List<AutomationElement> OrderLauncherWindowsForSelection(List<AutomationElement> windows)
+    {
+        if (windows == null || windows.Count <= 1) return windows;
+        var preferred = FindPreferredLauncherWindow(windows);
+        if (preferred == null) return windows;
+
+        var ordered = new List<AutomationElement>();
+        ordered.Add(preferred);
+        foreach (var window in windows)
+        {
+            try
+            {
+                if (window.Current.NativeWindowHandle == preferred.Current.NativeWindowHandle)
+                {
+                    continue;
+                }
+            }
+            catch { }
+            ordered.Add(window);
+        }
+
+        LogLine("AUDIT launcher window order: preferred first " + DescribeScope(preferred));
+        return ordered;
+    }
+
     private static void LogLine(string message)
     {
         if (Log == null) return;
@@ -218,6 +472,7 @@ public static class UIAHelper
         if (names == null || names.Length == 0) return null;
 
         var windows = FindAllLauncherWindowRoots();
+        windows = OrderLauncherWindowsForSelection(windows);
         if (windows.Count == 0)
         {
             LogLauncherMissThrottled("CLICK SKIP launcher buttons — TaleWorlds launcher process has no UIA windows yet (desktop never searched)");
@@ -231,7 +486,7 @@ public static class UIAHelper
 
         if (!_launcherFocused && !RespectUserForeground)
         {
-            var focusTarget = GetBestLauncherWindowForCoords(windows) ?? windows[0];
+            var focusTarget = FindPreferredLauncherWindow(windows) ?? GetBestLauncherWindowForCoords(windows) ?? windows[0];
             FocusScope(focusTarget, "launcher");
             _launcherFocused = true;
         }
@@ -372,6 +627,15 @@ public static class UIAHelper
     private static AutomationElement GetBestLauncherWindowForCoords(List<AutomationElement> windows)
     {
         if (windows == null || windows.Count == 0) return null;
+
+        var preferred = FindPreferredLauncherWindow(windows);
+        if (preferred != null)
+        {
+            LogLine(string.Format(
+                "AUDIT coord window pick: preferred delta candidate {0} score={1} reason={2}",
+                DescribeScope(preferred), _preferredLauncherWindowScore, _preferredLauncherWindowReason ?? string.Empty));
+            return preferred;
+        }
 
         AutomationElement best = null;
         double bestScore = -1;
@@ -1451,6 +1715,11 @@ public static class UIAHelper
 
     private static AutomationElement FindLauncherRoot()
     {
+        var preferred = FindPreferredLauncherWindow(FindAllLauncherWindowRoots());
+        if (preferred != null)
+        {
+            return preferred;
+        }
         return FindProcessMainWindowRoot(LauncherProcessName);
     }
 
@@ -2185,6 +2454,22 @@ if (Test-Path -LiteralPath $phase1LogPath) {
         Where-Object { Test-Phase1ReadyLine -Line $_ } |
         ForEach-Object { $phase1ReadyBaseline[$_] = $true }
 }
+if (Test-Path -LiteralPath $windowSnapshotS1Path) {
+    try {
+        $script:launcherSelectionBaselineSnapshot = Get-Content -LiteralPath $windowSnapshotS1Path -Raw | ConvertFrom-Json
+        Write-LaunchLog 'AUDIT S1 baseline loaded from pre-launch snapshot artifact'
+    }
+    catch {
+        Write-LaunchLog "AUDIT S1 baseline load failed; recapturing in launcher-auto-nav: $($_.Exception.Message)"
+    }
+}
+if (-not $script:launcherSelectionBaselineSnapshot) {
+    $script:launcherSelectionBaselineSnapshot = Get-Pr11ProcessSnapshot -Label 'S1_pre_launch_fallback' -BannerlordRoot $BannerlordRoot
+    Save-TbgLauncherWindowArtifact -Object $script:launcherSelectionBaselineSnapshot -Path $windowSnapshotS1Path
+    Write-LaunchLog 'AUDIT S1 baseline recaptured inside launcher-auto-nav (fallback only)'
+}
+[UIAHelper]::ClearPreferredLauncherWindow()
+Write-TbgLauncherSelectionDecisionArtifact -Decision $null -ChosenWindow $null
 
 function Test-LauncherChromeVisible {
     if ([UIAHelper]::HasSafeModeDialog()) { return $true }
@@ -2474,7 +2759,9 @@ function Test-UserLaunchPathAdopted {
         return $false
     }
 
-    if ($script:launchPathAdopted -or $script:automationClickedPlayContinue) {
+    if ($script:launchPathAdopted -or $script:automationClickedPlayContinue `
+            -or $script:automationContinueIntentDeclared -or $script:launcherSelectionAttempts -gt 0 `
+            -or $clickedSafeMode) {
         return $false
     }
 
@@ -2764,8 +3051,18 @@ function Wait-PostHandoffWatchdog {
 }
 
 function Test-HandoffWhenGameStable {
-    if (-not (Test-GameProcessRunning)) {
+    $det = Get-LaunchNavProcessDetection
+    if (-not $det.gameProcessRunning) {
         $script:gameStablePolls = 0
+        return $false
+    }
+
+    if (-not (Test-TbgRealGameSpawnDetection -Detection $det)) {
+        $script:gameStablePolls = 0
+        if (-not $script:weakPostContinueSignalLogged) {
+            Write-LaunchLog "LAUNCH_STATE=weak_handoff_signal_ignored confidence=$([string]$det.gameAliveConfidence) method=$([string]$det.gameProcessDetectionMethod) — awaiting real game process or fresh TBG READY"
+            $script:weakPostContinueSignalLogged = $true
+        }
         return $false
     }
 
@@ -2999,26 +3296,34 @@ while ((Get-Date) -lt $deadline) {
     if ($LaunchIntent -eq 'play' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
         if ($sinceClick -ge 15 -and -not $script:playEscalated -and -not $script:launchPathAdopted) {
-            Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:playEscalated = $true
-            $clickedPlayContinue = $false
-            $script:playClickUtc = $null
-            $RespectUserForeground = $false
-            [UIAHelper]::RespectUserForeground = $false
-            [UIAHelper]::ResetLauncherClickRetryState()
+            if ($AllowFocusSteal) {
+                Write-LaunchLog 'LAUNCH_STATE=play_escalate — hwnd-only PLAY did not spawn Bannerlord.exe; retry with foreground clicks (AllowFocusSteal)'
+                $clickedPlayContinue = $false
+                $script:playClickUtc = $null
+                $RespectUserForeground = $false
+                [UIAHelper]::RespectUserForeground = $false
+                [UIAHelper]::ResetLauncherClickRetryState()
+            } else {
+                Write-LaunchLog 'LAUNCH_STATE=play_escalate_suppressed — hwnd-only PLAY did not spawn Bannerlord.exe; focus-steal escalation suppressed by policy (pass -AllowFocusSteal to enable)'
+            }
         }
     }
 
     if ($LaunchIntent -eq 'continue' -and $clickedPlayContinue -and -not (Test-GameProcessRunning) -and $script:playClickUtc) {
         $sinceClick = ((Get-Date) - $script:playClickUtc).TotalSeconds
         if ($sinceClick -ge 15 -and -not $script:continueEscalated -and -not $script:launchPathAdopted) {
-            Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks'
             $script:continueEscalated = $true
-            $clickedPlayContinue = $false
-            $script:playClickUtc = $null
-            $RespectUserForeground = $false
-            [UIAHelper]::RespectUserForeground = $false
-            [UIAHelper]::ResetLauncherClickRetryState()
+            if ($AllowFocusSteal) {
+                Write-LaunchLog 'LAUNCH_STATE=continue_escalate — hwnd-only CONTINUE did not spawn Bannerlord.exe; retry with foreground clicks (AllowFocusSteal)'
+                $clickedPlayContinue = $false
+                $script:playClickUtc = $null
+                $RespectUserForeground = $false
+                [UIAHelper]::RespectUserForeground = $false
+                [UIAHelper]::ResetLauncherClickRetryState()
+            } else {
+                Write-LaunchLog 'LAUNCH_STATE=continue_escalate_suppressed — hwnd-only CONTINUE did not spawn Bannerlord.exe; focus-steal escalation suppressed by policy (pass -AllowFocusSteal to enable)'
+            }
         }
     }
 
@@ -3116,9 +3421,14 @@ while ((Get-Date) -lt $deadline) {
             continue
         }
         if (-not (Test-NavGuardedLauncherClick -Intent $LaunchIntent)) {
+            $script:operatorGuardedClickDeniedCount++
+            if ($script:operatorGuardedClickDeniedCount -ge 10) {
+                Invoke-OperatorInteractiveFocusPrompt -Reason 'guarded_click_denied' | Out-Null
+            }
             Start-Sleep -Milliseconds $PollMs
             continue
         }
+        $script:operatorGuardedClickDeniedCount = 0
         $matchedName = [UIAHelper]::ClickButtonByNameInLauncher($targetButtonNames)
         if ($matchedName) {
             $displayName = if ($LaunchIntent -eq 'continue') { 'CONTINUE' } else { 'PLAY' }
@@ -3133,12 +3443,18 @@ while ((Get-Date) -lt $deadline) {
                 } else {
                     Write-LaunchLog 'LAUNCH_STATE=play_clicked selectedBy=automation'
                 }
+                $deltaWinner = if ($script:lastLauncherWindowDeltaDecision -and $script:lastLauncherWindowDeltaDecision.allowed) {
+                    $script:lastLauncherWindowDeltaDecision.winner
+                } else {
+                    $null
+                }
                 $launcher = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue | Select-Object -First 1
                 Record-TbgNavLaunchSelection -Intent $LaunchIntent -Actor 'script' -ButtonText $displayName `
-                    -Method 'uia' -Confidence 90 -ProcessId $(if ($launcher) { $launcher.Id } else { 0 }) `
-                    -Hwnd $(if ($launcher) { [int64]$launcher.MainWindowHandle } else { 0 }) `
-                    -WindowTitle $(if ($launcher) { [string]$launcher.MainWindowTitle } else { $null }) `
-                    -ProcessName $(if ($launcher) { [string]$launcher.ProcessName } else { $null })
+                    -Method 'uia' -Confidence $(if ($deltaWinner) { [int]$deltaWinner.score } else { 90 }) `
+                    -ProcessId $(if ($deltaWinner) { [int]$deltaWinner.pid } elseif ($launcher) { $launcher.Id } else { 0 }) `
+                    -Hwnd $(if ($deltaWinner) { [int64]$deltaWinner.hwnd } elseif ($launcher) { [int64]$launcher.MainWindowHandle } else { 0 }) `
+                    -WindowTitle $(if ($deltaWinner) { [string]$deltaWinner.windowTitle } elseif ($launcher) { [string]$launcher.MainWindowTitle } else { $null }) `
+                    -ProcessName $(if ($deltaWinner) { [string]$deltaWinner.processName } elseif ($launcher) { [string]$launcher.ProcessName } else { $null })
                 $clickedPlayContinue = $true
                 $script:playClickUtc = Get-Date
                 Extend-DeadlineAfterPlayClick

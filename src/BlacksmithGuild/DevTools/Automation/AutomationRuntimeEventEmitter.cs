@@ -43,6 +43,17 @@ namespace BlacksmithGuild.DevTools.Automation
         public const string RestWaitStarted = "rest_wait.started";
         public const string RestWaitCompleted = "rest_wait.completed";
         public const string RecursiveBranchStateChanged = "recursiveBranchState.changed";
+        public const string GovernorDecisionStarted = "governor.decision.started";
+        public const string GovernorDecisionCompleted = "governor.decision.completed";
+        public const string GovernorDecisionFailed = "governor.decision.failed";
+        public const string GovernorBranchBlocked = "governor.branch.blocked";
+        public const string GovernorReportInsufficient = "governor.report_insufficient";
+        public const string GovernorFailSafePause = "governor.failsafe_pause";
+        public const string FoodQuantityLow = "food.quantity.low";
+        public const string FoodDiversityLow = "food.diversity.low";
+        public const string CityCompletionStarted = "city_completion.started";
+        public const string CityCompletionCompleted = "city_completion.completed";
+        public const string CityCompletionBlocked = "city_completion.blocked";
 
         private static readonly object Sync = new object();
         private static readonly string EventPath =

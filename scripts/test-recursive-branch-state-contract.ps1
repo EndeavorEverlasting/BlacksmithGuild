@@ -118,10 +118,17 @@ foreach ($needle in @(
     'evidenceSource',
     'boundaryName',
     'failureClass',
-    'BuildSignature')) {
+    'BuildSignature',
+    'ResolveNearestSettlementFallback',
+    'AssistiveLeaveTownTravelService.ResolveRecommendedTarget')) {
     if ($src -notmatch [regex]::Escape($needle)) {
         throw "RecursiveCampaignBranchState.cs missing contract needle: $needle"
     }
+}
+
+# Cold-session seed must be gated on travel safety so a non-travel surface never proposes a destination.
+if ($src -notmatch 'snapshot\.SafeToExecuteTravel\)\s*\{\s*return ResolveNearestSettlementFallback') {
+    throw 'RecursiveCampaignBranchState.cs must only seed nearest-settlement fallback on travel-safe surfaces'
 }
 
 $forgeStatus = Get-Content -LiteralPath (Join-Path $repoRoot 'src\BlacksmithGuild\ForgeStatus.cs') -Raw

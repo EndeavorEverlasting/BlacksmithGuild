@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/skill-manifest.schema.json",
+  "title": "TBG Skill Manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "repo",
+    "purpose",
+    "routerContract",
+    "schemaPath",
+    "currentStateSources",
+    "authorityRules",
+    "skills"
+  ],
+  "properties": {
+    "schema": {
+      "const": "tbg.skills.manifest.v2"
+    },
+    "repo": {
+      "const": "EndeavorEverlasting/BlacksmithGuild"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "routerContract": {
+      "type": "string",
+      "minLength": 1
+    },
+    "schemaPath": {
+      "type": "string",
+      "minLength": 1
+    },
+    "currentStateSources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "authorityRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "path",
+          "distribution",
+          "lane",
+          "match",
+          "requiresSkills",
+          "composesWith",
+          "exclusiveWith",
+          "entryContract",
+          "primaryAuthorities",
+          "validators",
+          "expectedArtifacts",
+          "proofCeiling",
+          "riskClass",
+          "freshnessSource",
+          "ownedPaths",
+          "forbiddenPaths"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^\\.tbg/skills/.+/SKILL\\.md$"
+          },
+          "distribution": {
+            "enum": [
+              "repo_internal",
+              "package_candidate",
+              "public"
+            ]
+          },
+          "lane": {
+            "type": "string",
+            "minLength": 1
+          },
+          "match": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "intents",
+              "paths",
+              "commands",
+              "artifacts"
+            ],
+            "properties": {
+              "intents": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "commands": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "artifacts": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "requiresSkills": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "composesWith": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "exclusiveWith": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "entryContract": {
+            "type": "string",
+            "minLength": 1
+          },
+          "primaryAuthorities": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "validators": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "expectedArtifacts": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "proofCeiling": {
+            "enum": [
+              "contract",
+              "harness",
+              "windows watcher harness",
+              "static test",
+              "build",
+              "launcher",
+              "command ACK",
+              "behavior observed",
+              "live runtime"
+            ]
+          },
+          "riskClass": {
+            "enum": [
+              "static",
+              "local_read_write",
+              "external_read_only",
+              "runtime_read",
+              "runtime_write",
+              "destructive"
+            ]
+          },
+          "freshnessSource": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ownedPaths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "forbiddenPaths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

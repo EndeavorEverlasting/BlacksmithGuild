@@ -122,6 +122,12 @@ if ((Get-GameplaySurfaceFromInputs $townMenu) -ne 'settlement_menu') { throw 'Ma
 $map = New-GameplayInput
 if ((Get-GameplaySurfaceFromInputs $map) -ne 'campaign_map') { throw 'MapState without menu must map to campaign_map' }
 
+# escape menu is a first-class operator interruption surface
+$escape = New-GameplayInput -IsEscapeMenu $true -IsMapStateActive $false
+if ((Get-GameplaySurfaceFromInputs $escape) -ne 'escape_menu') { throw 'escape menu must map to escape_menu' }
+$safetyEscape = Get-SafetyFromSurface 'escape_menu' $null $false
+if ($safetyEscape.safeToExecuteTravel) { throw 'escape_menu must block travel' }
+
 # mission conversation
 $conv = New-GameplayInput -IsMissionActive $true -IsConversation $true -IsMapStateActive $false
 $sConv = Get-GameplaySurfaceFromInputs $conv
@@ -166,12 +172,18 @@ if ($safetyTrade.safeToExecuteTravel -or -not $safetyTrade.safeToExecuteTrade) {
 
 # command lifecycle contract fields exist in runtime lifecycle writer path
 $forgeStatusCs = Get-Content -LiteralPath (Join-Path $repoRoot 'src\BlacksmithGuild\ForgeStatus.cs') -Raw
-foreach ($needle in @('AppendStateMachineBlock', 'stateMachine', 'RuntimeLifecycleWriter.AppendStateMachine')) {
+foreach ($needle in @('AppendStateMachineBlock', 'stateMachine', 'RuntimeLifecycleWriter.AppendStateMachine', 'CampaignRuntimeRegent.Write(CampaignRuntimeRegent.BuildSnapshot(snapshot))')) {
     if ($forgeStatusCs -notmatch [regex]::Escape($needle)) { throw "ForgeStatus.cs missing lifecycle needle: $needle" }
 }
 
+$regentCs = Get-Content -LiteralPath (Join-Path $repoRoot 'src\BlacksmithGuild\CampaignRuntime\CampaignRuntimeRegent.cs') -Raw
+foreach ($needle in @('campaign_map_paused', 'escape_menu_interrupted', 'operatorInterruptionObserved', 'ResumeCampaignClock')) {
+    if ($regentCs -notmatch [regex]::Escape($needle)) { throw "CampaignRuntimeRegent.cs missing: $needle" }
+}
+
 $runtimeWriter = Get-Content -LiteralPath (Join-Path $repoRoot 'src\BlacksmithGuild\DevTools\RuntimeLifecycleWriter.cs') -Raw
-foreach ($needle in @('lastCommandStartedAtUtc', 'lastCommandFinishedAtUtc', 'gracefulShutdownObserved', 'BlacksmithGuild_RuntimeLifecycle.json')) {
+foreach ($needle in @('lastCommandStartedAtUtc', 'lastCommandFinishedAtUtc', 'gracefulShutdownObserved',
+        'BlacksmithGuild_RuntimeLifecycle.json', 'WriteAllTextAtomic', 'File.Replace')) {
     if ($runtimeWriter -notmatch [regex]::Escape($needle)) { throw "RuntimeLifecycleWriter missing: $needle" }
 }
 

@@ -1,0 +1,70 @@
+# Stale branch cherry-pick progress
+
+> **Overall: INCOMPLETE**
+> **5 of 16 stale pull requests are complete (31.2%).**
+> **Current distribution: 0 in progress, 4 blocked, and 7 not started.**
+> **Next: Wave D1, PR #28: Map the feedback-harness manifest fields into the current harness or record explicit rejections.**
+
+The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
+
+## Completion rule
+
+The stale-branch cherry-pick process is finished only when every planned source pull request has one terminal status: `replayed_and_merged`, `superseded_recorded`, `rejected_recorded`, or `historical_retained`. An open replacement pull request is progress, not completion.
+
+## Progress table
+
+| Wave | Source PR | Status | Replacement PR | Blocked by | Disposition or evidence | Next action |
+|---|---:|---|---:|---|---|---|
+| A | #9 | ✅ historical retained | #65 | — | The maintained replacement PR #65 merged and the original PR remains as historical provenance. Final disposition: all unique evidence and coordination value is now on current main. | No further replay work remains for PR #9. |
+| A | #34 | ✅ superseded recorded | #65 | — | The concurrent sprint map was replayed onto current main via PR #65 and supersedes the stale branch copy entirely. | No further replay work remains for PR #34. |
+| B | #2 | ✅ replayed and merged | #66 | — | Superseded by PR #66, which replays the same three files from PR #2 head 61090349037c89d4bcbc1c0e3fd4a3651333e7e6 onto current main. Source branch and original commit remain as historical provenance. | No further replay work remains for PR #2. |
+| C | #8 | ✅ replayed and merged | #87 | — | PR #8 useful current-main value preserved via PR #87 (forge -VerifyLogPatterns + preservation matrix). Remaining F7 helpers/docs already on main; stub runners and June evidence rejected as current proof. Source head d8a0e0e retained as provenance. | No further replay work remains for PR #8. |
+| D1 | #28 | ⬜ not started | — | — | — | Map the feedback-harness manifest fields into the current harness or record explicit rejections. |
+| D1 | #29 | ⬜ not started | — | — | — | Adapt or reject the feedback writer against the current effective-context schema. |
+| D1 | #30 | ⬜ not started | — | — | — | Port or reject the pure remediation planner using current result schemas and fixtures. |
+| D1 | #31 | ⬜ not started | — | — | — | Reconcile only the stop-hook trigger map with the current hook-result and policy-reporting schemas. |
+| D2 | #32 | ⬜ not started | — | — | — | Merge unique guardrail fields into current contracts or record why each field is superseded. |
+| D2 | #33 | ⬜ not started | — | — | — | Replay pure tools only when current-schema tests prove they cannot create false PASS results. |
+| D3 | #35 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value. |
+| E | #20 | ⬜ not started | — | — | — | Reconstruct the useful governor handoff model, tests, and review requirements against current main. |
+| E | #24 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject. |
+| E | #38 | ✅ superseded recorded | — | — | PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its guardrail, worktree, harness, and proof-discipline intent has been replaced by maintained mainline contracts, while source head e618349b7575dc6379cb7a8b378df6ec5be4d282 remains retained as provenance. | No further replay work remains for PR #38. |
+| F | #5 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof. |
+| F | #6 | ⛔ blocked dependency | — | #43, #52 | — | Wait for pull request 5 value to be reconstructed and for the maintained route lineage to settle. |
+
+## Active work excluded from stale recovery
+
+| PR | Status | Reason |
+|---:|---|---|
+| #43 | active_excluded | Active route and launcher-validation foundation. This pull request is not stale-recovery work. |
+| #52 | active_excluded | Bounded repair owned by pull request 43. This pull request is not stale-recovery work. |
+
+## Operator commands
+
+Refresh and display the dashboard:
+
+```powershell
+.\ForgeStalePrProgress.cmd status
+```
+
+Record an in-progress replacement:
+
+```powershell
+.\ForgeStalePrProgress.cmd set -PrNumber 9 -Status replacement_pr_open -ReplacementPr 65 -Disposition "Historical value is in PR #65." -Evidence "PR #65"
+```
+
+Record a terminal disposition only after its gate is satisfied:
+
+```powershell
+.\ForgeStalePrProgress.cmd set -PrNumber 9 -Status historical_retained -Disposition "The maintained replacement merged and the source remains reachable as history." -Evidence "PR #65 merged; replacement commit <sha>" -NextAction "No further replay work remains for PR #9."
+```
+
+## Exact next command
+
+```powershell
+.\ForgeStalePrRecovery.cmd -Wave D1 -PrNumber 28 -LocalFloorVerified
+```
+
+## Proof boundary
+
+This dashboard proves only that the committed plan and progress ledger were reconciled. A terminal status must cite the replacement, rejection, or retention evidence. The dashboard does not itself prove a cherry-pick, merge, build, launcher action, gameplay behavior, or runtime result.

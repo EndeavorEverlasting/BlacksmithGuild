@@ -15,6 +15,33 @@ obj/
 .DS_Store
 Thumbs.db
 
+# Temp / crash / swap
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+*.dmp
+*.hdmp
+*.crash
+core
+
+# Secrets / credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+credentials.json
+secrets.json
+
+# Agent tool caches
+.codex/
+.gemini/
+
+# Local operator/session outputs
+.local/
+
 # Local game logs and runtime artifacts (not source)
 BlacksmithGuild_Phase1.log
 BlacksmithGuild_Forge.log
@@ -50,9 +77,15 @@ BlacksmithGuild_CohesionOpportunities.json
 BlacksmithGuild_CohesionMove.json
 BlacksmithGuild_MapTradeRouteSafety.json
 BlacksmithGuild_MapTradeCert.json
+BlacksmithGuild_MapTradeRouteCert.json
 BlacksmithGuild_ArmyPressureWindows.json
 BlacksmithGuild_MapTradeForgeHandoff.json
 BlacksmithGuild_AutonomousGuildLoop.json
+BlacksmithGuild_CampaignGovernorDecision.json
+BlacksmithGuild_RuntimeRegent.json
+BlacksmithGuild_RouteCouncil.json
+BlacksmithGuild_HorseAtlas.json
+BlacksmithGuild_HerdLedger.json
 *.log
 
 # Committed evidence snapshots (negate runtime JSON ignores above)
@@ -64,6 +97,7 @@ BlacksmithGuild_AutonomousGuildLoop.json
 # Scratch PR11 runner sessions (local only); curated PR14 proof folders may be committed
 docs/evidence/live-cert/*-pr11-launch-attach-execute/
 docs/evidence/live-cert/*-autonomous-assist-session/
+docs/evidence/reboot*-reboot-session/
 !docs/evidence/live-cert/20260624-pr14-consumer-live-continue-blocker/
 !docs/evidence/live-cert/20260624-pr14-consumer-live-continue-blocker/**
 
@@ -73,3 +107,6 @@ Mount & Blade II Bannerlord/
 *.pdb
 *.mdb
 *.rsuser
+
+# Local proof/evidence artifacts
+artifacts/

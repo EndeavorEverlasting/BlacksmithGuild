@@ -1,0 +1,112 @@
+name: Governor Contracts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/campaign-runtime-governor
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Governor contract verifiers
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scope note
+        shell: pwsh
+        run: |
+          Write-Host 'This workflow runs platform-neutral text, policy, and contract verifiers.'
+          Write-Host 'Installed-game, launcher, live-runtime, and OS-specific game-backed runs are advisory and belong in separate workflows.'
+          Write-Host 'Development must preserve modular platform adapters for Windows, Linux, and future supported systems.'
+          Write-Host 'Continuum interoperability is optional and must preserve standalone BlacksmithGuild build, validation, and runtime behavior.'
+
+      - name: Parse PR lifecycle and interoperability controllers
+        shell: pwsh
+        run: |
+          foreach ($path in @(
+            './scripts/tbg/Invoke-TbgPrLifecycle.ps1',
+            './scripts/tbg/Invoke-TbgPrLifecycleSweep.ps1',
+            './scripts/tbg/Test-TbgPrLifecycleAutomation.ps1',
+            './scripts/tbg/Test-TbgPrLifecycleSweep.ps1',
+            './scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1',
+            './scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1',
+            './scripts/tbg/Verify-TbgContinuumInteroperability.ps1'
+          )) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $path).Path,
+              [ref]$tokens,
+              [ref]$errors)
+            if ($errors.Count -gt 0) {
+              throw (('{0}: {1}' -f $path, ($errors.Message -join '; ')))
+            }
+          }
+          Write-Host 'PR lifecycle and interoperability controller parse: PASS'
+
+      - name: Test repository-wide PR lifecycle automation
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgPrLifecycleAutomation.ps1
+
+      - name: Test PR lifecycle reconciliation sweep
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgPrLifecycleSweep.ps1
+
+      - name: Verify PR lifecycle automation boundaries
+        shell: pwsh
+        run: ./scripts/tbg/Verify-TbgPrLifecycleAutomation.ps1
+
+      - name: Verify Continuum interoperability boundary
+        shell: pwsh
+        run: ./scripts/tbg/Verify-TbgContinuumInteroperability.ps1
+
+      - name: Exercise Continuum capability export
+        shell: pwsh
+        run: |
+          $packetPath = Join-Path $env:RUNNER_TEMP 'blacksmithguild-continuum-capabilities.json'
+          ./scripts/tbg/Export-TbgContinuumCapabilityPacket.ps1 -OutputPath $packetPath
+          $packet = Get-Content -LiteralPath $packetPath -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($packet.schema -ne 'TbgContinuumCapabilityPacket.v1') {
+            throw 'Continuum capability export produced an unexpected schema.'
+          }
+          if (-not $packet.standalone.build -or -not $packet.standalone.runtime -or -not $packet.standalone.repositoryValidation) {
+            throw 'Continuum capability export weakened standalone BlacksmithGuild operation.'
+          }
+          Write-Host ("Continuum capability export: PASS ({0} capabilities)" -f @($packet.capabilities).Count)
+
+      - name: Verify campaign governor contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-governor-contract.ps1
+
+      - name: Verify campaign activity dispatcher contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-activity-dispatcher-contract.ps1
+
+      - name: Verify campaign activity handoff contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-activity-handoff-contract.ps1
+
+      - name: Verify tick cost profiler contract
+        shell: pwsh
+        run: ./scripts/verify-tick-cost-profiler-contract.ps1
+
+      - name: Verify clickable command surface
+        shell: pwsh
+        run: ./scripts/verify-clickable-command-surface.ps1
+
+      - name: Verify command-bus patch contract
+        shell: pwsh
+        run: ./scripts/verify-campaign-governor-commandbus-patch-contract.ps1
+
+      - name: Document source wiring gate
+        shell: pwsh
+        run: |
+          Write-Host 'Command-bus source verifier intentionally requires the local patch output.'
+          Write-Host 'Installed-game validation remains advisory; use a matching Windows or Linux game host when runtime proof is actually in scope.'

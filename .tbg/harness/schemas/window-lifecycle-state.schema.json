@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/window-lifecycle-state.schema.json",
+  "title": "TBG Window Lifecycle State v1",
+  "description": "The deterministic materialized lifecycle state for one observed launcher or game window. The state records proof already reached without promoting action dispatch into application acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "windowKey",
+    "phase",
+    "generation",
+    "proofLevel",
+    "terminal",
+    "blockers",
+    "history"
+  ],
+  "properties": {
+    "schema": { "const": "TbgWindowLifecycleState.v1" },
+    "windowKey": { "type": "string", "minLength": 1 },
+    "identityId": { "type": ["string", "null"] },
+    "phase": {
+      "enum": [
+        "unseen",
+        "observed",
+        "recognized",
+        "action_ready",
+        "action_dispatched",
+        "terminal_observation",
+        "unknown_quarantined",
+        "disappeared",
+        "blocked"
+      ]
+    },
+    "generation": { "type": "integer", "minimum": 0 },
+    "lastEventType": { "type": ["string", "null"] },
+    "lastTransitionId": { "type": ["string", "null"] },
+    "actionId": { "type": ["string", "null"] },
+    "proofLevel": {
+      "enum": [
+        "none",
+        "observation",
+        "identity",
+        "action_authority",
+        "action_dispatch",
+        "terminal_observation",
+        "quarantine"
+      ]
+    },
+    "terminal": { "type": "boolean" },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "history": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^window-transition:" },
+      "uniqueItems": true
+    }
+  }
+}

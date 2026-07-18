@@ -5,6 +5,7 @@ function Get-DevCommandNames {
         'ShowForgeStatus',
         'AdvanceOneDay',
         'ToggleFastForward',
+        'ResumeCampaignClock',
         'RichPlayerEconomyTest',
         'RichSmithingProgressionTest',
         'AddSmithingXp',
@@ -29,10 +30,12 @@ function Get-DevCommandNames {
         'RunGuildLoopNow',
         'ShowCharacterDoctrine',
         'MarketSnapshotNow',
+        'AnalyzeFood',
         'AnalyzeHorseMarket',
         'ShowHorseMarketIntel',
         'RankHorseMarketActions',
         'ApplyAutoCharacterBuild',
+        'SaveDevStartSaveNow',
         'ShowAutoCharacterBuildProfiles',
         'ShowAutoCharacterBuildProfile',
         'SetAutoCharacterBuildForgeQuartermasterWarlord',
@@ -92,7 +95,19 @@ function Get-DevCommandNames {
         'AnalyzeClanRoles',
         'ProbeCourtshipApi',
         'AssistiveTownToTownProbe',
-        'AssistiveLeaveTownAndTravel'
+        'AssistiveLeaveTownAndTravel',
+        'RunCampaignGovernorCycleNow',
+        'ShowCampaignGovernorDecision',
+        'PauseCampaignGovernorAutomation',
+        'ResumeCampaignGovernorAutomation',
+        'ShowRuntimeRegentState',
+        'ConveneRouteCouncil',
+        'ShowRouteCouncil',
+        'ScanHorseAtlas',
+        'ShowHorseAtlas',
+        'RankHorseDestinations',
+        'AnalyzeHerdLedger',
+        'ShowHerdLedger'
         # Dynamic prefix also accepted: AutoTravel:<town-or-village-name>
     )
 }
@@ -107,14 +122,21 @@ function Test-Phase1TbgReady {
         (Join-Path $env:USERPROFILE 'Documents\Mount and Blade II Bannerlord\BlacksmithGuild_Phase1.log')
     )
 
+    $readyPrefix = "Blacksmith Guild $([char]0x2014) Ready:"
+
     foreach ($logPath in $candidates) {
         if (-not (Test-Path -LiteralPath $logPath)) {
             continue
         }
 
-        $tail = Get-Content -LiteralPath $logPath -Tail 60 -ErrorAction SilentlyContinue
-        if ($tail -match 'TBG READY') {
-            return $true
+        $tail = Get-Content -LiteralPath $logPath -Tail 25000 -ErrorAction SilentlyContinue
+        foreach ($line in $tail) {
+            if ($line -match 'TBG READY' -or
+                $line -match ([regex]::Escape($readyPrefix)) -or
+                $line -match '\[TBG MAPREADY\] immediate hooks complete' -or
+                $line -match 'map_ready.*PASS') {
+                return $true
+            }
         }
     }
 

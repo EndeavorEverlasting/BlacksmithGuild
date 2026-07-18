@@ -1,0 +1,107 @@
+﻿{
+    "schema":  "TbgSkillCapabilityMap.v1",
+    "generatedUtc":  "2026-07-18T08:54:45.3021774Z",
+    "mappings":  [
+                     {
+                         "skillId":  "repo-floor-hygiene",
+                         "providerId":  "provider:repo-floor-hygiene",
+                         "capabilities":  [
+                                              "capability:repo-floor-inspection"
+                                          ]
+                     },
+                     {
+                         "skillId":  "agent-skill-factoring",
+                         "providerId":  "provider:agent-skill-factoring",
+                         "capabilities":  [
+                                              "capability:skill-routing-validation",
+                                              "capability:static-validation"
+                                          ]
+                     },
+                     {
+                         "skillId":  "harness-maturity",
+                         "providerId":  "provider:harness-maturity",
+                         "capabilities":  [
+                                              "capability:harness-maturity-classification",
+                                              "capability:game-compatibility-observation"
+                                          ]
+                     },
+                     {
+                         "skillId":  "local-artifact-engine",
+                         "providerId":  "provider:local-artifact-engine",
+                         "capabilities":  [
+                                              "capability:local-artifact-parsing"
+                                          ]
+                     },
+                     {
+                         "skillId":  "runtime-evidence-certification",
+                         "providerId":  "provider:runtime-evidence-certification",
+                         "capabilities":  [
+                                              "capability:runtime-evidence-certification"
+                                          ]
+                     },
+                     {
+                         "skillId":  "window-lifecycle-runtime",
+                         "providerId":  "provider:window-lifecycle-runtime",
+                         "capabilities":  [
+                                              "capability:window-lifecycle-reduction",
+                                              "capability:window-lifecycle-runtime-observation"
+                                          ]
+                     },
+                     {
+                         "skillId":  "launcher-lifecycle",
+                         "providerId":  "provider:launcher-lifecycle",
+                         "capabilities":  [
+                                              "capability:launcher-control"
+                                          ]
+                     },
+                     {
+                         "skillId":  "stale-pr-cherry-pick",
+                         "providerId":  "provider:stale-pr-cherry-pick",
+                         "capabilities":  [
+                                              "capability:stale-value-replay"
+                                          ]
+                     },
+                     {
+                         "skillId":  "route-visible-trade",
+                         "providerId":  "provider:route-visible-trade",
+                         "capabilities":  [
+                                              "capability:route-source-edit"
+                                          ]
+                     },
+                     {
+                         "skillId":  "operator-control-surface",
+                         "providerId":  "provider:operator-control-surface",
+                         "capabilities":  [
+                                              "capability:operator-control"
+                                          ]
+                     },
+                     {
+                         "skillId":  "implementation-completion",
+                         "providerId":  "provider:implementation-completion",
+                         "capabilities":  [
+                                              "capability:commit-push-pr"
+                                          ]
+                     },
+                     {
+                         "skillId":  "continuum-interoperability",
+                         "providerId":  "provider:continuum-interoperability",
+                         "capabilities":  [
+                                              "capability:continuum-export"
+                                          ]
+                     },
+                     {
+                         "skillId":  "compendium-preservation",
+                         "providerId":  "provider:compendium-preservation",
+                         "capabilities":  [
+                                              "capability:compendium-classification"
+                                          ]
+                     },
+                     {
+                         "skillId":  "operator-terminal-environment",
+                         "providerId":  "provider:operator-terminal-environment",
+                         "capabilities":  [
+
+                                          ]
+                     }
+                 ]
+}

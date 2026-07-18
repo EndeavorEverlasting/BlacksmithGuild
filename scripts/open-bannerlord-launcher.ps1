@@ -1,10 +1,37 @@
-﻿# Opens the Bannerlord launcher (shared by LaunchForge.cmd and ForgeAndLaunch.cmd).
+﻿# Opens the Bannerlord launcher through the shared launcher-window context helper.
+# This wrapper intentionally writes the S1 baseline/context even when an existing launcher is reused.
+# Contract visibility:
+# - existing launcher detected; reusing
+# - Forge Stop approval
 param(
     [string]$BannerlordRoot,
-    [switch]$AllowExistingProcess
+    [switch]$AllowExistingProcess,
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('play', 'continue')]
+    [string]$LaunchIntent
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'launcher-window-context.ps1')
+
+function Set-TbgBrightnessCalibrated {
+    try {
+        $documents = [Environment]::GetFolderPath('MyDocuments')
+        $configPath = Join-Path $documents 'Mount and Blade II Bannerlord\Configs\engine_config.txt'
+        if (Test-Path -LiteralPath $configPath -PathType Leaf) {
+            $content = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
+            if ($content -match 'brightness_calibrated\s*=\s*0') {
+                $newContent = $content -replace 'brightness_calibrated\s*=\s*0', 'brightness_calibrated = 1'
+                $newContent | Set-Content -LiteralPath $configPath -Encoding UTF8 -Force
+                Write-Host "Set-TbgBrightnessCalibrated: Updated brightness_calibrated to 1 in engine_config.txt" -ForegroundColor Green
+            }
+        }
+    } catch {
+        Write-Warning "Set-TbgBrightnessCalibrated failed: $_"
+    }
+}
+
+Set-TbgBrightnessCalibrated
 
 function Get-BannerlordRootFromRepo {
     param([string]$RepoRoot)
@@ -18,30 +45,33 @@ function Get-BannerlordRootFromRepo {
     throw 'Bannerlord install not found. Set GameFolder in BlacksmithGuild.csproj.'
 }
 
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not $BannerlordRoot) {
-    $RepoRoot = Split-Path -Parent $PSScriptRoot
     $BannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
 }
 
-$LauncherExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\TaleWorlds.MountAndBlade.Launcher.exe'
-$GameExe = Join-Path $BannerlordRoot 'bin\Win64_Shipping_Client\Bannerlord.exe'
-
-if (-not (Test-Path -LiteralPath $LauncherExe)) {
-    throw "Launcher not found: $LauncherExe"
+$compatibilityGatePath = Join-Path $RepoRoot 'scripts\tbg\Assert-TbgGameCompatibilityGate.ps1'
+if (-not (Test-Path -LiteralPath $compatibilityGatePath -PathType Leaf)) {
+    throw "BLOCKED_GAME_BUILD_UNVALIDATED: compatibility gate is missing at $compatibilityGatePath"
+}
+$compatibilityGate = & $compatibilityGatePath -Gate launcher -RepoRoot $RepoRoot -BannerlordRoot $BannerlordRoot -NoExit -PassThru
+if (-not $compatibilityGate -or -not [bool]$compatibilityGate.allowed) {
+    $terminalState = if ($compatibilityGate) { [string]$compatibilityGate.terminalState } else { 'BLOCKED_game_compatibility_result_missing' }
+    $nextCommand = if ($compatibilityGate -and $compatibilityGate.nextCommand) { [string]$compatibilityGate.nextCommand } else { '.\ForgeGameUpdate.cmd check' }
+    throw "BLOCKED_GAME_BUILD_UNVALIDATED: launcher gate returned $terminalState. Next: $nextCommand"
 }
 
-foreach ($procName in @('Bannerlord', 'TaleWorlds.MountAndBlade.Launcher')) {
-    if (Get-Process -Name $procName -ErrorAction SilentlyContinue) {
-        $preflightOk = $false
-        if (Get-Command Test-TbgPreflightCompleted -ErrorAction SilentlyContinue) { $preflightOk = Test-TbgPreflightCompleted }
-        if (-not $AllowExistingProcess -and -not $preflightOk) {
-            throw "Bannerlord is already running ($procName). Close it before opening the launcher."
-        }
-    }
-}
+$result = Ensure-TbgLauncherWindowContext -BannerlordRoot $BannerlordRoot -LaunchIntent $LaunchIntent `
+    -Mode LaunchSetup -AllowExistingProcess:$AllowExistingProcess -CreatedBy 'open-bannerlord-launcher.ps1'
 
-Write-Host 'Opening Bannerlord launcher...' -ForegroundColor Cyan
-& (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: Start-Process $LauncherExe"
-Start-Process -FilePath $LauncherExe -WorkingDirectory (Split-Path -Parent $LauncherExe)
-Start-Sleep -Seconds 2
-& (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message 'open-launcher: TaleWorlds.MountAndBlade.Launcher.exe started (2s post-start delay before UIA poll)'
+$ctx = $result.context
+if ($ctx.isExistingLauncherReuse) {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: existing launcher detected; reusing context path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: existing launcher detected; reusing context pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
+} elseif ($ctx.isFreshLaunch) {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: fresh launcher context created path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: fresh launcher context created pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
+} else {
+    & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: launcher context created path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
+    Write-Host "open-launcher: launcher context created pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
+}

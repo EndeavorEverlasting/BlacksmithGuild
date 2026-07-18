@@ -1,0 +1,152 @@
+{
+  "schema": "TbgArtifactEngineRegistry.v1",
+  "version": "1.1.0",
+  "defaults": {
+    "outputRoot": "artifacts/latest/artifact-engine",
+    "stateRoot": ".local/tbg-artifact-engine",
+    "pollSeconds": 1,
+    "settleMilliseconds": 250,
+    "maxCascadeEngines": 16,
+    "maxParseBytes": 8388608,
+    "excludePrefixes": [
+      "artifacts/latest/artifact-engine"
+    ]
+  },
+  "engines": [
+    {
+      "id": "artifact-index",
+      "order": 10,
+      "implementation": "inventory",
+      "authority": "read_only",
+      "required": true,
+      "sourceRoots": [
+        ".tbg/harness/artifact-engines.registry.json",
+        "artifacts/latest"
+      ],
+      "rootFilePatterns": [
+        "BlacksmithGuild_*.json"
+      ],
+      "extensions": [
+        ".json",
+        ".jsonl",
+        ".md",
+        ".txt",
+        ".log"
+      ],
+      "outputStem": "artifact-index",
+      "emits": [
+        "artifact.index.updated"
+      ],
+      "downstream": [
+        "repo-floor-context",
+        "stale-pr-next-action",
+        "window-lifecycle-boundary",
+        "runtime-proof-boundary"
+      ]
+    },
+    {
+      "id": "repo-floor-context",
+      "order": 20,
+      "implementation": "repo_floor",
+      "authority": "read_only",
+      "required": false,
+      "candidatePaths": [
+        "artifacts/latest/repo-hygiene-report.json",
+        "artifacts/latest/repo-hygiene-report.md"
+      ],
+      "outputStem": "repo-floor-context",
+      "emits": [
+        "repo.floor.updated"
+      ],
+      "downstream": [
+        "stale-pr-next-action",
+        "handoff-compressor"
+      ]
+    },
+    {
+      "id": "stale-pr-next-action",
+      "order": 30,
+      "implementation": "stale_pr",
+      "authority": "read_only",
+      "required": false,
+      "candidatePaths": [
+        "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+        "artifacts/latest/stale-pr-recovery/stale-pr-recovery.report.md"
+      ],
+      "outputStem": "stale-pr-next-action",
+      "emits": [
+        "recovery.next-action.updated"
+      ],
+      "downstream": [
+        "handoff-compressor"
+      ]
+    },
+    {
+      "id": "window-lifecycle-boundary",
+      "order": 35,
+      "implementation": "window_lifecycle_boundary",
+      "authority": "read_only",
+      "required": false,
+      "candidatePaths": [
+        "artifacts/latest/window-lifecycle/window-lifecycle.state.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.report.md"
+      ],
+      "outputStem": "window-lifecycle-boundary",
+      "emits": [
+        "window.lifecycle.updated"
+      ],
+      "downstream": [
+        "runtime-proof-boundary",
+        "handoff-compressor"
+      ]
+    },
+    {
+      "id": "runtime-proof-boundary",
+      "order": 40,
+      "implementation": "proof_boundary",
+      "authority": "read_only",
+      "required": false,
+      "candidatePaths": [
+        "artifacts/latest/launcher-validation-supervisor.result.json",
+        "artifacts/latest/launcher-validation-workhorse/result.json",
+        "artifacts/latest/launcher-frontdoor/result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.state.json",
+        "artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json",
+        "BlacksmithGuild_CommandAck.json",
+        "BlacksmithGuild_Status.json",
+        "BlacksmithGuild_RuntimeLifecycle.json",
+        "BlacksmithGuild_MapTradeCert.json",
+        "BlacksmithGuild_GuildLoopReport.json",
+        "BlacksmithGuild_AutonomousGuildLoop.json"
+      ],
+      "outputStem": "runtime-proof-boundary",
+      "emits": [
+        "proof.boundary.updated"
+      ],
+      "downstream": [
+        "handoff-compressor"
+      ]
+    },
+    {
+      "id": "handoff-compressor",
+      "order": 90,
+      "implementation": "handoff",
+      "authority": "read_only",
+      "required": true,
+      "consumesEngineResults": [
+        "artifact-index",
+        "repo-floor-context",
+        "stale-pr-next-action",
+        "window-lifecycle-boundary",
+        "runtime-proof-boundary"
+      ],
+      "outputStem": "artifact-engine-handoff",
+      "emits": [
+        "handoff.updated"
+      ],
+      "downstream": []
+    }
+  ]
+}

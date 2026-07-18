@@ -41,6 +41,7 @@ function New-RecursiveBranchFixture {
         [string]$NextPlannedBranch = 'observe_only',
         [string]$NextActionReason = 'recursive_branch_observe_only',
         [string]$CurrentTown = 'Ortysia',
+        [string]$TargetSettlement = $null,
         [hashtable]$BranchOverrides = @{}
     )
     $now = (Get-Date).ToUniversalTime().ToString('o')
@@ -55,7 +56,7 @@ function New-RecursiveBranchFixture {
         observe_only = [ordered]@{ state = 'available'; reason = 'always_safe_fallback' }
     }
     foreach ($k in $BranchOverrides.Keys) { $branches[$k] = $BranchOverrides[$k] }
-    return @{
+    $fixture = @{
         schemaVersion = 1
         updatedAtUtc = $now
         currentTown = $CurrentTown
@@ -67,6 +68,10 @@ function New-RecursiveBranchFixture {
         nextActionReason = $NextActionReason
         branches = $branches
     }
+    if (-not [string]::IsNullOrWhiteSpace($TargetSettlement)) {
+        $fixture['targetSettlement'] = $TargetSettlement
+    }
+    return $fixture
 }
 
 function New-RuntimeFixture {
@@ -86,7 +91,9 @@ function Build-Readiness {
         [bool]$WithStateMachine = $true,
         [bool]$StaleHeartbeat = $false,
         [hashtable]$RecursiveBranchState = $null,
-        [bool]$StaleRecursiveBranch = $false
+        [bool]$StaleRecursiveBranch = $false,
+        [bool]$TimePaused = $false,
+        [hashtable]$RuntimeRegent = $null
     )
     $statusPath = Join-Path $tmpRoot "status-$Surface.json"
     $session = [ordered]@{
@@ -95,9 +102,13 @@ function Build-Readiness {
         inGameAssistReady = $true
         canAcceptAssistiveCommand = $true
         campaignReady = $true
+        timePaused = $TimePaused
     }
     $sm = if ($WithStateMachine) {
+        $smNow = (Get-Date).ToUniversalTime().ToString('o')
         @{
+            updatedAtUtc = $smNow
+            heartbeatUtc = $smNow
             gameplaySurface = $Surface
             gameLifecycle = 'campaign_loaded'
             safeToExecuteTravel = ($Surface -in @('settlement_menu', 'campaign_map'))
@@ -118,6 +129,12 @@ function Build-Readiness {
     $hb = if ($StaleHeartbeat) { (Get-Date).ToUniversalTime().AddMinutes(-10).ToString('o') } else { (Get-Date).ToUniversalTime().ToString('o') }
     $runtimePath = Join-Path $tmpRoot "runtime-$Surface.json"
     New-RuntimeFixture @{ lastHeartbeatUtc = $hb } | Set-Content -LiteralPath $runtimePath -Encoding UTF8
+    $regentPath = Join-Path $tmpRoot 'BlacksmithGuild_RuntimeRegent.json'
+    if ($RuntimeRegent) {
+        ($RuntimeRegent | ConvertTo-Json -Depth 6) | Set-Content -LiteralPath $regentPath -Encoding UTF8
+    } else {
+        Remove-Item -LiteralPath $regentPath -Force -ErrorAction SilentlyContinue
+    }
 
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $tmpRoot
     $ready.runtimeLifecycle = Read-Pr11RuntimeLifecycle -BannerlordRoot $tmpRoot -Path $runtimePath
@@ -134,6 +151,33 @@ if ($decisionObserve.decision -ne 'observe') { throw "recursive observe_only mus
 if ($decisionObserve.recursiveBranchConsumed -ne $true) { throw 'recursiveBranchState must be consumed when fresh' }
 if ($decisionObserve.plannedBranch -ne 'observe_only') { throw "expected plannedBranch observe_only got $($decisionObserve.plannedBranch)" }
 
+# paused campaign_map must recover by resuming the campaign clock before rest_wait can idle forever
+$restWaitPausedRbs = New-RecursiveBranchFixture -NextPlannedBranch 'rest_wait' -NextActionReason 'productive_branch_blocked_wait_is_safe'
+$readyPausedMap = Build-Readiness -Surface 'campaign_map' -RecursiveBranchState $restWaitPausedRbs -TimePaused $true
+if (-not $readyPausedMap.sessionTimePaused) { throw 'readiness must preserve session.timePaused' }
+$decisionPausedMap = Get-AutonomousAssistIterationDecision -Readiness $readyPausedMap -AssistProfile 'training-map'
+if ($decisionPausedMap.decision -ne 'allowed') { throw "paused campaign_map must allow resume got $($decisionPausedMap.decision)" }
+if ($decisionPausedMap.commandSent -ne 'ResumeCampaignClock') { throw "paused campaign_map must send ResumeCampaignClock got $($decisionPausedMap.commandSent)" }
+if ($decisionPausedMap.reason -ne 'campaign_clock_paused_resume_safe_surface') { throw "paused campaign_map reason mismatch got $($decisionPausedMap.reason)" }
+
+# escape menu / operator interruption must stop instead of auto-resume
+$escapeRegent = [ordered]@{
+    generatedUtc = (Get-Date).ToUniversalTime().ToString('o')
+    surface = 'escape_menu'
+    menuId = 'escape'
+    stagnationClass = 'escape_menu_interrupted'
+    recommendedRecovery = 'operator_intervention_required'
+    requiresOperatorApproval = $true
+    sessionTimePaused = $true
+    operatorInterruptionObserved = $true
+    operatorInterruptionReason = 'escape_menu_open'
+}
+$readyEscapeInterrupted = Build-Readiness -Surface 'escape_menu' -RecursiveBranchState $restWaitPausedRbs -TimePaused $true -RuntimeRegent $escapeRegent
+if (-not $readyEscapeInterrupted.operatorInterruptionObserved) { throw 'runtime regent interruption must flow into readiness' }
+$decisionEscapeInterrupted = Get-AutonomousAssistIterationDecision -Readiness $readyEscapeInterrupted -AssistProfile 'training-map' -StopOnUnsafeState:$true
+if ($decisionEscapeInterrupted.decision -ne 'stop_unsafe_surface') { throw "escape-menu interruption must stop got $($decisionEscapeInterrupted.decision)" }
+if ($decisionEscapeInterrupted.reason -ne 'escape_menu_open') { throw "escape-menu interruption reason mismatch got $($decisionEscapeInterrupted.reason)" }
+
 # fresh recursiveBranchState.travel on settlement_menu allows travel when gate open
 $travelRbs = New-RecursiveBranchFixture -NextPlannedBranch 'travel' `
     -NextActionReason 'surface_allows_travel_recompute_destination_from_fresh_state' `
@@ -141,7 +185,49 @@ $travelRbs = New-RecursiveBranchFixture -NextPlannedBranch 'travel' `
 $readyTravel = Build-Readiness -Surface 'settlement_menu' -RecursiveBranchState $travelRbs
 $decisionTravel = Get-AutonomousAssistIterationDecision -Readiness $readyTravel -AssistProfile 'training-map' -TargetSettlement 'Ortysia'
 if ($decisionTravel.decision -ne 'allowed') { throw "recursive travel must allow travel got $($decisionTravel.decision)" }
+if ($decisionTravel.commandSent -ne 'AssistiveLeaveTownAndTravel') { throw 'recursive settlement_menu travel must send assistive travel command' }
 if ($decisionTravel.plannedBranch -ne 'travel') { throw 'recursive travel must plan travel branch' }
+
+# planned travel without an engine/explicit target must fail closed, not use an arbitrary default
+$decisionTravelMissingTarget = Get-AutonomousAssistIterationDecision -Readiness $readyTravel -AssistProfile 'training-map'
+if ($decisionTravelMissingTarget.decision -ne 'block') { throw "recursive travel without target must block got $($decisionTravelMissingTarget.decision)" }
+if ($decisionTravelMissingTarget.reason -ne 'handoff_missing_travel_target') { throw "recursive travel without target reason mismatch got $($decisionTravelMissingTarget.reason)" }
+if ($decisionTravelMissingTarget.commandSent) { throw 'recursive travel without target must not send command' }
+
+# recursiveBranchState target is a valid engine handoff target without explicit runner parameter
+$travelRbsWithTarget = New-RecursiveBranchFixture -NextPlannedBranch 'travel' `
+    -NextActionReason 'engine_selected_destination' -TargetSettlement 'Saneopa' `
+    -BranchOverrides @{ travel = [ordered]@{ state = 'available'; reason = 'surface_allows_travel' } }
+$readyTravelMapWithTarget = Build-Readiness -Surface 'campaign_map' -RecursiveBranchState $travelRbsWithTarget
+$decisionTravelMapWithTarget = Get-AutonomousAssistIterationDecision -Readiness $readyTravelMapWithTarget -AssistProfile 'training-map'
+if ($decisionTravelMapWithTarget.decision -ne 'allowed') { throw "recursive campaign_map target handoff must allow got $($decisionTravelMapWithTarget.decision)" }
+if ($decisionTravelMapWithTarget.target -ne 'Saneopa') { throw "recursive campaign_map target handoff target mismatch got $($decisionTravelMapWithTarget.target)" }
+if ($decisionTravelMapWithTarget.targetSource -ne 'recursiveBranchState') { throw "recursive campaign_map target source mismatch got $($decisionTravelMapWithTarget.targetSource)" }
+
+# fresh recursiveBranchState.travel on campaign_map must execute when no in-session command proof exists
+$readyTravelMap = Build-Readiness -Surface 'campaign_map' -RecursiveBranchState $travelRbs
+$decisionTravelMap = Get-AutonomousAssistIterationDecision -Readiness $readyTravelMap -AssistProfile 'training-map' -TargetSettlement 'Ortysia'
+if ($decisionTravelMap.decision -ne 'allowed') { throw "recursive campaign_map travel must allow command got $($decisionTravelMap.decision)" }
+if ($decisionTravelMap.commandSent -ne 'AssistiveLeaveTownAndTravel') { throw 'recursive campaign_map travel must send assistive travel command' }
+if ($decisionTravelMap.plannedBranch -ne 'travel') { throw 'recursive campaign_map travel must plan travel branch' }
+if ($decisionTravelMap.recursiveBranchConsumed -ne $true) { throw 'recursive campaign_map travel must consume fresh recursiveBranchState' }
+
+# recent travel command proof keeps campaign_map travel in cooldown without resending
+$decisionTravelMapCooldown = Get-AutonomousAssistIterationDecision -Readiness $readyTravelMap -AssistProfile 'training-map' `
+    -TargetSettlement 'Ortysia' -LastTravelCommandUtc (Get-Date).ToUniversalTime() -TravelCommandCooldownSec 45
+if ($decisionTravelMapCooldown.decision -ne 'wait') { throw "recursive campaign_map cooldown must wait got $($decisionTravelMapCooldown.decision)" }
+if ($decisionTravelMapCooldown.reason -ne 'travel_command_cooldown') { throw "recursive campaign_map cooldown reason mismatch got $($decisionTravelMapCooldown.reason)" }
+if ($decisionTravelMapCooldown.commandSent) { throw 'recursive campaign_map cooldown must not send command' }
+if ($decisionTravelMapCooldown.plannedBranch -ne 'travel') { throw 'recursive campaign_map cooldown must preserve travel branch' }
+
+# after cooldown, a prior in-session travel command is proof to observe movement instead of resending
+$priorTravelUtc = (Get-Date).ToUniversalTime().AddSeconds(-90)
+$decisionTravelMapObserve = Get-AutonomousAssistIterationDecision -Readiness $readyTravelMap -AssistProfile 'training-map' `
+    -TargetSettlement 'Ortysia' -LastTravelCommandUtc $priorTravelUtc -TravelCommandCooldownSec 45
+if ($decisionTravelMapObserve.decision -ne 'observe') { throw "recursive campaign_map after command must observe movement got $($decisionTravelMapObserve.decision)" }
+if ($decisionTravelMapObserve.actionConsidered -ne 'observe_route') { throw "recursive campaign_map after command must observe_route got $($decisionTravelMapObserve.actionConsidered)" }
+if ($decisionTravelMapObserve.commandSent) { throw 'recursive campaign_map after command must not resend command' }
+if ($decisionTravelMapObserve.reason -ne 'travel_command_sent_observe_movement') { throw "recursive campaign_map observe reason mismatch got $($decisionTravelMapObserve.reason)" }
 
 # trade branch must not execute without profitability evidence
 $tradeRbs = New-RecursiveBranchFixture -NextPlannedBranch 'trade' `
@@ -223,6 +309,20 @@ $blockedStale = Test-AutonomousAssistLoopReadiness -Readiness $readyStale
 if ($blockedStale.ready) { throw 'stale heartbeat must block loop' }
 if ($blockedStale.reason -ne 'runtime_heartbeat_stale') { throw "expected runtime_heartbeat_stale got $($blockedStale.reason)" }
 
+# transient missing/null RuntimeLifecycle heartbeat falls back to fresh Status.stateMachine heartbeat
+$readyInlineLifecycle = Build-Readiness -Surface 'settlement_menu'
+$readyInlineLifecycle.runtimeLifecycle = [pscustomobject]@{ parseOk = $true; lastHeartbeatUtc = $null }
+$readyInlineLifecycle.heartbeatFresh = $false
+$inlineLoopReady = Test-AutonomousAssistLoopReadiness -Readiness $readyInlineLifecycle
+if (-not $inlineLoopReady.ready) { throw "fresh stateMachine heartbeat must tolerate null RuntimeLifecycle heartbeat got $($inlineLoopReady.reason)" }
+if (-not $inlineLoopReady.runtimeLifecycleConsumed) { throw 'inline stateMachine heartbeat must count as runtimeLifecycleConsumed fallback' }
+
+# RuntimeLifecycle reader must tolerate transient empty reads from non-atomic game writes.
+$runtimeRetryText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1') -Raw
+if ($runtimeRetryText -notmatch 'empty RuntimeLifecycle read' -or $runtimeRetryText -notmatch 'Start-Sleep -Milliseconds 100') {
+    throw 'RuntimeLifecycle reader must retry transient empty/null heartbeat reads'
+}
+
 # settlement_menu permits travel action
 $decisionSettlement = Get-AutonomousAssistIterationDecision -Readiness $readySm -AssistProfile 'training-map' -TargetSettlement 'Ortysia'
 if ($decisionSettlement.decision -ne 'allowed') { throw "settlement_menu must allow travel got $($decisionSettlement.decision)" }
@@ -300,7 +400,7 @@ if ($childResult.text -notmatch 'post-handoff: Bannerlord exited') {
     throw 'child nav output must be captured for post-handoff classification'
 }
 
-# CertTarget continue is forwarded into launcher-auto-nav child command
+# launcher-auto-nav child command defaults to assistive launch setup, not strict continue cert mode
 $certNav = Join-Path $tmpRoot 'cert-target-launcher-auto-nav.ps1'
 @'
 param(
@@ -311,15 +411,24 @@ param(
     [int]$LauncherSelectionMaxMs,
     [string]$ExternalStateTimelinePath,
     [bool]$RespectUserForeground = $true,
-    [string]$CertTarget = 'any'
+    [string]$CertTarget = 'any',
+    [switch]$AllowFocusSteal
 )
 Write-Host "certTarget=$CertTarget"
+Write-Host "launchSetup=$([bool]$LaunchSetup)"
+Write-Host "allowFocusSteal=$([bool]$AllowFocusSteal)"
 exit 0
 '@ | Set-Content -LiteralPath $certNav -Encoding UTF8
 $certResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $certNav -LaunchIntent 'continue' `
-    -BannerlordRoot $tmpRoot -CertTarget 'continue' -ExternalStateTimelinePath (Join-Path $tmpRoot 'ExternalStateTimeline-cert.json')
-if ($certResult.text -notmatch 'certTarget=continue') {
-    throw 'Invoke-TbgLauncherAutoNavChild must forward CertTarget continue to launcher-auto-nav'
+    -BannerlordRoot $tmpRoot -AllowFocusSteal $true -ExternalStateTimelinePath (Join-Path $tmpRoot 'ExternalStateTimeline-cert.json')
+if ($certResult.text -notmatch 'certTarget=any') {
+    throw 'Invoke-TbgLauncherAutoNavChild must default CertTarget any for assistive launcher setup'
+}
+if ($certResult.text -notmatch 'launchSetup=True') {
+    throw 'Invoke-TbgLauncherAutoNavChild must pass -LaunchSetup to launcher-auto-nav'
+}
+if ($certResult.text -notmatch 'allowFocusSteal=True') {
+    throw 'Invoke-TbgLauncherAutoNavChild must forward explicit AllowFocusSteal opt-in'
 }
 
 # launcher-menu / uncertain detections must not count as real game spawn for adoption paths
@@ -331,6 +440,19 @@ $hostedOnly = [pscustomobject]@{
 }
 if (Test-TbgRealGameSpawnDetection -Detection $hostedOnly) {
     throw 'launcher_hosted must not be treated as real game spawn'
+}
+$hostedSingleplayer = [pscustomobject]@{
+    gameProcessRunning = $true
+    gameAliveConfidence = 'launcher_hosted'
+    gameProcessDetectionMethod = 'launcher_hosted_window'
+    gameProcessCandidates = @([pscustomobject]@{
+            method = 'launcher_hosted_window'
+            isLauncherHosted = $true
+            windowTitle = 'Mount and Blade II Bannerlord - Singleplayer PID: 75280 - Win64_Shipping_Client Msvc14 Managed C:/Program Files (x86)/Steam/steamapps/common/Mount & Blade II Bannerlord/bin/Modules/'
+        })
+}
+if (-not (Test-TbgRealGameSpawnDetection -Detection $hostedSingleplayer)) {
+    throw 'launcher_hosted Singleplayer window must count as real game spawn after Continue'
 }
 $uncertainOnly = [pscustomobject]@{
     gameProcessRunning = $true
@@ -396,14 +518,69 @@ if ($runnerText -notmatch 'Test-AutonomousAssistLoopReadiness') {
 foreach ($needle in @(
     'autonomous-assist-session.ps1', 'Write-TbgAssistToggle', 'assistLoopStartedWithoutHotkey',
     'Test-TbgPostHandoffFastFail', 'Get-AutonomousAssistIterationDecision', 'AssistToggle',
-    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff', '-CertTarget', 'navCertTarget'
+    'Invoke-TbgLauncherAutoNavChild', 'process_disappeared_during_post_handoff',
+    'Get-F7ForegroundWindowInfo', 'operator_interruption_foreground_lost', 'ForegroundLossStopSec'
 )) {
     if ($runnerText -notmatch [regex]::Escape($needle)) {
         throw "run-autonomous-assist-session.ps1 missing: $needle"
     }
 }
+if ($runnerText -match [regex]::Escape('-CertTarget')) {
+    throw 'autonomous assist runner must not force launcher-auto-nav into continue cert mode'
+}
+if ($runnerText -match 'navCertTarget') {
+    throw 'autonomous assist runner must not set navCertTarget; launch setup should stay assistive'
+}
 if ($runnerText -match 'Register-HotKey|SendKeys|Wait-Hotkey') {
     throw 'autonomous assist runner must not require hotkey for main path'
+}
+
+$launcherText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'launcher-auto-nav.ps1') -Raw
+if ($launcherText -notmatch [regex]::Escape('$script:launcherSelectionAttempts -gt 0')) {
+    throw 'launcher must not adopt user launch path after automation has attempted selection'
+}
+if ($launcherText -notmatch [regex]::Escape('$clickedSafeMode')) {
+    throw 'launcher must not adopt user launch path after Safe Mode automation'
+}
+if ($launcherText -notmatch [regex]::Escape('function Get-NavLockOwnerPid')) {
+    throw 'launcher nav lock must read owner pid from lock file'
+}
+if ($launcherText -notmatch [regex]::Escape('Get-Process -Id $ownerPid')) {
+    throw 'launcher nav lock must clear dead-pid locks immediately'
+}
+
+$runnerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'run-autonomous-assist-session.ps1') -Raw
+foreach ($needle in @(
+        'Test-GovernorStopRequested -RepoRoot $repoRoot',
+        'operator_stop_forge_stop',
+        '$operatorToggleOff ='
+    )) {
+    if ($runnerText -notmatch [regex]::Escape($needle)) {
+        throw "autonomous assist runner missing operator-stop contract: $needle"
+    }
+}
+# Engine handoff refresh must break the cold-start deadlock: refresh when travel is planned OR the
+# surface is travel-safe but the engine target is still missing, not only when travel is pre-planned.
+if ($runnerText -notmatch [regex]::Escape('$travelSafeNow = [bool]$ready.safeToExecuteTravel')) {
+    throw 'autonomous assist runner must read travel-safety for handoff refresh guard'
+}
+if ($runnerText -notmatch [regex]::Escape('($plannedBranchForTarget -eq ''travel'') -or $travelSafeNow')) {
+    throw 'autonomous assist runner handoff refresh must fire on travel-safe surface with missing target'
+}
+$stopText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'forge-stop.ps1') -Raw
+foreach ($needle in @("requestedBy = 'forge_stop'", 'BlacksmithGuild_AssistToggle.json')) {
+    if ($stopText -notmatch [regex]::Escape($needle)) {
+        throw "forge-stop missing assist-toggle stop contract: $needle"
+    }
+}
+$consumerText = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1') -Raw
+foreach ($needle in @('function Read-Pr11RuntimeRegent', 'operatorInterruptionObserved', 'BlacksmithGuild_RuntimeRegent.json')) {
+    if ($consumerText -notmatch [regex]::Escape($needle)) {
+        throw "runtime-state consumer missing regent interruption contract: $needle"
+    }
+}
+if ($runnerText -match [regex]::Escape("@('user_toggle_off', 'timeout'")) {
+    throw 'operator/user toggle stop must not be a PASS condition'
 }
 
 Remove-Item -LiteralPath $tmpRoot -Recurse -Force -ErrorAction SilentlyContinue

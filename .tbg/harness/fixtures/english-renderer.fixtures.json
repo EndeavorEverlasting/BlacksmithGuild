@@ -1,0 +1,138 @@
+{
+  "schema": "tbg.harness.english-renderer.fixtures.v1",
+  "policyId": "effective-policy-english",
+  "forbiddenPatterns": [
+    "(?s)^\\s*[\\{\\[]",
+    "(?m)^\\s*[-*]\\s+(?:schema|profileId|workflowId|policyId|lane|requiresInactiveRuntime|requiresForgeStopFirst|allowedCommands|deniedCommands|resultPath|artifactPaths|proofLevel|validationMode|ciSurfacePaths|sourceFiles|consumerSurfaces|status|verdict|blockedReason|nextPatchHint|commandText|decision|missingPrereqs)\\s*:",
+    "(?i)\"(?:schema|profileId|workflowId|policyId|status|verdict|blockedReason|nextPatchHint|commandText|decision|missingPrereqs)\"\\s*:"
+  ],
+  "cases": [
+    {
+      "id": "canonical-profile",
+      "profileId": "local-mcp-code-intelligence",
+      "rowType": "profile",
+      "expectedFragments": [
+        "The workflow uses the local-mcp-code-intelligence profile.",
+        "uses static harness proof without claiming live runtime evidence",
+        "writes its machine result to artifacts/latest/harness-readiness.result.json",
+        "uses offline validation"
+      ]
+    },
+    {
+      "id": "generic-ready-result",
+      "profileId": "local-mcp-code-intelligence",
+      "rowType": "result",
+      "row": {
+        "action": "TestHarnessReadiness",
+        "status": "ready",
+        "verdict": "harness_readiness_ready"
+      },
+      "expectedFragments": [
+        "The TestHarnessReadiness result for the local-mcp-code-intelligence profile is ready.",
+        "It recorded the harness readiness ready verdict."
+      ]
+    },
+    {
+      "id": "review-row",
+      "profileId": "project-ai-layer",
+      "rowType": "review",
+      "row": {
+        "reviewDecision": "required",
+        "reviewSummary": "the CLAUDE.md proposal contains generated rule changes that need operator review"
+      },
+      "expectedFragments": [
+        "The review for the project-ai-layer profile was required because the CLAUDE.md proposal contains generated rule changes that need operator review."
+      ]
+    },
+    {
+      "id": "policy-audit-row",
+      "profileId": "local-mcp-code-intelligence",
+      "rowType": "policy-audit",
+      "row": {
+        "auditDecision": "passed",
+        "auditFinding": "the executable source inventory is complete"
+      },
+      "expectedFragments": [
+        "The policy audit for the local-mcp-code-intelligence profile was passed because the executable source inventory is complete."
+      ]
+    },
+    {
+      "id": "workflow-contract-row",
+      "profileId": "route-visible-start",
+      "rowType": "workflow-contract",
+      "expectedFragments": [
+        "The route-visible-start workflow contract uses the route-visible-start profile.",
+        "requires inactive runtime state before validation",
+        "requires ForgeStop before runtime-affecting commands",
+        "writes its machine result to artifacts/latest/route-visible-start.result.json",
+        "uses contract and runtime validation"
+      ]
+    },
+    {
+      "id": "route-blocked-status-file-missing",
+      "profileId": "route-visible-start",
+      "rowType": "result",
+      "row": {
+        "verdict": "BLOCKED",
+        "phase": "map-ready",
+        "blockedReason": "status file missing"
+      },
+      "expectedFragments": [
+        "The route-visible-start result for the route-visible-start profile was blocked.",
+        "The workflow is blocked because status file missing.",
+        "map-ready workflow did not produce BlacksmithGuild_Status.json"
+      ]
+    },
+    {
+      "id": "route-pass",
+      "profileId": "route-visible-start",
+      "rowType": "result",
+      "row": {
+        "verdict": "PASS",
+        "phase": "done"
+      },
+      "expectedFragments": [
+        "The route-visible-start result for the route-visible-start profile passed.",
+        "writes its machine result to artifacts/latest/route-visible-start.result.json"
+      ]
+    },
+    {
+      "id": "denied-forge-reboot-command",
+      "profileId": "local-mcp-code-intelligence",
+      "rowType": "command-safety",
+      "row": {
+        "hook": "command-safety",
+        "commandText": "ForgeReboot.cmd",
+        "decision": "deny",
+        "reason": "Command matches deny pattern.",
+        "artifacts": [
+          "artifacts/latest/command-safety.result.json",
+          "artifacts/latest/command-safety.report.md"
+        ]
+      },
+      "expectedFragments": [
+        "The command safety policy denied ForgeReboot.cmd because command matches deny pattern.",
+        "requires ForgeStop before runtime-affecting commands",
+        "writes its machine result to artifacts/latest/command-safety.result.json"
+      ]
+    },
+    {
+      "id": "missing-prereq-result",
+      "profileId": "local-mcp-code-intelligence",
+      "rowType": "result",
+      "row": {
+        "action": "TestHarnessReadiness",
+        "status": "missing_prereqs",
+        "verdict": "harness_readiness_missing_prereqs",
+        "missingPrereqs": [
+          "tool-missing:go"
+        ]
+      },
+      "expectedFragments": [
+        "The TestHarnessReadiness result for the local-mcp-code-intelligence profile is missing prerequisites.",
+        "It recorded the harness readiness missing prerequisites verdict.",
+        "The result is missing the following prerequisites: tool-missing:go."
+      ]
+    }
+  ]
+}

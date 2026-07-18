@@ -106,6 +106,9 @@ namespace BlacksmithGuild.DevTools
         public static float CohesionMaxRallyDistance = 35f;
         public static float CohesionMinEscapeMarginHours = 0.25f;
         public static float CohesionScanRadius = 35f;
+        // Diagnostic-only status JSON posture scans can touch native party state during the
+        // fragile post-load attach window. Keep disabled unless explicitly debugging posture data.
+        public static bool FactionPowerPostureStatusScanEnabled = false;
         public static bool CohesionAllowLikelyWindows = true;
         public static bool CohesionAllowPlayerOnlyExecution = true;
         public static bool CohesionAllowClanPartyCommands = true;
@@ -124,9 +127,26 @@ namespace BlacksmithGuild.DevTools
         public static bool GuildLoopAutoTravelToSellTown = true;
         public static bool MapTradeAutoTravelToSellTown = true;
 
+        // Governor spine ships disabled for autonomous takeover until live cert proves branch policy.
+        public static bool CampaignRuntimeGovernorAutonomousMode = false;
+        public static int CampaignRuntimeGovernorDecisionIntervalMs = 4000;
+        public static bool CampaignRuntimeGovernorAllowBoundedExecution = false;
+
+        // Low-noise campaign tick profiler. Writes JSON only after slow segments or optional periodic snapshots.
+        public static bool TickCostProfilerEnabled = true;
+        public static double TickCostProfilerSlowThresholdMs = 8.0;
+        public static int TickCostProfilerMinWriteIntervalMs = 1000;
+        public static bool TickCostProfilerWritePeriodicSnapshots = false;
+
+        // Horse Atlas read-only intelligence: lay-of-land scan defaults.
+        public static BlacksmithGuild.HorseMarket.HorseMarketAtlasMode HorseMarketAtlasMode =
+            BlacksmithGuild.HorseMarket.HorseMarketAtlasMode.LayOfLandScan;
+        public static int HorseMarketAtlasFreshnessHours = 24;
+        public static int HorseMarketAtlasMaxDestinationCount = 5;
+        public static int HerdLedgerFreshnessHours = 6;
+
         public static int SmithingSmeltMaxWeaponTier = 2;
         public static int SmithingSmeltMaxPerInvocation = 1;
         public static bool SmithingSmeltRequireLootOnly = true;
     }
 }
-

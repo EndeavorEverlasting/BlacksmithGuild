@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/state-view.schema.json",
+  "title": "TBG State View v1",
+  "description": "A lane-specific materialized view of the current state envelope. Lanes consume views; they do not own state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "viewId",
+    "sourceEnvelope",
+    "objectiveRefs",
+    "readyWorkItems",
+    "activeConstraints",
+    "proofCeiling"
+  ],
+  "properties": {
+    "schema": {
+      "const": "TbgStateView.v1"
+    },
+    "viewId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceEnvelope": {
+      "type": "string",
+      "pattern": "^state-"
+    },
+    "objectiveRefs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^objective:"
+      }
+    },
+    "readyWorkItems": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^work-item:"
+      }
+    },
+    "activeConstraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^constraint:"
+      }
+    },
+    "relevantEvidence": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^evidence:"
+      }
+    },
+    "relevantClaims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^claim:"
+      }
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^resource:"
+      }
+    },
+    "proofCeiling": {
+      "enum": [
+        "contract",
+        "harness",
+        "windows watcher harness",
+        "static test",
+        "build",
+        "launcher",
+        "command ACK",
+        "behavior observed",
+        "live runtime"
+      ]
+    },
+    "generatedUtc": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

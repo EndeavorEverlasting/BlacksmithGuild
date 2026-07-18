@@ -1,0 +1,116 @@
+{
+  "id": "local-artifact-engine",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "local-artifact-engine-control-plane",
+  "contextBanner": "[TBG | Local Artifact Engine | harness/control-plane | main]",
+  "purpose": "Parse repo-local and explicitly supplied local artifacts, normalize evidence, cascade registered read-only engines, and produce operator-facing English reports without treating raw artifacts as self-executing truth.",
+  "lane": "harness/local-artifact-control-plane",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "proofLevel": "windows_watcher_harness",
+  "validationMode": "offline_cross_platform",
+  "registryPath": ".tbg/harness/artifact-engines.registry.json",
+  "statePath": ".local/tbg-artifact-engine/state.json",
+  "fingerprintPath": ".local/tbg-artifact-engine/fingerprints.json",
+  "pidPath": ".local/tbg-artifact-engine/watcher.json",
+  "resultPath": "artifacts/latest/artifact-engine/artifact-engine.result.json",
+  "requiredArtifacts": [
+    "artifacts/latest/artifact-engine/artifact-engine.result.json",
+    "artifacts/latest/artifact-engine/artifact-engine.report.md",
+    "artifacts/latest/artifact-engine/artifact-engine.events.jsonl",
+    "artifacts/latest/artifact-engine/artifact-engine.progress.log",
+    "artifacts/latest/artifact-engine/artifact-engine.handoff.md"
+  ],
+  "modes": {
+    "off": "The harness records no automatic artifact action. A manual run remains available.",
+    "observe": "The harness parses artifacts and writes reports, but it does not cascade registered action engines.",
+    "auto": "The harness parses changed artifacts and cascades every eligible read-only downstream engine.",
+    "strict": "The harness performs auto processing and returns a nonzero result when required inputs are missing or parsing produces blockers."
+  },
+  "operatorCommands": [
+    ".\\ForgeArtifactEngine.cmd status",
+    ".\\ForgeArtifactEngine.cmd on",
+    ".\\ForgeArtifactEngine.cmd off",
+    ".\\ForgeArtifactEngine.cmd toggle",
+    ".\\ForgeArtifactEngine.cmd run",
+    ".\\ForgeArtifactEngine.cmd watch",
+    ".\\ForgeArtifactEngine.cmd trigger repo-hygiene",
+    ".\\ForgeArtifactEngine.cmd trigger stale-pr-recovery"
+  ],
+  "philosophy": [
+    "Artifacts are evidence-bearing events, not inert attachments and not unquestioned truth.",
+    "The registry owns engine identity, dependencies, trigger edges, input candidates, and output names.",
+    "The local state file owns operator authority. Prompts and individual producer scripts do not silently override the toggle.",
+    "Every engine action must be deterministic, idempotent, local, bounded, and read-only with respect to source code, Git history, pull requests, worktrees, saves, and game state.",
+    "An upstream engine may enqueue downstream engines only through declared registry edges.",
+    "A cascade must reject cycles, enforce a maximum engine count, and exclude its own output directory from discovery.",
+    "The watcher must detect changed configured artifacts without requiring a producer command, while named producer triggers remain the low-latency path.",
+    "Turning the toggle off must revoke automatic authority and stop the watcher process recorded by the local lease.",
+    "JSON owns variables and machine state. English reports own operator explanation. The two surfaces must describe the same terminal state and next decision.",
+    "Artifact parsing may classify proof, but it may not manufacture proof that the source artifact does not contain.",
+    "The automatic path must fail closed when strict mode encounters missing required inputs, invalid JSON, a registry cycle, or an unregistered engine."
+  ],
+  "allowedScope": [
+    "read repo-local ignored artifacts",
+    "read explicitly supplied additional artifact roots",
+    "parse JSON, JSONL, Markdown, text, and log files within configured size limits",
+    "write ignored normalized packets, reports, events, progress, fingerprints, state, and handoff files",
+    "start or stop a repo-local watcher process when the operator changes the toggle",
+    "detect changed configured artifacts through polling without a producer command",
+    "cascade registered internal read-only engines",
+    "classify terminal state, proof boundary, blockers, and exact next commands"
+  ],
+  "forbiddenScope": [
+    "edit tracked source files during engine execution",
+    "execute git reset, clean, merge, rebase, cherry-pick, push, branch deletion, or worktree removal",
+    "open, close, retarget, merge, or comment on pull requests",
+    "launch Bannerlord",
+    "write a command inbox",
+    "mutate saves or runtime state",
+    "execute arbitrary commands read from an artifact",
+    "claim build, launcher, behavior, or runtime proof from parser success"
+  ],
+  "operatingLoop": [
+    "toggle_authority",
+    "watcher_or_producer_trigger",
+    "artifact_discovery",
+    "artifact_parse",
+    "engine_classification",
+    "declared_trigger_cascade",
+    "artifact_write",
+    "validation",
+    "english_report",
+    "next_decision"
+  ],
+  "doneGate": {
+    "requires": [
+      "the registry and workflow contract parse",
+      "the operator can query, enable, disable, and toggle automatic processing",
+      "manual run works while automatic processing is disabled",
+      "observe mode parses but does not cascade downstream engines",
+      "auto mode cascades declared downstream engines",
+      "strict mode fails on a malformed required artifact",
+      "repo hygiene output produces a repo-floor context packet",
+      "stale PR recovery output produces a bounded next-action packet",
+      "the handoff engine consumes upstream engine packets",
+      "the JSON result, JSONL events, progress log, English report, and handoff agree",
+      "Windows PowerShell starts the watcher and records a live process lease",
+      "the Windows watcher detects a changed configured artifact without a producer command",
+      "the watcher writes a watcher_change_detection result in the selected mode",
+      "turning the toggle off stops the recorded watcher process and removes its lease",
+      "the static validator and Windows watcher smoke both pass in CI"
+    ]
+  },
+  "terminalStates": [
+    "READY_manual_run_complete",
+    "READY_observe_complete",
+    "READY_auto_cascade_complete",
+    "DISABLED_automatic_processing_off",
+    "BLOCKED_registry_invalid",
+    "BLOCKED_required_artifact_missing",
+    "BLOCKED_artifact_parse_error",
+    "BLOCKED_engine_cycle",
+    "BLOCKED_cascade_limit"
+  ]
+}

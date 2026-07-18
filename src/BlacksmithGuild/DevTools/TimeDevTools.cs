@@ -52,5 +52,18 @@ namespace BlacksmithGuild.DevTools
 
             return true;
         }
+
+        public static bool ResumeCampaignClock()
+        {
+            LastFailReason = null;
+            if (Campaign.Current == null)
+            {
+                LastFailReason = "no active campaign";
+                DebugLogger.Test("ResumeCampaignClock: FAIL — no active campaign.");
+                return false;
+            }
+
+            return CampaignClockResumeHelper.EnsureClockRunning("ResumeCampaignClock");
+        }
     }
 }

@@ -1,0 +1,235 @@
+{
+  "schemaVersion": "TbgVisibleTradeProofFixtures.v1",
+  "description": "Fixture-based test cases for the visible trade proof coordinator and supporting contracts.",
+  "baseCase": {
+    "provenance": {
+      "sourceBranch": "agent/route-automation-operator-plan",
+      "sourceCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "executionWorktree": "/tmp/test-worktree",
+      "executionBranch": "agent/route-automation-operator-plan",
+      "executionCommit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "builtAssemblySha256": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "installedAssemblySha256": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "moduleVersion": "1.0.0",
+      "gameVersion": "1.2.1",
+      "testRunId": "vtp-test-001",
+      "commandCorrelationId": "vtp-test-001"
+    },
+    "checks": {
+      "sourceCommitKnown": true,
+      "buildHashMatch": true,
+      "commandAckObserved": true,
+      "timeAdvanceObserved": true,
+      "movementObserved": true,
+      "checkpointObserved": true,
+      "arrivalObserved": true,
+      "buyObserved": true,
+      "sellObserved": false,
+      "capsuleGenerated": true,
+      "remotePublished": true
+    },
+    "movement": {
+      "observed": true,
+      "delta": 3.5,
+      "startingPosition": "0,0",
+      "endingPosition": "1,2",
+      "sampleCount": 5,
+      "target": "Sargot"
+    },
+    "arrival": {
+      "observed": true,
+      "settlement": "Sargot",
+      "target": "Sargot"
+    },
+    "buy": {
+      "observed": true,
+      "goldDelta": -150,
+      "inventoryDelta": 2,
+      "itemId": "iron_ore"
+    },
+    "sell": {
+      "observed": false,
+      "goldDelta": 0,
+      "inventoryDelta": 0,
+      "itemId": ""
+    },
+    "publication": {
+      "published": true,
+      "evidenceBranch": "evidence/visible-trade/aaaaaaaa/vtp-test-001",
+      "evidenceCommit": "cccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "cases": [
+    {
+      "id": "complete_visible_trade_passes",
+      "overrides": [],
+      "expectedTerminalState": "PASS_VISIBLE_TRADE_PROVEN",
+      "expectedPassFail": "PASS",
+      "expectedHighestProof": "complete"
+    },
+    {
+      "id": "build_hash_mismatch_fails",
+      "overrides": [
+        { "path": "provenance.installedAssemblySha256", "value": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" }
+      ],
+      "expectedTerminalState": "FAIL_SOURCE_BUILD_INSTALL_MISMATCH",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "build"
+    },
+    {
+      "id": "no_command_ack_fails",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_COMMAND_NOT_ACKNOWLEDGED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher"
+    },
+    {
+      "id": "no_movement_fails",
+      "overrides": [
+        { "path": "movement.observed", "value": false },
+        { "path": "movement.delta", "value": 0 },
+        { "path": "checks.movementObserved", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_NO_POSITION_DELTA",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "command-ack"
+    },
+    {
+      "id": "movement_below_noise_threshold",
+      "overrides": [
+        { "path": "movement.observed", "value": false },
+        { "path": "movement.delta", "value": 0.001 },
+        { "path": "checks.movementObserved", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_NO_POSITION_DELTA",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "command-ack"
+    },
+    {
+      "id": "no_checkpoint_fails",
+      "overrides": [
+        { "path": "checks.checkpointObserved", "value": false },
+        { "path": "arrival.observed", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_ROUTE_CHECKPOINT_NOT_OBSERVED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "movement"
+    },
+    {
+      "id": "no_arrival_fails",
+      "overrides": [
+        { "path": "arrival.observed", "value": false },
+        { "path": "checks.arrivalObserved", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_ARRIVAL_NOT_OBSERVED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "movement"
+    },
+    {
+      "id": "no_buy_fails",
+      "overrides": [
+        { "path": "buy.observed", "value": false },
+        { "path": "buy.goldDelta", "value": 0 },
+        { "path": "buy.inventoryDelta", "value": 0 },
+        { "path": "checks.buyObserved", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_BUY_DELTA_NOT_OBSERVED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "arrival"
+    },
+    {
+      "id": "no_sell_observed_not_failure_when_buy_present",
+      "overrides": [
+        { "path": "sell.observed", "value": false },
+        { "path": "checks.sellObserved", "value": false }
+      ],
+      "expectedTerminalState": "PASS_VISIBLE_TRADE_PROVEN",
+      "expectedPassFail": "PASS",
+      "expectedHighestProof": "complete"
+    },
+    {
+      "id": "no_remote_publication_fails",
+      "overrides": [
+        { "path": "publication.published", "value": false },
+        { "path": "checks.remotePublished", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_REMOTE_EVIDENCE_NOT_PUBLISHED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "complete"
+    },
+    {
+      "id": "partial_movement_then_failure",
+      "overrides": [
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.checkpointObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "movement.observed", "value": false },
+        { "path": "movement.delta", "value": 0.1 },
+        { "path": "arrival.observed", "value": false },
+        { "path": "buy.observed", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_NO_POSITION_DELTA",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "command-ack"
+    },
+    {
+      "id": "capsule_not_generated_fails",
+      "overrides": [
+        { "path": "checks.capsuleGenerated", "value": false },
+        { "path": "publication.published", "value": false },
+        { "path": "checks.remotePublished", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_EVIDENCE_INCOMPLETE",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "complete"
+    },
+    {
+      "id": "lifecycle_dispatch_without_successor_fails",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false },
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "checks.remotePublished", "value": false },
+        { "path": "publication.published", "value": false }
+      ],
+      "expectedTerminalState": "FAIL_MODAL_TRANSITION_NOT_OBSERVED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher",
+      "notes": "Action dispatch without correlated modal successor must fail closed before campaign readiness."
+    },
+    {
+      "id": "lifecycle_host_handoff_without_campaign_is_not_complete",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false },
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "checks.remotePublished", "value": false },
+        { "path": "publication.published", "value": false }
+      ],
+      "expectedTerminalState": "BLOCKED_CAMPAIGN_NOT_READY",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher-handoff",
+      "notes": "Host handoff is not campaign readiness or visible-trade completion."
+    },
+    {
+      "id": "lifecycle_quarantine_blocks",
+      "overrides": [
+        { "path": "checks.commandAckObserved", "value": false },
+        { "path": "checks.movementObserved", "value": false },
+        { "path": "checks.arrivalObserved", "value": false },
+        { "path": "checks.buyObserved", "value": false },
+        { "path": "checks.remotePublished", "value": false },
+        { "path": "publication.published", "value": false }
+      ],
+      "expectedTerminalState": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED",
+      "expectedPassFail": "FAIL",
+      "expectedHighestProof": "launcher",
+      "notes": "Unknown/quarantined lifecycle state grants no click authority."
+    }
+  ]
+}

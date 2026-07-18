@@ -1,0 +1,73 @@
+{
+  "schema": "tbg.harness.operations.v1",
+  "operations": [
+    {
+      "id": "validate-end-to-end-harness",
+      "entrypoint": "scripts/tbg/Test-TbgEndToEndHarness.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": [
+        "artifacts/latest/e2e-harness/e2e-harness.result.json"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "static test"
+    },
+    {
+      "id": "run-end-to-end-profile",
+      "entrypoint": "scripts/tbg/Invoke-TbgEndToEndValidation.ps1",
+      "mode": "profile-gated",
+      "requiredInputs": ["profile"],
+      "outputArtifacts": [
+        "artifacts/latest/e2e-validation/"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "profile-dependent"
+    },
+    {
+      "id": "generate-sprint-capsule",
+      "entrypoint": "scripts/tbg/New-TbgSprintCapsule.ps1",
+      "mode": "local-transform",
+      "requiredInputs": ["sprintId", "lane", "mission", "proofLevel", "proofCeiling", "nextCommand"],
+      "outputArtifacts": [
+        "artifacts/latest/tbg-sprint-capsule.json"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "contract"
+    },
+    {
+      "id": "validate-window-lifecycle-runtime",
+      "entrypoint": "scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": [
+        "artifacts/latest/window-lifecycle/"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "static test"
+    },
+    {
+      "id": "replay-window-lifecycle-fixture",
+      "entrypoint": "ForgeWindowLifecycle.cmd",
+      "mode": "read-only",
+      "requiredInputs": ["replay"],
+      "outputArtifacts": [
+        "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.state.json",
+        "artifacts/latest/window-lifecycle/window-lifecycle.report.md"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "harness"
+    },
+    {
+      "id": "inspect-window-lifecycle-status",
+      "entrypoint": "ForgeWindowLifecycle.cmd",
+      "mode": "read-only",
+      "requiredInputs": ["status"],
+      "outputArtifacts": [
+        "artifacts/latest/window-lifecycle/window-lifecycle.handoff.md"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "harness"
+    }
+  ]
+}

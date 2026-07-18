@@ -22,6 +22,7 @@ $script:AutomationCheckpointNames = @(
     'travel_gate_ready',
     'probe_ack',
     'execute_ack',
+    'campaign_clock_resume_ack',
     'party_movement_observed',
     'market_evaluated',
     'smithing_refine_completed',
@@ -516,6 +517,7 @@ if ($MyInvocation.InvocationName -ne '.') {
     Add-AutomationCheckpointEvent -List $events -CheckpointName 'attach_ready' -Phase 'campaign_loop' | Out-Null
     Add-AutomationCheckpointEvent -List $events -CheckpointName 'state_machine_consumed' -Phase 'campaign_loop' | Out-Null
     Add-AutomationCheckpointEvent -List $events -CheckpointName 'runtime_lifecycle_consumed' -Phase 'campaign_loop' | Out-Null
+    Add-AutomationCheckpointEvent -List $events -CheckpointName 'campaign_clock_resume_ack' -Phase 'campaign_loop' | Out-Null
     Add-AutomationCheckpointEvent -List $events -CheckpointName 'summary_written' -Phase 'campaign_loop' | Out-Null
 
     $checkpointOnly = Test-AutomationPassCriteria -Events @($events.ToArray())

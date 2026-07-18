@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tbg.policy-reporting.schema.json",
+  "title": "TBG Policy Reporting Policy",
+  "type": "object",
+  "required": [
+    "schema",
+    "id",
+    "version",
+    "lane",
+    "primaryFormat",
+    "secondaryFormat",
+    "resultPathPattern",
+    "reportPathPattern",
+    "defaultProofLevel",
+    "defaultValidationMode",
+    "runtimeProofLevel",
+    "runtimeValidationMode",
+    "handoffFields",
+    "runtimeTestHandoffSequence",
+    "ciSurfacePaths",
+    "sourceFiles",
+    "consumerSurfaces"
+  ],
+  "properties": {
+    "schema": { "const": "tbg.harness.policy-reporting.v1" },
+    "id": { "const": "effective-policy-english" },
+    "version": { "const": 1 },
+    "lane": { "const": "harness/reporting/english-renderer" },
+    "primaryFormat": { "const": "english_markdown" },
+    "secondaryFormat": { "const": "raw_json" },
+    "resultPathPattern": { "const": "artifacts/latest/{profileId}.result.json" },
+    "reportPathPattern": { "const": "artifacts/latest/{profileId}.report.md" },
+    "defaultProofLevel": { "const": "static_harness" },
+    "defaultValidationMode": { "const": "offline" },
+    "runtimeProofLevel": { "const": "runtime_contract" },
+    "runtimeValidationMode": { "const": "contract_and_runtime" },
+    "handoffFields": {
+      "type": "array",
+      "minItems": 6,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "runtimeTestHandoffSequence": {
+      "type": "array",
+      "minItems": 8,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "ciSurfacePaths": {
+      "type": "array",
+      "minItems": 10,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "sourceFiles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "consumerSurfaces": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,88 @@
+name: Window Lifecycle Harness
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/harness/fixtures/window-intelligence/window-lifecycle-sequences.fixture.json'
+      - '.tbg/harness/fixtures/window-intelligence/window-lifecycle-runtime.fixture.json'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/e2e-artifact-types.registry.json'
+      - '.tbg/harness/policies/window-intelligence.policy.json'
+      - '.tbg/harness/schemas/window-lifecycle-*.schema.json'
+      - '.tbg/harness/window-identities.registry.json'
+      - '.tbg/workflows/window-metadata-intelligence.contract.json'
+      - 'docs/architecture/window-lifecycle-harness-spine.md'
+      - 'docs/architecture/window-lifecycle-runtime-wiring.md'
+      - 'scripts/tbg/Resolve-TbgWindowLifecycle.ps1'
+      - 'scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1'
+      - 'scripts/tbg/Test-TbgWindowLifecycle.ps1'
+      - 'scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1'
+      - 'scripts/tbg/Invoke-TbgWindowIntelligence.ps1'
+      - 'scripts/launcher-window-context.ps1'
+      - 'ForgeWindowLifecycle.cmd'
+      - '.github/workflows/window-lifecycle-harness.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.tbg/harness/fixtures/window-intelligence/window-lifecycle-sequences.fixture.json'
+      - '.tbg/harness/fixtures/window-intelligence/window-lifecycle-runtime.fixture.json'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/e2e-artifact-types.registry.json'
+      - '.tbg/harness/policies/window-intelligence.policy.json'
+      - '.tbg/harness/schemas/window-lifecycle-*.schema.json'
+      - '.tbg/harness/window-identities.registry.json'
+      - '.tbg/workflows/window-metadata-intelligence.contract.json'
+      - 'docs/architecture/window-lifecycle-harness-spine.md'
+      - 'docs/architecture/window-lifecycle-runtime-wiring.md'
+      - 'scripts/tbg/Resolve-TbgWindowLifecycle.ps1'
+      - 'scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1'
+      - 'scripts/tbg/Test-TbgWindowLifecycle.ps1'
+      - 'scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1'
+      - 'scripts/tbg/Invoke-TbgWindowIntelligence.ps1'
+      - 'scripts/launcher-window-context.ps1'
+      - 'ForgeWindowLifecycle.cmd'
+      - '.github/workflows/window-lifecycle-harness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-core:
+    name: PowerShell Core lifecycle harness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+
+      - name: Run pure lifecycle validator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./scripts/tbg/Test-TbgWindowLifecycle.ps1
+
+      - name: Run runtime lifecycle validator
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./scripts/tbg/Test-TbgWindowLifecycleRuntime.ps1
+
+  windows-powershell:
+    name: Windows PowerShell lifecycle harness
+    runs-on: windows-latest
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+
+      - name: Run pure lifecycle validator
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\scripts\tbg\Test-TbgWindowLifecycle.ps1
+
+      - name: Run runtime lifecycle validator
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\scripts\tbg\Test-TbgWindowLifecycleRuntime.ps1

@@ -1,53 +1,104 @@
 # Blacksmith Guild Agent Coordination Contract
 
-This file is the root coordination contract for Codex, Cursor, ChatGPT handoffs, and parallel sub-agents working in The Blacksmith Guild repository.
+`AGENTS.md` is the safe bootloader for every Codex, Claude, Cursor, ChatGPT, and parallel-agent session in `EndeavorEverlasting/BlacksmithGuild`. Keep conditional lane knowledge in `.tbg/skills/**`; keep executable sequence and done gates in `.tbg/workflows/**`.
 
-## Agent identities and ownership
+## Authority chain
 
-- Agent A = Cert / Evidence / Git / PR judgment
-- Agent B = Runtime / Readiness / Gameplay state truth
-- Agent C = External runner / launcher / lifecycle / window classifier
-- Agent D = Docs / atlas / routing board
+When instructions overlap, use this order:
 
-## Hard routing rules
+1. current source, scripts, schemas, registries, and executable workflow contracts;
+2. current generated evidence and state packets;
+3. the narrowest matching `.tbg/skills/<skill-id>/SKILL.md`;
+4. this root coordination contract;
+5. client adapters such as `CLAUDE.md`;
+6. historical docs, stale PR bodies, and chat handoffs.
 
-- Agent A does not write product code.
-- Agent B does not edit launcher/runner scripts unless explicitly routed.
-- Agent C does not edit src/** unless explicitly authorized.
-- Agent D does not certify gameplay.
-- Do not merge PR #8 unless user explicitly authorizes.
-- Do not commit scratch evidence folders.
-- Do not claim PASS from stale Status.json.
-- Do not ask the user to harvest logs manually.
-- Runner owns evidence capture.
+A lower authority may explain a higher authority but may not override it.
 
-## Current strategic target
+## Entry sequence
 
-One command should:
+Before substantial work:
 
-1. build/deploy if needed
-2. launch Bannerlord
-3. select Continue automatically
-4. wait for campaign attach
-5. consume stateMachine + RuntimeLifecycle
-6. start autonomous assist loop without hotkey
-7. make the avatar visibly move/train/act
-8. log every step
-9. allow user toggle-off
-10. stop cleanly
-11. write summary evidence
+1. identify repo, branch or worktree, PR or sprint, lane, owned scope, forbidden scope, expected artifacts, and any user-specified validation order;
+2. inspect `git status --short`, `git branch --show-current`, and `git log --oneline --decorate -5`;
+3. use `CODEBASE_MAP.md` to load the smallest relevant product, harness, runtime, or evidence surface;
+4. read `.tbg/skills/manifest.json` and select one primary skill plus only required cross-cutting skills;
+5. load the skill's `entryContract`, authorities, validators, expected artifacts, and proof ceiling;
+6. use `artifacts/latest/tbg-chat-packet.json`, `artifacts/latest/tbg-sprint-capsule.json`, or the artifact-engine handoff for fresh local state when present.
 
-## PowerShell encoding (non-negotiable)
+Do not paste full stale handoffs into every prompt. Do not load every skill.
 
-- **Every** tracked `*.ps1` / `*.psm1` / `*.psd1` must have a **UTF-8 BOM** (`EF BB BF`). PS 5.1 reads no-BOM files as ANSI; pwsh 7 reads them as UTF-8. Em dashes and other non-ASCII in no-BOM scripts are the usual visible break.
-- After editing scripts: `powershell -File scripts\tools\Add-Utf8Bom.ps1 -Fix`, then `powershell -File scripts\test-powershell-utf8-bom-contract.ps1`.
-- Full doctrine: `docs/conventions/powershell-utf8-bom-doctrine.md`. Do not assume pwsh-only green is repo green.
+## Universal safety
 
-## Coordination doctrine
+- Preserve dirty, conflicted, unpublished, ignored-evidence, and sibling-worktree state unless the active cleanup workflow proves a destructive action safe.
+- Do not use reset, clean, force push, branch deletion, worktree removal, save mutation, or PR closure merely to make the floor look clean.
+- Do not commit secrets, saves, personal configuration, scratch evidence, huge logs, crash dumps, or machine-local junk.
+- Do not ask the user to harvest logs manually when the runner can capture them. Runner-owned workflows own evidence capture.
+- No game launch, launcher click, command-inbox write, save mutation, or gameplay action is allowed unless the active workflow explicitly grants that authority.
+- A trigger, available tool, external coordinator, or prompt may route work, but it does not grant destructive, runtime, deployment, merge, secret, or live-target authority.
+- Checkpoint coherent tracked progress before broad validation, long diagnostics, runtime proof, refactoring expansion, or switching agents, models, worktrees, or environments. Include owned untracked files; a checkpoint proves preservation only.
+- If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.
+- External tools, AgentSwitchboard, SysAdminSuite, and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, save-safety, and product authority.
 
-- Read `docs/handoff/blacksmithguild-agent-coordination.md` before changing owned files.
-- Recursive campaign loop doctrine: `docs/handoff/recursive-campaign-assist-loop.md` (checkpoints are progress, not completion).
-- Runtime truth and runner consumption must follow `docs/handoff/runtime-state-routing.md`.
-- Window selection must follow `docs/control/logs/open/window-delta-doctrine.md`.
-- The current user-facing product target is `docs/control/logs/open/autonomous-assist-session-target.md`.
-- Synthesize parallel reports by preserving each agent's factual findings, resolving ownership conflicts through the routing matrix, and escalating only true contradictions to the user.
+## Proof and execution discipline
+
+Proof levels do not collapse:
+
+```text
+contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime
+```
+
+Do not claim a higher level from a lower one. A stale `Status.json`, parser success, command ACK, route assignment, checkpoint, or launcher handoff is not product completion. Every claim must name freshness, exact head when relevant, evidence paths, and the highest level actually reached.
+
+Incomplete proof is not automatically an execution prohibition. Prefer the strongest bounded workflow whose authority and safety boundary match the operator's request. Use `.tbg/workflows/end-to-end-validation.contract.json` for composed proof, `.tbg/workflows/checkpoint-discipline.contract.json` for recoverable expansion, and `.tbg/workflows/tbg-sprint-capsule.contract.json` for machine-readable continuation.
+
+## Lane router
+
+| Request or touched surface | Primary skill |
+|---|---|
+| branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
+| root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
+| harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
+| local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
+| proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
+| ForgeStop, build/deploy/launch/Continue | `launcher-lifecycle` |
+| window lifecycle reduce/replay/quarantine | `window-lifecycle-runtime` |
+| campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |
+| hotkeys, toggles, command inbox, Manual/Assist/Autonomous | `operator-control-surface` |
+| commit, push, PR, concurrent completion, release gates | `implementation-completion` |
+| stale or stacked PR value recovery | `stale-pr-cherry-pick` |
+| Continuum capability export or extraction | `continuum-interoperability` |
+| long annotations, stale snapshots, retained insight | `compendium-preservation` |
+| external coordinators and agent-operation tools | `agentic-operations` |
+| WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
+
+Agent A/B/C/D names are compatibility aliases only. Route by lane and skill. Map: A=Cert/Evidence/Git/PR; B=Runtime/Readiness; C=Launcher/lifecycle/window; D=Docs/atlas. Living boards: [`docs/handoff/blacksmithguild-agent-coordination.md`](docs/handoff/blacksmithguild-agent-coordination.md), [`docs/handoff/runtime-state-routing.md`](docs/handoff/runtime-state-routing.md). Runner owns evidence capture.
+
+## Current-state pointers
+
+Mutable PR restrictions, active targets, worktree state, runtime state, and latest evidence do not belong in this file. Resolve them from:
+
+- `artifacts/latest/tbg-chat-packet.json`;
+- `artifacts/latest/tbg-sprint-capsule.json`;
+- `artifacts/latest/artifact-engine/artifact-engine.handoff.md`;
+- `docs/control/logs/open/autonomous-assist-session-target.md`;
+- `docs/handoff/blacksmithguild-agent-coordination.md`;
+- `docs/handoff/runtime-state-routing.md`;
+- current Git, GitHub, workflow, and runtime artifacts.
+
+Historical snapshots remain provenance, not current truth.
+
+## PowerShell encoding
+
+Every tracked `*.ps1`, `*.psm1`, and `*.psd1` file must carry a UTF-8 BOM. After script edits run:
+
+```powershell
+powershell -File scripts\tools\Add-Utf8Bom.ps1 -Fix
+powershell -File scripts\test-powershell-utf8-bom-contract.ps1
+```
+
+PowerShell Core success alone is not Windows PowerShell 5.1 proof.
+
+## Completion report
+
+Serious repo work must name completed work, files changed, artifacts, validation, skipped checks, blockers, risks, important paths, Git/PR state, and one exact next command. Interrupted or resumed work must also name the checkpoint SHA or artifact, preserved and excluded files, last completed validation, first pending validation, and exact resume command. Use a schema-backed sprint capsule for cross-agent or cross-repository continuation; do not claim completion without a commit SHA, validated existing proof, or an exact blocker.

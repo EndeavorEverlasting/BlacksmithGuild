@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/state-envelope.schema.json",
+  "title": "TBG State Envelope v1",
+  "description": "A compact index of durable state objects. Regenerated as a materialized snapshot from append-only object stores.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "envelopeId",
+    "repo",
+    "generatedUtc",
+    "objectRefs",
+    "activeConstraints",
+    "terminalState"
+  ],
+  "properties": {
+    "schema": {
+      "const": "TbgStateEnvelope.v1"
+    },
+    "envelopeId": {
+      "type": "string",
+      "pattern": "^state-[0-9T\\-:Z]+-[a-f0-9]+$"
+    },
+    "repo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["remote", "head", "branch"],
+      "properties": {
+        "remote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "head": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "branch": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "generatedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "previousEnvelope": {
+      "type": "string"
+    },
+    "objectRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^observation:"
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^constraint:"
+          }
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^objective:"
+          }
+        },
+        "workItems": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^work-item:"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^evidence:"
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^claim:"
+          }
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^capability:"
+          }
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^resource:"
+          }
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^decision:"
+          }
+        }
+      }
+    },
+    "activeConstraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^constraint:"
+      }
+    },
+    "currentObjective": {
+      "type": "string",
+      "pattern": "^objective:"
+    },
+    "terminalState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "blockers", "nextDecision"],
+      "properties": {
+        "status": {
+          "enum": ["READY_FOR_ROUTING", "BLOCKED", "COMPLETED", "WAITING_FOR_EVIDENCE"]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nextDecision": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

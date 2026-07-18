@@ -27,6 +27,38 @@ $evidence.assistLoopStarted = $true
 $evidence.assistLoopStartedWithoutHotkey = $true
 $evidence.iterationCount = 2
 
+$movementExecPath = Join-Path $bannerlordRoot 'BlacksmithGuild_AssistiveTravelExecution.json'
+$movementProofPath = Join-Path $bannerlordRoot 'BlacksmithGuild_MovementProof.json'
+@{
+    travelClockRunning = $true
+    movementIntentSet = $true
+    partyMovedDistance = 0
+    movementProofClassification = 'MovementMetricDisagreement'
+    movementMetricDisagreement = $true
+    movementCheckpointObserved = $true
+    movementProof = @{
+        classification = 'MovementMetricDisagreement'
+        partyMovedDistance = 0
+        samples = @(@{ campaignClockRunning = $true; movementIntentSet = $true })
+        deltas = @{ positionChanged = $true; distanceToTargetChanged = $true; mapTimeAdvanced = $false; currentSettlementChanged = $false; nearestSettlementChanged = $false }
+    }
+} | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $movementExecPath -Encoding UTF8
+@{
+    schemaVersion = 1
+    classification = 'MovementMetricDisagreement'
+    partyMovedDistance = 0
+    deltas = @{ positionChanged = $true; distanceToTargetChanged = $true; mapTimeAdvanced = $false; currentSettlementChanged = $false; nearestSettlementChanged = $false }
+    samples = @(@{ campaignClockRunning = $true; movementIntentSet = $true })
+} | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $movementProofPath -Encoding UTF8
+
+$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence -BannerlordRoot $bannerlordRoot `
+    -SessionId $sessionId -AlreadyEmitted:$false
+if (-not $movementUpdate.checkpointEmitted) { throw 'runner movement checkpoint must emit for durable movement proof even when partyMovedDistance==0' }
+if (-not $movementUpdate.movementMetricDisagreement) { throw 'runner movement checkpoint must preserve movementMetricDisagreement=true' }
+if (-not $movementUpdate.movementCheckpointObserved) { throw 'runner movement checkpoint must preserve movementCheckpointObserved=true' }
+$movementCheckpointCount = @($evidence.checkpointEvents.ToArray() | Where-Object { $_.checkpointName -eq 'party_movement_observed' }).Count
+if ($movementCheckpointCount -ne 1) { throw "expected one movement checkpoint from durable movement proof fixture; got $movementCheckpointCount" }
+
 $lastDecision = [pscustomobject]@{
     atUtc = (Get-Date).ToUniversalTime().ToString('o')
     actionConsidered = 'observe_route'
@@ -258,7 +290,7 @@ $tradeReady = [pscustomobject]@{
     recursiveBranchFresh = $false
     recursiveBranchState = $null
     runtimeLifecycle = [pscustomobject]@{ parseOk = $true }
-    stateMachine = [pscustomobject]@{ hasStateMachine = $true; gameplaySurface = 'trading'; gameLifecycle = 'campaign'; safeToExecuteTravel = $true }
+    stateMachine = [pscustomobject]@{ hasStateMachine = $true; gameplaySurface = 'trading'; gameLifecycle = 'campaign'; safeToExecuteTravel = $true; heartbeatUtc = (Get-Date).ToUniversalTime().ToString('o') }
 }
 
 $ecoDrive = Get-AutonomousAssistIterationDecision -Readiness $tradeReady -CertProfile 'economic_loop' `
@@ -287,10 +319,13 @@ Write-Host 'PASS economic-loop trade-driving decision policy' -ForegroundColor G
 $tradeCountRoot = Join-Path $tmpRoot 'trade-count'
 New-Item -ItemType Directory -Force -Path $tradeCountRoot | Out-Null
 $tcFile = Join-Path $tradeCountRoot 'BlacksmithGuild_TradeIterations.jsonl'
-$staleRow = ([ordered]@{ schemaVersion = 1; iteration = 1; atUtc = (Get-Date).AddHours(-2).ToUniversalTime().ToString('o')
+# Deterministic UTC stamps (fixed offsets from one instant) so ConvertFrom-Json Kind loss cannot flake.
+$cutoffUtc = [datetime]::SpecifyKind([datetime]::ParseExact('2026-07-18T12:00:00.0000000Z', 'o', [Globalization.CultureInfo]::InvariantCulture), [System.DateTimeKind]::Utc)
+$staleAtUtc = $cutoffUtc.AddHours(-2).ToString('o')
+$freshAtUtc = $cutoffUtc.AddMinutes(1).ToString('o')
+$staleRow = ([ordered]@{ schemaVersion = 1; iteration = 1; atUtc = $staleAtUtc
     goldBefore = 1000; goldAfter = 900; goldDelta = -100; inventoryBefore = 0; inventoryAfter = 2; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
-$cutoffUtc = (Get-Date).ToUniversalTime()
-$freshRow = ([ordered]@{ schemaVersion = 1; iteration = 2; atUtc = (Get-Date).AddSeconds(5).ToUniversalTime().ToString('o')
+$freshRow = ([ordered]@{ schemaVersion = 1; iteration = 2; atUtc = $freshAtUtc
     goldBefore = 900; goldAfter = 800; goldDelta = -100; inventoryBefore = 2; inventoryAfter = 4; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
 Set-Content -LiteralPath $tcFile -Value @($staleRow, $freshRow) -Encoding UTF8
 

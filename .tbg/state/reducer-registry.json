@@ -1,0 +1,56 @@
+{
+  "schema": "TbgReducerRegistry.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "generatedUtc": "2026-07-13T00:00:00Z",
+  "reducers": [
+    {
+      "id": "reducer:observation",
+      "eventTypes": ["artifact.observed", "git.state.captured", "hygiene.report", "chat.packet", "skill.routed", "game.compatibility.observed"],
+      "consumedObjectTypes": [],
+      "producedObjectTypes": ["TbgObservation.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgObservation.ps1"
+    },
+    {
+      "id": "reducer:evidence",
+      "eventTypes": ["artifact.parsed", "build.result", "validator.result", "launcher.result", "command.ack", "runtime.evidence", "stale.pr.recovery"],
+      "consumedObjectTypes": ["TbgObservation.v1"],
+      "producedObjectTypes": ["TbgEvidenceRecord.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgEvidence.ps1"
+    },
+    {
+      "id": "reducer:claim",
+      "eventTypes": ["action.completed", "runtime.evidence"],
+      "consumedObjectTypes": ["TbgEvidenceRecord.v1"],
+      "producedObjectTypes": ["TbgClaim.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgClaim.ps1"
+    },
+    {
+      "id": "reducer:work-item",
+      "eventTypes": ["user.request", "work.item.created", "work.item.transitioned", "capability.gap.detected"],
+      "consumedObjectTypes": [],
+      "producedObjectTypes": ["TbgWorkItem.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgWorkItem.ps1"
+    },
+    {
+      "id": "reducer:capability-gap",
+      "eventTypes": ["capability.gap.detected", "event.unrecognized"],
+      "consumedObjectTypes": [],
+      "producedObjectTypes": ["TbgWorkItem.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgCapabilityGap.ps1"
+    },
+    {
+      "id": "reducer:constraint",
+      "eventTypes": ["constraint.violation", "system.generated"],
+      "consumedObjectTypes": [],
+      "producedObjectTypes": ["TbgConstraint.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgConstraint.ps1"
+    },
+    {
+      "id": "reducer:disposition",
+      "eventTypes": ["action.completed", "action.failed", "work.item.transitioned"],
+      "consumedObjectTypes": ["TbgWorkItem.v1"],
+      "producedObjectTypes": ["TbgWorkItem.v1"],
+      "scriptPath": "scripts/tbg/Reduce-TbgDisposition.ps1"
+    }
+  ]
+}

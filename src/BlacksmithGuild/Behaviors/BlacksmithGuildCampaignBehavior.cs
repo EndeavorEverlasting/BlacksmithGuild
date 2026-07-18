@@ -1,3 +1,4 @@
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.QuickStart;
@@ -79,7 +80,9 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
+            var tickCostStartedAt = TickCostProfiler.Start();
             GameSessionState.Refresh();
+            TickCostProfiler.Stop("GameSessionState.Refresh", tickCostStartedAt);
 
             if (!GameSessionState.IsMainHeroReady)
             {
@@ -91,16 +94,22 @@ namespace BlacksmithGuild.Behaviors
                 return;
             }
 
+            tickCostStartedAt = TickCostProfiler.Start();
             CampaignMapReadyOrchestrator.OnCampaignTick(dt);
+            TickCostProfiler.Stop("CampaignMapReadyOrchestrator.OnCampaignTick", tickCostStartedAt);
 
             if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted)
             {
                 return;
             }
 
-            if (LaunchPathInference.AreAutonomousDriversBlocked(
-                    CampaignMapReadyOrchestrator.ImmediateHooksCompleted,
-                    CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow))
+            tickCostStartedAt = TickCostProfiler.Start();
+            var autonomousDriversBlocked = LaunchPathInference.AreAutonomousDriversBlocked(
+                CampaignMapReadyOrchestrator.ImmediateHooksCompleted,
+                CampaignMapReadyOrchestrator.IsPostMapReadyStabilizationWindow);
+            TickCostProfiler.Stop("LaunchPathInference.AreAutonomousDriversBlocked", tickCostStartedAt);
+
+            if (autonomousDriversBlocked)
             {
                 LogDriverBlockedOnce();
                 return;
@@ -108,11 +117,29 @@ namespace BlacksmithGuild.Behaviors
 
             RuntimeTrace.Run("CampaignTick", "AutonomousDrivers", () =>
             {
+                var segmentStartedAt = TickCostProfiler.Start();
+                CampaignRuntimeGovernor.OnCampaignTick();
+                TickCostProfiler.Stop("CampaignRuntimeGovernor.OnCampaignTick", segmentStartedAt);
+
+                segmentStartedAt = TickCostProfiler.Start();
                 TreasuryDeltaWatchService.ProcessPendingSnapshot();
+                TickCostProfiler.Stop("TreasuryDeltaWatchService.ProcessPendingSnapshot", segmentStartedAt);
+
+                segmentStartedAt = TickCostProfiler.Start();
                 AutoTravelService.OnCampaignTick();
+                TickCostProfiler.Stop("AutoTravelService.OnCampaignTick", segmentStartedAt);
+
+                segmentStartedAt = TickCostProfiler.Start();
                 CohesionExecutionDriver.OnCampaignTick();
+                TickCostProfiler.Stop("CohesionExecutionDriver.OnCampaignTick", segmentStartedAt);
+
+                segmentStartedAt = TickCostProfiler.Start();
                 MapTradeAutonomousService.OnCampaignTick();
+                TickCostProfiler.Stop("MapTradeAutonomousService.OnCampaignTick", segmentStartedAt);
+
+                segmentStartedAt = TickCostProfiler.Start();
                 AutonomousGuildLoopService.OnCampaignTick();
+                TickCostProfiler.Stop("AutonomousGuildLoopService.OnCampaignTick", segmentStartedAt);
             });
         }
 

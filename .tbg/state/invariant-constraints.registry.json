@@ -1,0 +1,86 @@
+{
+  "schema": "TbgInvariantConstraintsRegistry.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "description": "Constraints that apply globally regardless of active skill. Skill-specific conditions live in individual TbgConstraint.v1 objects.",
+  "generatedUtc": "2026-07-13T00:00:00Z",
+  "constraints": [
+    {
+      "id": "constraint:no-destructive-cleanup-without-proof",
+      "appliesWhen": { "always": true },
+      "rule": "Do not use reset, clean, force push, branch deletion, worktree removal, save mutation, or PR closure merely to make the floor look clean.",
+      "authority": "AGENTS.md",
+      "severity": "blocking",
+      "scope": ["contract", "harness", "static test", "build"],
+      "status": "active",
+      "version": 1
+    },
+    {
+      "id": "constraint:no-commit-secrets",
+      "appliesWhen": { "always": true },
+      "rule": "Never commit secrets, saves, personal configuration, scratch evidence, huge logs, crash dumps, or machine-local junk.",
+      "authority": "AGENTS.md",
+      "severity": "blocking",
+      "scope": ["contract", "harness", "static test", "build", "launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    },
+    {
+      "id": "constraint:no-runtime-launch-without-contract",
+      "appliesWhen": {
+        "requestedProofAtLeast": "launcher"
+      },
+      "rule": "No game launch unless the active workflow explicitly grants that authority.",
+      "authority": "AGENTS.md",
+      "severity": "blocking",
+      "scope": ["launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    },
+    {
+      "id": "constraint:runtime-proof-requires-exact-head",
+      "appliesWhen": {
+        "requestedProofAtLeast": "launcher"
+      },
+      "rule": "Runtime-related proof must identify the exact source, built, installed, and loaded assembly heads.",
+      "authority": ".tbg/workflows/state-envelope.contract.json",
+      "severity": "blocking",
+      "scope": ["launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    },
+    {
+      "id": "constraint:proof-levels-do-not-collapse",
+      "appliesWhen": { "always": true },
+      "rule": "Proof levels do not collapse. Do not claim a higher level from a lower one. Every claim must name freshness, exact head, evidence paths, and the highest level actually reached.",
+      "authority": "AGENTS.md",
+      "severity": "blocking",
+      "scope": ["contract", "harness", "static test", "build", "launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    },
+    {
+      "id": "constraint:game-build-change-invalidates-runtime-proof",
+      "appliesWhen": {
+        "requestedProofAtLeast": "launcher"
+      },
+      "rule": "A changed or unknown upstream, installed, or repo-supported Bannerlord build invalidates earlier launcher and runtime proof until exact-head compatibility metadata is current and the runtime chain is recertified.",
+      "authority": ".tbg/workflows/bannerlord-game-compatibility-updater.contract.json",
+      "severity": "blocking",
+      "scope": ["launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    },
+    {
+      "id": "constraint:forge-stop-before-bannerlord-assumption",
+      "appliesWhen": {
+        "requestedProofAtLeast": "launcher"
+      },
+      "rule": "If a command assumes Bannerlord should not be running, use the repo's ForgeStop path first.",
+      "authority": "AGENTS.md",
+      "severity": "blocking",
+      "scope": ["launcher", "command ACK", "behavior observed", "live runtime"],
+      "status": "active",
+      "version": 1
+    }
+  ]
+}

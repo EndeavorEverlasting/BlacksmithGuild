@@ -5,6 +5,7 @@
 **Cert doctrine:** [certification-doctrine.md](docs/certification-doctrine.md)  
 **Handoff:** [post-stage-b-smithing-advisory-handoff.md](docs/checkpoints/post-stage-b-smithing-advisory-handoff.md)  
 **Commands:** [player-command-guide.md](docs/player-command-guide.md)  
+**Narrative schema:** [identity-disposition-schema.md](docs/identity-disposition-schema.md)  
 **Play now (skip certs):** [play-now-cert-triage.md](docs/checkpoints/play-now-cert-triage.md)
 
 ---
@@ -90,6 +91,7 @@ Optional: rerun `RunStageCCharcoalCert.cmd` after actor fix for clean JSON with 
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` only |
-| Remote | ahead of `origin/main` — push when requested |
-| GitHub | stale until push — local is truth |
+| Branch | `main` (HEAD `f90207f`) |
+| Remote | in sync with `origin/main` |
+| Open PRs | #20 (governor activity handoff contract — MERGEABLE, needs compile test) |
+| Recent merges | #99 launcher lifecycle, #97 P21 disposition, #96 visible trade proof, #95 window lifecycle skills |

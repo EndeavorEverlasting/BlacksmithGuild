@@ -1,0 +1,9 @@
+{
+  "response": {
+    "success": true,
+    "up_to_date": true,
+    "version_is_listable": true,
+    "required_version": 12345678,
+    "message": "fixture"
+  }
+}

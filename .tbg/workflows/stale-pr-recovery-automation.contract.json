@@ -1,0 +1,153 @@
+{
+  "id": "stale-pr-recovery-automation",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "stale-pr-recovery-progress-dashboard",
+  "contextBanner": "[TBG | Stale PR Recovery Progress | harness/cleanup | branch: feat/stale-pr-progress-dashboard]",
+  "purpose": "Convert the stale PR recovery manifest into deterministic instructions and maintain an evidence-backed per-PR progress ledger with a generated Markdown completion dashboard, without executing a cherry-pick, closing a PR, deleting a branch, or claiming runtime proof.",
+  "lane": "harness/cleanup/selective-replay-instruction-and-progress",
+  "requiresInactiveRuntime": false,
+  "requiresForgeStopFirst": false,
+  "proofLevel": "static_harness",
+  "validationMode": "offline",
+  "planPath": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
+  "progressLedgerPath": ".tbg/plans/stale-pr-recovery-20260712/progress.json",
+  "progressDashboardPath": "docs/handoff/stale-pr-cherry-pick-progress.md",
+  "resultPath": "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+  "progressResultPath": "artifacts/latest/stale-pr-recovery/stale-pr-recovery.progress.json",
+  "requiredArtifacts": [
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.result.json",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.report.md",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.events.jsonl",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.progress.log",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.handoff.md",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.progress.json",
+    "artifacts/latest/stale-pr-recovery/stale-pr-recovery.progress.md",
+    "docs/handoff/stale-pr-cherry-pick-progress.md"
+  ],
+  "allowedScope": [
+    "read the committed stale PR recovery plan",
+    "select a wave or source PR",
+    "render deterministic instructions",
+    "read and validate the canonical per-PR progress ledger",
+    "update one explicitly selected progress entry through the set action",
+    "require disposition and evidence before a terminal completion status can be recorded",
+    "calculate aggregate complete, in-progress, blocked, and not-started counts",
+    "write the tracked Markdown dashboard and ignored progress result artifacts",
+    "write ignored result, report, event, progress, and handoff artifacts",
+    "block execution when local floor proof is absent",
+    "name exact validators and disposition gates"
+  ],
+  "forbiddenScope": [
+    "execute git cherry-pick",
+    "execute a merge or squash",
+    "close or retarget a pull request",
+    "delete a branch or worktree",
+    "remove evidence",
+    "mark an open replacement pull request as terminal completion",
+    "infer completion from a PR state without a recorded disposition and evidence",
+    "launch Bannerlord",
+    "claim build, behavior, or runtime proof"
+  ],
+  "operatingLoop": [
+    "request",
+    "evidence",
+    "bounded_plan",
+    "action",
+    "artifacts",
+    "validation",
+    "report",
+    "next_decision"
+  ],
+  "syntacticEnglish": {
+    "schema": "TbgSyntacticEnglishInstruction.v1",
+    "requiredFields": [
+      "sequence",
+      "stage",
+      "subject",
+      "verb",
+      "object",
+      "condition",
+      "evidence",
+      "command",
+      "sentence"
+    ],
+    "rules": [
+      "Every sentence names the acting subject.",
+      "Every sentence contains one explicit action verb.",
+      "Every conditional sentence states the condition before the terminal decision.",
+      "Every command sentence names the evidence that the command must produce.",
+      "Every blocked state names one exact next command or one exact owner decision.",
+      "The English report and JSON result describe the same instruction objects.",
+      "The progress Markdown and progress JSON describe the same per-PR states and aggregate counts.",
+      "Raw JSON is never the primary human report."
+    ]
+  },
+  "progressGate": {
+    "sourceOfTruth": ".tbg/plans/stale-pr-recovery-20260712/progress.json",
+    "terminalCompleteStatuses": [
+      "replayed_and_merged",
+      "superseded_recorded",
+      "rejected_recorded",
+      "historical_retained"
+    ],
+    "nonTerminalStatuses": [
+      "not_started",
+      "replacement_pr_open",
+      "replay_in_progress",
+      "validation_pending",
+      "disposition_pending",
+      "blocked_dependency",
+      "blocked_runtime_proof"
+    ],
+    "terminalRequirements": [
+      "a non-empty disposition",
+      "one or more evidence references",
+      "a next action or explicit no-further-work statement"
+    ],
+    "completeRule": "Every planned source PR has one terminal completion status."
+  },
+  "localFloorGate": {
+    "requiredBeforeReplay": true,
+    "unverifiedVerdict": "BLOCKED",
+    "unverifiedTerminalState": "BLOCKED_local_floor_unverified",
+    "requiredEvidence": [
+      "current branch",
+      "current HEAD",
+      "short status",
+      "conflicted paths",
+      "in-progress Git operation",
+      "worktree list",
+      "branch upstream state",
+      "repo hygiene report"
+    ]
+  },
+  "doneGate": {
+    "requires": [
+      "the plan parses",
+      "the contract parses",
+      "the progress ledger parses",
+      "the progress ledger contains exactly the same source PRs as the plan",
+      "every operating-loop stage is rendered",
+      "every instruction is a complete sentence",
+      "the JSON and English instruction artifacts contain the same instruction count",
+      "the progress JSON and Markdown contain matching aggregate state",
+      "terminal dispositions fail closed without evidence",
+      "an open replacement PR remains non-terminal",
+      "all planned entries must be terminal before the dashboard reports COMPLETE",
+      "no generated command uses a destructive forbidden operation",
+      "a non-floor wave blocks without local floor proof",
+      "a verified-floor fixture produces a bounded ready decision",
+      "the validators pass in CI"
+    ]
+  },
+  "terminalStates": [
+    "READY_local_floor_collection",
+    "READY_bounded_recovery_instruction",
+    "BLOCKED_local_floor_unverified",
+    "BLOCKED_wave_dependency",
+    "BLOCKED_source_pr_not_in_plan",
+    "INCOMPLETE_stale_pr_recovery_work_remaining",
+    "COMPLETE_all_stale_pr_dispositions_recorded"
+  ]
+}

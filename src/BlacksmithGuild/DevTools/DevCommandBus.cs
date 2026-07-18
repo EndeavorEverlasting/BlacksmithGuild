@@ -1,5 +1,7 @@
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
+using BlacksmithGuild.Food;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
@@ -10,6 +12,7 @@ using BlacksmithGuild.Treasury;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
 
 namespace BlacksmithGuild.DevTools
@@ -203,6 +206,7 @@ namespace BlacksmithGuild.DevTools
                 commandName == ForgeRecommendationService.ProbeForgeRecipesCommand ||
                 commandName == SmithingAuditService.ProbeSmithingAuditCommand ||
                 commandName == SmithingAuditService.ProbeSmithingRefineApiCommand ||
+                commandName == FoodAdvisoryService.AnalyzeFoodCommand ||
                 commandName == MarketIntelligenceService.MarketSnapshotNowCommand ||
                 commandName == HorseMarketRecommendationService.AnalyzeHorseMarketCommand ||
                 commandName == HorseMarketRecommendationService.ShowHorseMarketIntelCommand ||
@@ -218,6 +222,18 @@ namespace BlacksmithGuild.DevTools
                 commandName == MapTradeAutonomousService.ShowMapTradeRouteStatusCommand ||
                 commandName == MapTradeAutonomousService.AnalyzeTacticalConvergenceCommand ||
                 commandName == MapTradeAutonomousService.ShowTacticalConvergenceCommand ||
+                commandName == CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand ||
+                commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
+                commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
+                commandName == CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand ||
+                commandName == CampaignRuntimeRegent.ShowRuntimeRegentStateCommand ||
+                commandName == CampaignRouteCouncil.ConveneRouteCouncilCommand ||
+                commandName == CampaignRouteCouncil.ShowRouteCouncilCommand ||
+                commandName == HorseMarketAtlasService.ScanHorseAtlasCommand ||
+                commandName == HorseMarketAtlasService.ShowHorseAtlasCommand ||
+                commandName == HorseMarketAtlasService.RankHorseDestinationsCommand ||
+                commandName == HerdLedgerService.AnalyzeHerdLedgerCommand ||
+                commandName == HerdLedgerService.ShowHerdLedgerCommand ||
                 commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand ||
                 commandName == ClanContextService.AnalyzeClanContextCommand ||
                 commandName == ClanContextService.ShowClanContextCommand ||
@@ -384,6 +400,11 @@ namespace BlacksmithGuild.DevTools
                 return AutoTravelService.LastFailReason ?? "auto-travel failed";
             }
 
+            if (commandName == FoodAdvisoryService.AnalyzeFoodCommand)
+            {
+                return FoodAdvisoryService.LastFailReason ?? "food advisory failed";
+            }
+
             if (commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand)
             {
                 return TavernHeroRecruitmentService.LastFailReason
@@ -418,6 +439,18 @@ namespace BlacksmithGuild.DevTools
                 return AssistiveTownToTownProbeService.LastFailReason ?? "assistive town-trade probe failed";
             }
 
+            if (commandName == DevSaveService.SaveDevStartSaveNowCommand)
+            {
+                return DevSaveService.LastFailReason ?? "dev save failed";
+            }
+
+            if (commandName == CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand ||
+                commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
+                commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
+                commandName == CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand)
+            {
+                return "campaign governor command failed";
+            }
             if (commandName == AssistiveLeaveTownTravelService.Command)
             {
                 return AssistiveLeaveTownTravelService.LastFailReason ?? "assistive leave-town travel failed";
@@ -436,6 +469,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
                 || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == DevSaveService.SaveDevStartSaveNowCommand
                 || commandName == AutoTravelService.AutoTravelToRecommendedCommand
                 || commandName == AutoTravelService.AutoTravelChoice1Command
                 || commandName == AutoTravelService.AutoTravelChoice2Command
@@ -459,6 +493,7 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CharacterProgressionTestScenarios.AddSmithingFocusCommand
                 || commandName == CharacterProgressionTestScenarios.AddEnduranceAttributeCommand
                 || commandName == AutoCharacterBuildService.ApplyAutoCharacterBuildCommand
+                || commandName == DevSaveService.SaveDevStartSaveNowCommand
                 || commandName == SmithingSafeActionService.RunSmithingSafeActionNowCommand
                 || commandName == AutoTravelService.AutoTravelToRecommendedCommand
                 || commandName == AutoTravelService.AutoTravelChoice1Command
@@ -489,6 +524,8 @@ namespace BlacksmithGuild.DevTools
                     return TimeDevTools.AdvanceOneDay() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case DevCommandRegistry.ToggleFastForwardCommand:
                     return TimeDevTools.ToggleFastForward() ? DevCommandResult.Success : DevCommandResult.Failed;
+                case DevCommandRegistry.ResumeCampaignClockCommand:
+                    return TimeDevTools.ResumeCampaignClock() ? DevCommandResult.Success : DevCommandResult.Failed;
                 case EconomyTestScenarios.RichPlayerEconomyTestName:
                     return EconomyTestScenarios.RunRichPlayerEconomyTest();
                 case CharacterProgressionTestScenarios.RichSmithingProgressionTestName:
@@ -549,6 +586,10 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case AutoCharacterBuildService.ApplyAutoCharacterBuildCommand:
                     return AutoCharacterBuildService.TryApplyFromCommand();
+                case DevSaveService.SaveDevStartSaveNowCommand:
+                    return DevSaveService.SaveDevStartNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand:
                     return AutoCharacterBuildService.ShowProfiles();
                 case AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand:
@@ -569,6 +610,10 @@ namespace BlacksmithGuild.DevTools
                     return AutoCharacterBuildService.SetSelectedProfileById("ShadowTrader");
                 case MarketIntelligenceService.MarketSnapshotNowCommand:
                     return MarketIntelligenceService.RunScanNow(MarketIntelligenceService.MarketSnapshotNowCommand)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case FoodAdvisoryService.AnalyzeFoodCommand:
+                    return FoodAdvisoryService.RunAnalyzeNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case HorseMarketRecommendationService.AnalyzeHorseMarketCommand:
@@ -622,6 +667,51 @@ namespace BlacksmithGuild.DevTools
                     return CharacterBuildVariantService.SelectBestNow();
                 case CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand:
                     return CharacterBuildVariantService.RunVisibleReplayNow();
+                case CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand:
+                    return CampaignRuntimeGovernor.RunCycleNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand:
+                    return CampaignRuntimeGovernor.ShowLastDecision()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand:
+                    return CampaignRuntimeGovernor.PauseAutomation("command")
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand:
+                    return CampaignRuntimeGovernor.ResumeAutomation("command")
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRuntimeRegent.ShowRuntimeRegentStateCommand:
+                    return CampaignRuntimeRegent.ShowNow()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRouteCouncil.ConveneRouteCouncilCommand:
+                    return CampaignRouteCouncil.Convene(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case CampaignRouteCouncil.ShowRouteCouncilCommand:
+                    return CampaignRouteCouncil.ShowLast()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HorseMarketAtlasService.ScanHorseAtlasCommand:
+                case HorseMarketAtlasService.RankHorseDestinationsCommand:
+                    return HorseMarketAtlasService.RunScanNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HorseMarketAtlasService.ShowHorseAtlasCommand:
+                    return HorseMarketAtlasService.ShowLastReport()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HerdLedgerService.AnalyzeHerdLedgerCommand:
+                    return HerdLedgerService.RunAnalyzeNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case HerdLedgerService.ShowHerdLedgerCommand:
+                    return HerdLedgerService.ShowLast()
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand:
                     return CharacterBuildVariantService.DumpSnapshotNow();
                 case AutoTravelService.ShowAutoTravelChoicesCommand:
@@ -835,7 +925,7 @@ namespace BlacksmithGuild.DevTools
             InGameNotice.Info("F7 Status | F8 Commands");
             InGameNotice.Info("F9 Daily tick | F10 Fast-forward | F11 Gold test");
             InGameNotice.Info("Ctrl+Alt+M Market intel | Ctrl+Alt+R Rank forge | Ctrl+Alt+G Guild loop");
-            InGameNotice.Info("Inbox: RunSmithingRestPlanNow | RunBlacksmithAutomationNow | ShowCharacterDoctrine");
+            InGameNotice.Info("Inbox: AnalyzeFood | RunSmithingRestPlanNow | RunBlacksmithAutomationNow | ShowCharacterDoctrine");
             InGameNotice.Info("Travel: ShowAutoTravelChoices, AutoTravelChoice1-5, AutoTravel:<town>");
             InGameNotice.Info("Tavern: AnalyzeTavernHeroes, NavigateToSettlementTavernNow, RecruitTavernHeroVisibleNow");
             InGameNotice.Info("Messages appear in lower-left feed. Logs contain full detail.");

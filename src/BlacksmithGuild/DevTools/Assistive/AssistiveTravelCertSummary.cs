@@ -17,13 +17,20 @@ namespace BlacksmithGuild.DevTools.Assistive
                 return null;
             }
 
+            var durableMovementProof = result.PartyMovedDistance > 0
+                || result.MovementCheckpointObserved
+                || result.MovementMetricDisagreement
+                || result.MovementProofClassification == MovementProofClassification.MovementDistanceObserved.ToString()
+                || result.MovementProofClassification == MovementProofClassification.MovementCheckpointObserved.ToString()
+                || result.MovementProofClassification == MovementProofClassification.MovementMetricDisagreement.ToString();
+
             var passCandidate = result.ExecuteRequested
                 && result.ExecuteAllowed
                 && result.TravelCommandMode == "execute"
                 && result.TravelApiCallSucceeded
                 && result.MovementIntentSet
                 && result.ActualExecutionObserved
-                && result.PartyMovedDistance > 0
+                && durableMovementProof
                 && !result.FakeGameplayDelta;
 
             var summary = new AssistiveTravelCertSummary

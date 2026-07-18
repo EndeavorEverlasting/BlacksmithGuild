@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.ClanIntel;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
+using BlacksmithGuild.DevTools.QuickStart;
+using BlacksmithGuild.Food;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.HorseMarket;
@@ -18,6 +21,7 @@ namespace BlacksmithGuild.DevTools
         public const string ListScenariosCommand = "ListScenarios";
         public const string AdvanceOneDayCommand = "AdvanceOneDay";
         public const string ToggleFastForwardCommand = "ToggleFastForward";
+        public const string ResumeCampaignClockCommand = "ResumeCampaignClock";
         public const string ShowForgeStatusCommand = "ShowForgeStatus";
 
         private static readonly HashSet<string> RegisteredCommands =
@@ -27,6 +31,7 @@ namespace BlacksmithGuild.DevTools
                 ListScenariosCommand,
                 AdvanceOneDayCommand,
                 ToggleFastForwardCommand,
+                ResumeCampaignClockCommand,
                 ShowForgeStatusCommand,
                 CharacterProgressionTestScenarios.RichSmithingProgressionTestName,
                 CharacterProgressionTestScenarios.AddSmithingXpCommand,
@@ -51,6 +56,7 @@ namespace BlacksmithGuild.DevTools
                 GuildLoopService.RunGuildLoopNowCommand,
                 CharacterDoctrineService.ShowCharacterDoctrineCommand,
                 AutoCharacterBuildService.ApplyAutoCharacterBuildCommand,
+                DevSaveService.SaveDevStartSaveNowCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfilesCommand,
                 AutoCharacterBuildService.ShowAutoCharacterBuildProfileCommand,
                 AutoCharacterBuildService.SetAutoCharacterBuildForgeQuartermasterWarlordCommand,
@@ -65,6 +71,19 @@ namespace BlacksmithGuild.DevTools
                 CharacterBuildVariantService.SelectCharacterBuildBestNowCommand,
                 CharacterBuildVariantService.RunCharacterVisibleReplayNowCommand,
                 CharacterBuildVariantService.DumpCharacterBuildSnapshotNowCommand,
+                FoodAdvisoryService.AnalyzeFoodCommand,
+                CampaignRuntimeGovernor.RunCampaignGovernorCycleNowCommand,
+                CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand,
+                CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand,
+                CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand,
+                CampaignRuntimeRegent.ShowRuntimeRegentStateCommand,
+                CampaignRouteCouncil.ConveneRouteCouncilCommand,
+                CampaignRouteCouncil.ShowRouteCouncilCommand,
+                HorseMarketAtlasService.ScanHorseAtlasCommand,
+                HorseMarketAtlasService.ShowHorseAtlasCommand,
+                HorseMarketAtlasService.RankHorseDestinationsCommand,
+                HerdLedgerService.AnalyzeHerdLedgerCommand,
+                HerdLedgerService.ShowHerdLedgerCommand,
                 MarketIntelligenceService.MarketSnapshotNowCommand,
                 HorseMarketRecommendationService.AnalyzeHorseMarketCommand,
                 HorseMarketRecommendationService.ShowHorseMarketIntelCommand,

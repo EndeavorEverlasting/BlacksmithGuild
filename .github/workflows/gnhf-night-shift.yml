@@ -1,0 +1,50 @@
+name: GNHF Night Shift
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/workflows/gnhf-night-shift.contract.json'
+      - 'prompts/gnhf/**'
+      - 'scripts/tbg/Test-TbgGnhfNightShift.ps1'
+      - '.github/workflows/gnhf-night-shift.yml'
+  push:
+    paths:
+      - '.tbg/workflows/gnhf-night-shift.contract.json'
+      - 'prompts/gnhf/**'
+      - 'scripts/tbg/Test-TbgGnhfNightShift.ps1'
+      - '.github/workflows/gnhf-night-shift.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-core:
+    name: PowerShell Core night-shift contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse JSON and validate contract
+        shell: pwsh
+        run: |
+          Get-Content -LiteralPath '.tbg/workflows/gnhf-night-shift.contract.json' -Raw | ConvertFrom-Json | Out-Null
+          ./scripts/tbg/Test-TbgGnhfNightShift.ps1
+      - name: Check repository diff hygiene
+        shell: bash
+        run: git diff --check
+
+  windows-powershell-51:
+    name: Windows PowerShell 5.1 night-shift contract
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate night-shift contract and PowerShell encoding
+        shell: powershell
+        run: |
+          .\scripts\tbg\Test-TbgGnhfNightShift.ps1
+          .\scripts\test-powershell-utf8-bom-contract.ps1
+      - name: Verify clean checkout
+        shell: powershell
+        run: |
+          $dirty = @(git status --porcelain=v1)
+          if ($dirty.Count -gt 0) { throw "Validation changed the checkout: $($dirty -join '; ')" }

@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "updatedBy": "surface-ownership-governance",
+  "normalActionTimeoutSec": 30,
+  "repeatThreshold": 2,
+  "movementDoctrine": {
+    "partyMovedDistanceZeroIsSoleNoMovementProof": false,
+    "movementShouldUseDiscreteCheckpointEvidence": true,
+    "acceptedEvidence": [
+      "position_delta",
+      "destination_or_proximity_delta",
+      "nearest_settlement_change",
+      "campaign_time_advance_with_route_intent",
+      "explicit_movement_checkpoint",
+      "positive_party_moved_distance"
+    ],
+    "routeIntentIsMovementProof": false,
+    "attachReadinessIsGameplayProof": false
+  },
+  "surfaceGroups": [
+    {
+      "surfaceGroup": "outside_town",
+      "owner": "OutsideTownGovernor",
+      "stableGapOwner": "outside_town_movement",
+      "nextPatchLane": "Agent B - Runtime / Movement truth with Agent C runner observation support",
+      "surfaces": [
+        "campaign_map",
+        "map_paused",
+        "traveling",
+        "outside_settlement",
+        "approaching_settlement",
+        "route_intent_active"
+      ],
+      "owns": [
+        "current_map_position",
+        "nearest_settlement_context",
+        "travel_target_resolution",
+        "route_intent",
+        "campaign_clock_recovery_on_map",
+        "movement_observation",
+        "enter_settlement_transition",
+        "outside_town_stable_gap_classification"
+      ],
+      "doesNotOwn": [
+        "smithing",
+        "market_trade_execution",
+        "tavern_scan",
+        "settlement_work_loop",
+        "launcher_navigation"
+      ],
+      "handoffInputs": [
+        "Status.json recursiveBranchState",
+        "BlacksmithGuild_RuntimeRegent.json",
+        "BlacksmithGuild_CampaignGovernorDecision.json",
+        "BlacksmithGuild_RouteCouncil.json",
+        "BlacksmithGuild_AssistiveTravelExecution.json",
+        "BlacksmithGuild_MovementProof.json"
+      ],
+      "proofRequirements": [
+        "engine_target_source_classified",
+        "travel_command_acknowledged_before_movement_claim",
+        "movement_checkpoint_or_discrete_delta_before_visible_movement_pass"
+      ],
+      "stableGapExamples": [
+        "route_ack_no_motion_proof",
+        "movement_metric_disagreement",
+        "outside_town_target_missing",
+        "foreground_loss_after_route_ack_prevents_observation"
+      ]
+    },
+    {
+      "surfaceGroup": "inside_town",
+      "owner": "SettlementGovernor",
+      "stableGapOwner": "inside_town_settlement_work",
+      "nextPatchLane": "Agent B - Runtime / Settlement work truth with Agent C command harness support",
+      "surfaces": [
+        "settlement_menu",
+        "town_menu",
+        "smithy",
+        "market",
+        "tavern",
+        "arena",
+        "settlement_interior"
+      ],
+      "owns": [
+        "current_town_identity",
+        "smithing_evaluation",
+        "safe_refine_or_smithing_action",
+        "market_scan",
+        "bounded_trade_action",
+        "tavern_scan",
+        "companion_or_recruit_inspection",
+        "rest_wait_decision",
+        "leave_town_decision",
+        "next_travel_preparation",
+        "inside_town_stable_gap_classification"
+      ],
+      "doesNotOwn": [
+        "campaign_map_route_movement",
+        "route_movement_proof",
+        "launcher_navigation",
+        "process_attach"
+      ],
+      "handoffInputs": [
+        "Status.json gameplaySurface",
+        "BlacksmithGuild_SmithingAudit.json",
+        "BlacksmithGuild_MarketIntel.json",
+        "BlacksmithGuild_ForgeRecommendations.json",
+        "BlacksmithGuild_CampaignGovernorDecision.json"
+      ],
+      "proofRequirements": [
+        "settlement_identity_resolved",
+        "action_preconditions_recorded",
+        "material_inventory_gold_stamina_delta_when_mutating",
+        "leave_town_or_next_destination_reason_when_done"
+      ],
+      "stableGapExamples": [
+        "smithing_preconditions_missing",
+        "market_action_unavailable",
+        "town_work_loop_no_action_selected",
+        "leave_town_decision_missing"
+      ]
+    },
+    {
+      "surfaceGroup": "interruption_recovery",
+      "owner": "RuntimeRegentAndRunner",
+      "stableGapOwner": "interruption_recovery",
+      "nextPatchLane": "Agent C - Runner foreground/operator policy with Agent B regent truth support",
+      "surfaces": [
+        "foreground_lost",
+        "escape_menu",
+        "operator_stop",
+        "ctrl_c",
+        "forge_stop_sentinel",
+        "paused_campaign_map"
+      ],
+      "owns": [
+        "operator_interruption_classification",
+        "foreground_loss_classification",
+        "escape_menu_classification",
+        "safe_campaign_clock_resume_when_not_operator_interrupted",
+        "local_stop_summary",
+        "operator_state_handoff"
+      ],
+      "doesNotOwn": [
+        "travel_destination_selection",
+        "town_work_selection",
+        "movement_proof_after_observation_delegation"
+      ],
+      "handoffInputs": [
+        "BlacksmithGuild_RuntimeRegent.json",
+        ".local/operator-stop/forge-stop-requested.json",
+        "state-snapshots.jsonl",
+        "safety-decisions.jsonl"
+      ],
+      "proofRequirements": [
+        "operator_interruption_reason_classified",
+        "foreground_loss_seconds_recorded",
+        "stop_summary_written"
+      ],
+      "stableGapExamples": [
+        "operator_interruption_foreground_lost",
+        "operator_stop_forge_stop",
+        "operator_stop_ctrl_c",
+        "escape_menu_unconsumed"
+      ]
+    },
+    {
+      "surfaceGroup": "launcher_attach",
+      "owner": "ForgeLauncherHarness",
+      "stableGapOwner": "launcher_attach",
+      "nextPatchLane": "Agent C - External runner / launcher / lifecycle",
+      "surfaces": [
+        "launcher_open",
+        "play_continue_selection",
+        "loading",
+        "crash_reporter",
+        "safe_mode_prompt",
+        "module_mismatch_prompt",
+        "attach_wait"
+      ],
+      "owns": [
+        "build_deploy_path",
+        "launcher_navigation",
+        "continue_or_play_selection",
+        "attach_readiness",
+        "process_cleanup",
+        "launch_evidence"
+      ],
+      "doesNotOwn": [
+        "campaign_map_decision",
+        "town_work_decision",
+        "movement_proof"
+      ],
+      "handoffInputs": [
+        "BlacksmithGuild_Launch.log",
+        "launch-selection.json",
+        "chosen-launch-window.json",
+        "window-delta-candidates.json",
+        "session-manifest.json"
+      ],
+      "proofRequirements": [
+        "launcher_action_classified",
+        "attach_ready_before_gameplay_claim",
+        "safe_cleanup_on_blocked_launch"
+      ],
+      "stableGapExamples": [
+        "launcher_failed",
+        "active_nav_lock_owner",
+        "attach_timeout",
+        "process_disappeared_before_attach"
+      ]
+    },
+    {
+      "surfaceGroup": "evidence_staleness",
+      "owner": "HarnessVerifier",
+      "stableGapOwner": "evidence_staleness",
+      "nextPatchLane": "Agent D - Evidence / docs / verifier lane",
+      "surfaces": [
+        "missing_status_json",
+        "heartbeat_stale",
+        "missing_summary",
+        "evidence_directory_missing",
+        "runtime_evidence_mismatch"
+      ],
+      "owns": [
+        "freshness_rules",
+        "summary_generation",
+        "local_handoff_paths",
+        "ignored_generated_evidence_policy",
+        "validation_wrapper"
+      ],
+      "doesNotOwn": [
+        "gameplay_decisions",
+        "movement_api",
+        "settlement_action_api"
+      ],
+      "handoffInputs": [
+        "reboot-summary.json",
+        "stable-gap-context.json",
+        "stable-gap-handoff.md",
+        "assist-loop-summary.json",
+        "campaign-loop-summary.json"
+      ],
+      "proofRequirements": [
+        "latest_evidence_path_recorded",
+        "freshness_classified",
+        "missing_artifact_classified"
+      ],
+      "stableGapExamples": [
+        "runner_evidence_missing",
+        "heartbeat_stale",
+        "summary_missing",
+        "generated_handoff_missing"
+      ]
+    }
+  ],
+  "handoffs": [
+    {
+      "contractId": "handoff.outside_to_inside",
+      "fromSurfaceGroup": "outside_town",
+      "toSurfaceGroup": "inside_town",
+      "trigger": "settlement_menu_or_town_surface_observed_after_route_or_enter_command",
+      "requiredFields": [
+        "currentTown",
+        "currentSettlementId",
+        "gameplaySurface",
+        "enterSettlementReason"
+      ],
+      "failureClass": "outside_to_inside_handoff_missing"
+    },
+    {
+      "contractId": "handoff.inside_to_outside",
+      "fromSurfaceGroup": "inside_town",
+      "toSurfaceGroup": "outside_town",
+      "trigger": "town_work_complete_or_blocked_with_leave_town_decision",
+      "requiredFields": [
+        "currentTown",
+        "leaveTownReason",
+        "nextDestinationCandidate"
+      ],
+      "failureClass": "inside_to_outside_handoff_missing"
+    },
+    {
+      "contractId": "stable_gap.surface_owner_routing",
+      "fromSurfaceGroup": "any",
+      "toSurfaceGroup": "evidence_staleness",
+      "trigger": "same_normalized_context_repeats_at_threshold",
+      "requiredFields": [
+        "surfaceGroup",
+        "surfaceOwner",
+        "stableGapOwner",
+        "nextPatchLane"
+      ],
+      "failureClass": "stable_gap_owner_unclassified"
+    },
+    {
+      "contractId": "movement.discrete_checkpoint_proof",
+      "fromSurfaceGroup": "outside_town",
+      "toSurfaceGroup": "outside_town",
+      "trigger": "route_intent_active_after_command_ack",
+      "requiredFields": [
+        "movementIntentSet",
+        "travelClockRunning",
+        "movementProofClassification",
+        "movementCheckpointObserved"
+      ],
+      "failureClass": "movement_proof_missing"
+    }
+  ]
+}

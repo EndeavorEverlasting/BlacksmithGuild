@@ -1,0 +1,100 @@
+{
+  "schema": "TbgStalePrRecoveryPlan.v1",
+  "snapshotDate": "2026-07-12",
+  "repository": "EndeavorEverlasting/BlacksmithGuild",
+  "planningBranch": "docs/stale-pr-cherry-pick-sprint-20260712",
+  "safeBase": {
+    "ref": "main",
+    "sha": "590d08de32ec4a39970f2fc54f676e55ec7198bb"
+  },
+  "lane": "coordinator/cleanup/selective-replay",
+  "forbidden": [
+    "feature implementation",
+    "runtime claims from stale artifacts",
+    "blind merge/squash",
+    "stale heads as general bases",
+    "destructive PR/branch/worktree/evidence cleanup"
+  ],
+  "activeExcluded": [
+    {
+      "pr": 43,
+      "headSha": "2fd964ac679b4eb0e7403f6948bf4cf96ae7b484",
+      "reason": "active route/harness foundation; 110 ahead and 21 behind main at the inspected snapshot"
+    },
+    {
+      "pr": 52,
+      "headSha": "2bb70775c65c3595c9d966fce8d86ae389eb727e",
+      "basePr": 43,
+      "reason": "bounded repair owned by PR #43; never replay whole head to main"
+    }
+  ],
+  "localProof": {
+    "status": "unverified",
+    "commands": [
+      "git fetch origin --prune",
+      "git status --short",
+      "git branch --show-current",
+      "git log --oneline --decorate -8",
+      "git worktree list --porcelain",
+      "gh pr list --state open --limit 50",
+      ".\\ForgeRepoHygiene.cmd -NoGitHub -FailOnBlocked"
+    ]
+  },
+  "commentHarvest": {
+    "8": [
+      "gate cannot return success without execution/evidence",
+      "parent bisect fails when any child fails",
+      "-SkipLaunch cannot be a silent self-contained default",
+      "dot-sourced logger preserves caller error mode",
+      "mutex timeout prevents write",
+      "grep verifier covers root wrappers",
+      "docs and scripts agree on entrypoint"
+    ],
+    "20": [
+      "runner owns evidence paths",
+      "mission branch preserves HorseAcquisition",
+      "rich blocked detail is retained",
+      "terminal reason is the actual outcome",
+      "cycle identifiers are unique"
+    ]
+  },
+  "waves": [
+    {"id": "0", "targets": [], "name": "prove_local_floor"},
+    {"id": "A", "targets": [9, 34], "name": "preserve_and_supersede_history", "parallelWith": ["B"]},
+    {"id": "B", "targets": [2], "name": "small_independent_replay", "parallelWith": ["A"]},
+    {"id": "C", "targets": [8], "name": "f7_comment_and_test_salvage"},
+    {"id": "D1", "targets": [28, 29, 30, 31], "name": "feedback_harness_reconciliation"},
+    {"id": "D2", "targets": [32, 33], "name": "guardrail_tool_reconciliation"},
+    {"id": "D3", "targets": [35], "name": "focused_route_utility_reconciliation", "blockedBy": [43, 52]},
+    {"id": "E", "targets": [20, 24, 38], "name": "focused_current_main_reconstruction"},
+    {"id": "F", "targets": [5, 6], "name": "runtime_economic_reconstruction", "blockedBy": [43, 52]}
+  ],
+  "entries": [
+    {"pr": 2, "headSha": "61090349037c89d4bcbc1c0e3fd4a3651333e7e6", "base": "main", "class": "replay_candidate", "risk": "medium", "strategy": "selective_path_replay", "usefulShas": ["61090349037c89d4bcbc1c0e3fd4a3651333e7e6"], "validators": ["git diff --check", "dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug"], "gate": "Replacement PR merged or explicit rejection recorded; source PR linked before close."},
+    {"pr": 5, "headSha": "9ec17ac3fc4bbc6acc4f1f1d472b9e878a91f247", "base": "main", "class": "needs_runtime_proof", "risk": "high", "strategy": "reimplement_contract_first", "usefulShas": ["aeb785af541637c4c416ce07ad3b727adbed5c03", "1ede90fe49efccfa7d6080830f0501ac2dafd5c8"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-economic-loop-cert-contract.ps1", "fresh exact-head live sell-delta proof"], "gate": "PR #43/#52 maintained runtime lineage settled; current-head implementation and fresh proof exist."},
+    {"pr": 6, "headSha": "2b5b7e104d1ac095cef9db738e0b56beec939643", "base": "feat/006c-4-sell-loop", "class": "blocked_dependency", "risk": "high", "strategy": "replay_after_pr5_reconstruction", "usefulShas": ["6124fd9e11f7c8687f21c3c47e25744599fc4c89"], "validators": ["fresh exact-head travel, arrival, sell-entry, and Manual-cleanup proof"], "gate": "PR #5 value classified and current route implementation owns the second leg."},
+    {"pr": 8, "headSha": "d8a0e0e209846c230e129bb82f288978d8a757aa", "base": "fix/f7-gate-stability", "class": "superseded_with_comment_value", "risk": "high", "strategy": "comment_and_test_replay_only", "usefulShas": ["11f357d00c81b24193bb331825cc9dd044257010", "bc0d033dc8d013f205cfb432001b84f38132e3f5", "d8a0e0e209846c230e129bb82f288978d8a757aa"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-f7-runner-contract.ps1", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-log-grep-patterns.ps1"], "gate": "Every unresolved review lesson mapped to current code/test/rejection; historical evidence remains reachable."},
+    {"pr": 9, "headSha": "ef0c95ca4f541cca579efe81d039559c1724fb8c", "base": "main", "class": "historical_evidence", "risk": "medium", "strategy": "preserve_and_supersede", "usefulShas": ["ef0c95ca4f541cca579efe81d039559c1724fb8c"], "validators": ["all retained JSON manifests parse", "no latest/current PASS pointer targets PR #9 evidence"], "gate": "Evidence inventory and maintained replacement lineage linked from PR #9."},
+    {"pr": 20, "headSha": "2839b37e0ff6cd9eb24d649a5b6d17fb14c738b0", "base": "main", "class": "reconstruct_model_and_tests", "risk": "high", "strategy": "model_test_and_comment_replay", "usefulShas": ["6f5d9c1c9faa50c4720f74171634cf7fb2a3f2e2", "56fcb4a826169a3e73b2acd65060fde3964afae6", "fa99160ae8cbead1b531881292698af3d9889493", "2839b37e0ff6cd9eb24d649a5b6d17fb14c738b0"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-campaign-activity-handoff-contract.ps1", "dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Debug"], "gate": "Current model/tests enforce runner evidence ownership, correct branch routing, unique cycles, and truthful terminal reasons."},
+    {"pr": 24, "headSha": "e3c0b14ee3918c87f3e28824ac08a80e673a3bec", "base": "main", "class": "partial_replacement", "risk": "high", "strategy": "reconcile_helpers_only", "usefulShas": ["f5dfe2baa77a344a72d0e09469cce21276b37a9d", "8db4c5468c27301dfdde292697f478b472a1f748", "20ad7561e692a3cb027b57ebbb9a30d8ea3198b7", "26318f0f5e9cce3a984f8a1eeff88f14b410cc54", "d1ab1e3775621cd35245baaa8fb40004baa0b22d", "74788d79ddc7b196d16213e4a783c44fb6b625bc", "c0d44036f14ddb1f8f22a8dcfbf2ca1afca51974", "e3c0b14ee3918c87f3e28824ac08a80e673a3bec"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-engine-toggle-authority-contract.ps1", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-operator-control-surface.ps1"], "gate": "Each wrapper/helper marked keep, superseded, or reject after PR #43/#52 lineage is settled."},
+    {"pr": 28, "headSha": "1655925e5124c3e0b7a3567766cf3dd216da8eda", "base": "main", "class": "field_level_replay", "risk": "medium", "strategy": "map_into_current_harness", "usefulShas": ["3782e4408e337b0e39977dad2429e799da4500c3", "888260b3a68ad7e625d1786a074d4050cda1b5a1", "01b7044f75a1a78d55197af7ebd7bddfbf7418d5", "1655925e5124c3e0b7a3567766cf3dd216da8eda"], "validators": ["Harness Policy Reports", "targeted feedback contract verifier"], "gate": "Child PR #29-#35 value classified and every manifest field replayed or rejected."},
+    {"pr": 29, "headSha": "c8bab9873bfb5d6abe041b09040752dc2ff6f169", "base": "agent-feedback-harness", "class": "field_level_replay", "risk": "medium", "strategy": "adapt_writer_to_current_context", "usefulShas": ["f070ba98c7e620d3beadb4fd5346d8433e0b48f4", "c8bab9873bfb5d6abe041b09040752dc2ff6f169"], "validators": ["Harness Policy Reports", "negative tests against JSON-shaped English output"], "gate": "Writer behavior ported behind current effective-context schema or rejected."},
+    {"pr": 30, "headSha": "b6f126b24f296bb01afeec455204d29a3a53b088", "base": "agent-feedback-writer", "class": "field_level_replay", "risk": "medium", "strategy": "port_pure_planner", "usefulShas": ["7734763f6836d2f21373cfe3810ae7e961eed865", "c3f451ca626cc1b63b25e06d8cfaa1898903089d", "b6f126b24f296bb01afeec455204d29a3a53b088"], "validators": ["fixture replay through current harness result schema"], "gate": "Planner inputs/outputs mapped to current schemas."},
+    {"pr": 31, "headSha": "c4a6c93e90bab382f3bbc58bf2d0b21623e59745", "base": "agent-feedback-remediation-planner", "class": "field_level_replay", "risk": "high", "strategy": "trigger_map_only", "usefulShas": ["d1ae3344f20b1891ebe792d34491337c31a6ca1e", "fa790f8638d7a3e14282424a902cc6d72b8aa84f", "f2027b99f70503aa15d5791ba4d1229e15addd08", "c4a6c93e90bab382f3bbc58bf2d0b21623e59745"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/harness/Test-TbgDoneGate.ps1", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/harness/Test-TbgEnglishRenderer.ps1"], "gate": "Fields mapped to current hook-result and policy-reporting schemas."},
+    {"pr": 32, "headSha": "d004aead5b482005bf03e77e8b181a11680b6f46", "base": "agent-feedback-stop-hook", "class": "field_level_replay", "risk": "medium", "strategy": "merge_fields_into_current_guardrails", "usefulShas": ["1c1ea7834d7b2b363f8e2745b0c665038eeceb14", "c49b01714bef3a0b5bfe99b15d4c2d21f21de255", "7d1f9b36acc3e8fb92d25922d3e392be4408a28b", "95bd6e8d1efcdd97d647dc7694d3b190bcc0bc9f", "1d1a148712477e6d9cfd13b2bdfa12bdd1f9514a", "d004aead5b482005bf03e77e8b181a11680b6f46"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/harness/Test-TbgFileSafety.ps1", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/harness/Test-TbgDoneGate.ps1"], "gate": "PR #33/#35 children classified and fields replayed or rejected."},
+    {"pr": 33, "headSha": "340602946dee8eab4b4defd1e37e2be3a5569090", "base": "agent-default-guardrail-map", "class": "tool_replay_candidate", "risk": "medium", "strategy": "replay_pure_tools_with_adapters", "usefulShas": ["eb77d765def89a03690e564c997e12d4799c96db", "ee6efef68a813bad946060cafa4ff1529761fa99", "01b16a117ad4865fb81f7489cd6c0884cb0132e2", "340602946dee8eab4b4defd1e37e2be3a5569090"], "validators": ["fixture tests prove stubs cannot yield PASS", "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-powershell-utf8-bom-contract.ps1"], "gate": "Each tool has current-schema tests or rejection rationale."},
+    {"pr": 34, "headSha": "63610beefdda0beef269ee4f3f8665cc04e0be5a", "base": "agent-default-guardrail-implementation", "class": "superseded_map", "risk": "low", "strategy": "preserve_timeless_rules_only", "usefulShas": ["b59fb09b482cb0d460e29ac07f9cad37a6ffa5da", "caeeb79c714958e6954897bc1ce2c81733069224", "192e8d88b440e703d20402909acdec0d26099223"], "validators": ["current worktree map generated from git worktree list --porcelain"], "gate": "PR #34 links maintained current map and records timeless rules retained."},
+    {"pr": 35, "headSha": "4b291a96b2763988d6c4a37feabe473cd88978b3", "base": "agent-default-guardrail-map", "class": "partial_replacement", "risk": "high", "strategy": "salvage_detection_and_ownership_only", "usefulShas": ["91e50ae69c73243cfe250daf2497c217f8ce3ec6", "0197d1dba117c1113dfac25a37ad8b2de35d2bf7", "fda2c25e23a0f2b5e838f5ff7f39f69d94908e12", "f739e8be02ed2f0cc2a2933a07a41160486ef190", "2fd9a1938b09b5da759efc6639695ec4e56bd87e", "4b291a96b2763988d6c4a37feabe473cd88978b3"], "validators": ["agent-run exact-head proof without required human focus", "Manual-mode cleanup verified"], "gate": "PR #43/#52 unattended proof lineage settled and optional focus utility ported or rejected."},
+    {"pr": 38, "headSha": "e618349b7575dc6379cb7a8b378df6ec5be4d282", "base": "docs/agent-workflow-contracts", "class": "reconstruct_unique_guardrails", "risk": "high", "strategy": "reconstruct_from_current_main", "usefulShas": ["6c330045a65c8aad1fcbd3dfebfff212d3e6fee0", "934ce95bb8ab0aac164c9c9ea9177e31f0f05749", "962c0ab8c3c7b4f62741f0931b809f26ff4eb578", "4436cd21f74e4d6621e2359adcfeee2f9fa61064", "58bf7b74b56b31d9b2a5b2288429ef5fcb86738b", "d043f969035c8f91544856870436de908eb6ecb5", "0d32d65d034fb818a877a710c39f76b070327b46", "5ab693b97f9245ef6d596609089eae09530d0433", "5529b76a918b523a9df05d58c5239213aadf666f", "e618349b7575dc6379cb7a8b378df6ec5be4d282"], "validators": ["powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeGuardrail.ps1 -Intent static-review", "Harness Policy Reports"], "gate": "Every unique guardrail mapped to current replacement or rejection; retention explicit."}
+  ],
+  "closeOrder": [[9, 34], [8, 35, 33, 32, 31, 30, 29, 28], [38, 24, 20, 2], [6, 5]],
+  "doneGate": [
+    "source PR/comments classified",
+    "selected delta replayed from current main or blocker recorded",
+    "provenance retained",
+    "targeted validation and git diff --check pass or exact skip recorded",
+    "stale evidence stays historical",
+    "old PR disposition recorded before close/cleanup"
+  ],
+  "proofLevel": "contract_and_remote_metadata_proof_only"
+}

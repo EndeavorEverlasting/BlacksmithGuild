@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/continuum-capability-packet.schema.json",
+  "title": "BlacksmithGuild to Continuum capability packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "generatedUtc",
+    "producer",
+    "consumer",
+    "relationship",
+    "contract",
+    "standalone",
+    "capabilities",
+    "migrationRules"
+  ],
+  "properties": {
+    "schema": {
+      "const": "TbgContinuumCapabilityPacket.v1"
+    },
+    "generatedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "const": "EndeavorEverlasting/BlacksmithGuild"
+    },
+    "consumer": {
+      "const": "EndeavorEverlasting/Continuum"
+    },
+    "relationship": {
+      "const": "optional_development_accelerator"
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "schemaVersion", "status"],
+      "properties": {
+        "id": {"const": "continuum-interoperability"},
+        "schemaVersion": {"const": "TbgWorkflowContract.v1"},
+        "status": {"enum": ["experiment_active", "delegation_active", "extraction_active"]}
+      }
+    },
+    "standalone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build", "runtime", "repositoryValidation"],
+      "properties": {
+        "build": {"const": true},
+        "runtime": {"const": true},
+        "repositoryValidation": {"const": true}
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "classification",
+          "maturity",
+          "summary",
+          "sourcePaths",
+          "genericCore",
+          "blacksmithAdapter",
+          "proofLevel"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "classification": {
+            "enum": ["candidate_for_continuum", "blacksmith_adapter", "domain_locked"]
+          },
+          "maturity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourcePaths": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "genericCore": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "blacksmithAdapter": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
+          "proofLevel": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "classification": {"const": "candidate_for_continuum"}
+              },
+              "required": ["classification"]
+            },
+            "then": {
+              "properties": {
+                "genericCore": {"minItems": 1}
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "classification": {"const": "domain_locked"}
+              },
+              "required": ["classification"]
+            },
+            "then": {
+              "properties": {
+                "genericCore": {"maxItems": 0}
+              }
+            }
+          }
+        ]
+      }
+    },
+    "migrationRules": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    }
+  }
+}

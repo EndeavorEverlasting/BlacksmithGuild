@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/observation.schema.json",
+  "title": "TBG Observation v1",
+  "description": "A raw thing that was observed, without promoting it into a conclusion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "subject",
+    "predicate",
+    "value",
+    "observedUtc",
+    "source",
+    "freshness"
+  ],
+  "properties": {
+    "schema": {
+      "const": "TbgObservation.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^observation:[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "predicate": {
+      "type": "string",
+      "minLength": 1
+    },
+    "value": {},
+    "observedUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locator": {
+          "type": "string"
+        }
+      }
+    },
+    "freshness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class"],
+      "properties": {
+        "class": {
+          "enum": ["current_at_observation", "head_bound", "time_bound", "permanent"]
+        },
+        "expiresAfterSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "validForHead": {
+          "type": "string"
+        }
+      }
+    },
+    "supersedes": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
