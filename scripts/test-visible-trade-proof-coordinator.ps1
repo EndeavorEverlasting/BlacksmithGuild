@@ -12,6 +12,7 @@ $ErrorActionPreference = 'Stop'
 
 . (Join-Path $RepoRoot 'scripts\visible-trade-proof-event-schema.ps1')
 . (Join-Path $RepoRoot 'scripts\visible-trade-proof-helpers.ps1')
+. (Join-Path $RepoRoot 'scripts\visible-trade-lifecycle-gate.ps1')
 . (Join-Path $RepoRoot 'scripts\visible-trade-proof-capsule.ps1')
 
 function Assert-True {
@@ -168,7 +169,7 @@ Test-Case 'Event schema increments sequence' {
 
 Test-Case 'All required stages are listed' {
     $stages = Get-TbgVisibleTradeProofStageList
-    $required = @('preflight','workspace','validation','runtime-stop','build','install','hash-verification','evidence-start','launch','campaign-ready','route-request','command-ack','time-advance','movement','checkpoint','arrival','buy','travel','sell','runtime-stop-final','capsule','remote-publish','closeout')
+    $required = @('preflight','workspace','validation','runtime-stop','build','install','hash-verification','evidence-start','launch','window-lifecycle','modal-transition','launcher-handoff','campaign-ready','route-request','command-ack','time-advance','movement','checkpoint','arrival','buy','travel','sell','runtime-stop-final','capsule','remote-publish','closeout')
     foreach ($s in $required) {
         Assert-True ($stages -contains $s) "Stage '$s' must be in stage list"
     }
@@ -176,7 +177,7 @@ Test-Case 'All required stages are listed' {
 
 Test-Case 'All terminal states are defined' {
     $states = Get-TbgVisibleTradeProofTerminalStates
-    $required = @('PASS_VISIBLE_TRADE_PROVEN','BLOCKED_CAMPAIGN_NOT_READY','BLOCKED_RUNTIME_ENVIRONMENT_UNAVAILABLE','FAIL_SOURCE_BUILD_INSTALL_MISMATCH','FAIL_STATIC_VALIDATION','FAIL_LAUNCHER_HANDOFF','FAIL_COMMAND_NOT_ACKNOWLEDGED','FAIL_CAMPAIGN_TIME_NOT_ADVANCING','FAIL_NO_POSITION_DELTA','FAIL_ROUTE_CHECKPOINT_NOT_OBSERVED','FAIL_ARRIVAL_NOT_OBSERVED','FAIL_BUY_DELTA_NOT_OBSERVED','FAIL_SELL_DELTA_NOT_OBSERVED','FAIL_EVIDENCE_INCOMPLETE','FAIL_REMOTE_EVIDENCE_NOT_PUBLISHED','CANCELLED_SAFE_STOP')
+    $required = @('PASS_VISIBLE_TRADE_PROVEN','BLOCKED_CAMPAIGN_NOT_READY','BLOCKED_RUNTIME_ENVIRONMENT_UNAVAILABLE','BLOCKED_WINDOW_LIFECYCLE_REQUIRED_ARTIFACTS_MISSING','BLOCKED_WINDOW_LIFECYCLE_STALE','BLOCKED_WINDOW_LIFECYCLE_QUARANTINED','FAIL_SOURCE_BUILD_INSTALL_MISMATCH','FAIL_STATIC_VALIDATION','FAIL_WINDOW_LIFECYCLE_GATE','FAIL_MODAL_TRANSITION_NOT_OBSERVED','FAIL_LAUNCHER_HANDOFF','FAIL_COMMAND_NOT_ACKNOWLEDGED','FAIL_CAMPAIGN_TIME_NOT_ADVANCING','FAIL_NO_POSITION_DELTA','FAIL_ROUTE_CHECKPOINT_NOT_OBSERVED','FAIL_ARRIVAL_NOT_OBSERVED','FAIL_BUY_DELTA_NOT_OBSERVED','FAIL_SELL_DELTA_NOT_OBSERVED','FAIL_EVIDENCE_INCOMPLETE','FAIL_REMOTE_EVIDENCE_NOT_PUBLISHED','CANCELLED_SAFE_STOP')
     foreach ($s in $required) {
         Assert-True ($states -contains $s) "Terminal state '$s' must be defined"
     }
@@ -213,7 +214,7 @@ Write-Host '--- Event Ordering Tests ---' -ForegroundColor Yellow
 
 Test-Case 'Coordinator writes all required lifecycle stages' {
     $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\run-visible-trade-proof.ps1') -Raw
-    $required = @('preflight', 'workspace', 'validation', 'runtime-stop', 'build', 'install', 'hash-verification', 'evidence-start', 'launch', 'campaign-ready', 'route-request', 'command-ack', 'time-advance', 'movement', 'checkpoint', 'arrival', 'buy', 'runtime-stop-final', 'capsule', 'remote-publish', 'closeout')
+    $required = @('preflight', 'workspace', 'validation', 'runtime-stop', 'build', 'install', 'hash-verification', 'evidence-start', 'launch', 'window-lifecycle', 'modal-transition', 'launcher-handoff', 'campaign-ready', 'route-request', 'command-ack', 'time-advance', 'movement', 'checkpoint', 'arrival', 'buy', 'runtime-stop-final', 'capsule', 'remote-publish', 'closeout')
     foreach ($stage in $required) {
         $idx = $text.IndexOf("-Stage $stage ", [System.StringComparison]::Ordinal)
         Assert-True ($idx -ge 0) "Stage '$stage' must appear in the coordinator"
@@ -416,7 +417,7 @@ Test-Case 'Proof levels are ordered correctly' {
     $idx = $text.IndexOf('proofLevels = @(', [System.StringComparison]::Ordinal)
     Assert-True ($idx -ge 0) 'proofLevels array must exist'
     $levelStr = $text.Substring($idx, 300)
-    Assert-True ($levelStr.Contains('none') -and $levelStr.Contains('contract') -and $levelStr.Contains('launcher') -and $levelStr.Contains('buy') -and $levelStr.Contains('sell') -and $levelStr.Contains('complete')) 'All proof levels must be in order'
+    Assert-True ($levelStr.Contains('none') -and $levelStr.Contains('contract') -and $levelStr.Contains('launcher') -and $levelStr.Contains('lifecycle') -and $levelStr.Contains('modal-transition') -and $levelStr.Contains('launcher-handoff') -and $levelStr.Contains('buy') -and $levelStr.Contains('sell') -and $levelStr.Contains('complete')) 'All proof levels must be in order'
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -542,6 +543,122 @@ Test-Case 'Coordinator uses current-main helper surface' {
     Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'scripts\tbg\Test-TbgSkillRouting.ps1'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $RepoRoot 'scripts\visible-trade-cycle-contract.ps1'))) 'PR #43 cycle-contract must not be re-imported'
     Assert-True (-not (Test-Path -LiteralPath (Join-Path $RepoRoot 'scripts\visible-trade-launch-boundary.ps1'))) 'PR #43 launch-boundary must not be re-imported'
+}
+
+# ═══════════════════════════════════════════════════════════════
+# 17. Window-lifecycle gate
+# ═══════════════════════════════════════════════════════════════
+Write-Host ''
+Write-Host '--- Window Lifecycle Gate Tests ---' -ForegroundColor Yellow
+
+Test-Case 'Coordinator consumes the lifecycle gate helper' {
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'visible-trade-lifecycle-gate.ps1'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'Resolve-TbgVisibleTradeLifecycleGate'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'Action dispatch alone is not modal acceptance.'
+}
+
+Test-Case 'Lifecycle gate fails closed when artifacts are missing' {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('vtp-lifecycle-missing-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
+    try {
+        $gate = Resolve-TbgVisibleTradeLifecycleGate -RepoRoot $tempRoot -RequireFresh
+        Assert-Equal 'missing' ([string]$gate.gate) 'gate'
+        Assert-Equal 'BLOCKED_WINDOW_LIFECYCLE_REQUIRED_ARTIFACTS_MISSING' ([string]$gate.terminalState) 'terminal'
+        Assert-Equal 'none' ([string]$gate.actionAuthority) 'action authority'
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'Lifecycle gate rejects action-dispatch without successor' {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('vtp-lifecycle-dispatch-' + [guid]::NewGuid().ToString('N'))
+    $lifecycleRoot = Join-Path $tempRoot 'artifacts\latest\window-lifecycle'
+    New-Item -ItemType Directory -Force -Path $lifecycleRoot | Out-Null
+    try {
+        [pscustomobject]@{
+            schema = 'TbgWindowLifecycleMaterializedState.v1'
+            windows = @([pscustomobject]@{ windowKey = 'pid:1|hwnd:1'; phase = 'action_dispatched'; identityId = 'bannerlord.dependency-version-caution'; proofLevel = 'action_dispatch' })
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $lifecycleRoot 'window-lifecycle.state.json') -Encoding UTF8
+        [pscustomobject]@{
+            schema = 'TbgWindowLifecycleRuntimeResult.v1'
+            status = 'ready'
+            proofLevel = 'runtime_adapter_harness'
+            proofCeiling = 'launcher_lifecycle_harness'
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $lifecycleRoot 'window-lifecycle.result.json') -Encoding UTF8
+        $gate = Resolve-TbgVisibleTradeLifecycleGate -RepoRoot $tempRoot -RequireFresh
+        Assert-Equal 'action_dispatch_only' ([string]$gate.gate) 'gate'
+        Assert-Equal 'FAIL_MODAL_TRANSITION_NOT_OBSERVED' ([string]$gate.terminalState) 'terminal'
+        Assert-True (-not [bool]$gate.modalTransitionObserved) 'modal transition must be false'
+        Assert-equal 'none' ([string]$gate.actionAuthority) 'action authority'
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'Lifecycle gate accepts host handoff after modal transition' {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('vtp-lifecycle-host-' + [guid]::NewGuid().ToString('N'))
+    $lifecycleRoot = Join-Path $tempRoot 'artifacts\latest\window-lifecycle'
+    New-Item -ItemType Directory -Force -Path $lifecycleRoot | Out-Null
+    try {
+        [pscustomobject]@{
+            schema = 'TbgWindowLifecycleMaterializedState.v1'
+            windows = @(
+                [pscustomobject]@{ windowKey = 'pid:1|hwnd:1'; phase = 'disappeared'; identityId = 'bannerlord.dependency-version-caution'; proofLevel = 'action_dispatch' },
+                [pscustomobject]@{ windowKey = 'pid:2|hwnd:2'; phase = 'terminal_observation'; identityId = 'bannerlord.singleplayer-host'; proofLevel = 'terminal_observation' }
+            )
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $lifecycleRoot 'window-lifecycle.state.json') -Encoding UTF8
+        [pscustomobject]@{
+            schema = 'TbgWindowLifecycleRuntimeResult.v1'
+            status = 'ready'
+            proofLevel = 'runtime_adapter_harness'
+            proofCeiling = 'launcher_lifecycle_harness'
+            correlationId = 'corr-host'
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $lifecycleRoot 'window-lifecycle.result.json') -Encoding UTF8
+        $gate = Resolve-TbgVisibleTradeLifecycleGate -RepoRoot $tempRoot -RequireFresh
+        Assert-Equal 'host_handoff' ([string]$gate.gate) 'gate'
+        Assert-True ([bool]$gate.hostHandoffObserved) 'host handoff'
+        Assert-True ([bool]$gate.modalTransitionObserved) 'modal transition'
+        Assert-Equal 'none' ([string]$gate.actionAuthority) 'action authority'
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'Lifecycle gate quarantines unknown windows without click authority' {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('vtp-lifecycle-quarantine-' + [guid]::NewGuid().ToString('N'))
+    $lifecycleRoot = Join-Path $tempRoot 'artifacts\latest\window-lifecycle'
+    New-Item -ItemType Directory -Force -Path $lifecycleRoot | Out-Null
+    try {
+        [pscustomobject]@{
+            schema = 'TbgWindowLifecycleMaterializedState.v1'
+            windows = @([pscustomobject]@{ windowKey = 'pid:9|hwnd:9'; phase = 'unknown_quarantined'; identityId = 'unknown'; proofLevel = 'quarantine' })
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $lifecycleRoot 'window-lifecycle.state.json') -Encoding UTF8
+        [pscustomobject]@{
+            schema = 'TbgWindowLifecycleRuntimeResult.v1'
+            status = 'ready'
+            proofLevel = 'runtime_adapter_harness'
+            proofCeiling = 'launcher_lifecycle_harness'
+        } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $lifecycleRoot 'window-lifecycle.result.json') -Encoding UTF8
+        $gate = Resolve-TbgVisibleTradeLifecycleGate -RepoRoot $tempRoot -RequireFresh
+        Assert-Equal 'quarantined' ([string]$gate.gate) 'gate'
+        Assert-Equal 'BLOCKED_WINDOW_LIFECYCLE_QUARANTINED' ([string]$gate.terminalState) 'terminal'
+        Assert-Equal 'none' ([string]$gate.actionAuthority) 'action authority'
+    }
+    finally {
+        Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Test-Case 'Fixture includes lifecycle gate cases' {
+    $fixturePath = Join-Path $RepoRoot '.tbg\harness\fixtures\visible-trade-proof.fixtures.json'
+    $fixtures = Get-Content -LiteralPath $fixturePath -Raw | ConvertFrom-Json
+    foreach ($id in @('lifecycle_dispatch_without_successor_fails', 'lifecycle_host_handoff_without_campaign_is_not_complete', 'lifecycle_quarantine_blocks')) {
+        $case = @($fixtures.cases) | Where-Object { $_.id -eq $id }
+        Assert-True ($null -ne $case) "Fixture case '$id' must exist"
+    }
 }
 
 Write-Host ''
