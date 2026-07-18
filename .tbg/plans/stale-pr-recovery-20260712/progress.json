@@ -63,17 +63,16 @@
     {
       "wave": "C",
       "pr": 8,
-      "status": "replacement_pr_open",
+      "status": "replayed_and_merged",
       "replacementPr": 87,
       "blockedBy": [],
-      "disposition": "PR #8 unique current-main delta is the forge -VerifyLogPatterns entrypoint plus preservation matrix; remaining F7 runner/helpers/docs already live on main or are explicitly rejected stubs/June evidence.",
+      "disposition": "PR #8 useful current-main value preserved via PR #87 (forge -VerifyLogPatterns + preservation matrix). Remaining F7 helpers/docs already on main; stub runners and June evidence rejected as current proof. Source head d8a0e0e retained as provenance.",
       "evidence": [
-        "PR #87",
-        "commit 8183766",
-        "docs/handoff/pr8-preservation-matrix-20260718.md",
+        "PR #87 merged commit dafe6b557ced1b13afe6c154db6071f252ff6da4",
+        "preservation matrix docs/handoff/pr8-preservation-matrix-20260718.md",
         "source PR #8 head d8a0e0e"
       ],
-      "nextAction": "Merge PR #87 after exact-head CI, then close PR #8 with the terminal preservation comment."
+      "nextAction": "No further replay work remains for PR #8."
     },
     {
       "wave": "A",
