@@ -224,6 +224,42 @@ try {
     $state = Get-Content -LiteralPath (Join-Path $stateRoot 'state.json') -Raw | ConvertFrom-Json
     Assert-Tbg -Condition (-not [bool]$state.enabled) -Message 'Toggle did not change automatic processing from on to off.'
 
+
+    $missingStatePath = "$lifecycleStatePath.missing"
+    $missingResultPath = "$lifecycleResultPath.missing"
+    Move-Item -LiteralPath $lifecycleStatePath -Destination $missingStatePath
+    Move-Item -LiteralPath $lifecycleResultPath -Destination $missingResultPath
+    try {
+        Remove-Item -LiteralPath $outputRoot -Recurse -Force
+        New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+        $partialLifecycle = Invoke-TbgChild -ScriptPath $scriptPath -Arguments (@('run', '-Mode', 'auto') + $common)
+        Assert-Tbg -Condition ($partialLifecycle.exitCode -eq 0) -Message "Partial lifecycle fixture failed unexpectedly: $($partialLifecycle.output)"
+        $partialLifecyclePacket = Get-Content -LiteralPath (Join-Path $outputRoot 'window-lifecycle-boundary.result.json') -Raw | ConvertFrom-Json
+        Assert-Tbg -Condition ($partialLifecyclePacket.terminalState -eq 'BLOCKED_window_lifecycle_required_artifacts_missing') -Message 'A report-only lifecycle artifact set did not fail closed.'
+        Assert-Tbg -Condition ($partialLifecyclePacket.payload.actionAuthority -eq 'none') -Message 'A partial lifecycle artifact set must never authorize an action.'
+        Assert-Tbg -Condition (@($partialLifecyclePacket.payload.missingRequiredArtifacts) -contains 'window-lifecycle.state.json') -Message 'The missing lifecycle state artifact was not reported.'
+        Assert-Tbg -Condition (@($partialLifecyclePacket.payload.missingRequiredArtifacts) -contains 'window-lifecycle.result.json') -Message 'The missing lifecycle result artifact was not reported.'
+    }
+    finally {
+        Move-Item -LiteralPath $missingStatePath -Destination $lifecycleStatePath -Force
+        Move-Item -LiteralPath $missingResultPath -Destination $lifecycleResultPath -Force
+    }
+
+    $reportItem = Get-Item -LiteralPath $lifecycleReportPath
+    $originalReportWriteUtc = $reportItem.LastWriteTimeUtc
+    try {
+        $reportItem.LastWriteTimeUtc = (Get-Date).ToUniversalTime().AddHours(-25)
+        Remove-Item -LiteralPath $outputRoot -Recurse -Force
+        New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+        $staleReport = Invoke-TbgChild -ScriptPath $scriptPath -Arguments (@('run', '-Mode', 'auto') + $common)
+        Assert-Tbg -Condition ($staleReport.exitCode -eq 0) -Message "Stale lifecycle report fixture failed unexpectedly: $($staleReport.output)"
+        $staleReportPacket = Get-Content -LiteralPath (Join-Path $outputRoot 'window-lifecycle-boundary.result.json') -Raw | ConvertFrom-Json
+        Assert-Tbg -Condition ($staleReportPacket.terminalState -eq 'BLOCKED_window_lifecycle_stale') -Message 'A stale lifecycle report did not make aggregate freshness fail closed.'
+    }
+    finally {
+        (Get-Item -LiteralPath $lifecycleReportPath).LastWriteTimeUtc = $originalReportWriteUtc
+    }
+
     '{ malformed fixture' | Set-Content -LiteralPath $repoHygienePath -Encoding UTF8
     $strict = Invoke-TbgChild -ScriptPath $scriptPath -Arguments (@('run', '-Mode', 'strict') + $common)
     Assert-Tbg -Condition ($strict.exitCode -eq 2) -Message "Strict mode did not fail closed: $($strict.output)"

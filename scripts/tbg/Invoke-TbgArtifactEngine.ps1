@@ -598,6 +598,30 @@ function Invoke-TbgWindowLifecycleBoundary {
         )
     }
 
+
+    $requiredStateFiles = @($files | Where-Object { $_.Name -eq 'window-lifecycle.state.json' })
+    $requiredResultFiles = @($files | Where-Object { $_.Name -eq 'window-lifecycle.result.json' })
+    $missingRequiredArtifacts = New-Object System.Collections.Generic.List[string]
+    if ($requiredStateFiles.Count -eq 0) { $missingRequiredArtifacts.Add('window-lifecycle.state.json') | Out-Null }
+    if ($requiredResultFiles.Count -eq 0) { $missingRequiredArtifacts.Add('window-lifecycle.result.json') | Out-Null }
+    if ($missingRequiredArtifacts.Count -gt 0) {
+        $availableArtifacts = @($files | ForEach-Object { $_.Name })
+        return New-TbgPacket -EngineId $Engine.id -Schema 'TbgWindowLifecycleBoundary.v1' -TerminalState 'BLOCKED_window_lifecycle_required_artifacts_missing' -NextCommand '.\ForgeWindowLifecycle.cmd replay' -Payload ([pscustomobject][ordered]@{
+            artifactFound = $true
+            artifactCount = $files.Count
+            availableArtifacts = $availableArtifacts
+            missingRequiredArtifacts = @($missingRequiredArtifacts.ToArray())
+            parserProofLevel = 'artifact_inspection'
+            freshnessVerified = $false
+            independentlyValidated = $false
+            actionAuthority = 'none'
+        }) -Sentences @(
+            'The window-lifecycle-boundary engine found a partial lifecycle artifact set without every authoritative state and result artifact.',
+            "The missing required lifecycle artifact(s) are: $(@($missingRequiredArtifacts.ToArray()) -join ', ').",
+            "The operator should run '.\ForgeWindowLifecycle.cmd replay' before treating lifecycle routing as fresh."
+        ) -Blocking $true
+    }
+
     $claims = New-Object System.Collections.Generic.List[object]
     $blocking = $false
     $quarantined = $false
@@ -672,6 +696,8 @@ function Invoke-TbgWindowLifecycleBoundary {
     }
 
     foreach ($file in $reportFiles) {
+        $reportFresh = (($now - $file.LastWriteTimeUtc).TotalHours -le $maxAgeHours)
+        if (-not $reportFresh) { $freshnessVerified = $false }
         $claims.Add([pscustomobject][ordered]@{
             path = Get-TbgRelativePath -RepoRoot $RepoRoot -Path $file.FullName
             schema = 'markdown-report'
@@ -679,7 +705,7 @@ function Invoke-TbgWindowLifecycleBoundary {
             proofLevel = ''
             proofCeiling = ''
             candidateClassification = 'report_present'
-            freshnessVerified = (($now - $file.LastWriteTimeUtc).TotalHours -le $maxAgeHours)
+            freshnessVerified = $reportFresh
             independentlyValidated = $false
         }) | Out-Null
     }
