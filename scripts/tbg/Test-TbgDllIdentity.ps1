@@ -37,8 +37,10 @@ if ($installedExists) { $passed++ } else { $failed++ }
 $builtHash = $null; $installedHash = $null; $match = $false; $gameRunning = $false
 
 if ($builtExists -and $installedExists) {
-    $builtHash = (Get-FileHash -LiteralPath $builtPath -Algorithm SHA256).Hash
-    $installedHash = (Get-FileHash -LiteralPath $installedPath -Algorithm SHA256).Hash
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $builtHash = [BitConverter]::ToString($sha.ComputeHash([IO.File]::ReadAllBytes($builtPath))).Replace('-','')
+    $installedHash = [BitConverter]::ToString($sha.ComputeHash([IO.File]::ReadAllBytes($installedPath))).Replace('-','')
+    $sha.Dispose()
     $match = $builtHash -eq $installedHash
     $checks += @{ name = "Built matches installed (sha256)"; passed = $match }
     if ($match) { $passed++ } else { $failed++ }
