@@ -71,6 +71,8 @@ namespace BlacksmithGuild.DevTools
         public static float MapTradeMaxTravelDurationHours = 72f;
         public static float MapTradeMaxRouteDistance = 160f;
         public static int MapTradeSafeGoldReserve = 500;
+
+        public static bool PauseMenuAutoResumeEnabled = true;
         public static int MapTradeMaxGoldSpendPercent = 50;
         public static int MapTradeTargetCapacityBufferPercent = 25;
         public static bool MapTradePreferSmithingInputs = true;
