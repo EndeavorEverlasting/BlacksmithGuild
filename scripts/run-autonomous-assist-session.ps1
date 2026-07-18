@@ -721,13 +721,10 @@ while ((Get-Date) -lt $loopDeadline) {
             } catch { }
         }
         if ($arrivalObserved -and $townEntryObserved -and -not $governorHandoffPresent) {
-            Write-SessionLog 'Arrival/town entry observed; refreshing Governor and requesting AutonomousGuildLoop handoff chain.'
+            # Do NOT call RunAutonomousGuildLoopNow here: StartNow/PauseIfVisible uses Thread.Sleep on the
+            # game tick and can freeze inbox ACK (observed 2026-07-18: lastCommandFinishedAtUtc=null).
+            Write-SessionLog 'Arrival/town entry observed; refreshing Governor only (skipping RunAutonomousGuildLoopNow hang).'
             Invoke-AutonomousAssistEngineHandoffRefresh -BannerlordRoot $bannerlordRoot -TimeoutSec 30 | Out-Null
-            try {
-                Send-ForgeCommand -CommandName RunAutonomousGuildLoopNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
-            } catch {
-                Write-SessionLog "RunAutonomousGuildLoopNow handoff refresh failed: $($_.Exception.Message)"
-            }
         }
 
         $recruitPath = Join-Path $bannerlordRoot 'BlacksmithGuild_TavernHeroRecruitment.json'
@@ -957,7 +954,9 @@ while ((Get-Date) -lt $loopDeadline) {
         surface = $decision.surface; reason = $decision.reason
     })
 
-	if ($travelExecuted -and -not $partyMovementCheckpointEmitted) {
+	# Full-campaign: poll movement proof every cycle (existing MovementMetricDisagreement on disk
+	# must count even when this segment did not re-issue travel).
+	if (($travelExecuted -or $isFullCampaignHandoff) -and -not $partyMovementCheckpointEmitted) {
 		$movementUpdate = Update-AssistTravelMovementCheckpoint -Evidence $evidence `
 			-BannerlordRoot $bannerlordRoot -SessionId $sessionId `
 			-AlreadyEmitted:$partyMovementCheckpointEmitted

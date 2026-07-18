@@ -284,7 +284,10 @@ namespace BlacksmithGuild.DevTools
             }
 
             CanPollHelpHotkeys = IsCampaignMapReady || IsSettlementInteriorReady || IsSettlementMenuReady;
-            CanPollRiskyHotkeys = IsCampaignMapReady && !IsMapMenuOpen;
+            // Settlement town menu is a valid risky-command surface (trade/guild/recruit probes).
+            CanPollRiskyHotkeys = (IsCampaignMapReady && !IsMapMenuOpen)
+                || IsSettlementInteriorReady
+                || IsSettlementMenuReady;
             AssistReadinessEvaluator.ApplyInboxAndAssistFlags();
             CanPollHotkeys = CanPollHelpHotkeys || CanPollRiskyHotkeys;
             UpdateGameplaySurface();

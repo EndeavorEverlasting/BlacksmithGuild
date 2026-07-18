@@ -614,8 +614,11 @@ namespace BlacksmithGuild.GuildLoop
                 return;
             }
 
+            // Never Thread.Sleep on the campaign/application tick — it freezes inbox ACK and Status flush.
             InGameNotice.Info($"TBG GUILD LOOP: {label}...");
-            Thread.Sleep(DevToolsConfig.MapTradeDecisionPauseMs);
+            DebugLogger.Test(
+                $"[TBG GUILD LOOP] visible pause skipped (no Thread.Sleep) label={label} configuredMs={DevToolsConfig.MapTradeDecisionPauseMs}",
+                showInGame: false);
         }
 
         private static string NullableString(string value) =>

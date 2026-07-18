@@ -8,6 +8,8 @@ param(
     [string]$Mode = 'one',
     [switch]$SkipBuild,
     [switch]$AllowFocusSteal,
+    # Short segments often run while Cursor stays focused; default 120s avoids false FAIL.
+    [int]$ForegroundLossStopSec = 120,
     [switch]$DryRun
 )
 
@@ -49,6 +51,7 @@ foreach ($segment in $segmentsToRun) {
         '-StopOnUnsafeState'
     )
     if ($AllowFocusSteal) { $args += '-AllowFocusSteal' }
+    $args += @('-ForegroundLossStopSec', ([string]$ForegroundLossStopSec))
     if ($DryRun) {
         $args += @('-DryRun', '-SkipBuild', '-SkipLaunch')
     } else {

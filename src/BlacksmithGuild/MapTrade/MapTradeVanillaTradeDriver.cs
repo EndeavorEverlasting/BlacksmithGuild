@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -167,22 +168,73 @@ namespace BlacksmithGuild.MapTrade
 
         public static bool RunProbeExecutionNow(string source = ProbeVanillaTradeExecutionNowCommand)
         {
+            // Must always return + write probe JSON so inbox ACK can complete on the game tick.
             GameSessionState.Refresh();
-            var signatures = MapTradeTradeActionReflection.ProbeApplySignatures();
-            var settlement = MobileParty.MainParty?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+            List<string> signatures = new List<string>();
+            Settlement settlement = null;
             MapTradeExecutionResult execution = null;
             string attemptDetail = null;
             var success = false;
 
-            if (settlement != null)
+            try
             {
-                SettlementNavigationHelper.TryEnsureSettlementInterior(out _);
-                var mission = MapTradeMissionSelector.SelectBestMission();
-                if (mission?.ItemId != null
-                    && mission.MissionType != MapTradeMissionType.BuyPackAnimalForCapacityThenTrade)
+                try
                 {
-                    var item = MapTradeTradeActionReflection.ResolveItem(mission.ItemId);
-                    if (item != null && !FoodProtectionPolicy.IsFoodItem(item))
+                    signatures = MapTradeTradeActionReflection.ProbeApplySignatures();
+                }
+                catch (Exception ex)
+                {
+                    attemptDetail = $"ProbeApplySignatures failed: {ex.Message}";
+                }
+
+                settlement = MobileParty.MainParty?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+                if (settlement == null)
+                {
+                    attemptDetail = attemptDetail ?? "party not at settlement — travel required before trade probe";
+                }
+                else
+                {
+                    if (!GameSessionState.IsSettlementInteriorReady)
+                    {
+                        SettlementNavigationHelper.TryEnsureSettlementInterior(out var navDetail);
+                        if (!string.IsNullOrWhiteSpace(navDetail) && attemptDetail == null)
+                        {
+                            attemptDetail = navDetail;
+                        }
+                    }
+
+                    // Prefer a local town roster item so we do not block on market-wide RunScanNow
+                    // / SelectBestMission while already on settlement_menu.
+                    var item = TryPickLocalOrdinaryBuyItem(settlement);
+                    var itemSource = item != null ? "local_settlement_roster" : null;
+                    if (item == null)
+                    {
+                        try
+                        {
+                            var mission = MapTradeMissionSelector.SelectBestMission();
+                            if (mission?.ItemId != null
+                                && mission.MissionType != MapTradeMissionType.BuyPackAnimalForCapacityThenTrade)
+                            {
+                                item = MapTradeTradeActionReflection.ResolveItem(mission.ItemId);
+                                itemSource = "SelectBestMission";
+                                if (item != null && FoodProtectionPolicy.IsFoodItem(item))
+                                {
+                                    attemptDetail = "best mission item is food/pack; ordinary trade probe skipped that item";
+                                    item = null;
+                                }
+                            }
+                            else
+                            {
+                                attemptDetail = attemptDetail ?? "no ordinary mission item available";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            attemptDetail = $"SelectBestMission failed: {ex.Message}";
+                        }
+                    }
+
+                    if (item != null)
                     {
                         success = MapTradeTradeActionReflection.TryExecuteBuy(
                             settlement,
@@ -191,14 +243,101 @@ namespace BlacksmithGuild.MapTrade
                             out execution,
                             out attemptDetail,
                             itemClassification: "Ordinary");
-                    }
-                    else if (item != null)
-                    {
-                        attemptDetail = "best mission item is food/pack; ordinary trade probe skipped that item";
+                        if (!string.IsNullOrWhiteSpace(itemSource) && !string.IsNullOrWhiteSpace(attemptDetail))
+                        {
+                            attemptDetail = $"{attemptDetail} (source={itemSource})";
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                success = false;
+                attemptDetail = $"RunProbeExecutionNow exception: {ex.Message}";
+                DebugLogger.Test($"[TBG MAP TRADE] probe exception: {ex}", showInGame: false);
+            }
 
+            try
+            {
+                WriteOrdinaryProbeArtifact(source, settlement, signatures, success, attemptDetail, execution);
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG MAP TRADE] probe artifact write failed: {ex.Message}", showInGame: false);
+            }
+
+            InGameNotice.Info($"TBG MAP TRADE PROBE: {(success ? "buy delta proven" : attemptDetail ?? "blocked")}");
+            return success;
+        }
+
+        private static ItemObject TryPickLocalOrdinaryBuyItem(Settlement settlement)
+        {
+            try
+            {
+                var roster = settlement?.ItemRoster;
+                if (roster == null)
+                {
+                    return null;
+                }
+
+                foreach (var element in roster)
+                {
+                    var item = element.EquipmentElement.Item;
+                    if (item == null || element.Amount <= 0)
+                    {
+                        continue;
+                    }
+
+                    if (FoodProtectionPolicy.IsFoodItem(item))
+                    {
+                        continue;
+                    }
+
+                    if (item.IsAnimal || item.HorseComponent != null)
+                    {
+                        continue;
+                    }
+
+                    // Prefer cheap trade goods / materials over gear.
+                    if (item.IsTradeGood || item.Type == ItemObject.ItemTypeEnum.Goods)
+                    {
+                        return item;
+                    }
+                }
+
+                foreach (var element in roster)
+                {
+                    var item = element.EquipmentElement.Item;
+                    if (item == null || element.Amount <= 0 || FoodProtectionPolicy.IsFoodItem(item))
+                    {
+                        continue;
+                    }
+
+                    if (item.IsAnimal || item.HorseComponent != null)
+                    {
+                        continue;
+                    }
+
+                    return item;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG MAP TRADE] local item pick failed: {ex.Message}", showInGame: false);
+            }
+
+            return null;
+        }
+
+        private static void WriteOrdinaryProbeArtifact(
+            string source,
+            Settlement settlement,
+            List<string> signatures,
+            bool success,
+            string attemptDetail,
+            MapTradeExecutionResult execution)
+        {
+            signatures = signatures ?? new List<string>();
             var sb = new StringBuilder();
             sb.AppendLine("{");
             sb.AppendLine($"  \"generatedUtc\": \"{DateTime.UtcNow:o}\",");
@@ -223,8 +362,6 @@ namespace BlacksmithGuild.MapTrade
 
             var path = Path.Combine(BasePath.Name, "BlacksmithGuild_MapTradeProbe.json");
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
-            InGameNotice.Info($"TBG MAP TRADE PROBE: {(success ? "buy delta proven" : attemptDetail ?? "blocked")}");
-            return success;
         }
 
         public static bool ProbePackAnimalBuyApi(out string detail)
