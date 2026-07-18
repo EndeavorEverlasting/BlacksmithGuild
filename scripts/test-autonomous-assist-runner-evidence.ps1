@@ -319,10 +319,13 @@ Write-Host 'PASS economic-loop trade-driving decision policy' -ForegroundColor G
 $tradeCountRoot = Join-Path $tmpRoot 'trade-count'
 New-Item -ItemType Directory -Force -Path $tradeCountRoot | Out-Null
 $tcFile = Join-Path $tradeCountRoot 'BlacksmithGuild_TradeIterations.jsonl'
-$staleRow = ([ordered]@{ schemaVersion = 1; iteration = 1; atUtc = (Get-Date).AddHours(-2).ToUniversalTime().ToString('o')
+# Deterministic UTC stamps (fixed offsets from one instant) so ConvertFrom-Json Kind loss cannot flake.
+$cutoffUtc = [datetime]::SpecifyKind([datetime]::ParseExact('2026-07-18T12:00:00.0000000Z', 'o', [Globalization.CultureInfo]::InvariantCulture), [System.DateTimeKind]::Utc)
+$staleAtUtc = $cutoffUtc.AddHours(-2).ToString('o')
+$freshAtUtc = $cutoffUtc.AddMinutes(1).ToString('o')
+$staleRow = ([ordered]@{ schemaVersion = 1; iteration = 1; atUtc = $staleAtUtc
     goldBefore = 1000; goldAfter = 900; goldDelta = -100; inventoryBefore = 0; inventoryAfter = 2; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
-$cutoffUtc = (Get-Date).ToUniversalTime()
-$freshRow = ([ordered]@{ schemaVersion = 1; iteration = 2; atUtc = (Get-Date).AddSeconds(5).ToUniversalTime().ToString('o')
+$freshRow = ([ordered]@{ schemaVersion = 1; iteration = 2; atUtc = $freshAtUtc
     goldBefore = 900; goldAfter = 800; goldDelta = -100; inventoryBefore = 2; inventoryAfter = 4; inventoryDelta = 2; fakeGameplayDelta = $false } | ConvertTo-Json -Compress)
 Set-Content -LiteralPath $tcFile -Value @($staleRow, $freshRow) -Encoding UTF8
 

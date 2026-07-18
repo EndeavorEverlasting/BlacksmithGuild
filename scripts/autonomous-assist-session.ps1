@@ -1012,12 +1012,17 @@ function Get-EconomicLoopProvenTradeCount {
     })
     $proven = @($rows | Where-Object { $_ -and (Test-TradeIterationProven -Iteration $_) })
     if ($SinceUtc) {
+        # ConvertFrom-Json often yields Unspecified-kind wall clocks for *Utc fields. Use ConvertTo-Pr11Utc
+        # (Unspecified => treat as UTC) so local ToUniversalTime() cannot push stale rows into the future.
+        if (-not (Get-Command ConvertTo-Pr11Utc -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
+        }
+        $since = ConvertTo-Pr11Utc -Value $SinceUtc
         $proven = @($proven | Where-Object {
             if (($_.PSObject.Properties.Name -contains 'atUtc') -and -not [string]::IsNullOrWhiteSpace([string]$_.atUtc)) {
-                [datetime]$rowUtc = [datetime]::MinValue
-                if ([datetime]::TryParse([string]$_.atUtc, [Globalization.CultureInfo]::InvariantCulture,
-                        [Globalization.DateTimeStyles]::RoundtripKind, [ref]$rowUtc)) {
-                    return ($rowUtc.ToUniversalTime() -ge $SinceUtc)
+                $rowUtc = ConvertTo-Pr11Utc -Value $_.atUtc
+                if ($null -ne $rowUtc -and $null -ne $since) {
+                    return ($rowUtc -ge $since)
                 }
             }
             # Rows without a parseable timestamp cannot be attributed to this run; exclude them.
