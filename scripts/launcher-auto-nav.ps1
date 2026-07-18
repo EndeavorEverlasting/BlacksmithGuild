@@ -1444,8 +1444,8 @@ public static class UIAHelper
         LogLine(string.Format("NATIVE CRASH CLOSE hwnd=0x{0:X8}", (long)hwnd));
         SetForegroundWindow(hwnd);
         Thread.Sleep(100);
-        SendMessage(hwnd, 0x0111, (IntPtr)7, IntPtr.Zero);   // WM_COMMAND IDNO
-        SendMessage(hwnd, 0x0010, IntPtr.Zero, IntPtr.Zero);  // WM_CLOSE
+        SendMessage(hwnd, 0x0111, 7, 0);   // WM_COMMAND IDNO
+        SendMessage(hwnd, 0x0010, 0, 0);  // WM_CLOSE
         PostMessage(hwnd, 0x0010, IntPtr.Zero, IntPtr.Zero);  // WM_CLOSE
         return true;
     }
@@ -2367,6 +2367,9 @@ public static class UIAHelper
 
     [DllImport("user32.dll")]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, int lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct RECT

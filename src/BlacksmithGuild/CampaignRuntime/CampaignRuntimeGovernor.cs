@@ -247,6 +247,15 @@ namespace BlacksmithGuild.CampaignRuntime
 
             if (decision.CompanionStatus.StartsWith("available", StringComparison.OrdinalIgnoreCase))
             {
+                if (!HorseInventoryMeetsRecruitmentMinimum(decision.HorseStatus))
+                {
+                    AddBlocked(decision, CampaignRuntimePolicy.BranchCompanionOpportunity,
+                        "horse inventory below recruitment minimum (" + CampaignRuntimePolicy.MinHorseSurplusForRecruitment + " surplus required)");
+                    Select(decision, CampaignRuntimePolicy.BranchHorseSpeedUtility,
+                        "horse deficit blocks companion recruitment; acquire mounts first", false, null);
+                    return;
+                }
+
                 Select(decision, CampaignRuntimePolicy.BranchCompanionOpportunity, decision.CompanionStatus, false, null);
                 return;
             }
@@ -419,6 +428,37 @@ namespace BlacksmithGuild.CampaignRuntime
 
             return threatStatus.StartsWith("unknown", StringComparison.OrdinalIgnoreCase)
                 || threatStatus.Equals("high", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool HorseInventoryMeetsRecruitmentMinimum(string horseStatus)
+        {
+            if (string.IsNullOrWhiteSpace(horseStatus))
+            {
+                return false;
+            }
+
+            if (!horseStatus.StartsWith("observed:", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var match = System.Text.RegularExpressions.Regex.Match(
+                horseStatus, @"horseLike=(\d+)");
+            if (!match.Success || !int.TryParse(match.Groups[1].Value, out var horseLike))
+            {
+                return false;
+            }
+
+            var party = MobileParty.MainParty;
+            if (party == null)
+            {
+                return false;
+            }
+
+            var partyMemberCount = party.MemberRoster?.TotalManCount ?? 0;
+            var minimumHorses = partyMemberCount + CampaignRuntimePolicy.MinHorseSurplusForRecruitment;
+
+            return horseLike >= minimumHorses;
         }
 
         private static void Select(
