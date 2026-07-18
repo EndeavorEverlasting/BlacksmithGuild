@@ -36,6 +36,13 @@ $invoke = @{
 }
 if (-not [string]::IsNullOrWhiteSpace($BannerlordRoot)) { $invoke.BannerlordRoot = $BannerlordRoot }
 if (-not [string]::IsNullOrWhiteSpace($AppManifestPath)) { $invoke.AppManifestPath = $AppManifestPath }
+# When Steam UpToDateCheck is unavailable, allow a machine-local fixture under .local/ for launcher gating.
+if ([string]::IsNullOrWhiteSpace($UpstreamFixturePath)) {
+    $localFixture = Join-Path $RepoRoot '.local\steam-uptodate.fixture.json'
+    if (Test-Path -LiteralPath $localFixture -PathType Leaf) {
+        $UpstreamFixturePath = $localFixture
+    }
+}
 if (-not [string]::IsNullOrWhiteSpace($UpstreamFixturePath)) { $invoke.UpstreamFixturePath = $UpstreamFixturePath }
 if (-not [string]::IsNullOrWhiteSpace($BuiltDllPath)) { $invoke.BuiltDllPath = $BuiltDllPath }
 if (-not [string]::IsNullOrWhiteSpace($InstalledDllPath)) { $invoke.InstalledDllPath = $InstalledDllPath }
