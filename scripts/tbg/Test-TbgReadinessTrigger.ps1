@@ -13,6 +13,7 @@ param(
     [string]$RequiredSurface = 'map_surface',
     [ValidateSet('Human','Runner','FreshTestLaunch','UserSession','RunnerCleanup','unknown')]
     [string]$SessionMode = 'unknown',
+    [string]$LaunchId,
     [switch]$PassThru
 )
 
@@ -34,7 +35,7 @@ function Write-Event($msg) {
     $events.Add($entry)
 }
 
-Write-Event "TRIGGER START command=$Command pollMs=$PollMs readyTimeout=${ReadyTimeoutSec}s ackTimeout=${AckTimeoutSec}s sessionMode=$SessionMode"
+Write-Event "TRIGGER START command=$Command pollMs=$PollMs readyTimeout=${ReadyTimeoutSec}s ackTimeout=${AckTimeoutSec}s sessionMode=$SessionMode launchId=$LaunchId"
 
 # Phase 1: wait for campaign map readiness
 Write-Event "PHASE 1: waiting for campaign map readiness..."

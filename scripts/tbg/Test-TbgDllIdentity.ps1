@@ -6,6 +6,7 @@ Fails when the running game may have loaded a stale DLL.
 param(
     [string]$RepoRoot,
     [string]$BannerlordRoot,
+    [string]$LaunchId,
     [switch]$PassThru
 )
 
@@ -76,6 +77,7 @@ $detail = if ($match -and $gameRunning) {
 $result = [pscustomobject]@{
     schema = 'tbg.dll-identity.v1'
     timestamp = [DateTime]::UtcNow.ToString('o')
+    launchId = $LaunchId
     verdict = $verdict
     passed = $passed; failed = $failed; total = $checks.Count
     builtHash = $builtHash; installedHash = $installedHash; match = $match
@@ -85,6 +87,7 @@ $result = [pscustomobject]@{
 }
 
 Write-Host "=== DLL Identity Check ===" -ForegroundColor Cyan
+if ($LaunchId) { Write-Host "Launch: $LaunchId" -ForegroundColor Cyan }
 Write-Host "Verdict: $verdict" -ForegroundColor $(if ($verdict -eq 'PASS') { 'Green' } else { 'Red' })
 Write-Host "Built:    $(if ($builtHash) { $builtHash.Substring(0,16) } else { 'N/A' })..."
 Write-Host "Installed: $(if ($installedHash) { $installedHash.Substring(0,16) } else { 'N/A' })..."

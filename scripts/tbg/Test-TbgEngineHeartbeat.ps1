@@ -6,6 +6,7 @@ A Phase1.log that stopped writing without an engine stop token = crash.
 param(
     [string]$BannerlordRoot,
     [int]$StaleSeconds = 30,
+    [string]$LaunchId,
     [switch]$PassThru
 )
 
@@ -69,6 +70,7 @@ $verdict = if ($failed -eq 0) { 'PASS' } elseif ($failed -eq 1) { 'ATTENTION' } 
 $result = [pscustomobject]@{
     schema = 'tbg.engine-heartbeat.v1'
     timestamp = [DateTime]::UtcNow.ToString('o')
+    launchId = $LaunchId
     verdict = $verdict
     passed = $passed
     failed = $failed
@@ -80,6 +82,7 @@ $result = [pscustomobject]@{
 }
 
 Write-Host "=== Engine Heartbeat ===" -ForegroundColor Cyan
+if ($LaunchId) { Write-Host "Launch: $LaunchId" -ForegroundColor Cyan }
 Write-Host "Verdict: $verdict" -ForegroundColor $(switch ($verdict) { 'PASS' { 'Green' } 'ATTENTION' { 'Yellow' } 'CRASH' { 'Red' } })
 Write-Host "Log age: $($result.logAge)"
 Write-Host "Passed: $passed/$($checks.Count)"
