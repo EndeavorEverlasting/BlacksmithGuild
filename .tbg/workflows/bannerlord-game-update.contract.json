@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "id": "bannerlord-game-update-detection",
+  "sprint": "Bannerlord Game Compatibility Updater",
+  "contextBanner": "[TBG | Game Compatibility Updater | feat/bannerlord-game-compatibility-updater]",
+  "purpose": "Detect, reconcile, assess, gate, and adopt Bannerlord game version changes so that upstream updates cannot silently break the repository.",
+  "allowedScope": [
+    ".tbg/compatibility/**",
+    ".tbg/harness/schemas/game-build-observation.schema.json",
+    ".tbg/harness/schemas/game-compatibility-result.schema.json",
+    ".tbg/workflows/bannerlord-game-update.contract.json",
+    ".tbg/state/use-case-contracts/bannerlord-update-detected.json",
+    "scripts/tbg/*GameUpdate*",
+    "scripts/tbg/*BannerlordUpdate*",
+    "scripts/tbg/Test-TbgBannerlordUpdate.ps1",
+    "ForgeGameUpdate.cmd",
+    "ForgeGameUpdate-Assess.cmd",
+    "ForgeGameUpdate-Status.cmd",
+    "artifacts/latest/game-update/**",
+    ".github/workflows/bannerlord-upstream-watch.yml"
+  ],
+  "forbiddenScope": [
+    "no committing proprietary game DLLs",
+    "no modifying Steam installation files",
+    "no forcing Steam updates",
+    "no silently downgrading Bannerlord",
+    "no blindly rewriting runtime hooks",
+    "no automatically claiming support from version equality",
+    "no automatically claiming runtime compatibility from compilation",
+    "no changing SubModule.xml before acceptance gates pass",
+    "no launching Bannerlord during static CI",
+    "no save mutation",
+    "no destructive Git cleanup",
+    "no runtime claims without fresh evidence"
+  ],
+  "requiredArtifacts": [
+    ".tbg/compatibility/bannerlord-support.json",
+    ".tbg/compatibility/bannerlord-api-baseline.json",
+    ".tbg/harness/schemas/game-build-observation.schema.json",
+    ".tbg/harness/schemas/game-compatibility-result.schema.json"
+  ],
+  "validationCommands": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgBannerlordUpdate.ps1"
+  ],
+  "terminalStates": ["SUPPORTED_VALIDATED", "SUPPORTED_BUILD_ONLY", "UPDATE_AVAILABLE_NOT_INSTALLED", "INSTALLED_UPDATE_UNVALIDATED", "COMPATIBILITY_ASSESSMENT_RUNNING", "COMPATIBILITY_BLOCKED", "COMPATIBILITY_FAILED", "ROLLBACK_RECOMMENDED", "UPSTREAM_VERSION_UNKNOWN", "LOCAL_VERSION_UNKNOWN"],
+  "stateIntegration": {
+    "acceptedEventTypes": [
+      "upstream.game.release.observed",
+      "local.game.install.observed",
+      "local.game.install.changed",
+      "compatibility.assessment.requested",
+      "compatibility.build.completed",
+      "compatibility.api-diff.completed",
+      "compatibility.launcher-proof.completed",
+      "compatibility.runtime-proof.completed",
+      "compatibility.support.adopted",
+      "compatibility.support.rejected"
+    ],
+    "producedEventTypes": [
+      "upstream.game.release.observed",
+      "local.game.install.observed",
+      "local.game.install.changed",
+      "compatibility.assessment.requested",
+      "compatibility.build.completed",
+      "compatibility.api-diff.completed",
+      "compatibility.support.adopted",
+      "compatibility.support.rejected"
+    ],
+    "producedObjectTypes": ["TbgGameBuildObservation.v1", "TbgGameCompatibilityResult.v1"],
+    "requiredCapabilities": [],
+    "providedCapabilities": ["capability:game-compatibility-gating"],
+    "terminalStates": ["SUCCEEDED", "FAILED"],
+    "fallbackProvider": "provider:bannerlord-game-compatibility"
+  },
+  "doneGate": {
+    "allMustPass": [
+      "Local game build can be detected repeatedly and deterministically",
+      "Upstream observation failure does not erase local truth",
+      "Every changed build produces a durable state event",
+      "Every unvalidated change produces an owned work item",
+      "No proprietary game files are committed",
+      "Replay produces the same current compatibility projection"
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema": "TbgUseCaseContract.v1",
+  "id": "bannerlord-update-detected",
+  "purpose": "Handle a detected upstream or local game version change and drive the compatibility assessment loop to completion.",
+  "triggerEvents": [
+    "upstream.game.release.observed",
+    "local.game.install.observed",
+    "local.game.install.changed"
+  ],
+  "ownedWorkItems": ["TbgWorkItem.v1"],
+  "requiredProviders": ["provider:bannerlord-game-compatibility"],
+  "terminalStates": [
+    "SUPPORTED_VALIDATED",
+    "SUPPORTED_BUILD_ONLY",
+    "UPDATE_AVAILABLE_NOT_INSTALLED",
+    "INSTALLED_UPDATE_UNVALIDATED",
+    "COMPATIBILITY_BLOCKED",
+    "COMPATIBILITY_FAILED",
+    "ROLLBACK_RECOMMENDED",
+    "UPSTREAM_VERSION_UNKNOWN",
+    "LOCAL_VERSION_UNKNOWN"
+  ],
+  "forbiddenClaims": [
+    "runtime compatibility from compilation alone",
+    "support from version equality alone",
+    "launcher compatibility without launcher proof",
+    "behavior compatibility without runtime evidence"
+  ],
+  "gates": {
+    "buildGate": {
+      "requiredObservations": ["local.game.install.observed"],
+      "requiredComparison": "installed_and_supported_known",
+      "canProceed": "static_build_may_proceed"
+    },
+    "launcherGate": {
+      "requiredObservations": ["local.game.install.observed", "compatibility.build.completed"],
+      "requiredComparison": "build_test_passed",
+      "canProceed": "launcher_observation_may_proceed"
+    },
+    "runtimeGate": {
+      "requiredObservations": ["compatibility.launcher-proof.completed"],
+      "requiredComparison": "launcher_observed",
+      "canProceed": "runtime_observation_may_proceed"
+    },
+    "adoptionGate": {
+      "requiredArtifacts": ["build_test_pass", "api_diff_clean"],
+      "canProceed": "support_registry_may_update"
+    }
+  }
+}

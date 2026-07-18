@@ -26,7 +26,12 @@
         "action.failed", "capability.gap.detected", "work.item.created",
         "work.item.transitioned", "constraint.violation", "contradiction.detected",
         "reconciler.scan", "event.unrecognized", "event.quarantined",
-        "projection.rebuilt", "registry.drift.detected", "system.generated"
+        "projection.rebuilt", "registry.drift.detected", "system.generated",
+        "upstream.game.release.observed", "local.game.install.observed",
+        "local.game.install.changed", "compatibility.assessment.requested",
+        "compatibility.build.completed", "compatibility.api-diff.completed",
+        "compatibility.launcher-proof.completed", "compatibility.runtime-proof.completed",
+        "compatibility.support.adopted", "compatibility.support.rejected"
       ]
     },
     "source": {

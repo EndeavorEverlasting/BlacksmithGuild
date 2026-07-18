@@ -1,0 +1,38 @@
+{
+  "schema": "TbgBannerlordApiBaseline.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "generatedUtc": "2026-07-13T00:00:00Z",
+  "baselineVersion": "v1.4.6",
+  "apiSurfaces": [
+    {
+      "dllName": "TaleWorlds.MountAndBlade.dll",
+      "publicTypes": [],
+      "publicMethods": [],
+      "notes": "Baseline will be captured on first successful build against v1.4.6."
+    },
+    {
+      "dllName": "TaleWorlds.Library.dll",
+      "publicTypes": [],
+      "publicMethods": [],
+      "notes": "Baseline will be captured on first successful build against v1.4.6."
+    },
+    {
+      "dllName": "TaleWorlds.Core.dll",
+      "publicTypes": [],
+      "publicMethods": [],
+      "notes": "Baseline will be captured on first successful build against v1.4.6."
+    },
+    {
+      "dllName": "SandBox.dll",
+      "publicTypes": [],
+      "publicMethods": [],
+      "notes": "Baseline will be captured on first successful build against v1.4.6."
+    }
+  ],
+  "diffPolicy": {
+    "breakingTypesRemoved": "BLOCK_BUILD",
+    "breakingMethodsRemoved": "BLOCK_BUILD",
+    "newPublicTypes": "WARN",
+    "newPublicMethods": "INFO"
+  }
+}

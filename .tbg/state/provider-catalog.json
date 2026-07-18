@@ -240,6 +240,39 @@
       "commands": [],
       "validators": [],
       "terminalStates": ["SUCCEEDED", "FAILED", "REJECTED"]
+    },
+    {
+      "id": "provider:bannerlord-game-compatibility",
+      "type": "workflow",
+      "displayName": "Bannerlord Game Compatibility",
+      "capabilities": ["capability:game-compatibility-gating", "capability:game-build-detection", "capability:game-api-diff"],
+      "inputSchemas": ["TbgGameBuildObservation.v1"],
+      "outputSchemas": ["TbgGameCompatibilityResult.v1", "TbgWorkItem.v1"],
+      "maxProofLevel": "build",
+      "riskClasses": ["static", "local_read_write"],
+      "authorityRequirements": ["steam_paths", "game_install_path"],
+      "preconditions": [".tbg/compatibility/bannerlord-support.json exists"],
+      "ownedPaths": [
+        ".tbg/compatibility/**",
+        "scripts/tbg/*GameUpdate*",
+        "scripts/tbg/*BannerlordUpdate*",
+        "ForgeGameUpdate.cmd",
+        "ForgeGameUpdate-Assess.cmd",
+        "ForgeGameUpdate-Status.cmd",
+        "artifacts/latest/game-update/**"
+      ],
+      "forbiddenPaths": [
+        "src/**",
+        "Module/**",
+        "docs/evidence/**"
+      ],
+      "commands": [
+        "ForgeGameUpdate.cmd",
+        "ForgeGameUpdate-Assess.cmd",
+        "ForgeGameUpdate-Status.cmd"
+      ],
+      "validators": ["scripts/tbg/Test-TbgBannerlordUpdate.ps1"],
+      "terminalStates": ["SUPPORTED_VALIDATED", "SUPPORTED_BUILD_ONLY", "UPDATE_AVAILABLE_NOT_INSTALLED", "INSTALLED_UPDATE_UNVALIDATED", "COMPATIBILITY_BLOCKED", "COMPATIBILITY_FAILED", "ROLLBACK_RECOMMENDED", "UPSTREAM_VERSION_UNKNOWN", "LOCAL_VERSION_UNKNOWN"]
     }
   ]
 }

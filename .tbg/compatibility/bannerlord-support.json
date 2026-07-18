@@ -1,0 +1,32 @@
+{
+  "schema": "TbgBannerlordSupport.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "updatedUtc": "2026-07-13T00:00:00Z",
+  "supportedVersions": [
+    {
+      "friendlyVersion": "v1.4.6",
+      "buildNumbers": [],
+      "moduleDependentVersions": ["v1.4.6"],
+      "dllFingerprints": [],
+      "minSupportedVersion": true,
+      "maxSupportedVersion": true,
+      "notes": "Primary supported version. SubModule.xml declares v1.4.6 dependencies."
+    }
+  ],
+  "unsupportedVersions": [],
+  "rollbackTarget": {
+    "friendlyVersion": "v1.4.6",
+    "buildNumbers": [],
+    "notes": "No prior supported version to roll back to yet."
+  },
+  "gates": {
+    "requiredForSupported": ["build_test", "submodule_xml_match"],
+    "requiredForRuntimeProof": ["build_test", "api_diff_clean", "launcher_observed", "runtime_observed"],
+    "requiredForAdoption": ["build_test", "submodule_xml_match", "api_diff_clean"]
+  },
+  "watchSchedule": {
+    "upstreamCheckHours": 24,
+    "localCheckOnForge": true,
+    "notifyOnUpdateAvailable": true
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeeverEverlasting/BlacksmithGuild/.tbg/harness/schemas/game-compatibility-result.schema.json",
+  "title": "TBG Game Compatibility Result v1",
+  "description": "The outcome of a compatibility assessment between upstream, installed, and supported game builds.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "resultId", "assessedUtc", "upstreamIdentity",
+    "installedIdentity", "supportedIdentity", "repoSourceCommit",
+    "compatibilityState", "allowedActions", "blockedClaims"
+  ],
+  "properties": {
+    "schema": { "const": "TbgGameCompatibilityResult.v1" },
+    "resultId": { "type": "string", "pattern": "^compat-result-[a-f0-9]+$" },
+    "assessedUtc": { "type": "string", "format": "date-time" },
+    "upstreamIdentity": {
+      "type": ["object", "null"],
+      "description": "Last known upstream game build identity, null if observation failed"
+    },
+    "installedIdentity": {
+      "type": ["object", "null"],
+      "description": "Locally installed game build identity, null if detection failed"
+    },
+    "supportedIdentity": {
+      "type": "object",
+      "description": "Repo-declared supported game build identity"
+    },
+    "repoSourceCommit": { "type": "string", "minLength": 1 },
+    "compatibilityState": {
+      "type": "string",
+      "enum": [
+        "SUPPORTED_VALIDATED",
+        "SUPPORTED_BUILD_ONLY",
+        "UPDATE_AVAILABLE_NOT_INSTALLED",
+        "INSTALLED_UPDATE_UNVALIDATED",
+        "COMPATIBILITY_ASSESSMENT_RUNNING",
+        "COMPATIBILITY_BLOCKED",
+        "COMPATIBILITY_FAILED",
+        "ROLLBACK_RECOMMENDED",
+        "UPSTREAM_VERSION_UNKNOWN",
+        "LOCAL_VERSION_UNKNOWN"
+      ]
+    },
+    "versionMatch": { "type": "boolean", "description": "Friendly versions match between installed and supported" },
+    "buildMatch": { "type": "boolean", "description": "Build numbers match between installed and supported" },
+    "fingerprintMatch": { "type": "boolean", "description": "DLL hashes match between installed and supported" },
+    "moduleXmlValid": { "type": "boolean", "description": "SubModule.xml declares compatible dependent versions" },
+    "buildTestPassed": { "type": ["boolean", "null"], "description": "Null if not yet run" },
+    "apiDiffCompleted": { "type": ["boolean", "null"] },
+    "launcherProofCompleted": { "type": ["boolean", "null"] },
+    "runtimeProofCompleted": { "type": ["boolean", "null"] },
+    "allowedActions": { "type": "array", "items": { "type": "string" } },
+    "blockedClaims": { "type": "array", "items": { "type": "string" } },
+    "workItemId": { "type": ["string", "null"], "description": "State-spine work item tracking this assessment" },
+    "eventIds": { "type": "array", "items": { "type": "string" } },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "observation": { "type": "string" },
+        "apiDiff": { "type": "string" },
+        "handoff": { "type": "string" },
+        "progressLog": { "type": "string" }
+      }
+    }
+  }
+}

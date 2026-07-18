@@ -1,0 +1,38 @@
+name: Bannerlord Upstream Watch
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.tbg/compatibility/**'
+      - '.tbg/harness/schemas/game-*'
+      - '.tbg/workflows/bannerlord-game-update*'
+      - 'scripts/tbg/*GameUpdate*'
+      - 'scripts/tbg/*BannerlordUpdate*'
+
+jobs:
+  compatibility-validation:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run compatibility updater tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgBannerlordUpdate.ps1
+      - name: Run detection script (dry run - no install required)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Get-TbgGameBuildObservation.ps1 -RepoRoot "." -OutputRoot "artifacts/latest/game-update" 2>&1 | Out-Null
+          Write-Host "Detection completed (install may not be present in CI)"
+      - name: Validate skill routing
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1
+      - name: Validate UTF-8 BOM
+        shell: pwsh
+        run: |
+          powershell -File scripts/test-powershell-utf8-bom-contract.ps1

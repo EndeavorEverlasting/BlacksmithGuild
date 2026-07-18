@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/game-build-observation.schema.json",
+  "title": "TBG Game Build Observation v1",
+  "description": "A raw observation of a game build identity from any detection source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "observationId", "observedUtc", "source", "identity"
+  ],
+  "properties": {
+    "schema": { "const": "TbgGameBuildObservation.v1" },
+    "observationId": { "type": "string", "pattern": "^observation:game-build-[a-f0-9]+$" },
+    "observedUtc": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["steam-manifest", "steam-cli", "dll-metadata", "submodule-xml", "install-directory", "manual"]
+        },
+        "locator": { "type": "string" }
+      }
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["friendlyVersion", "buildNumber"],
+      "properties": {
+        "friendlyVersion": { "type": "string", "minLength": 1, "description": "e.g. v1.4.3 or e1.2.1" },
+        "buildNumber": { "type": "string", "minLength": 1, "description": "Steam build id or internal build number" },
+        "moduleVersion": { "type": "string", "description": "Native module DependentVersion from SubModule.xml" },
+        "dllProductVersion": { "type": "string", "description": "FileVersionInfo.ProductVersion of TaleWorlds.MountAndBlade.dll" },
+        "dllFileVersion": { "type": "string", "description": "FileVersionInfo.FileVersion of TaleWorlds.MountAndBlade.dll" },
+        "dllSha256": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$", "description": "Hash of TaleWorlds.MountAndBlade.dll" },
+        "installPath": { "type": "string" }
+      }
+    },
+    "steamAppId": { "type": "integer", "const": 261550 },
+    "isInstalled": { "type": "boolean" },
+    "isUpstream": { "type": "boolean", "description": "True when sourced from Steam store/depot API rather than local install" },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}
