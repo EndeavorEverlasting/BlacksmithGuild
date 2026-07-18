@@ -9,6 +9,8 @@ param(
     [int]$AckTimeoutSec = 120,
     [int]$PollMs = 2000,
     [string]$BannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord',
+    [ValidateSet('map_surface','town_surface','settlement_menu','any')]
+    [string]$RequiredSurface = 'map_surface',
     [switch]$PassThru
 )
 
@@ -73,8 +75,30 @@ if (-not $mapReady) {
     exit 1
 }
 
-# Phase 2: dispatch command
-Write-Event "PHASE 2: dispatching command $Command"
+# Phase 2: validate surface before dispatch
+Write-Event "PHASE 2: validating surface (required=$RequiredSurface)..."
+
+if ($RequiredSurface -ne 'any') {
+    $tail = Get-Content -LiteralPath $phase1Path -Tail 20 -Encoding UTF8
+    $surfaceMatch = $tail | Where-Object { $_ -match "surface=(\S+)" }
+    if ($surfaceMatch) {
+        $current = ($surfaceMatch | Select-Object -Last 1) -replace '.*surface=(\S+).*', '$1'
+        Write-Event "Current surface: $current"
+        if ($current -notmatch $RequiredSurface) {
+            Write-Event "SURFACE MISMATCH: required=$RequiredSurface actual=$current — refusing to dispatch $Command"
+            $result = [pscustomobject]@{ verdict = 'SURFACE_MISMATCH'; required = $RequiredSurface; actual = $current; command = $Command }
+            Write-Host "Verdict: SURFACE_MISMATCH - required=$RequiredSurface actual=$current" -ForegroundColor Red
+            $outputPath = Join-Path $RepoRoot 'artifacts\latest\readiness-trigger.result.json'
+            $result | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $outputPath -Encoding UTF8
+            if ($PassThru) { Write-Output $result }
+            exit 2
+        }
+        Write-Event "Surface OK: $current matches $RequiredSurface"
+    }
+}
+
+# Phase 3: dispatch command
+Write-Event "PHASE 3: dispatching command $Command"
 
 $lastAckSeq = 0
 $ackMatch = 'consumed sequence=(\d+)'
@@ -91,8 +115,8 @@ $inbox | ConvertTo-Json | Set-Content -LiteralPath $inboxPath -Encoding UTF8
 $dispatchTime = Get-Date
 Write-Event "DISPATCHED: sequence=$newSeq command=$Command"
 
-# Phase 3: wait for ACK
-Write-Event "PHASE 3: waiting for command ACK (sequence=$newSeq)..."
+# Phase 4: wait for ACK
+Write-Event "PHASE 4: waiting for command ACK (sequence=$newSeq)..."
 $ackDeadline = $dispatchTime.AddSeconds($AckTimeoutSec)
 $acked = $false
 $ackResult = ''
@@ -121,8 +145,8 @@ while ((Get-Date) -lt $ackDeadline) {
     Start-Sleep -Milliseconds $PollMs
 }
 
-# Phase 4: collect evidence
-Write-Event "PHASE 4: collecting evidence"
+# Phase 5: collect evidence
+Write-Event "PHASE 5: collecting evidence"
 $phase1Tail = $null
 if (Test-Path -LiteralPath $phase1Path -PathType Leaf) {
     $phase1Tail = Get-Content -LiteralPath $phase1Path -Tail 30 -Encoding UTF8
