@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Validates that the harness doctrine is installed and enforced in the repository.
 .DESCRIPTION
