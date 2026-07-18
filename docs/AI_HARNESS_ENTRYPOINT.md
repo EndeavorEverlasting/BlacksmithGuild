@@ -41,6 +41,8 @@ The runner uses `dotnet build -c Debug`; the Release install target is not invok
 
 The profile is registered but fails closed until a specific workflow contract is supplied. No generic harness flag may authorize an unscoped save mutation.
 
+Discovery uses `.tbg/harness/policies/disposable-save.policy.json` (name patterns + preferred leaves + active pin). Machine-local year-floor authority may exist only under gitignored `.local/disposable-save.operator.json` and must never ship as an end-user default.
+
 ## Handoff
 
 `New-TbgSprintCapsule.ps1` emits a path-free capsule to the run root and `artifacts/latest/tbg-sprint-capsule.json`. AgentSwitchboard can coordinate from it. SysAdminSuite readiness remains false unless the operator explicitly authorizes a tandem operation.

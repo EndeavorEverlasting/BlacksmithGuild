@@ -74,6 +74,12 @@ Assert-Contains 'scripts\run-governor-disposable-smoke.ps1' 'Assert-GovernorDeci
 Assert-Contains 'scripts\run-governor-disposable-smoke.ps1' "[Alias('SkipBuild')]" 'backward-compatible SkipBuild alias'
 
 Assert-Contains 'scripts\governor-operator-common.ps1' 'BlacksmithGuild_Disposable_*.sav' 'approved disposable save pattern'
+Assert-Contains 'scripts\governor-operator-common.ps1' 'Get-GovernorDisposableSavePolicy' 'tracked disposable-save policy loader'
+Assert-Contains 'scripts\governor-operator-common.ps1' 'Get-GovernorDisposableSaveOperatorAuthority' 'machine-local operator authority loader'
+Assert-Contains 'scripts\governor-operator-common.ps1' 'Set-GovernorActiveDisposableSavePin' 'active disposable-save pin writer'
+Assert-Contains 'scripts\governor-operator-common.ps1' 'machine-local operator year-floor' 'year-floor must stay machine-local'
+Assert-Contains '.tbg\harness\policies\disposable-save.policy.json' '"yearFloorEnabled": false' 'shipped policy must not enable year-floor'
+Assert-Contains '.tbg\harness\policies\disposable-save.policy.json' 'treatCalendarYearAsDisposable": false' 'shipped policy must reject calendar-year disposability'
 Assert-Contains 'scripts\ensure-dev-save.ps1' 'Read-GovernorOperatorChoice' 'operator no-save menu'
 Assert-Contains 'scripts\ensure-dev-save.ps1' 'invoke-forge-launch-operator.ps1' 'operator launch wrapper'
 Assert-Contains 'scripts\ensure-dev-save.ps1' 'Assert-GovernorNotStopped' 'stop polling during waits'
