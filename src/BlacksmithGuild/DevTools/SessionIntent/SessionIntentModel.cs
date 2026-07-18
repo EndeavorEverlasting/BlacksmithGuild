@@ -29,6 +29,7 @@ namespace BlacksmithGuild.DevTools.SessionIntent
 
         public bool IsAutomation => DrivenBy == "automation_script" || DrivenBy == "ai_agent" || DrivenBy == "ci_cd";
         public bool IsHuman => DrivenBy == "human_player";
+        public bool IsMultitasking => DrivenBy == "multitasking";
         public bool IsCiCd => DrivenBy == "ci_cd";
         public bool IsAgent => DrivenBy == "ai_agent";
     }

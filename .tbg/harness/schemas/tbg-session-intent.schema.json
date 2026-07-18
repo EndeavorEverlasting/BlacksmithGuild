@@ -8,7 +8,7 @@
     "drivenBy": {
       "type": "string",
       "description": "Who is driving the game session. Standard taxonomy.",
-      "enum": ["human_player", "automation_script", "ai_agent", "ci_cd", "unknown"]
+      "enum": ["human_player", "multitasking", "automation_script", "ai_agent", "ci_cd", "unknown"]
     },
     "launchIntent": {
       "type": "string",
