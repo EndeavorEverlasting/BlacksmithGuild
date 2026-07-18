@@ -9,12 +9,12 @@
     "timeoutSeconds": 15
   },
   "repoSupportedBuild": {
-    "id": "bannerlord-public-v1-4-6",
+    "id": "bannerlord-public-v1-4-7",
     "status": "supported_metadata_baseline_runtime_recertification_required",
-    "gameVersionPrefix": "1.4.6",
-    "moduleDependencyVersion": "v1.4.6",
+    "gameVersionPrefix": "1.4.7",
+    "moduleDependencyVersion": "v1.4.7",
     "certificationMode": "game_version_family",
-    "certifiedSteamBuildIds": [],
+    "certifiedSteamBuildIds": ["24127665"],
     "source": "Module/BlacksmithGuild/SubModule.xml"
   },
   "mod": {
