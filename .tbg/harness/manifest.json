@@ -114,6 +114,10 @@
     "Stale PR recovery is complete only when every planned source PR has an evidence-backed terminal disposition in the canonical progress ledger.",
     "Continuum is an optional development accelerator, never a BlacksmithGuild build, validation, launch, or runtime dependency.",
     "Composed end-to-end proof is the default merge target for executable, launcher, command, persistence, and integration changes.",
-    "AgentSwitchboard and SysAdminSuite may consume a sprint capsule only within the registered authority boundary and may not promote BlacksmithGuild proof."
+    "AgentSwitchboard and SysAdminSuite may consume a sprint capsule only within the registered authority boundary and may not promote BlacksmithGuild proof.",
+    "Every serious app needs a repo-local AI harness. Prompts are one artifact inside it, not the harness itself.",
+    "The harness includes: agent rules, codebase map, workflow specs, run context, artifact registry, validators, hooks, skills, code intelligence, reports, and handoff compression.",
+    "Action-commitment: any prompt claiming to install, build, execute, repair, or release must produce the corresponding mutation and proof. Acknowledgment, plans, and summaries are not completion.",
+    "Escape menu (pause menu) is auto-dismissed by ClockResumeHelper via Win32 keybd_event. Operator intervention is no longer required for pause-menu recovery."
   ]
 }

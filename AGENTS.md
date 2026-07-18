@@ -15,11 +15,26 @@ When instructions overlap, use this order:
 
 A lower authority may explain a higher authority but may not override it.
 
+## Harness doctrine
+
+Every serious session must follow the harness doctrine. The harness is not a prompt; it is the complete operational surface (rules, workflows, validators, artifacts, skills) that lets a fresh agent enter, operate, and hand off cleanly.
+
+**Canonical reference:** [`docs/harness-doctrine.md`](docs/harness-doctrine.md)
+**Policy file:** `.tbg/harness/policies/harness-doctrine.policy.json`
+**Validator:** `scripts/tbg/Test-TbgHarnessDoctrine.ps1`
+
+Core rules:
+- **Identity declaration:** Open with `[TBG | Sprint/PR | lane/context | branch: <branch>]` naming repo, branch, PR, lane, owned scope, forbidden scope, expected artifacts, and validation order.
+- **Execution loop:** `request -> evidence review -> bounded decision -> mutation -> artifacts -> validation -> report -> next decision`
+- **Action-commitment:** Any prompt claiming to install, build, execute, repair, or release must produce the corresponding mutation and proof. Acknowledgment, plans, and summaries are not completion.
+- **Evidence before confidence.** Existing contracts before invention. Preservation before destructive cleanup.
+- **Proof levels do not collapse.** Do not claim live runtime from static tests or command ACKs.
+
 ## Entry sequence
 
 Before substantial work:
 
-1. identify repo, branch or worktree, PR or sprint, lane, owned scope, forbidden scope, expected artifacts, and any user-specified validation order;
+1. identify repo, branch or worktree, PR or sprint, lane, owned scope, forbidden scope, expected artifacts, and any user-specified validation order (see [harness doctrine](docs/harness-doctrine.md));
 2. inspect `git status --short`, `git branch --show-current`, and `git log --oneline --decorate -5`;
 3. use `CODEBASE_MAP.md` to load the smallest relevant product, harness, runtime, or evidence surface;
 4. read `.tbg/skills/manifest.json` and select one primary skill plus only required cross-cutting skills;
@@ -56,6 +71,7 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 
 | Request or touched surface | Primary skill |
 |---|---|
+| harness doctrine, execution loop, action-commitment, agent rules | `harness-maturity` |
 | branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
 | root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
 | harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |

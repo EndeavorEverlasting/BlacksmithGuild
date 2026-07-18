@@ -1,0 +1,108 @@
+{
+  "schema": "tbg.harness-doctrine.policy.v1",
+  "title": "Harness Doctrine Enforcement",
+  "description": "Machine-readable rules for agent execution discipline in EndeavorEverlasting/BlacksmithGuild",
+  "requiredFields": [
+    "repo",
+    "branch_or_worktree",
+    "pr_or_sprint",
+    "lane",
+    "owned_scope",
+    "forbidden_scope",
+    "expected_artifacts",
+    "validation_order"
+  ],
+  "executionLoop": [
+    "request",
+    "evidence_review",
+    "bounded_decision",
+    "mutation",
+    "artifacts",
+    "validation",
+    "report",
+    "next_decision"
+  ],
+  "enforcementRules": [
+    {
+      "id": "HD-001",
+      "rule": "Identity declaration",
+      "description": "Every substantial response must open with [TBG | Sprint/PR | lane/context | branch: <branch>] and name repo, branch, PR, lane, owned scope, forbidden scope, expected artifacts, and validation order",
+      "severity": "required"
+    },
+    {
+      "id": "HD-002",
+      "rule": "Execution loop",
+      "description": "Every serious task must follow: request -> evidence review -> bounded decision -> mutation -> artifacts -> validation -> report -> next decision",
+      "severity": "required"
+    },
+    {
+      "id": "HD-003",
+      "rule": "Evidence before confidence",
+      "description": "Inspect before inventing. Read before writing. Grep before assuming.",
+      "severity": "required"
+    },
+    {
+      "id": "HD-004",
+      "rule": "Existing contracts before invention",
+      "description": "Reuse .tbg/workflows, scripts/tbg, validators, and helpers before creating new ones",
+      "severity": "required"
+    },
+    {
+      "id": "HD-005",
+      "rule": "Preservation before destructive cleanup",
+      "description": "Checkpoint coherent progress. Do not reset, force-push, or delete to make the floor clean.",
+      "severity": "required"
+    },
+    {
+      "id": "HD-006",
+      "rule": "Mutation before completion claim",
+      "description": "A file must change, a branch must exist, a PR must be open, or a test must pass. Words alone are not completion.",
+      "severity": "required"
+    },
+    {
+      "id": "HD-007",
+      "rule": "Task-specific override",
+      "description": "If the user specifies a validation order, lane, or forbidden scope, those override the defaults",
+      "severity": "required"
+    },
+    {
+      "id": "HD-008",
+      "rule": "Action-commitment",
+      "description": "Any prompt claiming to install, set up, build, execute, repair, configure, upgrade, deploy, merge, or release must produce the corresponding mutation and proof",
+      "severity": "required"
+    },
+    {
+      "id": "HD-009",
+      "rule": "Proof levels do not collapse",
+      "description": "contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime. Do not claim a higher level from a lower one.",
+      "severity": "required"
+    },
+    {
+      "id": "HD-010",
+      "rule": "Completion report required",
+      "description": "Every serious session must end with completed work, files changed, artifacts, validation, gaps, risks, Git/PR state, and one exact next command",
+      "severity": "required"
+    }
+  ],
+  "invalidPatterns": [
+    "acknowledgment_only",
+    "summary_only",
+    "rewritten_prompt_only",
+    "plan_only",
+    "handoff_only",
+    "preflight_only",
+    "request_for_permission_when_mutation_is_safe"
+  ],
+  "requiredArtifacts": {
+    "doctrine": "docs/harness-doctrine.md",
+    "policy": ".tbg/harness/policies/harness-doctrine.policy.json",
+    "validator": "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "agENTS": "AGENTS.md",
+    "manifest": ".tbg/harness/manifest.json"
+  },
+  "validationCommands": [
+    "git status --short",
+    "git diff --check",
+    ".\\scripts\\tbg\\Test-TbgHarnessDoctrine.ps1"
+  ]
+}
