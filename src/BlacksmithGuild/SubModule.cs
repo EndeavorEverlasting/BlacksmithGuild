@@ -73,6 +73,8 @@ namespace BlacksmithGuild
 
                 AutoTravelService.OnRealtimeTick();
 
+                PauseMenuAutoResumeService.OnCampaignTick();
+
                 if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
                     && CampaignMapReadyOrchestrator.ShouldRunOrchestratorTick())
                 {
