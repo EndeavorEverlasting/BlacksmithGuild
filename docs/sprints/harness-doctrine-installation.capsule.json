@@ -1,0 +1,70 @@
+{
+  "nextCommand": "./forge.ps1 -Launch -LaunchIntent continue -AllowFocusSteal -SessionAuthorityMode UserSession",
+  "git": {
+    "commits": [
+      "9098fa8",
+      "0b97055",
+      "76a93b3",
+      "d9c34a2",
+      "923d644"
+    ],
+    "branch": "feat/harness-doctrine-installation",
+    "pushed": true,
+    "head": "9098fa8"
+  },
+  "scope": {
+    "forbidden": [
+      "save mutation",
+      "personal data",
+      "free resources"
+    ],
+    "owned": [
+      "harness doctrine docs",
+      "escape menu helper",
+      "game compatibility registry",
+      "launcher gate fixture"
+    ]
+  },
+  "proof": {
+    "launcherNav": "PASS",
+    "escapeMenuDismissal": "NOT PROVEN",
+    "highest": "launcher + market intel",
+    "marketIntel": "Quyaz 18:18:03Z",
+    "commandAck": "UNREACHED"
+  },
+  "handoff": {
+    "risk": "v1.4.7 stability concern. Injection vs vanilla mechanic debt.",
+    "blocker": "Game crashed ~2min after launch. All engines in Manual mode.",
+    "gap": "No engine heartbeat log. Engine failure silent."
+  },
+  "generatedUtc": "2026-07-18T22:29:40.9517472Z",
+  "producer": "EndeavorEverlasting/BlacksmithGuild",
+  "consumers": {
+    "sysAdminSuite": {
+      "authority": "requires_tandem_auth"
+    },
+    "agentSwitchboard": {
+      "proofCeiling": "none"
+    }
+  },
+  "artifactRefs": [
+    "artifacts/latest/harness-doctrine.result.json",
+    "Phase1.log (Quyaz market intel)",
+    "BlacksmithGuild_RuntimeRegent.json",
+    "BlacksmithGuild_Launch.log"
+  ],
+  "schema": "tbg.sprint-capsule.v1",
+  "validation": {
+    "build": "0/0",
+    "doctrine": "13/13 PASS",
+    "bomCheck": "PASS"
+  },
+  "sprint": {
+    "id": "harness-doctrine-installation",
+    "lane": "harness doctrine + engine observability",
+    "status": "in_progress",
+    "summary": "Installed harness doctrine. Escape menu auto-dismissal via Win32 keybd_event. v1.4.7 compatibility fix. Launcher gate fixture for blocked Steam API. Live proof: launcher nav complete, game spawned, TBG READY, Quyaz market intel generated. Game crashed ~2min in, command inbox unconsumed.",
+    "branch": "feat/harness-doctrine-installation",
+    "PR": 102
+  }
+}
