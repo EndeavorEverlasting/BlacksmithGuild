@@ -5,6 +5,9 @@ param(
     [string]$AssistProfile = 'training-map',
     [ValidateSet('default', 'economic_loop', 'full_campaign_handoff')]
     [string]$CertProfile = 'default',
+    # Live full-campaign work is segmented. Default attach-only so a bare profile never starts a 12-minute mega-run.
+    [ValidateSet('attach', 'movement', 'arrival', 'handoff', 'trade', 'horse', 'provision', 'manpower')]
+    [string]$CertSegment = 'attach',
     [int]$TradeIterationTarget = 10,
     [int]$HorseAcquisitionTarget = 1,
     [int]$ProvisionAcquisitionTarget = 1,
@@ -262,16 +265,42 @@ function Exit-AssistSession {
     exit $Code
 }
 
+$segmentBudget = $null
 if ($CertProfile -eq 'full_campaign_handoff') {
     # Profile-owned targets: movement is mandatory; trade/horse/food/manpower default to 1 unless overridden.
     if ($TradeIterationTarget -lt 1) { $TradeIterationTarget = 1 }
     if ($HorseAcquisitionTarget -lt 1) { $HorseAcquisitionTarget = 1 }
     if ($ProvisionAcquisitionTarget -lt 1) { $ProvisionAcquisitionTarget = 1 }
     if ($ManpowerAcquisitionTarget -lt 1) { $ManpowerAcquisitionTarget = 1 }
+    $segmentBudget = Get-FullCampaignHandoffSegmentBudget -CertSegment $CertSegment
+    # Segment budgets own the live clock unless the caller explicitly shortened further.
+    $segmentMinutes = [Math]::Max(1, [int][Math]::Ceiling([double]$segmentBudget.maxRuntimeSec / 60.0))
+    if ($PSBoundParameters.ContainsKey('MaxRuntimeMinutes')) {
+        if ($MaxRuntimeMinutes -gt $segmentMinutes) { $MaxRuntimeMinutes = $segmentMinutes }
+    } else {
+        $MaxRuntimeMinutes = $segmentMinutes
+    }
+    if (-not $PSBoundParameters.ContainsKey('PollIntervalSec')) {
+        $PollIntervalSec = [int]$segmentBudget.pollIntervalSec
+    }
+    if ($CertSegment -eq 'attach') {
+        if (-not $PSBoundParameters.ContainsKey('AttachWaitSec')) {
+            $AttachWaitSec = [int]$segmentBudget.attachWaitSec
+        }
+    } else {
+        # Post-attach segments assume an already-live campaign unless the caller forces launch.
+        if (-not $SkipLaunch -and -not $PSBoundParameters.ContainsKey('SkipLaunch')) {
+            $SkipLaunch = $true
+        }
+        if (-not $PSBoundParameters.ContainsKey('AttachWaitSec')) {
+            $AttachWaitSec = 45
+        }
+    }
+    Write-SessionLog "Full-campaign segment=$CertSegment budgetSec=$($segmentBudget.maxRuntimeSec) successStop=$($segmentBudget.successStopReason) maxRuntimeMin=$MaxRuntimeMinutes"
 }
 
 if ($WhatIf) {
-    Write-Host "WhatIf: launch=$LaunchIntent profile=$AssistProfile certProfile=$CertProfile maxMin=$MaxRuntimeMinutes evidence=$checkpointDir trade=$TradeIterationTarget horse=$HorseAcquisitionTarget provision=$ProvisionAcquisitionTarget manpower=$ManpowerAcquisitionTarget" -ForegroundColor Cyan
+    Write-Host "WhatIf: launch=$LaunchIntent profile=$AssistProfile certProfile=$CertProfile certSegment=$CertSegment maxMin=$MaxRuntimeMinutes evidence=$checkpointDir trade=$TradeIterationTarget horse=$HorseAcquisitionTarget provision=$ProvisionAcquisitionTarget manpower=$ManpowerAcquisitionTarget" -ForegroundColor Cyan
     exit 0
 }
 
@@ -484,7 +513,6 @@ if (-not $attachReady) {
     }
 }
 
-$cyclePhase = 'assist_loop'
 $readyAtAttach = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
 $loopReadiness = Test-AutonomousAssistLoopReadiness -Readiness $readyAtAttach
 if ($loopReadiness.stateMachineConsumed) {
@@ -495,6 +523,25 @@ if ($loopReadiness.runtimeLifecycleConsumed) {
     Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'runtime_lifecycle_consumed' `
         -SessionId $sessionId -Phase 'attach' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
 }
+
+# Segment attach ends here: campaign load/attach is the long segment; do not continue into travel/trade.
+if ($CertProfile -eq 'full_campaign_handoff' -and $CertSegment -eq 'attach') {
+    $attachSegmentPass = [bool]$attachReady -or [bool]$loopReadiness.ready
+    Exit-AssistSession -Code $(if ($attachSegmentPass) { 0 } else { 2 }) -Evidence $evidence -Summary @{
+        passFail = $(if ($attachSegmentPass) { 'PASS' } else { 'FAIL' })
+        failureClass = $(if ($attachSegmentPass) { $null } else { 'attach_not_ready' })
+        stopReason = $(if ($attachSegmentPass) { 'segment_attach_ready' } else { 'attach_not_ready' })
+        exitCode = $(if ($attachSegmentPass) { 0 } else { 2 })
+        certProfile = $CertProfile
+        certSegment = $CertSegment
+        attachResult = $attachResult
+        fullChainPass = $false
+        highestProofLevel = $(if ($attachSegmentPass) { 'launcher' } else { 'none' })
+        endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+}
+
+$cyclePhase = 'assist_loop'
 if (-not $loopReadiness.ready) {
     Exit-AssistSession -Code 2 -Evidence $evidence -Summary @{
         passFail = 'FAIL'; failureClass = 'assist_loop_not_ready'; exitCode = 2
@@ -690,11 +737,20 @@ while ((Get-Date) -lt $loopDeadline) {
             } catch { }
         }
 
-        if ($partyMovementCheckpointEmitted -and $arrivalObserved -and $townEntryObserved -and
-            $governorHandoffPresent -and $ordinaryTradeDone -and $horseAcquisitionDone -and
-            $provisionAcquisitionDone -and $manpowerAcquisitionDone) {
-            $stopReason = 'full_campaign_handoff_complete'
-            Write-SessionLog 'Full campaign handoff targets satisfied — finalizing'
+        $segmentState = Test-FullCampaignHandoffSegmentComplete `
+            -CertSegment $CertSegment `
+            -AttachReady:$true `
+            -MovementObserved:$partyMovementCheckpointEmitted `
+            -ArrivalObserved:$arrivalObserved `
+            -TownEntryObserved:$townEntryObserved `
+            -GovernorHandoffPresent:$governorHandoffPresent `
+            -OrdinaryTradeDone:$ordinaryTradeDone `
+            -HorseDone:$horseAcquisitionDone `
+            -ProvisionDone:$provisionAcquisitionDone `
+            -ManpowerDone:$manpowerAcquisitionDone
+        if ($segmentState.complete) {
+            $stopReason = [string]$segmentState.successStopReason
+            Write-SessionLog "Full-campaign segment complete segment=$CertSegment stopReason=$stopReason (not full-chain cert)"
             break
         }
     }
@@ -973,13 +1029,42 @@ $criteriaPreview = Test-AutomationPassCriteria -Events @($evidence.checkpointEve
     -RequireAssistLoopStarted -RequireExecuteMovement:$travelExecuted
 $allowedPassStops = @('timeout', 'trade_iteration_target_reached', 'movement_observed', $null)
 if ($isFullCampaignHandoff) {
-    # movement_observed is never a PASS terminal for this profile.
-    $allowedPassStops = @('full_campaign_handoff_complete')
+    # Segment PASS only. movement_observed and full-chain complete are not automatic PASS here.
+    $allowedPassStops = @(
+        'segment_attach_ready',
+        'segment_movement_observed',
+        'segment_arrival_town_observed',
+        'segment_governor_handoff_observed',
+        'segment_ordinary_trade_proven',
+        'segment_horse_proven',
+        'segment_provision_proven',
+        'segment_manpower_proven'
+    )
 }
 $passFail = if ($stopReason -in $allowedPassStops -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
     else { 'FAIL' }
 
 if ($isFullCampaignHandoff) {
+    $segmentFinal = Test-FullCampaignHandoffSegmentComplete `
+        -CertSegment $CertSegment `
+        -AttachReady:([bool]$attachReady) `
+        -MovementObserved:$partyMovementCheckpointEmitted `
+        -ArrivalObserved:$arrivalObserved `
+        -TownEntryObserved:$townEntryObserved `
+        -GovernorHandoffPresent:$governorHandoffPresent `
+        -OrdinaryTradeDone:$ordinaryTradeDone `
+        -HorseDone:$horseAcquisitionDone `
+        -ProvisionDone:$provisionAcquisitionDone `
+        -ManpowerDone:$manpowerAcquisitionDone
+    if ($segmentFinal.complete -and ($stopReason -eq $segmentFinal.successStopReason)) {
+        $passFail = 'PASS'
+    } else {
+        $passFail = 'FAIL'
+        if ([string]::IsNullOrWhiteSpace($stopReason) -or $stopReason -eq 'timeout') {
+            $stopReason = if ($segmentFinal.failureClass) { $segmentFinal.failureClass } else { 'timeout' }
+        }
+    }
+    # Full-chain criteria are diagnostic only; segment PASS must never collapse into live-runtime-cert.
     $tradePathFinal = Join-Path $bannerlordRoot 'BlacksmithGuild_TradeIterations.jsonl'
     $tradeRowsFinal = @()
     if (Test-Path -LiteralPath $tradePathFinal) {
@@ -989,7 +1074,7 @@ if ($isFullCampaignHandoff) {
     }
     $fullCriteria = Test-FullCampaignHandoffPassCriteria `
         -CertProfile $CertProfile `
-        -StopReason $stopReason `
+        -StopReason $(if ($stopReason -like 'segment_*') { 'timeout' } else { $stopReason }) `
         -MovementObserved:$partyMovementCheckpointEmitted `
         -ArrivalObserved:$arrivalObserved `
         -TownEntryObserved:$townEntryObserved `
@@ -1005,14 +1090,9 @@ if ($isFullCampaignHandoff) {
         -CheckpointEvents @($evidence.checkpointEvents.ToArray()) `
         -BranchConsiderationLog @($evidence.branchConsiderationLog.ToArray()) `
         -RequireTerminalEvent:$false
-    if (-not $fullCriteria.pass) {
-        $passFail = 'FAIL'
-        if ([string]::IsNullOrWhiteSpace($stopReason) -or $stopReason -eq 'timeout') {
-            $stopReason = $fullCriteria.exactFailureClass
-        }
-    } elseif ($stopReason -eq 'full_campaign_handoff_complete') {
-        $passFail = 'PASS'
-    }
+    $fullCriteria | Add-Member -NotePropertyName segmentPass -NotePropertyValue ($passFail -eq 'PASS') -Force
+    $fullCriteria | Add-Member -NotePropertyName certSegment -NotePropertyValue $CertSegment -Force
+    $fullCriteria | Add-Member -NotePropertyName fullChainPass -NotePropertyValue $false -Force
 }
 
 # Explicit post-attach proof-mode separation. Attach-ready and read-only reasoning are NOT a visible

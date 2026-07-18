@@ -80,9 +80,23 @@ Write-Host '=== Full Campaign Handoff Cert Contract Tests ==='
 $runner = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\run-autonomous-assist-session.ps1') -Raw
 Assert-True ($runner -match "ValidateSet\('default', 'economic_loop', 'full_campaign_handoff'\)") 'ValidateSet includes full_campaign_handoff'
 Assert-True ($runner -match 'continuing for arrival/town handoff') 'movement_observed continues for full_campaign_handoff'
-Assert-True ($runner -match "allowedPassStops = @\('full_campaign_handoff_complete'\)") 'only full_campaign_handoff_complete is PASS stop'
+Assert-True ($runner -match "CertSegment = 'attach'") 'default cert segment is attach (no mega-run)'
+Assert-True ($runner -match 'segment_movement_observed') 'segment movement stop reason exists'
+Assert-True ($runner -notmatch "allowedPassStops = @\('full_campaign_handoff_complete'\)") 'full-chain complete is not a single-run PASS stop'
 Assert-True (Test-FullCampaignHandoffMovementTerminalForbidden -StopReason 'movement_observed' -CertProfile 'full_campaign_handoff') `
-    'movement_observed terminal is forbidden for profile'
+    'movement_observed terminal is forbidden for full-chain profile'
+
+$attachBudget = Get-FullCampaignHandoffSegmentBudget -CertSegment 'attach'
+$moveBudget = Get-FullCampaignHandoffSegmentBudget -CertSegment 'movement'
+Assert-True ($attachBudget.maxRuntimeSec -ge 120) 'attach budget may exceed 30s for campaign load'
+Assert-True ($moveBudget.maxRuntimeSec -le 30) 'movement segment budget is <=30s'
+Assert-True ((Get-FullCampaignHandoffSegmentBudget -CertSegment 'trade').maxRuntimeSec -le 30) 'trade segment budget is <=30s'
+Assert-True ((Get-FullCampaignHandoffSegmentBudget -CertSegment 'manpower').maxRuntimeSec -le 30) 'manpower segment budget is <=30s'
+
+$segMove = Test-FullCampaignHandoffSegmentComplete -CertSegment 'movement' -MovementObserved:$true
+Assert-True ($segMove.complete -and -not $segMove.fullChainPass) 'segment movement PASS is not full-chain PASS'
+$segTradeFail = Test-FullCampaignHandoffSegmentComplete -CertSegment 'trade' -OrdinaryTradeDone:$false
+Assert-True ($segTradeFail.failureClass -eq 'ordinary_trade_delta_missing') 'trade segment names ordinary_trade_delta_missing'
 
 $fx = New-FullCampaignValidFixture
 $valid = Test-FullCampaignHandoffPassCriteria `

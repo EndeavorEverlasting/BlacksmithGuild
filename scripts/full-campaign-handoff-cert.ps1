@@ -1,6 +1,6 @@
 ﻿# Full campaign handoff cert contract helpers (offline + runner).
-# Movement is a checkpoint only. PASS requires arrival, town entry, governor handoff,
-# ordinary trade, horse/pack buy, food buy, and manpower roster increase.
+# Movement is a checkpoint only. Live proof is segmented: most segments budget ~30s;
+# campaign attach/load may exceed 30s. A segment PASS is not full-chain PASS.
 
 if (-not (Get-Command Test-TradeIterationProven -ErrorAction SilentlyContinue)) {
     . (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
@@ -36,10 +36,177 @@ $script:FullCampaignHandoffFailureClasses = @(
     'direct_injection'
 )
 
+$script:FullCampaignHandoffSegments = @(
+    'attach',
+    'movement',
+    'arrival',
+    'handoff',
+    'trade',
+    'horse',
+    'provision',
+    'manpower'
+)
+
 function Test-FullCampaignHandoffMovementTerminalForbidden {
     param([string]$StopReason, [string]$CertProfile)
     if ($CertProfile -ne 'full_campaign_handoff') { return $false }
-    return ($StopReason -eq 'movement_observed')
+    # Segment movement may stop after the checkpoint, but that stop reason must not certify the full chain.
+    if ($StopReason -eq 'movement_observed') { return $true }
+    return $false
+}
+
+function Get-FullCampaignHandoffSegmentBudget {
+    # Attach/load is the only intentionally long segment. All post-attach live polls default to 30s.
+    param([string]$CertSegment = 'movement')
+    switch ($CertSegment) {
+        'attach' {
+            return [pscustomobject][ordered]@{
+                segment = 'attach'
+                maxRuntimeSec = 300
+                attachWaitSec = 300
+                pollIntervalSec = 2
+                successStopReason = 'segment_attach_ready'
+                requiredProof = 'campaign_attach'
+            }
+        }
+        'movement' {
+            return [pscustomobject][ordered]@{
+                segment = 'movement'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_movement_observed'
+                requiredProof = 'movement'
+            }
+        }
+        'arrival' {
+            return [pscustomobject][ordered]@{
+                segment = 'arrival'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_arrival_town_observed'
+                requiredProof = 'arrival_town_entry'
+            }
+        }
+        'handoff' {
+            return [pscustomobject][ordered]@{
+                segment = 'handoff'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_governor_handoff_observed'
+                requiredProof = 'governor_handoff'
+            }
+        }
+        'trade' {
+            return [pscustomobject][ordered]@{
+                segment = 'trade'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_ordinary_trade_proven'
+                requiredProof = 'ordinary_trade'
+            }
+        }
+        'horse' {
+            return [pscustomobject][ordered]@{
+                segment = 'horse'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_horse_proven'
+                requiredProof = 'horse_acquisition'
+            }
+        }
+        'provision' {
+            return [pscustomobject][ordered]@{
+                segment = 'provision'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_provision_proven'
+                requiredProof = 'provision_acquisition'
+            }
+        }
+        'manpower' {
+            return [pscustomobject][ordered]@{
+                segment = 'manpower'
+                maxRuntimeSec = 30
+                attachWaitSec = 0
+                pollIntervalSec = 2
+                successStopReason = 'segment_manpower_proven'
+                requiredProof = 'manpower_acquisition'
+            }
+        }
+        default { throw "Unknown full-campaign cert segment: $CertSegment" }
+    }
+}
+
+function Test-FullCampaignHandoffSegmentComplete {
+    param(
+        [Parameter(Mandatory = $true)][string]$CertSegment,
+        [bool]$AttachReady = $false,
+        [bool]$MovementObserved = $false,
+        [bool]$ArrivalObserved = $false,
+        [bool]$TownEntryObserved = $false,
+        [bool]$GovernorHandoffPresent = $false,
+        [bool]$OrdinaryTradeDone = $false,
+        [bool]$HorseDone = $false,
+        [bool]$ProvisionDone = $false,
+        [bool]$ManpowerDone = $false
+    )
+    $budget = Get-FullCampaignHandoffSegmentBudget -CertSegment $CertSegment
+    $complete = $false
+    $failureClass = $null
+    switch ($CertSegment) {
+        'attach' {
+            $complete = [bool]$AttachReady
+            if (-not $complete) { $failureClass = 'timeout' }
+        }
+        'movement' {
+            $complete = [bool]$MovementObserved
+            if (-not $complete) { $failureClass = 'movement_not_observed' }
+        }
+        'arrival' {
+            $complete = [bool]$ArrivalObserved -and [bool]$TownEntryObserved
+            if (-not $ArrivalObserved) { $failureClass = 'arrival_not_observed' }
+            elseif (-not $TownEntryObserved) { $failureClass = 'town_entry_not_observed' }
+        }
+        'handoff' {
+            $complete = [bool]$GovernorHandoffPresent
+            if (-not $complete) { $failureClass = 'governor_handoff_missing' }
+        }
+        'trade' {
+            $complete = [bool]$OrdinaryTradeDone
+            if (-not $complete) { $failureClass = 'ordinary_trade_delta_missing' }
+        }
+        'horse' {
+            $complete = [bool]$HorseDone
+            if (-not $complete) { $failureClass = 'horse_delta_missing' }
+        }
+        'provision' {
+            $complete = [bool]$ProvisionDone
+            if (-not $complete) { $failureClass = 'provision_delta_missing' }
+        }
+        'manpower' {
+            $complete = [bool]$ManpowerDone
+            if (-not $complete) { $failureClass = 'manpower_delta_missing' }
+        }
+    }
+    return [pscustomobject][ordered]@{
+        segment = $CertSegment
+        complete = [bool]$complete
+        successStopReason = $budget.successStopReason
+        failureClass = $failureClass
+        maxRuntimeSec = [int]$budget.maxRuntimeSec
+        # Segment PASS never implies full-chain live cert.
+        fullChainPass = $false
+    }
+}
+
+function Get-FullCampaignHandoffSegmentOrder {
+    return @($script:FullCampaignHandoffSegments)
 }
 
 function Get-TradeIterationClassification {
