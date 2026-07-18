@@ -1,0 +1,9 @@
+{
+  "response": {
+    "success": true,
+    "up_to_date": true,
+    "version_is_listable": true,
+    "required_version": 24127665,
+    "message": "fixture - v1.4.7 installed build 24127665"
+  }
+}
