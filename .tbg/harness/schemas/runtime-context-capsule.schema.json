@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/runtime-context-capsule.schema.json",
+  "title": "TbgRuntimeContextCapsule.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "runId", "generatedUtc", "repo", "branch", "commitSha", "sprint", "lane", "runtimeClassification", "processes", "handoff", "failure", "evidenceRefs", "proofLevel", "redaction", "nextDecision"],
+  "properties": {
+    "schema": {"const": "TbgRuntimeContextCapsule.v1"},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "generatedUtc": {"type": "string", "format": "date-time"},
+    "repo": {"const": "EndeavorEverlasting/BlacksmithGuild"},
+    "branch": {"type": "string", "minLength": 1, "maxLength": 256},
+    "commitSha": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
+    "sprint": {"type": "string", "minLength": 1, "maxLength": 256},
+    "lane": {"type": "string", "minLength": 1, "maxLength": 256},
+    "worktreeLabel": {"type": ["string", "null"], "maxLength": 256},
+    "sessionOwner": {"type": ["string", "null"], "maxLength": 128},
+    "loadedAssemblySha256": {"type": ["string", "null"], "pattern": "^([0-9a-fA-F]{64})?$"},
+    "runtimeClassification": {"enum": ["absent", "active_owned", "active_human", "active_foreign", "stale_or_zombie_proven", "ambiguous"]},
+    "processes": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["canonicalName", "pid", "ownership"],
+        "properties": {
+          "canonicalName": {"enum": ["Bannerlord", "Bannerlord.Native", "TaleWorlds.MountAndBlade", "TaleWorlds.MountAndBlade.Launcher"]},
+          "pid": {"type": ["integer", "null"], "minimum": 1},
+          "ownership": {"enum": ["owned", "human", "foreign", "unknown", "stale_proven"]},
+          "windowIdentity": {"type": ["string", "null"], "maxLength": 256}
+        }
+      }
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lastCompleted", "active", "nextIntended"],
+      "properties": {
+        "lastCompleted": {"type": ["object", "null"]},
+        "active": {"type": ["object", "null"]},
+        "nextIntended": {"type": ["object", "null"]}
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "summary", "crashObserved"],
+      "properties": {
+        "classification": {"type": ["string", "null"], "maxLength": 128},
+        "summary": {"type": "string", "maxLength": 2048},
+        "crashObserved": {"type": "boolean"}
+      }
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "sha256"],
+        "properties": {
+          "role": {"type": "string", "minLength": 1, "maxLength": 128},
+          "sha256": {"type": "string", "pattern": "^[0-9a-fA-F]{64}$"},
+          "sanitizedExcerpt": {"type": ["string", "null"], "maxLength": 12000}
+        }
+      }
+    },
+    "proofLevel": {"enum": ["contract", "harness", "static_test", "build", "launcher", "command_ack", "behavior_observed", "live_runtime"]},
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sanitized", "containsSecrets", "containsSaveData", "containsAbsolutePersonalPaths", "rawLogsCommitted"],
+      "properties": {
+        "sanitized": {"const": true},
+        "containsSecrets": {"const": false},
+        "containsSaveData": {"const": false},
+        "containsAbsolutePersonalPaths": {"const": false},
+        "rawLogsCommitted": {"const": false}
+      }
+    },
+    "nextDecision": {"type": "string", "minLength": 1, "maxLength": 2048}
+  }
+}
