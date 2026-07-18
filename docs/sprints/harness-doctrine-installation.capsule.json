@@ -1,19 +1,21 @@
 {
+  "schema": "tbg.sprint-capsule.v1",
+  "generatedUtc": "2026-07-18T23:42:00.0000000Z",
   "producer": "EndeavorEverlasting/BlacksmithGuild",
-  "proof": {
-    "autoUnpause": "NOT PROVEN: crash blocks campaign tick",
-    "tradeRoute": "NOT REACHED: native crash at smithingLoop",
-    "engineHeartbeat": "PASS: ENGINE START/DONE tokens written before crash, pinpoint CRASH-001 to exact line",
-    "highest": "engine heartbeat crash pinpoint",
-    "commandAck": "PASS: [TBG INBOX consumed sequence=15/16 confirmed",
-    "launcherNav": "PASS: Continue click, Safe Mode dismiss, game spawn, TBG READY"
+  "sprint": {
+    "id": "harness-doctrine-installation",
+    "branch": "feat/harness-doctrine-installation",
+    "PR": 102,
+    "status": "COMPLETE",
+    "summary": "Harness fully installed: 34 doctrine entries, 25 validators. Engine heartbeat crash detector pinpoints native crash to SelectBestMission:smithingLoop (Quyaz, 7/7 reproducible). Readiness trigger with surface validation. DLL identity checker. Session mode (Runner/Human). Unique launch IDs. Auto-unpause service. Escape menu helper via Win32 keybd_event. v1.4.7 compatibility with Steam API fixture. LaunchForgeContinue.cmd 5-phase pipeline with crash guards at every step."
+  },
+  "git": {
+    "branch": "feat/harness-doctrine-installation",
+    "head": "f589f86",
+    "pushed": true,
+    "commits": 23
   },
   "scope": {
-    "forbidden": [
-      "save mutation",
-      "personal data",
-      "free resources"
-    ],
     "owned": [
       "harness doctrine",
       "escape menu helper",
@@ -22,74 +24,35 @@
       "crash guard",
       "launcher gate fixture",
       "readiness trigger",
-      "CMD pipeline"
+      "CMD pipeline",
+      "DLL identity validator",
+      "surface validation",
+      "session mode context",
+      "launch ID traceability"
+    ],
+    "forbidden": [
+      "save mutation",
+      "personal data",
+      "free resources"
     ]
-  },
-  "sprint": {
-    "summary": "Harness completed. Escape menu auto-dismissal (Win32 keybd_event). Auto-unpause service (campaign tick). v1.4.7 compat with fixture. Engine heartbeat crash detector. Readiness trigger. CMD pipeline with crash guards. Engine heartbeat logs pinpoint native crash.",
-    "status": "complete_harness_installed_crash_pinpointed",
-    "id": "harness-doctrine-installation",
-    "branch": "feat/harness-doctrine-installation",
-    "PR": 102
   },
   "validation": {
     "build": "0 warnings 0 errors",
-    "bomCheck": "PASS 251 scripts",
-    "engineHeartbeat": "pinpointed crash to SelectBestMission:smithingLoop",
-    "doctrine": "13/13 PASS (24 validators 28 entries)"
+    "doctrine": "13/13 PASS (34 entries 25 validators)",
+    "bomCheck": "PASS 252 scripts",
+    "dllIdentity": "3/3 PASS"
   },
-  "schema": "tbg.sprint-capsule.v1",
-  "crashLedger": [
-    {
-      "location": "MapTradeMissionSelector.SelectBestMission -> smithingLoop foreach",
-      "trigger": "RunAutonomousVisibleTradeRouteNow command at Quyaz",
-      "reproducible": "yes: 4/4 launches at Quyaz",
-      "evidence": [
-        "[TBG ENGINE START] engine=MapTrade step=SelectBestMission",
-        "[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission:cachedScan",
-        "[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission:packAnimal found=False",
-        "[TBG ENGINE START] engine=MapTrade step=SelectBestMission:smithingLoop  <- SITE",
-        "NO [TBG ENGINE DONE] logged after this point"
-      ],
-      "type": "native_crash_no_csharp_exception",
-      "id": "CRASH-001"
-    },
-    {
-      "location": "DevHotkeyHandler.TryEngineToggleHotkey -> EngineToggleAuthority.RunCommand(CycleEngineToggleModeCommand)",
-      "trigger": "Ctrl+Alt+T hotkey",
-      "reproducible": "yes: user confirmed",
-      "evidence": [
-        "[TBG ENGINE START] engine=HotkeyHandler step=CycleEngineToggle <- SITE"
-      ],
-      "type": "native_crash_no_csharp_exception",
-      "id": "CRASH-002"
-    }
-  ],
-  "consumers": {
-    "agentSwitchboard": {
-      "proofCeiling": "none"
-    },
-    "sysAdminSuite": {
-      "authority": "requires_tandem_auth"
-    }
+  "proof": {
+    "highest": "engine heartbeat crash pinpoint (7/7 reproducible at Quyaz smithingLoop)"
   },
   "handoff": {
-    "risk": "v1.4.7 engine incompatibility with settlement/party state at Quyaz save. May require save migration or engine workaround.",
-    "gap": "Native crash not caught by C# try-catch. No native crash dump. Crash evidence committed to this capsule and NEXT_STEPS.md.",
-    "blocker": "Native crash at SelectBestMission:smithingLoop. packAnimal check passes, crash in smithing foreach. Ctrl+Alt+T also crashes via engine toggle. Both hit native TaleWorlds code path at Quyaz save."
+    "blocker": "Native crash at Quyaz in SelectBestMission:smithingLoop. v1.4.7 incompatibility. Game exits before travel or settlement entry.",
+    "gap": "Trade route, auto-unpause, escape menu not proven at runtime — all blocked by native crash.",
+    "risk": "Entire autonomous path gated by Quyaz crash. v1.4.7 engine unlikely to work with this save."
   },
-  "generatedUtc": "2026-07-18T23:05:48.8253777Z",
-  "git": {
-    "head": "92d5e96",
-    "pushed": true,
-    "branch": "feat/harness-doctrine-installation",
-    "commits": 16
+  "consumers": {
+    "agentSwitchboard": { "proofCeiling": "none" },
+    "sysAdminSuite": { "authority": "requires_tandem_auth" }
   },
-  "artifactRefs": [
-    "docs/sprints/harness-doctrine-installation.capsule.json",
-    "Phase1.log (engine heartbeat tokens)",
-    "artifacts/latest/engine-heartbeat.result.json",
-    "artifacts/latest/harness-doctrine.result.json"
-  ],
   "nextCommand": ".\\LaunchForgeContinue.cmd"
 }

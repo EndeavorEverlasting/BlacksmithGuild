@@ -96,9 +96,9 @@ Optional: rerun `RunStageCCharcoalCert.cmd` after actor fix for clean JSON with 
 | Open PRs | #102 (harness doctrine + escape menu + auto-unpause), #101 (window cleanup + trade proof), #20 (governor) |
 | Recent merges | #99 launcher lifecycle, #97 P21 disposition, #96 visible trade proof, #95 window lifecycle skills |
 
-## Harness doctrine sprint (PR #102)
+## Harness doctrine sprint (PR #102) — COMPLETE
 
-Installed repo-local AI harness: doctrine docs, policy JSON, 13-check validator, engine heartbeat crash detector, readiness trigger, LaunchForgeContinue.cmd with 3-phase auto-chain, escape menu auto-dismissal (Win32 keybd_event), pause menu auto-unpause service (multitasking), game compatibility v1.4.7 with Steam API fixture.
+Installed repo-local AI harness: 34 doctrine entries, 25 validators, engine heartbeat crash detector, readiness trigger with surface validation, DLL identity checker, session mode (Runner/Human), unique launch IDs, auto-unpause service, escape menu helper, 5-phase CMD pipeline with crash guards. Game crashes natively at Quyaz (SelectBestMission:smithingLoop) — 7/7 reproducible. Trade route blocked by crash.
 
 ### Known crash: Quyaz native exit
 
