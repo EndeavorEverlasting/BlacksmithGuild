@@ -1,7 +1,7 @@
 {
   "schema": "tbg.gnhf-night-shift.contract.v1",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
-  "purpose": "Provide the repository-owned stage contract used by AgentSwitchboard to start one bounded Good Night, Have Fun process in a dedicated WezTerm/tmux panel.",
+  "purpose": "Provide the repository-owned objective contract used by AgentSwitchboard to start one bounded Good Night, Have Fun process in a dedicated native-Windows WezTerm panel.",
   "sourceModel": {
     "promptKit": "AI_Harness_Prompt_Kit_v38.xlsx",
     "sequence": ["P37", "P38", "P41", "P44"],
@@ -16,6 +16,7 @@
     "queue": ".tbg/plans/gnhf-night-shift/queue.json",
     "report": "docs/handoff/gnhf-night-shift-report.md",
     "closeout": "docs/handoff/gnhf-night-shift-closeout.md",
+    "nightPrompt": "prompts/gnhf/blacksmithguild-one-click-night-shift.md",
     "compilePrompt": "prompts/gnhf/blacksmithguild-night-queue-compiler.md",
     "repairPrompt": "prompts/gnhf/blacksmithguild-state-safe-repair.md",
     "closeoutPrompt": "prompts/gnhf/blacksmithguild-morning-closeout.md"
@@ -39,8 +40,16 @@
   },
   "stageSelection": [
     {
+      "stage": "night",
+      "when": "default_one_click_chain",
+      "promptPath": "prompts/gnhf/blacksmithguild-one-click-night-shift.md",
+      "maxIterations": 9,
+      "maxTokens": 850000,
+      "stopWhen": "The queue checkpoint, up to three bounded repair dispositions, and the closeout are committed in order, deterministic validation is recorded, personal and live game state remain untouched, and the generated GNHF worktree is clean."
+    },
+    {
       "stage": "compile",
-      "when": "queue_missing",
+      "when": "explicit_queue_only_recovery",
       "promptPath": "prompts/gnhf/blacksmithguild-night-queue-compiler.md",
       "maxIterations": 2,
       "maxTokens": 180000,
@@ -48,7 +57,7 @@
     },
     {
       "stage": "repair",
-      "when": "queue_valid_and_ready_items_exist",
+      "when": "explicit_repair_recovery_from_a_queue_bearing_checkout",
       "promptPath": "prompts/gnhf/blacksmithguild-state-safe-repair.md",
       "maxIterations": 7,
       "maxTokens": 650000,
@@ -56,7 +65,7 @@
     },
     {
       "stage": "closeout",
-      "when": "explicit_closeout_or_no_ready_items",
+      "when": "explicit_closeout_recovery_from_an_existing_night_checkout",
       "promptPath": "prompts/gnhf/blacksmithguild-morning-closeout.md",
       "maxIterations": 3,
       "maxTokens": 240000,
@@ -71,7 +80,7 @@
     "git status --short"
   ],
   "authority": {
-    "agentSwitchboardOwns": ["agent spawn proof", "provider route", "WezTerm and tmux process launch", "GNHF flags and caps", "operator-local runtime logs"],
+    "agentSwitchboardOwns": ["agent spawn proof", "provider route", "native Windows WezTerm process launch", "GNHF flags and caps", "operator-local runtime logs"],
     "blacksmithGuildOwns": ["repository prompt payloads", "queue and report schemas", "owned and forbidden scope", "validation", "game and save safety", "proof promotion"]
   },
   "forbidden": [
