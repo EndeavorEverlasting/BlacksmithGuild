@@ -34,6 +34,7 @@ namespace BlacksmithGuild.MapTrade
             {
                 Iteration = iteration,
                 ItemName = execution.ItemName,
+                ItemClassification = execution.ItemClassification,
                 Direction = direction,
                 GoldBefore = execution.GoldBefore,
                 GoldAfter = execution.GoldAfter,
@@ -45,7 +46,8 @@ namespace BlacksmithGuild.MapTrade
             var payload = "{\"iteration\":" + iteration
                 + ",\"goldDelta\":" + (execution.GoldAfter - execution.GoldBefore)
                 + ",\"inventoryDelta\":" + (execution.InventoryAfter - execution.InventoryBefore)
-                + ",\"itemName\":\"" + EscapeJson(execution.ItemName) + "\"}";
+                + ",\"itemName\":\"" + EscapeJson(execution.ItemName) + "\""
+                + ",\"itemClassification\":\"" + EscapeJson(execution.ItemClassification) + "\"}";
             AutomationRuntimeEventEmitter.Emit(
                 AutomationRuntimeEventEmitter.TradeCompleted,
                 reason: direction,
@@ -91,7 +93,8 @@ namespace BlacksmithGuild.MapTrade
             ItemObject item,
             int quantity,
             out MapTradeExecutionResult result,
-            out string detail)
+            out string detail,
+            string itemClassification = null)
         {
             result = null;
             detail = null;
@@ -136,7 +139,8 @@ namespace BlacksmithGuild.MapTrade
                     QuantityBought = inventoryDelta,
                     InventoryBefore = inventoryBefore,
                     InventoryAfter = inventoryAfter,
-                    ExecutionMethod = methodUsed
+                    ExecutionMethod = methodUsed,
+                    ItemClassification = string.IsNullOrWhiteSpace(itemClassification) ? "Ordinary" : itemClassification
                 };
 
                 if (inventoryDelta > 0 && goldDelta < 0)

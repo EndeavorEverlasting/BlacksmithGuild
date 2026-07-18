@@ -481,6 +481,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
                 || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeFoodBuyNowCommand
                 || commandName == SmithingSmeltService.RunWeaponSmeltNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
@@ -506,6 +508,8 @@ namespace BlacksmithGuild.DevTools
                 || commandName == CohesionExecutionDriver.RunVisibleCohesionMoveNowCommand
                 || commandName == MapTradeAutonomousService.RunAutonomousVisibleTradeRouteNowCommand
                 || commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeFoodBuyNowCommand
                 || commandName == SmithingSmeltService.RunWeaponSmeltNowCommand
                 || commandName == AutonomousGuildLoopService.RunAutonomousGuildLoopNowCommand;
         }
@@ -843,6 +847,10 @@ namespace BlacksmithGuild.DevTools
                         : DevCommandResult.Failed;
                 case MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand:
                     return MapTradeVanillaTradeDriver.RunProbePackAnimalBuyNow(source: commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
+                case MapTradeVanillaTradeDriver.ProbeFoodBuyNowCommand:
+                    return MapTradeVanillaTradeDriver.RunProbeFoodBuyNow(source: commandName)
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
                 case SmithingSmeltService.ProbeWeaponSmeltNowCommand:

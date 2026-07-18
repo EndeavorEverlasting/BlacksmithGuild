@@ -3,9 +3,15 @@ param(
     [ValidateSet('play', 'continue')]
     [string]$LaunchIntent = 'continue',
     [string]$AssistProfile = 'training-map',
-    [ValidateSet('default', 'economic_loop')]
+    [ValidateSet('default', 'economic_loop', 'full_campaign_handoff')]
     [string]$CertProfile = 'default',
+    # Live full-campaign work is segmented. Default attach-only so a bare profile never starts a 12-minute mega-run.
+    [ValidateSet('attach', 'movement', 'arrival', 'handoff', 'trade', 'horse', 'provision', 'manpower')]
+    [string]$CertSegment = 'attach',
     [int]$TradeIterationTarget = 10,
+    [int]$HorseAcquisitionTarget = 1,
+    [int]$ProvisionAcquisitionTarget = 1,
+    [int]$ManpowerAcquisitionTarget = 1,
     [string]$TargetSettlement = $null,
     [int]$MaxRuntimeMinutes = 30,
     [switch]$StopOnUnsafeState,
@@ -43,6 +49,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'automation-boundary-contract.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 . (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
+. (Join-Path $PSScriptRoot 'full-campaign-handoff-cert.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\${sessionId}-autonomous-assist-session"
@@ -258,8 +265,42 @@ function Exit-AssistSession {
     exit $Code
 }
 
+$segmentBudget = $null
+if ($CertProfile -eq 'full_campaign_handoff') {
+    # Profile-owned targets: movement is mandatory; trade/horse/food/manpower default to 1 unless overridden.
+    if ($TradeIterationTarget -lt 1) { $TradeIterationTarget = 1 }
+    if ($HorseAcquisitionTarget -lt 1) { $HorseAcquisitionTarget = 1 }
+    if ($ProvisionAcquisitionTarget -lt 1) { $ProvisionAcquisitionTarget = 1 }
+    if ($ManpowerAcquisitionTarget -lt 1) { $ManpowerAcquisitionTarget = 1 }
+    $segmentBudget = Get-FullCampaignHandoffSegmentBudget -CertSegment $CertSegment
+    # Segment budgets own the live clock unless the caller explicitly shortened further.
+    $segmentMinutes = [Math]::Max(1, [int][Math]::Ceiling([double]$segmentBudget.maxRuntimeSec / 60.0))
+    if ($PSBoundParameters.ContainsKey('MaxRuntimeMinutes')) {
+        if ($MaxRuntimeMinutes -gt $segmentMinutes) { $MaxRuntimeMinutes = $segmentMinutes }
+    } else {
+        $MaxRuntimeMinutes = $segmentMinutes
+    }
+    if (-not $PSBoundParameters.ContainsKey('PollIntervalSec')) {
+        $PollIntervalSec = [int]$segmentBudget.pollIntervalSec
+    }
+    if ($CertSegment -eq 'attach') {
+        if (-not $PSBoundParameters.ContainsKey('AttachWaitSec')) {
+            $AttachWaitSec = [int]$segmentBudget.attachWaitSec
+        }
+    } else {
+        # Post-attach segments assume an already-live campaign unless the caller forces launch.
+        if (-not $SkipLaunch -and -not $PSBoundParameters.ContainsKey('SkipLaunch')) {
+            $SkipLaunch = $true
+        }
+        if (-not $PSBoundParameters.ContainsKey('AttachWaitSec')) {
+            $AttachWaitSec = 45
+        }
+    }
+    Write-SessionLog "Full-campaign segment=$CertSegment budgetSec=$($segmentBudget.maxRuntimeSec) successStop=$($segmentBudget.successStopReason) maxRuntimeMin=$MaxRuntimeMinutes"
+}
+
 if ($WhatIf) {
-    Write-Host "WhatIf: launch=$LaunchIntent profile=$AssistProfile maxMin=$MaxRuntimeMinutes evidence=$checkpointDir" -ForegroundColor Cyan
+    Write-Host "WhatIf: launch=$LaunchIntent profile=$AssistProfile certProfile=$CertProfile certSegment=$CertSegment maxMin=$MaxRuntimeMinutes evidence=$checkpointDir trade=$TradeIterationTarget horse=$HorseAcquisitionTarget provision=$ProvisionAcquisitionTarget manpower=$ManpowerAcquisitionTarget" -ForegroundColor Cyan
     exit 0
 }
 
@@ -324,13 +365,30 @@ if ($DryRun) {
     $ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
     $loopReady = Test-AutonomousAssistLoopReadiness -Readiness $ready
     $decision = Get-AutonomousAssistIterationDecision -Readiness $ready -AssistProfile $AssistProfile `
-        -TargetSettlement $TargetSettlement -StopOnUnsafeState:$StopOnUnsafeState
+        -TargetSettlement $TargetSettlement -StopOnUnsafeState:$StopOnUnsafeState -CertProfile $CertProfile
+    $plannedChain = $null
+    if ($CertProfile -eq 'full_campaign_handoff') {
+        $plannedChain = @(
+            (Get-FullCampaignHandoffNextCommand -MovementObserved:$false -ArrivalObserved:$false -TownEntryObserved:$false -OrdinaryTradeDone:$false -HorseDone:$false -ProvisionDone:$false -ManpowerDone:$false -Surface 'settlement_menu'),
+            (Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObserved:$true -TownEntryObserved:$true -OrdinaryTradeDone:$false -HorseDone:$false -ProvisionDone:$false -ManpowerDone:$false -Surface 'trading'),
+            (Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObserved:$true -TownEntryObserved:$true -OrdinaryTradeDone:$true -HorseDone:$false -ProvisionDone:$false -ManpowerDone:$false -Surface 'trading'),
+            (Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObserved:$true -TownEntryObserved:$true -OrdinaryTradeDone:$true -HorseDone:$true -ProvisionDone:$false -ManpowerDone:$false -Surface 'trading'),
+            (Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObserved:$true -TownEntryObserved:$true -OrdinaryTradeDone:$true -HorseDone:$true -ProvisionDone:$true -ManpowerDone:$false -Surface 'settlement_menu'),
+            (Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObserved:$true -TownEntryObserved:$true -OrdinaryTradeDone:$true -HorseDone:$true -ProvisionDone:$true -ManpowerDone:$true -Surface 'settlement_menu')
+        )
+    }
     Add-AssistSessionJsonl -List $evidence.timeline -Event ([ordered]@{
-        atUtc = (Get-Date).ToUniversalTime().ToString('o'); phase = 'dry_run'; decision = $decision
+        atUtc = (Get-Date).ToUniversalTime().ToString('o'); phase = 'dry_run'; decision = $decision; plannedBranchChain = $plannedChain
     })
     Exit-AssistSession -Code 0 -Evidence $evidence -Summary @{
         passFail = 'DRY_RUN'; failureClass = $null; exitCode = 0
+        certProfile = $CertProfile
         loopReadiness = $loopReady; sampleDecision = $decision
+        plannedBranchChain = $plannedChain
+        tradeIterationTarget = $TradeIterationTarget
+        horseAcquisitionTarget = $HorseAcquisitionTarget
+        provisionAcquisitionTarget = $ProvisionAcquisitionTarget
+        manpowerAcquisitionTarget = $ManpowerAcquisitionTarget
         stateMachineConsumed = $loopReady.stateMachineConsumed
         runtimeLifecycleConsumed = $loopReady.runtimeLifecycleConsumed
         readinessConfidence = $loopReady.readinessConfidence
@@ -455,7 +513,6 @@ if (-not $attachReady) {
     }
 }
 
-$cyclePhase = 'assist_loop'
 $readyAtAttach = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
 $loopReadiness = Test-AutonomousAssistLoopReadiness -Readiness $readyAtAttach
 if ($loopReadiness.stateMachineConsumed) {
@@ -466,6 +523,25 @@ if ($loopReadiness.runtimeLifecycleConsumed) {
     Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'runtime_lifecycle_consumed' `
         -SessionId $sessionId -Phase 'attach' -Runner 'run-autonomous-assist-session.ps1' | Out-Null
 }
+
+# Segment attach ends here: campaign load/attach is the long segment; do not continue into travel/trade.
+if ($CertProfile -eq 'full_campaign_handoff' -and $CertSegment -eq 'attach') {
+    $attachSegmentPass = [bool]$attachReady -or [bool]$loopReadiness.ready
+    Exit-AssistSession -Code $(if ($attachSegmentPass) { 0 } else { 2 }) -Evidence $evidence -Summary @{
+        passFail = $(if ($attachSegmentPass) { 'PASS' } else { 'FAIL' })
+        failureClass = $(if ($attachSegmentPass) { $null } else { 'attach_not_ready' })
+        stopReason = $(if ($attachSegmentPass) { 'segment_attach_ready' } else { 'attach_not_ready' })
+        exitCode = $(if ($attachSegmentPass) { 0 } else { 2 })
+        certProfile = $CertProfile
+        certSegment = $CertSegment
+        attachResult = $attachResult
+        fullChainPass = $false
+        highestProofLevel = $(if ($attachSegmentPass) { 'launcher' } else { 'none' })
+        endedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+    }
+}
+
+$cyclePhase = 'assist_loop'
 if (-not $loopReadiness.ready) {
     Exit-AssistSession -Code 2 -Evidence $evidence -Summary @{
         passFail = 'FAIL'; failureClass = 'assist_loop_not_ready'; exitCode = 2
@@ -512,6 +588,17 @@ $latestMovementUpdate = [pscustomobject]@{
 $nonTradeBranchDone = $false
 $provenTradeCount = 0
 $isEconomicLoop = ($CertProfile -eq 'economic_loop')
+$isFullCampaignHandoff = ($CertProfile -eq 'full_campaign_handoff')
+$arrivalObserved = $false
+$townEntryObserved = $false
+$governorHandoffPresent = $false
+$ordinaryTradeDone = $false
+$horseAcquisitionDone = $false
+$provisionAcquisitionDone = $false
+$manpowerAcquisitionDone = $false
+$latestManpowerEvidence = $null
+$latestHandoffChain = @()
+$fullCriteria = $null
 # Only proven trade rows stamped at/after this moment are attributed to the current run, so a prior
 # cert's append-only rows in the game-root trade file cannot trip the target before this session buys.
 $tradeScopeSinceUtc = (Get-Date).ToUniversalTime()
@@ -567,21 +654,23 @@ while ((Get-Date) -lt $loopDeadline) {
     }
 
     $tradeTargetReached = $false
-    if ($isEconomicLoop) {
+    if ($isEconomicLoop -or $isFullCampaignHandoff) {
         $provenTradeCount = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot -SinceUtc $tradeScopeSinceUtc
         $evidence.tradeIterationCount = $provenTradeCount
-        $tradeTargetReached = ($provenTradeCount -ge $TradeIterationTarget)
-        if ($tradeTargetReached) {
-            $stopReason = 'trade_iteration_target_reached'
-            Write-SessionLog "Economic loop target reached: $provenTradeCount/$TradeIterationTarget proven trades"
-            break
-        }
-        if (-not $nonTradeBranchDone) {
-            $economicNoBranchCycles++
-            if ($economicNoBranchCycles -ge $nonTradeBranchMaxCycles) {
-                $stopReason = 'non_trade_branch_unavailable'
-                Write-SessionLog "Economic loop stopping: no non-trade branch executed/blocked within $economicNoBranchCycles cycles; cannot establish multi-branch evidence (is the party able to travel to a trade town?)"
+        if ($isEconomicLoop) {
+            $tradeTargetReached = ($provenTradeCount -ge $TradeIterationTarget)
+            if ($tradeTargetReached) {
+                $stopReason = 'trade_iteration_target_reached'
+                Write-SessionLog "Economic loop target reached: $provenTradeCount/$TradeIterationTarget proven trades"
                 break
+            }
+            if (-not $nonTradeBranchDone) {
+                $economicNoBranchCycles++
+                if ($economicNoBranchCycles -ge $nonTradeBranchMaxCycles) {
+                    $stopReason = 'non_trade_branch_unavailable'
+                    Write-SessionLog "Economic loop stopping: no non-trade branch executed/blocked within $economicNoBranchCycles cycles; cannot establish multi-branch evidence (is the party able to travel to a trade town?)"
+                    break
+                }
             }
         }
     }
@@ -601,6 +690,70 @@ while ((Get-Date) -lt $loopDeadline) {
 		$ready = Get-Pr11AssistiveReadiness -StatusPath $statusPath -BannerlordRoot $bannerlordRoot
 		$targetResolution = Get-AutonomousAssistEngineTravelTarget -Readiness $ready -BannerlordRoot $bannerlordRoot -ExplicitTarget $TargetSettlement
 	}
+
+    if ($isFullCampaignHandoff) {
+        $tradePath = Join-Path $bannerlordRoot 'BlacksmithGuild_TradeIterations.jsonl'
+        $tradeRows = @()
+        if (Test-Path -LiteralPath $tradePath) {
+            $tradeRows = @(Get-Content -LiteralPath $tradePath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+                try { $_ | ConvertFrom-Json } catch { $null }
+            } | Where-Object { $null -ne $_ })
+        }
+        $classified = Get-ProvenTradesByClassification -TradeIterations $tradeRows -SinceUtc $tradeScopeSinceUtc
+        $ordinaryTradeDone = (@($classified.ordinary).Count -ge $TradeIterationTarget)
+        $horseAcquisitionDone = (@($classified.horse).Count -ge $HorseAcquisitionTarget)
+        $provisionAcquisitionDone = (@($classified.food).Count -ge $ProvisionAcquisitionTarget)
+
+        $execSnap = Get-AssistTravelExecutionSnapshotForRunner -BannerlordRoot $bannerlordRoot
+        $arrivalTown = Test-FullCampaignArrivalEvidence -Readiness $ready -ExecutionJson $execSnap.json -TargetSettlement $(if ($targetResolution) { $targetResolution.target } else { $TargetSettlement })
+        if ($arrivalTown.arrivalObserved) { $arrivalObserved = $true }
+        if ($arrivalTown.townEntryObserved) { $townEntryObserved = $true }
+
+        $guildLoopPath = Join-Path $bannerlordRoot 'BlacksmithGuild_AutonomousGuildLoop.json'
+        if (Test-Path -LiteralPath $guildLoopPath) {
+            try {
+                $guildLoopJson = Get-Content -LiteralPath $guildLoopPath -Raw | ConvertFrom-Json
+                $handoffEv = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson $guildLoopJson
+                $governorHandoffPresent = [bool]$handoffEv.present
+                $latestHandoffChain = @($handoffEv.handoffs)
+            } catch { }
+        }
+        if ($arrivalObserved -and $townEntryObserved -and -not $governorHandoffPresent) {
+            Write-SessionLog 'Arrival/town entry observed; refreshing Governor and requesting AutonomousGuildLoop handoff chain.'
+            Invoke-AutonomousAssistEngineHandoffRefresh -BannerlordRoot $bannerlordRoot -TimeoutSec 30 | Out-Null
+            try {
+                Send-ForgeCommand -CommandName RunAutonomousGuildLoopNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
+            } catch {
+                Write-SessionLog "RunAutonomousGuildLoopNow handoff refresh failed: $($_.Exception.Message)"
+            }
+        }
+
+        $recruitPath = Join-Path $bannerlordRoot 'BlacksmithGuild_TavernHeroRecruitment.json'
+        if (Test-Path -LiteralPath $recruitPath) {
+            try {
+                $recruitJson = Get-Content -LiteralPath $recruitPath -Raw | ConvertFrom-Json
+                $latestManpowerEvidence = Test-FullCampaignManpowerEvidence -RecruitmentJson $recruitJson
+                if ($latestManpowerEvidence.proven) { $manpowerAcquisitionDone = $true }
+            } catch { }
+        }
+
+        $segmentState = Test-FullCampaignHandoffSegmentComplete `
+            -CertSegment $CertSegment `
+            -AttachReady:$true `
+            -MovementObserved:$partyMovementCheckpointEmitted `
+            -ArrivalObserved:$arrivalObserved `
+            -TownEntryObserved:$townEntryObserved `
+            -GovernorHandoffPresent:$governorHandoffPresent `
+            -OrdinaryTradeDone:$ordinaryTradeDone `
+            -HorseDone:$horseAcquisitionDone `
+            -ProvisionDone:$provisionAcquisitionDone `
+            -ManpowerDone:$manpowerAcquisitionDone
+        if ($segmentState.complete) {
+            $stopReason = [string]$segmentState.successStopReason
+            Write-SessionLog "Full-campaign segment complete segment=$CertSegment stopReason=$stopReason (not full-chain cert)"
+            break
+        }
+    }
     $lastRecursiveBranchState = $ready.recursiveBranchState
     $lastRecursiveBranchFresh = [bool]$ready.recursiveBranchFresh
 	$foregroundStatus = Get-AutonomousAssistForegroundStatus -Detection $det
@@ -630,7 +783,14 @@ while ((Get-Date) -lt $loopDeadline) {
     $decision = Get-AutonomousAssistIterationDecision -Readiness $ready -AssistProfile $AssistProfile `
 		-TargetSettlement $targetResolution.target -StopOnUnsafeState:$StopOnUnsafeState `
         -LastTravelCommandUtc $lastTravelCommandUtc -TravelCommandCooldownSec $TravelCommandCooldownSec `
-        -CertProfile $CertProfile -TradeTargetReached:$tradeTargetReached -NonTradeBranchDone:$nonTradeBranchDone
+        -CertProfile $CertProfile -TradeTargetReached:$tradeTargetReached -NonTradeBranchDone:$nonTradeBranchDone `
+        -FullCampaignMovementObserved:$partyMovementCheckpointEmitted `
+        -FullCampaignArrivalObserved:$arrivalObserved `
+        -FullCampaignTownEntryObserved:$townEntryObserved `
+        -FullCampaignOrdinaryTradeDone:$ordinaryTradeDone `
+        -FullCampaignHorseDone:$horseAcquisitionDone `
+        -FullCampaignProvisionDone:$provisionAcquisitionDone `
+        -FullCampaignManpowerDone:$manpowerAcquisitionDone
     $lastDecision = $decision
 
     # Classify every cycle so no poll is ever silent/unclassified, and track consecutive safe-idle cycles
@@ -720,7 +880,16 @@ while ((Get-Date) -lt $loopDeadline) {
 					-AlreadyEmitted:$partyMovementCheckpointEmitted
 					$latestMovementUpdate = $movementUpdate
 				$partyMovementCheckpointEmitted = [bool]$movementUpdate.checkpointEmitted
-				if ($partyMovementCheckpointEmitted) { $stopReason = 'movement_observed' }
+				if ($partyMovementCheckpointEmitted) {
+                    if ($isFullCampaignHandoff) {
+                        Write-SessionLog 'Movement checkpoint observed — continuing for arrival/town handoff (not terminal)'
+                        Add-AutomationCheckpointEvent -List $evidence.checkpointEvents -CheckpointName 'party_movement_observed' `
+                            -SessionId $sessionId -Phase 'assist_loop' -Runner 'run-autonomous-assist-session.ps1' `
+                            -Reason 'checkpoint_only_full_campaign_handoff' | Out-Null
+                    } else {
+                        $stopReason = 'movement_observed'
+                    }
+                }
                 } elseif ($decision.commandSent -eq 'ResumeCampaignClock') {
                     Write-SessionLog "Iteration $iteration sending ResumeCampaignClock (paused campaign_map recovery)"
                     Send-ForgeCommand -CommandName ResumeCampaignClock -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
@@ -729,7 +898,7 @@ while ((Get-Date) -lt $loopDeadline) {
                         -Reason 'ResumeCampaignClock' | Out-Null
                     $cmdResult = 'Success'
             } elseif ($decision.commandSent -eq 'ProbeVanillaTradeExecutionNow') {
-                Write-SessionLog "Iteration $iteration sending ProbeVanillaTradeExecutionNow (economic_loop drive proven buy) at $TargetSettlement"
+                Write-SessionLog "Iteration $iteration sending ProbeVanillaTradeExecutionNow (proven buy) at $TargetSettlement"
                 # Send-ForgeCommand returns the command sequence, not the trade verdict. Derive the real
                 # outcome from the mod's proven-trade delta on disk so a blocked buy is recorded as blocked.
                 $provenBeforeSend = Get-EconomicLoopProvenTradeCount -BannerlordRoot $bannerlordRoot -SinceUtc $tradeScopeSinceUtc
@@ -742,6 +911,18 @@ while ((Get-Date) -lt $loopDeadline) {
                 } else {
                     $cmdResult = 'Failed: trade_not_proven'
                 }
+            } elseif ($decision.commandSent -eq 'ProbePackAnimalBuyNow') {
+                Write-SessionLog "Iteration $iteration sending ProbePackAnimalBuyNow"
+                Send-ForgeCommand -CommandName ProbePackAnimalBuyNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
+                $cmdResult = 'Success'
+            } elseif ($decision.commandSent -eq 'ProbeFoodBuyNow') {
+                Write-SessionLog "Iteration $iteration sending ProbeFoodBuyNow"
+                Send-ForgeCommand -CommandName ProbeFoodBuyNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
+                $cmdResult = 'Success'
+            } elseif ($decision.commandSent -eq 'RecruitTavernHeroVisibleNow') {
+                Write-SessionLog "Iteration $iteration sending RecruitTavernHeroVisibleNow"
+                Send-ForgeCommand -CommandName RecruitTavernHeroVisibleNow -BannerlordRoot $bannerlordRoot -Wait -TimeoutSec $ExecuteTimeoutSec | Out-Null
+                $cmdResult = 'Success'
             }
         } catch {
             $cmdResult = "Failed: $($_.Exception.Message)"
@@ -782,7 +963,11 @@ while ((Get-Date) -lt $loopDeadline) {
 		$partyMovementCheckpointEmitted = [bool]$movementUpdate.checkpointEmitted
 		if ($partyMovementCheckpointEmitted) {
 			$partyMovementCheckpointEmitted = $true
-			$stopReason = 'movement_observed'
+            if ($isFullCampaignHandoff) {
+                Write-SessionLog 'Movement checkpoint observed during poll — continuing for arrival/town handoff'
+            } else {
+			    $stopReason = 'movement_observed'
+            }
 		} elseif ($movementObservationDeadline -and (Get-Date) -ge $movementObservationDeadline) {
 			$stopReason = if ($movementUpdate.travelClockRunning) { 'safe_idle_route_set_no_motion' } else { 'safe_idle_clock_stopped' }
 		}
@@ -842,8 +1027,73 @@ $criteriaPreview = Test-AutomationPassCriteria -Events @($evidence.checkpointEve
         runtimeLifecycleConsumed = $loopReadiness.runtimeLifecycleConsumed
     }) -ExecutionJson $executionJsonForCriteria -RequiredCheckpoints $previewRequiredCheckpoints `
     -RequireAssistLoopStarted -RequireExecuteMovement:$travelExecuted
-$passFail = if ($stopReason -in @('timeout', 'trade_iteration_target_reached', 'movement_observed', $null) -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
+$allowedPassStops = @('timeout', 'trade_iteration_target_reached', 'movement_observed', $null)
+if ($isFullCampaignHandoff) {
+    # Segment PASS only. movement_observed and full-chain complete are not automatic PASS here.
+    $allowedPassStops = @(
+        'segment_attach_ready',
+        'segment_movement_observed',
+        'segment_arrival_town_observed',
+        'segment_governor_handoff_observed',
+        'segment_ordinary_trade_proven',
+        'segment_horse_proven',
+        'segment_provision_proven',
+        'segment_manpower_proven'
+    )
+}
+$passFail = if ($stopReason -in $allowedPassStops -and $actionsLogged -gt 0 -and $criteriaPreview.pass) { 'PASS' } `
     else { 'FAIL' }
+
+if ($isFullCampaignHandoff) {
+    $segmentFinal = Test-FullCampaignHandoffSegmentComplete `
+        -CertSegment $CertSegment `
+        -AttachReady:([bool]$attachReady) `
+        -MovementObserved:$partyMovementCheckpointEmitted `
+        -ArrivalObserved:$arrivalObserved `
+        -TownEntryObserved:$townEntryObserved `
+        -GovernorHandoffPresent:$governorHandoffPresent `
+        -OrdinaryTradeDone:$ordinaryTradeDone `
+        -HorseDone:$horseAcquisitionDone `
+        -ProvisionDone:$provisionAcquisitionDone `
+        -ManpowerDone:$manpowerAcquisitionDone
+    if ($segmentFinal.complete -and ($stopReason -eq $segmentFinal.successStopReason)) {
+        $passFail = 'PASS'
+    } else {
+        $passFail = 'FAIL'
+        if ([string]::IsNullOrWhiteSpace($stopReason) -or $stopReason -eq 'timeout') {
+            $stopReason = if ($segmentFinal.failureClass) { $segmentFinal.failureClass } else { 'timeout' }
+        }
+    }
+    # Full-chain criteria are diagnostic only; segment PASS must never collapse into live-runtime-cert.
+    $tradePathFinal = Join-Path $bannerlordRoot 'BlacksmithGuild_TradeIterations.jsonl'
+    $tradeRowsFinal = @()
+    if (Test-Path -LiteralPath $tradePathFinal) {
+        $tradeRowsFinal = @(Get-Content -LiteralPath $tradePathFinal | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+            try { $_ | ConvertFrom-Json } catch { $null }
+        } | Where-Object { $null -ne $_ })
+    }
+    $fullCriteria = Test-FullCampaignHandoffPassCriteria `
+        -CertProfile $CertProfile `
+        -StopReason $(if ($stopReason -like 'segment_*') { 'timeout' } else { $stopReason }) `
+        -MovementObserved:$partyMovementCheckpointEmitted `
+        -ArrivalObserved:$arrivalObserved `
+        -TownEntryObserved:$townEntryObserved `
+        -GovernorHandoffPresent:$governorHandoffPresent `
+        -TradeIterations $tradeRowsFinal `
+        -TradeScopeSinceUtc $tradeScopeSinceUtc `
+        -TradeIterationTarget $TradeIterationTarget `
+        -HorseAcquisitionTarget $HorseAcquisitionTarget `
+        -ProvisionAcquisitionTarget $ProvisionAcquisitionTarget `
+        -ManpowerAcquisitionTarget $ManpowerAcquisitionTarget `
+        -ManpowerEvidence $latestManpowerEvidence `
+        -RuntimeEvents @($evidence.runtimeEvents.ToArray()) `
+        -CheckpointEvents @($evidence.checkpointEvents.ToArray()) `
+        -BranchConsiderationLog @($evidence.branchConsiderationLog.ToArray()) `
+        -RequireTerminalEvent:$false
+    $fullCriteria | Add-Member -NotePropertyName segmentPass -NotePropertyValue ($passFail -eq 'PASS') -Force
+    $fullCriteria | Add-Member -NotePropertyName certSegment -NotePropertyValue $CertSegment -Force
+    $fullCriteria | Add-Member -NotePropertyName fullChainPass -NotePropertyValue $false -Force
+}
 
 # Explicit post-attach proof-mode separation. Attach-ready and read-only reasoning are NOT a visible
 # mechanics PASS; only a real observed party-movement delta promotes this run to visible_mechanics_proof.
@@ -851,6 +1101,18 @@ $visibleMechanicsProven = [bool]$partyMovementCheckpointEmitted
 $proofMode = if ($visibleMechanicsProven) { 'visible_mechanics_proof' } `
     elseif ($attachReady) { 'attach_readiness_proof' } `
     else { 'attach_readiness_proof' }
+
+$highestProofLevel = 'none'
+if ($attachReady) { $highestProofLevel = 'launcher' }
+if ($travelExecuted) { $highestProofLevel = 'command-ack' }
+if ($partyMovementCheckpointEmitted) { $highestProofLevel = 'movement' }
+if ($arrivalObserved) { $highestProofLevel = 'arrival' }
+if ($townEntryObserved) { $highestProofLevel = 'town-entry' }
+if ($ordinaryTradeDone) { $highestProofLevel = 'trade' }
+if ($horseAcquisitionDone) { $highestProofLevel = 'horse' }
+if ($provisionAcquisitionDone) { $highestProofLevel = 'provision' }
+if ($manpowerAcquisitionDone) { $highestProofLevel = 'manpower' }
+if ($passFail -eq 'PASS' -and $isFullCampaignHandoff) { $highestProofLevel = 'live-runtime-cert' }
 
 $summary = [ordered]@{
     sessionId = $sessionId
@@ -863,6 +1125,7 @@ $summary = [ordered]@{
     exitCode = if ($passFail -eq 'PASS') { 0 } else { 2 }
     attachResult = $attachResult
     assistProfile = $AssistProfile
+    certProfile = $CertProfile
     assistLoopStarted = $evidence.assistLoopStarted
     assistLoopStartedWithoutHotkey = $evidence.assistLoopStartedWithoutHotkey
     stateMachineConsumed = $loopReadiness.stateMachineConsumed
@@ -873,6 +1136,12 @@ $summary = [ordered]@{
     travelExecuted = $travelExecuted
     proofMode = $proofMode
     visibleMechanicsProven = $visibleMechanicsProven
+    movementObserved = [bool]$partyMovementCheckpointEmitted
+    arrivalObserved = [bool]$arrivalObserved
+    townEntryObserved = [bool]$townEntryObserved
+    governorHandoffPresent = [bool]$governorHandoffPresent
+    handoffChain = $latestHandoffChain
+    highestProofLevel = $highestProofLevel
     movementProofClassification = $latestMovementUpdate.movementProofClassification
     movementMetricDisagreement = [bool]$latestMovementUpdate.movementMetricDisagreement
     movementCheckpointObserved = [bool]$latestMovementUpdate.movementCheckpointObserved
@@ -880,6 +1149,7 @@ $summary = [ordered]@{
     lastSafeIdleClass = $lastSafeIdleClass
     maxConsecutiveSafeIdleCycles = $maxConsecutiveSafeIdleObserved
     automationPassCriteria = $criteriaPreview
+    fullCampaignHandoffCriteria = $(if ($isFullCampaignHandoff -and $fullCriteria) { $fullCriteria } else { $null })
     gameProcessAlive = $(if ($stopReason -match 'game_process_gone|process_disappeared|game_gone|game_exited') { $false } else { $true })
     endedAtUtc = $endedAtUtc
     checkpointDir = $checkpointDir

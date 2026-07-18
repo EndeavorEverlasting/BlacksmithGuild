@@ -555,7 +555,14 @@ function Get-AutonomousAssistIterationDecision {
         [int]$TravelCommandCooldownSec = 45,
         [string]$CertProfile = 'default',
         [bool]$TradeTargetReached = $false,
-        [bool]$NonTradeBranchDone = $false
+        [bool]$NonTradeBranchDone = $false,
+        [bool]$FullCampaignMovementObserved = $false,
+        [bool]$FullCampaignArrivalObserved = $false,
+        [bool]$FullCampaignTownEntryObserved = $false,
+        [bool]$FullCampaignOrdinaryTradeDone = $false,
+        [bool]$FullCampaignHorseDone = $false,
+        [bool]$FullCampaignProvisionDone = $false,
+        [bool]$FullCampaignManpowerDone = $false
     )
 
     $nowUtc = (Get-Date).ToUniversalTime()
@@ -637,6 +644,40 @@ function Get-AutonomousAssistIterationDecision {
             $base.plannedBranch = 'trade'
             return [pscustomobject]$base
         }
+    }
+
+    # Full campaign handoff: after arrival/town entry, drive ordinary trade -> pack -> food -> recruit.
+    # Movement is never a terminal stop for this profile.
+    if ($CertProfile -eq 'full_campaign_handoff') {
+        if (-not (Get-Command Get-FullCampaignHandoffNextCommand -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'full-campaign-handoff-cert.ps1')
+        }
+        $next = Get-FullCampaignHandoffNextCommand `
+            -MovementObserved:$FullCampaignMovementObserved `
+            -ArrivalObserved:$FullCampaignArrivalObserved `
+            -TownEntryObserved:$FullCampaignTownEntryObserved `
+            -OrdinaryTradeDone:$FullCampaignOrdinaryTradeDone `
+            -HorseDone:$FullCampaignHorseDone `
+            -ProvisionDone:$FullCampaignProvisionDone `
+            -ManpowerDone:$FullCampaignManpowerDone `
+            -Surface $surface
+        if ($next.reason -eq 'full_campaign_handoff_complete') {
+            $base.actionConsidered = 'finalize'
+            $base.decision = 'observe'
+            $base.reason = 'full_campaign_handoff_complete'
+            $base.plannedBranch = 'finalize'
+            return [pscustomobject]$base
+        }
+        if ($next.commandSent) {
+            $base.actionConsidered = $next.phase
+            $base.decision = 'allowed'
+            $base.commandSent = $next.commandSent
+            $base.target = $TargetSettlement
+            $base.reason = $next.reason
+            $base.plannedBranch = $next.phase
+            return [pscustomobject]$base
+        }
+        # Still traveling / awaiting arrival: fall through to recursive travel planning.
     }
 
     $rbs = $Readiness.recursiveBranchState
@@ -1191,6 +1232,19 @@ function Save-AutonomousAssistSessionEvidence {
     if ($isEconomicLoop -and (Get-Command Save-EconomicLoopCertEvidence -ErrorAction SilentlyContinue)) {
         $target = if ($null -ne $Evidence.tradeIterationTarget) { [int]$Evidence.tradeIterationTarget } else { 10 }
         Save-EconomicLoopCertEvidence -Evidence $Evidence -BannerlordRoot $BannerlordRoot -TradeIterationTarget $target | Out-Null
+    }
+
+    if ([string]$Evidence.certProfile -eq 'full_campaign_handoff') {
+        if (-not (Get-Command Save-FullCampaignHandoffCertEvidence -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'full-campaign-handoff-cert.ps1')
+        }
+        $criteria = if ($Summary.fullCampaignHandoffCriteria) { $Summary.fullCampaignHandoffCriteria } else {
+            Test-FullCampaignHandoffPassCriteria -CertProfile 'full_campaign_handoff' -StopReason ([string]$Summary.stopReason) `
+                -MovementObserved:([bool]$Summary.movementObserved) -ArrivalObserved:([bool]$Summary.arrivalObserved) `
+                -TownEntryObserved:([bool]$Summary.townEntryObserved) -GovernorHandoffPresent:([bool]$Summary.governorHandoffPresent) `
+                -RequireTerminalEvent:$false
+        }
+        Save-FullCampaignHandoffCertEvidence -Evidence $Evidence -BannerlordRoot $BannerlordRoot -Summary $Summary -Criteria $criteria | Out-Null
     }
 
     if ($Summary.travelExecuted -eq $true) {
