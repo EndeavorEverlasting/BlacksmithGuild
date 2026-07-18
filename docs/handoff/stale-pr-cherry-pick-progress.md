@@ -1,9 +1,9 @@
 # Stale branch cherry-pick progress
 
 > **Overall: INCOMPLETE**
-> **4 of 16 stale pull requests are complete (25%).**
-> **Current distribution: 1 in progress, 4 blocked, and 7 not started.**
-> **Next: Wave C, PR #8: Merge PR #87 after exact-head CI, then close PR #8 with the terminal preservation comment.**
+> **5 of 16 stale pull requests are complete (31.2%).**
+> **Current distribution: 0 in progress, 4 blocked, and 7 not started.**
+> **Next: Wave D1, PR #28: Map the feedback-harness manifest fields into the current harness or record explicit rejections.**
 
 The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
 
@@ -18,7 +18,7 @@ The stale-branch cherry-pick process is finished only when every planned source 
 | A | #9 | ✅ historical retained | #65 | — | The maintained replacement PR #65 merged and the original PR remains as historical provenance. Final disposition: all unique evidence and coordination value is now on current main. | No further replay work remains for PR #9. |
 | A | #34 | ✅ superseded recorded | #65 | — | The concurrent sprint map was replayed onto current main via PR #65 and supersedes the stale branch copy entirely. | No further replay work remains for PR #34. |
 | B | #2 | ✅ replayed and merged | #66 | — | Superseded by PR #66, which replays the same three files from PR #2 head 61090349037c89d4bcbc1c0e3fd4a3651333e7e6 onto current main. Source branch and original commit remain as historical provenance. | No further replay work remains for PR #2. |
-| C | #8 | 🟡 replacement pr open | #87 | — | PR #8 unique current-main delta is the forge -VerifyLogPatterns entrypoint plus preservation matrix; remaining F7 runner/helpers/docs already live on main or are explicitly rejected stubs/June evidence. | Merge PR #87 after exact-head CI, then close PR #8 with the terminal preservation comment. |
+| C | #8 | ✅ replayed and merged | #87 | — | PR #8 useful current-main value preserved via PR #87 (forge -VerifyLogPatterns + preservation matrix). Remaining F7 helpers/docs already on main; stub runners and June evidence rejected as current proof. Source head d8a0e0e retained as provenance. | No further replay work remains for PR #8. |
 | D1 | #28 | ⬜ not started | — | — | — | Map the feedback-harness manifest fields into the current harness or record explicit rejections. |
 | D1 | #29 | ⬜ not started | — | — | — | Adapt or reject the feedback writer against the current effective-context schema. |
 | D1 | #30 | ⬜ not started | — | — | — | Port or reject the pure remediation planner using current result schemas and fixtures. |
@@ -62,7 +62,7 @@ Record a terminal disposition only after its gate is satisfied:
 ## Exact next command
 
 ```powershell
-gh pr view 87 --json number,title,state,isDraft,mergeable,headRefOid,baseRefName,checks
+.\ForgeStalePrRecovery.cmd -Wave D1 -PrNumber 28 -LocalFloorVerified
 ```
 
 ## Proof boundary
