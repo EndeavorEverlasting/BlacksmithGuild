@@ -1,0 +1,16 @@
+{
+  "schema": "tbg.runtime-context-continuity.fixtures.v1",
+  "cases": [
+    {"id": "active-human-preserved", "claimsAction": false, "mutationEvidence": false, "runtimeClassification": "active_human", "requestedProcessMutation": "none", "remoteEvidence": "sanitized_capsule", "expected": "PASS"},
+    {"id": "active-foreign-preserved", "claimsAction": false, "mutationEvidence": false, "runtimeClassification": "active_foreign", "requestedProcessMutation": "none", "remoteEvidence": "none", "expected": "PASS"},
+    {"id": "ambiguous-fails-closed", "claimsAction": false, "mutationEvidence": false, "runtimeClassification": "ambiguous", "requestedProcessMutation": "none", "remoteEvidence": "sanitized_capsule", "expected": "PASS"},
+    {"id": "owned-session-stop", "claimsAction": true, "mutationEvidence": true, "runtimeClassification": "active_owned", "requestedProcessMutation": "stop", "remoteEvidence": "sanitized_capsule", "expected": "PASS"},
+    {"id": "stale-proven-cleanup", "claimsAction": true, "mutationEvidence": true, "runtimeClassification": "stale_or_zombie_proven", "requestedProcessMutation": "kill", "remoteEvidence": "sanitized_capsule", "expected": "PASS"},
+    {"id": "process-presence-kill-rejected", "claimsAction": true, "mutationEvidence": true, "runtimeClassification": "ambiguous", "requestedProcessMutation": "kill", "remoteEvidence": "none", "expected": "FAIL"},
+    {"id": "human-session-stop-rejected", "claimsAction": true, "mutationEvidence": true, "runtimeClassification": "active_human", "requestedProcessMutation": "stop", "remoteEvidence": "none", "expected": "FAIL"},
+    {"id": "raw-log-remote-rejected", "claimsAction": false, "mutationEvidence": false, "runtimeClassification": "active_owned", "requestedProcessMutation": "none", "remoteEvidence": "raw_log", "expected": "FAIL"},
+    {"id": "action-claim-plan-only-rejected", "claimsAction": true, "mutationEvidence": false, "runtimeClassification": "absent", "requestedProcessMutation": "none", "remoteEvidence": "none", "expected": "FAIL"},
+    {"id": "handoff-crash-sanitized", "claimsAction": true, "mutationEvidence": true, "runtimeClassification": "active_owned", "requestedProcessMutation": "none", "remoteEvidence": "sanitized_capsule", "handoffCrashContextComplete": true, "expected": "PASS"},
+    {"id": "handoff-crash-missing-context", "claimsAction": true, "mutationEvidence": true, "runtimeClassification": "active_owned", "requestedProcessMutation": "none", "remoteEvidence": "sanitized_capsule", "handoffCrashContextComplete": false, "expected": "FAIL"}
+  ]
+}
