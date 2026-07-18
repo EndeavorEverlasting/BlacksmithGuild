@@ -1,0 +1,231 @@
+{
+  "schema": "tbg.priority-engine.policy.v1",
+  "description": "Autonomous priority engine doctrine — governs which engine the campaign runtime governor selects next. Codifies the deterministic evaluation cascade with safety gates, resource thresholds, and gating preconditions.",
+
+  "cascade": {
+    "evaluation": "sequential_order_returns_on_first_match",
+    "description": "Each rank is evaluated in ascending order. When a branch condition is true AND its gating preconditions pass, that branch is selected and evaluation stops. Lower-ranked branches are never reached when a higher rank fires. A branch may BLOCK lower-priority branches (e.g., low food blocks profitable_trade)."
+  },
+
+  "branches": [
+    {
+      "rank": 1,
+      "id": "game_health",
+      "name": "Game Health",
+      "condition": "GameHealth != 'ok'",
+      "gating": "none — this is the emergency stop",
+      "action": "pause automation, report failure class",
+      "blocks": [],
+      "terminal": true
+    },
+    {
+      "rank": 2,
+      "id": "surface_safety",
+      "name": "Surface Safety",
+      "condition": "MapTransitionGuard defers OR campaign map / settlement interior / menu not ready",
+      "gating": "none — surface must be safe before any gameplay action",
+      "action": "wait for surface to become ready",
+      "blocks": [],
+      "terminal": true
+    },
+    {
+      "rank": 3,
+      "id": "threat_politics_safety",
+      "name": "Threat and Politics Safety",
+      "condition": "ThreatStatus is unknown or unsafe",
+      "gating": "none — safety is non-negotiable",
+      "action": "hold position, wait for threat assessment",
+      "blocks": ["profitable_trade", "travel_to_best_known_opportunity"],
+      "terminal": true
+    },
+    {
+      "rank": 4,
+      "id": "food_quantity",
+      "name": "Food Quantity",
+      "condition": "Food quantity status is critical OR low, OR food forecast is critical OR low",
+      "gating": "none — survival overrides profit",
+      "action": "resupply food before any discretionary action",
+      "blocks": ["profitable_trade", "travel_to_best_known_opportunity"],
+      "terminal": true,
+      "doctrine": "When the party is at risk of starvation, buying food takes absolute priority over buying trade goods. The governor emits FoodQuantityLow event and blocks all trade until food runway exceeds the planning horizon."
+    },
+    {
+      "rank": 5,
+      "id": "food_diversity",
+      "name": "Food Diversity",
+      "condition": "Food diversity status is low",
+      "gating": "none — morale depends on food variety",
+      "action": "acquire diverse food types",
+      "blocks": ["profitable_trade"],
+      "terminal": true,
+      "doctrine": "Even when quantity is sufficient, low diversity harms party morale. The governor acquires missing food types before resuming trade."
+    },
+    {
+      "rank": 6,
+      "id": "refresh_horse_atlas",
+      "name": "Horse Atlas Refresh",
+      "condition": "HorseMarketAtlas is missing or stale",
+      "gating": "none — horse data must be current before any horse decision",
+      "action": "scan market intel for horse availability and prices",
+      "blocks": [],
+      "terminal": true,
+      "doctrine": "Horses provide DUAL utility: (1) mounted speed for faster travel, (2) inventory capacity for more trade volume. Both utilities depend on current market data. The atlas must be refreshed before buying, selling, or evaluating horse-to-man ratios."
+    },
+    {
+      "rank": 7,
+      "id": "analyze_herd_ledger",
+      "name": "Herd Ledger Analysis",
+      "condition": "HerdLedger is missing or stale",
+      "gating": "none — ledger must be current to evaluate all horse decisions",
+      "action": "analyze herd composition, count horse-like items, compute speed and capacity posture",
+      "blocks": [],
+      "terminal": true,
+      "doctrine": "The herd ledger reveals party speed contributions, capacity headroom, and cavalry upgrade reserves. All downstream horse decisions (buy, sell, capacity, speed, recruitment gating) depend on this analysis being current."
+    },
+    {
+      "rank": 8,
+      "id": "capacity_pressure",
+      "name": "Inventory Capacity Pressure",
+      "condition": "Capacity status starts with 'pressure'",
+      "gating": "none — full inventory blocks all trade and loot",
+      "action": "acquire pack animals or sell excess to relieve capacity",
+      "blocks": ["profitable_trade"],
+      "terminal": true,
+      "doctrine": "When inventory is near capacity, trade cannot function. The governor prioritizes pack animal acquisition (horses, mules, camels) to expand capacity before resuming trade. Each pack animal adds carry weight AND contributes to party speed."
+    },
+    {
+      "rank": 9,
+      "id": "horse_speed_utility",
+      "name": "Horse Speed Utility",
+      "condition": "Horse status indicates deficit, low speed, or profit opportunity from route council",
+      "gating": "Route council must recommend horse utility action (improve_party_speed, horse_profit, buy_pack_capacity)",
+      "action": "acquire horses to improve speed or exploit underpriced horse market",
+      "blocks": [],
+      "terminal": true,
+      "doctrine": "Horses are a continuous utility asset. More horses (up to the infantry-to-cavalry ratio cap) mean faster map travel. Faster travel means more trade cycles per hour. After basic needs (food, capacity) are met, acquiring surplus horses is a force-multiplier for all economic activity. The horse_profit branch only activates when food/safety/capacity/recruitment/upgrade/gold bases are confirmed clear."
+    },
+    {
+      "rank": 10,
+      "id": "smithing_or_prep",
+      "name": "Smithing Readiness",
+      "condition": "Smithing status is ready_or_advisory",
+      "gating": "bounded execution must be enabled; governor spine ships with bounded execution disabled by default",
+      "action": "execute smithing cycle at current town",
+      "blocks": [],
+      "terminal": true
+    },
+    {
+      "rank": 11,
+      "id": "profitable_trade",
+      "name": "Profitable Trade",
+      "condition": "Trade status starts with 'cached' AND has at least one route (routes > 0)",
+      "gating": "must not be blocked by food_quantity (rank 4), food_diversity (rank 5), capacity_pressure (rank 8), or threat_politics_safety (rank 3)",
+      "action": "travel to best known trade opportunity and execute buy",
+      "blocks": [],
+      "terminal": true,
+      "doctrine": "Trade is the primary economic engine but yields to survival needs. Trade goods are only purchased when: (1) food runway exceeds the planning horizon, (2) food diversity is adequate, (3) inventory has capacity headroom, and (4) no hostiles threaten the route. When all gates pass, the governor delegates to MapTradeMissionSelector for scored destination ranking."
+    },
+    {
+      "rank": 12,
+      "id": "travel_to_best_known_opportunity",
+      "name": "Travel Opportunity",
+      "condition": "Destination candidate is not empty (from prior market scan or route council)",
+      "gating": "must not be blocked by threat_politics_safety (rank 3) or route council veto",
+      "action": "travel to the best known destination",
+      "blocks": [],
+      "terminal": true
+    },
+    {
+      "rank": 13,
+      "id": "companion_tavern_opportunity",
+      "name": "Companion Recruitment",
+      "condition": "Companion status starts with 'available'",
+      "gating": {
+        "horse_to_man_ratio": {
+          "rule": "party needs at least one rideable horse per companion to be recruited, plus two surplus for speed and capacity",
+          "minimum_horses": "party_member_count + pending_companion_count + 2",
+          "doctrine": "Recruitment without horses slows the party and reduces trade throughput. The governor MUST NOT select companion recruitment when horse inventory falls below the minimum ratio. A horse deficit reverts to horse_speed_utility (rank 9) or capacity_pressure (rank 8) before recruitment is eligible."
+        }
+      },
+      "action": "enter tavern and recruit available companion",
+      "blocks": [],
+      "terminal": true,
+      "doctrine": "Companions are force-multipliers for party skills (scouting, trading, stewardship, medicine) but each added body consumes food and reduces speed without a mount. Recruitment is gated on: (1) food runway sufficient for one more mouth, (2) horse inventory meets the minimum ratio, (3) gold reserves exceed the recruitment cost buffer."
+    },
+    {
+      "rank": 14,
+      "id": "diplomacy_political_adjustment",
+      "name": "Diplomacy Adjustment",
+      "condition": "Not currently evaluated in governor cascade (reserved for future policy integration)",
+      "gating": "future: war declaration, faction posture change, mercenary contract expiration",
+      "action": "adjust party posture, avoid hostile territory, re-route trade away from war zones",
+      "blocks": [],
+      "terminal": false,
+      "doctrine": "Reserved. Diplomatic state changes should reroute trade away from hostile kingdoms and prioritize neutral territory."
+    },
+    {
+      "rank": 15,
+      "id": "report_insufficient",
+      "name": "Report Insufficient",
+      "condition": "Trade report is insufficient or market scan is stale",
+      "gating": "none — this is a diagnostic fallback",
+      "action": "request new market scan, emit ReportInsufficient event",
+      "blocks": [],
+      "terminal": false
+    },
+    {
+      "rank": 16,
+      "id": "observe_only",
+      "name": "Observe Only",
+      "condition": "No higher-priority branch matched",
+      "gating": "none — this is the idle fallback",
+      "action": "wait for next tick, no action taken",
+      "blocks": [],
+      "terminal": false,
+      "doctrine": "When no branch matches, the governor observes and waits. This is not an error — it means all needs are currently met. The next tick may activate a branch if conditions change (food depletes, a market scan completes, a new companion becomes available)."
+    }
+  ],
+
+  "horse_utility_doctrine": {
+    "dual_utility": {
+      "speed": "Mounted speed increases as the ratio of rideable horses to party members approaches 1:1. A horse deficit causes the 'herd penalty' speed reduction shown on the campaign map. Every infantryman without a mount slows the column.",
+      "capacity": "Each pack animal (horse, mule, camel, sumpter horse) adds carry weight to the party inventory. More capacity means larger trade volumes per trip, reducing travel overhead per gold earned.",
+      "combined": "Horses multiply economic throughput: more speed = more trade cycles per hour; more capacity = more gold per cycle. This makes horse acquisition the highest-leverage investment after basic survival needs are met."
+    },
+    "horse_to_man_minimum": {
+      "rule": "party must maintain at least (member_count + pending_recruits + 2) horses before recruiting new members",
+      "surplus_two": "the +2 surplus ensures the party retains speed after adding a new member; without surplus, each recruit slows the party immediately",
+      "deficit_behavior": "when horses < minimum, the governor must select horse acquisition (rank 6-9) before companion recruitment (rank 13)"
+    },
+    "pack_animal_priority": "capacity_pressure (rank 8) fires before profitable_trade (rank 11). The governor buys pack animals when inventory is full rather than trying to trade with no space."
+  },
+
+  "food_vs_trade_dynamic": {
+    "thresholds": {
+      "critical_food": "2 days or fewer remaining — all non-safety actions blocked, food_quantity (rank 4) fires",
+      "low_food": "3-5 days remaining — trade blocked, food_quantity (rank 4) fires",
+      "low_diversity": "fewer than 3 unique food types — trade blocked, food_diversity (rank 5) fires",
+      "adequate": "> 5 days remaining AND >= 3 unique types — trade is eligible (rank 11)"
+    },
+    "doctrine": "Food is a survival constraint. The governor checks food BEFORE trade goods in the cascade (ranks 4-5 vs rank 11). When food is adequate, trade optimization runs. When food is marginal, food acquisition overrides all profit-seeking behavior."
+  },
+
+  "recruitment_gating": {
+    "preconditions": [
+      "food runway >= 3 days after adding one more mouth",
+      "horse inventory >= (current_members + pending_companions + 2)",
+      "gold reserves >= recruitment cost + 500 denar buffer",
+      "companion status starts with 'available' in a reachable settlement"
+    ],
+    "doctrine": "Recruitment is gated behind horse availability. The party cannot recruit faster than it can mount. Each new companion without a horse reduces party speed, increases food consumption, and adds no trade capacity. The governor must ensure the herd supports the headcount before recruiting."
+  },
+
+  "implementation_surface": {
+    "policy_file": "src/BlacksmithGuild/CampaignRuntime/CampaignRuntimePolicy.cs",
+    "governor_file": "src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs",
+    "status_readers": "src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeStatusReaders.cs",
+    "route_council": "src/BlacksmithGuild/CampaignRuntime/CampaignRouteCouncil.cs",
+    "decision_writer": "src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecisionWriter.cs",
+    "validator": "scripts/tbg/Test-TbgPriorityEngine.ps1"
+  }
+}

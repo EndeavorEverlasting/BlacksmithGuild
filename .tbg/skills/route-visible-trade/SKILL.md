@@ -24,10 +24,12 @@ description: Own campaign readiness, route start, route-owned time, movement, ar
 
 1. `AGENTS.md`
 2. `.tbg/skills/manifest.json`
-3. `docs/handoff/recursive-campaign-assist-loop.md`
-4. `docs/control/logs/open/autonomous-assist-session-target.md`
-5. current `src/BlacksmithGuild/MapTrade/**`
-6. the active route workflow, cert, and runtime evidence
+3. `.tbg/harness/policies/priority-engine.policy.json`
+4. `docs/handoff/recursive-campaign-assist-loop.md`
+5. `docs/control/logs/open/autonomous-assist-session-target.md`
+6. current `src/BlacksmithGuild/MapTrade/**`
+7. current `src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs`
+8. the active route workflow, cert, and runtime evidence
 
 ## Behavior proof sequence
 

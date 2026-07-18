@@ -20,6 +20,9 @@ namespace BlacksmithGuild.CampaignRuntime
         public const string BranchObserveOnly = "observe_only";
         public const string BranchFailSafePause = "failsafe_pause";
 
+        public const string BranchHorseToManRatioGate = "horse_to_man_ratio";
+        public const float MinHorseSurplusForRecruitment = 2.0f;
+
         public static int RankForBranch(string branch)
         {
             switch (branch)
