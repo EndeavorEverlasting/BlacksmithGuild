@@ -16,6 +16,7 @@ namespace BlacksmithGuild.MapTrade
         public string SessionId { get; set; }
         public int? CycleId { get; set; }
         public string ItemName { get; set; }
+        public string ItemClassification { get; set; }
         public string Direction { get; set; }
         public int GoldBefore { get; set; }
         public int GoldAfter { get; set; }
@@ -77,6 +78,7 @@ namespace BlacksmithGuild.MapTrade
 
             AppendString(sb, "atUtc", DateTime.UtcNow.ToString("o"));
             AppendString(sb, "itemName", r.ItemName);
+            AppendString(sb, "itemClassification", r.ItemClassification);
             AppendString(sb, "direction", r.Direction);
             sb.Append(",\"goldBefore\":").Append(r.GoldBefore);
             sb.Append(",\"goldAfter\":").Append(r.GoldAfter);

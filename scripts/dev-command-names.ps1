@@ -82,6 +82,7 @@ function Get-DevCommandNames {
         'RunForgeHandoffAfterTradeNow',
         'ProbeVanillaTradeExecutionNow',
         'ProbePackAnimalBuyNow',
+        'ProbeFoodBuyNow',
         'ProbeWeaponSmeltNow',
         'RunWeaponSmeltNow',
         'RunAutonomousGuildLoopNow',

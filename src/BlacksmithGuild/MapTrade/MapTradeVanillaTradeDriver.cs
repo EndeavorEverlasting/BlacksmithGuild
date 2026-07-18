@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.Food;
 using BlacksmithGuild.Forge;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
@@ -17,6 +18,7 @@ namespace BlacksmithGuild.MapTrade
     {
         public const string ProbeVanillaTradeExecutionNowCommand = "ProbeVanillaTradeExecutionNow";
         public const string ProbePackAnimalBuyNowCommand = "ProbePackAnimalBuyNow";
+        public const string ProbeFoodBuyNowCommand = "ProbeFoodBuyNow";
 
         public static string LastProbeMethod { get; private set; }
         public static bool LastProbeAvailable { get; private set; }
@@ -134,14 +136,18 @@ namespace BlacksmithGuild.MapTrade
                 return false;
             }
 
-            if (MapTradeTradeActionReflection.TryExecuteBuy(settlement, item, 1, out var result, out detail))
+            var classification = mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
+                ? "PackAnimal"
+                : "Ordinary";
+            if (MapTradeTradeActionReflection.TryExecuteBuy(
+                    settlement,
+                    item,
+                    1,
+                    out var result,
+                    out detail,
+                    itemClassification: classification))
             {
                 LastExecutionResult = result;
-                if (mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade)
-                {
-                    LastExecutionResult.ItemClassification = "PackAnimal";
-                }
-
                 LastProbeMethod = result.ExecutionMethod;
                 LastProbeAvailable = true;
                 LastProbeDetail = detail;
@@ -172,12 +178,23 @@ namespace BlacksmithGuild.MapTrade
             {
                 SettlementNavigationHelper.TryEnsureSettlementInterior(out _);
                 var mission = MapTradeMissionSelector.SelectBestMission();
-                if (mission?.ItemId != null)
+                if (mission?.ItemId != null
+                    && mission.MissionType != MapTradeMissionType.BuyPackAnimalForCapacityThenTrade)
                 {
                     var item = MapTradeTradeActionReflection.ResolveItem(mission.ItemId);
-                    if (item != null)
+                    if (item != null && !FoodProtectionPolicy.IsFoodItem(item))
                     {
-                        success = MapTradeTradeActionReflection.TryExecuteBuy(settlement, item, 1, out execution, out attemptDetail);
+                        success = MapTradeTradeActionReflection.TryExecuteBuy(
+                            settlement,
+                            item,
+                            1,
+                            out execution,
+                            out attemptDetail,
+                            itemClassification: "Ordinary");
+                    }
+                    else if (item != null)
+                    {
+                        attemptDetail = "best mission item is food/pack; ordinary trade probe skipped that item";
                     }
                 }
             }
@@ -295,6 +312,87 @@ namespace BlacksmithGuild.MapTrade
             WritePackAnimalProbeJson(source, signatures, settlement, mission, underBuffer, success, attemptDetail, execution);
             InGameNotice.Info($"TBG PACK BUY PROBE: {(success ? "pack delta proven" : attemptDetail ?? "blocked")}");
             return success;
+        }
+
+        public static bool RunProbeFoodBuyNow(string source = ProbeFoodBuyNowCommand)
+        {
+            GameSessionState.Refresh();
+            var settlement = MobileParty.MainParty?.CurrentSettlement ?? GameSessionState.ResolveCurrentSettlement();
+            MapTradeExecutionResult execution = null;
+            string attemptDetail = null;
+            var success = false;
+
+            if (settlement == null)
+            {
+                attemptDetail = "party not at settlement — travel required before food buy";
+            }
+            else
+            {
+                SettlementNavigationHelper.TryEnsureSettlementInterior(out _);
+                SettlementNavigationHelper.TryOpenMarketMenu(out _);
+                var market = FoodMarketStockScanner.ScanCurrentSettlement(MobileParty.MainParty);
+                var offer = market?.Items?
+                    .Where(i => i != null && !string.IsNullOrWhiteSpace(i.ItemId) && i.Amount > 0)
+                    .OrderBy(i => i.ItemName ?? i.ItemId)
+                    .FirstOrDefault();
+                if (offer == null)
+                {
+                    attemptDetail = "no food stock at current settlement market";
+                }
+                else
+                {
+                    var item = MapTradeTradeActionReflection.ResolveItem(offer.ItemId);
+                    if (item == null || !FoodProtectionPolicy.IsFoodItem(item))
+                    {
+                        attemptDetail = $"food offer unresolved or not food: {offer.ItemId}";
+                    }
+                    else
+                    {
+                        success = MapTradeTradeActionReflection.TryExecuteBuy(
+                            settlement,
+                            item,
+                            1,
+                            out execution,
+                            out attemptDetail,
+                            itemClassification: "Food");
+                        LastExecutionResult = execution;
+                        if (success && execution != null)
+                        {
+                            LastProbeMethod = execution.ExecutionMethod;
+                            LastProbeAvailable = true;
+                            LastProbeDetail = attemptDetail;
+                        }
+                    }
+                }
+            }
+
+            WriteFoodBuyProbeJson(source, settlement, success, attemptDetail, execution);
+            InGameNotice.Info($"TBG FOOD BUY PROBE: {(success ? "food delta proven" : attemptDetail ?? "blocked")}");
+            return success;
+        }
+
+        private static void WriteFoodBuyProbeJson(
+            string source,
+            Settlement settlement,
+            bool success,
+            string attemptDetail,
+            MapTradeExecutionResult execution)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("{");
+            sb.AppendLine($"  \"generatedUtc\": \"{DateTime.UtcNow:o}\",");
+            sb.AppendLine($"  \"source\": \"{Escape(source)}\",");
+            sb.AppendLine($"  \"readOnly\": false,");
+            sb.AppendLine($"  \"settlement\": {NullableString(settlement?.Name?.ToString() ?? settlement?.StringId)},");
+            sb.AppendLine($"  \"attemptSuccess\": {(success ? "true" : "false")},");
+            sb.AppendLine($"  \"attemptDetail\": {NullableString(attemptDetail)},");
+            sb.AppendLine("  \"tradeExecution\": ");
+            AppendExecution(sb, execution, "  ");
+            sb.AppendLine(",");
+            sb.AppendLine($"  \"verdict\": \"{(success ? "ProbeFoodBuySuccess" : "ProbeFoodBuyBlocked")}\"");
+            sb.AppendLine("}");
+            var path = Path.Combine(BasePath.Name, "BlacksmithGuild_FoodBuyProbe.json");
+            File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
         }
 
         private static void WritePackAnimalProbeJson(

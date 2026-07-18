@@ -118,8 +118,10 @@ if ($manifest) {
     }
 }
 
-Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "[ValidateSet('default', 'economic_loop')]" 'trade/town mechanics remain profile-gated, not accidental default behavior'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' "[ValidateSet('default', 'economic_loop', 'full_campaign_handoff')]" 'trade/town mechanics remain profile-gated, not accidental default behavior'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' '$isEconomicLoop = ($CertProfile -eq ''economic_loop'')' 'economic loop must be explicit until profile toggle is shared'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' '$isFullCampaignHandoff = ($CertProfile -eq ''full_campaign_handoff'')' 'full campaign handoff must be an explicit cert profile'
+Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'continuing for arrival/town handoff' 'full campaign handoff must not terminal-stop on movement_observed'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'ProbeVanillaTradeExecutionNow' 'trade driving surface must remain identifiable for downstream town mechanics work'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Non-trade branch satisfied for economic-loop' 'economic loop must prove travel branch before trade counts'
 Assert-Contains 'scripts\run-autonomous-assist-session.ps1' 'Get-AutonomousAssistEngineTravelTarget' 'travel target handoff remains the spine before downstream logistics'
