@@ -1,256 +1,213 @@
-﻿{
-    "schema":  "TbgStalePrRecoveryProgress.v1",
-    "repository":  "EndeavorEverlasting/BlacksmithGuild",
-    "planPath":  ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
-    "updatedDate":  "2026-07-18",
-    "terminalCompleteStatuses":  [
-                                     "replayed_and_merged",
-                                     "superseded_recorded",
-                                     "rejected_recorded",
-                                     "historical_retained"
-                                 ],
-    "activeExcluded":  [
-                           {
-                               "pr":  43,
-                               "status":  "active_excluded",
-                               "reason":  "Active route and launcher-validation foundation. This pull request is not stale-recovery work."
-                           },
-                           {
-                               "pr":  52,
-                               "status":  "active_excluded",
-                               "reason":  "Bounded repair owned by pull request 43. This pull request is not stale-recovery work."
-                           }
-                       ],
-    "entries":  [
-                    {
-                        "wave":  "B",
-                        "pr":  2,
-                        "status":  "replayed_and_merged",
-                        "replacementPr":  66,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "Superseded by PR #66, which replays the same three files from PR #2 head 61090349037c89d4bcbc1c0e3fd4a3651333e7e6 onto current main. Source branch and original commit remain as historical provenance.",
-                        "evidence":  [
-                                         "PR #66 merged commit 96a182a2fba4646855a92f6e1118d368d8183005"
-                                     ],
-                        "nextAction":  "No further replay work remains for PR #2."
-                    },
-                    {
-                        "wave":  "F",
-                        "pr":  5,
-                        "status":  "blocked_dependency",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-                                          43,
-                                          52
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof."
-                    },
-                    {
-                        "wave":  "F",
-                        "pr":  6,
-                        "status":  "blocked_dependency",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-                                          43,
-                                          52
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Wait for pull request 5 value to be reconstructed and for the maintained route lineage to settle."
-                    },
-                    {
-                        "wave":  "C",
-                        "pr":  8,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Map every unresolved F7 review lesson to current code, current tests, or an explicit rejection."
-                    },
-                    {
-                        "wave":  "A",
-                        "pr":  9,
-                        "status":  "historical_retained",
-                        "replacementPr":  65,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "The maintained replacement PR #65 merged and the original PR remains as historical provenance. Final disposition: all unique evidence and coordination value is now on current main.",
-                        "evidence":  [
-                                         "PR #65 merged commit 060ea46ff9dbf6b11b58d8e1c34dac1dbf8adedd"
-                                     ],
-                        "nextAction":  "No further replay work remains for PR #9."
-                    },
-                    {
-                        "wave":  "E",
-                        "pr":  20,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Reconstruct the useful governor handoff model, tests, and review requirements against current main."
-                    },
-                    {
-                        "wave":  "E",
-                        "pr":  24,
-                        "status":  "blocked_dependency",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-                                          43,
-                                          52
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject."
-                    },
-                    {
-                        "wave":  "D1",
-                        "pr":  28,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Map the feedback-harness manifest fields into the current harness or record explicit rejections."
-                    },
-                    {
-                        "wave":  "D1",
-                        "pr":  29,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Adapt or reject the feedback writer against the current effective-context schema."
-                    },
-                    {
-                        "wave":  "D1",
-                        "pr":  30,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Port or reject the pure remediation planner using current result schemas and fixtures."
-                    },
-                    {
-                        "wave":  "D1",
-                        "pr":  31,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Reconcile only the stop-hook trigger map with the current hook-result and policy-reporting schemas."
-                    },
-                    {
-                        "wave":  "D2",
-                        "pr":  32,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Merge unique guardrail fields into current contracts or record why each field is superseded."
-                    },
-                    {
-                        "wave":  "D2",
-                        "pr":  33,
-                        "status":  "not_started",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Replay pure tools only when current-schema tests prove they cannot create false PASS results."
-                    },
-                    {
-                        "wave":  "A",
-                        "pr":  34,
-                        "status":  "superseded_recorded",
-                        "replacementPr":  65,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "The concurrent sprint map was replayed onto current main via PR #65 and supersedes the stale branch copy entirely.",
-                        "evidence":  [
-                                         "PR #65 merged commit 060ea46ff9dbf6b11b58d8e1c34dac1dbf8adedd"
-                                     ],
-                        "nextAction":  "No further replay work remains for PR #34."
-                    },
-                    {
-                        "wave":  "D3",
-                        "pr":  35,
-                        "status":  "blocked_dependency",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-                                          43,
-                                          52
-                                      ],
-                        "disposition":  "",
-                        "evidence":  [
-
-                                     ],
-                        "nextAction":  "Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value."
-                    },
-                    {
-                        "wave":  "E",
-                        "pr":  38,
-                        "status":  "superseded_recorded",
-                        "replacementPr":  null,
-                        "blockedBy":  [
-
-                                      ],
-                        "disposition":  "PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its guardrail, worktree, harness, and proof-discipline intent has been replaced by maintained mainline contracts, while source head e618349b7575dc6379cb7a8b378df6ec5be4d282 remains retained as provenance.",
-                        "evidence":  [
-                                         "PR #38 closed without merge; source head e618349b7575dc6379cb7a8b378df6ec5be4d282 retained",
-                                         "Local rebase aborted after add/add conflicts against main b1975f523dd7fe088e17e013127b0f0e73d2be34; no force rewrite or branch deletion",
-                                         "PR #38 terminal disposition comment 4964827437"
-                                     ],
-                        "nextAction":  "No further replay work remains for PR #38."
-                    }
-                ]
+{
+  "schema": "TbgStalePrRecoveryProgress.v1",
+  "repository": "EndeavorEverlasting/BlacksmithGuild",
+  "planPath": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
+  "updatedDate": "2026-07-18",
+  "terminalCompleteStatuses": [
+    "replayed_and_merged",
+    "superseded_recorded",
+    "rejected_recorded",
+    "historical_retained"
+  ],
+  "activeExcluded": [
+    {
+      "pr": 43,
+      "status": "active_excluded",
+      "reason": "Active route and launcher-validation foundation. This pull request is not stale-recovery work."
+    },
+    {
+      "pr": 52,
+      "status": "active_excluded",
+      "reason": "Bounded repair owned by pull request 43. This pull request is not stale-recovery work."
+    }
+  ],
+  "entries": [
+    {
+      "wave": "B",
+      "pr": 2,
+      "status": "replayed_and_merged",
+      "replacementPr": 66,
+      "blockedBy": [],
+      "disposition": "Superseded by PR #66, which replays the same three files from PR #2 head 61090349037c89d4bcbc1c0e3fd4a3651333e7e6 onto current main. Source branch and original commit remain as historical provenance.",
+      "evidence": [
+        "PR #66 merged commit 96a182a2fba4646855a92f6e1118d368d8183005"
+      ],
+      "nextAction": "No further replay work remains for PR #2."
+    },
+    {
+      "wave": "F",
+      "pr": 5,
+      "status": "blocked_dependency",
+      "replacementPr": null,
+      "blockedBy": [
+        43,
+        52
+      ],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof."
+    },
+    {
+      "wave": "F",
+      "pr": 6,
+      "status": "blocked_dependency",
+      "replacementPr": null,
+      "blockedBy": [
+        43,
+        52
+      ],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Wait for pull request 5 value to be reconstructed and for the maintained route lineage to settle."
+    },
+    {
+      "wave": "C",
+      "pr": 8,
+      "status": "replacement_pr_open",
+      "replacementPr": 87,
+      "blockedBy": [],
+      "disposition": "PR #8 unique current-main delta is the forge -VerifyLogPatterns entrypoint plus preservation matrix; remaining F7 runner/helpers/docs already live on main or are explicitly rejected stubs/June evidence.",
+      "evidence": [
+        "PR #87",
+        "commit 8183766",
+        "docs/handoff/pr8-preservation-matrix-20260718.md",
+        "source PR #8 head d8a0e0e"
+      ],
+      "nextAction": "Merge PR #87 after exact-head CI, then close PR #8 with the terminal preservation comment."
+    },
+    {
+      "wave": "A",
+      "pr": 9,
+      "status": "historical_retained",
+      "replacementPr": 65,
+      "blockedBy": [],
+      "disposition": "The maintained replacement PR #65 merged and the original PR remains as historical provenance. Final disposition: all unique evidence and coordination value is now on current main.",
+      "evidence": [
+        "PR #65 merged commit 060ea46ff9dbf6b11b58d8e1c34dac1dbf8adedd"
+      ],
+      "nextAction": "No further replay work remains for PR #9."
+    },
+    {
+      "wave": "E",
+      "pr": 20,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Reconstruct the useful governor handoff model, tests, and review requirements against current main."
+    },
+    {
+      "wave": "E",
+      "pr": 24,
+      "status": "blocked_dependency",
+      "replacementPr": null,
+      "blockedBy": [
+        43,
+        52
+      ],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject."
+    },
+    {
+      "wave": "D1",
+      "pr": 28,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Map the feedback-harness manifest fields into the current harness or record explicit rejections."
+    },
+    {
+      "wave": "D1",
+      "pr": 29,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Adapt or reject the feedback writer against the current effective-context schema."
+    },
+    {
+      "wave": "D1",
+      "pr": 30,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Port or reject the pure remediation planner using current result schemas and fixtures."
+    },
+    {
+      "wave": "D1",
+      "pr": 31,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Reconcile only the stop-hook trigger map with the current hook-result and policy-reporting schemas."
+    },
+    {
+      "wave": "D2",
+      "pr": 32,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Merge unique guardrail fields into current contracts or record why each field is superseded."
+    },
+    {
+      "wave": "D2",
+      "pr": 33,
+      "status": "not_started",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Replay pure tools only when current-schema tests prove they cannot create false PASS results."
+    },
+    {
+      "wave": "A",
+      "pr": 34,
+      "status": "superseded_recorded",
+      "replacementPr": 65,
+      "blockedBy": [],
+      "disposition": "The concurrent sprint map was replayed onto current main via PR #65 and supersedes the stale branch copy entirely.",
+      "evidence": [
+        "PR #65 merged commit 060ea46ff9dbf6b11b58d8e1c34dac1dbf8adedd"
+      ],
+      "nextAction": "No further replay work remains for PR #34."
+    },
+    {
+      "wave": "D3",
+      "pr": 35,
+      "status": "blocked_dependency",
+      "replacementPr": null,
+      "blockedBy": [
+        43,
+        52
+      ],
+      "disposition": "",
+      "evidence": [],
+      "nextAction": "Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value."
+    },
+    {
+      "wave": "E",
+      "pr": 38,
+      "status": "superseded_recorded",
+      "replacementPr": null,
+      "blockedBy": [],
+      "disposition": "PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its guardrail, worktree, harness, and proof-discipline intent has been replaced by maintained mainline contracts, while source head e618349b7575dc6379cb7a8b378df6ec5be4d282 remains retained as provenance.",
+      "evidence": [
+        "PR #38 closed without merge; source head e618349b7575dc6379cb7a8b378df6ec5be4d282 retained",
+        "Local rebase aborted after add/add conflicts against main b1975f523dd7fe088e17e013127b0f0e73d2be34; no force rewrite or branch deletion",
+        "PR #38 terminal disposition comment 4964827437"
+      ],
+      "nextAction": "No further replay work remains for PR #38."
+    }
+  ]
 }
