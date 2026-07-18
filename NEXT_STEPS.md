@@ -91,7 +91,19 @@ Optional: rerun `RunStageCCharcoalCert.cmd` after actor fix for clean JSON with 
 
 | Field | Value |
 |-------|-------|
-| Branch | `main` (HEAD `f90207f`) |
-| Remote | in sync with `origin/main` |
-| Open PRs | #20 (governor activity handoff contract — MERGEABLE, needs compile test) |
+| Branch | `feat/harness-doctrine-installation` (HEAD `6334f8b`) |
+| Remote | in sync with `origin/feat/harness-doctrine-installation` |
+| Open PRs | #102 (harness doctrine + escape menu + auto-unpause), #101 (window cleanup + trade proof), #20 (governor) |
 | Recent merges | #99 launcher lifecycle, #97 P21 disposition, #96 visible trade proof, #95 window lifecycle skills |
+
+## Harness doctrine sprint (PR #102)
+
+Installed repo-local AI harness: doctrine docs, policy JSON, 13-check validator, engine heartbeat crash detector, readiness trigger, LaunchForgeContinue.cmd with 3-phase auto-chain, escape menu auto-dismissal (Win32 keybd_event), pause menu auto-unpause service (multitasking), game compatibility v1.4.7 with Steam API fixture.
+
+### Known crash: Quyaz native exit
+
+**Pattern:** Game reaches campaign map at Quyaz, market intel generates, then native crash ~2-3min after launch. Phase1.log stops without error. Command IS consumed (`[TBG TEST] Command started: RunAutonomousVisibleTradeRouteNow`). Crash is outside C# try-catch — likely TaleWorlds engine native code.
+
+**Detection:** `.\scripts\tbg\Test-TbgEngineHeartbeat.ps1` detects stale Phase1.log. `LaunchForgeContinue.cmd` has crash guards after each phase.
+
+**Workaround:** Re-launch. Auto-unpause + escape menu dismissal prevent pause-menu stalls. The crash is under investigation — may be a v1.4.7 engine instability or save-specific issue.

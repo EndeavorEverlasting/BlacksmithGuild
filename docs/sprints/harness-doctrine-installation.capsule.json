@@ -1,70 +1,51 @@
 {
-  "nextCommand": "./forge.ps1 -Launch -LaunchIntent continue -AllowFocusSteal -SessionAuthorityMode UserSession",
   "git": {
-    "commits": [
-      "9098fa8",
-      "0b97055",
-      "76a93b3",
-      "d9c34a2",
-      "923d644"
-    ],
-    "branch": "feat/harness-doctrine-installation",
     "pushed": true,
-    "head": "9098fa8"
+    "branch": "feat/harness-doctrine-installation",
+    "commits": 14,
+    "head": "6334f8b"
+  },
+  "generatedUtc": "2026-07-18T22:47:19.3254097Z",
+  "sprint": {
+    "PR": 102,
+    "branch": "feat/harness-doctrine-installation",
+    "summary": "Harness doctrine installed. Escape menu auto-dismissal. v1.4.7 compat. Engine heartbeat crash detector. Readiness trigger. LaunchForgeContinue.cmd with 3-phase auto-chain and crash guards. PauseMenuAutoResumeService for multitasking. Game crashes natively at Quyaz post-market-intel — command consumed but engine exits.",
+    "id": "harness-doctrine-installation",
+    "status": "complete_harness_installed_runtime_blocked"
+  },
+  "validation": {
+    "bomCheck": "PASS (251 scripts)",
+    "doctrine": "13/13 PASS",
+    "heartbeat": "detects CRASH (2/5)",
+    "build": "0/0"
+  },
+  "producer": "EndeavorEverlasting/BlacksmithGuild",
+  "proof": {
+    "highest": "launcher + market intel (behavior observed)",
+    "autoUnpause": "NOT PROVEN — crash blocks campaign runtime",
+    "tradeRoute": "NOT REACHED — native crash at Quyaz"
   },
   "scope": {
+    "owned": [
+      "harness doctrine",
+      "escape menu helper",
+      "auto-unpause service",
+      "compatibility registry",
+      "launcher gate",
+      "engine heartbeat",
+      "readiness trigger",
+      "CMD pipeline"
+    ],
     "forbidden": [
       "save mutation",
       "personal data",
       "free resources"
-    ],
-    "owned": [
-      "harness doctrine docs",
-      "escape menu helper",
-      "game compatibility registry",
-      "launcher gate fixture"
     ]
   },
-  "proof": {
-    "launcherNav": "PASS",
-    "escapeMenuDismissal": "NOT PROVEN",
-    "highest": "launcher + market intel",
-    "marketIntel": "Quyaz 18:18:03Z",
-    "commandAck": "UNREACHED"
-  },
-  "handoff": {
-    "risk": "v1.4.7 stability concern. Injection vs vanilla mechanic debt.",
-    "blocker": "Game crashed ~2min after launch. All engines in Manual mode.",
-    "gap": "No engine heartbeat log. Engine failure silent."
-  },
-  "generatedUtc": "2026-07-18T22:29:40.9517472Z",
-  "producer": "EndeavorEverlasting/BlacksmithGuild",
-  "consumers": {
-    "sysAdminSuite": {
-      "authority": "requires_tandem_auth"
-    },
-    "agentSwitchboard": {
-      "proofCeiling": "none"
-    }
-  },
-  "artifactRefs": [
-    "artifacts/latest/harness-doctrine.result.json",
-    "Phase1.log (Quyaz market intel)",
-    "BlacksmithGuild_RuntimeRegent.json",
-    "BlacksmithGuild_Launch.log"
-  ],
   "schema": "tbg.sprint-capsule.v1",
-  "validation": {
-    "build": "0/0",
-    "doctrine": "13/13 PASS",
-    "bomCheck": "PASS"
+  "handoff": {
+    "gap": "No native crash marker. Auto-unpause not proven at runtime.",
+    "blocker": "Game crashes natively at Quyaz during trade route market intel ~2min in. Native crash outside C# try-catch."
   },
-  "sprint": {
-    "id": "harness-doctrine-installation",
-    "lane": "harness doctrine + engine observability",
-    "status": "in_progress",
-    "summary": "Installed harness doctrine. Escape menu auto-dismissal via Win32 keybd_event. v1.4.7 compatibility fix. Launcher gate fixture for blocked Steam API. Live proof: launcher nav complete, game spawned, TBG READY, Quyaz market intel generated. Game crashed ~2min in, command inbox unconsumed.",
-    "branch": "feat/harness-doctrine-installation",
-    "PR": 102
-  }
+  "nextCommand": ".\\LaunchForgeContinue.cmd"
 }
