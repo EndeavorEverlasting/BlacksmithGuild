@@ -39,14 +39,18 @@ $runtimeRouting = Get-RepoText 'docs/handoff/runtime-state-routing.md'
 $redirect = Get-RepoText 'docs/handoff/agent-coordination-contract.md'
 $windowDoctrine = Get-RepoText 'docs/control/logs/open/window-delta-doctrine.md'
 $autonomousTarget = Get-RepoText 'docs/control/logs/open/autonomous-assist-session-target.md'
+$runtimeContinuity = Get-RepoText '.tbg/workflows/runtime-context-continuity.contract.json'
 
-Require-Match 'AGENTS defines Agent A' $agents 'Agent A\s*=\s*Cert\s*/\s*Evidence\s*/\s*Git\s*/\s*PR judgment'
-Require-Match 'AGENTS defines Agent B' $agents 'Agent B\s*=\s*Runtime\s*/\s*Readiness\s*/\s*Gameplay state truth'
-Require-Match 'AGENTS defines Agent C' $agents 'Agent C\s*=\s*External runner\s*/\s*launcher\s*/\s*lifecycle\s*/\s*window classifier'
-Require-Match 'AGENTS defines Agent D' $agents 'Agent D\s*=\s*Docs\s*/\s*atlas\s*/\s*routing board'
+Require-Match 'AGENTS defines Agent A' $agents 'Agent A\s*=\s*Cert\s*/\s*Evidence\s*/\s*Git\s*/\s*PR judgment|Map:\s*A=Cert/Evidence/Git/PR'
+Require-Match 'AGENTS defines Agent B' $agents 'Agent B\s*=\s*Runtime\s*/\s*Readiness\s*/\s*Gameplay state truth|B=Runtime/Readiness'
+Require-Match 'AGENTS defines Agent C' $agents 'Agent C\s*=\s*External runner\s*/\s*launcher\s*/\s*lifecycle\s*/\s*window classifier|C=Launcher/lifecycle/window'
+Require-Match 'AGENTS defines Agent D' $agents 'Agent D\s*=\s*Docs\s*/\s*atlas\s*/\s*routing board|D=Docs/atlas'
 Require-Match 'AGENTS runner evidence ownership' $agents 'Runner owns evidence capture'
 Require-Match 'AGENTS points to living coordination board' $agents 'blacksmithguild-agent-coordination\.md'
 Require-Match 'AGENTS points to runtime routing' $agents 'runtime-state-routing\.md'
+Require-Match 'AGENTS points to runtime continuity' $agents 'runtime-context-continuity\.contract\.json'
+Require-Match 'AGENTS protects existing sessions' $agents 'process presence is context, not zombie proof'
+Require-Match 'AGENTS requires action commitment' $agents 'plan-only closeout is invalid'
 
 Require-Match 'Living board has branch map' $coordination 'Current branch map'
 Require-Match 'Living board has routing matrix' $coordination 'Routing matrix'
@@ -66,6 +70,11 @@ Require-Match 'Window Delta Doctrine global fallback' $windowDoctrine 'Global sc
 
 Require-Match 'Autonomous target rejects manual log harvesting' $autonomousTarget 'manual log harvesting'
 Require-Match 'Autonomous target no hotkey preferred path' $autonomousTarget 'preferred path requires no hotkey|without hotkey|no hotkey'
+
+Require-Match 'Runtime continuity names canonical processes' $runtimeContinuity 'Bannerlord\.Native[\s\S]*TaleWorlds\.MountAndBlade\.Launcher'
+Require-Match 'Runtime continuity protects human sessions' $runtimeContinuity 'active_human[\s\S]*forbidden[\s\S]*kill'
+Require-Match 'Runtime continuity bounds remote evidence' $runtimeContinuity 'maxExcerptLines[\s\S]*80'
+Require-Match 'Runtime continuity enforces mutation proof' $runtimeContinuity 'requireMutation[\s\S]*true[\s\S]*requireProof[\s\S]*true'
 
 Write-Host ''
 if ($failures.Count -gt 0) {
