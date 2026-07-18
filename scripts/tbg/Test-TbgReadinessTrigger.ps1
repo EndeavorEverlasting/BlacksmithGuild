@@ -59,8 +59,8 @@ while ((Get-Date) -lt $readyDeadline) {
     }
     if ($phase -and -not $mapReady) {
         $lastSurface = ($phase | Select-Object -Last 1 | Out-String).Trim()
-        $paused = $lastSurface -match 'phase=MapPaused'
-        Write-Event "SURFACE: surface=$($paused ? 'MapPaused' : 'unknown') - waiting for mapReady"
+        if ($lastSurface -match 'phase=MapPaused') { Write-Event "SURFACE: MapPaused - waiting for mapReady" }
+        else { Write-Event "SURFACE: $lastSurface" }
     }
 
     Start-Sleep -Milliseconds $PollMs

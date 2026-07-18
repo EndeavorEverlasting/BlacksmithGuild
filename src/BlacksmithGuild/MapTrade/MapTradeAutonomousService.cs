@@ -123,7 +123,9 @@ namespace BlacksmithGuild.MapTrade
             }
 
             _activeReport.Steps.Add("MarketScan:Success");
+            DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=SelectBestMission", showInGame: false);
             _activeReport.Mission = MapTradeMissionSelector.SelectBestMission();
+            DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission type={_activeReport.Mission?.MissionType}", showInGame: false);
             _activeReport.State = MapTradeRouteState.SelectMission;
 
             if (_activeReport.Mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
@@ -134,10 +136,34 @@ namespace BlacksmithGuild.MapTrade
 
             if (MapTradeMissionSelector.NeedsCohesionCheck(_activeReport.Mission))
             {
-                return RunCohesionCheck(source);
+                DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=RunCohesionCheck", showInGame: false);
+                try
+                {
+                    var result = RunCohesionCheck(source);
+                    DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=RunCohesionCheck result={result}", showInGame: false);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=RunCohesionCheck ex={ex.GetType().Name}:{ex.Message}", showInGame: false);
+                    Finish(MapTradeRouteState.Failed, "Failed", $"cohesion check threw: {ex.Message}");
+                    return false;
+                }
             }
 
-            return BeginTravel(source);
+            DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=BeginTravel", showInGame: false);
+            try
+            {
+                var travelResult = BeginTravel(source);
+                DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=BeginTravel result={travelResult}", showInGame: false);
+                return travelResult;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=BeginTravel ex={ex.GetType().Name}:{ex.Message}", showInGame: false);
+                Finish(MapTradeRouteState.Failed, "Failed", $"travel threw: {ex.Message}");
+                return false;
+            }
         }
 
         public static bool StartBranchRouteNow(string targetSettlementName, string source = BranchRouteSource)
@@ -505,8 +531,10 @@ namespace BlacksmithGuild.MapTrade
             _activeReport.RuntimeProofClaim = "main_party_move_to_settlement_order_issued";
             _activeReport.State = MapTradeRouteState.TravelToTarget;
             _activeReport.Steps.Add("RouteLifeCert:travelCommandIssued=true");
-            _activeReport.Steps.Add($"TravelToTarget:{_activeReport.Mission.TargetSettlementName}");
-            InGameNotice.Info($"TBG MAP TRADE MOVE: riding toward {_activeReport.Mission.TargetSettlementName}.");
+            var settlementName = _activeReport.Mission?.TargetSettlementName ?? "unknown";
+            _activeReport.Steps.Add($"TravelToTarget:{settlementName}");
+            DebugLogger.Test($"[TBG ENGINE START] engine=MapTrade step=TravelToTarget target={settlementName}", showInGame: false);
+            InGameNotice.Info($"TBG MAP TRADE MOVE: riding toward {settlementName}.");
             MapTradeEvidenceWriter.WriteCert(_activeReport);
             return true;
         }

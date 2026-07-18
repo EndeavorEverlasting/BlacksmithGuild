@@ -24,21 +24,26 @@ namespace BlacksmithGuild.MapTrade
 
         public static MapTradeMission SelectBestMission()
         {
+            DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=SelectBestMission:cachedScan", showInGame: false);
             if (!MarketIntelligenceService.HasCachedScan
                 && !MarketIntelligenceService.RunScanNow("MapTradeMissionSelector"))
             {
                 return Blocked("market scan unavailable");
             }
+            DebugLogger.Test("[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission:cachedScan", showInGame: false);
 
             var main = MobileParty.MainParty;
             var candidates = new List<MapTradeMission>();
 
+            DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=SelectBestMission:packAnimal", showInGame: false);
             var packMission = MapTradePackAnimalMissionHelper.TryBuildPackAnimalMission(main);
+            DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission:packAnimal found={packMission != null}", showInGame: false);
             if (packMission != null)
             {
                 candidates.Add(packMission);
             }
 
+            DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=SelectBestMission:smithingLoop", showInGame: false);
             foreach (var input in SmithingInputs)
             {
                 if (!MarketIntelligenceService.TryFindBuyAtNearest(input.Id, input.Name, out var townName, out var buyPrice, out var stock))
@@ -46,7 +51,9 @@ namespace BlacksmithGuild.MapTrade
                     continue;
                 }
 
+                DebugLogger.Test($"[TBG ENGINE START] engine=MapTrade step=SelectBestMission:resolveSettlement town={townName}", showInGame: false);
                 var settlement = ResolveSettlement(townName);
+                DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission:resolveSettlement found={settlement != null}", showInGame: false);
                 if (settlement == null)
                 {
                     continue;
