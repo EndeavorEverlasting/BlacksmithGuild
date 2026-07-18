@@ -26,21 +26,23 @@ description: Own ForgeStop-first conditions, build and deploy handoff, Bannerlor
 
 1. `AGENTS.md`
 2. `.tbg/skills/manifest.json`
-3. `ForgeStop.cmd`
-4. `.tbg/workflows/window-metadata-intelligence.contract.json`
-5. `.tbg/harness/policies/window-intelligence.policy.json`
-6. `.tbg/harness/window-identities.registry.json`
-7. `docs/architecture/window-metadata-intelligence.md`
-8. `docs/control/logs/open/window-delta-doctrine.md`
-9. `docs/handoff/runtime-state-routing.md`
-10. the active launcher or reboot script and workflow
+3. `.tbg/workflows/runtime-context-continuity.contract.json`
+4. `ForgeStop.cmd`
+5. `.tbg/workflows/window-metadata-intelligence.contract.json`
+6. `.tbg/harness/policies/window-intelligence.policy.json`
+7. `.tbg/harness/window-identities.registry.json`
+8. `docs/architecture/window-metadata-intelligence.md`
+9. `docs/control/logs/open/window-delta-doctrine.md`
+10. `docs/handoff/runtime-state-routing.md`
+11. the active launcher or reboot script and workflow
 
 ## Current best strategy
 
 Use this order:
 
 ```text
-exact cached fingerprint
+codified process names and runtime-context ownership classification
+  -> exact cached fingerprint
   -> tracked window registry metadata
   -> launcher-window-context launch intent
   -> module dependency prediction
@@ -48,7 +50,7 @@ exact cached fingerprint
   -> image or operator diagnostic only
 ```
 
-`launcher-window-context.json` is the sole authority for PLAY versus CONTINUE. The window-intelligence watcher handles known CAUTION and Safe Mode identities through exact named controls. The S1/S2 delta protocol is a first-seen learning mechanism, not the default selection loop for windows the repo already knows.
+`launcher-window-context.json` is the sole authority for PLAY versus CONTINUE. Before launch or stop, classify any existing canonical Bannerlord process as absent, active-owned, active-human, active-foreign, stale-or-zombie-proven, or ambiguous. Process presence is not cleanup authority. PID delta is secondary correlation only for a child launched by the current owned workflow. The window-intelligence watcher handles known CAUTION and Safe Mode identities through exact named controls.
 
 Before proposing another launcher collector, longer timeout, coordinate map, or screenshot parser, run:
 
@@ -58,7 +60,7 @@ Before proposing another launcher collector, longer timeout, coordinate map, or 
 
 ## Lifecycle boundary
 
-Use the repo's ForgeStop path before operations that assume Bannerlord is not running. Preserve process, PID, HWND, title, class, control, semantic text, dependency, timeout, modal, launch-log, and action-lease evidence. Interpret reduced window-lifecycle artifacts through `window-lifecycle-runtime`. Hand off to runtime or route skills only after the launcher-specific terminal state is explicit.
+Use the runtime-context continuity contract before operations that assume Bannerlord is not running. Use ForgeStop only when the active workflow owns the session, stale-or-zombie state is proven, or the operator explicitly requests stop. Never terminate an active human, foreign, or ambiguous session. Preserve process, PID, HWND, title, class, control, semantic text, dependency, timeout, modal, launch-log, and action-lease evidence. Interpret reduced window-lifecycle artifacts through `window-lifecycle-runtime`. Hand off to runtime or route skills only after the launcher-specific terminal state is explicit.
 
 ## Owned scope
 
@@ -83,6 +85,7 @@ Use the repo's ForgeStop path before operations that assume Bannerlord is not ru
 - unrelated branch or worktree cleanup
 - stale evidence presented as fresh launcher proof
 - automatic action against an unknown window
+- treating process presence as zombie proof or stopping an active human, foreign, or ambiguous session
 - process-memory scraping
 - coordinate learning as semantic identity
 - guessing PLAY versus CONTINUE from stale evidence
@@ -90,6 +93,7 @@ Use the repo's ForgeStop path before operations that assume Bannerlord is not ru
 ## Validation
 
 ```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeContextContinuity.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgWindowIntelligence.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1
 powershell -File scripts/test-powershell-utf8-bom-contract.ps1
@@ -100,7 +104,7 @@ Run the exact launcher validator registered by the active workflow. Live launch 
 
 ## Done gate
 
-- Stop-first ownership is explicit where required.
+- Existing-session classification and process-mutation ownership are explicit before stop-first behavior.
 - Build/deploy and launched binary identity are recorded when claimed.
 - PLAY versus CONTINUE comes from the frozen launcher context.
 - Known windows resolve through the registry or revalidated cache before delta or pixel fallback.
