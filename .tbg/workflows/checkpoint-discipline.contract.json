@@ -1,0 +1,118 @@
+{
+  "schema": "TbgCheckpointDisciplineContract.v1",
+  "id": "checkpoint-discipline",
+  "purpose": "Preserve coherent repository work before validation, refactoring, runtime, or agent-cost expansion and resume from evidence without repeating completed work.",
+  "sourceDoctrine": [
+    {
+      "repository": "EndeavorEverlasting/AgentSwitchboard",
+      "authorities": [
+        "AGENTS.md",
+        ".ai/skills/bounded-sprint/SKILL.md"
+      ],
+      "adopted": [
+        "checkpoint_before_expansion",
+        "capability_presence_is_not_authority",
+        "required_sprint_declaration"
+      ]
+    },
+    {
+      "repository": "EndeavorEverlasting/SysAdminSuite",
+      "authorities": [
+        "docs/HARNESS_DISCIPLINE.md",
+        ".claude/capabilities/proof-and-checkpointing.md",
+        ".claude/skills/repository-sprint/SKILL.md"
+      ],
+      "adopted": [
+        "patches_must_include_owned_untracked_files",
+        "resume_smallest_pending_validation_first",
+        "refactoring_uses_recoverable_slices"
+      ]
+    }
+  ],
+  "localAuthority": {
+    "repository": "EndeavorEverlasting/BlacksmithGuild",
+    "rule": "External doctrine may strengthen coordination, but BlacksmithGuild retains product, runtime, save-safety, evidence, and proof authority."
+  },
+  "requiredDeclaration": [
+    "repo",
+    "branchOrWorktree",
+    "prOrSprint",
+    "lane",
+    "ownedScope",
+    "forbiddenScope",
+    "expectedArtifacts",
+    "validationOrder"
+  ],
+  "executionLoop": [
+    "request",
+    "evidence_review",
+    "bounded_decision",
+    "coherent_repo_or_git_mutation",
+    "preservation_checkpoint",
+    "targeted_validation",
+    "repair_proven_failures",
+    "broader_validation",
+    "completion_artifacts",
+    "report",
+    "next_decision"
+  ],
+  "checkpointRequiredBefore": [
+    "broad_validation",
+    "long_diagnostics",
+    "runtime_proof",
+    "refactoring_expansion",
+    "shared_contract_or_schema_change",
+    "multi_file_move_or_rename",
+    "all_callers_update",
+    "agent_model_worktree_or_environment_switch"
+  ],
+  "acceptedCheckpointTypes": [
+    "bounded_commit",
+    "complete_patch_or_bundle",
+    "repo_approved_recovery_artifact"
+  ],
+  "requiredCheckpointFields": [
+    "checkpointType",
+    "checkpointShaOrArtifact",
+    "preservedFiles",
+    "excludedFiles",
+    "lastCompletedValidation",
+    "nextValidationCommand"
+  ],
+  "resumeOrder": [
+    "inspect_latest_checkpoint",
+    "verify_changed_file_boundary",
+    "run_smallest_failing_or_pending_validation",
+    "repair_only_proven_failure",
+    "checkpoint_repair_before_expansion"
+  ],
+  "terminalStates": [
+    "PASS_CHECKPOINT_DISCIPLINE",
+    "FAIL_CHECKPOINT_MISSING",
+    "FAIL_UNTRACKED_NOT_PRESERVED",
+    "FAIL_RESUME_SCOPE_EXPANSION",
+    "FAIL_CHECKPOINT_OVERCLAIM"
+  ],
+  "proofBoundary": {
+    "checkpointProves": [
+      "work_is_recoverable"
+    ],
+    "checkpointDoesNotProve": [
+      "correctness",
+      "completion",
+      "merge_readiness",
+      "launcher_behavior",
+      "runtime_behavior"
+    ]
+  },
+  "forbidden": [
+    "mix_unrelated_dirty_files_into_checkpoint",
+    "commit_secrets_or_runtime_evidence",
+    "treat_plain_git_diff_as_complete_when_owned_untracked_files_exist",
+    "repeat_completed_discovery_without_checkpoint_invalidation_evidence",
+    "claim_completion_from_checkpoint_alone"
+  ],
+  "validator": "scripts/tbg/Test-TbgCheckpointDiscipline.ps1",
+  "fixtures": ".tbg/harness/fixtures/checkpoint-discipline.fixtures.json",
+  "proofCeiling": "static test"
+}
