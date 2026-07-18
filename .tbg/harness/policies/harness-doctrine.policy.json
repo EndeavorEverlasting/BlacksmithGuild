@@ -108,7 +108,7 @@
     "agentRules": "AGENTS.md",
     "codebaseMap": "CODEBASE_MAP.md",
     "workflowDirectory": ".tbg/workflows",
-    "runContext": "artifacts/latest/tbg-sprint-capsule.json",
+    "runContextSchema": ".tbg/harness/schemas/tbg-sprint-capsule.schema.json",
     "artifactRegistry": ".tbg/harness/e2e-artifact-types.registry.json",
     "validatorDirectory": "scripts/tbg",
     "skillManifest": ".tbg/skills/manifest.json",
