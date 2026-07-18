@@ -87,7 +87,7 @@ if ($schema) {
 
 Match 'AGENTS contract pointer' $agents 'runtime-context-continuity\.contract\.json'
 Match 'AGENTS process protection' $agents 'process presence is context, not zombie proof'
-Match 'AGENTS owner protection' $agents 'active human, foreign, or ambiguous session must not be killed'
+Match 'AGENTS owner protection' $agents 'active human, foreign, or ambiguous session must not be terminated'
 Match 'AGENTS remote capsule' $agents 'sanitized bounded runtime-context capsule'
 Match 'AGENTS action commitment' $agents 'plan-only closeout is invalid'
 Match 'launcher contract pointer' $launcher 'runtime-context-continuity\.contract\.json'
