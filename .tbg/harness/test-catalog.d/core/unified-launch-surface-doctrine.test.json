@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.unified-launch-surface-doctrine",
+  "displayName": "Unified Launch Surface Doctrine Validation",
+  "ownerLane": "launcher-lifecycle",
+  "sourcePath": "scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates unified launch surface doctrine contract compliance across policy, registry, workflow, fixture, skill, and AGENTS.",
+  "tags": ["static", "contract", "doctrine", "launcher", "core"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "main"}
+}
