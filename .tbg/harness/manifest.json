@@ -112,6 +112,7 @@
     "ForgeStop or process termination requires an owned session, proven stale-or-zombie state, or explicit operator stop; active human, foreign, and ambiguous sessions fail closed.",
     "PID deltas are secondary correlation for a child launched by the current workflow, not primary process identity.",
     "Raw runtime evidence stays local and ignored; remote analysis uses a bounded sanitized runtime-context capsule under docs/evidence/runtime-context.",
+    "Crash diagnosis requires correlated pre-state and post-state-or-process-loss spans, declared expected and observed signals, valid fresh negative evidence, causality separation, independent reconstruction, and external terminal evidence before native-crash confirmation.",
     "Do not commit real local secrets, tokens, saves, or machine-specific config.",
     "AGENTS.md is the safe bootloader; the v2 skill manifest routes conditional lane knowledge.",
     "Select one primary skill and only declared required or composed skills.",
