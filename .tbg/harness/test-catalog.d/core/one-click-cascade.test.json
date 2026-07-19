@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.one-click-cascade",
+  "displayName": "One-Click Event Cascade Validation",
+  "ownerLane": "harness-spine/operator-test-frontdoor",
+  "sourcePath": "scripts/tbg/Test-TbgOneClickCascade.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgOneClickCascade.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": ["core.trigger-fragments"],
+  "timeoutSeconds": 60,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates the event cascade processor with fixture events against trigger fragments.",
+  "tags": ["static", "contract", "cascade", "trigger", "core"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "sprint/sprint3-remainder"}
+}
