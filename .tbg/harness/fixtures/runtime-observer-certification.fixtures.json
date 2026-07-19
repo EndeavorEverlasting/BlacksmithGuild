@@ -1,0 +1,85 @@
+{
+  "schema": "TbgRuntimeObserverCertificationFixture.v1",
+  "description": "Sanitized composed certification scenarios. Fixture and Windows-smoke success never prove Bannerlord live-runtime behavior.",
+  "proofLadder": [
+    "contract",
+    "harness",
+    "static_test",
+    "build",
+    "launcher",
+    "command_ack",
+    "behavior_observed",
+    "live_runtime"
+  ],
+  "scenarios": [
+    {
+      "id": "composed-fixture-validation",
+      "kind": "fixture",
+      "requiredValidators": [
+        "Test-TbgRuntimeEventObservation.ps1",
+        "Test-TbgWindowEventListener.ps1",
+        "Test-TbgGameRuntimeObserver.ps1",
+        "Test-TbgRuntimeSpanInstrumentation.ps1",
+        "Test-TbgRuntimeIncidentAssembler.ps1",
+        "Test-TbgSkillRouting.ps1",
+        "Test-TbgArtifactEngine.ps1"
+      ],
+      "expectedProofLevel": "static_test",
+      "forbiddenClaims": [
+        "Bannerlord live runtime",
+        "product behavior observed",
+        "native crash root cause"
+      ]
+    },
+    {
+      "id": "disposable-windows-smoke",
+      "kind": "windows_smoke",
+      "requiredObservations": [
+        "window listener registration and disposal",
+        "disposable child process start and exit",
+        "bounded Windows event-log query",
+        "observer lease status",
+        "incident assembly"
+      ],
+      "expectedProofLevel": "harness",
+      "forbiddenClaims": [
+        "Bannerlord launched",
+        "Bannerlord attached",
+        "live runtime certified"
+      ]
+    },
+    {
+      "id": "missing-live-authority",
+      "kind": "authority_gate",
+      "requiredAuthority": [
+        "explicit current live-runtime authority",
+        "active owned session",
+        "fresh runtime artifacts correlated to this head"
+      ],
+      "expectedTerminalState": "BLOCKED_live_authority_missing",
+      "expectedProofLevel": "harness",
+      "forbiddenClaims": [
+        "live runtime",
+        "operator acceptance",
+        "session ownership"
+      ]
+    },
+    {
+      "id": "authorized-live-observation",
+      "kind": "authority_gate",
+      "requiredAuthority": [
+        "explicit current live-runtime authority",
+        "active_owned session classification",
+        "fresh runtime artifacts correlated to this head",
+        "operator acceptance"
+      ],
+      "expectedTerminalState": "READY_authorized_live_observation",
+      "expectedProofLevel": "live_runtime",
+      "forbiddenClaims": [
+        "save mutation",
+        "command inbox write",
+        "root cause without external terminal evidence"
+      ]
+    }
+  ]
+}
