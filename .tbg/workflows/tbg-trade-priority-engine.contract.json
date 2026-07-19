@@ -1,0 +1,47 @@
+{
+  "id": "tbg-trade-priority-engine",
+  "sprint": "runtime-proof-priority-engine",
+  "contextBanner": "[TBG | Trade Priority Engine | runtime proof / live behavior evidence | branch: feat/harness-doctrine-installation]",
+  "purpose": "Prove the economic loop: Land -> Survive -> Purchase -> Travel -> Sell. Every run loads the living contract, reads market intel, scores decisions, and logs machine-readable intent.",
+  "allowedScope": [
+    "Read Phase1.log for party inventory and market intel",
+    "Read trade-priority.contract.json for formula weights",
+    "Append to trade-decisions.log.json",
+    "Focus game window, dismiss pause, navigate menus",
+    "Dispatch RunAutonomousVisibleTradeRouteNow via command inbox"
+  ],
+  "forbiddenScope": [
+    "Save file mutation",
+    "Gold/item injection via cheats",
+    "Personal data mutation",
+    "Broad refactors unrelated to trading",
+    "Claiming live proof from static tests"
+  ],
+  "requiredArtifacts": [
+    ".tbg/state/trade-priority.contract.json",
+    ".tbg/state/trade-decisions.log.json",
+    "artifacts/latest/priority-engine.result.json"
+  ],
+  "validationCommands": [
+    "dotnet build src/BlacksmithGuild/BlacksmithGuild.csproj -c Release --no-restore",
+    "Test-TbgHarnessDoctrine.ps1",
+    "Test-TbgEngineHeartbeat.ps1",
+    "git diff --check",
+    "git status --short"
+  ],
+  "terminalStates": {
+    "LIVE_RUNTIME_PROOF": "All 5 phases executed, decision logged, game alive after dispatch",
+    "PARTIAL_RUNTIME": "Some phases failed but decision logged with failure reason",
+    "CRASH": "Game crashed during execution — export evidence, log failure"
+  },
+  "proofChain": [
+    "Game alive (engine heartbeat PASS)",
+    "Surface detected (settlement_menu or campaign map)",
+    "Contract loaded (version matched)",
+    "Market intel read (inventory + prices)",
+    "Decision scored (buyScores computed)",
+    "Command dispatched (inbox sequence incremented)",
+    "Decision logged (trade-decisions.log.json appended)",
+    "Game alive after dispatch (engine heartbeat PASS)"
+  ]
+}
