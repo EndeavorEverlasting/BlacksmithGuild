@@ -135,7 +135,8 @@
     "Every launch is identifiable: each forge launch generates a unique launch ID (forge-YYYYMMDDTHHmmssZ-xxxxxx) written to BlacksmithGuild_LaunchId.json. All harness artifacts (heartbeat, DLL identity, readiness trigger, sprint capsule) carry the launch ID. Concurrent launches are traceable; no two runs share an ID."
   ,
     "Multitasking is flagged: when the operator dictates or switches windows, the game may lose focus. The harness must detect focus loss, auto-dismiss pause menus, and continue running. Town scene buildings (trade district, tavern, keep, arena) are separate destinations within the settlement interior — entering the town does not enter a specific building. Traverse the 3D scene to reach target building before sending interact commands.",
-    "Focus before input: every keyboard/mouse command requires the game window to have foreground focus. Focus-TbgGameWindow.ps1 finds the Bannerlord window by title prefix via EnumWindows and calls SetForegroundWindow. Window title is 'Mount and Blade II Bannerlord - Singleplayer'. Never assume the game has focus after dictation or window switch."
+    "Focus before input: every keyboard/mouse command requires the game window to have foreground focus. Focus-TbgGameWindow.ps1 finds the Bannerlord window by title prefix via EnumWindows and calls SetForegroundWindow. Window title is 'Mount and Blade II Bannerlord - Singleplayer'. Never assume the game has focus after dictation or window switch.",
+    "Settlement landmarks: town scene building navigation requires per-settlement coordinate registry (.tbg/state/settlement-landmarks.registry.json). Trade district, tavern, keep, arena have specific 3D positions in each town. Invoke-TbgSettlementTradeTrigger.ps1 handles settlement entry; building access needs landmark data for click targets."
   ]
 }
 
