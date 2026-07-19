@@ -51,7 +51,7 @@ $fixture = Get-Json '.tbg/harness/fixtures/window-intelligence/unified-launch-su
 Require-Match 'doctrine defines launch path invariance' $doctrine 'Unified launch path and surface invariance'
 Require-Match 'doctrine names all entry paths' $doctrine 'ForgeContinue[\s\S]*Auto Launch Nav[\s\S]*new-game[\s\S]*Steam-mediated'
 Require-Match 'doctrine names all launch surfaces' $doctrine 'Play/Continue[\s\S]*calibration[\s\S]*Safe Mode[\s\S]*Caution[\s\S]*Steam'
-Require-Match 'doctrine requires observers before actuation' $doctrine 'observers must be active before the first actuation'
+Require-Match 'doctrine requires observers before actuation' $doctrine 'same run context[\s\S]*window observer[\s\S]*external runtime observer[\s\S]*before the first actuation'
 Require-Match 'doctrine records non-action windows' $doctrine 'recorded even when the harness does not interact with it'
 Require-Match 'doctrine constrains Steam' $doctrine 'Steam is a correlated launch broker[\s\S]*observation-only'
 Require-Match 'doctrine requires per-surface freeze' $doctrine 'frozen independently for that surface operation'
