@@ -167,7 +167,7 @@ namespace BlacksmithGuild.GuildLoop
             }
             catch (Exception ex)
             {
-                AddStep("SelectMission", "Crashed", $"{ex.GetType().Name}: {ex.Message}. BuyItemsAction removed in v1.4.7 — update to v1.5.0+.");
+                AddStep("SelectMission", "Crashed", $"{ex.GetType().Name}: {ex.Message}. BuyItemsAction removed in v1.4.7 — switch to beta v1.4.6 in Steam > Properties > Game Versions & Betas.");
                 Complete("Failed", $"SelectBestMission threw: {ex.Message}");
                 return false;
             }
