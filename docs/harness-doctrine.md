@@ -132,6 +132,40 @@ A foreground, cursor, or coordinate fallback is valid only when all of the follo
 
 Sending a click, InvokePattern, message, or input event is command dispatch, not success. Play/Continue completion requires a fresh correlated transition such as the launcher control disappearing, the frozen window changing state, a new game process/window appearing, or another workflow-declared expected signal. If the transition is absent, report the dispatch and the missing verification separately; do not sit indefinitely, move the mouse repeatedly, or claim launcher proof.
 
+## Unified launch path and surface invariance
+
+The launcher contract applies to every entry path, not only the path that currently works best. `ForgeContinue`, Auto Launch Nav, the new-game Play path, Steam-mediated launch, and every future registered launch path must create or join the same run context, correlation identity, window observer, external runtime observer, artifact registry, and proof boundary before the first actuation. No launch path may bypass identity resolution, event emission, quarantine, background-safety, transition verification, or operator reporting by calling a legacy helper directly.
+
+Every correlated top-level launch surface must be recorded even when the harness does not interact with it. Required surface classes are:
+
+- the Play/Continue launcher menu;
+- the calibration menu;
+- the Safe Mode window;
+- the dependency Caution window;
+- any other launcher-owned window;
+- a correlated Steam broker window;
+- the Singleplayer game handoff.
+
+Each observation records the launch path, run and correlation IDs, process name, PID, HWND, executable path when available, title, class, UI Automation ownership, first and last seen times, identity resolution or quarantine result, action authority, dispatch result, and verified or missing transition. If an observer was not active or a surface was outside its correlated scope, absence is unknown evidence rather than proof that the window did not appear.
+
+Identity is frozen independently for that surface operation. A verified transition from one surface to another may establish a new frozen identity inside the same run; a broad scan may not silently drift from the Play/Continue menu to calibration, Safe Mode, Caution, Steam, another launcher window, or the game host. Unknown windows remain quarantined. The calibration surface remains observation-only until its exact controls and workflow-owned semantic action are registered and fixture-proven.
+
+Steam is a correlated launch broker, not an automatic action target. Observe only Steam or `steamwebhelper` windows that are tied to the active launch by fresh timing, parent/child process evidence, verified executable path, an owned launch request, or S1/S2 process/window delta. Do not enumerate unrelated Steam windows as Bannerlord surfaces, do not click or focus Steam automatically, and do not hide its presence merely because the harness does not interact with it.
+
+All paths and surfaces emit the same minimum cascade:
+
+```text
+launch.path.selected
+  -> window.observed
+  -> window.identity.resolved_or_quarantined
+  -> action.authorized_or_blocked
+  -> action.dispatched_or_skipped
+  -> transition.verified_or_unverified
+  -> launch.handoff_or_blocked
+```
+
+Play/Continue intent remains owned by the launch context. Safe Mode maps only to the exact `No` control. Dependency Caution maps only to the exact `Confirm` control. Calibration requires an explicit registered action contract. Steam and unknown windows are observation-only. A path-specific implementation, timeout, mouse fallback, or launcher wrapper may not weaken these rules.
+
 ## Crash observability and negative evidence
 
 Crash-sensitive engine calls, API calls, and state transitions must be reconstructable from correlated evidence rather than guessed from the last log line.
