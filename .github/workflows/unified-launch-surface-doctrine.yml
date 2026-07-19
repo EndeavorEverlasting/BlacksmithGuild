@@ -1,0 +1,44 @@
+name: Unified Launch Surface Doctrine
+
+on:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'docs/harness-doctrine.md'
+      - '.tbg/harness/policies/harness-doctrine.policy.json'
+      - '.tbg/harness/policies/window-intelligence.policy.json'
+      - '.tbg/harness/window-identities.registry.json'
+      - '.tbg/workflows/window-metadata-intelligence.contract.json'
+      - '.tbg/skills/launcher-lifecycle/SKILL.md'
+      - '.tbg/harness/fixtures/window-intelligence/unified-launch-surface-doctrine.fixture.json'
+      - 'scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1'
+      - '.github/workflows/unified-launch-surface-doctrine.yml'
+  workflow_dispatch:
+
+jobs:
+  powershell-core:
+    name: PowerShell Core unified launch doctrine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate unified launch surface doctrine
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1
+      - name: Validate harness doctrine
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgHarnessDoctrine.ps1
+      - name: Validate window intelligence
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgWindowIntelligence.ps1
+
+  windows-powershell:
+    name: Windows PowerShell unified launch doctrine
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate unified launch surface doctrine
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgUnifiedLaunchSurfaceDoctrine.ps1
+      - name: Validate PowerShell encoding
+        shell: powershell
+        run: .\scripts\test-powershell-utf8-bom-contract.ps1
