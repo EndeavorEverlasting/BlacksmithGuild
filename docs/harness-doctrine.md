@@ -113,6 +113,25 @@ Before launch, stop, build, install, cleanup, global input injection, or other r
 - keep raw logs, saves, crash dumps, credentials, and private machine data local and ignored;
 - publish only a schema-valid bounded sanitized capsule when remote diagnosis is needed.
 
+## Launcher identity and multitasking
+
+Launcher Play/Continue automation must select one fresh, unambiguous process/window identity and freeze it for the duration of that operation. Exact PID plus HWND is preferred when available. A unique process name, verified executable path, UI Automation root process ID, or a fresh S1-to-S2 process/window delta is also viable when it uniquely identifies the target. Process name is not inferior merely because PID/HWND exists; use the least invasive selector that is current, unique, and sufficient.
+
+Discovery and actuation are separate. Process name, PID, HWND, executable path, UIA process ownership, and S1/S2 deltas may discover or corroborate the target. Once selected, later broad scans may not silently replace it. If the frozen identity disappears, becomes ambiguous, or no longer matches the expected launcher family, emit a blocked or explicit reselection decision and restart the bounded operation rather than drifting to another window.
+
+Multitasking is the default. Launcher automation must remain background-safe and mouse-independent unless the active narrow workflow explicitly grants foreground-input authority. Prefer named UI Automation controls and supported invoke/select patterns inside the frozen target. A target-scoped background message may be used only when the control contract supports it and the target identity remains proven. Desktop-wide unscoped searches, cursor movement, `mouse_event`, foreground stealing, or guessed coordinates are not normal launcher discovery or actuation.
+
+A foreground, cursor, or coordinate fallback is valid only when all of the following are recorded:
+
+- explicit task-specific authority for foreground input;
+- evidence that named-control, UIA-pattern, and target-scoped background paths were unavailable or failed;
+- the exact frozen PID/HWND or equivalent unique identity;
+- a bounded retry count and timeout;
+- preservation and restoration of the operator's foreground where possible;
+- post-action verification from a fresh process, window, UIA, or lifecycle transition.
+
+Sending a click, InvokePattern, message, or input event is command dispatch, not success. Play/Continue completion requires a fresh correlated transition such as the launcher control disappearing, the frozen window changing state, a new game process/window appearing, or another workflow-declared expected signal. If the transition is absent, report the dispatch and the missing verification separately; do not sit indefinitely, move the mouse repeatedly, or claim launcher proof.
+
 ## Crash observability and negative evidence
 
 Crash-sensitive engine calls, API calls, and state transitions must be reconstructable from correlated evidence rather than guessed from the last log line.
