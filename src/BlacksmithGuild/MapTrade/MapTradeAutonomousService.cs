@@ -140,7 +140,7 @@ namespace BlacksmithGuild.MapTrade
             catch (Exception ex)
             {
                 DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=SelectBestMission ex={ex.GetType().Name}:{ex.Message}", showInGame: true);
-                Finish(MapTradeRouteState.Failed, "Failed", $"SelectBestMission threw: {ex.Message}. BuyItemsAction removed in v1.4.7 — update to v1.5.0+.");
+                Finish(MapTradeRouteState.Failed, "Failed", $"SelectBestMission threw: {ex.Message}. BuyItemsAction removed in v1.4.7 — switch to beta v1.4.6 in Steam > Properties > Game Versions & Betas.");
                 return false;
             }
             DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission type={_activeReport.Mission?.MissionType}", showInGame: false);

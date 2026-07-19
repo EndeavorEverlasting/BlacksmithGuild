@@ -206,11 +206,23 @@ Every version-incompatibility error must state:
 1. **What the mod expects**: the exact game version family (e.g., "v1.4.7")
 2. **What the user has**: the installed version (if detectable)
 3. **What broke**: the specific missing API or type (e.g., "BuyItemsAction was removed")
-4. **What to do**: the exact target version (e.g., "Update to v1.5.0+")
+4. **What to do**: the exact Steam beta name to switch to (e.g., "Switch to beta v1.4.6")
 
-Example: `"BuyItemsAction removed in v1.4.7 — update to v1.5.0+"`
+Example: `"BuyItemsAction removed in v1.4.7 — switch to beta v1.4.6 in Steam > Properties > Game Versions & Betas"`
 
 Bad: `"Update Bannerlord and reinstall the mod"` (doesn't say which version)
+Bad: `"Update to v1.5.0+"` (version may not exist yet)
+
+### Version ambiguity is a harness failure
+
+When the mod's expected version is not the latest available, the harness must:
+
+1. Detect the installed version via `Test-TbgVersionCompatibility.ps1`
+2. List all available Steam betas with compatibility status
+3. Recommend the exact beta to use
+4. Never assume a version exists without checking
+
+This ambiguity must never occur again. Every agent, every session, every error message must resolve versioning before acting.
 
 ### Where this applies
 

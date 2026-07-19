@@ -180,7 +180,7 @@ namespace BlacksmithGuild.MapTrade
                 {
                     mission = null;
                     DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=SelectBestMission ex={ex.GetType().Name}:{ex.Message}", showInGame: true);
-                    GuildLog.Info($"[ERROR] [MapTrade] SelectBestMission crashed in VanillaTradeDriver: {ex.Message}. BuyItemsAction removed in v1.4.7 — update to v1.5.0+.", showInGame: true);
+                    GuildLog.Info($"[ERROR] [MapTrade] SelectBestMission crashed: {ex.Message}. BuyItemsAction removed in v1.4.7 — switch to beta v1.4.6 in Steam > Properties > Game Versions & Betas.", showInGame: true);
                 }
                 if (mission?.ItemId != null)
                 {
