@@ -199,6 +199,16 @@
         }
       }
     },
+    "runtimeObserverEventArtifactPath": {
+      "type": ["string", "null"],
+      "maxLength": 512,
+      "description": "Optional sanitized or ignored-local reference to the canonical runtime-observer events stream; it does not establish causality."
+    },
+    "runtimeObserverTimelineArtifactPath": {
+      "type": ["string", "null"],
+      "maxLength": 512,
+      "description": "Optional reference to the non-causal normalized runtime incident timeline."
+    },
     "proofLevel": {"enum": ["contract", "harness", "static_test", "build", "launcher", "command_ack", "behavior_observed", "live_runtime"]},
     "redaction": {
       "type": "object",

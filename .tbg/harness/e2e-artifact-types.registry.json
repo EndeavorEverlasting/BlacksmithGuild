@@ -3,6 +3,8 @@
   "runtimeRoot": ".local/tbg-e2e-runs",
   "windowLifecycleRuntimeRoot": ".local/tbg-window-lifecycle",
   "windowLifecycleLatestRoot": "artifacts/latest/window-lifecycle",
+  "runtimeObserverRuntimeRoot": ".local/tbg-runtime-observer",
+  "runtimeObserverLatestRoot": "artifacts/latest/runtime-observer",
   "trackedRuntimeEvidenceAllowed": false,
   "types": [
     {"id": "run-context", "fileName": "run-context.json", "tracked": false},
@@ -17,6 +19,13 @@
     {"id": "window-lifecycle-state", "fileName": "state.json", "tracked": false},
     {"id": "window-lifecycle-result", "fileName": "result.json", "tracked": false},
     {"id": "window-lifecycle-operator-report", "fileName": "operator-report.md", "tracked": false},
-    {"id": "window-lifecycle-handoff", "fileName": "handoff.md", "tracked": false}
+    {"id": "window-lifecycle-handoff", "fileName": "handoff.md", "tracked": false},
+    {"id": "runtime-observer-run-context", "fileName": "run-context.json", "tracked": false},
+    {"id": "runtime-observer-artifact-registry", "fileName": "artifact-registry.json", "tracked": false},
+    {"id": "runtime-observer-events", "fileName": "events.jsonl", "tracked": false},
+    {"id": "runtime-observer-status", "fileName": "observer-status.json", "tracked": false},
+    {"id": "runtime-incident-timeline", "fileName": "incident-timeline.json", "tracked": false},
+    {"id": "runtime-incident-result", "fileName": "incident-result.json", "tracked": false},
+    {"id": "runtime-observer-operator-report", "fileName": "operator-report.md", "tracked": false}
   ]
 }

@@ -259,6 +259,7 @@
       "artifacts/latest/tbg-sprint-capsule.json",
       "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
       "artifacts/latest/artifact-engine/artifact-engine.handoff.md",
+      "artifacts/latest/runtime-observer/runtime-event-observation.result.json when fresh and applicable",
       "runtime-context capsule for the current run"
     ],
     "requiredBeforeRuntimeMutation": [
@@ -275,6 +276,8 @@
     "trackedRoot": "docs/evidence/runtime-context",
     "capsuleSchema": ".tbg/harness/schemas/runtime-context-capsule.schema.json",
     "rawEvidencePolicy": "local_ignored_only",
+    "runtimeObserverArtifactRoot": ".local/tbg-runtime-observer/<runId>/",
+    "runtimeObserverEventStream": "events.jsonl",
     "publishRule": "Commit a sanitized bounded capsule when a runtime failure, engine-handoff crash, interrupted agent run, or token-exhaustion handoff needs remote analysis.",
     "maxCapsuleBytes": 65536,
     "maxExcerptLines": 80,

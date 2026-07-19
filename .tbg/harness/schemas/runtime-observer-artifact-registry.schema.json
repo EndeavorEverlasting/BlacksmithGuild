@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/runtime-observer-artifact-registry.schema.json",
+  "title": "TBG Runtime Observer Artifact Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "runId", "generatedUtc", "artifacts"],
+  "properties": {
+    "schema": {"const": "TbgRuntimeObserverArtifactRegistry.v1"},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "generatedUtc": {"type": "string", "format": "date-time"},
+    "artifacts": {"type": "array", "maxItems": 32, "items": {"type": "object", "additionalProperties": false, "required": ["role", "path", "sha256", "generatedUtc", "sourceObserver", "disposition", "retention"], "properties": {"role": {"type": "string", "minLength": 1, "maxLength": 128}, "path": {"type": "string", "minLength": 1, "maxLength": 512}, "sha256": {"type": ["string", "null"], "pattern": "^([0-9a-fA-F]{64})?$"}, "generatedUtc": {"type": "string", "format": "date-time"}, "sourceObserver": {"type": "string", "minLength": 1, "maxLength": 128}, "disposition": {"enum": ["tracked", "ignored_local"]}, "retention": {"type": "string", "minLength": 1, "maxLength": 128}}}}
+  }
+}
