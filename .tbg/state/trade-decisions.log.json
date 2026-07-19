@@ -45,6 +45,49 @@
                                         },
                           "commandDispatched":  true,
                           "sequence":  21
+                      },
+                      {
+                          "timestamp":  "2026-07-19T15:22:15.0520714Z",
+                          "contractVersion":  1,
+                          "settlement":  null,
+                          "surface":  "campaign_map",
+                          "partyState":  {
+                                             "charcoal":  {
+                                                              "floor":  2,
+                                                              "have":  0
+                                                          },
+                                             "hardwood":  {
+                                                              "floor":  4,
+                                                              "have":  0
+                                                          }
+                                         },
+                          "shortfall":  [
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            },
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            },
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            },
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            }
+                                        ],
+                          "buyScores":  {
+                                            "grain":  0.7,
+                                            "ironIngot":  0.6,
+                                            "charcoal":  1.0,
+                                            "hardwood":  0.9,
+                                            "ironOre":  0.8
+                                        },
+                          "commandDispatched":  true,
+                          "sequence":  22
                       }
                   ]
 }
