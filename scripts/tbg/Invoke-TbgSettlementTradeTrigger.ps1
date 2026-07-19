@@ -12,12 +12,30 @@ param(
 $ErrorActionPreference = 'SilentlyContinue'
 $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 
-# Step 0: focus game window before any input
-Write-Host "=== Settlement -> Trade Trigger ==="
-$focusResult = & "$PSScriptRoot\Focus-TbgGameWindow.ps1" -PassThru
-if (-not $focusResult.confirmed) {
-    Write-Host "WARN: Game window not focused. Input may go to wrong window."
+# Self-contained keyboard/mouse/focus via Win32
+Add-Type -TypeDefinition @"
+using System;using System.Runtime.InteropServices;using System.Text;
+public class NavKeys {
+    [DllImport("user32.dll")] static extern bool EnumWindows(EW lp,IntPtr l);
+    [DllImport("user32.dll")] static extern int GetWindowText(IntPtr h,StringBuilder t,int m);
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] static extern void keybd_event(byte vk,byte s,uint f,UIntPtr e);
+    [DllImport("user32.dll")] static extern bool SetCursorPos(int x,int y);
+    [DllImport("user32.dll")] static extern void mouse_event(uint f,uint dx,uint dy,uint d,UIntPtr e);
+    delegate bool EW(IntPtr h,IntPtr l);const uint UP=0x0002,LD=0x0002,LU=0x0004;
+    public static bool FocusGame(){IntPtr f=IntPtr.Zero;EnumWindows((h,ll)=>{var s=new StringBuilder(256);GetWindowText(h,s,256);if(s.ToString().StartsWith("Mount and Blade II Bannerlord")){f=h;return false;}return true;},IntPtr.Zero);return f!=IntPtr.Zero&&SetForegroundWindow(f);}
+    public static void Press(byte vk){keybd_event(vk,0,0,UIntPtr.Zero);keybd_event(vk,0,UP,UIntPtr.Zero);}
+    public static void Click(int x,int y){SetCursorPos(x,y);mouse_event(LD,0,0,0,UIntPtr.Zero);mouse_event(LU,0,0,0,UIntPtr.Zero);}
+    public static void Hold(byte vk){keybd_event(vk,0,0,UIntPtr.Zero);}
+    public static void Release(byte vk){keybd_event(vk,0,UP,UIntPtr.Zero);}
 }
+"@
+const byte VK_ESC=0x1B,VK_F=0x46,VK_ENTER=0x0D,VK_TAB=0x09,VK_DOWN=0x28,VK_A=0x41,VK_D=0x44,VK_W=0x57,VK_LALT=0xA4;
+
+Write-Host "=== Settlement -> Trade Trigger ==="
+
+# Step 0: focus game window
+[NavKeys]::FocusGame(); Start-Sleep -Milliseconds 800; Write-Host "Game focused"
 
 $phase1Path = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
 $regentPath = Join-Path $BannerlordRoot 'BlacksmithGuild_RuntimeRegent.json'
@@ -110,3 +128,4 @@ $result = [ordered]@{
 }
 $result | ConvertTo-Json | Write-Host
 exit $(if ($result.tradeMenuReached) { 0 } else { 3 })
+
