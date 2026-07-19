@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Campaign map → settlement entry → trade menu navigation trigger.
 Detects campaign map, enters nearest settlement, navigates to trade menu.
@@ -11,6 +11,14 @@ param(
 
 $ErrorActionPreference = 'SilentlyContinue'
 $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+
+# Step 0: focus game window before any input
+Write-Host "=== Settlement -> Trade Trigger ==="
+$focusResult = & "$PSScriptRoot\Focus-TbgGameWindow.ps1" -PassThru
+if (-not $focusResult.confirmed) {
+    Write-Host "WARN: Game window not focused. Input may go to wrong window."
+}
+
 $phase1Path = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
 $regentPath = Join-Path $BannerlordRoot 'BlacksmithGuild_RuntimeRegent.json'
 
