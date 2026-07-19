@@ -1,58 +1,88 @@
 {
   "schema": "tbg.sprint-capsule.v1",
-  "generatedUtc": "2026-07-18T23:42:00.0000000Z",
+  "generatedUtc": "2026-07-19T01:13:00Z",
   "producer": "EndeavorEverlasting/BlacksmithGuild",
   "sprint": {
     "id": "harness-doctrine-installation",
     "branch": "feat/harness-doctrine-installation",
     "PR": 102,
     "status": "COMPLETE",
-    "summary": "Harness fully installed: 34 doctrine entries, 25 validators. Engine heartbeat crash detector pinpoints native crash to SelectBestMission:smithingLoop (Quyaz, 7/7 reproducible). Readiness trigger with surface validation. DLL identity checker. Session mode (Runner/Human). Unique launch IDs. Auto-unpause service. Escape menu helper via Win32 keybd_event. v1.4.7 compatibility with Steam API fixture. LaunchForgeContinue.cmd 5-phase pipeline with crash guards at every step."
+    "summary": "27 commits. Full harness installed: 34 doctrine entries, 25 validators, 10 enforcement rules, 11 harness components. Engine heartbeat crash detector pinpoints native crash to SelectBestMission:smithingLoop (Quyaz, 10/10 reproducible). Root cause: BuyItemsAction missing in v1.4.7 — trade API reflection probe fails, causing native instability."
   },
   "git": {
     "branch": "feat/harness-doctrine-installation",
-    "head": "f589f86",
+    "head": "94863ec",
     "pushed": true,
-    "commits": 23
+    "commits": 27
   },
   "scope": {
-    "owned": [
-      "harness doctrine",
-      "escape menu helper",
-      "auto-unpause service",
-      "engine heartbeat logs",
-      "crash guard",
-      "launcher gate fixture",
-      "readiness trigger",
-      "CMD pipeline",
-      "DLL identity validator",
-      "surface validation",
-      "session mode context",
-      "launch ID traceability"
-    ],
-    "forbidden": [
-      "save mutation",
-      "personal data",
-      "free resources"
-    ]
+    "owned": ["harness doctrine","escape menu helper","auto-unpause service","engine heartbeat","crash guard","launcher gate fixture","readiness trigger","CMD pipeline","DLL identity","surface validation","session mode","launch ID"],
+    "forbidden": ["save mutation","personal data","free resources","broad refactors"]
   },
   "validation": {
     "build": "0 warnings 0 errors",
     "doctrine": "13/13 PASS (34 entries 25 validators)",
     "bomCheck": "PASS 252 scripts",
-    "dllIdentity": "3/3 PASS"
+    "dllIdentity": "3/3 PASS",
+    "engineHeartbeat": "CRASH pinpointed to SelectBestMission:smithingLoop"
   },
   "proof": {
-    "highest": "engine heartbeat crash pinpoint (7/7 reproducible at Quyaz smithingLoop)"
+    "highest": "engine heartbeat crash pinpoint (10/10 at Quyaz smithingLoop)",
+    "launcherNav": "PASS (Continue, Safe Mode, game spawn, TBG READY)",
+    "settlementEntry": "PASS (Quyaz settlement interior reached via click)",
+    "pauseDismissal": "PASS (keybd_event VK_ESCAPE dismisses, game continues 5400+ ticks)",
+    "clockResume": "PASS (ACK Success, MapActive phase proven)",
+    "tradeRoute": "BLOCKED (BuyItemsAction:missing in v1.4.7)",
+    "autoUnpause": "NOT PROVEN (service fires on campaign tick, test requires map surface)"
   },
+  "crashLedger": [
+    {
+      "id": "CRASH-001",
+      "location": "MapTradeMissionSelector.SelectBestMission -> smithingLoop foreach",
+      "trigger": "RunAutonomousVisibleTradeRouteNow at Quyaz",
+      "rootCause": "BuyItemsAction reflection probe returns missing in v1.4.7. Traded API renamed/removed.",
+      "reproducible": "10/10"
+    },
+    {
+      "id": "CRASH-002",
+      "location": "EngineToggleAuthority.CycleEngineToggleModeCommand",
+      "trigger": "Ctrl+Alt+T hotkey",
+      "rootCause": "Same engine toggle path destabilizes when trade API missing",
+      "reproducible": "user confirmed"
+    }
+  ],
   "handoff": {
-    "blocker": "Native crash at Quyaz in SelectBestMission:smithingLoop. v1.4.7 incompatibility. Game exits before travel or settlement entry.",
-    "gap": "Trade route, auto-unpause, escape menu not proven at runtime — all blocked by native crash.",
-    "risk": "Entire autonomous path gated by Quyaz crash. v1.4.7 engine unlikely to work with this save."
+    "blocker": "BuyItemsAction:missing in v1.4.7. Fix requires updating MapTradeTradeActionReflection.cs to find renamed/relocated trade method.",
+    "gap": "Auto-unpause not proven on campaign map. Settlement-to-map transition needed.",
+    "risk": "CMD pipeline uses powershell (pwsh) which lacks Get-FileHash. Workaround: use powershell.exe explicitly."
+  },
+  "agentRouting": {
+    "nextAgent": "Agent B (Runtime/Readiness)",
+    "priority": [
+      {"reason": "Fixing BuyItemsAction requires runtime surface + live game for proof. Agent B owns runtime lane.", "agent": "B"},
+      {"reason": "Auto-unpause proof requires campaign map + pause menu interaction. Agent B owns readiness.", "agent": "B"},
+      {"reason": "Trade route end-to-end requires settlement nav + trade API fix + runtime proof.", "agent": "B"}
+    ],
+    "dependencies": [
+      "Fix MapTradeTradeActionReflection.cs to resolve BuyItemsAction in v1.4.7",
+      "Restart game to deploy new DLL",
+      "Navigate campaign map -> settlement -> trade menu",
+      "Collect engine heartbeat evidence through entire chain"
+    ]
   },
   "consumers": {
     "agentSwitchboard": { "proofCeiling": "none" },
     "sysAdminSuite": { "authority": "requires_tandem_auth" }
   },
-  "nextCommand": ".\\LaunchForgeContinue.cmd"
+  "artifactRefs": [
+    "docs/sprints/harness-doctrine-installation.capsule.json",
+    "docs/harness-doctrine.md",
+    ".tbg/harness/manifest.json (34 doctrines)",
+    ".tbg/harness/policies/harness-doctrine.policy.json (10 rules)",
+    "artifacts/latest/dll-identity.result.json",
+    "artifacts/latest/engine-heartbeat.result.json",
+    "artifacts/latest/readiness-trigger.result.json",
+    "artifacts/latest/harness-doctrine.result.json"
+  ],
+  "nextCommand": "Update MapTradeTradeActionReflection.cs to find v1.4.7 trade API, rebuild, restart, run: `$env:TBG_SESSION_MODE='Runner'; Stop-Process -Name 'TaleWorlds*' -Force; Start-Sleep 2; powershell.exe -NoProfile -Exec Bypass -File .\\forge.ps1 -Launch -LaunchIntent continue -AllowFocusSteal -SessionAuthorityMode UserSession; .\\scripts\\tbg\\Test-TbgReadinessTrigger.ps1 -Command RunAutonomousVisibleTradeRouteNow -RequiredSurface map_surface -SessionMode Runner -ReadyTimeoutSec 180 -AckTimeoutSec 120`"
 }
