@@ -1,0 +1,22 @@
+{
+  "schema": "TbgGameRuntimeObserverFixture.v1",
+  "description": "Synthetic, sanitized observations. They define observer classification and do not assert root cause.",
+  "cases": [
+    {"id":"clean-exit","inputs":{"processAlive":false,"exitObserved":true,"wer":false},"expectedEvent":"process.exited","classification":"clean_exit"},
+    {"id":"exit-without-wer","inputs":{"processAlive":false,"exitObserved":true,"wer":false},"expectedEvent":"process.exited","classification":"process_exited"},
+    {"id":"wer-native-crash","inputs":{"processAlive":false,"exitObserved":true,"wer":true,"correlatedIdentity":true,"correlatedTimestamp":true},"expectedEvent":"external_terminal_evidence","classification":"native_crash_confirmed"},
+    {"id":"taleworlds-report","inputs":{"taleWorldsReport":true},"expectedEvent":"external_terminal_evidence","classification":"native_crash_suspected"},
+    {"id":"stale-log-healthy-process","inputs":{"processAlive":true,"logAgeSeconds":120,"observerActive":true},"expectedEvent":"heartbeat.stalled","classification":"log_stalled"},
+    {"id":"missing-observer","inputs":{"processAlive":true,"observerActive":false},"expectedEvent":"observer.gap","classification":"process_unobserved"},
+    {"id":"hang-suspected","inputs":{"processAlive":true,"logAgeSeconds":240,"observerActive":true,"responding":null},"expectedEvent":"hang.suspected","classification":"unknown_failure"},
+    {"id":"wrong-run","inputs":{"processAlive":true,"observerActive":true,"runMarkerMatches":false},"expectedEvent":"observer.gap","classification":"process_unobserved"},
+    {"id":"duplicate-wer","inputs":{"wer":true,"duplicateFingerprint":true},"expectedEvent":"external_terminal_evidence","classification":"native_crash_suspected"},
+    {"id":"process-reconciliation","inputs":{"initialPid":41,"finalPid":42},"expectedEvent":"observer.reconciled","classification":"process_exited"}
+  ],
+  "nonEquivalences": [
+    "stale_log_alone_is_not_native_crash_confirmed",
+    "process_exit_without_correlated_external_evidence_is_not_native_crash_confirmed",
+    "taleworlds_report_is_evidence_not_root_cause",
+    "missing_observer_is_not_negative_evidence"
+  ]
+}
