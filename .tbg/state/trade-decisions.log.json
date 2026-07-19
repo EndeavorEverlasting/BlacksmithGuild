@@ -1,0 +1,50 @@
+﻿{
+    "schema":  "TbgTradeDecisionsLog.v1",
+    "repo":  "EndeavorEverlasting/BlacksmithGuild",
+    "description":  "Append-only log of every trade priority decision. Machine-readable intent for remote analysis.",
+    "decisions":  [
+                      {
+                          "timestamp":  "2026-07-19T05:41:06.3801817Z",
+                          "contractVersion":  1,
+                          "settlement":  null,
+                          "surface":  "settlement_menu",
+                          "partyState":  {
+                                             "charcoal":  {
+                                                              "floor":  2,
+                                                              "have":  0
+                                                          },
+                                             "hardwood":  {
+                                                              "floor":  4,
+                                                              "have":  0
+                                                          }
+                                         },
+                          "shortfall":  [
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            },
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            },
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            },
+                                            {
+                                                "need":  2,
+                                                "item":  "charcoal"
+                                            }
+                                        ],
+                          "buyScores":  {
+                                            "grain":  0.7,
+                                            "ironIngot":  0.6,
+                                            "charcoal":  1.0,
+                                            "hardwood":  0.9,
+                                            "ironOre":  0.8
+                                        },
+                          "commandDispatched":  true,
+                          "sequence":  21
+                      }
+                  ]
+}

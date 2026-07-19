@@ -1,0 +1,56 @@
+{
+  "schema": "TbgTradePriorityContract.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "description": "Living formula for trade priority decisions. Engine reads this every run. Changes require live cert evidence.",
+  "version": 1,
+  "createdUtc": "2026-07-19T05:32:00Z",
+  "lastTweakedUtc": "2026-07-19T05:32:00Z",
+  "lastTweakReason": "Initial formula — hardcoded survival thresholds from Phase1.log observations",
+  "proofLevel": "live runtime",
+  "formula": {
+    "survivalFloor": {
+      "charcoal": 2,
+      "hardwood": 4,
+      "grain": 5,
+      "ironOre": 3,
+      "ironIngot": 2
+    },
+    "buyWeights": {
+      "charcoal": { "belowFloor": 1.0, "aboveFloor": 0.3 },
+      "hardwood": { "belowFloor": 0.9, "aboveFloor": 0.2 },
+      "grain": { "belowFloor": 0.7, "aboveFloor": 0.1 },
+      "ironOre": { "belowFloor": 0.8, "aboveFloor": 0.4 },
+      "ironIngot": { "belowFloor": 0.6, "aboveFloor": 0.5 },
+      "steelIngot": { "belowFloor": 0.0, "aboveFloor": 0.7 },
+      "horses": { "belowFloor": 0.0, "aboveFloor": 0.2 },
+      "tools": { "belowFloor": 0.0, "aboveFloor": 0.6 },
+      "armor": { "belowFloor": 0.0, "aboveFloor": 0.4 },
+      "weapons": { "belowFloor": 0.0, "aboveFloor": 0.5 }
+    },
+    "sellPriority": {
+      "overstockThreshold": 2,
+      "priceFloorRatio": 0.6,
+      "profitMarginMin": 0.15
+    },
+    "travelPriority": {
+      "maxDistanceRatio": 0.8,
+      "preferNearestTown": true,
+      "avoidTownsWhereRecentLoss": true
+    }
+  },
+  "decisionLogic": {
+    "step1_land": "Detect settlement name, read market intel",
+    "step2_survive": "Check party inventory vs survivalFloor. Items below floor are MUST-BUY.",
+    "step3_purchase": "For each item: score = buyWeight * (1 - priceRatio). Buy top-scoring items until gold runs out or inventory full.",
+    "step4_travel": "Choose next town: prefer towns where sell prices are highest for overstocked items. If no clear winner, prefer nearest.",
+    "step5_sell": "At next town: sell items where sellPriority.profitMarginMin is met."
+  },
+  "tweakHistory": [
+    {
+      "version": 1,
+      "date": "2026-07-19",
+      "reason": "Initial formula. Survival floors derived from Phase1.log: charcoal 0 (need 2), hardwood 0 (need 4). No trade data yet.",
+      "evidence": "Phase1.log grep: party charcoal: x0 (low) floor=2, party hardwood: x0 (low) floor=4"
+    }
+  ]
+}
