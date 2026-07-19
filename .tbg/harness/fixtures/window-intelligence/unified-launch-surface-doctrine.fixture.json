@@ -1,0 +1,88 @@
+{
+  "schema": "TbgUnifiedLaunchSurfaceDoctrineFixture.v1",
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "purpose": "Require every supported launch entry path to use the same observed, identity-frozen, background-safe window lifecycle contract.",
+  "entryPaths": [
+    {
+      "id": "forge_continue",
+      "entrypoint": "ForgeContinue.cmd",
+      "intent": "continue"
+    },
+    {
+      "id": "auto_launch_nav",
+      "entrypoint": "scripts/launcher-auto-nav.ps1",
+      "intent": "context_owned"
+    },
+    {
+      "id": "new_game_play",
+      "entrypoint": "new-game launch path",
+      "intent": "play"
+    },
+    {
+      "id": "steam_mediated",
+      "entrypoint": "Steam launch broker",
+      "intent": "context_owned"
+    }
+  ],
+  "requiredSurfaceClasses": [
+    {
+      "id": "play_continue_menu",
+      "registryIdentity": "bannerlord.launcher.menu",
+      "expectedDisposition": "context_owned_action"
+    },
+    {
+      "id": "calibration_menu",
+      "registryIdentity": "bannerlord.launcher.calibration",
+      "expectedDisposition": "observe_until_exact_action_contract"
+    },
+    {
+      "id": "safe_mode_window",
+      "registryIdentity": "bannerlord.safe-mode",
+      "expectedDisposition": "exact_named_control_only"
+    },
+    {
+      "id": "caution_window",
+      "registryIdentity": "bannerlord.dependency-version-caution",
+      "expectedDisposition": "exact_named_control_only"
+    },
+    {
+      "id": "steam_broker_window",
+      "registryIdentity": "steam.launch-broker",
+      "expectedDisposition": "observation_only"
+    },
+    {
+      "id": "other_launcher_window",
+      "registryIdentity": null,
+      "expectedDisposition": "unknown_quarantined"
+    },
+    {
+      "id": "singleplayer_handoff",
+      "registryIdentity": "bannerlord.singleplayer-host",
+      "expectedDisposition": "terminal_observation"
+    }
+  ],
+  "requiredEvents": [
+    "launch.path.selected",
+    "window.observed",
+    "window.identity.resolved_or_quarantined",
+    "action.authorized_or_blocked",
+    "action.dispatched_or_skipped",
+    "transition.verified_or_unverified",
+    "launch.handoff_or_blocked"
+  ],
+  "pathInvariantRules": [
+    "same_run_context_and_correlation_contract",
+    "observers_active_before_first_actuation",
+    "all_correlated_top_level_windows_recorded",
+    "identity_frozen_per_surface_operation",
+    "background_safe_and_mouse_independent_by_default",
+    "unknown_windows_quarantined",
+    "steam_observed_but_never_automatically_acted_on",
+    "fresh_transition_required_before_success"
+  ],
+  "matrixExpectation": {
+    "allEntryPathsMustDeclareAllSurfaceClasses": true,
+    "missingSurfaceObservationIsUnknownNotAbsent": true,
+    "pathSpecificSafetyBypassForbidden": true
+  }
+}
