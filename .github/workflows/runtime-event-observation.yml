@@ -1,0 +1,48 @@
+name: Runtime Event Observation
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/workflows/runtime-event-observation.contract.json'
+      - '.tbg/workflows/runtime-context-continuity.contract.json'
+      - '.tbg/harness/schemas/runtime-observer-*.schema.json'
+      - '.tbg/harness/schemas/runtime-incident-timeline.schema.json'
+      - '.tbg/harness/schemas/runtime-context-capsule.schema.json'
+      - '.tbg/harness/fixtures/runtime-event-observation.fixtures.json'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/e2e-artifact-types.registry.json'
+      - 'scripts/tbg/Test-TbgRuntimeEventObservation.ps1'
+      - 'docs/architecture/runtime-event-observation-spine.md'
+      - '.github/workflows/runtime-event-observation.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.tbg/workflows/runtime-event-observation.contract.json'
+      - '.tbg/workflows/runtime-context-continuity.contract.json'
+      - '.tbg/harness/schemas/runtime-observer-*.schema.json'
+      - '.tbg/harness/schemas/runtime-incident-timeline.schema.json'
+      - '.tbg/harness/schemas/runtime-context-capsule.schema.json'
+      - '.tbg/harness/fixtures/runtime-event-observation.fixtures.json'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/e2e-artifact-types.registry.json'
+      - 'scripts/tbg/Test-TbgRuntimeEventObservation.ps1'
+      - 'docs/architecture/runtime-event-observation-spine.md'
+      - '.github/workflows/runtime-event-observation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  powershell-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: pwsh
+        run: ./scripts/tbg/Test-TbgRuntimeEventObservation.ps1
+  windows-powershell:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: powershell
+        run: .\scripts\tbg\Test-TbgRuntimeEventObservation.ps1

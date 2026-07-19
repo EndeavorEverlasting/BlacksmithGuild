@@ -1,0 +1,57 @@
+{
+  "id": "runtime-event-observation",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "sprint": "runtime-event-spine",
+  "contextBanner": "[TBG | Sprint 2 | runtime event observation spine | branch: sprint/runtime-event-spine]",
+  "purpose": "Define the canonical, read-only normalized event boundary shared by later window, process, external-evidence, and in-process-span observers. Observation never implies action acceptance, root cause, or live-runtime proof.",
+  "allowedScope": [
+    "schemas, fixtures, static validator, registry and manifest wiring for runtime observation",
+    "read-only normalization and artifact-shape validation",
+    "sanitized local artifact path declaration"
+  ],
+  "forbiddenScope": [
+    "src/** or observer implementation",
+    "process, game, launcher, command-inbox, save, or gameplay mutation",
+    "incident cause assembly or native-crash confirmation from event presence alone",
+    "raw dump, secret, token, or personal-path tracking"
+  ],
+  "sharedOutputRoot": ".local/tbg-runtime-observer/<runId>/",
+  "requiredArtifacts": [
+    "run-context.json",
+    "artifact-registry.json",
+    "events.jsonl",
+    "observer-status.json",
+    "incident-timeline.json",
+    "incident-result.json",
+    "operator-report.md"
+  ],
+  "latestOutputRoot": "artifacts/latest/runtime-observer/",
+  "schemas": {
+    "runContext": ".tbg/harness/schemas/runtime-observer-run-context.schema.json",
+    "event": ".tbg/harness/schemas/runtime-observer-event.schema.json",
+    "artifactRegistry": ".tbg/harness/schemas/runtime-observer-artifact-registry.schema.json",
+    "incidentTimeline": ".tbg/harness/schemas/runtime-incident-timeline.schema.json"
+  },
+  "doctrine": {
+    "eventPresenceIsNotAcceptanceOrCause": true,
+    "lastOpenSpanIsBoundaryNotCause": true,
+    "nativeCrashConfirmedRequiresCorrelatedExternalTerminalEvidence": true,
+    "staleOrIncompleteSilenceIsNotNegativeEvidence": true
+  },
+  "validationCommands": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeEventObservation.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeContextContinuity.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgEndToEndHarness.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-agent-coordination-contract.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-powershell-utf8-bom-contract.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Invoke-TbgEndToEndValidation.ps1 -Profile default-static",
+    "git diff --check"
+  ],
+  "proofCeiling": "static_test",
+  "terminalStates": [
+    "PASS_runtime_event_spine_static_validated",
+    "BLOCKED_contract_or_registry_missing",
+    "FAIL_fixture_or_doctrine_violation"
+  ]
+}

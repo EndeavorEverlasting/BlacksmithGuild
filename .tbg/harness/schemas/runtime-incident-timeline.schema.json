@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/runtime-incident-timeline.schema.json",
+  "title": "TBG Runtime Incident Timeline v1",
+  "description": "Orders normalized evidence without declaring cause. The timeline must not promote an observation, last event, or open span into causal fact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "runId", "correlationId", "orderedEventIds", "ingestionOrderEventIds", "classificationsAllowed", "provenCause"],
+  "properties": {
+    "schema": {"const": "TbgRuntimeIncidentTimeline.v1"},
+    "runId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "correlationId": {"type": "string", "minLength": 1, "maxLength": 128},
+    "orderedEventIds": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"type": "string", "minLength": 1, "maxLength": 128}, "uniqueItems": true},
+    "ingestionOrderEventIds": {"type": "array", "minItems": 1, "maxItems": 4096, "items": {"type": "string", "minLength": 1, "maxLength": 128}, "uniqueItems": true},
+    "classificationsAllowed": {"type": "array", "maxItems": 16, "items": {"enum": ["log_stalled", "process_unobserved", "process_exited", "managed_exception_confirmed", "native_crash_suspected", "native_crash_confirmed", "hang_confirmed", "clean_exit", "unknown_failure"]}, "uniqueItems": true},
+    "observations": {"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 2048}},
+    "inferences": {"type": "array", "maxItems": 128, "items": {"type": "string", "maxLength": 2048}},
+    "hypotheses": {"type": "array", "maxItems": 128, "items": {"type": "string", "maxLength": 2048}},
+    "provenCause": {"type": "null", "description": "Null-only at the event-spine layer; a later assembler may establish a cause under its own authority."}
+  }
+}
