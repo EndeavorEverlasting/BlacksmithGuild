@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using BlacksmithGuild.DevTools.Diagnostics;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools.Automation
@@ -54,6 +55,11 @@ namespace BlacksmithGuild.DevTools.Automation
         public const string CityCompletionStarted = "city_completion.started";
         public const string CityCompletionCompleted = "city_completion.completed";
         public const string CityCompletionBlocked = "city_completion.blocked";
+        public const string SpanStarted = "span.started";
+        public const string SpanCompleted = "span.completed";
+        public const string SpanError = "span.error";
+        public const string SpanBlocked = "span.blocked";
+        public const string SpanAbandoned = "span.abandoned";
 
         private static readonly object Sync = new object();
         private static readonly string EventPath =
@@ -62,6 +68,42 @@ namespace BlacksmithGuild.DevTools.Automation
         private static string _lastBranchStateSignature;
 
         public static string PathForTests => EventPath;
+
+        // Span helpers are intentionally additive to the existing dotted-event API. A terminal
+        // helper only writes the supplied span ID, so an unrelated completion cannot close a parent.
+        public static RuntimeSpanContext BeginSpan(
+            string operation,
+            RuntimeSpanContext parent = null,
+            string sessionId = null,
+            string commandId = null,
+            string correlationId = null,
+            string expectedSignal = null,
+            RuntimeStateSnapshot preState = null)
+        {
+            var context = RuntimeSpanContext.Create(operation, parent, sessionId, commandId, correlationId);
+            RuntimeSpanWriter.WriteStarted(context, expectedSignal, preState);
+            return context;
+        }
+
+        public static void CompleteSpan(RuntimeSpanContext context, string observedSignal = null, RuntimeStateSnapshot postState = null)
+        {
+            RuntimeSpanWriter.WriteTerminal(context, SpanCompleted, "completed", observedSignal, postState, null);
+        }
+
+        public static void BlockSpan(RuntimeSpanContext context, string reason, RuntimeStateSnapshot postState = null)
+        {
+            RuntimeSpanWriter.WriteTerminal(context, SpanBlocked, "blocked", reason, postState, null);
+        }
+
+        public static void FailSpan(RuntimeSpanContext context, Exception exception, RuntimeStateSnapshot postState = null)
+        {
+            RuntimeSpanWriter.WriteTerminal(context, SpanError, "error", null, postState, exception);
+        }
+
+        public static void AbandonSpan(RuntimeSpanContext context, string reason, RuntimeStateSnapshot postState = null)
+        {
+            RuntimeSpanWriter.WriteTerminal(context, SpanAbandoned, "abandoned", reason, postState, null);
+        }
 
         public static void Emit(
             string type,

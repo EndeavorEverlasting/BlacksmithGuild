@@ -1,6 +1,7 @@
 using System;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.DevTools.Diagnostics;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Food;
 using BlacksmithGuild.HorseMarket;
@@ -40,6 +41,10 @@ namespace BlacksmithGuild.CampaignRuntime
 
         public static bool RunCycleNow(string source = RunCampaignGovernorCycleNowCommand)
         {
+            var span = AutomationRuntimeEventEmitter.BeginSpan(
+                "CampaignRuntimeGovernor.RunCycleNow",
+                expectedSignal: "campaign_runtime_decision_written",
+                preState: RuntimeStateSnapshot.Capture(source));
             try
             {
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.GovernorDecisionStarted, reason: source);
@@ -52,10 +57,18 @@ namespace BlacksmithGuild.CampaignRuntime
                     payloadJson: "{\"cycleId\":\"" + Escape(decision.CycleId) + "\",\"selectedBranch\":\"" + Escape(decision.SelectedBranch) + "\",\"activityId\":\"" + Escape(decision.ProposedActivity?.ActivityId) + "\"}");
 
                 InGameNotice.Info(ModDisplay.CompactLine("Governor", $"{decision.SelectedBranch}: {decision.SelectedReason}"));
+                AutomationRuntimeEventEmitter.CompleteSpan(
+                    span,
+                    "campaign_runtime_decision_written",
+                    RuntimeStateSnapshot.Capture("governor.post", decision.CurrentTown, decision.DestinationCandidate, decision.BlockedBranches.Count));
                 return true;
             }
             catch (Exception ex)
             {
+                AutomationRuntimeEventEmitter.FailSpan(
+                    span,
+                    ex,
+                    RuntimeStateSnapshot.Capture(source));
                 _paused = true;
                 var failed = BuildFailedDecision(source, ex);
                 LastDecision = failed;
@@ -64,7 +77,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.GovernorFailSafePause, reason: ex.Message);
                 DebugLogger.Test($"[TBG GOVERNOR] failed and paused: {ex.Message}", showInGame: false);
                 InGameNotice.Blocked(ModDisplay.CompactLine("Governor", "failed; automation paused"));
-                return false;
+                throw;
             }
         }
 
