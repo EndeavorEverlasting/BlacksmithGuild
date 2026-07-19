@@ -1,0 +1,267 @@
+{
+  "schema": "TbgRuntimeEventObservationOwnership.v1",
+  "version": 1,
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "program": "runtime-event-observation",
+  "inspectedAtUtc": "2026-07-19T13:34:21Z",
+  "floorCommitSha": "7800cb7a6bafdeac76c2ad723f756f86739429e2",
+  "rule": "Exactly one sprint owns each shared surface category. Parallel owners must not edit each other's files. Shared schemas belong to Sprint 2; observer implementations belong to Sprints 3-5; correlation belongs to Sprint 6; skills/capabilities/triggers belong to Sprint 7; live evidence belongs to Sprint 8.",
+  "owners": [
+    {
+      "sprint": 1,
+      "name": "Prove the Runtime Observer Floor",
+      "branch": "sprint/runtime-observer-floor",
+      "owns": [
+        ".tbg/plans/runtime-event-observation/floor.json",
+        ".tbg/plans/runtime-event-observation/ownership.json",
+        "docs/handoff/runtime-event-observation-floor.md"
+      ],
+      "category": "floor-and-collision-ledger"
+    },
+    {
+      "sprint": 2,
+      "name": "Establish the Unified Runtime Event Spine",
+      "branch": "sprint/runtime-event-spine",
+      "owns": [
+        ".tbg/workflows/runtime-event-observation.contract.json",
+        ".tbg/harness/schemas/runtime-observer-run-context.schema.json",
+        ".tbg/harness/schemas/runtime-observer-event.schema.json",
+        ".tbg/harness/schemas/runtime-observer-artifact-registry.schema.json",
+        ".tbg/harness/schemas/runtime-incident-timeline.schema.json",
+        ".tbg/harness/schemas/runtime-context-capsule.schema.json",
+        ".tbg/workflows/runtime-context-continuity.contract.json",
+        ".tbg/harness/fixtures/runtime-event-observation.fixtures.json",
+        ".tbg/harness/e2e-artifact-types.registry.json",
+        ".tbg/harness/manifest.json",
+        "scripts/tbg/Test-TbgRuntimeEventObservation.ps1",
+        ".github/workflows/runtime-event-observation.yml",
+        "docs/architecture/runtime-event-observation-spine.md"
+      ],
+      "category": "shared-event-run-context-artifact-schemas"
+    },
+    {
+      "sprint": 3,
+      "name": "Build the Windows Window Event Listener",
+      "branch": "sprint/window-event-listener",
+      "owns": [
+        "scripts/tbg/Start-TbgWindowEventListener.ps1",
+        "scripts/tbg/Invoke-TbgWindowIntelligence.ps1",
+        "scripts/tbg/Test-TbgWindowEventListener.ps1",
+        "ForgeWindowIntel.cmd",
+        ".tbg/workflows/window-metadata-intelligence.contract.json",
+        ".tbg/harness/policies/window-intelligence.policy.json",
+        ".tbg/harness/fixtures/window-intelligence/window-event-listener.fixture.json",
+        "docs/architecture/window-event-listener.md"
+      ],
+      "category": "window-listener-implementation",
+      "consumeOnly": [
+        ".tbg/harness/schemas/runtime-observer-*.schema.json",
+        ".tbg/workflows/runtime-event-observation.contract.json"
+      ]
+    },
+    {
+      "sprint": 4,
+      "name": "Build the External Game Runtime Observer",
+      "branch": "sprint/game-runtime-observer",
+      "owns": [
+        "scripts/tbg/Start-TbgGameRuntimeObserver.ps1",
+        "scripts/tbg/Get-TbgWindowsCrashEvidence.ps1",
+        "scripts/tbg/Get-TbgTaleWorldsCrashEvidence.ps1",
+        "scripts/tbg/Get-TbgRuntimeHeartbeatEvidence.ps1",
+        "scripts/tbg/Test-TbgGameRuntimeObserver.ps1",
+        "ForgeRuntimeObserver.cmd",
+        ".tbg/harness/fixtures/game-runtime-observer.fixtures.json",
+        "docs/architecture/game-runtime-observer.md"
+      ],
+      "category": "external-game-observer",
+      "consumeOnly": [
+        ".tbg/harness/schemas/runtime-observer-*.schema.json",
+        ".tbg/workflows/runtime-event-observation.contract.json",
+        ".tbg/workflows/runtime-context-continuity.contract.json"
+      ]
+    },
+    {
+      "sprint": 5,
+      "name": "Instrument In-Process Runtime Spans",
+      "branch": "sprint/runtime-span-instrumentation",
+      "owns": [
+        "src/BlacksmithGuild/DevTools/Automation/AutomationRuntimeEventEmitter.cs",
+        "src/BlacksmithGuild/DevTools/Diagnostics/RuntimeSpanContext.cs",
+        "src/BlacksmithGuild/DevTools/Diagnostics/RuntimeSpanWriter.cs",
+        "src/BlacksmithGuild/DevTools/Diagnostics/RuntimeStateSnapshot.cs",
+        "src/BlacksmithGuild/MapTrade/MapTradeMissionSelector.cs",
+        "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs",
+        "src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs",
+        "scripts/tbg/Test-TbgRuntimeSpanInstrumentation.ps1",
+        ".tbg/harness/fixtures/runtime-span-instrumentation.fixtures.json",
+        "docs/architecture/runtime-span-instrumentation.md"
+      ],
+      "category": "in-process-span-implementation",
+      "consumeOnly": [
+        ".tbg/harness/schemas/runtime-observer-event.schema.json"
+      ],
+      "forbiddenBehaviorChanges": [
+        "mission selection decisions",
+        "trade decisions",
+        "route decisions",
+        "governor product decisions",
+        "exception swallowing"
+      ]
+    },
+    {
+      "sprint": 6,
+      "name": "Assemble the Unified Incident Timeline and Capsule",
+      "branch": "sprint/runtime-incident-assembler",
+      "owns": [
+        "scripts/tbg/Resolve-TbgRuntimeIncident.ps1",
+        "scripts/tbg/New-TbgRuntimeIncidentCapsule.ps1",
+        "scripts/tbg/Test-TbgRuntimeIncidentAssembler.ps1",
+        "ForgeRuntimeIncident.cmd",
+        ".tbg/harness/fixtures/runtime-incident-assembler.fixtures.json",
+        "docs/architecture/runtime-incident-assembly.md",
+        "docs/handoff/runtime-incident-operator-guide.md"
+      ],
+      "category": "incident-correlation",
+      "dependsOnMergedSprints": [2, 3, 4, 5]
+    },
+    {
+      "sprint": 7,
+      "name": "Wire Agent Harness Skills, Capabilities, and Triggers",
+      "branch": "sprint/runtime-observer-agent-harness",
+      "owns": [
+        ".tbg/skills/runtime-evidence-certification/SKILL.md",
+        ".tbg/skills/runtime-incident-triage/SKILL.md",
+        ".tbg/skills/window-lifecycle-runtime/SKILL.md",
+        ".tbg/skills/launcher-lifecycle/SKILL.md",
+        ".tbg/skills/local-artifact-engine/SKILL.md",
+        ".tbg/skills/manifest.json",
+        ".tbg/harness/api/operations.json",
+        ".tbg/harness/artifact-engines.registry.json",
+        ".tbg/workflows/agent-skill-router.contract.json",
+        "scripts/tbg/Test-TbgSkillRouting.ps1",
+        "scripts/tbg/Test-TbgArtifactEngine.ps1",
+        "scripts/tbg/Test-TbgArtifactWatcher.ps1",
+        "AGENTS.md",
+        "CODEBASE_MAP.md",
+        "docs/AI_HARNESS_ENTRYPOINT.md",
+        "docs/architecture/runtime-observer-agent-routing.md"
+      ],
+      "category": "skills-capabilities-triggers",
+      "dependsOnMergedSprints": [6]
+    },
+    {
+      "sprint": 8,
+      "name": "Run Live Runtime Certification and Final Convergence",
+      "branch": "cert/runtime-observer-live",
+      "owns": [
+        "scripts/tbg/Invoke-TbgRuntimeObserverCertification.ps1",
+        "scripts/tbg/Test-TbgRuntimeObserverCertification.ps1",
+        ".tbg/harness/fixtures/runtime-observer-certification.fixtures.json",
+        "docs/handoff/runtime-observer-certification.md",
+        "docs/evidence/runtime-context/"
+      ],
+      "category": "live-evidence-and-final-reporting",
+      "dependsOnMergedSprints": [7],
+      "trackedEvidenceConstraint": "sanitized TbgRuntimeContextCapsule.v1 capsules only; never raw logs, dumps, or saves"
+    }
+  ],
+  "sharedSurfaceCategories": [
+    {
+      "category": "shared-event-run-context-artifact-schemas",
+      "ownerSprint": 2,
+      "othersRule": "consume only; report gaps; do not patch concurrently"
+    },
+    {
+      "category": "window-listener-implementation",
+      "ownerSprint": 3,
+      "othersRule": "no edits by Sprints 4-8"
+    },
+    {
+      "category": "external-game-observer",
+      "ownerSprint": 4,
+      "othersRule": "no edits by Sprints 3,5-8"
+    },
+    {
+      "category": "in-process-span-implementation",
+      "ownerSprint": 5,
+      "othersRule": "no edits by observer lanes"
+    },
+    {
+      "category": "incident-correlation",
+      "ownerSprint": 6,
+      "othersRule": "no edits by agent-harness lane"
+    },
+    {
+      "category": "skills-capabilities-triggers",
+      "ownerSprint": 7,
+      "othersRule": "no simultaneous edits; no provisional operations before Sprint 6 merges"
+    },
+    {
+      "category": "live-evidence-and-final-reporting",
+      "ownerSprint": 8,
+      "othersRule": "earlier sprints use fixtures and local ignored output only"
+    }
+  ],
+  "collisionSurfaces": [
+    {
+      "path": ".tbg/harness/manifest.json",
+      "ownerSprint": 2,
+      "othersRule": "consume only"
+    },
+    {
+      "path": ".tbg/harness/schemas/runtime-context-capsule.schema.json",
+      "ownerSprint": 2,
+      "othersRule": "extend only in Sprint 2; later sprints report gaps"
+    },
+    {
+      "path": ".tbg/workflows/runtime-context-continuity.contract.json",
+      "ownerSprint": 2,
+      "othersRule": "extend only as needed to reference event/timeline artifacts"
+    },
+    {
+      "path": "scripts/tbg/Invoke-TbgWindowIntelligence.ps1",
+      "ownerSprint": 3,
+      "othersRule": "no edits by Sprints 4-8"
+    },
+    {
+      "path": "src/BlacksmithGuild/DevTools/Automation/AutomationRuntimeEventEmitter.cs",
+      "ownerSprint": 5,
+      "othersRule": "no edits by observer lanes"
+    },
+    {
+      "path": "scripts/tbg/Resolve-TbgRuntimeIncident.ps1",
+      "ownerSprint": 6,
+      "othersRule": "no edits by agent-harness lane"
+    },
+    {
+      "path": ".tbg/skills/manifest.json",
+      "ownerSprint": 7,
+      "othersRule": "no simultaneous edits"
+    },
+    {
+      "path": ".tbg/harness/api/operations.json",
+      "ownerSprint": 7,
+      "othersRule": "no provisional entries before Sprint 6 merges"
+    },
+    {
+      "path": ".tbg/harness/artifact-engines.registry.json",
+      "ownerSprint": 7,
+      "othersRule": "Sprints 2-6 document outputs only"
+    },
+    {
+      "path": "docs/evidence/runtime-context/**",
+      "ownerSprint": 8,
+      "othersRule": "earlier sprints use fixtures/local output"
+    }
+  ],
+  "historicalPrCollisionPolicy": {
+    "doNotUseAsBase": [101, 102, 20],
+    "doNotWholesaleCherryPick": [101, 102],
+    "selectiveReplayAllowed": "ideas and review requirements only after focused comparison against current crash-observability doctrine on origin/main",
+    "pr102AntiPatterns": [
+      "Test-TbgEngineHeartbeat.ps1 treats stale Phase1.log without stop token as likely CRASH",
+      "Test-TbgEngineHeartbeat.ps1 checks only Bannerlord* process names",
+      "Export-TbgCrashEvidence.ps1 equates unmatched ENGINE START with crash without external terminal evidence"
+    ]
+  }
+}

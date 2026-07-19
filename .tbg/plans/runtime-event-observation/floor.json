@@ -1,0 +1,397 @@
+{
+  "schema": "TbgRuntimeEventObservationFloor.v1",
+  "version": 1,
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "program": "runtime-event-observation",
+  "sprint": 1,
+  "sprintName": "Prove the Runtime Observer Floor",
+  "lane": "repo-floor/research-design",
+  "wave": "Wave 0",
+  "inspectedAtUtc": "2026-07-19T13:34:21Z",
+  "refreshRule": "Mutable fields (open PR checks, mergeable, worktree dirt, local branch tip) are snapshots. Refresh with git fetch, gh pr view, and git worktree list before using as a base.",
+  "floor": {
+    "ref": "origin/main",
+    "commitSha": "7800cb7a6bafdeac76c2ad723f756f86739429e2",
+    "commitSubject": "feat(harness): install crash observability and negative evidence doctrine (#108)",
+    "verifiedAgainstPackExpectedSha": true,
+    "packExpectedSha": "7800cb7a6bafdeac76c2ad723f756f86739429e2"
+  },
+  "localPrimaryCheckout": {
+    "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild",
+    "branch": "main",
+    "commitSha": "6b618771e55969d579d9928ca5743a057dfff0b8",
+    "relationToOriginMain": "behind_by_13_commits",
+    "dirtyTracked": false,
+    "disposition": "preserved_not_updated",
+    "note": "Primary checkout was clean but stale relative to origin/main. Sprint 1 work uses an isolated worktree instead of mutating this checkout."
+  },
+  "sprintWorktree": {
+    "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-runtime-observer-floor",
+    "branch": "sprint/runtime-observer-floor",
+    "base": "origin/main",
+    "baseSha": "7800cb7a6bafdeac76c2ad723f756f86739429e2",
+    "createdBecause": "primary checkout behind origin/main; preserve unknown sibling state"
+  },
+  "remote": {
+    "originFetch": "https://github.com/EndeavorEverlasting/BlacksmithGuild.git",
+    "originPush": "https://github.com/EndeavorEverlasting/BlacksmithGuild.git"
+  },
+  "worktrees": [
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild",
+      "head": "6b618771e55969d579d9928ca5743a057dfff0b8",
+      "branchOrDetached": "main"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-037a-validation",
+      "head": "91704e6735b2f976618d99bebc1c258883ac4c97",
+      "branchOrDetached": "feat/route-branch-state-runtime-start"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-agent-status-relay",
+      "head": "74b1df0c05e4a488d67ac3352f660d3d3ddd87bc",
+      "branchOrDetached": "detached"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-p19-window-runtime",
+      "head": "4d0e020d4c109ee24f15574c5a90af6cd9227272",
+      "branchOrDetached": "feat/window-lifecycle-runtime-wiring"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-p20-window-agent",
+      "head": "9423c87baabb1578be04b9f7071ea325ff2bac94",
+      "branchOrDetached": "feat/window-lifecycle-agent-routing"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-p21-live-cert",
+      "head": "df29b3b5f9a5d76e868d04758980d32da14f398a",
+      "branchOrDetached": "cert/2026-07-18-full-campaign-handoff-live",
+      "collisionNote": "Same branch family as open PR #101; preserve; do not use as base"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-p21-runtime-proof",
+      "head": "0a80ab0173c486279935934538d304e99424cb1d",
+      "branchOrDetached": "docs/p21-runtime-proof-disposition"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-pr25-launcher-evidence",
+      "head": "b9e901c31e58688c560d4cd18ceb24146a7f21e0",
+      "branchOrDetached": "detached"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-pr8-recovery",
+      "head": "53253983ec3470aaf931bb3d78d779bbcfc2e6dc",
+      "branchOrDetached": "chore/pr8-terminal-disposition"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-route-operator-plan",
+      "head": "38af927a9317fba1add69324b6da2f6a72f8ecc2",
+      "branchOrDetached": "agent/route-automation-operator-plan"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-runtime-observer-floor",
+      "head": "7800cb7a6bafdeac76c2ad723f756f86739429e2",
+      "branchOrDetached": "sprint/runtime-observer-floor"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-visible-trade-proof",
+      "head": "900820b2a5a5b09e694c9c08e8664c93f54d8680",
+      "branchOrDetached": "feat/visible-trade-one-click-proof-relay"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-visible-trade-repair",
+      "head": "4efe2b68302d894a8000f794a7d454a0cc56d67c",
+      "branchOrDetached": "detached"
+    },
+    {
+      "path": "C:/Users/Cheex/Desktop/dev/Mods/Bannerlord/BlacksmithGuild-window-intel-temp",
+      "head": "9fd8aecd0bcd1c9a55a2684d87d54ab77df1b0ad",
+      "branchOrDetached": "detached"
+    }
+  ],
+  "openPrLedger": [
+    {
+      "number": 101,
+      "title": "feat(runtime): harden window cleanup harness and prove trade chain v1.4.7",
+      "state": "OPEN",
+      "headRefName": "cert/2026-07-18-full-campaign-handoff-live",
+      "headRefOid": "38d0223685bbff6b77e212b3aa24f0b364574f76",
+      "baseRefName": "main",
+      "mergeable": "CONFLICTING",
+      "checksSnapshot": {
+        "Harness Policy Reports / Static harness policy and report checks": "FAILURE",
+        "Harness Policy Reports / Windows PowerShell routing, window intelligence, and artifact watcher smoke": "FAILURE",
+        "PR Lifecycle Automation / Inspect evidence, promote, and exact-head merge": "SUCCESS",
+        "CodeRabbit": "SUCCESS"
+      },
+      "role": "collision_reference_only",
+      "mayUseAsBase": false,
+      "mayWholesaleCherryPick": false,
+      "observerProgramOverlaps": [
+        "src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs",
+        "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs",
+        "scripts/preflight-cleanup.ps1",
+        "scripts/launcher-auto-nav.ps1",
+        "scripts/full-campaign-handoff-cert.ps1",
+        "Module/BlacksmithGuild/SubModule.xml"
+      ],
+      "usefulIdeas": [
+        "session-intent policy and schema surfaces",
+        "governor activity handoff contract ideas also present in PR #20",
+        "campaign handoff certification harness structure"
+      ],
+      "staleOrSuperseded": [
+        "Broad live-cert branch conflicts with current main crash-observability doctrine from #108",
+        "Product/runtime and Module version bumps require separate review lanes"
+      ],
+      "mustNotImportWholesale": [
+        "window cleanup / preflight process mutation without current session-ownership classification",
+        "broad src/** campaign and map-trade behavior changes into observer program"
+      ]
+    },
+    {
+      "number": 102,
+      "title": "feat(runtime): auto-dismiss escape menu and investigate campaign crash",
+      "state": "OPEN",
+      "headRefName": "feat/harness-doctrine-installation",
+      "headRefOid": "fed8bda017e49f9027e3a5e4b197469f0cf40dab",
+      "baseRefName": "main",
+      "mergeable": "CONFLICTING",
+      "checksSnapshot": {
+        "Harness Policy Reports / Static harness policy and report checks": "FAILURE",
+        "Harness Policy Reports / Windows PowerShell routing, window intelligence, and artifact watcher smoke": "FAILURE",
+        "PR Lifecycle Automation / Inspect evidence, promote, and exact-head merge": "SUCCESS",
+        "CodeRabbit": "SUCCESS"
+      },
+      "role": "collision_reference_only",
+      "mayUseAsBase": false,
+      "mayWholesaleCherryPick": false,
+      "observerProgramOverlaps": [
+        ".tbg/harness/manifest.json",
+        "docs/harness-doctrine.md",
+        "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+        "scripts/tbg/Test-TbgEngineHeartbeat.ps1",
+        "scripts/tbg/Export-TbgCrashEvidence.ps1",
+        "src/BlacksmithGuild/MapTrade/MapTradeMissionSelector.cs",
+        "src/BlacksmithGuild/MapTrade/MapTradeAutonomousService.cs",
+        "src/BlacksmithGuild/DevTools/EscapeMenuHelper.cs"
+      ],
+      "usefulIdeas": [
+        "need for external crash evidence collectors",
+        "need for heartbeat/log progress observation",
+        "escape-menu interference as a window/lifecycle concern for later product lanes"
+      ],
+      "staleOrSuperseded": [
+        "Crash-observability and negative-evidence doctrine already landed on main via #108",
+        "Heartbeat/crash scripts conflict with current docs/harness-doctrine.md"
+      ],
+      "mustNotImportWholesale": [
+        "scripts/tbg/Test-TbgEngineHeartbeat.ps1",
+        "scripts/tbg/Export-TbgCrashEvidence.ps1",
+        "escape-menu auto-dismiss product behavior",
+        "broad harness-doctrine reinstallation overlapping #103-#108"
+      ],
+      "doctrineConflicts": [
+        "Stale Phase1.log alone must not become CRASH or native_crash_confirmed",
+        "Unmatched ENGINE START without external terminal evidence must not equal crash",
+        "Process identity must use canonical four-name doctrine, not Bannerlord* alone"
+      ]
+    },
+    {
+      "number": 20,
+      "title": "Codify governor activity handoff contract",
+      "state": "OPEN",
+      "headRefName": "sprint/governor-activity-contract",
+      "headRefOid": "2839b37e0ff6cd9eb24d649a5b6d17fb14c738b0",
+      "baseRefName": "main",
+      "mergeable": "MERGEABLE",
+      "checksSnapshot": {
+        "CodeRabbit": "SUCCESS"
+      },
+      "role": "collision_reference_only",
+      "mayUseAsBase": false,
+      "mayWholesaleCherryPick": false,
+      "observerProgramOverlaps": [
+        "src/BlacksmithGuild/GuildLoop/GovernorActivityHandoff.cs",
+        "src/BlacksmithGuild/GuildLoop/AutonomousGuildLoopService.cs"
+      ],
+      "usefulIdeas": [
+        "governor activity handoff contract requirements for later product reconstruction"
+      ],
+      "staleOrSuperseded": [
+        "Implementation base predates current runtime-context continuity and crash doctrine"
+      ],
+      "mustNotImportWholesale": [
+        "GuildLoop governor activity product changes into observer/harness spine"
+      ],
+      "requiresSeparateReview": true
+    }
+  ],
+  "canonicalExistingSurfaces": {
+    "windowPollingWatcher": {
+      "path": "scripts/tbg/Invoke-TbgWindowIntelligence.ps1",
+      "behavior": "Default pollMilliseconds=100; publishes window intelligence and lifecycle runtime events; reduces through window lifecycle state machine",
+      "entry": "ForgeWindowIntel.cmd",
+      "contract": ".tbg/workflows/window-metadata-intelligence.contract.json",
+      "related": [
+        "scripts/tbg/Invoke-TbgWindowLifecycleRuntime.ps1",
+        "scripts/tbg/Resolve-TbgWindowLifecycle.ps1",
+        ".tbg/harness/schemas/window-lifecycle-runtime-event.schema.json",
+        ".tbg/harness/schemas/window-lifecycle-run-context.schema.json",
+        ".tbg/harness/schemas/window-lifecycle-state.schema.json",
+        ".tbg/harness/schemas/window-lifecycle-transition.schema.json",
+        ".local/tbg-window-lifecycle/"
+      ]
+    },
+    "runtimeContextContinuity": {
+      "contract": ".tbg/workflows/runtime-context-continuity.contract.json",
+      "capsuleSchema": ".tbg/harness/schemas/runtime-context-capsule.schema.json",
+      "doctrine": "docs/harness-doctrine.md#crash-observability-and-negative-evidence",
+      "canonicalProcessNames": [
+        "Bannerlord",
+        "Bannerlord.Native",
+        "TaleWorlds.MountAndBlade",
+        "TaleWorlds.MountAndBlade.Launcher"
+      ]
+    },
+    "inProcessRuntimeEmitter": {
+      "path": "src/BlacksmithGuild/DevTools/Automation/AutomationRuntimeEventEmitter.cs",
+      "schemaVersion": 1,
+      "stream": "AutomationEvents.jsonl",
+      "envelope": "free-form dotted type with optional payloadJson; lacks required correlated spanId/parentSpanId/pre/post-state contract",
+      "note": "Extend in Sprint 5; do not replace existing event constants"
+    },
+    "capabilitySurface": {
+      "operations": ".tbg/harness/api/operations.json",
+      "present": [
+        "validate-end-to-end-harness",
+        "run-end-to-end-profile",
+        "generate-sprint-capsule",
+        "validate-window-lifecycle-runtime",
+        "replay-window-lifecycle-fixture",
+        "inspect-window-lifecycle-status"
+      ],
+      "absent": [
+        "start-runtime-observer",
+        "inspect-runtime-observer-status",
+        "stop-owned-runtime-observer",
+        "validate-runtime-event-observation",
+        "assemble-runtime-incident",
+        "validate-runtime-incident",
+        "inspect-runtime-incident-status"
+      ]
+    },
+    "artifactEngine": {
+      "path": ".tbg/harness/artifact-engines.registry.json",
+      "presentStages": [
+        "window-lifecycle-boundary",
+        "runtime-proof-boundary"
+      ],
+      "absentTriggers": [
+        "process_lost",
+        "external_terminal_evidence",
+        "window_error_or_unknown_quarantine",
+        "open_span_at_process_loss",
+        "heartbeat_stalled_with_live_process",
+        "observer_gap",
+        "incident_ready"
+      ]
+    }
+  },
+  "missingSurfaces": [
+    ".tbg/workflows/runtime-event-observation.contract.json",
+    ".tbg/harness/schemas/runtime-observer-run-context.schema.json",
+    ".tbg/harness/schemas/runtime-observer-event.schema.json",
+    ".tbg/harness/schemas/runtime-observer-artifact-registry.schema.json",
+    ".tbg/harness/schemas/runtime-incident-timeline.schema.json",
+    "scripts/tbg/Test-TbgRuntimeEventObservation.ps1",
+    "scripts/tbg/Start-TbgWindowEventListener.ps1",
+    "scripts/tbg/Start-TbgGameRuntimeObserver.ps1",
+    "scripts/tbg/Get-TbgWindowsCrashEvidence.ps1",
+    "scripts/tbg/Get-TbgTaleWorldsCrashEvidence.ps1",
+    "scripts/tbg/Get-TbgRuntimeHeartbeatEvidence.ps1",
+    "scripts/tbg/Resolve-TbgRuntimeIncident.ps1",
+    "src/BlacksmithGuild/DevTools/Diagnostics/RuntimeSpanContext.cs",
+    "src/BlacksmithGuild/DevTools/Diagnostics/RuntimeSpanWriter.cs",
+    "src/BlacksmithGuild/DevTools/Diagnostics/RuntimeStateSnapshot.cs",
+    ".tbg/skills/runtime-incident-triage/SKILL.md",
+    ".local/tbg-runtime-observer/<runId>/ shared output root"
+  ],
+  "sharedOutputContractPlanned": {
+    "localRoot": ".local/tbg-runtime-observer/<runId>/",
+    "files": [
+      "run-context.json",
+      "artifact-registry.json",
+      "events.jsonl",
+      "observer-status.json",
+      "incident-timeline.json",
+      "incident-result.json",
+      "operator-report.md"
+    ],
+    "latestResults": [
+      "artifacts/latest/runtime-observer/runtime-observer.result.json",
+      "artifacts/latest/runtime-observer/runtime-observer.report.md"
+    ],
+    "ownerOfContract": 2
+  },
+  "dependencyFloorForSprint2": {
+    "baseRef": "origin/main",
+    "requiredFloorSha": "7800cb7a6bafdeac76c2ad723f756f86739429e2",
+    "alternateBase": "exact green Sprint 1 merge commit on main after this PR merges",
+    "forbiddenBases": [
+      "PR #101 head",
+      "PR #102 head",
+      "PR #20 head",
+      "any Parallel Group Alpha branch",
+      "stale primary checkout main at 6b61877"
+    ],
+    "unlockGate": "Sprint 1 floor ledger committed, pushed, and PR checks green"
+  },
+  "proofCeiling": {
+    "reached": "contract_static_inspection",
+    "allows": [
+      "floor and ownership ledgers",
+      "collision classification",
+      "canonical surface inventory",
+      "static validation of docs/plans"
+    ],
+    "forbids": [
+      "observer implementation",
+      "schema invention beyond floor ownership assignment",
+      "build",
+      "launcher",
+      "behavior observed",
+      "live runtime",
+      "native crash claims",
+      "cherry-pick of PR #101/#102 heartbeat or crash-export scripts"
+    ]
+  },
+  "selectiveReplayCandidates": [
+    {
+      "source": "PR #102",
+      "candidate": "external crash-evidence collector concept",
+      "action": "redesign under Sprint 4 against current crash-observability doctrine; do not import scripts unchanged"
+    },
+    {
+      "source": "PR #102",
+      "candidate": "heartbeat/log progress observation concept",
+      "action": "redesign under Sprint 4; stale log alone must remain unknown or log_stalled, never confirmed crash"
+    },
+    {
+      "source": "PR #101/#20",
+      "candidate": "governor activity handoff ideas",
+      "action": "separate product review; out of observer program owned scope"
+    }
+  ],
+  "validationCommands": [
+    "PowerShell ConvertFrom-Json on floor.json and ownership.json",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-agent-coordination-contract.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-powershell-utf8-bom-contract.ps1",
+    "git diff --check"
+  ],
+  "exactNextCommand": "gh pr checks --watch",
+  "ownershipLedgerPath": ".tbg/plans/runtime-event-observation/ownership.json",
+  "operatorReportPath": "docs/handoff/runtime-event-observation-floor.md"
+}
