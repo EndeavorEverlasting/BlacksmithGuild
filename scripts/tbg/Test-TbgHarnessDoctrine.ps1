@@ -64,6 +64,13 @@ Require-Match 'doctrine defines execution loop' $doctrine 'request[\s\S]*evidenc
 Require-Match 'doctrine defines action commitment' $doctrine 'install, set up, build, execute, repair, configure, upgrade, deploy, merge, or release'
 Require-Match 'doctrine defines task override' $doctrine 'task-specific execution contract overrides generic closeout'
 Require-Match 'doctrine defines runtime specialization' $doctrine 'runtime-context-continuity\.contract\.json'
+Require-Match 'doctrine defines launcher identity' $doctrine 'Launcher identity and multitasking'
+Require-Match 'doctrine accepts process identity signals' $doctrine 'Exact PID plus HWND[\s\S]*unique process name[\s\S]*S1-to-S2 process/window delta'
+Require-Match 'doctrine freezes launcher identity' $doctrine 'freeze it for the duration of that operation'
+Require-Match 'doctrine defaults to multitasking' $doctrine 'Multitasking is the default'
+Require-Match 'doctrine defaults to mouse independence' $doctrine 'background-safe and mouse-independent'
+Require-Match 'doctrine constrains coordinate fallback' $doctrine 'foreground, cursor, or coordinate fallback is valid only when'
+Require-Match 'doctrine verifies launcher transition' $doctrine 'Play/Continue completion requires a fresh correlated transition'
 Require-Match 'doctrine defines crash observability' $doctrine 'Crash observability and negative evidence'
 Require-Match 'doctrine requires pre-post state' $doctrine 'pre-state snapshot[\s\S]*post-state snapshot'
 Require-Match 'doctrine constrains negative evidence' $doctrine 'Negative evidence is valid only when'
@@ -78,6 +85,8 @@ Require-Values 'generated output boundaries' $generatedOutputLines @('.local/','
 Require-Match 'AGENTS points to doctrine' $agents 'docs/harness-doctrine\.md'
 Require-Match 'AGENTS requires action proof' $agents 'plan-only closeout is invalid'
 Require-Match 'AGENTS protects existing runtime' $agents 'process presence is context, not zombie proof'
+Require-Match 'AGENTS defines launcher identity freeze' $agents 'exact PID/HWND preferred; unique process name or S1/S2 delta allowed'
+Require-Match 'AGENTS defines multitasking launcher safety' $agents 'background-safe and mouse-independent by default'
 Require-Match 'AGENTS defines crash boundary' $agents 'last marker as a boundary rather than a cause'
 if ($agents) {
     $lineCount = @($agents -split "`r?`n").Count
@@ -101,7 +110,25 @@ if ($policy) {
     Require-Values 'policy invalid closeouts' @($policy.invalidCloseouts) @(
         'acknowledgment_only','summary_only','rewritten_prompt_only','plan_only','handoff_only','preflight_only'
     )
-    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011','HD-012')
+    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011','HD-012','HD-013')
+    Require-Values 'policy launcher identity signals' @($policy.launcherSelection.acceptableIdentitySignals) @(
+        'exact_pid_and_hwnd','unique_process_name','verified_executable_path','uia_root_process_id','s1_s2_process_or_window_delta'
+    )
+    if ($policy.launcherSelection.pidHwndPreferredWhenAvailable) { Add-Pass 'policy PID HWND preference' } else { Add-Failure 'policy PID HWND preference' }
+    if ($policy.launcherSelection.processNameCanBeSufficientWhenUnique) { Add-Pass 'policy unique process name allowed' } else { Add-Failure 'policy unique process name allowed' }
+    if ($policy.launcherSelection.deltaCanEstablishIdentityWhenNamesAreAmbiguous) { Add-Pass 'policy S1 S2 delta allowed' } else { Add-Failure 'policy S1 S2 delta allowed' }
+    if ($policy.launcherSelection.identityMustBeFreshAndUnambiguous) { Add-Pass 'policy launcher identity freshness' } else { Add-Failure 'policy launcher identity freshness' }
+    if ($policy.launcherSelection.freezeSelectedIdentityPerOperation) { Add-Pass 'policy launcher identity freeze' } else { Add-Failure 'policy launcher identity freeze' }
+    if ($policy.launcherSelection.silentReselectionForbidden) { Add-Pass 'policy silent reselection rejected' } else { Add-Failure 'policy silent reselection rejected' }
+    if ($policy.launcherSelection.backgroundSafeByDefault) { Add-Pass 'policy background-safe default' } else { Add-Failure 'policy background-safe default' }
+    if ($policy.launcherSelection.mouseIndependentByDefault) { Add-Pass 'policy mouse-independent default' } else { Add-Failure 'policy mouse-independent default' }
+    if ($policy.launcherSelection.namedControlOrPatternBeforeCoordinates) { Add-Pass 'policy named control before coordinates' } else { Add-Failure 'policy named control before coordinates' }
+    if ($policy.launcherSelection.desktopWideUnscopedSearchForbidden) { Add-Pass 'policy desktop-wide search rejected' } else { Add-Failure 'policy desktop-wide search rejected' }
+    if ($policy.launcherSelection.postActionTransitionVerificationRequired) { Add-Pass 'policy launcher transition verification' } else { Add-Failure 'policy launcher transition verification' }
+    Require-Values 'policy coordinate fallback requirements' @($policy.launcherSelection.coordinateFallbackRequires) @(
+        'explicit_task_specific_foreground_authority','background_safe_paths_exhausted','exact_frozen_target_identity',
+        'bounded_retry_and_timeout','operator_foreground_preserved_or_restored','fresh_post_action_transition_verification'
+    )
     Require-Values 'policy crash trace fields' @($policy.crashObservability.requiredTraceFields) @(
         'runId','commandIdOrNull','correlationId','spanId','parentSpanIdOrNull','operation','startedAtUtc',
         'preState','postStateOrNull','expectedSignals','observedSignals','negativeEvidence','terminalStatus'
