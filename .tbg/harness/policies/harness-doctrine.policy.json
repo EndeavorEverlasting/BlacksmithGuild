@@ -113,6 +113,43 @@
       "fresh_post_action_transition_verification"
     ]
   },
+  "unifiedLaunchSurfaces": {
+    "entryPaths": [
+      "forge_continue",
+      "auto_launch_nav",
+      "new_game_play",
+      "steam_mediated",
+      "future_registered_path"
+    ],
+    "requiredSurfaceClasses": [
+      "play_continue_menu",
+      "calibration_menu",
+      "safe_mode_window",
+      "caution_window",
+      "steam_broker_window",
+      "other_launcher_window",
+      "singleplayer_handoff"
+    ],
+    "requiredEvents": [
+      "launch.path.selected",
+      "window.observed",
+      "window.identity.resolved_or_quarantined",
+      "action.authorized_or_blocked",
+      "action.dispatched_or_skipped",
+      "transition.verified_or_unverified",
+      "launch.handoff_or_blocked"
+    ],
+    "sameObserverContractForEveryPath": true,
+    "observersActiveBeforeFirstActuation": true,
+    "recordAllCorrelatedTopLevelWindows": true,
+    "freezeIdentityPerSurfaceOperation": true,
+    "backgroundSafeAndMouseIndependentByDefault": true,
+    "unknownWindowsQuarantined": true,
+    "steamBrokerObservationOnly": true,
+    "freshTransitionRequiredBeforeSuccess": true,
+    "pathSpecificSafetyBypassForbidden": true,
+    "missingObservationDisposition": "unknown_not_absent"
+  },
   "rules": [
     {
       "id": "HD-001",
@@ -178,6 +215,11 @@
       "id": "HD-013",
       "name": "launcher-identity-freeze-and-multitasking",
       "requirement": "Launcher Play/Continue automation must choose a fresh unique process/window identity using PID/HWND, unique process name, verified path, UIA ownership, or S1/S2 delta; freeze that identity for the operation; remain background-safe and mouse-independent by default; require explicit authority for foreground or coordinate fallback; and verify a fresh post-action transition before claiming success."
+    },
+    {
+      "id": "HD-014",
+      "name": "unified-launch-path-and-surface-invariance",
+      "requirement": "ForgeContinue, Auto Launch Nav, new-game Play, Steam-mediated, and future launch paths must use the same observer-first run context and event cascade for Play/Continue, calibration, Safe Mode, Caution, Steam broker, other launcher windows, and game handoff; record every correlated surface, freeze identity per surface operation, quarantine unknowns, keep Steam observation-only, and require a fresh verified transition before success."
     }
   ],
   "invalidCloseouts": [
@@ -207,11 +249,15 @@
     "doctrine": "docs/harness-doctrine.md",
     "policy": ".tbg/harness/policies/harness-doctrine.policy.json",
     "validator": "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "unifiedLaunchSurfaceValidator": "scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1",
+    "unifiedLaunchSurfaceFixture": ".tbg/harness/fixtures/window-intelligence/unified-launch-surface-doctrine.fixture.json",
     "runtimeContinuityContract": ".tbg/workflows/runtime-context-continuity.contract.json",
     "runtimeCapsuleSchema": ".tbg/harness/schemas/runtime-context-capsule.schema.json"
   },
   "validationOrder": [
+    "scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1",
     "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "scripts/tbg/Test-TbgWindowIntelligence.ps1",
     "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1",
     "scripts/test-agent-coordination-contract.ps1",
     "scripts/tbg/Test-TbgSkillRouting.ps1",
