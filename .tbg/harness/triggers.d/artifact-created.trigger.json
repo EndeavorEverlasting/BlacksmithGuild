@@ -1,0 +1,19 @@
+{
+  "schema": "tbg.one-click-test.trigger.v1",
+  "triggerId": "artifact-created-event",
+  "displayName": "Artifact Created Trigger",
+  "description": "Routes new artifact events to the artifact engine for indexing and downstream processing.",
+  "eventMatch": {
+    "eventTypes": ["artifact.registered"]
+  },
+  "condition": "The artifact path is not already in the artifact index.",
+  "requiredFreshness": "Within the current session.",
+  "requiredProofLevel": "harness",
+  "forbiddenProofLevels": [],
+  "downstreamOperation": "artifact-engine-index",
+  "maxCascadeDepth": 3,
+  "deduplicationKey": "artifact path + runId",
+  "cooldownSeconds": 5,
+  "mutationAuthority": "read_only",
+  "expectedArtifacts": ["artifact-index.json"]
+}
