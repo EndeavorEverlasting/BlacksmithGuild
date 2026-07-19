@@ -1,0 +1,17 @@
+{
+  "schema": "TbgRuntimeIncidentAssemblerFixture.v1",
+  "cases": [
+    {"id":"window-only-modal-failure","events":["window.destroyed"],"expected":"unknown_failure"},
+    {"id":"clean-process-exit","events":["process.exited.clean"],"expected":"clean_exit"},
+    {"id":"managed-exception-balanced-error-span","events":["span.started","span.error"],"expected":"managed_exception_confirmed"},
+    {"id":"process-loss-open-span-no-external-evidence","events":["span.started","process_lost"],"expected":"native_crash_suspected","capsule":true},
+    {"id":"native-crash-with-wer","events":["span.started","process_lost","external_terminal_evidence.wer"],"expected":"native_crash_confirmed","capsule":true},
+    {"id":"taleworlds-evidence","events":["process_lost","external_terminal_evidence.taleworlds"],"expected":"native_crash_confirmed"},
+    {"id":"hang-process-alive","events":["hang.confirmed"],"expected":"hang_confirmed"},
+    {"id":"stale-log-healthy-process","events":["heartbeat.stalled"],"expected":"log_stalled"},
+    {"id":"observer-failure","events":["observer.gap"],"expected":"observer_failure"},
+    {"id":"wrong-run","events":["wrong-run","observer.gap"],"expected":"observer_failure","quarantine":"identity_mismatch"},
+    {"id":"unrelated-done","events":["span.started","span.completed.unrelated","process_lost"],"expected":"native_crash_suspected"},
+    {"id":"incomplete-negative-evidence-window","events":["negative-evidence-claim"],"expected":"observer_failure"}
+  ]
+}
