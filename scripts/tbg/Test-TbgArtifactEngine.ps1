@@ -62,11 +62,22 @@ Assert-Tbg -Condition ($contract.id -eq 'local-artifact-engine') -Message 'The w
 Assert-Tbg -Condition ($registry.schema -eq 'TbgArtifactEngineRegistry.v1') -Message 'The registry has the wrong schema.'
 Assert-Tbg -Condition (@($registry.engines).Count -eq 6) -Message 'The registry must contain exactly six engines including window-lifecycle-boundary.'
 Assert-Tbg -Condition (@($registry.engines | Where-Object { $_.authority -ne 'read_only' }).Count -eq 0) -Message 'Every artifact engine must remain read-only.'
+$requiredObserverTriggers = @('process_lost', 'external_terminal_evidence', 'window_error_or_unknown_quarantine', 'open_span_at_process_loss', 'heartbeat_stalled_with_live_process', 'observer_gap', 'incident_ready')
+foreach ($triggerId in $requiredObserverTriggers) {
+    $trigger = @($registry.triggers | Where-Object { $_.id -eq $triggerId } | Select-Object -First 1)
+    Assert-Tbg -Condition ($trigger.Count -eq 1) -Message "The runtime-observer trigger '$triggerId' is registered."
+    Assert-Tbg -Condition ([string]$trigger[0].mode -eq 'read_only_route') -Message "The runtime-observer trigger '$triggerId' remains read-only."
+    Assert-Tbg -Condition (@($trigger[0].forbiddenAuthority).Count -gt 0) -Message "The runtime-observer trigger '$triggerId' declares forbidden authority."
+}
 
 $engineIds = @($registry.engines.id)
 foreach ($requiredId in @('artifact-index', 'repo-floor-context', 'stale-pr-next-action', 'window-lifecycle-boundary', 'runtime-proof-boundary', 'handoff-compressor')) {
     Assert-Tbg -Condition ($engineIds -contains $requiredId) -Message "Required engine '$requiredId' is missing."
 }
+$proofEngine = @($registry.engines | Where-Object { $_.id -eq 'runtime-proof-boundary' } | Select-Object -First 1)
+$handoffEngine = @($registry.engines | Where-Object { $_.id -eq 'handoff-compressor' } | Select-Object -First 1)
+Assert-Tbg -Condition (@($proofEngine[0].candidatePaths) -contains 'artifacts/latest/runtime-incident/runtime-incident-assembler.result.json') -Message 'The runtime proof boundary consumes incident results.'
+Assert-Tbg -Condition (@($handoffEngine[0].candidatePaths) -contains 'artifacts/latest/runtime-incident/runtime-incident-assembler.result.json') -Message 'The handoff compressor declares incident result input.'
 
 $wrapperText = Get-Content -LiteralPath $wrapperPath -Raw
 Assert-Tbg -Condition ($wrapperText -match 'Invoke-TbgArtifactEngine\.ps1') -Message 'The operator wrapper does not invoke the artifact engine.'

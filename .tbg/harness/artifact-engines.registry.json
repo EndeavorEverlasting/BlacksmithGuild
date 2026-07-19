@@ -12,6 +12,50 @@
       "artifacts/latest/artifact-engine"
     ]
   },
+  "triggers": [
+    {
+      "id": "process_lost",
+      "mode": "read_only_route",
+      "primarySkill": "runtime-incident-triage",
+      "forbiddenAuthority": ["restart", "kill", "click", "save", "proof_promotion"]
+    },
+    {
+      "id": "external_terminal_evidence",
+      "mode": "read_only_route",
+      "primarySkill": "runtime-incident-triage",
+      "forbiddenAuthority": ["restart", "kill", "click", "save", "proof_promotion"]
+    },
+    {
+      "id": "window_error_or_unknown_quarantine",
+      "mode": "read_only_route",
+      "primarySkill": "window-lifecycle-runtime",
+      "forbiddenAuthority": ["click", "restart", "proof_promotion"]
+    },
+    {
+      "id": "open_span_at_process_loss",
+      "mode": "read_only_route",
+      "primarySkill": "runtime-incident-triage",
+      "forbiddenAuthority": ["causality_claim", "restart", "proof_promotion"]
+    },
+    {
+      "id": "heartbeat_stalled_with_live_process",
+      "mode": "read_only_route",
+      "primarySkill": "runtime-incident-triage",
+      "forbiddenAuthority": ["kill", "restart", "proof_promotion"]
+    },
+    {
+      "id": "observer_gap",
+      "mode": "read_only_route",
+      "primarySkill": "runtime-incident-triage",
+      "forbiddenAuthority": ["negative_evidence_confidence", "restart", "proof_promotion"]
+    },
+    {
+      "id": "incident_ready",
+      "mode": "read_only_route",
+      "primarySkill": "runtime-evidence-certification",
+      "forbiddenAuthority": ["live_certification", "restart", "kill", "click", "save"]
+    }
+  ],
   "engines": [
     {
       "id": "artifact-index",
@@ -114,6 +158,7 @@
         "artifacts/latest/window-lifecycle/window-lifecycle.result.json",
         "artifacts/latest/window-lifecycle/window-lifecycle.state.json",
         "artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json",
+        "artifacts/latest/runtime-incident/runtime-incident-assembler.result.json",
         "BlacksmithGuild_CommandAck.json",
         "BlacksmithGuild_Status.json",
         "BlacksmithGuild_RuntimeLifecycle.json",
@@ -141,6 +186,10 @@
         "stale-pr-next-action",
         "window-lifecycle-boundary",
         "runtime-proof-boundary"
+      ],
+      "candidatePaths": [
+        "artifacts/latest/runtime-incident/runtime-incident-assembler.result.json",
+        "artifacts/latest/artifact-engine/runtime-proof-boundary.result.json"
       ],
       "outputStem": "artifact-engine-handoff",
       "emits": [

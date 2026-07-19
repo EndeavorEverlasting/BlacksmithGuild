@@ -10,6 +10,7 @@ description: Inspect and interpret P19 window-lifecycle run context, events, sta
 - Inspecting `artifacts/latest/window-lifecycle/*` or `.local/tbg-window-lifecycle/**`.
 - Running `ForgeWindowLifecycle.cmd` validate, replay, or status.
 - Interpreting lifecycle phases, transitions, unknown quarantine, or action-dispatch proof boundaries.
+- Routing `window_error_or_unknown_quarantine` to diagnostic lifecycle inspection.
 - Selecting bounded next actions from lifecycle state without launching or clicking.
 
 ## Do not use when
@@ -38,6 +39,8 @@ contract -> harness -> static fixture replay -> runtime-adapter execution -> lau
 ```
 
 Lifecycle dispatch and host-handoff observation remain below campaign readiness and live runtime. Parser success and artifact-trigger PASS are not launcher acceptance.
+
+Window disappearance is an observation, not success, cleanup authority, or a crash verdict. Unknown quarantine remains a no-action state and may compose with `runtime-incident-triage` only for read-only reconstruction.
 
 ## Owned scope
 

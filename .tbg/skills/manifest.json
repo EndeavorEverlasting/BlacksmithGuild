@@ -492,7 +492,8 @@
                                                      "toggle artifact watcher",
                                                      "run artifact engine",
                                                      "route artifact output",
-                                                     "classify artifact blockers"
+                                                     "classify artifact blockers",
+                                                     "route runtime observer trigger"
                                                  ],
                                      "paths":  [
                                                    ".tbg/harness/artifact-engines.registry.json",
@@ -509,7 +510,8 @@
                                      "artifacts":  [
                                                        "artifact-engine.result.json",
                                                        "artifact-engine.report.md",
-                                                       "artifact-engine.handoff.md"
+                                                       "artifact-engine.handoff.md",
+                                                       "runtime observer trigger"
                                                    ]
                                  },
                        "requiresSkills":  [
@@ -518,7 +520,8 @@
                        "composesWith":  [
                                             "runtime-evidence-certification",
                                             "window-lifecycle-runtime",
-                                            "repo-floor-hygiene"
+                                            "repo-floor-hygiene",
+                                            "runtime-incident-triage"
                                         ],
                        "exclusiveWith":  [
                                              "launcher-lifecycle",
@@ -624,6 +627,81 @@
                                         ]
                    },
                    {
+                       "id":  "runtime-incident-triage",
+                       "path":  ".tbg/skills/runtime-incident-triage/SKILL.md",
+                       "distribution":  "repo_internal",
+                       "lane":  "runtime/incident-triage",
+                       "match":  {
+                                     "intents":  [
+                                                     "reconstruct runtime incident",
+                                                     "inspect crash evidence",
+                                                     "inspect process loss",
+                                                     "inspect hang",
+                                                     "select incident next test"
+                                                 ],
+                                     "paths":  [
+                                                   ".local/tbg-runtime-observer/**",
+                                                   "artifacts/latest/runtime-incident/**",
+                                                   "docs/architecture/runtime-incident-assembly.md"
+                                               ],
+                                     "commands":  [
+                                                      "ForgeRuntimeIncident.cmd",
+                                                      "Resolve-TbgRuntimeIncident.ps1",
+                                                      "Test-TbgRuntimeIncidentAssembler.ps1"
+                                                  ],
+                                     "artifacts":  [
+                                                       "process_lost",
+                                                       "external_terminal_evidence",
+                                                       "open_span_at_process_loss",
+                                                       "heartbeat_stalled_with_live_process",
+                                                       "observer_gap",
+                                                       "incident-result.json"
+                                                   ]
+                                 },
+                       "requiresSkills":  [
+                                              "runtime-evidence-certification"
+                                          ],
+                       "composesWith":  [
+                                            "window-lifecycle-runtime",
+                                            "local-artifact-engine"
+                                        ],
+                       "exclusiveWith":  [
+                                             "route-visible-trade"
+                                         ],
+                       "entryContract":  ".tbg/workflows/runtime-event-observation.contract.json",
+                       "primaryAuthorities":  [
+                                                  ".tbg/workflows/runtime-event-observation.contract.json",
+                                                  "scripts/tbg/Resolve-TbgRuntimeIncident.ps1",
+                                                  "docs/architecture/runtime-incident-assembly.md"
+                                              ],
+                       "validators":  [
+                                          "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeIncidentAssembler.ps1",
+                                          "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgSkillRouting.ps1"
+                                      ],
+                       "expectedArtifacts":  [
+                                                 ".local/tbg-runtime-observer/<runId>/incident-result.json",
+                                                 "artifacts/latest/runtime-incident/runtime-incident-assembler.result.json"
+                                             ],
+                       "proofCeiling":  "harness",
+                       "riskClass":  "runtime_read",
+                       "freshnessSource":  ".local/tbg-runtime-observer/<runId>/incident-result.json",
+                       "ownedPaths":  [
+                                          ".tbg/skills/runtime-incident-triage/**",
+                                          ".tbg/harness/api/operations.json",
+                                          ".tbg/harness/artifact-engines.registry.json",
+                                          "docs/architecture/runtime-observer-agent-routing.md"
+                                      ],
+                       "forbiddenPaths":  [
+                                              "src/**",
+                                              "Module/**",
+                                              "scripts/tbg/Resolve-TbgRuntimeIncident.ps1",
+                                              "scripts/tbg/Start-TbgGameRuntimeObserver.ps1"
+                                          ],
+                       "providerRefs":  [
+                                            "provider:runtime-incident-triage"
+                                        ]
+                   },
+                   {
                        "id":  "runtime-evidence-certification",
                        "path":  ".tbg/skills/runtime-evidence-certification/SKILL.md",
                        "distribution":  "repo_internal",
@@ -635,7 +713,8 @@
                                                      "verify exact head",
                                                      "classify proof",
                                                      "inspect freshness",
-                                                     "validate command correlation"
+                                                     "validate command correlation",
+                                                     "inspect runtime incident status"
                                                  ],
                                      "paths":  [
                                                    "artifacts/**",
@@ -652,7 +731,8 @@
                                                        "Status.json",
                                                        "CommandAck.json",
                                                        "campaign action evidence",
-                                                       "window-lifecycle.result.json"
+                                                       "window-lifecycle.result.json",
+                                                       "incident_ready"
                                                    ]
                                  },
                        "requiresSkills":  [
@@ -662,7 +742,8 @@
                                             "launcher-lifecycle",
                                             "window-lifecycle-runtime",
                                             "route-visible-trade",
-                                            "local-artifact-engine"
+                                            "local-artifact-engine",
+                                            "runtime-incident-triage"
                                         ],
                        "exclusiveWith":  [
 
@@ -678,7 +759,8 @@
                                       ],
                        "expectedArtifacts":  [
                                                  "artifacts/latest/tbg-chat-packet.json",
-                                                 "artifacts/latest/artifact-engine/runtime-proof-boundary.result.json"
+                                                 "artifacts/latest/artifact-engine/runtime-proof-boundary.result.json",
+                                                 "artifacts/latest/runtime-incident/runtime-incident-assembler.result.json"
                                              ],
                        "proofCeiling":  "live runtime",
                        "riskClass":  "runtime_read",
@@ -707,18 +789,23 @@
                                                      "select Continue",
                                                      "supervise launcher",
                                                      "stop runtime",
-                                                     "build and deploy before launch"
+                                                     "build and deploy before launch",
+                                                     "start runtime observer",
+                                                     "inspect runtime observer status",
+                                                     "stop owned runtime observer"
                                                  ],
                                      "paths":  [
                                                    "ForgeStop.cmd",
                                                    "ForgeReboot.cmd",
+                                                   "ForgeRuntimeObserver.cmd",
                                                    "scripts/*launcher*",
                                                    "scripts/*reboot*",
                                                    "docs/control/logs/open/window-delta-doctrine.md"
                                                ],
                                      "commands":  [
                                                       "ForgeStop.cmd",
-                                                      "ForgeReboot.cmd"
+                                                      "ForgeReboot.cmd",
+                                                      "ForgeRuntimeObserver.cmd"
                                                   ],
                                      "artifacts":  [
                                                        "launch log",
@@ -732,7 +819,8 @@
                                           ],
                        "composesWith":  [
                                             "operator-control-surface",
-                                            "window-lifecycle-runtime"
+                                            "window-lifecycle-runtime",
+                                            "runtime-incident-triage"
                                         ],
                        "exclusiveWith":  [
                                              "repo-floor-hygiene"
@@ -781,7 +869,8 @@
                                                      "reduce window lifecycle events",
                                                      "interpret lifecycle quarantine",
                                                      "classify unknown window lifecycle state",
-                                                     "inspect window lifecycle status"
+                                                     "inspect window lifecycle status",
+                                                     "window error or unknown quarantine"
                                                  ],
                                      "paths":  [
                                                    "artifacts/latest/window-lifecycle/**",
@@ -800,7 +889,8 @@
                                                        "window-lifecycle.state.json",
                                                        "window-lifecycle.result.json",
                                                        "window-lifecycle.report.md",
-                                                       "window-lifecycle.handoff.md"
+                                                       "window-lifecycle.handoff.md",
+                                                       "window_error_or_unknown_quarantine"
                                                    ]
                                  },
                        "requiresSkills":  [
@@ -809,7 +899,8 @@
                        "composesWith":  [
                                             "launcher-lifecycle",
                                             "runtime-evidence-certification",
-                                            "local-artifact-engine"
+                                            "local-artifact-engine",
+                                            "runtime-incident-triage"
                                         ],
                        "exclusiveWith":  [
                                              "repo-floor-hygiene"

@@ -12,6 +12,7 @@ description: Operate and change the repo-local artifact parser, watcher, toggle,
 - Converting ignored JSON, JSONL, Markdown, text, or log output into bounded next decisions.
 - Investigating why a producer trigger or automatic watcher pass did not route.
 - Interpreting the `window-lifecycle-boundary` engine as a read-only freshness and proof-boundary classifier for P19 lifecycle artifacts.
+- Routing read-only runtime-observer triggers without executing an observer, assembler, launcher, or recovery action.
 
 ## Do not use when
 
@@ -34,6 +35,8 @@ description: Operate and change the repo-local artifact parser, watcher, toggle,
 The registry owns engine identity, inputs, outputs, and declared edges. The ignored local state file owns automatic-processing authority. The workflow contract owns allowed and forbidden actions. Artifact contents never grant execution authority.
 
 This skill may prove contract, static harness, PowerShell watcher, change-detection, and packet-generation behavior. It may not prove a product build, launcher handoff, gameplay action, movement, trade, or live runtime result.
+
+Registered runtime-observer triggers (`process_lost`, `external_terminal_evidence`, `window_error_or_unknown_quarantine`, `open_span_at_process_loss`, `heartbeat_stalled_with_live_process`, `observer_gap`, and `incident_ready`) select a downstream diagnostic lane only. They cannot promote negative evidence, stop a process, restart a session, click a window, or certify live runtime behavior.
 
 ## Owned scope
 

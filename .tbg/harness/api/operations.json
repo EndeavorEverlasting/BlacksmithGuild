@@ -68,6 +68,83 @@
       ],
       "riskClass": "static",
       "proofCeiling": "harness"
+    },
+    {
+      "id": "start-runtime-observer",
+      "entrypoint": "ForgeRuntimeObserver.cmd / Start-TbgGameRuntimeObserver.ps1",
+      "mode": "owned-observer-start",
+      "requiredInputs": ["completed-or-active read-only observation scope"],
+      "outputArtifacts": [".local/tbg-runtime-observer/<runId>/run-context.json", ".local/tbg-runtime-observer/<runId>/observer-status.json"],
+      "riskClass": "runtime_read",
+      "proofCeiling": "harness",
+      "ownershipLease": "Creates only an observer lease under .local/tbg-runtime-observer; it owns neither Bannerlord nor its launcher.",
+      "forbiddenConditions": ["Do not launch, stop, restart, kill, click, focus, or save.", "Do not infer live certification from observer startup."]
+    },
+    {
+      "id": "inspect-runtime-observer-status",
+      "entrypoint": "ForgeRuntimeObserver.cmd status",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": [".local/tbg-runtime-observer/<runId>/observer-status.json"],
+      "riskClass": "runtime_read",
+      "proofCeiling": "harness",
+      "ownershipLease": "Reads observer status only; Bannerlord ownership is never inferred.",
+      "forbiddenConditions": ["Process presence is not cleanup authority.", "Observer absence is not negative-evidence confidence."]
+    },
+    {
+      "id": "stop-owned-runtime-observer",
+      "entrypoint": "ForgeRuntimeObserver.cmd stop",
+      "mode": "owned-observer-stop",
+      "requiredInputs": ["matching owned observer lease"],
+      "outputArtifacts": [".local/tbg-runtime-observer/<runId>/observer-status.json"],
+      "riskClass": "local_read_write",
+      "proofCeiling": "harness",
+      "ownershipLease": "May stop only the matching harness-owned observer lease; NEVER stops Bannerlord.",
+      "forbiddenConditions": ["Never terminate Bannerlord, its launcher, or a human, foreign, or ambiguous process.", "Do not treat observer stop as incident resolution."]
+    },
+    {
+      "id": "validate-runtime-event-observation",
+      "entrypoint": "scripts/tbg/Test-TbgRuntimeEventObservation.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": ["artifacts/latest/runtime-observer/runtime-event-observation.result.json"],
+      "riskClass": "static",
+      "proofCeiling": "static test",
+      "ownershipLease": "None; fixture validation only.",
+      "forbiddenConditions": ["No observer execution, process action, proof promotion, or live-runtime claim."]
+    },
+    {
+      "id": "assemble-runtime-incident",
+      "entrypoint": "Resolve-TbgRuntimeIncident.ps1 / ForgeRuntimeIncident.cmd",
+      "mode": "read-only",
+      "requiredInputs": ["completed observer run root"],
+      "outputArtifacts": [".local/tbg-runtime-observer/<runId>/incident-timeline.json", ".local/tbg-runtime-observer/<runId>/incident-result.json", "artifacts/latest/runtime-incident/runtime-incident-assembler.result.json"],
+      "riskClass": "runtime_read",
+      "proofCeiling": "harness",
+      "ownershipLease": "Consumes a bounded completed observer run; it acquires no game, launcher, or process ownership.",
+      "forbiddenConditions": ["No restart, kill, click, focus, save, command-inbox, or root-cause promotion.", "Stale logs and window disappearance do not confirm a crash."]
+    },
+    {
+      "id": "validate-runtime-incident",
+      "entrypoint": "scripts/tbg/Test-TbgRuntimeIncidentAssembler.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": ["artifacts/latest/runtime-incident/runtime-incident-assembler.result.json"],
+      "riskClass": "static",
+      "proofCeiling": "static test",
+      "ownershipLease": "None; deterministic fixture replay only.",
+      "forbiddenConditions": ["No live process observation or certification.", "No proof promotion from fixture outcomes."]
+    },
+    {
+      "id": "inspect-runtime-incident-status",
+      "entrypoint": "Resolve-TbgRuntimeIncident.ps1 / ForgeRuntimeIncident.cmd",
+      "mode": "read-only",
+      "requiredInputs": ["completed observer run root"],
+      "outputArtifacts": [".local/tbg-runtime-observer/<runId>/incident-result.json"],
+      "riskClass": "runtime_read",
+      "proofCeiling": "harness",
+      "ownershipLease": "Reads completed incident output; no ownership is acquired.",
+      "forbiddenConditions": ["incident_ready is not live certification.", "Do not convert observer gaps into negative-evidence confidence."]
     }
   ]
 }
