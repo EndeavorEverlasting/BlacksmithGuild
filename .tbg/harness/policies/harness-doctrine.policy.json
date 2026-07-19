@@ -93,6 +93,11 @@
       "id": "HD-010",
       "name": "raw-evidence-boundary",
       "requirement": "Raw logs, saves, crash dumps, credentials, private configuration, and machine-local junk remain local and ignored."
+    },
+    {
+      "id": "HD-011",
+      "name": "fresh-agent-entry",
+      "requirement": "A fresh agent must discover the canonical harness entrypoint from the manifest, choose one primary skill and narrow workflow, run targeted and composed validators, produce registered artifacts and an operator report, and emit a schema-valid sprint capsule with exact Git or PR evidence."
     }
   ],
   "invalidCloseouts": [
@@ -107,6 +112,8 @@
   "requiredHarnessComponents": {
     "agentRules": "AGENTS.md",
     "codebaseMap": "CODEBASE_MAP.md",
+    "aiHarnessEntrypoint": "docs/AI_HARNESS_ENTRYPOINT.md",
+    "generatedOutputPolicy": ".gitignore",
     "workflowDirectory": ".tbg/workflows",
     "runContextSchema": ".tbg/harness/schemas/tbg-sprint-capsule.schema.json",
     "artifactRegistry": ".tbg/harness/e2e-artifact-types.registry.json",

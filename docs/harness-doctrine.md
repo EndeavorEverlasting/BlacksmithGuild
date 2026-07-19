@@ -23,6 +23,21 @@ A prompt is one artifact inside the harness. The harness is the tracked operatio
 
 Do not invent a parallel authority surface when one of these already owns the concern.
 
+## Fresh-agent acceptance
+
+`docs/AI_HARNESS_ENTRYPOINT.md` is the canonical fresh-agent front door and must be discoverable through `.tbg/harness/manifest.json`.
+
+A fresh agent must be able to:
+
+1. inspect the repo rules, doctrine, codebase map, harness manifest, generated-output policy, current Git/PR state, and fresh run context;
+2. select one primary skill and the narrowest matching workflow contract;
+3. load that workflow's authorities, validators, expected artifacts, freshness source, and proof ceiling;
+4. run targeted validation before the applicable composed E2E profile and broader safe checks;
+5. produce registry-backed artifacts and an English/operator report without tracking raw runtime output;
+6. emit a schema-valid sprint capsule containing exact Git or PR evidence and one next decision.
+
+The harness-doctrine and E2E validators must fail when the entrypoint, manifest registration, generated-output boundary, validator path, artifact path, report path, or handoff path is missing. Prompts may route this sequence, but they cannot replace it.
+
 ## Required identity
 
 Every serious writing or mutation sprint must name:

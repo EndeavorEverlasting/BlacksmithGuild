@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "AGENTS.md"
+      - "CODEBASE_MAP.md"
+      - ".gitignore"
       - ".tbg/harness/manifest.json"
       - ".tbg/harness/policies/harness-doctrine.policy.json"
       - ".tbg/harness/fixtures/runtime-context-continuity.fixtures.json"
@@ -11,6 +13,7 @@ on:
       - ".tbg/workflows/runtime-context-continuity.contract.json"
       - ".tbg/skills/launcher-lifecycle/SKILL.md"
       - ".tbg/skills/runtime-evidence-certification/SKILL.md"
+      - "docs/AI_HARNESS_ENTRYPOINT.md"
       - "docs/harness-doctrine.md"
       - "docs/evidence/runtime-context/**"
       - "scripts/preflight-cleanup.ps1"
@@ -22,6 +25,8 @@ on:
       - main
     paths:
       - "AGENTS.md"
+      - "CODEBASE_MAP.md"
+      - ".gitignore"
       - ".tbg/harness/manifest.json"
       - ".tbg/harness/policies/harness-doctrine.policy.json"
       - ".tbg/harness/fixtures/runtime-context-continuity.fixtures.json"
@@ -29,6 +34,7 @@ on:
       - ".tbg/workflows/runtime-context-continuity.contract.json"
       - ".tbg/skills/launcher-lifecycle/SKILL.md"
       - ".tbg/skills/runtime-evidence-certification/SKILL.md"
+      - "docs/AI_HARNESS_ENTRYPOINT.md"
       - "docs/harness-doctrine.md"
       - "docs/evidence/runtime-context/**"
       - "scripts/preflight-cleanup.ps1"

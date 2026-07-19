@@ -6,9 +6,12 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 
 - `AGENTS.md` — safe bootloader, universal safety, proof ladder, and lane router.
 - `CLAUDE.md` — Claude adapter subordinate to `AGENTS.md`.
+- `docs/AI_HARNESS_ENTRYPOINT.md` — canonical fresh-agent front door from rules through workflow selection, validation, artifacts, and handoff.
+- `CODEBASE_MAP.md` — this smallest-surface navigation map.
 - `.tbg/skills/manifest.json` — canonical v2 skill router, ownership, validators, artifacts, and proof ceilings.
 - `.tbg/harness/manifest.json` — central path registry and harness doctrine.
 - `.tbg/workflows/` — executable workflow contracts.
+- `.gitignore` — generated-output, secret, save, crash-dump, and machine-local evidence boundary.
 - `artifacts/latest/` — generated current-state and handoff surfaces; freshness must be proven.
 
 ## E2E and machine-readable continuation

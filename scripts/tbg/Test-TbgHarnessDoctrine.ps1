@@ -44,10 +44,14 @@ function Require-Path([string]$Label, [string]$RelativePath) {
 }
 
 $doctrinePath = 'docs/harness-doctrine.md'
+$entrypointPath = 'docs/AI_HARNESS_ENTRYPOINT.md'
+$generatedOutputPolicyPath = '.gitignore'
 $policyPath = '.tbg/harness/policies/harness-doctrine.policy.json'
 $runtimePath = '.tbg/workflows/runtime-context-continuity.contract.json'
 $runtimeSchemaPath = '.tbg/harness/schemas/runtime-context-capsule.schema.json'
 $doctrine = Get-Text $doctrinePath
+$entrypoint = Get-Text $entrypointPath
+$generatedOutputPolicy = Get-Text $generatedOutputPolicyPath
 $agents = Get-Text 'AGENTS.md'
 $policy = Get-Json $policyPath
 $manifest = Get-Json '.tbg/harness/manifest.json'
@@ -55,10 +59,17 @@ $runtime = Get-Json $runtimePath
 $runtimeSchema = Get-Json $runtimeSchemaPath
 
 Require-Match 'doctrine defines harness' $doctrine 'A prompt is one artifact inside the harness'
+Require-Match 'doctrine defines fresh-agent acceptance' $doctrine 'Fresh-agent acceptance'
 Require-Match 'doctrine defines execution loop' $doctrine 'request[\s\S]*evidence review[\s\S]*bounded decision[\s\S]*repo or Git or GitHub mutation[\s\S]*artifacts[\s\S]*validation[\s\S]*report[\s\S]*next decision'
 Require-Match 'doctrine defines action commitment' $doctrine 'install, set up, build, execute, repair, configure, upgrade, deploy, merge, or release'
 Require-Match 'doctrine defines task override' $doctrine 'task-specific execution contract overrides generic closeout'
 Require-Match 'doctrine defines runtime specialization' $doctrine 'runtime-context-continuity\.contract\.json'
+Require-Match 'entrypoint defines ordered fresh-agent journey' $entrypoint 'AGENTS\.md[\s\S]*harness-doctrine\.md[\s\S]*harness/manifest\.json[\s\S]*\.gitignore[\s\S]*CODEBASE_MAP\.md[\s\S]*skills/manifest\.json[\s\S]*workflow contract[\s\S]*targeted validator[\s\S]*E2E profile[\s\S]*artifact registry[\s\S]*sprint-capsule'
+Require-Match 'entrypoint rejects prompt substitution' $entrypoint 'Prompts remain artifacts inside this system; they are not the harness'
+Require-Match 'generated output ignores local state' $generatedOutputPolicy '(?m)^\.local/$'
+Require-Match 'generated output ignores artifacts' $generatedOutputPolicy '(?m)^artifacts/$'
+Require-Match 'generated output ignores raw logs' $generatedOutputPolicy '(?m)^\*\.log$'
+Require-Match 'generated output ignores crash dumps' $generatedOutputPolicy '(?m)^\*\.dmp$'
 Require-Match 'AGENTS points to doctrine' $agents 'docs/harness-doctrine\.md'
 Require-Match 'AGENTS requires action proof' $agents 'plan-only closeout is invalid'
 Require-Match 'AGENTS protects existing runtime' $agents 'process presence is context, not zombie proof'
@@ -84,7 +95,7 @@ if ($policy) {
     Require-Values 'policy invalid closeouts' @($policy.invalidCloseouts) @(
         'acknowledgment_only','summary_only','rewritten_prompt_only','plan_only','handoff_only','preflight_only'
     )
-    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010')
+    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011')
     foreach ($property in $policy.requiredHarnessComponents.PSObject.Properties) {
         Require-Path "harness component $($property.Name)" ([string]$property.Value)
     }
@@ -92,9 +103,15 @@ if ($policy) {
 
 if ($manifest) {
     $expected = [ordered]@{
+        codebaseMap = 'CODEBASE_MAP.md'
+        aiHarnessEntrypoint = $entrypointPath
+        generatedOutputPolicy = $generatedOutputPolicyPath
         harnessDoctrine = $doctrinePath
         harnessDoctrinePolicy = $policyPath
         harnessDoctrineValidator = 'scripts/tbg/Test-TbgHarnessDoctrine.ps1'
+        endToEndContract = '.tbg/workflows/end-to-end-validation.contract.json'
+        endToEndArtifactTypes = '.tbg/harness/e2e-artifact-types.registry.json'
+        sprintCapsuleContract = '.tbg/workflows/tbg-sprint-capsule.contract.json'
         runtimeContextContinuityContract = $runtimePath
         runtimeContextCapsuleSchema = $runtimeSchemaPath
     }
