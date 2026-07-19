@@ -66,6 +66,21 @@ if ($builtExists -and $installedExists) {
 }
 
 $verdict = if ($failed -eq 0) { 'PASS' } elseif ($gameRunning) { 'STALE_RUNTIME' } else { 'FAIL' }
+
+# Check pending reload marker for restart-needed flag
+$pendingPath = Join-Path $BannerlordRoot 'BlacksmithGuild_PendingReload.json'
+$pendingReload = $false
+$pendingAge = $null
+if (Test-Path -LiteralPath $pendingPath -PathType Leaf) {
+    try {
+        $pending = Get-Content -LiteralPath $pendingPath -Raw | ConvertFrom-Json
+        $pendingAge = [Math]::Round(([DateTime]::Now - [DateTime]::Parse($pending.installedAt)).TotalSeconds, 1)
+        $pendingReload = $true
+        $checks += @{ name = "Pending reload (${pendingAge}s ago) — restart required"; passed = $false }
+        $failed++
+        $verdict = 'RESTART_REQUIRED'
+    } catch { }
+}
 $detail = if ($match -and $gameRunning) {
     'DLL files match but game may have loaded a previous version. Restart Bannerlord for fresh load.'
 } elseif ($match) {
@@ -82,6 +97,8 @@ $result = [pscustomobject]@{
     passed = $passed; failed = $failed; total = $checks.Count
     builtHash = $builtHash; installedHash = $installedHash; match = $match
     gameRunning = $gameRunning
+    pendingReload = $pendingReload
+    pendingReloadAgeSec = $pendingAge
     detail = $detail
     checks = $checks
 }
