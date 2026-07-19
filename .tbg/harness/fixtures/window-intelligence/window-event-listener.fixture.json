@@ -1,0 +1,17 @@
+{
+  "schema": "TbgWindowEventListenerFixture.v1",
+  "purpose": "Exercise event-first window observation and polling reconciliation without a live Windows target.",
+  "events": [
+    {"caseId": "create-show-destroy", "source": "hook", "eventType": "window.created", "pid": 301001, "hwnd": 401001, "title": "Mount & Blade II: Bannerlord", "className": "TaleWorldsWindow", "visible": true},
+    {"caseId": "create-show-destroy", "source": "hook", "eventType": "window.shown", "pid": 301001, "hwnd": 401001, "title": "Mount & Blade II: Bannerlord", "className": "TaleWorldsWindow", "visible": true},
+    {"caseId": "create-show-destroy", "source": "hook", "eventType": "window.destroyed", "pid": 301001, "hwnd": 401001, "title": "Mount & Blade II: Bannerlord", "className": "TaleWorldsWindow", "visible": false},
+    {"caseId": "duplicate-hook-poll", "source": "hook", "eventType": "window.title_changed", "pid": 301002, "hwnd": 401002, "title": "Bannerlord Launcher", "className": "Launcher", "visible": true},
+    {"caseId": "duplicate-hook-poll", "source": "poll", "eventType": "window.title_changed", "pid": 301002, "hwnd": 401002, "title": "Bannerlord Launcher", "className": "Launcher", "visible": true},
+    {"caseId": "unknown-quarantine", "source": "hook", "eventType": "window.created", "pid": 301003, "hwnd": 401003, "title": "Unexpected TaleWorlds Dialog", "className": "Dialog", "visible": true},
+    {"caseId": "out-of-order", "source": "hook", "eventType": "window.hidden", "pid": 301004, "hwnd": 401004, "title": "Bannerlord", "className": "TaleWorldsWindow", "visible": false},
+    {"caseId": "out-of-order", "source": "hook", "eventType": "window.shown", "pid": 301004, "hwnd": 401004, "title": "Bannerlord", "className": "TaleWorldsWindow", "visible": true},
+    {"caseId": "listener-restart", "source": "poll", "eventType": "window.created", "pid": 301005, "hwnd": 401005, "title": "Bannerlord", "className": "TaleWorldsWindow", "visible": true},
+    {"caseId": "missed-event-reconciliation", "kind": "reconciled", "pid": 301006, "hwnd": 401006, "detail": "poll discovered a window after a missed hook callback"},
+    {"caseId": "callback-failure", "kind": "callback_failure", "pid": 301007, "hwnd": 401007, "detail": "simulated callback exception was isolated from the listener loop"}
+  ]
+}

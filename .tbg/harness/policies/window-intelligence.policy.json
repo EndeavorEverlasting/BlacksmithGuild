@@ -21,6 +21,16 @@
     "An action lease prevents duplicate dispatch against the same window fingerprint.",
     "Unknown windows remain observed or quarantined; they are never clicked automatically."
   ],
+  "listenerRules": [
+    "SetWinEventHook is the first signal for create, show, hide, destroy, title-change, and focus-change observations; callbacks enqueue only minimal metadata.",
+    "All process lookup, identity resolution, registry use, UI Automation, lifecycle publication, and artifact writes occur after the callback has returned.",
+    "The listener accepts only exact context PID/HWND targets when supplied; otherwise it filters to Bannerlord and TaleWorlds process identities.",
+    "Polling reconciles hook loss at 100 milliseconds during the launch interval and may slow only after the listener is stable.",
+    "Deduplication applies only to a short cross-source hook/poll overlap. It must not suppress repeated events from the same source.",
+    "Callback failure and a reconciliation correction emit observer.gap and observer.reconciled respectively.",
+    "Window disappearance is a disappearance observation only. It is not application acceptance, process loss, or crash confirmation.",
+    "The event listener is observation-only: it does not click, focus, send keys, write command inbox files, or grant unknown-window action authority."
+  ],
   "lifecycleRules": [
     "Every window begins at unseen and advances only through an allowed event transition.",
     "Observation, identity resolution, action authority, action dispatch, terminal handoff, quarantine, disappearance, and blocking are distinct states.",

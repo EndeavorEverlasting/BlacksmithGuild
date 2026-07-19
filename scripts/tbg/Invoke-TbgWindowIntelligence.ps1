@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [ValidateSet('scan','watch','status','learn')]
+    [ValidateSet('scan','watch','status','learn','listen')]
     [string]$Command = 'scan',
 
     [ValidateSet('observe','auto','strict')]
@@ -51,6 +51,15 @@ $handoffPath = Join-Path $OutputDirectory 'window-intelligence.handoff.md'
 $learningPath = Join-Path $OutputDirectory 'window-intelligence.learning-candidates.json'
 $leasePath = Join-Path (Split-Path -Parent $CachePath) 'watcher.json'
 $actionLeasePath = Join-Path (Split-Path -Parent $CachePath) 'action-leases.json'
+
+if ($Command -eq 'listen') {
+    $listenerPath = Join-Path $repoRoot 'scripts/tbg/Start-TbgWindowEventListener.ps1'
+    if (-not (Test-Path -LiteralPath $listenerPath -PathType Leaf)) {
+        throw "The window event listener is missing: $listenerPath"
+    }
+    & $listenerPath -Mode observe -DurationSeconds $DurationSeconds -ProcessId $ProcessId -Hwnd $Hwnd
+    exit $LASTEXITCODE
+}
 
 function Resolve-TbgFullPath {
     param([Parameter(Mandatory = $true)][string]$Path)
