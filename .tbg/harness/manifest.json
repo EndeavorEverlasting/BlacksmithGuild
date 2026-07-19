@@ -10,6 +10,8 @@
   },
   "paths": {
     "codebaseMap": "CODEBASE_MAP.md",
+    "aiHarnessEntrypoint": "docs/AI_HARNESS_ENTRYPOINT.md",
+    "generatedOutputPolicy": ".gitignore",
     "contracts": ".tbg/workflows",
     "policies": ".tbg/harness/policies",
     "schemas": ".tbg/harness/schemas",
