@@ -1,8 +1,8 @@
 {
   "schema": "TbgWindowIdentityRegistry.v1",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
-  "purpose": "Classify Bannerlord and launcher windows from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
+  "purpose": "Classify every correlated Bannerlord, launcher, calibration, modal, Steam-broker, and game-handoff window from process, HWND, Win32, UI Automation, dependency, and learned-alias metadata before any coordinate or image fallback is considered.",
   "defaultPolicy": {
     "minimumRecognitionScore": 70,
     "minimumAutomaticActionScore": 90,
@@ -10,7 +10,23 @@
     "maximumControls": 256,
     "cacheHighConfidenceMatches": true,
     "unknownWindowDisposition": "delta_discovery_required",
-    "imageFallbackDisposition": "diagnostic_only"
+    "imageFallbackDisposition": "diagnostic_only",
+    "recordAllCorrelatedTopLevelWindows": true,
+    "freezeIdentityPerSurfaceOperation": true
+  },
+  "launchPathInvariance": {
+    "entryPaths": ["forge_continue", "auto_launch_nav", "new_game_play", "steam_mediated", "future_registered_path"],
+    "requiredSurfaceClasses": [
+      "play_continue_menu",
+      "calibration_menu",
+      "safe_mode_window",
+      "caution_window",
+      "steam_broker_window",
+      "other_launcher_window",
+      "singleplayer_handoff"
+    ],
+    "unknownSurfaceDisposition": "unknown_quarantined",
+    "missingObservationDisposition": "unknown_not_absent"
   },
   "lifecycle": {
     "stateSchema": ".tbg/harness/schemas/window-lifecycle-state.schema.json",
@@ -31,6 +47,7 @@
     {
       "id": "bannerlord.launcher.menu",
       "displayName": "Bannerlord launcher menu",
+      "surfaceClass": "play_continue_menu",
       "lifecycleRole": "context_owned_interactive",
       "aliases": [
         "Mount & Blade II: Bannerlord",
@@ -60,8 +77,40 @@
       }
     },
     {
+      "id": "bannerlord.launcher.calibration",
+      "displayName": "Bannerlord launcher calibration menu",
+      "surfaceClass": "calibration_menu",
+      "lifecycleRole": "context_owned_interactive",
+      "aliases": [
+        "Calibration",
+        "Launcher Calibration",
+        "Calibrate"
+      ],
+      "match": {
+        "processNames": ["TaleWorlds.MountAndBlade.Launcher", "Bannerlord"],
+        "titleRegex": ["(?i)calibrat"],
+        "anyControlNames": ["Calibrate", "Continue", "Confirm", "Skip"],
+        "allTextRegex": [],
+        "anyTextRegex": ["(?i)calibrat"],
+        "dependencyMismatch": false,
+        "minimumDirectSignals": 2
+      },
+      "actionPolicy": {
+        "kind": "context_owned_observation",
+        "description": "Record calibration as a first-class launcher surface. Do not automate it until an exact workflow-owned semantic action, named controls, expected transition, and fixture are registered.",
+        "automatic": false,
+        "minimumScore": 0,
+        "preferredControlNames": [],
+        "fallbackKeys": [],
+        "fallbackRequiresForegroundAuthority": true,
+        "requiredDirectSignals": [],
+        "forbiddenFallbacks": ["guess calibration choice", "blind coordinate click", "reuse PLAY or CONTINUE coordinates"]
+      }
+    },
+    {
       "id": "bannerlord.dependency-version-caution",
       "displayName": "Blacksmith Guild dependency-version caution",
+      "surfaceClass": "caution_window",
       "lifecycleRole": "known_modal",
       "aliases": [
         "CAUTION",
@@ -105,6 +154,7 @@
     {
       "id": "bannerlord.safe-mode",
       "displayName": "Bannerlord Safe Mode prompt",
+      "surfaceClass": "safe_mode_window",
       "lifecycleRole": "known_modal",
       "aliases": ["Safe Mode", "Bannerlord Safe Mode", "Launch in Safe Mode"],
       "match": {
@@ -130,8 +180,49 @@
       }
     },
     {
+      "id": "steam.launch-broker",
+      "displayName": "Steam Bannerlord launch broker",
+      "surfaceClass": "steam_broker_window",
+      "lifecycleRole": "launch_broker_observation",
+      "aliases": [
+        "Steam",
+        "Steam Client",
+        "Steam launch broker",
+        "steamwebhelper"
+      ],
+      "match": {
+        "processNames": ["steam", "steamwebhelper"],
+        "titleRegex": ["(?i)steam"],
+        "anyControlNames": [],
+        "allTextRegex": [],
+        "anyTextRegex": ["(?i)mount.*blade", "(?i)bannerlord", "(?i)launching"],
+        "dependencyMismatch": false,
+        "minimumDirectSignals": 2,
+        "correlationRequired": true,
+        "correlationSignals": [
+          "owned_launch_request",
+          "fresh_launch_time_window",
+          "parent_child_process_evidence",
+          "verified_executable_path",
+          "s1_s2_process_or_window_delta"
+        ]
+      },
+      "actionPolicy": {
+        "kind": "observation_only",
+        "description": "Record a Steam window only when it is correlated to the active Bannerlord launch. Never click, focus, close, or otherwise interact with Steam automatically.",
+        "automatic": false,
+        "minimumScore": 0,
+        "preferredControlNames": [],
+        "fallbackKeys": [],
+        "fallbackRequiresForegroundAuthority": true,
+        "requiredDirectSignals": ["steam_process", "active_launch_correlation"],
+        "forbiddenFallbacks": ["global Steam window enumeration", "automatic Steam click", "foreground Steam", "close Steam"]
+      }
+    },
+    {
       "id": "bannerlord.singleplayer-host",
       "displayName": "Bannerlord Singleplayer host",
+      "surfaceClass": "singleplayer_handoff",
       "lifecycleRole": "terminal_handoff",
       "aliases": [
         "Mount and Blade II Bannerlord - Singleplayer",
