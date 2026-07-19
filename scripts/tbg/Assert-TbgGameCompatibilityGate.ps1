@@ -46,7 +46,10 @@ if ($NoEnvelope) { $invoke.NoEnvelope = $true }
 
 $result = @(& $updaterPath @invoke | Where-Object { $null -ne $_ } | Select-Object -Last 1)
 $result = if ($result.Count -gt 0) { $result[0] } else { $null }
-$allowed = $null -ne $result -and [string]$result.terminalState -eq 'PASS_compatibility_metadata_aligned'
+# ATTENTION_upstream_build_unavailable is a non-blocking warning: the Steam Web API query
+# failed (network issue, rate limiting, API down), but the local install is intact.
+# Do not block launcher entry for transient upstream API failures.
+$allowed = $null -ne $result -and ([string]$result.terminalState -eq 'PASS_compatibility_metadata_aligned' -or [string]$result.terminalState -eq 'ATTENTION_upstream_build_unavailable')
 $terminalState = if ($result) { [string]$result.terminalState } else { 'BLOCKED_game_compatibility_result_missing' }
 $nextCommand = if ($result -and $result.nextCommand) { [string]$result.nextCommand } else { '.\ForgeGameUpdate.cmd check' }
 
