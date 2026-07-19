@@ -2,15 +2,46 @@
   "schema": "TbgWindowIntelligencePolicy.v1",
   "status": "implementation_active",
   "authority": "launcher-lifecycle",
-  "goal": "Recognize and handle known Bannerlord windows from stable metadata faster than a human can react, while preserving exact-window action safety and proof boundaries.",
+  "goal": "Recognize and record every correlated Bannerlord, launcher, calibration, modal, Steam-broker, and game-handoff window from stable metadata faster than a human can react, while preserving exact-window action safety, multitasking, path invariance, and proof boundaries.",
   "decisionOrder": [
     {"order": 1, "method": "exact_cached_fingerprint", "description": "Use an exact learned fingerprint for process, HWND class, normalized title, controls, and semantic text when the cache still agrees with the tracked registry."},
     {"order": 2, "method": "tracked_registry_metadata_match", "description": "Match process name, title aliases, Win32 child text, UI Automation names and identifiers, and dependency-version metadata against the tracked registry."},
     {"order": 3, "method": "context_owned_launch_intent", "description": "Use launcher-window-context.json as the sole authority for PLAY versus CONTINUE. Never infer launch intent from stale artifacts or a window image."},
     {"order": 4, "method": "module_dependency_prediction", "description": "Compare Blacksmith Guild dependency declarations with installed TaleWorlds module versions so the harness expects a dependency caution before it appears. Prediction accelerates recognition but does not itself authorize a click."},
-    {"order": 5, "method": "s1_s2_delta_discovery", "description": "For an unknown window, capture the known-fast before/after PID and window delta once, collect its metadata, and write a learning candidate."},
+    {"order": 5, "method": "s1_s2_delta_discovery", "description": "For an unknown or newly brokered window, capture the known-fast before/after PID and window delta once, collect its metadata, and write a learning or correlation candidate."},
     {"order": 6, "method": "image_or_manual_diagnostic", "description": "Use a screenshot or operator description only when process, Win32, UI Automation, dependency, context, and delta evidence cannot identify the window. Image evidence is diagnostic and does not silently expand action authority."}
   ],
+  "pathInvariance": {
+    "entryPaths": ["forge_continue", "auto_launch_nav", "new_game_play", "steam_mediated", "future_registered_path"],
+    "requiredSurfaceClasses": [
+      "play_continue_menu",
+      "calibration_menu",
+      "safe_mode_window",
+      "caution_window",
+      "steam_broker_window",
+      "other_launcher_window",
+      "singleplayer_handoff"
+    ],
+    "sameRunContextAndObservers": true,
+    "observersStartBeforeFirstActuation": true,
+    "recordNonInteractiveWindows": true,
+    "freezeIdentityPerSurfaceOperation": true,
+    "pathSpecificSafetyBypassForbidden": true,
+    "missingObservationDisposition": "unknown_not_absent"
+  },
+  "steamBrokerRules": {
+    "observationOnly": true,
+    "correlationRequired": true,
+    "globalSteamEnumerationForbidden": true,
+    "allowedCorrelationSignals": [
+      "owned_launch_request",
+      "fresh_launch_time_window",
+      "parent_child_process_evidence",
+      "verified_executable_path",
+      "s1_s2_process_or_window_delta"
+    ],
+    "forbiddenActions": ["click", "focus", "send_keys", "close", "terminate", "grant_launcher_action_authority"]
+  },
   "automaticActionRules": [
     "The exact target PID and HWND must still exist when the action is dispatched.",
     "The tracked identity score must meet or exceed the identity action minimum.",
@@ -19,12 +50,16 @@
     "Keyboard fallback requires foreground authority and a still-matching identity immediately before dispatch.",
     "Coordinates are not a primary action method and may not be learned as semantic identity.",
     "An action lease prevents duplicate dispatch against the same window fingerprint.",
-    "Unknown windows remain observed or quarantined; they are never clicked automatically."
+    "Unknown windows remain observed or quarantined; they are never clicked automatically.",
+    "Calibration remains observation-only until an exact workflow-owned semantic action, named controls, expected transition, and fixture are registered.",
+    "Steam broker windows are observation-only and can never inherit launcher action authority."
   ],
   "listenerRules": [
     "SetWinEventHook is the first signal for create, show, hide, destroy, title-change, and focus-change observations; callbacks enqueue only minimal metadata.",
     "All process lookup, identity resolution, registry use, UI Automation, lifecycle publication, and artifact writes occur after the callback has returned.",
-    "The listener accepts only exact context PID/HWND targets when supplied; otherwise it filters to Bannerlord and TaleWorlds process identities.",
+    "The listener accepts only exact context PID/HWND targets when supplied; otherwise it filters to Bannerlord and TaleWorlds process identities plus Steam or steamwebhelper windows correlated to the active launch.",
+    "Every supported launch entry path starts or joins the same observer run before its first actuation.",
+    "Every correlated top-level window is recorded even when no action is authorized or attempted.",
     "Polling reconciles hook loss at 100 milliseconds during the launch interval and may slow only after the listener is stable.",
     "Deduplication applies only to a short cross-source hook/poll overlap. It must not suppress repeated events from the same source.",
     "Callback failure and a reconciliation correction emit observer.gap and observer.reconciled respectively.",
@@ -37,15 +72,17 @@
     "An unknown window transitions to unknown_quarantined and cannot receive action authority until an explicit tracked identity is resolved.",
     "A Singleplayer host may become terminal_observation only after the canonical bannerlord.singleplayer-host identity is resolved.",
     "A modal action may be dispatched only after action_authorized for the same window key and action identifier.",
+    "Each surface action freezes its own identity; a verified transition may establish the next surface identity inside the same run, but broad scans may not silently retarget an active action.",
     "Window disappearance after dispatch preserves action_dispatch as the proof ceiling and never creates application-acceptance proof.",
     "The reducer is pure: it does not click, focus, launch, sleep, inspect pixels, write runtime state, or infer timestamps.",
     "Rejected transitions remain recorded as rejected transition objects and do not mutate the prior materialized state."
   ],
   "legacyRules": [
-    "launcher-auto-nav.ps1 is a compatibility fallback, not the current best strategy.",
+    "launcher-auto-nav.ps1 is a compatibility fallback, not a path-specific safety exception.",
+    "ForgeContinue, Auto Launch Nav, new-game Play, Steam-mediated launch, and future launch paths must consume the same observer-first contract.",
     "Repeated PLAY-versus-CONTINUE rescoring is forbidden after launcher-window-context.json has frozen the launch intent.",
     "A spawned Singleplayer host must never be promoted back into launcher-menu selection.",
-    "Safe Mode and dependency CAUTION are first-class modal identities, not timeout noise.",
+    "Safe Mode, dependency CAUTION, calibration, and correlated Steam broker windows are first-class surfaces, not timeout noise.",
     "Agents must inspect window-intelligence artifacts before proposing another launcher collector, longer wait, or screenshot parser."
   ],
   "cacheRules": [
@@ -56,9 +93,10 @@
     "A registry version change invalidates action authority for stale cache records until they are revalidated."
   ],
   "proofBoundary": [
-    "Window recognition proves a launcher or modal observation only.",
+    "Window recognition proves a launcher, modal, calibration, Steam-broker, or handoff observation only.",
     "A dispatched modal action proves dispatch, not that the game accepted it.",
     "A lifecycle terminal state proves only that the reducer reached a terminal harness disposition for that window key.",
+    "A missing surface observation is unknown when the required observer was absent, stale, or out of correlated scope.",
     "Game process handoff is distinct from campaign readiness, command acknowledgement, movement, arrival, trade, and live product success.",
     "Screenshot text supplied by an operator may seed a fixture, but live success requires fresh machine evidence."
   ]
