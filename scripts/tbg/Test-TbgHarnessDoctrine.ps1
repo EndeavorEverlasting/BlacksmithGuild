@@ -66,10 +66,8 @@ Require-Match 'doctrine defines task override' $doctrine 'task-specific executio
 Require-Match 'doctrine defines runtime specialization' $doctrine 'runtime-context-continuity\.contract\.json'
 Require-Match 'entrypoint defines ordered fresh-agent journey' $entrypoint 'AGENTS\.md[\s\S]*harness-doctrine\.md[\s\S]*harness/manifest\.json[\s\S]*\.gitignore[\s\S]*CODEBASE_MAP\.md[\s\S]*skills/manifest\.json[\s\S]*workflow contract[\s\S]*targeted validator[\s\S]*E2E profile[\s\S]*artifact registry[\s\S]*sprint-capsule'
 Require-Match 'entrypoint rejects prompt substitution' $entrypoint 'Prompts remain artifacts inside this system; they are not the harness'
-Require-Match 'generated output ignores local state' $generatedOutputPolicy '(?m)^\.local/$'
-Require-Match 'generated output ignores artifacts' $generatedOutputPolicy '(?m)^artifacts/$'
-Require-Match 'generated output ignores raw logs' $generatedOutputPolicy '(?m)^\*\.log$'
-Require-Match 'generated output ignores crash dumps' $generatedOutputPolicy '(?m)^\*\.dmp$'
+$generatedOutputLines = @($generatedOutputPolicy -split "`r?`n")
+Require-Values 'generated output boundaries' $generatedOutputLines @('.local/','artifacts/','*.log','*.dmp')
 Require-Match 'AGENTS points to doctrine' $agents 'docs/harness-doctrine\.md'
 Require-Match 'AGENTS requires action proof' $agents 'plan-only closeout is invalid'
 Require-Match 'AGENTS protects existing runtime' $agents 'process presence is context, not zombie proof'
