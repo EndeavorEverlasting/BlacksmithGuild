@@ -166,6 +166,93 @@
     "orphanDispatchForbidden": true,
     "ackIsNotCompletion": true
   },
+  "crashObservability": {
+    "requiredBeforeCrashSensitiveOperation": [
+      "runId",
+      "commandIdOrNull",
+      "correlationId",
+      "spanId",
+      "parentSpanIdOrNull",
+      "operation",
+      "startedAtUtc",
+      "preState",
+      "expectedSignals"
+    ],
+    "requiredWhenControlReturns": [
+      "completedAtUtc",
+      "postState",
+      "observedSignals",
+      "terminalStatus"
+    ],
+    "terminalStatuses": [
+      "completed",
+      "error",
+      "blocked",
+      "aborted",
+      "process_lost",
+      "open"
+    ],
+    "balancedSpansRequired": true,
+    "unrelatedDoneCannotCloseActiveSpan": true,
+    "missingPostSignalRule": "When the process disappears before a matching terminal marker, preserve the correlated open span, set terminalStatus to process_lost, keep postState null, and treat the missing close as an unresolved execution boundary rather than a root cause.",
+    "negativeEvidenceRequiredFields": [
+      "expectedSignal",
+      "observer",
+      "source",
+      "windowStartUtc",
+      "windowEndUtc",
+      "sourceFresh",
+      "observationComplete",
+      "observed"
+    ],
+    "negativeEvidenceValidity": [
+      "signal_declared_in_advance",
+      "observer_identified_and_active",
+      "source_identified_and_fresh",
+      "observation_window_complete",
+      "observed_is_false"
+    ],
+    "invalidNegativeEvidence": [
+      "stale_log_silence",
+      "missing_observer",
+      "incomplete_observation_window",
+      "wrong_process_or_run",
+      "undeclared_expected_signal"
+    ],
+    "causalityFields": [
+      "observation",
+      "inferenceOrNull",
+      "hypotheses",
+      "provenCauseOrNull",
+      "rootCauseEvidenceRefs"
+    ],
+    "lastMarkerIsBoundaryNotCause": true,
+    "failureClassifications": [
+      "log_stalled",
+      "process_unobserved",
+      "process_exited",
+      "managed_exception_confirmed",
+      "native_crash_suspected",
+      "native_crash_confirmed",
+      "hang_confirmed",
+      "clean_exit",
+      "unknown_failure"
+    ],
+    "nativeCrashConfirmationRequires": [
+      "correlated_external_terminal_evidence",
+      "correlated_process_identity",
+      "correlated_timestamp",
+      "faulting_module_or_exception_code_when_available"
+    ],
+    "nativeCrashEvidenceExamples": [
+      "windows_error_reporting",
+      "taleworlds_crash_report",
+      "debugger_or_dump_metadata",
+      "equivalent_correlated_process_exit_evidence"
+    ],
+    "reconstructionGate": "A fresh agent who was not present must reconstruct the attempted operation, pre-state, post-state or process-loss boundary, expected signals, observed signals, valid absent signals, active span, terminal process evidence, causality status, exact head, and next decision from sanitized repository artifacts alone.",
+    "postCrashLiveCertRequiresObservabilityPass": true
+  },
   "parallelCoordination": {
     "contextPacketSources": [
       "artifacts/latest/tbg-chat-packet.json",
@@ -208,6 +295,11 @@
       "artifact_hashes",
       "handoff_state",
       "failure_class",
+      "pre_and_post_state",
+      "expected_observed_and_absent_signals",
+      "open_span",
+      "external_terminal_evidence",
+      "observation_inference_hypotheses_and_proven_cause",
       "proof_level",
       "next_decision"
     ],
@@ -234,6 +326,9 @@
     "process_name_match_is_not_session_ownership",
     "pid_delta_is_not_primary_identity",
     "command_ack_is_not_engine_handoff_completion",
+    "last_marker_is_not_root_cause",
+    "stale_log_silence_is_not_negative_evidence",
+    "process_non_observation_is_not_native_crash_confirmation",
     "sanitized_capsule_is_not_live_runtime_proof",
     "launcher_handoff_is_not_gameplay_completion"
   ]
