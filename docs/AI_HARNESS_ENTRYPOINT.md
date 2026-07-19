@@ -39,6 +39,20 @@ For a completed external observer run, use `runtime-incident-triage` for crash, 
 
 Triggers are read-only routes, not action authority. Window disappearance is not success, stale logs are not confirmed crashes, process presence is not cleanup authority, `incident_ready` is not live certification, and an observer gap is not negative evidence.
 
+## One-click operator front door
+
+The universal operator front door is `ForgeTest.cmd`. Double-click to run the safe default profile, or use:
+
+```powershell
+ForgeTest.cmd list           # list tests and profiles
+ForgeTest.cmd status          # show current state
+ForgeTest.cmd run             # run default profile
+ForgeTest.cmd run --profile default-static  # run a specific profile
+ForgeTest.cmd run --test core.skill-routing  # run one test
+```
+
+Tests are auto-discovered from `.tbg/harness/test-catalog.d/**/*.test.json`. No front-door edits needed when adding tests.
+
 ## Safe default
 
 ```powershell

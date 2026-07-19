@@ -26,6 +26,13 @@
     {"id": "runtime-observer-status", "fileName": "observer-status.json", "tracked": false},
     {"id": "runtime-incident-timeline", "fileName": "incident-timeline.json", "tracked": false},
     {"id": "runtime-incident-result", "fileName": "incident-result.json", "tracked": false},
-    {"id": "runtime-observer-operator-report", "fileName": "operator-report.md", "tracked": false}
+    {"id": "runtime-observer-operator-report", "fileName": "operator-report.md", "tracked": false},
+    {"id": "one-click-test-run-context", "fileName": "run-context.json", "tracked": false, "runRoot": ".local/tbg-one-click-tests"},
+    {"id": "one-click-test-artifact-registry", "fileName": "artifact-registry.json", "tracked": false, "runRoot": ".local/tbg-one-click-tests"},
+    {"id": "one-click-test-events", "fileName": "events.jsonl", "tracked": false, "runRoot": ".local/tbg-one-click-tests"},
+    {"id": "one-click-test-discovered-tests", "fileName": "discovered-tests.json", "tracked": false, "runRoot": ".local/tbg-one-click-tests"},
+    {"id": "one-click-test-result", "fileName": "result.json", "tracked": false, "runRoot": ".local/tbg-one-click-tests"},
+    {"id": "one-click-test-operator-report", "fileName": "operator-report.md", "tracked": false, "runRoot": ".local/tbg-one-click-tests"},
+    {"id": "one-click-test-handoff", "fileName": "handoff.md", "tracked": false, "runRoot": ".local/tbg-one-click-tests"}
   ]
 }

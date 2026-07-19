@@ -1,0 +1,53 @@
+{
+  "schema": "tbg.workflow-contract.v1",
+  "id": "one-click-test",
+  "sprint": "Sprint 1 — Install the One-Click Test Spine",
+  "contextBanner": "[TBG | Sprint 1 | One-Click Test Spine | harness-spine/operator-test-frontdoor]",
+  "purpose": "Define the permanent universal operator front door for repository testing. After this contract is satisfied, an operator can double-click ForgeTest.cmd and run tests without AI assistance.",
+  "allowedScope": [
+    "ForgeTest.cmd",
+    "scripts/tbg/Invoke-TbgOneClickTest.ps1",
+    "scripts/tbg/Write-TbgLiveTestConsole.ps1",
+    "scripts/tbg/Test-TbgOneClickTestSpine.ps1",
+    ".tbg/workflows/one-click-test.contract.json",
+    ".tbg/harness/schemas/one-click-test-*.schema.json",
+    ".tbg/harness/test-catalog.d/**/*.test.json",
+    ".tbg/harness/test-profiles.d/*.profile.json",
+    ".tbg/harness/manifest.json",
+    ".tbg/harness/e2e-artifact-types.registry.json",
+    ".tbg/harness/fixtures/one-click-test/*.fixture.json",
+    ".github/workflows/one-click-test-spine.yml",
+    "docs/architecture/one-click-test-spine.md",
+    "docs/handoff/one-click-test-operator-guide.md",
+    "CODEBASE_MAP.md"
+  ],
+  "forbiddenScope": [
+    "src/**",
+    "Module/**",
+    "window-listener or process-listener implementation",
+    "live launcher or game behavior",
+    "skill manifest, capability registry, or trigger routing",
+    "incident-root-cause logic",
+    "broad cherry-picks from PR #101 or #102",
+    "destructive cleanup, reset, clean, force-push",
+    "raw logs, saves, dumps, secrets, tokens, personal configuration",
+    "putting test logic directly inside ForgeTest.cmd"
+  ],
+  "requiredArtifacts": [
+    ".local/tbg-one-click-tests/<runId>/run-context.json",
+    ".local/tbg-one-click-tests/<runId>/artifact-registry.json",
+    ".local/tbg-one-click-tests/<runId>/events.jsonl",
+    ".local/tbg-one-click-tests/<runId>/discovered-tests.json",
+    ".local/tbg-one-click-tests/<runId>/result.json",
+    ".local/tbg-one-click-tests/<runId>/operator-report.md",
+    ".local/tbg-one-click-tests/<runId>/handoff.md",
+    "artifacts/latest/one-click-test/one-click-test.result.json",
+    "artifacts/latest/one-click-test/one-click-test.report.md"
+  ],
+  "validationCommands": [
+    "ForgeTest.cmd list --no-pause",
+    "ForgeTest.cmd run --profile default-static --no-pause",
+    "ForgeTest.cmd run --profile operator-observe --no-pause"
+  ],
+  "terminalStates": ["completed", "failed", "blocked"]
+}

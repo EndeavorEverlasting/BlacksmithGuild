@@ -145,6 +145,42 @@
       "proofCeiling": "harness",
       "ownershipLease": "Reads completed incident output; no ownership is acquired.",
       "forbiddenConditions": ["incident_ready is not live certification.", "Do not convert observer gaps into negative-evidence confidence."]
+    },
+    {
+      "id": "run-one-click-test",
+      "entrypoint": "ForgeTest.cmd",
+      "mode": "profile-gated",
+      "requiredInputs": [],
+      "outputArtifacts": [
+        ".local/tbg-one-click-tests/<runId>/run-context.json",
+        ".local/tbg-one-click-tests/<runId>/events.jsonl",
+        ".local/tbg-one-click-tests/<runId>/discovered-tests.json",
+        ".local/tbg-one-click-tests/<runId>/result.json",
+        ".local/tbg-one-click-tests/<runId>/operator-report.md",
+        "artifacts/latest/one-click-test/"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "profile-dependent"
+    },
+    {
+      "id": "list-one-click-tests",
+      "entrypoint": "ForgeTest.cmd",
+      "mode": "read-only",
+      "requiredInputs": ["list"],
+      "outputArtifacts": [],
+      "riskClass": "static",
+      "proofCeiling": "contract"
+    },
+    {
+      "id": "validate-one-click-test-spine",
+      "entrypoint": "scripts/tbg/Test-TbgOneClickTestSpine.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": [
+        "artifacts/latest/one-click-test/one-click-test-spine.validation.json"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "static test"
     }
   ]
 }

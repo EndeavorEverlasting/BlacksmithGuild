@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.one-click-test-spine",
+  "displayName": "One-Click Test Spine Validation",
+  "ownerLane": "harness-spine/operator-test-frontdoor",
+  "sourcePath": "scripts/tbg/Test-TbgOneClickTestSpine.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgOneClickTestSpine.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates the one-click test spine files exist, parse, and satisfy contracts.",
+  "tags": ["static", "contract", "harness", "sprint1", "core"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "sprint/one-click-test-spine"}
+}

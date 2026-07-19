@@ -1,0 +1,8 @@
+{
+  "schema": "tbg.one-click-test.fixture.v1",
+  "fixtureId": "duplicate-id-rejection",
+  "description": "Tests that duplicate test IDs are rejected",
+  "duplicateIds": ["core.duplicate-test-a", "core.duplicate-test-a"],
+  "expectedBehavior": "rejected",
+  "proofCeiling": "static test"
+}

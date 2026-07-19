@@ -27,6 +27,21 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `tests/harness/test_tbg_end_to_end_harness.py` — dependency-free Linux/static contract.
 - `.local/tbg-e2e-runs/` — ignored run contexts and raw harness outputs.
 
+## One-click test spine
+
+- `ForgeTest.cmd` — universal operator front door; double-click to run tests.
+- `.tbg/workflows/one-click-test.contract.json` — one-click test workflow contract.
+- `.tbg/harness/schemas/one-click-test-*.schema.json` — one-click test run context, catalog entry, profile, event, artifact registry, and result schemas.
+- `.tbg/harness/test-catalog.d/**/*.test.json` — discoverable test descriptors; new tests register here without editing the CMD.
+- `.tbg/harness/test-profiles.d/*.profile.json` — discoverable profiles selecting tests by tags/IDs.
+- `.tbg/harness/fixtures/one-click-test/*.fixture.json` — discovery, duplicate, and cycle fixtures.
+- `scripts/tbg/Invoke-TbgOneClickTest.ps1` — orchestrator: run, list, status, event emission, artifact writing.
+- `scripts/tbg/Write-TbgLiveTestConsole.ps1` — live console event viewer.
+- `scripts/tbg/Test-TbgOneClickTestSpine.ps1` — spine contract validator.
+- `.local/tbg-one-click-tests/` — ignored run contexts and raw harness outputs.
+- `artifacts/latest/one-click-test/` — latest result and report.
+- `.github/workflows/one-click-test-spine.yml` — CI for PowerShell Core and Windows PowerShell 5.1.
+
 ## Existing harness and state systems
 
 - `.tbg/harness/artifact-engines.registry.json` and `.tbg/workflows/local-artifact-engine.contract.json` — deterministic artifact parsing/routing.
@@ -36,7 +51,7 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `.tbg/state/game-compatibility.registry.json` — Bannerlord compatibility gate.
 - `scripts/tbg/Test-TbgSkillRouting.ps1` — canonical skill/router validator.
 - `docs/architecture/runtime-observer-agent-routing.md` — read-only observer capability and incident trigger routing.
-- `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
+- `ForgeTest.cmd`, `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
 
 ## Product and build
 

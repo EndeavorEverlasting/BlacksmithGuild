@@ -1,0 +1,21 @@
+{
+  "schema": "tbg.one-click-test.profile.v1",
+  "profileId": "operator-observe",
+  "displayName": "Operator Observe Profile",
+  "description": "Safe default for double-click. Run static checks, plus read-only observer tests when available. Never launches or mutates the game.",
+  "proofClass": "operator-observe",
+  "includeTags": ["static", "contract", "test", "smoke"],
+  "excludeTags": ["build", "launcher", "runtime", "game", "live", "deployment", "mutation"],
+  "includeTestIds": [],
+  "excludeTestIds": [],
+  "failFast": false,
+  "mutationAuthority": "none",
+  "authority": {
+    "observer": true,
+    "launcher": false,
+    "gameMutation": false,
+    "deployment": false
+  },
+  "timeoutSeconds": 300,
+  "maxConcurrentTests": 1
+}
