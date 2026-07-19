@@ -68,12 +68,43 @@ if ($contract) {
         'runId','sourceEngine','targetEngine','branch','phase','authority','correlationId','status',
         'failureClassOrNull','evidenceRefs','nextEngineHint','exactHead'
     )
+    Contains 'crash pre-state fields' @($contract.crashObservability.requiredBeforeCrashSensitiveOperation) @(
+        'runId','commandIdOrNull','correlationId','spanId','parentSpanIdOrNull','operation','startedAtUtc','preState','expectedSignals'
+    )
+    Contains 'crash return fields' @($contract.crashObservability.requiredWhenControlReturns) @(
+        'completedAtUtc','postState','observedSignals','terminalStatus'
+    )
+    Contains 'negative evidence fields' @($contract.crashObservability.negativeEvidenceRequiredFields) @(
+        'expectedSignal','observer','source','windowStartUtc','windowEndUtc','sourceFresh','observationComplete','observed'
+    )
+    Contains 'causality fields' @($contract.crashObservability.causalityFields) @(
+        'observation','inferenceOrNull','hypotheses','provenCauseOrNull','rootCauseEvidenceRefs'
+    )
+    Contains 'failure classifications' @($contract.crashObservability.failureClassifications) @(
+        'log_stalled','process_unobserved','process_exited','managed_exception_confirmed','native_crash_suspected',
+        'native_crash_confirmed','hang_confirmed','clean_exit','unknown_failure'
+    )
+    Contains 'native crash confirmation' @($contract.crashObservability.nativeCrashConfirmationRequires) @(
+        'correlated_external_terminal_evidence','correlated_process_identity','correlated_timestamp'
+    )
+    if ($contract.crashObservability.lastMarkerIsBoundaryNotCause) { Pass 'last marker boundary only' } else { Fail 'last marker boundary only' }
+    if ($contract.crashObservability.balancedSpansRequired) { Pass 'balanced spans required' } else { Fail 'balanced spans required' }
+    if ($contract.crashObservability.unrelatedDoneCannotCloseActiveSpan) { Pass 'unrelated done rejected' } else { Fail 'unrelated done rejected' }
+    if ($contract.crashObservability.postCrashLiveCertRequiresObservabilityPass) { Pass 'post-crash observability gate' } else { Fail 'post-crash observability gate' }
+    Match 'reconstruction gate' ([string]$contract.crashObservability.reconstructionGate) 'fresh agent.*reconstruct'
     if ($contract.remoteEvidence.rawEvidencePolicy -eq 'local_ignored_only') { Pass 'raw evidence local' } else { Fail 'raw evidence local' }
     if ($contract.remoteEvidence.maxExcerptLines -le 80 -and $contract.remoteEvidence.maxCapsuleBytes -le 65536) {
         Pass 'capsule bounds'
     } else { Fail 'capsule bounds' }
+    Contains 'allowed crash evidence' @($contract.remoteEvidence.allowedTrackedContent) @(
+        'pre_and_post_state','expected_observed_and_absent_signals','open_span','external_terminal_evidence',
+        'observation_inference_hypotheses_and_proven_cause'
+    )
     Contains 'forbidden remote evidence' @($contract.remoteEvidence.forbiddenTrackedContent) @(
         'raw_logs','saves','crash_dumps','credentials','tokens','private_configuration','machine_local_junk'
+    )
+    Contains 'non-equivalences' @($contract.nonEquivalences) @(
+        'last_marker_is_not_root_cause','stale_log_silence_is_not_negative_evidence','process_non_observation_is_not_native_crash_confirmation'
     )
 }
 
@@ -83,19 +114,38 @@ if ($schema) {
         'runId','generatedUtc','repo','branch','commitSha','sprint','lane','runtimeClassification',
         'processes','handoff','failure','evidenceRefs','proofLevel','redaction','nextDecision'
     )
+    if ($schema.properties.PSObject.Properties.Name -contains 'crashObservability') { Pass 'capsule crash observability' } else { Fail 'capsule crash observability' }
+    if ($schema.properties.failure.properties.PSObject.Properties.Name -contains 'externalTerminalEvidenceRefs') { Pass 'capsule external terminal evidence' } else { Fail 'capsule external terminal evidence' }
+    Contains 'capsule crash trace fields' @($schema.properties.crashObservability.required) @(
+        'commandId','correlationId','spanId','parentSpanId','operation','startedAtUtc','completedAtUtc','terminalStatus',
+        'preState','postState','expectedSignals','observedSignals','negativeEvidence','lastMarkerBoundaryOnly',
+        'balancedSpan','unrelatedDoneClosedSpan','causality','reconstructable'
+    )
+    Contains 'capsule negative evidence fields' @($schema.properties.crashObservability.properties.negativeEvidence.items.required) @(
+        'expectedSignal','observer','source','windowStartUtc','windowEndUtc','observerActive','sourceFresh','observationComplete','observed'
+    )
+    Contains 'capsule causality fields' @($schema.properties.crashObservability.properties.causality.required) @(
+        'observation','inference','hypotheses','provenCause','rootCauseEvidenceRefs'
+    )
+    if (@($schema.allOf).Count -ge 2) { Pass 'capsule crash conditionals' } else { Fail 'capsule crash conditionals' }
 }
 
 Match 'AGENTS contract pointer' $agents 'runtime-context-continuity\.contract\.json'
 Match 'AGENTS process protection' $agents 'process presence is context, not zombie proof'
 Match 'AGENTS owner protection' $agents 'active human, foreign, or ambiguous session must not be terminated'
 Match 'AGENTS remote capsule' $agents 'sanitized bounded runtime-context capsule'
+Match 'AGENTS crash boundary' $agents 'last marker as a boundary rather than a cause'
 Match 'AGENTS action commitment' $agents 'plan-only closeout is invalid'
 Match 'launcher contract pointer' $launcher 'runtime-context-continuity\.contract\.json'
 Match 'launcher PID rule' $launcher 'PID delta.*secondary'
 Match 'launcher owner protection' $launcher 'active human, foreign, or ambiguous'
 Match 'evidence schema pointer' $evidence 'runtime-context-capsule\.schema\.json'
+Match 'evidence pre-post state' $evidence 'pre-state.*post-state'
+Match 'evidence negative evidence' $evidence 'negative evidence'
+Match 'evidence root cause boundary' $evidence 'last marker.*boundary.*cause'
 Match 'evidence raw-log boundary' $evidence 'Raw logs.*ignored'
 Match 'remote evidence path' $readme 'docs/evidence/runtime-context'
+Match 'remote evidence reconstruction' $readme 'fresh agent.*reconstruct'
 Match 'remote evidence boundary' $readme 'Never commit raw logs'
 
 if ($agents) {
@@ -125,6 +175,21 @@ if ($fixtures) {
             $case.runtimeClassification -notin @('active_owned','stale_or_zombie_proven')) { $valid = $false }
         if ($case.remoteEvidence -eq 'raw_log') { $valid = $false }
         if ($null -ne $case.handoffCrashContextComplete -and -not $case.handoffCrashContextComplete) { $valid = $false }
+
+        if ($null -ne $case.crashObserved) {
+            if (-not $case.preStateCaptured) { $valid = $false }
+            if (-not $case.expectedSignalsDeclared) { $valid = $false }
+            if (-not $case.observedSignalsRecorded) { $valid = $false }
+            if (-not $case.negativeEvidenceFresh) { $valid = $false }
+            if (-not $case.openSpanCorrelated) { $valid = $false }
+            if (-not $case.lastMarkerBoundaryOnly) { $valid = $false }
+            if (-not $case.causalitySeparated) { $valid = $false }
+            if (-not $case.reconstructable) { $valid = $false }
+            if ($case.crashObserved -and -not ($case.postStateCaptured -or $case.processLossBoundaryCaptured)) { $valid = $false }
+            if (-not $case.crashObserved -and -not $case.postStateCaptured) { $valid = $false }
+            if ($case.failureClassification -eq 'native_crash_confirmed' -and -not $case.externalCrashEvidence) { $valid = $false }
+        }
+
         $actual = if ($valid) { 'PASS' } else { 'FAIL' }
         if ($actual -eq $case.expected) { Pass "fixture $($case.id)" } else { Fail "fixture $($case.id)" }
     }
