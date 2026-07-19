@@ -82,6 +82,12 @@
       "rule": "Completion report required",
       "description": "Every serious session must end with completed work, files changed, artifacts, validation, gaps, risks, Git/PR state, and one exact next command",
       "severity": "required"
+    },
+    {
+      "id": "HD-011",
+      "rule": "Pause-safe entry points",
+      "description": "Every script that sends keyboard/mouse input to the Bannerlord game must call Assert-TbgGameUnpaused.ps1 before sending any gameplay keys. Blind ESC is forbidden — read the runtime regent first to detect actual pause/menu state.",
+      "severity": "required"
     }
   ],
   "invalidPatterns": [

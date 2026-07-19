@@ -115,7 +115,55 @@ A stale `Status.json`, parser success, command ACK, route assignment, checkpoint
 
 ---
 
-## 6. Completion report
+## 6. Pause-safe entry point principle
+
+When a script sends keyboard or mouse input to the Bannerlord game from an external terminal, the game may be paused (escape menu open), in a settlement menu, or in any other non-campaign-map state. Sending gameplay keys to a paused game causes crashes or undefined behavior.
+
+### Rule
+
+Every script that sends keyboard/mouse input to the Bannerlord game **must** call `Assert-TbgGameUnpaused.ps1` before sending any gameplay keys. The guard:
+
+1. Reads `BlacksmithGuild_RuntimeRegent.json` to detect current state
+2. If paused (`sessionTimePaused=true`) or in a menu (`settlement_menu`, `escape`, etc.), sends ESC to dismiss
+3. Verifies dismissal by re-reading the regent
+4. Retries up to 3 times if needed
+5. Returns the post-dismissal regent state for the caller to use
+
+### Implementation
+
+```powershell
+$guardScript = Join-Path $PSScriptRoot 'Assert-TbgGameUnpaused.ps1'
+$regent = & $guardScript -BannerlordRoot $BannerlordRoot -PassThru
+if (-not $regent) { Write-Host "ERROR: pause guard failed"; exit 1 }
+```
+
+### What the guard does NOT do
+
+- It does not resume the campaign clock (the caller or mod must do that)
+- It does not navigate menus (the caller handles that)
+- It does not assume the game is on any specific surface
+
+### Affected entry points
+
+| Script | Before guard | After guard |
+|--------|-------------|-------------|
+| `Invoke-TbgPriorityEngine.ps1` | Blind ESC | Regent-aware guard |
+| `Invoke-TbgSettlementTradeTrigger.ps1` | No guard | Regent-aware guard |
+| `Run-LiveCert.ps1` | Partial (settlement only) | Regent-aware guard |
+| `Run-LiveCertEndToEnd.ps1` | Partial (checks sessionTimePaused) | Regent-aware guard |
+
+### Why not blind ESC
+
+A blind `[N]::Esc()` at script start is dangerous:
+- If the game is **not** paused, ESC **opens** the pause menu (breaking the user's current state)
+- If the game **is** paused, ESC dismisses it (correct)
+- If the game is in a settlement menu, ESC may do nothing or navigate unexpectedly
+
+The regent-aware guard reads the actual state first and only sends ESC when needed.
+
+---
+
+## 7. Completion report
 
 Every serious session must end with:
 
@@ -142,7 +190,7 @@ Interrupted or resumed work must also name:
 
 ---
 
-## 7. Enforcement
+## 8. Enforcement
 
 ### Automated validator
 
@@ -169,7 +217,7 @@ The entry sequence in `AGENTS.md` references this doctrine as step 1 (identify f
 
 ---
 
-## 8. Scope lock
+## 9. Scope lock
 
 - This doctrine applies to all agent sessions in this repository
 - It does not grant runtime, game-launch, save-mutation, or deployment authority

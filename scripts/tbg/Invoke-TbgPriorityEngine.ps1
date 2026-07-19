@@ -36,15 +36,13 @@ function Log($m) { $ts = [DateTime]::UtcNow.ToString('HH:mm:ss'); $e = "[${ts}] 
 
 Log "PRIORITY ENGINE START - Land/Survive/Purchase/Travel/Sell"
 
-# 0. Focus game
-[N]::Focus(); Start-Sleep -Milliseconds 500; Log "Game focused"
+# 0. Focus game + dismiss pause (regent-aware, not blind ESC)
+$guardScript = Join-Path $PSScriptRoot 'Assert-TbgGameUnpaused.ps1'
+$regent = & $guardScript -BannerlordRoot $BannerlordRoot -PassThru
+if (-not $regent) { Log "ERROR: pause guard failed - game not found or unresponsive"; exit 1 }
+Log "PAUSE GUARD: surface=$($regent.surface) phase=$($regent.phase) settlement=$($regent.settlement)"
 
-# 1. Dismiss pause
-[N]::Esc(); Start-Sleep -Seconds 2; Log "Pause dismissed"
-
-# 2. LAND — check current surface
-$regent = try { Get-Content (Join-Path $BannerlordRoot 'BlacksmithGuild_RuntimeRegent.json') -Raw | ConvertFrom-Json } catch { $null }
-if (-not $regent) { Log "ERROR: no regent"; exit 1 }
+# 1. LAND — check current surface
 Log "LAND: surface=$($regent.surface) phase=$($regent.phase) settlement=$($regent.settlement)"
 
 # 3. SURVIVE — read market intel + contract floors
