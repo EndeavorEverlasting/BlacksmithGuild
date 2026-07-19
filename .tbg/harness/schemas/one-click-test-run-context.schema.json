@@ -1,0 +1,40 @@
+{
+  "schema": "tbg.one-click-test.run-context.v1",
+  "type": "object",
+  "required": [
+    "schema", "runId", "correlationId", "generatedUtc", "repository",
+    "profile", "git", "authority"
+  ],
+  "properties": {
+    "schema": { "type": "string", "enum": ["tbg.one-click-test.run-context.v1"] },
+    "runId": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "generatedUtc": { "type": "string", "format": "date-time" },
+    "repository": { "type": "string" },
+    "profile": { "type": "string" },
+    "git": {
+      "type": "object",
+      "required": ["branch", "head", "dirty"],
+      "properties": {
+        "branch": { "type": "string" },
+        "head": { "type": "string" },
+        "dirty": { "type": "boolean" },
+        "worktree": { "type": "string" },
+        "prNumbers": {
+          "type": "array",
+          "items": { "type": "integer" }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "properties": {
+        "observer": { "type": "boolean" },
+        "launcher": { "type": "boolean" },
+        "gameMutation": { "type": "boolean" },
+        "deployment": { "type": "boolean" }
+      }
+    },
+    "purpose": { "type": "string" }
+  }
+}

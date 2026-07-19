@@ -1,0 +1,161 @@
+name: One-Click Test Spine
+
+on:
+  pull_request:
+    paths:
+      - 'ForgeTest.cmd'
+      - 'scripts/tbg/Invoke-TbgOneClickTest.ps1'
+      - 'scripts/tbg/Write-TbgLiveTestConsole.ps1'
+      - 'scripts/tbg/Test-TbgOneClickTestSpine.ps1'
+      - '.tbg/workflows/one-click-test.contract.json'
+      - '.tbg/harness/schemas/one-click-test-*.schema.json'
+      - '.tbg/harness/test-catalog.d/**'
+      - '.tbg/harness/test-profiles.d/**'
+      - '.tbg/harness/fixtures/one-click-test/**'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/e2e-artifact-types.registry.json'
+      - '.github/workflows/one-click-test-spine.yml'
+      - 'docs/architecture/one-click-test-spine.md'
+      - 'docs/handoff/one-click-test-operator-guide.md'
+  push:
+    paths:
+      - 'ForgeTest.cmd'
+      - 'scripts/tbg/Invoke-TbgOneClickTest.ps1'
+      - 'scripts/tbg/Write-TbgLiveTestConsole.ps1'
+      - 'scripts/tbg/Test-TbgOneClickTestSpine.ps1'
+      - '.tbg/workflows/one-click-test.contract.json'
+      - '.tbg/harness/schemas/one-click-test-*.schema.json'
+      - '.tbg/harness/test-catalog.d/**'
+      - '.tbg/harness/test-profiles.d/**'
+      - '.tbg/harness/fixtures/one-click-test/**'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/e2e-artifact-types.registry.json'
+      - '.github/workflows/one-click-test-spine.yml'
+      - 'docs/architecture/one-click-test-spine.md'
+      - 'docs/handoff/one-click-test-operator-guide.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  one-click-test-spine:
+    name: One-Click Test Spine Validation
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse TBG JSON for one-click test spine
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $jsonFiles = @(
+            '.tbg/workflows/one-click-test.contract.json',
+            '.tbg/harness/schemas/one-click-test-run-context.schema.json',
+            '.tbg/harness/schemas/one-click-test-catalog-entry.schema.json',
+            '.tbg/harness/schemas/one-click-test-profile.schema.json',
+            '.tbg/harness/schemas/one-click-test-event.schema.json',
+            '.tbg/harness/schemas/one-click-test-artifact-registry.schema.json',
+            '.tbg/harness/schemas/one-click-test-result.schema.json'
+          )
+          foreach ($jsonFile in $jsonFiles) {
+            Get-Content -LiteralPath $jsonFile -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "JSON OK: $jsonFile"
+          }
+
+      - name: Parse all catalog descriptors
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $catalogFiles = Get-ChildItem -LiteralPath '.tbg/harness/test-catalog.d' -Recurse -File -Filter '*.test.json'
+          foreach ($f in $catalogFiles) {
+            Get-Content -LiteralPath $f.FullName -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "CATALOG OK: $($f.FullName)"
+          }
+
+      - name: Parse all profiles
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $profileFiles = Get-ChildItem -LiteralPath '.tbg/harness/test-profiles.d' -File -Filter '*.profile.json'
+          foreach ($f in $profileFiles) {
+            Get-Content -LiteralPath $f.FullName -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "PROFILE OK: $($f.FullName)"
+          }
+
+      - name: Run one-click test spine validator (PowerShell Core)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDir = './artifacts/latest/one-click-test-ci'
+          New-Item -ItemType Directory -Force -Path $diagnosticDir | Out-Null
+          $logPath = Join-Path $diagnosticDir 'validator.log'
+          try {
+            ./scripts/tbg/Test-TbgOneClickTestSpine.ps1 *>&1 | Tee-Object -FilePath $logPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $logPath -Append | Write-Host
+            throw
+          }
+
+      - name: Run ForgeTest.cmd list
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./ForgeTest.cmd list --no-pause
+
+      - name: Run ForgeTest.cmd default-static profile
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./ForgeTest.cmd run --profile default-static --no-pause
+
+      - name: Upload one-click test diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: one-click-test-spine-ci-${{ github.run_id }}
+          path: |
+            artifacts/latest/one-click-test-ci/validator.log
+            artifacts/latest/one-click-test/one-click-test.result.json
+            artifacts/latest/one-click-test/one-click-test.report.md
+          if-no-files-found: ignore
+          retention-days: 14
+
+  windows-powershell-validation:
+    name: One-Click Test Windows PowerShell 5.1
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run one-click test spine validator (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $diagnosticDir = '.\artifacts\latest\one-click-test-windows-ci'
+          $logPath = Join-Path $diagnosticDir 'validator.log'
+          New-Item -ItemType Directory -Force -Path $diagnosticDir | Out-Null
+          try {
+            .\scripts\tbg\Test-TbgOneClickTestSpine.ps1 *>&1 | Tee-Object -FilePath $logPath
+          }
+          catch {
+            $_ | Out-String | Tee-Object -FilePath $logPath -Append | Write-Host
+            throw
+          }
+
+      - name: Run ForgeTest.cmd list (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\ForgeTest.cmd list --no-pause
+
+      - name: Upload Windows PowerShell 5.1 diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: one-click-test-windows-ci-${{ github.run_id }}
+          path: artifacts/latest/one-click-test-windows-ci/validator.log
+          if-no-files-found: ignore
+          retention-days: 14

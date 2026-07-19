@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.end-to-end-harness",
+  "displayName": "E2E Harness Contract Validation",
+  "ownerLane": "harness-spine/operator-test-frontdoor",
+  "sourcePath": "scripts/tbg/Test-TbgEndToEndHarness.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgEndToEndHarness.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates E2E harness contract compliance.",
+  "tags": ["static", "contract", "harness", "core"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "main"}
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "tbg.one-click-test.profile.v1",
+  "profileId": "default-static",
+  "displayName": "Default Static Profile",
+  "description": "Static and contract checks only. No game, build, launcher, or runtime access. Safe for any checkout.",
+  "proofClass": "composed-static-e2e",
+  "includeTags": ["static", "contract", "test"],
+  "excludeTags": ["build", "launcher", "runtime", "game", "smoke", "live"],
+  "includeTestIds": [],
+  "excludeTestIds": [],
+  "failFast": false,
+  "mutationAuthority": "none",
+  "authority": {
+    "observer": false,
+    "launcher": false,
+    "gameMutation": false,
+    "deployment": false
+  },
+  "timeoutSeconds": 300,
+  "maxConcurrentTests": 1
+}

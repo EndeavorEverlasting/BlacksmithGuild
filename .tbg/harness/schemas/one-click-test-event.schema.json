@@ -1,0 +1,28 @@
+{
+  "schema": "tbg.one-click-test.event.v1",
+  "type": "object",
+  "required": [
+    "eventId", "eventType", "runId", "correlationId", "timestamp", "ingestionSequence"
+  ],
+  "properties": {
+    "eventId": { "type": "string" },
+    "eventType": {
+      "type": "string",
+      "enum": [
+        "run.started", "profile.selected", "test.discovered", "test.skipped",
+        "test.started", "test.stdout", "test.stderr", "test.completed",
+        "test.failed", "artifact.registered", "trigger.candidate",
+        "run.completed", "run.blocked"
+      ]
+    },
+    "runId": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "parentEventId": { "type": ["string", "null"] },
+    "testId": { "type": ["string", "null"] },
+    "source": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "ingestionSequence": { "type": "integer" },
+    "proofLevel": { "type": "string" },
+    "payload": { "type": "object" }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "tbg.one-click-test.fixture.v1",
+  "fixtureId": "cycle-detection-rejection",
+  "description": "Tests that cyclic dependencies between tests are rejected",
+  "cycleTests": [
+    {"testId": "core.cycle-a", "dependencies": ["core.cycle-b"]},
+    {"testId": "core.cycle-b", "dependencies": ["core.cycle-c"]},
+    {"testId": "core.cycle-c", "dependencies": ["core.cycle-a"]}
+  ],
+  "expectedBehavior": "rejected",
+  "proofCeiling": "static test"
+}

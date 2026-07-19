@@ -1,0 +1,48 @@
+{
+  "schema": "tbg.one-click-test.profile.v1",
+  "type": "object",
+  "required": [
+    "profileId", "displayName", "description", "proofClass",
+    "includeTags", "excludeTags", "includeTestIds", "excludeTestIds",
+    "failFast", "mutationAuthority", "authority"
+  ],
+  "properties": {
+    "profileId": { "type": "string" },
+    "displayName": { "type": "string" },
+    "description": { "type": "string" },
+    "schema": { "type": "string", "enum": ["tbg.one-click-test.profile.v1"] },
+    "proofClass": { "type": "string" },
+    "includeTags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "excludeTags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "includeTestIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "excludeTestIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "failFast": { "type": "boolean" },
+    "mutationAuthority": {
+      "type": "string",
+      "enum": ["none", "local_write", "runtime_read", "runtime_write", "deployment"]
+    },
+    "authority": {
+      "type": "object",
+      "properties": {
+        "observer": { "type": "boolean" },
+        "launcher": { "type": "boolean" },
+        "gameMutation": { "type": "boolean" },
+        "deployment": { "type": "boolean" }
+      }
+    },
+    "timeoutSeconds": { "type": "integer" },
+    "maxConcurrentTests": { "type": "integer" }
+  }
+}

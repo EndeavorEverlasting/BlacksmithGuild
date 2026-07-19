@@ -25,6 +25,7 @@ Thumbs.db
 *.hdmp
 *.crash
 core
+!.tbg/harness/test-catalog.d/core/
 
 # Secrets / credentials
 .env

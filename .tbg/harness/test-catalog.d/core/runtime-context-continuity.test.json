@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.runtime-context-continuity",
+  "displayName": "Runtime Context Continuity Validation",
+  "ownerLane": "harness-spine/operator-test-frontdoor",
+  "sourcePath": "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates runtime context continuity contract.",
+  "tags": ["static", "contract", "harness", "core"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "origin/main"}
+}

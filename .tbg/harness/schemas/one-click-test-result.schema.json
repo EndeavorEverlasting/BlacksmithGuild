@@ -1,0 +1,56 @@
+{
+  "schema": "tbg.one-click-test.result.v1",
+  "type": "object",
+  "required": [
+    "schema", "runId", "profile", "status", "proofLevel",
+    "proofCeiling", "tests", "artifacts", "finalGit"
+  ],
+  "properties": {
+    "schema": { "type": "string", "enum": ["tbg.one-click-test.result.v1"] },
+    "runId": { "type": "string" },
+    "correlationId": { "type": "string" },
+    "profile": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "failed", "blocked", "cancelled"]
+    },
+    "proofLevel": { "type": "string" },
+    "proofCeiling": { "type": "string" },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["testId", "status", "exitCode", "message", "elapsed", "proofLevel"],
+        "properties": {
+          "testId": { "type": "string" },
+          "status": { "type": "string", "enum": ["passed", "failed", "skipped", "blocked"] },
+          "exitCode": { "type": "integer" },
+          "message": { "type": "string" },
+          "elapsed": { "type": "string" },
+          "proofLevel": { "type": "string" },
+          "stdoutPath": { "type": "string" },
+          "stderrPath": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "finalGit": {
+      "type": "object",
+      "properties": {
+        "unchanged": { "type": "boolean" },
+        "status": { "type": "string" }
+      }
+    },
+    "failure": { "type": ["string", "null"] },
+    "blocker": { "type": ["string", "null"] }
+  }
+}

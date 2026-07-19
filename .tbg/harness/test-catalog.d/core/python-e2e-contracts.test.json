@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.python-e2e-contracts",
+  "displayName": "Python E2E Contracts",
+  "ownerLane": "harness-spine/operator-test-frontdoor",
+  "sourcePath": "tests/harness/test_tbg_end_to_end_harness.py",
+  "command": "python",
+  "arguments": ["tests/harness/test_tbg_end_to_end_harness.py"],
+  "supportedHosts": ["win", "linux", "macos"],
+  "requiredTools": ["python"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Dependency-free Linux/Windows static E2E contracts.",
+  "tags": ["static", "contract", "python", "e2e", "core"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "main"}
+}
