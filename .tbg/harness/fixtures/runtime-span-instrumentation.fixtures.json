@@ -1,0 +1,26 @@
+{
+  "schema": "TbgRuntimeSpanInstrumentationFixture.v1",
+  "cases": [
+    {
+      "id": "nested-success",
+      "expect": "pass",
+      "events": [
+        {"eventType": "span.started", "spanId": "governor", "parentSpanId": null},
+        {"eventType": "span.started", "spanId": "selector", "parentSpanId": "governor"},
+        {"eventType": "span.completed", "spanId": "selector", "parentSpanId": "governor"},
+        {"eventType": "span.completed", "spanId": "governor", "parentSpanId": null}
+      ]
+    },
+    {
+      "id": "unrelated-terminal-does-not-close-parent",
+      "expect": "pass",
+      "events": [
+        {"eventType": "span.started", "spanId": "parent", "parentSpanId": null},
+        {"eventType": "span.started", "spanId": "child", "parentSpanId": "parent"},
+        {"eventType": "span.completed", "spanId": "unrelated", "parentSpanId": null},
+        {"eventType": "span.completed", "spanId": "child", "parentSpanId": "parent"},
+        {"eventType": "span.completed", "spanId": "parent", "parentSpanId": null}
+      ]
+    }
+  ]
+}

@@ -5,6 +5,8 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
+using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.DevTools.Diagnostics;
 using BlacksmithGuild.Market;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
@@ -75,6 +77,10 @@ namespace BlacksmithGuild.MapTrade
 
         public static bool StartRouteNow(string source = RunAutonomousVisibleTradeRouteNowCommand)
         {
+            var span = AutomationRuntimeEventEmitter.BeginSpan(
+                "MapTradeAutonomousService.StartRouteNow",
+                expectedSignal: "route_preflight_completed_or_blocked",
+                preState: RuntimeStateSnapshot.Capture(source));
             LastFailReason = null;
             _abortRequested = false;
             GameSessionState.Refresh();
@@ -82,18 +88,21 @@ namespace BlacksmithGuild.MapTrade
             if (!EngineToggleAuthority.IsEngineEnabled(EngineToggleKey.MapTrade))
             {
                 LastFailReason = "MapTrade engine disabled by authority";
+                AutomationRuntimeEventEmitter.BlockSpan(span, LastFailReason, RuntimeStateSnapshot.Capture(source));
                 return false;
             }
 
             if (!GameSessionState.IsCampaignMapReady)
             {
                 LastFailReason = GameSessionState.GetCampaignMapBlockDetail();
+                AutomationRuntimeEventEmitter.BlockSpan(span, LastFailReason, RuntimeStateSnapshot.Capture(source));
                 return false;
             }
 
             if (IsRunning)
             {
                 LastFailReason = "map trade route already in progress";
+                AutomationRuntimeEventEmitter.BlockSpan(span, LastFailReason, RuntimeStateSnapshot.Capture(source));
                 return false;
             }
 
@@ -119,6 +128,7 @@ namespace BlacksmithGuild.MapTrade
             if (!MarketIntelligenceService.RunScanNow(source))
             {
                 Finish(MapTradeRouteState.Blocked, "Blocked", "market scan failed");
+                AutomationRuntimeEventEmitter.BlockSpan(span, "market scan failed", RuntimeStateSnapshot.Capture(source));
                 return false;
             }
 
@@ -129,15 +139,26 @@ namespace BlacksmithGuild.MapTrade
             if (_activeReport.Mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
             {
                 Finish(MapTradeRouteState.Blocked, "Blocked", _activeReport.Mission.BlockReason);
+                AutomationRuntimeEventEmitter.BlockSpan(span, _activeReport.Mission.BlockReason, RuntimeStateSnapshot.Capture(source));
                 return false;
             }
 
             if (MapTradeMissionSelector.NeedsCohesionCheck(_activeReport.Mission))
             {
-                return RunCohesionCheck(source);
+                var cohesionResult = RunCohesionCheck(source);
+                if (cohesionResult)
+                    AutomationRuntimeEventEmitter.CompleteSpan(span, "cohesion_preflight_completed", RuntimeStateSnapshot.Capture(source));
+                else
+                    AutomationRuntimeEventEmitter.BlockSpan(span, _activeReport?.BlockedReason ?? "cohesion blocked", RuntimeStateSnapshot.Capture(source));
+                return cohesionResult;
             }
 
-            return BeginTravel(source);
+            var travelResult = BeginTravel(source);
+            if (travelResult)
+                AutomationRuntimeEventEmitter.CompleteSpan(span, "route_preflight_completed", RuntimeStateSnapshot.Capture(source));
+            else
+                AutomationRuntimeEventEmitter.BlockSpan(span, _activeReport?.BlockedReason ?? "travel blocked", RuntimeStateSnapshot.Capture(source));
+            return travelResult;
         }
 
         public static bool StartBranchRouteNow(string targetSettlementName, string source = BranchRouteSource)
@@ -484,9 +505,14 @@ namespace BlacksmithGuild.MapTrade
 
         private static bool BeginTravel(string source)
         {
+            var span = AutomationRuntimeEventEmitter.BeginSpan(
+                "MapTradeAutonomousService.BeginTravel",
+                expectedSignal: "travel_command_issued_or_blocked",
+                preState: RuntimeStateSnapshot.Capture(source, destination: _activeReport?.Mission?.TargetSettlementName));
             if (!MapTradeVisibleMovementDriver.TryStartTravel(_activeReport.Mission, out var detail))
             {
                 Finish(MapTradeRouteState.Blocked, "BlockedNoMovementApi", detail);
+                AutomationRuntimeEventEmitter.BlockSpan(span, detail, RuntimeStateSnapshot.Capture(source, destination: _activeReport?.Mission?.TargetSettlementName));
                 return false;
             }
 
@@ -508,6 +534,7 @@ namespace BlacksmithGuild.MapTrade
             _activeReport.Steps.Add($"TravelToTarget:{_activeReport.Mission.TargetSettlementName}");
             InGameNotice.Info($"TBG MAP TRADE MOVE: riding toward {_activeReport.Mission.TargetSettlementName}.");
             MapTradeEvidenceWriter.WriteCert(_activeReport);
+            AutomationRuntimeEventEmitter.CompleteSpan(span, "travel_command_issued", RuntimeStateSnapshot.Capture(source, destination: _activeReport.Mission.TargetSettlementName));
             return true;
         }
 
