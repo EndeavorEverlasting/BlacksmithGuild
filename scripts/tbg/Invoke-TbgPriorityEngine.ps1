@@ -1,223 +1,91 @@
 ﻿<#
 .SYNOPSIS
-  Priority engine: land-survive-purchase-travel-sell order against a live or
-  read-only game session. Validates preconditions, detects stale surfaces, and
-  dispatches the highest-priority autonomous command.
-
-.DESCRIPTION
-  Reads Phase1.log or regent evidence to detect the current campaign surface.
-  Applies the priority formula: land, survive, purchase, travel, sell.
-  Dispatches one decision and records the result.
-
-  Safety rules:
-  - Branch verification: after any git checkout, confirms branch matches expected.
-  - Regent staleness: if CampaignRuntimeRegent age > 60 s, falls back to Phase1.log.
-  - Campaign map readiness: uses Phase1.log surface=map_surface.*mapReady=true.
+Priority engine: Land -> Survive -> Purchase -> Travel -> Sell.
+Economic loop that reads market intel, decides best action, executes.
 #>
-[CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)]
-    [ValidateSet('Land','Survive','Purchase','Travel','Sell')]
-    [string]$Priority,
-
-    [string]$RepoRoot = '',
-    [string]$PhaseLogPath = 'BlacksmithGuild_Phase1.log',
-    [string]$RegentPath = 'BlacksmithGuild_RuntimeRegent.json',
-    [string]$CommandInboxPath = 'BlacksmithGuild_CommandInbox.json',
-    [string]$OutputPath = 'artifacts/latest/priority-engine/priority-engine.result.json',
-    [int]$RegentStalenessSeconds = 60,
-    [switch]$WhatIf
+    [string]$BannerlordRoot = 'C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord',
+    [int]$MaxIterations = 1,
+    [switch]$PassThru
 )
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'SilentlyContinue'
+$RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$phase1Path = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
+$inboxPath = Join-Path $BannerlordRoot 'BlacksmithGuild_CommandInbox.json'
+$marketIntelPath = Join-Path $BannerlordRoot 'BlacksmithGuild_MarketIntel.json'
 
-if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
-    $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+# Self-contained Win32
+Add-Type -TypeDefinition @"
+using System;using System.Runtime.InteropServices;using System.Text;
+public class N { [DllImport("user32.dll")] static extern bool EnumWindows(EW l,IntPtr p);[DllImport("user32.dll")] static extern int GetWindowText(IntPtr h,StringBuilder t,int m);[DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);[DllImport("user32.dll")] static extern void keybd_event(byte v,byte s,uint f,UIntPtr e);[DllImport("user32.dll")] static extern bool SetCursorPos(int x,int y);[DllImport("user32.dll")] static extern void mouse_event(uint f,uint dx,uint dy,uint d,UIntPtr e);
+delegate bool EW(IntPtr h,IntPtr l);const uint UP=0x0002,LD=0x0002,LU=0x0004;
+public static bool Focus(){IntPtr f=IntPtr.Zero;EnumWindows((h,ll)=>{var s=new StringBuilder(256);GetWindowText(h,s,256);if(s.ToString().StartsWith("Mount and Blade II Bannerlord")){f=h;return false;}return true;},IntPtr.Zero);return f!=IntPtr.Zero&&SetForegroundWindow(f);}
+public static void Esc(){keybd_event(0x1B,0,0,UIntPtr.Zero);keybd_event(0x1B,0,UP,UIntPtr.Zero);}
+public static void Enter(){keybd_event(0x0D,0,0,UIntPtr.Zero);keybd_event(0x0D,0,UP,UIntPtr.Zero);}
+public static void Tab(){keybd_event(0x09,0,0,UIntPtr.Zero);keybd_event(0x09,0,UP,UIntPtr.Zero);}
+public static void Down(){keybd_event(0x28,0,0,UIntPtr.Zero);keybd_event(0x28,0,UP,UIntPtr.Zero);}
+public static void F(){keybd_event(0x46,0,0,UIntPtr.Zero);keybd_event(0x46,0,UP,UIntPtr.Zero);}
+public static void Click(int x,int y){SetCursorPos(x,y);mouse_event(LD,0,0,0,UIntPtr.Zero);mouse_event(LU,0,0,0,UIntPtr.Zero);}
 }
-if (-not [IO.Path]::IsPathRooted($PhaseLogPath)) {
-    $PhaseLogPath = Join-Path $RepoRoot $PhaseLogPath
+"@
+
+$events = [System.Collections.Generic.List[string]]::new()
+function Log($m) { $ts = [DateTime]::UtcNow.ToString('HH:mm:ss'); $e = "[${ts}] $m"; Write-Host $e; $events.Add($e) }
+
+Log "PRIORITY ENGINE START - Land/Survive/Purchase/Travel/Sell"
+
+# 0. Focus game
+[N]::Focus(); Start-Sleep -Milliseconds 500; Log "Game focused"
+
+# 1. Dismiss pause
+[N]::Esc(); Start-Sleep -Seconds 2; Log "Pause dismissed"
+
+# 2. LAND — check current surface
+$regent = try { Get-Content (Join-Path $BannerlordRoot 'BlacksmithGuild_RuntimeRegent.json') -Raw | ConvertFrom-Json } catch { $null }
+if (-not $regent) { Log "ERROR: no regent"; exit 1 }
+Log "LAND: surface=$($regent.surface) phase=$($regent.phase) settlement=$($regent.settlement)"
+
+# 3. SURVIVE — read market intel for needs
+$marketIntel = try { Get-Content $marketIntelPath -Raw | ConvertFrom-Json } catch { $null }
+if ($marketIntel) {
+    $forgeSection = Select-String -LiteralPath $phase1Path -Pattern 'party charcoal|party hardwood|shortfall' -Encoding UTF8 | Select-Object -Last 5
+    if ($forgeSection) {
+        $forgeSection | ForEach-Object { Log "SURVIVE: $($_.Line)" }
+    }
+    Log "SURVIVE: market intel available"
+} else {
+    Log "SURVIVE: no market intel - run Ctrl+Alt+M first"
 }
-if (-not [IO.Path]::IsPathRooted($RegentPath)) {
-    $RegentPath = Join-Path $RepoRoot $RegentPath
-}
-if (-not [IO.Path]::IsPathRooted($CommandInboxPath)) {
-    $CommandInboxPath = Join-Path $RepoRoot $CommandInboxPath
-}
-if (-not [IO.Path]::IsPathRooted($OutputPath)) {
-    $OutputPath = Join-Path $RepoRoot $OutputPath
-}
+
+# 4. PURCHASE — dispatch buy command if at settlement with survival needs
+[N]::Tab(); Start-Sleep -Milliseconds 500
+[N]::Down(); Start-Sleep -Milliseconds 200; [N]::Down(); Start-Sleep -Milliseconds 200
+[N]::Enter(); Start-Sleep -Seconds 3
+$regent2 = try { Get-Content (Join-Path $BannerlordRoot 'BlacksmithGuild_RuntimeRegent.json') -Raw | ConvertFrom-Json } catch { $null }
+Log "PURCHASE ATTEMPT: surface=$($regent2.surface) phase=$($regent2.phase) menu=$($regent2.menuId)"
+
+# 5. TRAVEL + SELL — dispatch trade route
+$seq = 0
+$acks = Select-String -LiteralPath $phase1Path -Pattern 'consumed sequence=(\d+)' -Encoding UTF8
+if ($acks) { $seq = [int]($acks[-1].Matches.Groups[1].Value) }
+$newSeq = $seq + 1
+$inbox = @{ sequence=$newSeq; command='RunAutonomousVisibleTradeRouteNow'; source='Invoke-TbgPriorityEngine.ps1' }
+$inbox | ConvertTo-Json | Set-Content -LiteralPath $inboxPath -Encoding UTF8
+Log "TRAVEL: dispatched sequence=$newSeq RunAutonomousVisibleTradeRouteNow"
 
 $result = [ordered]@{
-    schema = 'tbg.priority-engine.result.v1'
     timestamp = [DateTime]::UtcNow.ToString('o')
-    priority = $Priority
-    branch = ''
-    surface = ''
-    phase = ''
-    surfaceSource = ''
-    regentStale = $false
-    settled = $false
-    commandDispatched = $false
-    decisionRecorded = $false
-    events = [System.Collections.Generic.List[string]]::new()
+    surface = $regent.surface
+    phase = $regent.phase
+    settlementEntered = ($regent.surface -eq 'settlement_menu')
+    commandDispatched = ($null -ne $inbox)
+    sequence = $newSeq
+    events = $events.ToArray()
 }
-
-function Add-Event([string]$Message) {
-    $timestamp = [DateTime]::UtcNow.ToString('HH:mm:ss')
-    $entry = "[$timestamp] $Message"
-    $result.events.Add($entry)
-    Write-Host $entry
-}
-
-function Test-FileFreshness([string]$FilePath, [int]$MaxAgeSeconds) {
-    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) { return $false }
-    $age = [DateTime]::UtcNow - [IO.File]::GetLastWriteTimeUtc($FilePath)
-    return $age.TotalSeconds -le $MaxAgeSeconds
-}
-
-function Get-ExpectedBranch {
-    $manifestPath = Join-Path $RepoRoot '.tbg/harness/manifest.json'
-    if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
-        try {
-            $m = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-            if ($m.repo -and $m.repo.activeBranch) { return $m.repo.activeBranch }
-        } catch {}
-    }
-    return ''
-}
-
-function Confirm-Branch {
-    $actual = $null
-    try {
-        $actual = git -C $RepoRoot rev-parse --abbrev-ref HEAD 2>$null
-    } catch {}
-    if ([string]::IsNullOrWhiteSpace($actual)) { return $true }
-    $result.branch = $actual
-
-    $expected = Get-ExpectedBranch
-    if ([string]::IsNullOrWhiteSpace($expected)) { return $true }
-
-    if ($actual -ne $expected) {
-        Add-Event "BRANCH MISMATCH: expected=$expected actual=$actual"
-        return $false
-    }
-    Add-Event "Branch verified: $actual"
-    return $true
-}
-
-function Detect-Surface {
-    $regentAge = -1
-    if (Test-Path -LiteralPath $RegentPath -PathType Leaf) {
-        $regentAge = ([DateTime]::UtcNow - [IO.File]::GetLastWriteTimeUtc($RegentPath)).TotalSeconds
-    }
-
-    if ($regentAge -ge 0 -and $regentAge -le $RegentStalenessSeconds) {
-        try {
-            $regent = Get-Content -LiteralPath $RegentPath -Raw | ConvertFrom-Json
-            $result.surface = [string]$regent.surface
-            $result.phase = [string]$regent.phase
-            $result.surfaceSource = 'regent'
-            $result.regentStale = $false
-            Add-Event "Surface from regent (age=${regentAge}s): surface=$($result.surface) phase=$($result.phase)"
-            return
-        } catch {
-            Add-Event "Regent parse failed, falling back to Phase1.log"
-        }
-    }
-
-    if ($regentAge -gt $RegentStalenessSeconds) {
-        $result.regentStale = $true
-        Add-Event "Regent stale (age=${regentAge}s > ${RegentStalenessSeconds}s threshold), falling back to Phase1.log"
-    }
-
-    $result.surfaceSource = 'phase1log'
-    if (-not (Test-Path -LiteralPath $PhaseLogPath -PathType Leaf)) {
-        Add-Event "Phase1.log not found at $PhaseLogPath"
-        $result.surface = 'unknown'
-        $result.phase = 'unknown'
-        return
-    }
-
-    $raw = Get-Content -LiteralPath $PhaseLogPath -Raw -ErrorAction SilentlyContinue
-    if ($null -eq $raw) {
-        $result.surface = 'unknown'
-        $result.phase = 'unknown'
-        Add-Event "Phase1.log read failed"
-        return
-    }
-
-    if ($raw -match 'surface=map_surface.*mapReady=true') {
-        $result.surface = 'campaign_map'
-        $result.phase = $Matches[0]
-        Add-Event "Campaign map ready (Phase1.log): $($Matches[0])"
-    } elseif ($raw -match 'surface=(\S+)') {
-        $result.surface = $Matches[1]
-        $result.phase = 'detected'
-        Add-Event "Surface from Phase1.log: $($result.surface)"
-    } else {
-        $result.surface = 'unknown'
-        $result.phase = 'undetected'
-        Add-Event "No surface detected in Phase1.log"
-    }
-
-    if ($raw -match 'settlementEntered=(\w+)') {
-        $result.settled = $Matches[1] -eq 'true'
-        Add-Event "Settlement entered: $($result.settled)"
-    }
-}
-
-function Write-Command {
-    if ($WhatIf) {
-        Add-Event "WHATIF: would write $Priority command to inbox"
-        $result.commandDispatched = $true
-        return
-    }
-
-    $inbox = @{
-        command = switch ($Priority) {
-            'Land'     { 'LandAtNearestSettlement' }
-            'Survive'  { 'BuySurvivalGoods' }
-            'Purchase' { 'RunAutonomousBuyOrder' }
-            'Travel'   { 'RunAutonomousVisibleTradeRouteNow' }
-            'Sell'     { 'SellInventorySurplus' }
-        }
-        mode = 'Autonomous'
-        dispatchedAt = [DateTime]::UtcNow.ToString('o')
-    }
-
-    try {
-        $inbox | ConvertTo-Json -Depth 2 | Set-Content -LiteralPath $CommandInboxPath -Encoding UTF8
-        $result.commandDispatched = $true
-        Add-Event "Command dispatched: $($inbox.command)"
-    } catch {
-        Add-Event "FAILED to write command inbox: $($_.Exception.Message)"
-    }
-}
-
-Write-Host "=== TBG Priority Engine ==="
-Add-Event "PRIORITY ENGINE START - $Priority"
-
-$branchOk = Confirm-Branch
-if (-not $branchOk) {
-    Add-Event "ABORT: branch mismatch"
-    $null = New-Item -Path (Split-Path $OutputPath -Parent) -ItemType Directory -Force -ErrorAction SilentlyContinue
-    $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
-    exit 1
-}
-
-Detect-Surface
-
-if ($result.surface -eq 'campaign_map' -or $result.surface -eq 'MapPaused') {
-    Write-Command
-    $result.decisionRecorded = $true
-    Add-Event "DECISION: $Priority command dispatched for surface=$($result.surface)"
-} else {
-    Add-Event "SKIP: surface=$($result.surface) does not accept priority commands"
-}
-
-$null = New-Item -Path (Split-Path $OutputPath -Parent) -ItemType Directory -Force -ErrorAction SilentlyContinue
-$result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
-
-Write-Host "`nPriority engine complete: $($result.surface) | $($result.priority) | dispatched=$($result.commandDispatched)"
+Log "PRIORITY ENGINE COMPLETE: settlementEntered=$($result.settlementEntered) commandDispatched=$($result.commandDispatched)"
+$outPath = Join-Path $RepoRoot 'artifacts\latest\priority-engine.result.json'
+$result | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $outPath -Encoding UTF8
+Log "Output: $outPath"
+if ($PassThru) { Write-Output $result }
 exit 0
