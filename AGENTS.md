@@ -40,6 +40,7 @@ Do not paste full stale handoffs into every prompt. Do not load every skill.
 - Checkpoint coherent tracked progress before broad validation, long diagnostics, runtime proof, refactoring expansion, or switching agents, models, worktrees, or environments. Include owned untracked files; a checkpoint proves preservation only.
 - Before launch, stop, build, install, or cleanup, classify existing Bannerlord processes through `.tbg/workflows/runtime-context-continuity.contract.json`; process presence is context, not zombie proof, and an active human, foreign, or ambiguous session must not be terminated.
 - Raw runtime evidence stays ignored; cross-agent or remote diagnosis uses a sanitized bounded runtime-context capsule registered by that contract.
+- For crash diagnosis, treat the last marker as a boundary rather than a cause; require correlated pre-state, post-state or process-loss, expected, observed, and valid absent signals, plus external evidence before confirming a native crash.
 - External tools, AgentSwitchboard, SysAdminSuite, and Continuum may coordinate or accelerate work, but BlacksmithGuild retains proof, policy, runtime, save-safety, and product authority.
 
 ## Proof and execution discipline
