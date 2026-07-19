@@ -59,6 +59,7 @@ try {
     $launchId = "forge-" + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ") + "-" + [Guid]::NewGuid().ToString("N").Substring(0, 6)
     $launchIdPath = Join-Path $BannerlordRoot 'BlacksmithGuild_LaunchId.json'
     @{ launchId = $launchId; generatedUtc = [DateTime]::UtcNow.ToString("o"); sessionMode = $SessionAuthorityMode } | ConvertTo-Json | Set-Content -LiteralPath $launchIdPath -Encoding UTF8
+    $launchId | Set-Content -LiteralPath (Join-Path $BannerlordRoot 'BlacksmithGuild_LaunchId.txt') -Encoding ASCII
     Write-Host "Launch ID: $launchId"
 
     if ($SessionAuthorityMode -eq 'FreshTestLaunch') {
