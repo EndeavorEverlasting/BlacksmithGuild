@@ -34,8 +34,11 @@ const byte VK_ESC=0x1B,VK_F=0x46,VK_ENTER=0x0D,VK_TAB=0x09,VK_DOWN=0x28,VK_A=0x4
 
 Write-Host "=== Settlement -> Trade Trigger ==="
 
-# Step 0: focus game window
-[NavKeys]::FocusGame(); Start-Sleep -Milliseconds 800; Write-Host "Game focused"
+# Step 0: pause guard — dismiss escape menu if open
+$guardScript = Join-Path $PSScriptRoot 'Assert-TbgGameUnpaused.ps1'
+$preGuard = & $guardScript -BannerlordRoot $BannerlordRoot -PassThru
+if (-not $preGuard) { Write-Host "ERROR: pause guard failed"; exit 1 }
+Write-Host "Pause guard: surface=$($preGuard.surface) paused=$($preGuard.sessionTimePaused)"
 
 $phase1Path = Join-Path $BannerlordRoot 'BlacksmithGuild_Phase1.log'
 $regentPath = Join-Path $BannerlordRoot 'BlacksmithGuild_RuntimeRegent.json'

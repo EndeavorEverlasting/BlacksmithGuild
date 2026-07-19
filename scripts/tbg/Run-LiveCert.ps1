@@ -60,15 +60,17 @@ for ($i = 0; $i -lt 30; $i++) {
 Start-Sleep -Seconds 30
 Log "Waiting for game to reach campaign map..."
 
-# Phase 2: Find game window and focus
+# Phase 2: Find game window, focus, and dismiss pause
 for ($i = 0; $i -lt 15; $i++) {
     if ([G]::Focus("Mount and Blade II")) { Log "Game window focused"; break }
     Start-Sleep -Seconds 2
 }
 
-# Check regent
-$regent = Get-Content (Join-Path $root 'BlacksmithGuild_RuntimeRegent.json') -Raw | ConvertFrom-Json 2>$null
-Log "Surface: $($regent.surface) Phase: $($regent.phase) Menu: $($regent.menuId)"
+# Dismiss pause menu (regent-aware, not blind)
+$guardScript = Join-Path $PSScriptRoot 'Assert-TbgGameUnpaused.ps1'
+$regent = & $guardScript -PassThru
+if (-not $regent) { Log "WARN: pause guard returned null, reading regent directly"; $regent = Get-Content (Join-Path $root 'BlacksmithGuild_RuntimeRegent.json') -Raw | ConvertFrom-Json 2>$null }
+Log "After pause guard: Surface=$($regent.surface) Phase=$($regent.phase) Menu=$($regent.menuId)"
 
 # Phase 3: If at settlement_menu, navigate to Leave
 if ($regent.surface -eq 'settlement_menu') {
