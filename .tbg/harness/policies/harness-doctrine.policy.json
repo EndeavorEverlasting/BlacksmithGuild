@@ -88,6 +88,12 @@
       "rule": "Pause-safe entry points",
       "description": "Every script that sends keyboard/mouse input to the Bannerlord game must call Assert-TbgGameUnpaused.ps1 before sending any gameplay keys. Blind ESC is forbidden — read the runtime regent first to detect actual pause/menu state.",
       "severity": "required"
+    },
+    {
+      "id": "HD-012",
+      "rule": "Error-over-crash with version clarity",
+      "description": "When a game version is incompatible, throw a clear error naming the expected version, installed version, missing API, and target version. Never crash silently. Every version-incompatibility error must tell the user exactly what to do.",
+      "severity": "required"
     }
   ],
   "invalidPatterns": [

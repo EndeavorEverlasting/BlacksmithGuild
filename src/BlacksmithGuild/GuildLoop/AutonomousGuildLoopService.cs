@@ -128,7 +128,16 @@ namespace BlacksmithGuild.GuildLoop
 
             AddStep("MarketScan", "Success", MarketIntelligenceService.Summary?.NearestTown ?? "scan ok");
             _activeReport.Phase = GuildLoopPhase.SelectMission;
-            _mission = MapTradeMissionSelector.SelectBestMission();
+            try
+            {
+                _mission = MapTradeMissionSelector.SelectBestMission();
+            }
+            catch (Exception ex)
+            {
+                AddStep("SelectMission", "Crashed", $"{ex.GetType().Name}: {ex.Message}. BuyItemsAction removed in v1.4.7 — update to v1.5.0+.");
+                Complete("Failed", $"SelectBestMission threw: {ex.Message}");
+                return false;
+            }
             if (_mission.MissionType == MapTradeMissionType.BlockedNoSafeMission)
             {
                 AddStep("SelectMission", "Blocked", _mission.BlockReason);

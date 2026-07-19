@@ -24,6 +24,23 @@ namespace BlacksmithGuild.MapTrade
 
         public static MapTradeMission SelectBestMission()
         {
+            try
+            {
+                return SelectBestMissionInner();
+            }
+            catch (Exception ex)
+            {
+                var reason = $"SelectBestMission crashed: {ex.GetType().Name}: {ex.Message}. "
+                    + "The mod requires BuyItemsAction which was removed in Bannerlord v1.4.7. "
+                    + "Update to v1.5.0+ or use a compatible beta version.";
+                DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=SelectBestMission ex={ex.GetType().Name}:{ex.Message}", showInGame: true);
+                GuildLog.Info($"[ERROR] [MapTrade] {reason}", showInGame: true);
+                return Blocked(reason);
+            }
+        }
+
+        private static MapTradeMission SelectBestMissionInner()
+        {
             DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=SelectBestMission:cachedScan", showInGame: false);
             if (!MarketIntelligenceService.HasCachedScan
                 && !MarketIntelligenceService.RunScanNow("MapTradeMissionSelector"))

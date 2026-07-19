@@ -133,7 +133,16 @@ namespace BlacksmithGuild.MapTrade
 
             _activeReport.Steps.Add("MarketScan:Success");
             DebugLogger.Test("[TBG ENGINE START] engine=MapTrade step=SelectBestMission", showInGame: false);
-            _activeReport.Mission = MapTradeMissionSelector.SelectBestMission();
+            try
+            {
+                _activeReport.Mission = MapTradeMissionSelector.SelectBestMission();
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=SelectBestMission ex={ex.GetType().Name}:{ex.Message}", showInGame: true);
+                Finish(MapTradeRouteState.Failed, "Failed", $"SelectBestMission threw: {ex.Message}. BuyItemsAction removed in v1.4.7 — update to v1.5.0+.");
+                return false;
+            }
             DebugLogger.Test($"[TBG ENGINE DONE] engine=MapTrade step=SelectBestMission type={_activeReport.Mission?.MissionType}", showInGame: false);
             _activeReport.State = MapTradeRouteState.SelectMission;
 

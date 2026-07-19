@@ -163,7 +163,67 @@ The regent-aware guard reads the actual state first and only sends ESC when need
 
 ---
 
-## 7. Completion report
+## 7. Error-over-crash principle
+
+When a game version is incompatible with the mod, the mod must throw a clear error message telling the user to update — not crash the game.
+
+### Rule
+
+Every engine, service, or driver that calls into game APIs that may throw due to version incompatibility **must** wrap those calls in try/catch and return a blocked/failed state with a human-readable error message. The error message must:
+
+1. Name the exception type and message
+2. Tell the user what to do: "Update Bannerlord and reinstall the mod"
+3. Log to both Phase1.log (via `DebugLogger.Test`) and the in-game display (via `GuildLog.Info`)
+
+### Example
+
+```csharp
+try
+{
+    mission = MapTradeMissionSelector.SelectBestMission();
+}
+catch (Exception ex)
+{
+    var reason = $"SelectBestMission crashed: {ex.GetType().Name}: {ex.Message}. "
+        + "Update Bannerlord and reinstall the mod.";
+    DebugLogger.Test($"[TBG ENGINE ERROR] engine=MapTrade step=SelectBestMission ex={ex.GetType().Name}:{ex.Message}", showInGame: true);
+    GuildLog.Info($"[ERROR] [MapTrade] {reason}", showInGame: true);
+    return Blocked(reason);
+}
+```
+
+### Why not just let it crash
+
+- A crash gives the user no actionable information
+- A crash loses all in-progress state (route, market intel, decision log)
+- A clear error lets the user understand the problem and fix it
+- A blocked state lets the mod recover gracefully on next tick
+
+### Version clarity in error messages
+
+Every version-incompatibility error must state:
+
+1. **What the mod expects**: the exact game version family (e.g., "v1.4.7")
+2. **What the user has**: the installed version (if detectable)
+3. **What broke**: the specific missing API or type (e.g., "BuyItemsAction was removed")
+4. **What to do**: the exact target version (e.g., "Update to v1.5.0+")
+
+Example: `"BuyItemsAction removed in v1.4.7 — update to v1.5.0+"`
+
+Bad: `"Update Bannerlord and reinstall the mod"` (doesn't say which version)
+
+### Where this applies
+
+| Crash site | Before | After |
+|-----------|--------|-------|
+| `MapTradeMissionSelector.SelectBestMission()` | Zero try/catch (native crash) | Returns `Blocked` on exception |
+| `MapTradeAutonomousService.StartRouteNow` | No guard around SelectBestMission | try/catch + `Finish(Failed)` |
+| `AutonomousGuildLoopService.ContinueFromMarketScan` | No guard around SelectBestMission | try/catch + `Complete(Failed)` |
+| `MapTradeVanillaTradeDriver.RunProbeExecutionNow` | No guard around SelectBestMission | try/catch + null mission |
+
+---
+
+## 8. Completion report
 
 Every serious session must end with:
 
