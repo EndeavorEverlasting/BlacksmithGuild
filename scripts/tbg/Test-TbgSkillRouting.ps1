@@ -94,11 +94,15 @@ $warnings = [System.Collections.Generic.List[string]]::new()
 $manifestRelative = '.tbg/skills/manifest.json'
 $schemaRelative = '.tbg/harness/schemas/skill-manifest.schema.json'
 $agentsRelative = 'AGENTS.md'
+$operationsRelative = '.tbg/harness/api/operations.json'
+$artifactRegistryRelative = '.tbg/harness/artifact-engines.registry.json'
 $manifestPath = Resolve-TbgRepoPath $manifestRelative
 $schemaPath = Resolve-TbgRepoPath $schemaRelative
 $agentsPath = Resolve-TbgRepoPath $agentsRelative
+$operationsPath = Resolve-TbgRepoPath $operationsRelative
+$artifactRegistryPath = Resolve-TbgRepoPath $artifactRegistryRelative
 
-foreach ($requiredPath in @($manifestPath, $schemaPath, $agentsPath)) {
+foreach ($requiredPath in @($manifestPath, $schemaPath, $agentsPath, $operationsPath, $artifactRegistryPath)) {
     if (-not (Test-Path -LiteralPath $requiredPath -PathType Leaf)) {
         Add-TbgIssue -List $errors -Message "The required routing file '$requiredPath' is missing."
     }
@@ -106,10 +110,14 @@ foreach ($requiredPath in @($manifestPath, $schemaPath, $agentsPath)) {
 
 $manifest = $null
 $schema = $null
+$operations = $null
+$artifactRegistry = $null
 if ($errors.Count -eq 0) {
     try {
         $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
         $schema = Get-Content -LiteralPath $schemaPath -Raw | ConvertFrom-Json
+        $operations = Get-Content -LiteralPath $operationsPath -Raw | ConvertFrom-Json
+        $artifactRegistry = Get-Content -LiteralPath $artifactRegistryPath -Raw | ConvertFrom-Json
     }
     catch {
         Add-TbgIssue -List $errors -Message "The skill manifest or its schema could not be parsed as JSON: $($_.Exception.Message)"
@@ -222,6 +230,60 @@ if ($null -ne $manifest) {
         }
     }
 
+    $requiredCapabilities = [ordered]@{
+        'start-runtime-observer' = 'ForgeRuntimeObserver.cmd / Start-TbgGameRuntimeObserver.ps1'
+        'inspect-runtime-observer-status' = 'ForgeRuntimeObserver.cmd status'
+        'stop-owned-runtime-observer' = 'ForgeRuntimeObserver.cmd stop'
+        'validate-runtime-event-observation' = 'scripts/tbg/Test-TbgRuntimeEventObservation.ps1'
+        'assemble-runtime-incident' = 'Resolve-TbgRuntimeIncident.ps1 / ForgeRuntimeIncident.cmd'
+        'validate-runtime-incident' = 'scripts/tbg/Test-TbgRuntimeIncidentAssembler.ps1'
+        'inspect-runtime-incident-status' = 'Resolve-TbgRuntimeIncident.ps1 / ForgeRuntimeIncident.cmd'
+    }
+    foreach ($capabilityId in $requiredCapabilities.Keys) {
+        $capability = @($operations.operations | Where-Object { $_.id -eq $capabilityId } | Select-Object -First 1)
+        if ($capability.Count -ne 1) {
+            Add-TbgIssue -List $errors -Message "Required runtime-observer capability '$capabilityId' is missing."
+            continue
+        }
+        if ([string]$capability[0].entrypoint -ne [string]$requiredCapabilities[$capabilityId]) {
+            Add-TbgIssue -List $errors -Message "Capability '$capabilityId' does not use its exact merged entrypoint."
+        }
+        foreach ($property in @('mode', 'requiredInputs', 'outputArtifacts', 'riskClass', 'proofCeiling', 'ownershipLease', 'forbiddenConditions')) {
+            if ($capability[0].PSObject.Properties.Name -notcontains $property) {
+                Add-TbgIssue -List $errors -Message "Capability '$capabilityId' is missing '$property'."
+            }
+        }
+    }
+
+    $requiredTriggers = [ordered]@{
+        'process_lost' = 'runtime-incident-triage'
+        'external_terminal_evidence' = 'runtime-incident-triage'
+        'window_error_or_unknown_quarantine' = 'window-lifecycle-runtime'
+        'open_span_at_process_loss' = 'runtime-incident-triage'
+        'heartbeat_stalled_with_live_process' = 'runtime-incident-triage'
+        'observer_gap' = 'runtime-incident-triage'
+        'incident_ready' = 'runtime-evidence-certification'
+    }
+    foreach ($triggerId in $requiredTriggers.Keys) {
+        $trigger = @($artifactRegistry.triggers | Where-Object { $_.id -eq $triggerId } | Select-Object -First 1)
+        if ($trigger.Count -ne 1 -or [string]$trigger[0].mode -ne 'read_only_route' -or [string]$trigger[0].primarySkill -ne [string]$requiredTriggers[$triggerId]) {
+            Add-TbgIssue -List $errors -Message "Trigger '$triggerId' must be a read-only route to '$($requiredTriggers[$triggerId])'."
+        }
+    }
+    $authorityFixtures = @(
+        [pscustomobject]@{ name = 'window disappearance'; trigger = 'window_error_or_unknown_quarantine'; forbidden = 'click' },
+        [pscustomobject]@{ name = 'stale log'; trigger = 'process_lost'; forbidden = 'proof_promotion' },
+        [pscustomobject]@{ name = 'process presence'; trigger = 'heartbeat_stalled_with_live_process'; forbidden = 'kill' },
+        [pscustomobject]@{ name = 'incident ready'; trigger = 'incident_ready'; forbidden = 'live_certification' },
+        [pscustomobject]@{ name = 'observer gap'; trigger = 'observer_gap'; forbidden = 'negative_evidence_confidence' }
+    )
+    foreach ($fixture in $authorityFixtures) {
+        $trigger = @($artifactRegistry.triggers | Where-Object { $_.id -eq $fixture.trigger } | Select-Object -First 1)
+        if ($trigger.Count -ne 1 -or @($trigger[0].forbiddenAuthority) -notcontains $fixture.forbidden) {
+            Add-TbgIssue -List $errors -Message "Forbidden-authority fixture '$($fixture.name)' is not blocked by trigger '$($fixture.trigger)'."
+        }
+    }
+
     $duplicates = @($skillIds | Group-Object | Where-Object Count -gt 1)
     foreach ($duplicate in $duplicates) {
         Add-TbgIssue -List $errors -Message "Skill id '$($duplicate.Name)' is registered more than once."
@@ -281,7 +343,12 @@ if ($null -ne $manifest -and $errors.Count -eq 0) {
         [pscustomobject]@{ name = 'launcher-command'; intent = 'launch Bannerlord'; path = ''; command = 'ForgeReboot.cmd'; artifact = ''; expected = 'launcher-lifecycle' },
         [pscustomobject]@{ name = 'command-ack'; intent = 'distinguish ACK from action'; path = ''; command = ''; artifact = 'CommandAck.json'; expected = 'operator-control-surface' },
         [pscustomobject]@{ name = 'movement-trade'; intent = 'prove visible trade'; path = 'src/BlacksmithGuild/MapTrade/**'; command = ''; artifact = 'buy delta'; expected = 'route-visible-trade' },
-        [pscustomobject]@{ name = 'runtime-cert-compose'; intent = 'classify proof'; path = ''; command = 'ForgeAgentStatus.cmd'; artifact = 'window-lifecycle.result.json'; expected = 'runtime-evidence-certification' }
+        [pscustomobject]@{ name = 'runtime-cert-compose'; intent = 'classify proof'; path = ''; command = 'ForgeAgentStatus.cmd'; artifact = 'window-lifecycle.result.json'; expected = 'runtime-evidence-certification' },
+        [pscustomobject]@{ name = 'observer-start'; intent = 'start runtime observer'; path = ''; command = 'ForgeRuntimeObserver.cmd'; artifact = ''; expected = 'launcher-lifecycle' },
+        [pscustomobject]@{ name = 'process-loss'; intent = 'inspect process loss'; path = ''; command = ''; artifact = 'process_lost'; expected = 'runtime-incident-triage' },
+        [pscustomobject]@{ name = 'unknown-window-trigger'; intent = 'window error or unknown quarantine'; path = ''; command = ''; artifact = 'window_error_or_unknown_quarantine'; expected = 'window-lifecycle-runtime' },
+        [pscustomobject]@{ name = 'incident-ready'; intent = 'inspect runtime incident status'; path = ''; command = 'ForgeRuntimeIncident.cmd'; artifact = 'incident_ready'; expected = 'runtime-evidence-certification' },
+        [pscustomobject]@{ name = 'artifact-trigger-route'; intent = 'route runtime observer trigger'; path = ''; command = ''; artifact = 'runtime observer trigger'; expected = 'local-artifact-engine' }
     )
 
     foreach ($fixture in $fixtures) {

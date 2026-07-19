@@ -33,6 +33,12 @@ A fresh agent passes this entry contract only when it can:
 
 BlacksmithGuild already has a product-specialized harness: a v2 skill router, workflow contracts, artifact engine, state envelope, launcher/window identity, game-compatibility gates, repo-floor tooling, stale-PR recovery, and live runtime evidence lanes. The E2E and handoff layer extends those authorities; it does not replace them.
 
+## Runtime observer routing
+
+For a completed external observer run, use `runtime-incident-triage` for crash, process-loss, hang, WER, TaleWorlds, open-span, heartbeat, or observer-gap reconstruction. Use `runtime-evidence-certification` only to classify the bounded incident result's freshness and proof. Observer start/status and owned-lease stop remain under `launcher-lifecycle`; window quarantine remains under `window-lifecycle-runtime`; artifact trigger parsing remains under `local-artifact-engine`.
+
+Triggers are read-only routes, not action authority. Window disappearance is not success, stale logs are not confirmed crashes, process presence is not cleanup authority, `incident_ready` is not live certification, and an observer gap is not negative evidence.
+
 ## Safe default
 
 ```powershell

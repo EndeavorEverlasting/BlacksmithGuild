@@ -11,6 +11,7 @@ description: Own ForgeStop-first conditions, build and deploy handoff, Bannerlor
 - Running ForgeStop, ForgeReboot, Continue selection, launcher supervision, process classification, or window selection.
 - Changing launcher scripts, lifecycle timeouts, modal handling, metadata parsing, learned window aliases, or clean-stop behavior.
 - Producing launcher-specific evidence.
+- Starting or inspecting the registered external runtime observer when explicitly authorized by its read-only capability.
 - Compose with `window-lifecycle-runtime` when interpreting reduced lifecycle state, quarantine, or action-dispatch proof boundaries.
 
 ## Do not use when
@@ -51,6 +52,8 @@ codified process names and runtime-context ownership classification
 ```
 
 `launcher-window-context.json` is the sole authority for PLAY versus CONTINUE. Before launch or stop, classify any existing canonical Bannerlord process as absent, active-owned, active-human, active-foreign, stale-or-zombie-proven, or ambiguous. Process presence is not cleanup authority. PID delta is secondary correlation only for a child launched by the current owned workflow. The window-intelligence watcher handles known CAUTION and Safe Mode identities through exact named controls.
+
+`start-runtime-observer` starts only the harness-owned observer lease. `stop-owned-runtime-observer` may revoke that lease and must never stop Bannerlord. Observer status is diagnostic evidence, not a restart or cleanup instruction.
 
 Before proposing another launcher collector, longer timeout, coordinate map, or screenshot parser, run:
 

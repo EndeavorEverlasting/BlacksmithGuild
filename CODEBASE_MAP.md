@@ -35,6 +35,7 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `docs/harness-doctrine.md`, `.tbg/harness/policies/harness-doctrine.policy.json`, and `scripts/tbg/Test-TbgHarnessDoctrine.ps1` — launcher identity freeze, process-name/PID/HWND/S1-S2 selection, multitasking-safe background actuation, and post-action transition verification doctrine.
 - `.tbg/state/game-compatibility.registry.json` — Bannerlord compatibility gate.
 - `scripts/tbg/Test-TbgSkillRouting.ps1` — canonical skill/router validator.
+- `docs/architecture/runtime-observer-agent-routing.md` — read-only observer capability and incident trigger routing.
 - `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
 
 ## Product and build
@@ -55,6 +56,7 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `BlacksmithGuild_Phase1.log` — canonical behavior log.
 - route, map-trade, smithing, governor, and regent JSON artifacts — workflow-specific behavior proof.
 - `.tbg/workflows/runtime-context-continuity.contract.json` — process ownership, correlated spans, pre/post-state, negative evidence, causality, and crash reconstruction authority.
+- `ForgeRuntimeObserver.cmd`, `ForgeRuntimeIncident.cmd`, and `.tbg/skills/runtime-incident-triage/SKILL.md` — observer lease/status and completed-run incident reconstruction entrypoints.
 - `.tbg/harness/schemas/runtime-context-capsule.schema.json` and `scripts/tbg/Test-TbgRuntimeContextContinuity.ps1` — sanitized crash-capsule enforcement.
 - `docs/evidence/runtime-context/` — bounded remote reconstruction packets; raw logs and crash dumps stay ignored.
 - `docs/certification-doctrine.md` and `docs/dev-disposable-save.md` — live proof and save-safety authority.

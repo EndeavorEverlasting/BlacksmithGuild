@@ -65,6 +65,7 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 | root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
 | local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
 | proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
+| crash, process loss, hang, external terminal evidence, incident reconstruction | `runtime-incident-triage` |
 | ForgeStop, build/deploy/launch/Continue | `launcher-lifecycle` |
 | window lifecycle reduce/replay/quarantine | `window-lifecycle-runtime` |
 | campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |

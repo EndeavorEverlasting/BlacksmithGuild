@@ -2,9 +2,9 @@
   "id": "agent-skill-router",
   "schemaVersion": "TbgWorkflowContract.v1",
   "status": "implementation_active",
-  "sprint": "P20-window-lifecycle-agent-routing",
-  "contextBanner": "[TBG | P20 | Skill Router v2 | harness/agent-routing | window-lifecycle]",
-  "purpose": "Select the narrowest primary skill from request intent, touched paths, commands, artifacts, proof request, and risk; enforce declared authority, validation, artifact, freshness, and proof boundaries before work begins; keep window-lifecycle inspection distinct from launcher control, command ACK, and route-visible-trade.",
+  "sprint": "Sprint 7-runtime-observer-agent-harness",
+  "contextBanner": "[TBG | Sprint 7 | Skill Router v2 | harness/agent-routing | runtime-observer]",
+  "purpose": "Select the narrowest primary skill from request intent, touched paths, commands, artifacts, proof request, and risk; enforce declared authority, validation, artifact, freshness, and proof boundaries before work begins; route completed runtime-observer incidents read-only without merging incident triage into launcher control or promoting proof.",
   "lane": "harness/agent-routing",
   "requiresInactiveRuntime": false,
   "requiresForgeStopFirst": false,
@@ -29,6 +29,8 @@
   "rules": [
     "Read AGENTS.md before selecting a skill.",
     "Select exactly one primary skill unless the request is too ambiguous to perform safely.",
+    "Route process loss, external terminal evidence, open spans at process loss, heartbeat stalls, and observer gaps to runtime-incident-triage.",
+    "Route window error or unknown quarantine to window-lifecycle-runtime, runtime observer start/status to launcher-lifecycle, and incident_ready to runtime-evidence-certification.",
     "Load every requiresSkills entry and no unrelated skill.",
     "Load composesWith entries only when the request genuinely crosses that boundary.",
     "Reject an exclusiveWith combination unless a higher-authority workflow partitions the work into separate lanes.",
@@ -41,6 +43,7 @@
   "allowedScope": [
     "edit root agent routing rules",
     "edit skill cards, manifest, schema, router contract, and routing validator",
+    "register read-only runtime-observer capabilities and artifact-engine trigger routes",
     "read current source and current generated state for route classification",
     "write ignored routing validation artifacts"
   ],
@@ -50,6 +53,7 @@
     "write command inbox files",
     "mutate saves or runtime state",
     "claim launcher, behavior, or live runtime proof from routing validation",
+    "start, stop, restart, kill, click, focus, or save through a trigger",
     "delete branches, worktrees, pull requests, or evidence"
   ],
   "doneGate": {
@@ -60,6 +64,7 @@
       "every skill declares match signals, dependencies, composition, exclusion, entry contract, authorities, validators, artifacts, proof ceiling, risk, freshness, owned paths, and forbidden paths",
       "every registered skill file exists and contains the standard routing sections",
       "the manifest does not route through the superseded post-PR41 floor snapshot",
+      "runtime-observer incident routes are read-only and do not grant cleanup, restart, click, save, or proof-promotion authority",
       "JSON files parse",
       "the PowerShell routing validator carries a UTF-8 BOM and parses under Windows PowerShell 5.1",
       "git diff --check passes"
@@ -72,6 +77,7 @@
     "FAIL_skill_structure_invalid",
     "FAIL_root_contract_overloaded",
     "FAIL_stale_routing_reference",
-    "FAIL_proof_or_scope_boundary_missing"
+    "FAIL_proof_or_scope_boundary_missing",
+    "FAIL_runtime_observer_authority_boundary_missing"
   ]
 }

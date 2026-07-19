@@ -10,6 +10,7 @@ description: Classify freshness, exact-head identity, installed and loaded assem
 - A request uses words such as proved, passed, loaded, moved, arrived, traded, crashed, or worked.
 - Inspecting runtime artifacts, exact-head identity, installed DLL hashes, loaded assembly identity, command correlation, or process terminal evidence.
 - Reconstructing a crash from pre-state, post-state or process-loss, expected signals, observed signals, valid negative evidence, and correlated spans.
+- Consuming a completed runtime incident result to classify freshness and proof without promoting its classification.
 - Deciding the highest proof level supported by fresh evidence.
 - Archiving or retaining runtime evidence.
 
@@ -32,6 +33,7 @@ description: Classify freshness, exact-head identity, installed and loaded assem
 8. the fresh runtime and artifact-engine packets named by the active workflow
 9. `artifacts/latest/window-lifecycle/window-lifecycle.result.json` when present
 10. `artifacts/latest/artifact-engine/window-lifecycle-boundary.result.json` when present
+11. `artifacts/latest/runtime-incident/runtime-incident-assembler.result.json` when present
 
 ## Proof ladder
 
@@ -40,6 +42,8 @@ contract -> harness -> static test -> build -> launcher -> command ACK -> behavi
 ```
 
 Every result must state freshness, branch or exact head when relevant, evidence paths, allowed claims, forbidden claims, and the proof ceiling actually reached. Raw logs, saves, crash dumps, secrets, and personal paths remain ignored; remote analysis uses a bounded sanitized `TbgRuntimeContextCapsule.v1` under `docs/evidence/runtime-context`. Window-lifecycle artifacts and the `window-lifecycle-boundary` packet are correlation inputs only; they never replace live runtime evidence or promote action dispatch into product proof.
+
+Incident assembler results are correlation inputs only. `incident_ready` means a bounded report is available; it does not mean Bannerlord is live, certified, safe to restart, or safe to clean up.
 
 ## Crash observability
 

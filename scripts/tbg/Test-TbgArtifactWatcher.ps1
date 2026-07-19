@@ -79,6 +79,9 @@ try {
     $registry.defaults.pollSeconds = 1
     $registry.defaults.settleMilliseconds = 100
     $registry.defaults.excludePrefixes = @($outputRoot)
+    $observerTriggers = @($registry.triggers)
+    Assert-Tbg -Condition ($observerTriggers.Count -eq 7) -Message 'The watcher registry preserves seven runtime-observer read-only triggers.'
+    Assert-Tbg -Condition (@($observerTriggers | Where-Object { $_.mode -ne 'read_only_route' }).Count -eq 0) -Message 'The watcher registry grants no non-read-only runtime-observer trigger authority.'
 
     foreach ($engine in @($registry.engines)) {
         if ([string]$engine.id -eq 'artifact-index') {
