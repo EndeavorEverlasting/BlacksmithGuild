@@ -85,6 +85,34 @@
     "reconstructionGate": "A fresh agent who was not present must reconstruct the operation, pre-state, post-state or process-loss boundary, expected, observed, and valid absent signals, active span, terminal process evidence, causality status, exact head, and next decision from sanitized repository artifacts.",
     "postCrashLiveCertRequiresObservabilityPass": true
   },
+  "launcherSelection": {
+    "acceptableIdentitySignals": [
+      "exact_pid_and_hwnd",
+      "unique_process_name",
+      "verified_executable_path",
+      "uia_root_process_id",
+      "s1_s2_process_or_window_delta"
+    ],
+    "pidHwndPreferredWhenAvailable": true,
+    "processNameCanBeSufficientWhenUnique": true,
+    "deltaCanEstablishIdentityWhenNamesAreAmbiguous": true,
+    "identityMustBeFreshAndUnambiguous": true,
+    "freezeSelectedIdentityPerOperation": true,
+    "silentReselectionForbidden": true,
+    "backgroundSafeByDefault": true,
+    "mouseIndependentByDefault": true,
+    "namedControlOrPatternBeforeCoordinates": true,
+    "desktopWideUnscopedSearchForbidden": true,
+    "postActionTransitionVerificationRequired": true,
+    "coordinateFallbackRequires": [
+      "explicit_task_specific_foreground_authority",
+      "background_safe_paths_exhausted",
+      "exact_frozen_target_identity",
+      "bounded_retry_and_timeout",
+      "operator_foreground_preserved_or_restored",
+      "fresh_post_action_transition_verification"
+    ]
+  },
   "rules": [
     {
       "id": "HD-001",
@@ -145,6 +173,11 @@
       "id": "HD-012",
       "name": "crash-observability-and-negative-evidence",
       "requirement": "Crash-sensitive operations require correlated pre-state and post-state-or-process-loss spans, declared expected signals, observed signals, valid fresh negative evidence, separated observation/inference/hypotheses/proven cause, external evidence for confirmed native crashes, and independent reconstruction before post-crash live certification."
+    },
+    {
+      "id": "HD-013",
+      "name": "launcher-identity-freeze-and-multitasking",
+      "requirement": "Launcher Play/Continue automation must choose a fresh unique process/window identity using PID/HWND, unique process name, verified path, UIA ownership, or S1/S2 delta; freeze that identity for the operation; remain background-safe and mouse-independent by default; require explicit authority for foreground or coordinate fallback; and verify a fresh post-action transition before claiming success."
     }
   ],
   "invalidCloseouts": [

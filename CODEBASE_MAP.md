@@ -32,6 +32,7 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `.tbg/harness/artifact-engines.registry.json` and `.tbg/workflows/local-artifact-engine.contract.json` — deterministic artifact parsing/routing.
 - `.tbg/state/` and `.tbg/workflows/state-envelope.contract.json` — state capabilities, constraints, and views.
 - `.tbg/harness/window-identities.registry.json` — launcher/window identity policy.
+- `docs/harness-doctrine.md`, `.tbg/harness/policies/harness-doctrine.policy.json`, and `scripts/tbg/Test-TbgHarnessDoctrine.ps1` — launcher identity freeze, process-name/PID/HWND/S1-S2 selection, multitasking-safe background actuation, and post-action transition verification doctrine.
 - `.tbg/state/game-compatibility.registry.json` — Bannerlord compatibility gate.
 - `scripts/tbg/Test-TbgSkillRouting.ps1` — canonical skill/router validator.
 - `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
