@@ -1,0 +1,21 @@
+{
+  "schema": "tbg.one-click-test.profile.v1",
+  "profileId": "local-build",
+  "displayName": "Local Build Profile",
+  "description": "Static checks plus Debug build. Requires a valid GameFolder path. No game launch or runtime access.",
+  "proofClass": "local-build-e2e",
+  "includeTags": ["static", "contract", "test", "build"],
+  "excludeTags": ["launcher", "runtime", "game", "smoke", "live", "deployment", "mutation"],
+  "includeTestIds": [],
+  "excludeTestIds": [],
+  "failFast": false,
+  "mutationAuthority": "local_write",
+  "authority": {
+    "observer": false,
+    "launcher": false,
+    "gameMutation": false,
+    "deployment": false
+  },
+  "timeoutSeconds": 600,
+  "maxConcurrentTests": 1
+}

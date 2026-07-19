@@ -181,6 +181,40 @@
       ],
       "riskClass": "static",
       "proofCeiling": "static test"
+    },
+    {
+      "id": "resolve-one-click-cascade",
+      "entrypoint": "scripts/tbg/Resolve-TbgOneClickCascade.ps1",
+      "mode": "read-only",
+      "requiredInputs": ["completed one-click test run root"],
+      "outputArtifacts": [
+        ".local/tbg-one-click-tests/<runId>/cascade-result.json",
+        ".local/tbg-one-click-tests/<runId>/trigger-ledger.json"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "harness"
+    },
+    {
+      "id": "validate-one-click-cascade",
+      "entrypoint": "scripts/tbg/Test-TbgOneClickCascade.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": [
+        "artifacts/latest/one-click-cascade/one-click-cascade.validation.json"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "static test"
+    },
+    {
+      "id": "validate-trigger-fragments",
+      "entrypoint": "scripts/tbg/Test-TbgTriggerFragments.ps1",
+      "mode": "read-only",
+      "requiredInputs": [],
+      "outputArtifacts": [
+        "artifacts/latest/triggers/trigger-fragments.validation.json"
+      ],
+      "riskClass": "static",
+      "proofCeiling": "static test"
     }
   ]
 }

@@ -1,0 +1,19 @@
+{
+  "schema": "tbg.one-click-test.trigger.v1",
+  "triggerId": "test-failure-event",
+  "displayName": "Test Failure Trigger",
+  "description": "Routes failed test events to failure summary and related artifact indexing.",
+  "eventMatch": {
+    "eventTypes": ["test.failed"]
+  },
+  "condition": "exitCode != 0",
+  "requiredFreshness": "Within the current one-click test run.",
+  "requiredProofLevel": "static test",
+  "forbiddenProofLevels": [],
+  "downstreamOperation": "index-failed-test-artifacts",
+  "maxCascadeDepth": 1,
+  "deduplicationKey": "testId + runId",
+  "cooldownSeconds": 0,
+  "mutationAuthority": "none",
+  "expectedArtifacts": ["failure-summary.json"]
+}

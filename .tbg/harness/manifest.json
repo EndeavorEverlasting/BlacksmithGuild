@@ -119,7 +119,10 @@
     "oneClickTestProfilesDir": ".tbg/harness/test-profiles.d",
     "oneClickTestFixtures": ".tbg/harness/fixtures/one-click-test",
     "oneClickTestRunRoot": ".local/tbg-one-click-tests",
-    "oneClickTestOutput": "artifacts/latest/one-click-test"
+    "oneClickTestOutput": "artifacts/latest/one-click-test",
+    "oneClickTestDefaults": ".tbg/harness/one-click-test.defaults.json",
+    "oneClickTestTriggersDir": ".tbg/harness/triggers.d",
+    "oneClickTestCertCatalogDir": ".tbg/harness/test-catalog.d/certification"
   },
   "runtime": {
     "bannerlordInstallPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord",

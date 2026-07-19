@@ -1,0 +1,19 @@
+{
+  "schema": "tbg.one-click-test.trigger.v1",
+  "triggerId": "runtime-observer-event",
+  "displayName": "Runtime Observer Event Trigger",
+  "description": "Routes completed observer events to incident assembly and proof boundary.",
+  "eventMatch": {
+    "eventTypes": ["observer.completed", "observer.failed", "observer.heartbeat_lost"]
+  },
+  "condition": "runId matches an active observer lease under .local/tbg-runtime-observer/",
+  "requiredFreshness": "The observer run context must have been created within the current session.",
+  "requiredProofLevel": "harness",
+  "forbiddenProofLevels": ["live runtime"],
+  "downstreamOperation": "assemble-runtime-incident",
+  "maxCascadeDepth": 2,
+  "deduplicationKey": "runId + eventType",
+  "cooldownSeconds": 30,
+  "mutationAuthority": "none",
+  "expectedArtifacts": ["incident-timeline.json", "incident-result.json"]
+}

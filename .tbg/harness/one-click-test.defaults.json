@@ -1,0 +1,8 @@
+{
+  "schema": "tbg.one-click-test.defaults.v1",
+  "defaultProfile": "operator-observe",
+  "fallbackProfile": "default-static",
+  "consolePause": true,
+  "maxParallelTests": 1,
+  "proofCeiling": "Profile selection determines proof ceiling. The operator-observe profile runs static checks and attaches read-only observers when a valid game session exists. It never launches or mutates the game."
+}

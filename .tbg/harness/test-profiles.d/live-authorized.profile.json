@@ -1,0 +1,21 @@
+{
+  "schema": "tbg.one-click-test.profile.v1",
+  "profileId": "live-authorized",
+  "displayName": "Live Authorized Profile",
+  "description": "Explicit operator-only profile for workflows requiring runtime observation or authorized game interaction. Requires explicit operator authority.",
+  "proofClass": "workflow-specific-live-runtime",
+  "includeTags": ["static", "contract", "test", "build", "smoke", "runtime", "observer"],
+  "excludeTags": ["deployment", "mutation"],
+  "includeTestIds": [],
+  "excludeTestIds": [],
+  "failFast": true,
+  "mutationAuthority": "runtime_read",
+  "authority": {
+    "observer": true,
+    "launcher": false,
+    "gameMutation": false,
+    "deployment": false
+  },
+  "timeoutSeconds": 900,
+  "maxConcurrentTests": 1
+}

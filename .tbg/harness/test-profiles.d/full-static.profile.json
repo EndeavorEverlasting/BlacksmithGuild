@@ -1,0 +1,21 @@
+{
+  "schema": "tbg.one-click-test.profile.v1",
+  "profileId": "full-static",
+  "displayName": "Full Static Profile",
+  "description": "All static and contract checks including fixtures. No build, launcher, or runtime access.",
+  "proofClass": "composed-static-full",
+  "includeTags": ["static", "contract", "test", "fixture"],
+  "excludeTags": ["build", "launcher", "runtime", "game", "smoke", "live", "deployment", "mutation"],
+  "includeTestIds": [],
+  "excludeTestIds": [],
+  "failFast": false,
+  "mutationAuthority": "none",
+  "authority": {
+    "observer": false,
+    "launcher": false,
+    "gameMutation": false,
+    "deployment": false
+  },
+  "timeoutSeconds": 300,
+  "maxConcurrentTests": 1
+}
