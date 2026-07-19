@@ -53,6 +53,9 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `BlacksmithGuild_RuntimeLifecycle.json` and `BlacksmithGuild_ProcessLifecycle.json` — lifecycle evidence.
 - `BlacksmithGuild_Phase1.log` — canonical behavior log.
 - route, map-trade, smithing, governor, and regent JSON artifacts — workflow-specific behavior proof.
+- `.tbg/workflows/runtime-context-continuity.contract.json` — process ownership, correlated spans, pre/post-state, negative evidence, causality, and crash reconstruction authority.
+- `.tbg/harness/schemas/runtime-context-capsule.schema.json` and `scripts/tbg/Test-TbgRuntimeContextContinuity.ps1` — sanitized crash-capsule enforcement.
+- `docs/evidence/runtime-context/` — bounded remote reconstruction packets; raw logs and crash dumps stay ignored.
 - `docs/certification-doctrine.md` and `docs/dev-disposable-save.md` — live proof and save-safety authority.
 
 ## Proof-safe validation
