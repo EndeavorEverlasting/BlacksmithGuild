@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 Extracts crash evidence from Phase1.log and writes to a tracked evidence file.
 Commits the machine-readable crash edge so the remote repo preserves diagnostics.
