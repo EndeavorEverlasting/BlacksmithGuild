@@ -48,10 +48,142 @@
       "additionalProperties": false,
       "required": ["classification", "summary", "crashObserved"],
       "properties": {
-        "classification": {"type": ["string", "null"], "maxLength": 128},
+        "classification": {
+          "anyOf": [
+            {"type": "null"},
+            {"enum": ["log_stalled", "process_unobserved", "process_exited", "managed_exception_confirmed", "native_crash_suspected", "native_crash_confirmed", "hang_confirmed", "clean_exit", "unknown_failure"]}
+          ]
+        },
         "summary": {"type": "string", "maxLength": 2048},
-        "crashObserved": {"type": "boolean"}
+        "crashObserved": {"type": "boolean"},
+        "externalTerminalEvidenceRefs": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        }
       }
+    },
+    "crashObservability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commandId",
+        "correlationId",
+        "spanId",
+        "parentSpanId",
+        "operation",
+        "startedAtUtc",
+        "completedAtUtc",
+        "terminalStatus",
+        "preState",
+        "postState",
+        "expectedSignals",
+        "observedSignals",
+        "negativeEvidence",
+        "lastMarkerBoundaryOnly",
+        "balancedSpan",
+        "unrelatedDoneClosedSpan",
+        "causality",
+        "reconstructable"
+      ],
+      "properties": {
+        "commandId": {"type": ["string", "null"], "maxLength": 128},
+        "correlationId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "spanId": {"type": "string", "minLength": 1, "maxLength": 128},
+        "parentSpanId": {"type": ["string", "null"], "maxLength": 128},
+        "operation": {"type": "string", "minLength": 1, "maxLength": 512},
+        "startedAtUtc": {"type": "string", "format": "date-time"},
+        "completedAtUtc": {"type": ["string", "null"], "format": "date-time"},
+        "terminalStatus": {"enum": ["completed", "error", "blocked", "aborted", "process_lost", "open"]},
+        "preState": {"type": "object", "maxProperties": 128},
+        "postState": {"type": ["object", "null"], "maxProperties": 128},
+        "expectedSignals": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "observedSignals": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {"type": "string", "minLength": 1, "maxLength": 256}
+        },
+        "negativeEvidence": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["expectedSignal", "observer", "source", "windowStartUtc", "windowEndUtc", "observerActive", "sourceFresh", "observationComplete", "observed"],
+            "properties": {
+              "expectedSignal": {"type": "string", "minLength": 1, "maxLength": 256},
+              "observer": {"type": "string", "minLength": 1, "maxLength": 256},
+              "source": {"type": "string", "minLength": 1, "maxLength": 256},
+              "windowStartUtc": {"type": "string", "format": "date-time"},
+              "windowEndUtc": {"type": "string", "format": "date-time"},
+              "observerActive": {"const": true},
+              "sourceFresh": {"const": true},
+              "observationComplete": {"const": true},
+              "observed": {"const": false}
+            }
+          }
+        },
+        "lastMarkerBoundaryOnly": {"const": true},
+        "balancedSpan": {"type": "boolean"},
+        "unrelatedDoneClosedSpan": {"const": false},
+        "causality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["observation", "inference", "hypotheses", "provenCause", "rootCauseEvidenceRefs"],
+          "properties": {
+            "observation": {"type": "string", "minLength": 1, "maxLength": 4096},
+            "inference": {"type": ["string", "null"], "maxLength": 4096},
+            "hypotheses": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {"type": "string", "minLength": 1, "maxLength": 1024}
+            },
+            "provenCause": {"type": ["string", "null"], "maxLength": 4096},
+            "rootCauseEvidenceRefs": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {"type": "string", "minLength": 1, "maxLength": 256}
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {"provenCause": {"type": "string", "minLength": 1}},
+                "required": ["provenCause"]
+              },
+              "then": {
+                "properties": {"rootCauseEvidenceRefs": {"minItems": 1}}
+              }
+            }
+          ]
+        },
+        "reconstructable": {"const": true}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"terminalStatus": {"const": "process_lost"}}, "required": ["terminalStatus"]},
+          "then": {
+            "properties": {
+              "postState": {"type": "null"},
+              "balancedSpan": {"const": false}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"terminalStatus": {"enum": ["completed", "error", "blocked", "aborted"]}}, "required": ["terminalStatus"]},
+          "then": {
+            "properties": {
+              "postState": {"type": "object"},
+              "completedAtUtc": {"type": "string", "format": "date-time"},
+              "balancedSpan": {"const": true}
+            }
+          }
+        }
+      ]
     },
     "evidenceRefs": {
       "type": "array",
@@ -81,5 +213,39 @@
       }
     },
     "nextDecision": {"type": "string", "minLength": 1, "maxLength": 2048}
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "failure": {
+            "properties": {"crashObserved": {"const": true}},
+            "required": ["crashObserved"]
+          }
+        },
+        "required": ["failure"]
+      },
+      "then": {"required": ["crashObservability"]}
+    },
+    {
+      "if": {
+        "properties": {
+          "failure": {
+            "properties": {"classification": {"const": "native_crash_confirmed"}},
+            "required": ["classification"]
+          }
+        },
+        "required": ["failure"]
+      },
+      "then": {
+        "required": ["crashObservability"],
+        "properties": {
+          "failure": {
+            "required": ["externalTerminalEvidenceRefs"],
+            "properties": {"externalTerminalEvidenceRefs": {"minItems": 1}}
+          }
+        }
+      }
+    }
+  ]
 }

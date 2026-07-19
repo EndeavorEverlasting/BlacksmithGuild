@@ -43,6 +43,48 @@
       "one_safest_next_command"
     ]
   },
+  "crashObservability": {
+    "requiredTraceFields": [
+      "runId",
+      "commandIdOrNull",
+      "correlationId",
+      "spanId",
+      "parentSpanIdOrNull",
+      "operation",
+      "startedAtUtc",
+      "preState",
+      "postStateOrNull",
+      "expectedSignals",
+      "observedSignals",
+      "negativeEvidence",
+      "terminalStatus"
+    ],
+    "negativeEvidenceRequires": [
+      "signal_declared_in_advance",
+      "observer_identified",
+      "source_identified",
+      "source_fresh",
+      "observation_window_complete",
+      "signal_explicitly_absent"
+    ],
+    "causalityFields": [
+      "observation",
+      "inferenceOrNull",
+      "hypotheses",
+      "provenCauseOrNull",
+      "rootCauseEvidenceRefs"
+    ],
+    "nativeCrashConfirmationRequires": [
+      "correlated_external_terminal_evidence",
+      "correlated_process_identity",
+      "correlated_timestamp"
+    ],
+    "lastMarkerIsBoundaryNotCause": true,
+    "balancedSpansRequired": true,
+    "unrelatedDoneCannotCloseActiveSpan": true,
+    "reconstructionGate": "A fresh agent who was not present must reconstruct the operation, pre-state, post-state or process-loss boundary, expected, observed, and valid absent signals, active span, terminal process evidence, causality status, exact head, and next decision from sanitized repository artifacts.",
+    "postCrashLiveCertRequiresObservabilityPass": true
+  },
   "rules": [
     {
       "id": "HD-001",
@@ -98,6 +140,11 @@
       "id": "HD-011",
       "name": "fresh-agent-entry",
       "requirement": "A fresh agent must discover the canonical harness entrypoint from the manifest, choose one primary skill and narrow workflow, run targeted and composed validators, produce registered artifacts and an operator report, and emit a schema-valid sprint capsule with exact Git or PR evidence."
+    },
+    {
+      "id": "HD-012",
+      "name": "crash-observability-and-negative-evidence",
+      "requirement": "Crash-sensitive operations require correlated pre-state and post-state-or-process-loss spans, declared expected signals, observed signals, valid fresh negative evidence, separated observation/inference/hypotheses/proven cause, external evidence for confirmed native crashes, and independent reconstruction before post-crash live certification."
     }
   ],
   "invalidCloseouts": [

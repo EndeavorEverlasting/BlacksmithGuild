@@ -113,6 +113,25 @@ Before launch, stop, build, install, cleanup, global input injection, or other r
 - keep raw logs, saves, crash dumps, credentials, and private machine data local and ignored;
 - publish only a schema-valid bounded sanitized capsule when remote diagnosis is needed.
 
+## Crash observability and negative evidence
+
+Crash-sensitive engine calls, API calls, and state transitions must be reconstructable from correlated evidence rather than guessed from the last log line.
+
+Before the call or transition, emit a trace boundary containing the run, command when present, correlation ID, span ID, parent span, operation, start time, pre-state snapshot, and expected signals. When control returns, emit the matching post-state snapshot, observed signals, completion time, and terminal span status. If the process disappears first, the external harness records `process_lost`, preserves the open span, and leaves the post-state null. A missing closing marker narrows the unresolved execution interval; it is not proof of the failing statement or root cause.
+
+Negative evidence is valid only when the signal was declared in advance, the observer and source were active and fresh, the observation window completed, and the expected signal was not observed. Record the expected signal, observer, source, observation window, freshness, and explicit absence. Silence from a stale log, missing observer, incomplete window, or wrong process is unknown evidence, not negative evidence.
+
+Every crash report separates:
+
+- **observation:** what was directly recorded;
+- **inference:** the bounded conclusion supported by those observations;
+- **hypotheses:** plausible explanations still requiring tests;
+- **proven cause:** a cause supported by correlated evidence or a successful counterfactual repair.
+
+The last marker is always a boundary, never a cause. `native_crash_confirmed` requires correlated external terminal evidence such as Windows Error Reporting, a TaleWorlds crash report, debugger or dump metadata, or equivalent process-exit evidence. Log staleness or process non-observation alone may produce `log_stalled`, `process_unobserved`, or `native_crash_suspected`, but not a confirmed native-crash claim.
+
+After a crash, live-behavior certification may not resume until crash observability passes: a fresh agent who was not present must be able to reconstruct the attempted operation, pre-state, post-state or process-loss boundary, expected signals, observed signals, valid absent signals, active span, terminal process evidence, causality status, exact head, and next decision from the sanitized repository artifacts alone.
+
 ## Completion contract
 
 Every serious completion report names:
