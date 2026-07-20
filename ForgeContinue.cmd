@@ -17,7 +17,7 @@ if %FORGE_EXIT% NEQ 0 (
     exit /b %FORGE_EXIT%
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ". '%~dp0scripts\bannerlord-paths.ps1'; $root = Get-BannerlordRootFromRepo -RepoRoot '%~dp0'; & '%~dp0scripts\write-launch-intent.ps1' -LaunchIntent continue -BannerlordRoot $root; & '%~dp0scripts\launcher-frozen-context-nav.ps1' -LaunchIntent continue -BannerlordRoot $root -LauncherContextPath (Join-Path $root 'launcher-window-context.json') -PollMs 250 -LaunchSetup"
+powershell -NoProfile -ExecutionPolicy Bypass -Command ". '%~dp0scripts\bannerlord-paths.ps1'; $root = Get-BannerlordRootFromRepo -RepoRoot '%~dp0'; & '%~dp0scripts\write-launch-intent.ps1' -LaunchIntent continue -BannerlordRoot $root; & '%~dp0scripts\launcher-frozen-context-nav.ps1' -LaunchIntent continue -BannerlordRoot $root -LauncherContextPath (Join-Path $root 'launcher-window-context.json') -PollMs 250 -LaunchSetup -AllowFocusSteal -AllowLongRun -LongRunReason 'ForgeContinue' -TimeoutSec 120"
 set FORGE_EXIT=%ERRORLEVEL%
 if %FORGE_EXIT% NEQ 0 (
     echo.
