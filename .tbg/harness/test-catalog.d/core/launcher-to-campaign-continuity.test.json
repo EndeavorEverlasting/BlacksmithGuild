@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.launcher-to-campaign-continuity",
+  "displayName": "Launcher-to-Campaign Event Continuity Validation",
+  "ownerLane": "launcher-lifecycle/runtime-readiness integration",
+  "sourcePath": "scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": ["core.trigger-fragments", "core.unified-launch-surface-doctrine"],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": ["artifacts/latest/launcher-to-campaign-continuity/launcher-to-campaign-continuity.result.json"],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates observer overlap, launcher-to-runtime handoff, campaign readiness gating, and readiness-trigger authority boundaries. It does not prove a live launch or campaign map.",
+  "tags": ["static", "contract", "doctrine", "launcher", "runtime", "campaign-readiness", "cascade", "core"],
+  "triggerInterests": ["launch.handoff.verified", "runtime.observer.attached", "campaign.automation.ready"],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "launcher-to-campaign-continuity-doctrine"}
+}
