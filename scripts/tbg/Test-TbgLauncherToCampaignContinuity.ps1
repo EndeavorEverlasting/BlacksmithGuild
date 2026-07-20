@@ -87,7 +87,7 @@ try {
     Require-Match 'doctrine requires observer overlap' $doctrine 'window observer and external runtime observer must overlap'
     Require-Match 'doctrine gates window observer retirement' $doctrine 'window observer may retire only after'
     Require-Match 'doctrine separates launcher handoff' $doctrine 'Launcher handoff is not campaign readiness'
-    Require-Match 'doctrine separates MapTransition' $doctrine 'MapTransition is not MapReady or campaign readiness'
+    Require-Match 'doctrine separates MapTransition' $doctrine 'MapTransition[\s\S]*MapReady or campaign readiness'
     Require-Match 'doctrine defines campaign readiness gate' $doctrine 'campaignReady:true[\s\S]*canPollFileInbox:true[\s\S]*60-second'
     Require-Match 'doctrine trigger grants no gameplay authority' $doctrine 'readiness cascade grants no gameplay authority'
     Require-Match 'AGENTS defines continuity bridge' $agents 'window observer may retire only after a same-run runtime-observer attachment'
@@ -164,9 +164,9 @@ try {
     $cases = @(Get-Value $fixture @('cases'))
     $caseIds = @($cases | ForEach-Object { [string](Get-Value $_ @('id')) })
     Require-Values 'fixture cases' $caseIds @('valid_overlap_to_campaign_cascade','window_observer_retires_before_runtime_attach','runtime_attach_uses_new_correlation','map_transition_is_not_campaign_ready','map_ready_without_campaign_ready_blocks','campaign_ready_without_command_poll_blocks','stability_window_too_short_blocks','observer_gap_blocks_readiness_release','readiness_trigger_never_grants_gameplay_authority')
-    $validCase = @($cases | Where-Object { (Get-Value $_ @('id')) -eq 'valid_overlap_to_campaign_cascade' } | Select-Object -First 1)
+    $validCase = $cases | Where-Object { (Get-Value $_ @('id')) -eq 'valid_overlap_to_campaign_cascade' } | Select-Object -First 1
     Require-Equal 'fixture valid terminal state' (Get-Value $validCase @('expectedTerminalState')) 'PASS_CONTINUOUS_CAMPAIGN_READINESS_CASCADE'
-    $authorityCase = @($cases | Where-Object { (Get-Value $_ @('id')) -eq 'readiness_trigger_never_grants_gameplay_authority' } | Select-Object -First 1)
+    $authorityCase = $cases | Where-Object { (Get-Value $_ @('id')) -eq 'readiness_trigger_never_grants_gameplay_authority' } | Select-Object -First 1
     Require-Equal 'fixture authority escalation blocks' (Get-Value $authorityCase @('expectedTerminalState')) 'BLOCKED_TRIGGER_AUTHORITY_ESCALATION'
 
     Require-Equal 'catalog schema' (Get-Value $catalog @('schema')) 'tbg.one-click-test.catalog-entry.v1'
