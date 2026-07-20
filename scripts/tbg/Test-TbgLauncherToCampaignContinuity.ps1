@@ -92,7 +92,7 @@ if ($policy) {
     Require-True 'policy window retire gated' $policy.launcherToCampaignContinuity.windowObserverRetiresAfterRuntimeAttachment
     Require-True 'policy launcher handoff not readiness' $policy.launcherToCampaignContinuity.launcherHandoffIsNotCampaignReadiness
     Require-True 'policy MapTransition not readiness' $policy.launcherToCampaignContinuity.mapTransitionIsNotCampaignReadiness
-    Require-True 'policy trigger no gameplay authority' $policy.launcherToCampaignContinuity.readinessCascadeGrantsGameplayAuthority -eq $false
+    if ($policy.launcherToCampaignContinuity.readinessCascadeGrantsGameplayAuthority -eq $false) { Add-Pass 'policy trigger no gameplay authority' } else { Add-Failure 'policy trigger no gameplay authority' }
     Require-Equal 'policy stability window' $policy.launcherToCampaignContinuity.stabilityWindowSeconds 60
 }
 
