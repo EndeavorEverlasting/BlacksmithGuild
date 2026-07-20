@@ -20,12 +20,9 @@
   "sharedOutputRoot": ".local/tbg-runtime-observer/<runId>/",
   "requiredArtifacts": [
     "run-context.json",
-    "handoff-context.json",
     "artifact-registry.json",
     "events.jsonl",
     "observer-status.json",
-    "campaign-readiness.json",
-    "campaign-readiness-cascade.json",
     "incident-timeline.json",
     "incident-result.json",
     "operator-report.md"
@@ -48,7 +45,12 @@
     "launcherHandoffIsNotCampaignReadiness": true,
     "mapTransitionIsNotCampaignReadiness": true,
     "campaignCascadeRequiresStableReadinessGate": true,
-    "readinessCascadeGrantsGameplayAuthority": false
+    "readinessCascadeGrantsGameplayAuthority": false,
+    "additionalArtifacts": [
+      "handoff-context.json",
+      "campaign-readiness.json",
+      "campaign-readiness-cascade.json"
+    ]
   },
   "doctrine": {
     "eventPresenceIsNotAcceptanceOrCause": true,
