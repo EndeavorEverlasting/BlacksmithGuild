@@ -8,7 +8,7 @@ echo Build + install + frozen-context CONTINUE until map.
 echo Watch mode: ForgeWatch.cmd or .\forge.ps1 -Watch
 echo.
 
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch -LaunchIntent continue -LaunchManual
+pwsh -NoProfile -ExecutionPolicy Bypass -File "%~dp0forge.ps1" -Launch -LaunchIntent continue -LaunchManual
 set FORGE_EXIT=%ERRORLEVEL%
 if %FORGE_EXIT% NEQ 0 (
     echo.
@@ -17,7 +17,7 @@ if %FORGE_EXIT% NEQ 0 (
     exit /b %FORGE_EXIT%
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ". '%~dp0scripts\bannerlord-paths.ps1'; $root = Get-BannerlordRootFromRepo -RepoRoot '%~dp0'; & '%~dp0scripts\write-launch-intent.ps1' -LaunchIntent continue -BannerlordRoot $root; & '%~dp0scripts\launcher-frozen-context-nav.ps1' -LaunchIntent continue -BannerlordRoot $root -LauncherContextPath (Join-Path $root 'launcher-window-context.json') -PollMs 250 -LaunchSetup -AllowFocusSteal -AllowLongRun -LongRunReason 'ForgeContinue' -TimeoutSec 120"
+pwsh -NoProfile -ExecutionPolicy Bypass -Command ". '%~dp0scripts\bannerlord-paths.ps1'; $root = Get-BannerlordRootFromRepo -RepoRoot '%~dp0'; & '%~dp0scripts\write-launch-intent.ps1' -LaunchIntent continue -BannerlordRoot $root; & '%~dp0scripts\launcher-frozen-context-nav.ps1' -LaunchIntent continue -BannerlordRoot $root -LauncherContextPath (Join-Path $root 'launcher-window-context.json') -PollMs 250 -LaunchSetup -AllowFocusSteal -AllowLongRun -LongRunReason 'ForgeContinue' -TimeoutSec 120"
 set FORGE_EXIT=%ERRORLEVEL%
 if %FORGE_EXIT% NEQ 0 (
     echo.
