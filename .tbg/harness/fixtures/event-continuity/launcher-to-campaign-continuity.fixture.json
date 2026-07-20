@@ -1,0 +1,123 @@
+{
+  "schema": "TbgLauncherToCampaignContinuityFixture.v1",
+  "contractId": "launcher-to-campaign-event-continuity",
+  "stabilityWindowSeconds": 60,
+  "requiredSharedFields": [
+    "runId",
+    "correlationId",
+    "launchPath"
+  ],
+  "requiredEventOrder": [
+    "observer.window.started",
+    "observer.runtime.started",
+    "launch.path.selected",
+    "launch.handoff.verified_or_blocked",
+    "runtime.observer.attached_or_blocked",
+    "game.runtime.lifecycle.observed",
+    "campaign.map.transition_observed",
+    "campaign.map.ready_observed",
+    "campaign.readiness.stable_or_blocked",
+    "campaign.command_poll.ready_or_blocked",
+    "campaign.automation.ready_or_blocked",
+    "campaign.readiness.cascade_published_or_blocked"
+  ],
+  "cases": [
+    {
+      "id": "valid_overlap_to_campaign_cascade",
+      "events": [
+        {"type":"observer.window.started","runId":"run-a","correlationId":"corr-a","atSecond":0},
+        {"type":"observer.runtime.started","runId":"run-a","correlationId":"corr-a","atSecond":1},
+        {"type":"launch.path.selected","runId":"run-a","correlationId":"corr-a","atSecond":2,"launchPath":"ForgeContinue.cmd"},
+        {"type":"launch.handoff.verified_or_blocked","runId":"run-a","correlationId":"corr-a","atSecond":15,"status":"verified","gamePid":4242,"gameHwnd":8484},
+        {"type":"runtime.observer.attached_or_blocked","runId":"run-a","correlationId":"corr-a","atSecond":16,"status":"attached","gamePid":4242},
+        {"type":"observer.window.retired","runId":"run-a","correlationId":"corr-a","atSecond":17,"reason":"runtime_attachment_acknowledged"},
+        {"type":"game.runtime.lifecycle.observed","runId":"run-a","correlationId":"corr-a","atSecond":18,"sessionReady":true},
+        {"type":"campaign.map.transition_observed","runId":"run-a","correlationId":"corr-a","atSecond":24},
+        {"type":"campaign.map.ready_observed","runId":"run-a","correlationId":"corr-a","atSecond":30,"mapReady":true},
+        {"type":"campaign.readiness.stable_or_blocked","runId":"run-a","correlationId":"corr-a","atSecond":90,"status":"stable","campaignReady":true,"stabilitySeconds":60},
+        {"type":"campaign.command_poll.ready_or_blocked","runId":"run-a","correlationId":"corr-a","atSecond":91,"status":"ready","canPollFileInbox":true},
+        {"type":"campaign.automation.ready_or_blocked","runId":"run-a","correlationId":"corr-a","atSecond":92,"status":"ready","grantsGameplayAuthority":false},
+        {"type":"campaign.readiness.cascade_published_or_blocked","runId":"run-a","correlationId":"corr-a","atSecond":93,"status":"published"}
+      ],
+      "expectedTerminalState": "PASS_CONTINUOUS_CAMPAIGN_READINESS_CASCADE",
+      "expectedProofCeiling": "harness"
+    },
+    {
+      "id": "window_observer_retires_before_runtime_attach",
+      "events": [
+        {"type":"observer.window.started","runId":"run-b","correlationId":"corr-b","atSecond":0},
+        {"type":"observer.runtime.started","runId":"run-b","correlationId":"corr-b","atSecond":1},
+        {"type":"launch.handoff.verified_or_blocked","runId":"run-b","correlationId":"corr-b","atSecond":10,"status":"verified"},
+        {"type":"observer.window.retired","runId":"run-b","correlationId":"corr-b","atSecond":11,"reason":"timeout"},
+        {"type":"runtime.observer.attached_or_blocked","runId":"run-b","correlationId":"corr-b","atSecond":12,"status":"attached"}
+      ],
+      "expectedTerminalState": "BLOCKED_RUNTIME_ATTACHMENT_MISSING_AT_WINDOW_RETIRE",
+      "expectedProofCeiling": "launcher_handoff"
+    },
+    {
+      "id": "runtime_attach_uses_new_correlation",
+      "events": [
+        {"type":"observer.window.started","runId":"run-c","correlationId":"corr-c","atSecond":0},
+        {"type":"observer.runtime.started","runId":"run-c","correlationId":"corr-c","atSecond":1},
+        {"type":"launch.handoff.verified_or_blocked","runId":"run-c","correlationId":"corr-c","atSecond":10,"status":"verified"},
+        {"type":"runtime.observer.attached_or_blocked","runId":"run-c2","correlationId":"corr-c2","atSecond":11,"status":"attached"}
+      ],
+      "expectedTerminalState": "BLOCKED_OBSERVER_CORRELATION_MISMATCH",
+      "expectedProofCeiling": "launcher_handoff"
+    },
+    {
+      "id": "map_transition_is_not_campaign_ready",
+      "events": [
+        {"type":"campaign.map.transition_observed","runId":"run-d","correlationId":"corr-d","atSecond":20},
+        {"type":"campaign.automation.ready_or_blocked","runId":"run-d","correlationId":"corr-d","atSecond":21,"status":"ready"}
+      ],
+      "expectedTerminalState": "BLOCKED_CAMPAIGN_NOT_READY",
+      "expectedProofCeiling": "runtime_observation"
+    },
+    {
+      "id": "map_ready_without_campaign_ready_blocks",
+      "events": [
+        {"type":"campaign.map.ready_observed","runId":"run-e","correlationId":"corr-e","atSecond":30,"mapReady":true},
+        {"type":"campaign.readiness.stable_or_blocked","runId":"run-e","correlationId":"corr-e","atSecond":90,"status":"blocked","campaignReady":false,"stabilitySeconds":60}
+      ],
+      "expectedTerminalState": "BLOCKED_CAMPAIGN_NOT_READY",
+      "expectedProofCeiling": "runtime_observation"
+    },
+    {
+      "id": "campaign_ready_without_command_poll_blocks",
+      "events": [
+        {"type":"campaign.map.ready_observed","runId":"run-f","correlationId":"corr-f","atSecond":30,"mapReady":true},
+        {"type":"campaign.readiness.stable_or_blocked","runId":"run-f","correlationId":"corr-f","atSecond":90,"status":"stable","campaignReady":true,"stabilitySeconds":60},
+        {"type":"campaign.command_poll.ready_or_blocked","runId":"run-f","correlationId":"corr-f","atSecond":91,"status":"blocked","canPollFileInbox":false}
+      ],
+      "expectedTerminalState": "BLOCKED_COMMAND_POLL_NOT_READY",
+      "expectedProofCeiling": "runtime_observation"
+    },
+    {
+      "id": "stability_window_too_short_blocks",
+      "events": [
+        {"type":"campaign.map.ready_observed","runId":"run-g","correlationId":"corr-g","atSecond":30,"mapReady":true},
+        {"type":"campaign.readiness.stable_or_blocked","runId":"run-g","correlationId":"corr-g","atSecond":59,"status":"blocked","campaignReady":true,"stabilitySeconds":29}
+      ],
+      "expectedTerminalState": "BLOCKED_READINESS_STABILITY_INCOMPLETE",
+      "expectedProofCeiling": "runtime_observation"
+    },
+    {
+      "id": "observer_gap_blocks_readiness_release",
+      "events": [
+        {"type":"observer.gap","runId":"run-h","correlationId":"corr-h","atSecond":40,"reconciled":false},
+        {"type":"campaign.automation.ready_or_blocked","runId":"run-h","correlationId":"corr-h","atSecond":100,"status":"ready"}
+      ],
+      "expectedTerminalState": "BLOCKED_OBSERVER_GAP_UNRECONCILED",
+      "expectedProofCeiling": "harness"
+    },
+    {
+      "id": "readiness_trigger_never_grants_gameplay_authority",
+      "events": [
+        {"type":"campaign.automation.ready_or_blocked","runId":"run-i","correlationId":"corr-i","atSecond":100,"status":"ready","grantsGameplayAuthority":true}
+      ],
+      "expectedTerminalState": "BLOCKED_TRIGGER_AUTHORITY_ESCALATION",
+      "expectedProofCeiling": "harness"
+    }
+  ]
+}
