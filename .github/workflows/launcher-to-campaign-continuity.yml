@@ -27,6 +27,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Capture focused validator parse diagnostics
+        shell: pwsh
+        run: |
+          $output = 'artifacts/latest/launcher-to-campaign-continuity'
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path './scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1'), [ref]$tokens, [ref]$errors)
+          [ordered]@{
+            schema = 'TbgPowerShellParseDiagnostic.v1'
+            errorCount = @($errors).Count
+            errors = @($errors | ForEach-Object { [ordered]@{ message = $_.Message; line = $_.Extent.StartLineNumber; column = $_.Extent.StartColumnNumber; text = $_.Extent.Text } })
+          } | ConvertTo-Json -Depth 10 | Set-Content "$output/parser-diagnostic-pwsh.json" -Encoding UTF8
       - name: Validate launcher-to-campaign continuity
         shell: pwsh
         run: ./scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1
@@ -44,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: launcher-to-campaign-continuity-pwsh
-          if-no-files-found: warn
+          if-no-files-found: error
           path: |
             artifacts/latest/launcher-to-campaign-continuity/*.json
             artifacts/latest/harness-doctrine/*.json
@@ -55,6 +68,19 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Capture focused validator parse diagnostics
+        shell: powershell
+        run: |
+          $output = 'artifacts/latest/launcher-to-campaign-continuity'
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path '.\scripts\tbg\Test-TbgLauncherToCampaignContinuity.ps1'), [ref]$tokens, [ref]$errors)
+          [ordered]@{
+            schema = 'TbgPowerShellParseDiagnostic.v1'
+            errorCount = @($errors).Count
+            errors = @($errors | ForEach-Object { [ordered]@{ message = $_.Message; line = $_.Extent.StartLineNumber; column = $_.Extent.StartColumnNumber; text = $_.Extent.Text } })
+          } | ConvertTo-Json -Depth 10 | Set-Content "$output/parser-diagnostic-windows.json" -Encoding UTF8
       - name: Validate launcher-to-campaign continuity
         shell: powershell
         run: .\scripts\tbg\Test-TbgLauncherToCampaignContinuity.ps1
@@ -78,7 +104,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: launcher-to-campaign-continuity-windows
-          if-no-files-found: warn
+          if-no-files-found: error
           path: |
             artifacts/latest/launcher-to-campaign-continuity/*.json
             artifacts/latest/harness-doctrine/*.json
