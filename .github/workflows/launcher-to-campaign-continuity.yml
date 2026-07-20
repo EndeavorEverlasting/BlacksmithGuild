@@ -39,6 +39,16 @@ jobs:
       - name: Validate runtime event observation
         shell: pwsh
         run: ./scripts/tbg/Test-TbgRuntimeEventObservation.ps1
+      - name: Upload PowerShell Core validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launcher-to-campaign-continuity-pwsh
+          if-no-files-found: warn
+          path: |
+            artifacts/latest/launcher-to-campaign-continuity/*.json
+            artifacts/latest/harness-doctrine/*.json
+            artifacts/latest/runtime-observer/*.json
 
   windows-powershell:
     name: Windows PowerShell continuity doctrine
@@ -63,3 +73,15 @@ jobs:
       - name: Validate PowerShell encoding
         shell: powershell
         run: .\scripts\test-powershell-utf8-bom-contract.ps1
+      - name: Upload Windows validation results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launcher-to-campaign-continuity-windows
+          if-no-files-found: warn
+          path: |
+            artifacts/latest/launcher-to-campaign-continuity/*.json
+            artifacts/latest/harness-doctrine/*.json
+            artifacts/latest/triggers/*.json
+            artifacts/latest/one-click-cascade/*.json
+            artifacts/latest/one-click-test/*.json
