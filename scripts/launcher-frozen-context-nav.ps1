@@ -360,6 +360,16 @@ try {
     $targetTitle = [string]$context.windowTitle
     Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_target_selected selectionFrozen=true hwnd={0} pid={1} title="{2}" context={3} operationMode={4} runtimeProofClaim={5}' -f $targetHwnd.ToInt64(), $targetPid, $targetTitle, $LauncherContextPath, $operationMode, $runtimeProofClaim)
 
+    if (Test-GameSpawned) {
+        Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned before_click=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
+        if ($LaunchSetup) {
+            Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
+        }
+        $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
+        if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
+        exit 0
+    }
+
     if (-not (Test-FrozenHwndValid -Hwnd $targetHwnd -ExpectedPid $targetPid)) {
         throw 'frozen launcher context target is invalid before click phase'
     }
@@ -372,16 +382,6 @@ try {
         $safeAlreadyRunningTitle = $alreadyRunningTitle -replace '"', ''''
         Write-FrozenLaunchLog ('LAUNCH_STATE=already_running_game classification=already_running_game hwnd={0} pid={1} title="{2}" reason=continue_target_is_live_singleplayer_host operationMode={3} runtimeProofClaim={4}' -f $alreadyRunningHwnd.ToInt64(), $targetPid, $safeAlreadyRunningTitle, $operationMode, $runtimeProofClaim)
         throw 'operator_action_required: Bannerlord Singleplayer is already running; close it before ForgeContinue.'
-    }
-
-    if (Test-GameSpawned) {
-        Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned before_click=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
-        if ($LaunchSetup) {
-            Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_setup_handoff_observed classification=launcher_setup_handoff_observed runtimeProofClaim=false'
-        }
-        $classification = Emit-PostHandoffReadiness -Deadline $overallDeadline
-        if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
-        exit 0
     }
 
     Write-FrozenLaunchLog 'LAUNCH_STATE=launcher_load_wait waiting_for_ui_ready sleepSec=6'
