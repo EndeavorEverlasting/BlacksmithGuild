@@ -23,7 +23,7 @@ function Get-Json([string]$RelativePath) {
     $raw = Get-Text $RelativePath
     if ($null -eq $raw) { return $null }
     try { return $raw | ConvertFrom-Json -ErrorAction Stop }
-    catch { Add-Failure "invalid JSON $RelativePath: $($_.Exception.Message)"; return $null }
+    catch { Add-Failure "invalid JSON ${RelativePath}: $($_.Exception.Message)"; return $null }
 }
 function Get-Value($Object, [string[]]$Path) {
     $current = $Object
