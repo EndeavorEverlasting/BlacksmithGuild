@@ -360,6 +360,12 @@ try {
     $targetTitle = [string]$context.windowTitle
     Write-FrozenLaunchLog ('LAUNCH_STATE=launcher_target_selected selectionFrozen=true hwnd={0} pid={1} title="{2}" context={3} operationMode={4} runtimeProofClaim={5}' -f $targetHwnd.ToInt64(), $targetPid, $targetTitle, $LauncherContextPath, $operationMode, $runtimeProofClaim)
 
+    $frozenProcessAlive = Get-Process -Id $targetPid -ErrorAction SilentlyContinue
+    if (-not $frozenProcessAlive) {
+        Write-FrozenLaunchLog ('LAUNCH_STATE=frozen_context_stale classification=frozen_context_stale pid={0} reason=process_not_alive operationMode={1} runtimeProofClaim={2}' -f $targetPid, $operationMode, $runtimeProofClaim)
+        throw "frozen launcher context is stale: process $targetPid is not alive"
+    }
+
     if (Test-GameSpawned) {
         Write-FrozenLaunchLog ('LAUNCH_STATE=game_spawned classification=game_spawned before_click=true operationMode={0} runtimeProofClaim={1}' -f $operationMode, $runtimeProofClaim)
         if ($LaunchSetup) {
