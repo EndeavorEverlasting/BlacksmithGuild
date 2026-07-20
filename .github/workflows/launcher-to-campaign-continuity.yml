@@ -1,0 +1,65 @@
+name: Launcher to Campaign Continuity
+
+on:
+  pull_request:
+    paths:
+      - 'AGENTS.md'
+      - 'CODEBASE_MAP.md'
+      - 'docs/harness-doctrine.md'
+      - 'docs/handoff/launcher-to-campaign-event-continuity.md'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/harness/policies/harness-doctrine.policy.json'
+      - '.tbg/harness/fixtures/event-continuity/**'
+      - '.tbg/harness/triggers.d/**'
+      - '.tbg/harness/test-catalog.d/core/launcher-to-campaign-continuity.test.json'
+      - '.tbg/workflows/launcher-to-campaign-event-continuity.contract.json'
+      - '.tbg/workflows/runtime-event-observation.contract.json'
+      - '.tbg/skills/launcher-lifecycle/SKILL.md'
+      - '.tbg/skills/route-visible-trade/SKILL.md'
+      - 'scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1'
+      - 'scripts/tbg/Test-TbgHarnessDoctrine.ps1'
+      - '.github/workflows/launcher-to-campaign-continuity.yml'
+  workflow_dispatch:
+
+jobs:
+  powershell-core:
+    name: PowerShell Core continuity doctrine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate launcher-to-campaign continuity
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1
+      - name: Validate harness doctrine
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgHarnessDoctrine.ps1
+      - name: Validate unified launch surfaces
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1
+      - name: Validate runtime event observation
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgRuntimeEventObservation.ps1
+
+  windows-powershell:
+    name: Windows PowerShell continuity doctrine
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate launcher-to-campaign continuity
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgLauncherToCampaignContinuity.ps1
+      - name: Validate harness doctrine
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgHarnessDoctrine.ps1
+      - name: Validate trigger fragments
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgTriggerFragments.ps1
+      - name: Validate one-click cascade
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgOneClickCascade.ps1
+      - name: Validate one-click test spine
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgOneClickTestSpine.ps1
+      - name: Validate PowerShell encoding
+        shell: powershell
+        run: .\scripts\test-powershell-utf8-bom-contract.ps1

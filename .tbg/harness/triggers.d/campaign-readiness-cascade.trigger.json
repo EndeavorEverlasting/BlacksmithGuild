@@ -1,0 +1,19 @@
+{
+  "schema": "tbg.one-click-test.trigger.v1",
+  "triggerId": "campaign-readiness-cascade",
+  "displayName": "Campaign Readiness Cascade Trigger",
+  "description": "Publishes a same-run readiness cascade only after the in-game readiness producer emits campaign.automation.ready from a healthy observer, stable campaign map, and command-poll-ready gate. The trigger is notification and routing only; it grants no gameplay authority.",
+  "eventMatch": {
+    "eventTypes": ["campaign.automation.ready"]
+  },
+  "condition": "sessionReady, mapReady, campaignReady, canPollFileInbox, runtimeObserverHealthy, gameProcessAlive, and stabilityWindowComplete are true for the same run and correlation",
+  "requiredFreshness": "The readiness packet is from the current game session and completed a 60-second stable map-ready interval.",
+  "requiredProofLevel": "live runtime",
+  "forbiddenProofLevels": ["launcher", "launcher handoff", "command ACK"],
+  "downstreamOperation": "publish-campaign-readiness-cascade",
+  "maxCascadeDepth": 3,
+  "deduplicationKey": "runId + correlationId + gameSessionId + readinessGeneration",
+  "cooldownSeconds": 60,
+  "mutationAuthority": "read_only",
+  "expectedArtifacts": ["campaign-readiness.json", "campaign-readiness-cascade.json", "trigger-ledger.json"]
+}

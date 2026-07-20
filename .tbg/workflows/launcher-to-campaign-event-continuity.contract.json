@@ -1,0 +1,162 @@
+{
+  "id": "launcher-to-campaign-event-continuity",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "doctrine_installed",
+  "sprint": "launcher-to-campaign-continuity-doctrine",
+  "contextBanner": "[TBG | Launcher-to-Campaign Continuity | observer overlap | campaign readiness cascade]",
+  "purpose": "Require one correlated event lineage from Windows launcher observation through the Singleplayer host handoff, in-game lifecycle observation, stable campaign-map readiness, and the campaign readiness cascade. A process/window handoff, MapTransition, MapReady, command ACK, or trigger match alone is not campaign automation readiness.",
+  "lane": "launcher-lifecycle/runtime-readiness integration",
+  "authorities": [
+    "AGENTS.md",
+    "docs/harness-doctrine.md",
+    ".tbg/harness/policies/harness-doctrine.policy.json",
+    ".tbg/workflows/window-metadata-intelligence.contract.json",
+    ".tbg/workflows/runtime-event-observation.contract.json",
+    ".tbg/workflows/runtime-context-continuity.contract.json"
+  ],
+  "entryPaths": [
+    "ForgeContinue.cmd",
+    "Auto Launch Nav",
+    "new-game Play path",
+    "Steam-mediated path",
+    "future registered launch path"
+  ],
+  "sharedIdentityFields": [
+    "runId",
+    "correlationId",
+    "launchPath",
+    "sessionIntentOrNull",
+    "launcherProcessNameOrNull",
+    "launcherPidOrNull",
+    "launcherHwndOrNull",
+    "gameProcessNameOrNull",
+    "gamePidOrNull",
+    "gameHwndOrNull",
+    "gameSessionIdOrNull"
+  ],
+  "observerLeaseContinuity": {
+    "windowObserverActiveBeforeFirstActuation": true,
+    "runtimeObserverActiveBeforeFirstActuation": true,
+    "sameRunIdRequired": true,
+    "sameCorrelationIdRequired": true,
+    "overlapRequiredAcrossFinalLauncherHandoff": true,
+    "windowObserverMayRetireOnlyAfterRuntimeAttachmentAck": true,
+    "sameProcessGameHostingAllowed": true,
+    "sameProcessHostIdentityRequiresFreshHwndTitleOrLifecycleTransition": true,
+    "observerRestartRequiresExplicitGapAndReconciliationEvents": true,
+    "missingObserverDisposition": "blocked_unknown_not_absent"
+  },
+  "minimumEventChain": [
+    "observer.window.started",
+    "observer.runtime.started",
+    "launch.path.selected",
+    "window.observed",
+    "window.identity.resolved_or_quarantined",
+    "action.authorized_or_blocked",
+    "action.dispatched_or_skipped",
+    "transition.verified_or_unverified",
+    "launch.handoff.verified_or_blocked",
+    "runtime.observer.attached_or_blocked",
+    "game.runtime.lifecycle.observed",
+    "campaign.map.transition_observed",
+    "campaign.map.ready_observed",
+    "campaign.readiness.stable_or_blocked",
+    "campaign.command_poll.ready_or_blocked",
+    "campaign.automation.ready_or_blocked",
+    "campaign.readiness.cascade_published_or_blocked"
+  ],
+  "launcherHandoffGate": {
+    "requiresSingleplayerHostObservation": true,
+    "requiresFreshProcessOrWindowTransition": true,
+    "requiresRuntimeObserverAttachmentAck": true,
+    "requiresSharedRunAndCorrelation": true,
+    "windowDisappearanceAloneIsInsufficient": true,
+    "actionDispatchAloneIsInsufficient": true,
+    "launcherHandoffIsNotCampaignReadiness": true
+  },
+  "campaignReadinessGate": {
+    "requiredSignals": [
+      "sessionReady:true",
+      "mapReady:true",
+      "campaignReady:true",
+      "canPollFileInbox:true",
+      "runtimeObserverHealthy:true",
+      "gameProcessAlive:true",
+      "stabilityWindowComplete:true"
+    ],
+    "stabilityWindowSeconds": 60,
+    "forbiddenSubstitutions": [
+      "SetupPhase.MapTransition",
+      "SetupPhase.MapReady without campaignReady",
+      "launcher handoff",
+      "game process presence",
+      "window title alone",
+      "command ACK",
+      "stale status JSON",
+      "trigger match without fresh readiness evidence"
+    ],
+    "blockingSignals": [
+      "observer.gap.unreconciled",
+      "process_lost",
+      "campaignReady:false",
+      "canPollFileInbox:false",
+      "stabilityWindowComplete:false",
+      "active human foreign or ambiguous session",
+      "quarantined window lifecycle"
+    ],
+    "readyEvent": "campaign.automation.ready",
+    "readyEventGrantsGameplayAuthority": false
+  },
+  "triggerRouting": {
+    "launcherHandoffTrigger": ".tbg/harness/triggers.d/launcher-handoff-runtime-attach.trigger.json",
+    "runtimeAttachmentTrigger": ".tbg/harness/triggers.d/runtime-observer-attachment.trigger.json",
+    "campaignReadinessTrigger": ".tbg/harness/triggers.d/campaign-readiness-cascade.trigger.json",
+    "cascadeProcessor": "scripts/tbg/Resolve-TbgOneClickCascade.ps1",
+    "triggerMatchIsRoutingNotAcceptance": true,
+    "downstreamWorkflowMustProvideItsOwnAuthority": true
+  },
+  "requiredArtifacts": [
+    ".local/tbg-runtime-observer/<runId>/run-context.json",
+    ".local/tbg-runtime-observer/<runId>/handoff-context.json",
+    ".local/tbg-runtime-observer/<runId>/events.jsonl",
+    ".local/tbg-runtime-observer/<runId>/observer-status.json",
+    ".local/tbg-runtime-observer/<runId>/campaign-readiness.json",
+    ".local/tbg-runtime-observer/<runId>/campaign-readiness-cascade.json",
+    ".local/tbg-runtime-observer/<runId>/artifact-registry.json",
+    ".local/tbg-runtime-observer/<runId>/operator-report.md"
+  ],
+  "failureStates": [
+    "BLOCKED_WINDOW_OBSERVER_NOT_ACTIVE",
+    "BLOCKED_RUNTIME_OBSERVER_NOT_ACTIVE",
+    "BLOCKED_OBSERVER_CORRELATION_MISMATCH",
+    "BLOCKED_LAUNCHER_HANDOFF_UNVERIFIED",
+    "BLOCKED_RUNTIME_ATTACHMENT_MISSING",
+    "BLOCKED_OBSERVER_GAP_UNRECONCILED",
+    "BLOCKED_CAMPAIGN_NOT_READY",
+    "BLOCKED_COMMAND_POLL_NOT_READY",
+    "BLOCKED_READINESS_STABILITY_INCOMPLETE",
+    "BLOCKED_CAMPAIGN_CASCADE_NOT_PUBLISHED"
+  ],
+  "forbiddenScope": [
+    "gameplay action or command-inbox mutation from a readiness trigger alone",
+    "stopping Bannerlord when an observer lease ends",
+    "retiring the window observer before runtime attachment acknowledgement",
+    "promoting launcher handoff or MapTransition to campaign readiness",
+    "creating a second uncorrelated runtime run at the launcher boundary",
+    "claiming listener survival without a continuous event and lease ledger",
+    "tracking raw logs saves crash dumps secrets or machine-private evidence"
+  ],
+  "validationCommands": [
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgHarnessDoctrine.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgRuntimeEventObservation.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgTriggerFragments.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgOneClickCascade.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tbg/Test-TbgEndToEndHarness.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-powershell-utf8-bom-contract.ps1",
+    "git diff --check"
+  ],
+  "proofLevel": "contract",
+  "proofCeiling": "static_test"
+}

@@ -49,6 +49,7 @@ $generatedOutputPolicyPath = '.gitignore'
 $policyPath = '.tbg/harness/policies/harness-doctrine.policy.json'
 $runtimePath = '.tbg/workflows/runtime-context-continuity.contract.json'
 $runtimeSchemaPath = '.tbg/harness/schemas/runtime-context-capsule.schema.json'
+$continuityPath = '.tbg/workflows/launcher-to-campaign-event-continuity.contract.json'
 $doctrine = Get-Text $doctrinePath
 $entrypoint = Get-Text $entrypointPath
 $generatedOutputPolicy = Get-Text $generatedOutputPolicyPath
@@ -57,6 +58,7 @@ $policy = Get-Json $policyPath
 $manifest = Get-Json '.tbg/harness/manifest.json'
 $runtime = Get-Json $runtimePath
 $runtimeSchema = Get-Json $runtimeSchemaPath
+$continuity = Get-Json $continuityPath
 
 Require-Match 'doctrine defines harness' $doctrine 'A prompt is one artifact inside the harness'
 Require-Match 'doctrine defines fresh-agent acceptance' $doctrine 'Fresh-agent acceptance'
@@ -71,6 +73,10 @@ Require-Match 'doctrine defaults to multitasking' $doctrine 'Multitasking is the
 Require-Match 'doctrine defaults to mouse independence' $doctrine 'background-safe and mouse-independent'
 Require-Match 'doctrine constrains coordinate fallback' $doctrine 'foreground, cursor, or coordinate fallback is valid only when'
 Require-Match 'doctrine verifies launcher transition' $doctrine 'Play/Continue completion requires a fresh correlated transition'
+Require-Match 'doctrine defines observer continuity' $doctrine 'Cross-boundary observer continuity and campaign readiness cascade'
+Require-Match 'doctrine requires observer overlap' $doctrine 'window observer and external runtime observer must overlap'
+Require-Match 'doctrine gates campaign release' $doctrine 'campaignReady:true[\s\S]*canPollFileInbox:true[\s\S]*60-second stable map-ready interval'
+Require-Match 'doctrine denies trigger gameplay authority' $doctrine 'readiness cascade grants no gameplay authority'
 Require-Match 'doctrine defines crash observability' $doctrine 'Crash observability and negative evidence'
 Require-Match 'doctrine requires pre-post state' $doctrine 'pre-state snapshot[\s\S]*post-state snapshot'
 Require-Match 'doctrine constrains negative evidence' $doctrine 'Negative evidence is valid only when'
@@ -87,6 +93,9 @@ Require-Match 'AGENTS requires action proof' $agents 'plan-only closeout is inva
 Require-Match 'AGENTS protects existing runtime' $agents 'process presence is context, not zombie proof'
 Require-Match 'AGENTS defines launcher identity freeze' $agents 'exact PID/HWND preferred; unique process name or S1/S2 delta allowed'
 Require-Match 'AGENTS defines multitasking launcher safety' $agents 'background-safe and mouse-independent by default'
+Require-Match 'AGENTS defines observer handoff' $agents 'window observer may retire only after a same-run runtime-observer attachment'
+Require-Match 'AGENTS defines campaign readiness' $agents 'campaignReady:true, canPollFileInbox:true, and a fresh 60-second stable map-ready interval'
+Require-Match 'AGENTS denies readiness authority' $agents 'readiness cascade grants no gameplay authority'
 Require-Match 'AGENTS defines crash boundary' $agents 'last marker as a boundary rather than a cause'
 if ($agents) {
     $lineCount = @($agents -split "`r?`n").Count
@@ -110,7 +119,7 @@ if ($policy) {
     Require-Values 'policy invalid closeouts' @($policy.invalidCloseouts) @(
         'acknowledgment_only','summary_only','rewritten_prompt_only','plan_only','handoff_only','preflight_only'
     )
-    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011','HD-012','HD-013')
+    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011','HD-012','HD-013','HD-014','HD-015')
     Require-Values 'policy launcher identity signals' @($policy.launcherSelection.acceptableIdentitySignals) @(
         'exact_pid_and_hwnd','unique_process_name','verified_executable_path','uia_root_process_id','s1_s2_process_or_window_delta'
     )
@@ -129,6 +138,13 @@ if ($policy) {
         'explicit_task_specific_foreground_authority','background_safe_paths_exhausted','exact_frozen_target_identity',
         'bounded_retry_and_timeout','operator_foreground_preserved_or_restored','fresh_post_action_transition_verification'
     )
+    Require-Values 'policy continuity fields' @($policy.launcherToCampaignContinuity.sharedIdentityFields) @('runId','correlationId','launchPath','gamePidOrNull','gameHwndOrNull','gameSessionIdOrNull')
+    if ($policy.launcherToCampaignContinuity.observerOverlapRequired) { Add-Pass 'policy observer overlap' } else { Add-Failure 'policy observer overlap' }
+    if ($policy.launcherToCampaignContinuity.windowObserverRetiresAfterRuntimeAttachment) { Add-Pass 'policy attachment before window retirement' } else { Add-Failure 'policy attachment before window retirement' }
+    if ($policy.launcherToCampaignContinuity.launcherHandoffIsNotCampaignReadiness) { Add-Pass 'policy launcher handoff boundary' } else { Add-Failure 'policy launcher handoff boundary' }
+    if ($policy.launcherToCampaignContinuity.mapTransitionIsNotCampaignReadiness) { Add-Pass 'policy map transition boundary' } else { Add-Failure 'policy map transition boundary' }
+    if ([int]$policy.launcherToCampaignContinuity.stabilityWindowSeconds -eq 60) { Add-Pass 'policy readiness stability window' } else { Add-Failure 'policy readiness stability window' }
+    if ($policy.launcherToCampaignContinuity.readinessCascadeGrantsGameplayAuthority -eq $false) { Add-Pass 'policy readiness trigger authority boundary' } else { Add-Failure 'policy readiness trigger authority boundary' }
     Require-Values 'policy crash trace fields' @($policy.crashObservability.requiredTraceFields) @(
         'runId','commandIdOrNull','correlationId','spanId','parentSpanIdOrNull','operation','startedAtUtc',
         'preState','postStateOrNull','expectedSignals','observedSignals','negativeEvidence','terminalStatus'
@@ -165,6 +181,8 @@ if ($manifest) {
         sprintCapsuleContract = '.tbg/workflows/tbg-sprint-capsule.contract.json'
         runtimeContextContinuityContract = $runtimePath
         runtimeContextCapsuleSchema = $runtimeSchemaPath
+        launcherToCampaignContinuityContract = $continuityPath
+        launcherToCampaignContinuityValidator = 'scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1'
     }
     foreach ($entry in $expected.GetEnumerator()) {
         if ([string]$manifest.paths.($entry.Key) -eq [string]$entry.Value) { Add-Pass "manifest $($entry.Key)" }
@@ -180,6 +198,12 @@ if ($runtime -and $runtime.crashObservability.lastMarkerIsBoundaryNotCause) { Ad
 else { Add-Failure 'runtime crash observability contract' }
 if ($runtimeSchema -and ($runtimeSchema.properties.PSObject.Properties.Name -contains 'crashObservability')) { Add-Pass 'runtime crash observability schema' }
 else { Add-Failure 'runtime crash observability schema' }
+if ($continuity -and $continuity.id -eq 'launcher-to-campaign-event-continuity') { Add-Pass 'launcher to campaign continuity contract' }
+else { Add-Failure 'launcher to campaign continuity contract' }
+if ($continuity -and $continuity.observerLeaseContinuity.overlapRequiredAcrossFinalLauncherHandoff) { Add-Pass 'launcher to campaign observer overlap contract' }
+else { Add-Failure 'launcher to campaign observer overlap contract' }
+if ($continuity -and $continuity.campaignReadinessGate.readyEvent -eq 'campaign.automation.ready') { Add-Pass 'campaign readiness event contract' }
+else { Add-Failure 'campaign readiness event contract' }
 
 $result = [ordered]@{
     schema = 'tbg.harness-doctrine.validation.v1'

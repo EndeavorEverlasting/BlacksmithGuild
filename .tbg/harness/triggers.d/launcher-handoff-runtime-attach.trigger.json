@@ -1,0 +1,19 @@
+{
+  "schema": "tbg.one-click-test.trigger.v1",
+  "triggerId": "launcher-handoff-runtime-attach",
+  "displayName": "Launcher Handoff Runtime Attachment Trigger",
+  "description": "Routes a verified Singleplayer launcher handoff to same-run runtime observer attachment or confirmation. The trigger grants no launch, process, input, save, or gameplay authority.",
+  "eventMatch": {
+    "eventTypes": ["launch.handoff.verified"]
+  },
+  "condition": "runId and correlationId match the active launcher and runtime observer leases and the Singleplayer host identity is fresh",
+  "requiredFreshness": "The handoff and both observer leases belong to the current launch run.",
+  "requiredProofLevel": "launcher",
+  "forbiddenProofLevels": ["campaign readiness", "live runtime"],
+  "downstreamOperation": "attach-or-confirm-runtime-observer",
+  "maxCascadeDepth": 2,
+  "deduplicationKey": "runId + correlationId + game process identity",
+  "cooldownSeconds": 0,
+  "mutationAuthority": "read_only",
+  "expectedArtifacts": ["handoff-context.json", "observer-status.json", "events.jsonl"]
+}

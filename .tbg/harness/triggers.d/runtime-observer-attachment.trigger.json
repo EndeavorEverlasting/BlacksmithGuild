@@ -1,0 +1,19 @@
+{
+  "schema": "tbg.one-click-test.trigger.v1",
+  "triggerId": "runtime-observer-attachment",
+  "displayName": "Runtime Observer Attachment Handoff Trigger",
+  "description": "Routes a same-run runtime observer attachment acknowledgement to completion of the window-observer transfer. The window observer may retire only after this acknowledgement and a gap-free overlap ledger.",
+  "eventMatch": {
+    "eventTypes": ["runtime.observer.attached"]
+  },
+  "condition": "runId and correlationId match the verified launcher handoff and no unreconciled observer gap exists",
+  "requiredFreshness": "The attachment acknowledgement is emitted during the current launch handoff window.",
+  "requiredProofLevel": "harness",
+  "forbiddenProofLevels": ["campaign readiness", "gameplay"],
+  "downstreamOperation": "complete-window-observer-transfer",
+  "maxCascadeDepth": 2,
+  "deduplicationKey": "runId + correlationId + runtime observer lease",
+  "cooldownSeconds": 0,
+  "mutationAuthority": "read_only",
+  "expectedArtifacts": ["handoff-context.json", "observer-status.json", "events.jsonl"]
+}

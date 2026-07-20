@@ -42,16 +42,28 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `artifacts/latest/one-click-test/` — latest result and report.
 - `.github/workflows/one-click-test-spine.yml` — CI for PowerShell Core and Windows PowerShell 5.1.
 
+## Launcher-to-campaign event continuity
+
+- `.tbg/workflows/launcher-to-campaign-event-continuity.contract.json` — canonical observer-overlap, launcher-handoff, in-game readiness, and campaign-cascade contract.
+- `.tbg/harness/fixtures/event-continuity/launcher-to-campaign-continuity.fixture.json` — positive and blocked continuity/readiness sequences.
+- `.tbg/harness/triggers.d/launcher-handoff-runtime-attach.trigger.json` — verified launcher handoff to same-run runtime attachment routing.
+- `.tbg/harness/triggers.d/runtime-observer-attachment.trigger.json` — runtime attachment acknowledgement to window-observer transfer completion.
+- `.tbg/harness/triggers.d/campaign-readiness-cascade.trigger.json` — stable campaign readiness notification; grants no gameplay authority.
+- `scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1` — focused static validator.
+- `.tbg/harness/test-catalog.d/core/launcher-to-campaign-continuity.test.json` — `ForgeTest.cmd` discovery entry.
+- `docs/handoff/launcher-to-campaign-event-continuity.md` — English operator boundary and implementation handoff.
+- `artifacts/latest/launcher-to-campaign-continuity/` — ignored latest validation result.
+
 ## Existing harness and state systems
 
 - `.tbg/harness/artifact-engines.registry.json` and `.tbg/workflows/local-artifact-engine.contract.json` — deterministic artifact parsing/routing.
 - `.tbg/state/` and `.tbg/workflows/state-envelope.contract.json` — state capabilities, constraints, and views.
 - `.tbg/harness/window-identities.registry.json` — launcher/window identity policy.
-- `docs/harness-doctrine.md`, `.tbg/harness/policies/harness-doctrine.policy.json`, and `scripts/tbg/Test-TbgHarnessDoctrine.ps1` — launcher identity freeze, process-name/PID/HWND/S1-S2 selection, multitasking-safe background actuation, and post-action transition verification doctrine.
+- `docs/harness-doctrine.md`, `.tbg/harness/policies/harness-doctrine.policy.json`, and `scripts/tbg/Test-TbgHarnessDoctrine.ps1` — launcher identity freeze, process-name/PID/HWND/S1-S2 selection, multitasking-safe background actuation, post-action transition verification, and launcher-to-campaign observer continuity doctrine.
 - `.tbg/state/game-compatibility.registry.json` — Bannerlord compatibility gate.
 - `scripts/tbg/Test-TbgSkillRouting.ps1` — canonical skill/router validator.
 - `docs/architecture/runtime-observer-agent-routing.md` — read-only observer capability and incident trigger routing.
-- `ForgeTest.cmd`, `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
+- `ForgeTest.cmd`, `ForgeCascade.cmd`, `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
 
 ## Product and build
 
@@ -71,6 +83,7 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `BlacksmithGuild_Phase1.log` — canonical behavior log.
 - route, map-trade, smithing, governor, and regent JSON artifacts — workflow-specific behavior proof.
 - `.tbg/workflows/runtime-context-continuity.contract.json` — process ownership, correlated spans, pre/post-state, negative evidence, causality, and crash reconstruction authority.
+- `.tbg/workflows/runtime-event-observation.contract.json` — normalized window/process/external/in-process events and same-run continuity specialization.
 - `ForgeRuntimeObserver.cmd`, `ForgeRuntimeIncident.cmd`, and `.tbg/skills/runtime-incident-triage/SKILL.md` — observer lease/status and completed-run incident reconstruction entrypoints.
 - `.tbg/harness/schemas/runtime-context-capsule.schema.json` and `scripts/tbg/Test-TbgRuntimeContextContinuity.ps1` — sanitized crash-capsule enforcement.
 - `docs/evidence/runtime-context/` — bounded remote reconstruction packets; raw logs and crash dumps stay ignored.

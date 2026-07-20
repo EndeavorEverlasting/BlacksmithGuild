@@ -166,6 +166,36 @@ launch.path.selected
 
 Play/Continue intent remains owned by the launch context. Safe Mode maps only to the exact `No` control. Dependency Caution maps only to the exact `Confirm` control. Calibration requires an explicit registered action contract. Steam and unknown windows are observation-only. A path-specific implementation, timeout, mouse fallback, or launcher wrapper may not weaken these rules.
 
+## Cross-boundary observer continuity and campaign readiness cascade
+
+Logical listener survival is a continuous evidence and lease property; it does not require one operating-system hook or one process to observe every layer. The window observer and external runtime observer must overlap across the final launcher handoff, use the same `runId` and `correlationId`, and write into the same registered event lineage. Both observers must be active before the first launcher actuation. The window observer may retire only after a same-run runtime-observer attachment acknowledgement identifies the game host and confirms that the runtime observer owns continued observation. A restart or lost callback must emit `observer.gap` and `observer.reconciled` or remain blocked; silence is not continuity.
+
+A verified launcher surface transition must name its predecessor and successor. The final launcher surface emits `launch.handoff.verified` only after the Singleplayer host is freshly observed and the runtime observer acknowledges the same process/session lineage. Same-process game hosting under `TaleWorlds.MountAndBlade.Launcher` is valid when a fresh HWND, title, UIA ownership, or lifecycle transition proves the host change. Window disappearance, click dispatch, process presence, or a launcher terminal state alone is not a clean handoff. Launcher handoff is not campaign readiness.
+
+The in-game chain is equally explicit. `SetupPhase.MapTransition` is not MapReady or campaign readiness. `MapReady` alone is not permission to release automation. The campaign readiness gate requires fresh same-session evidence for `sessionReady:true`, `mapReady:true`, `campaignReady:true`, `canPollFileInbox:true`, a healthy runtime observer, a live correlated game process, no unreconciled observer gap, and a complete 60-second stable map-ready interval. Any false, missing, stale, mismatched, or interrupted signal blocks release.
+
+The successful gate emits `campaign.automation.ready`. The registered campaign trigger publishes `campaign.readiness.cascade_published` so skills, agents, reports, and authorized workflows can learn that the map is ready. The readiness cascade grants no gameplay authority: it may not move the party, issue a command, mutate a save, trade, smith, or enable an engine unless the downstream task-specific workflow independently grants that authority and requires its own proof.
+
+The minimum cross-boundary chain is:
+
+```text
+observer.window.started
+  -> observer.runtime.started
+  -> launch.path.selected
+  -> launcher surface cascade
+  -> launch.handoff.verified_or_blocked
+  -> runtime.observer.attached_or_blocked
+  -> game.runtime.lifecycle.observed
+  -> campaign.map.transition_observed
+  -> campaign.map.ready_observed
+  -> campaign.readiness.stable_or_blocked
+  -> campaign.command_poll.ready_or_blocked
+  -> campaign.automation.ready_or_blocked
+  -> campaign.readiness.cascade_published_or_blocked
+```
+
+Missing successor events, a changed run or correlation ID, premature window-observer retirement, an unreconciled observer gap, or a readiness trigger fired from lower proof must fail closed. The canonical specialization is `.tbg/workflows/launcher-to-campaign-event-continuity.contract.json`.
+
 ## Crash observability and negative evidence
 
 Crash-sensitive engine calls, API calls, and state transitions must be reconstructable from correlated evidence rather than guessed from the last log line.

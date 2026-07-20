@@ -150,6 +150,54 @@
     "pathSpecificSafetyBypassForbidden": true,
     "missingObservationDisposition": "unknown_not_absent"
   },
+  "launcherToCampaignContinuity": {
+    "sharedIdentityFields": [
+      "runId",
+      "correlationId",
+      "launchPath",
+      "launcherProcessNameOrNull",
+      "launcherPidOrNull",
+      "launcherHwndOrNull",
+      "gameProcessNameOrNull",
+      "gamePidOrNull",
+      "gameHwndOrNull",
+      "gameSessionIdOrNull"
+    ],
+    "requiredEvents": [
+      "observer.window.started",
+      "observer.runtime.started",
+      "launch.path.selected",
+      "launch.handoff.verified_or_blocked",
+      "runtime.observer.attached_or_blocked",
+      "game.runtime.lifecycle.observed",
+      "campaign.map.transition_observed",
+      "campaign.map.ready_observed",
+      "campaign.readiness.stable_or_blocked",
+      "campaign.command_poll.ready_or_blocked",
+      "campaign.automation.ready_or_blocked",
+      "campaign.readiness.cascade_published_or_blocked"
+    ],
+    "observerOverlapRequired": true,
+    "sameRunIdRequired": true,
+    "sameCorrelationIdRequired": true,
+    "windowObserverRetiresAfterRuntimeAttachment": true,
+    "sameProcessGameHostingAllowed": true,
+    "sameProcessHostingRequiresFreshWindowOrLifecycleTransition": true,
+    "observerGapRequiresExplicitReconciliation": true,
+    "unreconciledObserverGapBlocksRelease": true,
+    "launcherHandoffIsNotCampaignReadiness": true,
+    "mapTransitionIsNotCampaignReadiness": true,
+    "mapReadyAloneIsNotCampaignReadiness": true,
+    "campaignReadyRequired": true,
+    "commandPollReadyRequired": true,
+    "runtimeObserverHealthyRequired": true,
+    "gameProcessAliveRequired": true,
+    "stabilityWindowSeconds": 60,
+    "readinessEvent": "campaign.automation.ready",
+    "readinessCascadeGrantsGameplayAuthority": false,
+    "triggerRoutingIsAuthorityNeutral": true,
+    "missingSuccessorDisposition": "blocked_unknown_not_absent"
+  },
   "rules": [
     {
       "id": "HD-001",
@@ -220,6 +268,11 @@
       "id": "HD-014",
       "name": "unified-launch-path-and-surface-invariance",
       "requirement": "ForgeContinue, Auto Launch Nav, new-game Play, Steam-mediated, and future launch paths must use the same observer-first run context and event cascade for Play/Continue, calibration, Safe Mode, Caution, Steam broker, other launcher windows, and game handoff; record every correlated surface, freeze identity per surface operation, quarantine unknowns, keep Steam observation-only, and require a fresh verified transition before success."
+    },
+    {
+      "id": "HD-015",
+      "name": "launcher-to-campaign-observer-continuity",
+      "requirement": "The window and runtime observers must overlap across the final launcher handoff with one run and correlation lineage; the window observer retires only after runtime attachment acknowledgement; launcher handoff and MapTransition are not campaign readiness; campaign automation readiness requires campaignReady, command-poll readiness, observer health, process life, and a 60-second stable map-ready interval; the readiness cascade grants no gameplay authority."
     }
   ],
   "invalidCloseouts": [
@@ -243,7 +296,8 @@
     "skillManifest": ".tbg/skills/manifest.json",
     "codeIntelligenceContract": ".tbg/workflows/local-mcp-code-intelligence.contract.json",
     "operatorReports": "docs/handoff",
-    "handoffCompressionContract": ".tbg/workflows/tbg-sprint-capsule.contract.json"
+    "handoffCompressionContract": ".tbg/workflows/tbg-sprint-capsule.contract.json",
+    "launcherToCampaignContinuityContract": ".tbg/workflows/launcher-to-campaign-event-continuity.contract.json"
   },
   "requiredArtifacts": {
     "doctrine": "docs/harness-doctrine.md",
@@ -251,13 +305,20 @@
     "validator": "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
     "unifiedLaunchSurfaceValidator": "scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1",
     "unifiedLaunchSurfaceFixture": ".tbg/harness/fixtures/window-intelligence/unified-launch-surface-doctrine.fixture.json",
+    "launcherToCampaignContinuityContract": ".tbg/workflows/launcher-to-campaign-event-continuity.contract.json",
+    "launcherToCampaignContinuityFixture": ".tbg/harness/fixtures/event-continuity/launcher-to-campaign-continuity.fixture.json",
+    "launcherToCampaignContinuityValidator": "scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1",
     "runtimeContinuityContract": ".tbg/workflows/runtime-context-continuity.contract.json",
     "runtimeCapsuleSchema": ".tbg/harness/schemas/runtime-context-capsule.schema.json"
   },
   "validationOrder": [
+    "scripts/tbg/Test-TbgLauncherToCampaignContinuity.ps1",
     "scripts/tbg/Test-TbgUnifiedLaunchSurfaceDoctrine.ps1",
     "scripts/tbg/Test-TbgHarnessDoctrine.ps1",
     "scripts/tbg/Test-TbgWindowIntelligence.ps1",
+    "scripts/tbg/Test-TbgRuntimeEventObservation.ps1",
+    "scripts/tbg/Test-TbgTriggerFragments.ps1",
+    "scripts/tbg/Test-TbgOneClickCascade.ps1",
     "scripts/tbg/Test-TbgRuntimeContextContinuity.ps1",
     "scripts/test-agent-coordination-contract.ps1",
     "scripts/tbg/Test-TbgSkillRouting.ps1",
