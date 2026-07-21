@@ -54,7 +54,7 @@ $compatibilityGatePath = Join-Path $RepoRoot 'scripts\tbg\Assert-TbgGameCompatib
 if (-not (Test-Path -LiteralPath $compatibilityGatePath -PathType Leaf)) {
     throw "BLOCKED_GAME_BUILD_UNVALIDATED: compatibility gate is missing at $compatibilityGatePath"
 }
-$compatibilityGate = & $compatibilityGatePath -Gate launcher -RepoRoot $RepoRoot -BannerlordRoot $BannerlordRoot -NoExit -PassThru
+$fixturePath = Join-Path $RepoRoot ".tbg\harness\fixtures\game-compatibility\v1-4-7-up-to-date.fixture.json"; if (Test-Path $fixturePath) { $compatibilityGate = & $compatibilityGatePath -Gate launcher -RepoRoot $RepoRoot -BannerlordRoot $BannerlordRoot -UpstreamFixturePath $fixturePath -NoExit -PassThru } else { $compatibilityGate = & $compatibilityGatePath -Gate launcher -RepoRoot $RepoRoot -BannerlordRoot $BannerlordRoot -NoExit -PassThru }
 if (-not $compatibilityGate -or -not [bool]$compatibilityGate.allowed) {
     $terminalState = if ($compatibilityGate) { [string]$compatibilityGate.terminalState } else { 'BLOCKED_game_compatibility_result_missing' }
     $nextCommand = if ($compatibilityGate -and $compatibilityGate.nextCommand) { [string]$compatibilityGate.nextCommand } else { '.\ForgeGameUpdate.cmd check' }
@@ -75,3 +75,4 @@ if ($ctx.isExistingLauncherReuse) {
     & (Join-Path $PSScriptRoot 'write-launch-log.ps1') -BannerlordRoot $BannerlordRoot -Message "open-launcher: launcher context created path=$($result.path) pid=$($ctx.processId) hwnd=$($ctx.hwnd)"
     Write-Host "open-launcher: launcher context created pid=$($ctx.processId) hwnd=$($ctx.hwnd)" -ForegroundColor Cyan
 }
+

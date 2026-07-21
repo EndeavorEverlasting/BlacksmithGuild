@@ -62,7 +62,9 @@ namespace BlacksmithGuild.MapTrade
             foreach (var typeName in new[]
             {
                 "TaleWorlds.CampaignSystem.Actions.BuyItemsAction",
-                "TaleWorlds.CampaignSystem.Actions.SellItemsAction"
+                "TaleWorlds.CampaignSystem.Actions.SellItemsAction",
+                // v1.4.7 renamed types
+                "TaleWorlds.CampaignSystem.Actions.SellGoodsForTradeAction"
             })
             {
                 var type = ResolveType(typeName);

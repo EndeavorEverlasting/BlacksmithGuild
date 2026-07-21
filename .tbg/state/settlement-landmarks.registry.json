@@ -1,0 +1,15 @@
+{
+  "schema": "tbg.settlement-landmarks.v1",
+  "purpose": "Per-settlement building positions for town scene navigation (trade district, tavern, keep, arena)",
+  "settlements": {
+    "Quyaz": {
+      "comment": "Aserai town, center area. Trade stalls on right side from entrance.",
+      "buildingPositions": {
+        "trade_district": { "x": 700, "y": 450, "comment": "estimated, unverified" },
+        "tavern": { "x": 500, "y": 540, "comment": "estimated, unverified" },
+        "keep": { "x": 300, "y": 540, "comment": "estimated, unverified" }
+      }
+    }
+  },
+  "note": "v1.4.7 town scene building navigation blocked — requires verified per-settlement landmark coordinates. Invoke-TbgSettlementTradeTrigger.ps1 works up to settlement entry. Building access needs landmark data."
+}

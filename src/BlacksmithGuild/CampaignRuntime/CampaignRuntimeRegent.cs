@@ -45,6 +45,7 @@ namespace BlacksmithGuild.CampaignRuntime
         public const string BlockPersonalSave = "block_personal_save";
         public const string OperatorInterventionRequired = "operator_intervention_required";
         public const string FailClosed = "fail_closed";
+        public const string DismissEscapeMenu = "dismiss_escape_menu";
     }
 
     // ── Snapshot ─────────────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 case RegentStagnationClass.CampaignMapPaused:
                     return RegentRecoveryAction.ResumeCampaignClock;
                 case RegentStagnationClass.EscapeMenuInterrupted:
-                    return RegentRecoveryAction.OperatorInterventionRequired;
+                    return RegentRecoveryAction.DismissEscapeMenu;
                 case RegentStagnationClass.LauncherMenuStagnant:
                     return RegentRecoveryAction.RequestLauncherRebind;
                 case RegentStagnationClass.MainMenuStagnant:

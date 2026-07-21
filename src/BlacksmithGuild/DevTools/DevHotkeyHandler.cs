@@ -1,3 +1,4 @@
+using System;
 using BlacksmithGuild.Forge;
 using BlacksmithGuild.GuildLoop;
 using BlacksmithGuild.Market;
@@ -271,12 +272,22 @@ namespace BlacksmithGuild.DevTools
             }
 
             HotkeyTraceService.OnKeyDetected(label);
-            var ok = EngineToggleAuthority.RunCommand(EngineToggleAuthority.CycleEngineToggleModeCommand, label);
-            HotkeyTraceService.OnCommandResult(
-                label,
-                EngineToggleAuthority.CycleEngineToggleModeCommand,
-                ok ? DevCommandResult.Success : DevCommandResult.Failed);
-            return true;
+            DebugLogger.Test($"[TBG ENGINE START] engine=HotkeyHandler step=CycleEngineToggle label={label}", showInGame: false);
+            try
+            {
+                var ok = EngineToggleAuthority.RunCommand(EngineToggleAuthority.CycleEngineToggleModeCommand, label);
+                DebugLogger.Test($"[TBG ENGINE DONE] engine=HotkeyHandler step=CycleEngineToggle result={ok}", showInGame: false);
+                HotkeyTraceService.OnCommandResult(
+                    label,
+                    EngineToggleAuthority.CycleEngineToggleModeCommand,
+                    ok ? DevCommandResult.Success : DevCommandResult.Failed);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                DebugLogger.Test($"[TBG ENGINE ERROR] engine=HotkeyHandler step=CycleEngineToggle ex={ex.GetType().Name}:{ex.Message}", showInGame: false);
+                return false;
+            }
         }
 
         private static bool TryRiskyHotkey(InputKey key, string label, string commandName, ref bool wasDown)
