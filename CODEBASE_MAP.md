@@ -59,9 +59,12 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `.tbg/harness/artifact-engines.registry.json` and `.tbg/workflows/local-artifact-engine.contract.json` — deterministic artifact parsing/routing.
 - `.tbg/state/` and `.tbg/workflows/state-envelope.contract.json` — state capabilities, constraints, and views.
 - `.tbg/harness/window-identities.registry.json` — launcher/window identity policy.
-- `docs/harness-doctrine.md`, `.tbg/harness/policies/harness-doctrine.policy.json`, and `scripts/tbg/Test-TbgHarnessDoctrine.ps1` — launcher identity freeze, process-name/PID/HWND/S1-S2 selection, multitasking-safe background actuation, post-action transition verification, and launcher-to-campaign observer continuity doctrine.
+- `docs/harness-doctrine.md`, `.tbg/harness/policies/harness-doctrine.policy.json`, and `scripts/tbg/Test-TbgHarnessDoctrine.ps1` — launcher identity freeze, process-name/PID/HWND/S1-S2 selection, multitasking-safe background actuation, post-action transition verification, launcher-to-campaign observer continuity, and runtime safety (branch verification, regent staleness, campaign map readiness from Phase1.log).
 - `.tbg/state/game-compatibility.registry.json` — Bannerlord compatibility gate.
 - `scripts/tbg/Test-TbgSkillRouting.ps1` — canonical skill/router validator.
+- `scripts/tbg/Test-TbgHarnessCompleteness.ps1` — validates all harness components exist on disk.
+- `scripts/tbg/Invoke-TbgPriorityEngine.ps1` — priority engine with branch verification, regent staleness fallback, and campaign map readiness detection.
+- `docs/operator/harness-status-report.md` — consolidated operator report of repo state, gaps, and blockers.
 - `docs/architecture/runtime-observer-agent-routing.md` — read-only observer capability and incident trigger routing.
 - `ForgeTest.cmd`, `ForgeCascade.cmd`, `ForgeArtifactEngine.cmd`, `ForgeAgentStatus.cmd`, `ForgeRepoHygiene.cmd` — operator entrypoints.
 
