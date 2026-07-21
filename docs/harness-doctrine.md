@@ -231,6 +231,31 @@ Every serious completion report names:
 
 Interrupted or resumed work additionally names the checkpoint SHA or artifact, preserved and excluded files, last completed validation, first pending validation, and exact resume command.
 
+## Runtime safety
+
+Before dispatching commands against a live game session, the following rules prevent stale-surface, wrong-branch, and phantom-readiness failures.
+
+### Branch verification
+
+After any `git checkout` or branch switch, confirm the actual branch matches the expected branch before running scripts that depend on branch-specific code or configuration. A mismatch must abort the operation and report expected versus actual branch. The expected branch may come from the active `.tbg/harness/manifest.json`, the current sprint capsule, or an explicit operator override.
+
+### Regent staleness
+
+`CampaignRuntimeRegent.json` is a convenience snapshot, not the source of truth for surface detection. If the regent file age exceeds the staleness threshold (default: 60 seconds), ignore the regent and read `Phase1.log` directly for surface detection. A stale regent that contradicts live behavior must not block command dispatch or mislead the state machine.
+
+### Campaign map readiness
+
+Use `Phase1.log` pattern `surface=map_surface.*mapReady=true` as the source of truth for campaign map readiness, not the regent or any secondary surface file. The mod's internal state machine may lag behind the visual game state. Proof of campaign map presence requires a fresh `mapReady=true` line in `Phase1.log`, not a stale `CampaignLoading` entry in the regent.
+
+### Surface detection priority
+
+1. `Phase1.log` `mapReady=true` (authoritative for campaign map)
+2. `Phase1.log` `surface=` pattern (fallback for other surfaces)
+3. `CampaignRuntimeRegent.json` with age <= 60 s (convenience only)
+4. `unknown` surface (safe abort — do not dispatch without surface proof)
+
+A command dispatched into a stale or unknown surface is not consumed and may produce phantom ACKs that mislead downstream workflows.
+
 ## Scope lock
 
 This doctrine grants no gameplay, launcher, save-mutation, deployment, process-termination, merge, or release authority by itself. Those permissions must come from the active narrow workflow and task contract.
