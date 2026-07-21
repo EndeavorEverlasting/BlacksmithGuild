@@ -341,7 +341,13 @@ if ($certifiedIds.Count -gt 0) {
 }
 $upstreamMatchesInstalled = $null
 if ($upstream.status -eq 'observed' -and $manifest.steamBuildId) {
-    $upstreamMatchesInstalled = [string]$upstream.buildId -eq [string]$manifest.steamBuildId
+    # Steam UpToDateCheck: when up_to_date=true the installed build is current even if required_version differs.
+    if ([bool]$upstream.upToDate) {
+        $upstreamMatchesInstalled = $true
+        $upstream.buildId = [string]$manifest.steamBuildId
+    } else {
+        $upstreamMatchesInstalled = [string]$upstream.buildId -eq [string]$manifest.steamBuildId
+    }
 }
 $builtMatchesInstalled = $builtDll.exists -and $installedDll.exists -and ([string]$builtDll.sha256 -eq [string]$installedDll.sha256)
 
@@ -354,7 +360,10 @@ if ($locallyInstalled.status -ne 'observed') {
 elseif ($upstream.status -ne 'observed') {
     $terminalState = 'ATTENTION_upstream_build_unavailable'; $verdict = 'ATTENTION'; $nextCommand = '.\ForgeGameUpdate.cmd check'
 }
-elseif (-not [bool]$upstream.upToDate -or $upstreamMatchesInstalled -eq $false) {
+elseif (-not [bool]$upstream.upToDate) {
+    $terminalState = 'BLOCKED_game_update_available'; $verdict = 'BLOCKED'; $nextCommand = 'Update Bannerlord through Steam, then run .\ForgeGameUpdate.cmd again before runtime proof.'
+}
+elseif ($upstreamMatchesInstalled -eq $false) {
     $terminalState = 'BLOCKED_game_update_available'; $verdict = 'BLOCKED'; $nextCommand = 'Update Bannerlord through Steam, then run .\ForgeGameUpdate.cmd again before runtime proof.'
 }
 elseif (-not $repoBaselineConsistent) {

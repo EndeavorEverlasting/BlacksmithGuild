@@ -254,6 +254,12 @@ namespace BlacksmithGuild.MapTrade
 
             var element = new ItemRosterElement(item, quantity);
             var sellerParty = settlement.Party;
+            // SellItemsAction.Apply(seller, buyer, ...) — settlement sells to player for a buy.
+            var sellerFirstOrders = new[]
+            {
+                new[] { sellerParty, buyerParty },
+                new[] { buyerParty, sellerParty }
+            };
 
             foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
             {
@@ -268,20 +274,32 @@ namespace BlacksmithGuild.MapTrade
                     continue;
                 }
 
-                try
+                foreach (var order in sellerFirstOrders)
                 {
-                    var args = BuildApplyArguments(parameters, buyerParty, sellerParty, settlement, element, quantity);
-                    if (args == null)
+                    try
                     {
-                        continue;
-                    }
+                        var args = BuildApplyArguments(parameters, order[0], order[1], settlement, element, quantity);
+                        if (args == null)
+                        {
+                            continue;
+                        }
 
-                    method.Invoke(null, args);
-                    methodUsed = $"SellItemsAction.Apply({DescribeParameters(parameters)}) settlement-buy";
-                    return true;
-                }
-                catch
-                {
+                        var goldBefore = Hero.MainHero?.Gold ?? 0;
+                        var invBefore = GetItemCount(MobileParty.MainParty, item);
+                        method.Invoke(null, args);
+                        var goldAfter = Hero.MainHero?.Gold ?? 0;
+                        var invAfter = GetItemCount(MobileParty.MainParty, item);
+                        // Accept only a real buy signature: gold down, inventory up.
+                        if (invAfter > invBefore && goldAfter < goldBefore)
+                        {
+                            methodUsed =
+                                $"SellItemsAction.Apply({DescribeParameters(parameters)}) settlement-buy sellerFirst={ReferenceEquals(order[0], sellerParty)}";
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                    }
                 }
             }
 

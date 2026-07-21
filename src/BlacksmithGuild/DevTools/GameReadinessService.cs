@@ -87,7 +87,11 @@ namespace BlacksmithGuild.DevTools
                 return false;
             }
 
-            if (GameSessionState.IsMapMenuOpen)
+            // Town settlement menu / interior is the intended surface for trade, pack, food, and
+            // guild-loop probes. Only block non-settlement map overlays (escape, kingdom, etc.).
+            if (GameSessionState.IsMapMenuOpen
+                && !GameSessionState.IsSettlementMenuReady
+                && !GameSessionState.IsSettlementInteriorReady)
             {
                 var menuId = GameSessionState.MapMenuId ?? "unknown";
                 DebugLogger.Test(

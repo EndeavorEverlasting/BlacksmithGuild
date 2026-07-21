@@ -52,6 +52,16 @@ namespace BlacksmithGuild.TavernHeroes
                 }
 
                 PauseIfVisible("entering settlement");
+
+                var settleDeadline = DateTime.UtcNow.AddSeconds(5);
+                while (!GameSessionState.IsSettlementInteriorReady && DateTime.UtcNow < settleDeadline)
+                {
+                    GameSessionState.Refresh();
+                    if (!GameSessionState.IsSettlementInteriorReady)
+                    {
+                        Thread.Sleep(250);
+                    }
+                }
             }
 
             if (!GameSessionState.IsSettlementInteriorReady)

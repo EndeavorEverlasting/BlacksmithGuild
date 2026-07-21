@@ -199,6 +199,10 @@ $phase = Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObse
     -OrdinaryTradeDone:$false -HorseDone:$false -ProvisionDone:$false -ManpowerDone:$false -Surface 'trading'
 Assert-True ($phase.commandSent -eq 'ProbeVanillaTradeExecutionNow') 'phase driver starts with ordinary trade'
 
+$townEntryDrive = Get-FullCampaignHandoffNextCommand -MovementObserved:$true -ArrivalObserved:$false -TownEntryObserved:$false `
+    -OrdinaryTradeDone:$false -HorseDone:$false -ProvisionDone:$false -ManpowerDone:$false -Surface 'campaign_map'
+Assert-True ($townEntryDrive.commandSent -eq 'ProbeVanillaTradeExecutionNow') 'after movement, drive town entry via trade probe'
+
 $stale = Get-ProvenTradesByClassification -TradeIterations @(
     [pscustomobject]@{
         goldDelta = -10; inventoryDelta = 1; fakeGameplayDelta = $false

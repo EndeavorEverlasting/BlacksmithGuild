@@ -84,6 +84,11 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `BlacksmithGuild_Status.json` — status/certification summary.
 - `BlacksmithGuild_RuntimeLifecycle.json` and `BlacksmithGuild_ProcessLifecycle.json` — lifecycle evidence.
 - `BlacksmithGuild_Phase1.log` — canonical behavior log.
+- `BlacksmithGuild_SessionIntent.json` — machine-readable session intent: drivenBy, sprint, agentRole, priorityEngineMode.
+- `BlacksmithGuild_LaunchIntent.json` — legacy launch intent (backward compat; superseded by SessionIntent).
+- `.tbg/harness/schemas/tbg-session-intent.schema.json` — session intent schema.
+- `.tbg/harness/policies/session-intent.policy.json` — drivenBy taxonomy and engine mode defaults.
+- `src/BlacksmithGuild/DevTools/SessionIntent/` — C# reader and model for session intent.
 - route, map-trade, smithing, governor, and regent JSON artifacts — workflow-specific behavior proof.
 - `.tbg/workflows/runtime-context-continuity.contract.json` — process ownership, correlated spans, pre/post-state, negative evidence, causality, and crash reconstruction authority.
 - `.tbg/workflows/runtime-event-observation.contract.json` — normalized window/process/external/in-process events and same-run continuity specialization.
