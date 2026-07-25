@@ -32,7 +32,7 @@ A `live_fresh_launch` proof packet fails closed when any of these conditions app
 - the behavior artifact is missing or stale;
 - run/correlation continuity is broken.
 
-`not attempted` is never silently rewritten as `environment blocked`. A model-supplied `claimedProofLevel` is not authoritative; the validator computes the proof level from the observed chain.
+`not attempted` is never silently rewritten as `environment blocked`. **Agent prose cannot promote proof.** A model-supplied `claimedProofLevel` is not authoritative; the validator computes the proof level from the observed chain.
 
 ## Proof ladder enforced
 
