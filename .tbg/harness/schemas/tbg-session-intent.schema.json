@@ -1,0 +1,45 @@
+{
+  "schema": "tbg.session-intent.schema.v1",
+  "description": "Machine-readable session intent for agents and the in-game priority engine. Distinguishes human play from automation/CI, identifies active sprints, and exposes who is driving the game session.",
+  "required": ["schema", "generatedUtc", "drivenBy", "launchIntent", "sessionId"],
+  "properties": {
+    "schema": { "type": "string", "enum": ["tbg.session-intent.v1"] },
+    "generatedUtc": { "type": "string", "format": "date-time" },
+    "drivenBy": {
+      "type": "string",
+      "description": "Who is driving the game session. Standard taxonomy.",
+      "enum": ["human_player", "multitasking", "automation_script", "ai_agent", "ci_cd", "unknown"]
+    },
+    "launchIntent": {
+      "type": "string",
+      "enum": ["play", "continue", "none"]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Unique session identifier. Formatted as YYYYMMDD-HHMMSS or a UUID."
+    },
+    "sprint": {
+      "type": "string",
+      "description": "Active sprint or cert name visible to other agents."
+    },
+    "agentRole": {
+      "type": "string",
+      "description": "Agent role letter (A/B/C/D) or name. Aligned with agent-coordination.md."
+    },
+    "agentLabel": {
+      "type": "string",
+      "description": "Human-readable agent or operator label."
+    },
+    "priorityEngineMode": {
+      "type": "string",
+      "description": "Requested priority engine behavior for this session.",
+      "enum": ["conserve_resources", "observe_only", "normal", "aggressive_proof"]
+    },
+    "autoLoopEnabled": { "type": "boolean", "description": "Whether the agent auto-loop is enabled." },
+    "certProfile": { "type": "string", "description": "Cert profile active for this session." },
+    "certSegment": { "type": "string", "description": "Cert segment active for this session." },
+    "branch": { "type": "string", "description": "Git branch being tested or proven." },
+    "commitSha": { "type": "string", "description": "Git commit SHA at session start." },
+    "comment": { "type": "string", "description": "Free-form operator note." }
+  }
+}
