@@ -20,7 +20,7 @@ Complete only when: (a) changed files are named; (b) validation actually ran and
 Acknowledgment without mutation. Plans without execution. Summaries without proof. Completion claims without running checks. Secret/credential exposure. Reimplementing existing utilities. Save/game/launcher mutation without workflow authority.
 
 ## 6. Runtime Safety
-Every action target must be identity-frozen (exact PID/HWND preferred; unique process name or S1/S2 delta allowed). Multitasking must remain background-safe and mouse-independent by default. The window observer may retire only after a same-run runtime-observer attachment is acknowledged. Campaign readiness requires campaignReady:true, canPollFileInbox:true, and a fresh 60-second stable map-ready interval — readiness cascade grants no gameplay authority. For crash diagnosis, treat the last marker as a boundary rather than a cause; require correlated pre-state, post-state, and external evidence. Process presence is context, not zombie proof — an active human, foreign, or ambiguous session must not be terminated.
+Every action target must be identity-frozen (exact PID/HWND preferred; unique process name or S1/S2 delta allowed). Multitasking must remain background-safe and mouse-independent by default. The window observer may retire only after a same-run runtime-observer attachment is acknowledged. Campaign readiness requires campaignReady:true, canPollFileInbox:true, and a fresh 60-second stable map-ready interval — readiness cascade grants no gameplay authority. For crash diagnosis, treat the last marker as a boundary rather than a cause; require correlated pre-state, post-state, and external evidence. Process presence is context, not zombie proof — an active human, foreign, or ambiguous session must not be terminated. Cross-agent diagnosis uses a sanitized bounded runtime-context capsule; raw runtime evidence stays ignored/local.
 
 ## 7. PowerShell Governance
 Scripts are authored for **PowerShell Core 7+** (`pwsh`). The shebang `#!/usr/bin/env pwsh` is authoritative. From `.cmd` files use `pwsh`, NOT `powershell` — `Get-FileHash` fails in Windows PowerShell nested-invocation contexts. After script edits run `pwsh scripts\tools\Add-Utf8Bom.ps1 -Fix`. PowerShell Core success alone is not Windows PowerShell 5.1 proof.
@@ -29,12 +29,12 @@ Scripts are authored for **PowerShell Core 7+** (`pwsh`). The shebang `#!/usr/bi
 Do not generate inline `Get-Process -Name 'Bannerlord'`. Use `Get-BannerlordProcessDetection` from `scripts/bannerlord-paths.ps1`. Before any launch/stop/build/install, classify processes through `.tbg/workflows/runtime-context-continuity.contract.json`.
 
 ## 9. Entry Sequence
-1. Identify repo/branch/sprint scope. 2. Inspect `git status`, `git log -5`. 3. Load `CODEBASE_MAP.md`. 4. Select primary skill from `.tbg/skills/manifest.json`. 5. Use fresh artifact state. 6. Require mutation+proof for install/setup/build/execute/deploy/merge/release.
+1. Identify repo/branch/sprint scope. 2. Inspect `git status`, `git log -5`. 3. Load `CODEBASE_MAP.md`. 4. Select primary skill from `.tbg/skills/manifest.json`. 5. Use fresh artifact state. 6. Require mutation+proof for install/setup/build/execute/deploy/merge/release. For composed proof and continuation, use `.tbg/workflows/end-to-end-validation.contract.json` and `.tbg/workflows/tbg-sprint-capsule.contract.json`; consumer handoffs include AgentSwitchboard and SysAdminSuite without proof promotion.
 
 ## 10. Proof Discipline
 Proof levels: `contract -> harness -> static test -> build -> launcher -> command ACK -> behavior observed -> live runtime`. Do not collapse levels. Stale evidence is not completion.
 
-## 11. Lane Router
+## Lane router
 | Lane | Skill |
 |---|---|
 | harness maturity | `harness-maturity` |
@@ -53,6 +53,8 @@ Proof levels: `contract -> harness -> static test -> build -> launcher -> comman
 | compendium/long annotations | `compendium-preservation` |
 | external coordinators | `agentic-operations` |
 | terminal ergonomics | `operator-terminal-environment` |
+
+Compatibility aliases only. Map: A=Cert/Evidence/Git/PR; B=Runtime/Readiness; C=Launcher/lifecycle/window; D=Docs/atlas. Runner owns evidence capture.
 
 ## 12. Current-State Pointers
 Mutable state resolved from: `artifacts/latest/tbg-chat-packet.json`, `artifacts/latest/tbg-sprint-capsule.json`, `artifacts/latest/artifact-engine/artifact-engine.handoff.md`, `docs/handoff/blacksmithguild-agent-coordination.md`, `docs/handoff/runtime-state-routing.md`, and current Git state.
