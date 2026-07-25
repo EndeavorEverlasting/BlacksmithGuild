@@ -1,0 +1,47 @@
+{
+  "schema": "tbg.session-intent.schema.v1",
+  "implementationStatus": "contract_only_product_integration_deferred",
+  "proofCeiling": "contract",
+  "description": "Machine-readable session intent for agent and runtime context. Values describe the declared driver and requested posture; they do not grant launch, mutation, save, or runtime authority.",
+  "required": ["schema", "generatedUtc", "drivenBy", "launchIntent", "sessionId"],
+  "properties": {
+    "schema": { "type": "string", "enum": ["tbg.session-intent.v1"] },
+    "generatedUtc": { "type": "string", "format": "date-time" },
+    "drivenBy": {
+      "type": "string",
+      "description": "Declared session driver; context only, never an authority grant.",
+      "enum": ["human_player", "multitasking", "automation_script", "ai_agent", "ci_cd", "unknown"]
+    },
+    "launchIntent": {
+      "type": "string",
+      "enum": ["play", "continue", "none"]
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Unique session identifier. Formatted as YYYYMMDD-HHMMSS or a UUID."
+    },
+    "sprint": {
+      "type": "string",
+      "description": "Declared active sprint or certification context."
+    },
+    "agentRole": {
+      "type": "string",
+      "description": "Declared agent lane or role."
+    },
+    "agentLabel": {
+      "type": "string",
+      "description": "Human-readable agent or operator label."
+    },
+    "priorityEngineMode": {
+      "type": "string",
+      "description": "Requested engine posture only; active workflow and bounded-execution authority remain mandatory.",
+      "enum": ["conserve_resources", "observe_only", "normal", "aggressive_proof"]
+    },
+    "autoLoopEnabled": { "type": "boolean", "description": "Requested auto-loop state; does not authorize execution." },
+    "certProfile": { "type": "string", "description": "Declared certification profile." },
+    "certSegment": { "type": "string", "description": "Declared certification segment." },
+    "branch": { "type": "string", "description": "Git branch being exercised." },
+    "commitSha": { "type": "string", "description": "Git commit SHA at session start." },
+    "comment": { "type": "string", "description": "Free-form operator note." }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "schema": "tbg.session-intent.policy.v1",
+  "status": "contract_only_product_integration_deferred",
+  "proofCeiling": "contract",
+  "description": "Session intent classifies who is driving a session and the requested engine posture. It does not grant launch, mutation, bounded-execution, save, or runtime authority.",
+  "authorityBoundary": {
+    "rule": "The active workflow, skill authority, process ownership, save-safety rules, and bounded-execution gates always override session intent.",
+    "unknownOrMissing": "Fail closed to observe_only/manual behavior.",
+    "humanProtection": "human_player may never be upgraded into automation solely because another field requests an automated priority mode."
+  },
+  "drivenBy": {
+    "human_player": {
+      "governorMode": "Manual",
+      "description": "A human is playing normally. The requested posture is observe-only unless a separate active contract explicitly authorizes bounded work.",
+      "priorityEngine": "observe_only",
+      "autonomousDriversBlocked": true,
+      "engineToggleDefaults": {
+        "Governor": "Manual",
+        "MapTrade": "Manual",
+        "GuildLoop": "Manual",
+        "Cohesion": "Manual",
+        "HorseMarket": "Manual",
+        "Smithing": "Manual",
+        "Companion": "Manual",
+        "Assistive": "Hybrid"
+      }
+    },
+    "multitasking": {
+      "governorMode": "Hybrid",
+      "description": "The operator is using another window while the game remains live. Read-only observation may continue; any mutation still requires separate active authority.",
+      "priorityEngine": "conserve_resources",
+      "autonomousDriversBlocked": false,
+      "agentBehaviorRules": {
+        "glom": "Read-only evidence collection only.",
+        "parallel_sprint": "Use isolated repository state and do not mutate the live game session without independent authority."
+      },
+      "engineToggleDefaults": {
+        "Governor": "Hybrid",
+        "MapTrade": "Hybrid",
+        "GuildLoop": "Hybrid",
+        "Cohesion": "Hybrid",
+        "HorseMarket": "Hybrid",
+        "Smithing": "Manual",
+        "Companion": "Manual",
+        "Assistive": "Hybrid"
+      }
+    },
+    "automation_script": {
+      "governorMode": "Hybrid",
+      "description": "A script or automation runner is driving. This requests normal automation posture but does not authorize execution by itself.",
+      "priorityEngine": "normal",
+      "autonomousDriversBlocked": false,
+      "engineToggleDefaults": {
+        "Governor": "Hybrid",
+        "MapTrade": "Automation",
+        "GuildLoop": "Automation",
+        "Cohesion": "Automation",
+        "HorseMarket": "Hybrid",
+        "Smithing": "Hybrid",
+        "Companion": "Hybrid",
+        "Assistive": "Automation"
+      }
+    },
+    "ai_agent": {
+      "governorMode": "Automation",
+      "description": "An AI agent is the declared driver. Automation is only a requested posture; active workflow and bounded-execution authority remain mandatory.",
+      "priorityEngine": "normal",
+      "autonomousDriversBlocked": false,
+      "engineToggleDefaults": {
+        "Governor": "Automation",
+        "MapTrade": "Automation",
+        "GuildLoop": "Automation",
+        "Cohesion": "Automation",
+        "HorseMarket": "Automation",
+        "Smithing": "Automation",
+        "Companion": "Automation",
+        "Assistive": "Automation"
+      }
+    },
+    "ci_cd": {
+      "governorMode": "Automation",
+      "description": "CI/CD is the declared driver. Aggressive proof collection is requested, but no runtime or mutation authority is implied.",
+      "priorityEngine": "aggressive_proof",
+      "autonomousDriversBlocked": false,
+      "engineToggleDefaults": {
+        "Governor": "Automation",
+        "MapTrade": "Automation",
+        "GuildLoop": "Automation",
+        "Cohesion": "Automation",
+        "HorseMarket": "Automation",
+        "Smithing": "Automation",
+        "Companion": "Automation",
+        "Assistive": "Automation"
+      }
+    },
+    "unknown": {
+      "governorMode": "Manual",
+      "description": "Unknown driver. Conservative requested posture: all engines manual and observe-only.",
+      "priorityEngine": "observe_only",
+      "autonomousDriversBlocked": true,
+      "engineToggleDefaults": {
+        "Governor": "Manual",
+        "MapTrade": "Manual",
+        "GuildLoop": "Manual",
+        "Cohesion": "Manual",
+        "HorseMarket": "Manual",
+        "Smithing": "Manual",
+        "Companion": "Manual",
+        "Assistive": "Manual"
+      }
+    }
+  },
+  "priorityEngineModes": {
+    "conserve_resources": "Requested conservative posture for survival-critical routing only when separately authorized.",
+    "observe_only": "Read state only; no mutation authority.",
+    "normal": "Requested normal priority cascade with all existing safety and bounded-execution gates still required.",
+    "aggressive_proof": "Requested higher proof throughput; does not authorize gameplay mutation or weaken proof ceilings."
+  },
+  "agentVisibilityRules": {
+    "description": "When a session-intent artifact exists, agents may use it as context, not authority.",
+    "rules": [
+      "drivenBy identifies the declared session driver",
+      "sprint identifies the declared active sprint",
+      "agentRole identifies the declared lane",
+      "priorityEngineMode is a requested posture only",
+      "branch/commitSha identify the code context being exercised"
+    ]
+  }
+}
