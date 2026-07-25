@@ -2,7 +2,8 @@
 param(
     [string]$RepoRoot = '',
     [string]$InputPath = '',
-    [string]$OutputRoot = 'artifacts/latest/live-runtime-proof-admission'
+    [string]$OutputRoot = 'artifacts/latest/live-runtime-proof-admission',
+    [switch]$ExportReducerOnly
 )
 
 Set-StrictMode -Version Latest
@@ -21,16 +22,16 @@ $fixturesPath = Join-Path $RepoRoot '.tbg\harness\fixtures\live-runtime-proof-ad
 $resultPath = Join-Path $OutputRoot 'live-runtime-proof-admission.result.json'
 $reportPath = Join-Path $OutputRoot 'live-runtime-proof-admission.report.md'
 
-$failures = New-Object System.Collections.Generic.List[string]
-$passes = 0
+$script:failures = New-Object System.Collections.Generic.List[string]
+$script:passes = 0
 
 function Add-Pass([string]$Message) {
-    $script:passes++
-    Write-Host "PASS: $Message" -ForegroundColor Green
+    $script:passes = [int]$script:passes + 1
+    Write-Host "PASS: $Message"
 }
 function Add-Failure([string]$Message) {
-    $script:failures.Add($Message) | Out-Null
-    Write-Host "FAIL: $Message" -ForegroundColor Red
+    [void]$script:failures.Add($Message)
+    Write-Host "FAIL: $Message"
 }
 function Get-JsonFile([string]$Path, [string]$Label) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
@@ -38,7 +39,8 @@ function Get-JsonFile([string]$Path, [string]$Label) {
         return $null
     }
     try {
-        return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
+        $raw = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+        return $raw | ConvertFrom-Json -ErrorAction Stop
     }
     catch {
         Add-Failure "$Label invalid JSON: $($_.Exception.Message)"
@@ -47,9 +49,13 @@ function Get-JsonFile([string]$Path, [string]$Label) {
 }
 function Get-PropertyValue($Object, [string]$Name, $Default = $null) {
     if ($null -eq $Object) { return $Default }
-    $property = $Object.PSObject.Properties[$Name]
-    if ($null -eq $property) { return $Default }
-    return $property.Value
+    if ($Object -is [System.Collections.IDictionary]) {
+        if ($Object.Contains($Name)) { return $Object[$Name] }
+        return $Default
+    }
+    $matched = $Object.PSObject.Properties.Match($Name)
+    if ($matched -and $matched.Count -gt 0) { return $matched[0].Value }
+    return $Default
 }
 function Get-Bool($Object, [string]$Name) {
     return [bool](Get-PropertyValue $Object $Name $false)
@@ -128,34 +134,51 @@ function Resolve-LiveProofAdmission($Case) {
     return New-AdmissionDecision 'PASS_LIVE_RUNTIME' 'live_runtime' 'All required live stages were observed with fresh same-run evidence.'
 }
 
+if ($ExportReducerOnly) {
+    return
+}
+
 $contract = Get-JsonFile $contractPath 'contract'
 $registry = Get-JsonFile $registryPath 'artifact registry'
 $fixtures = Get-JsonFile $fixturesPath 'fixtures'
 
 if ($contract) {
-    if ([string]$contract.schema -eq 'TbgLiveRuntimeProofAdmissionContract.v1') { Add-Pass 'contract schema' } else { Add-Failure 'contract schema mismatch' }
-    if ([string]$contract.id -eq 'live-runtime-proof-admission') { Add-Pass 'contract id' } else { Add-Failure 'contract id mismatch' }
-    if ($contract.modes.live_fresh_launch.rejectSkipLaunch -eq $true) { Add-Pass 'live fresh launch rejects SkipLaunch' } else { Add-Failure 'live fresh launch must reject SkipLaunch' }
-    if ([string]$contract.modes.static_validation.proofCeiling -eq 'static_test') { Add-Pass 'static mode proof ceiling' } else { Add-Failure 'static mode proof ceiling mismatch' }
+    if ([string](Get-PropertyValue $contract 'schema') -eq 'TbgLiveRuntimeProofAdmissionContract.v1') { Add-Pass 'contract schema' } else { Add-Failure 'contract schema mismatch' }
+    if ([string](Get-PropertyValue $contract 'id') -eq 'live-runtime-proof-admission') { Add-Pass 'contract id' } else { Add-Failure 'contract id mismatch' }
+
+    $modes = Get-PropertyValue $contract 'modes'
+    $liveFresh = Get-PropertyValue $modes 'live_fresh_launch'
+    $rejectSkip = Get-PropertyValue $liveFresh 'rejectSkipLaunch'
+    if ($rejectSkip -eq $true) { Add-Pass 'live fresh launch rejects SkipLaunch' } else { Add-Failure 'live fresh launch must reject SkipLaunch' }
+
+    $staticVal = Get-PropertyValue $modes 'static_validation'
+    $proofCeil = Get-PropertyValue $staticVal 'proofCeiling'
+    if ([string]$proofCeil -eq 'static_test') { Add-Pass 'static mode proof ceiling' } else { Add-Failure 'static mode proof ceiling mismatch' }
+
+    $terminalStates = @(Get-PropertyValue $contract 'terminalStates' @())
     foreach ($requiredState in @('PASS_LIVE_RUNTIME','BLOCKED_LIVE_MODE_SKIP_LAUNCH','BLOCKED_LAUNCH_NOT_REQUESTED','FAIL_GAME_PROCESS_NOT_OBSERVED','FAIL_BEHAVIOR_NOT_OBSERVED','FAIL_STALE_EVIDENCE','FAIL_CORRELATION_MISMATCH')) {
-        if (@($contract.terminalStates) -contains $requiredState) { Add-Pass "terminal $requiredState" } else { Add-Failure "terminal missing: $requiredState" }
+        if ($terminalStates -contains $requiredState) { Add-Pass "terminal $requiredState" } else { Add-Failure "terminal missing: $requiredState" }
     }
 }
 
 if ($registry) {
-    if ([string]$registry.schema -eq 'TbgLiveRuntimeProofArtifactRegistry.v1') { Add-Pass 'artifact registry schema' } else { Add-Failure 'artifact registry schema mismatch' }
-    $artifactIds = @($registry.artifacts | ForEach-Object { [string]$_.id })
+    if ([string](Get-PropertyValue $registry 'schema') -eq 'TbgLiveRuntimeProofArtifactRegistry.v1') { Add-Pass 'artifact registry schema' } else { Add-Failure 'artifact registry schema mismatch' }
+    $artifactsList = @(Get-PropertyValue $registry 'artifacts' @())
+    $artifactIds = @($artifactsList | ForEach-Object { [string](Get-PropertyValue $_ 'id') })
     foreach ($requiredArtifact in @('run-context','launcher-context','launch-log','runtime-status','command-ack','behavior-evidence','admission-result')) {
         if ($artifactIds -contains $requiredArtifact) { Add-Pass "artifact $requiredArtifact" } else { Add-Failure "artifact missing: $requiredArtifact" }
     }
-    if ($registry.retention.forbidSecretsSavesAndPersonalPaths -eq $true) { Add-Pass 'artifact retention safety' } else { Add-Failure 'artifact retention safety missing' }
+    $retention = Get-PropertyValue $registry 'retention'
+    $forbidSecrets = Get-PropertyValue $retention 'forbidSecretsSavesAndPersonalPaths'
+    if ($forbidSecrets -eq $true) { Add-Pass 'artifact retention safety' } else { Add-Failure 'artifact retention safety missing' }
 }
 
 $fixtureResults = @()
 if ($fixtures) {
-    if ([string]$fixtures.schema -eq 'TbgLiveRuntimeProofAdmissionFixtures.v1') { Add-Pass 'fixture schema' } else { Add-Failure 'fixture schema mismatch' }
-    if (@($fixtures.cases).Count -ge 10) { Add-Pass 'fixture coverage count' } else { Add-Failure 'at least 10 admission fixtures are required' }
-    foreach ($case in @($fixtures.cases)) {
+    if ([string](Get-PropertyValue $fixtures 'schema') -eq 'TbgLiveRuntimeProofAdmissionFixtures.v1') { Add-Pass 'fixture schema' } else { Add-Failure 'fixture schema mismatch' }
+    $fixtureCases = @(Get-PropertyValue $fixtures 'cases' @())
+    if ($fixtureCases.Count -ge 10) { Add-Pass 'fixture coverage count' } else { Add-Failure 'at least 10 admission fixtures are required' }
+    foreach ($case in $fixtureCases) {
         $decision = Resolve-LiveProofAdmission $case
         $expectedState = [string](Get-PropertyValue $case 'expectedTerminalState' '')
         $expectedProof = [string](Get-PropertyValue $case 'expectedProofLevel' '')
@@ -181,7 +204,7 @@ if (-not [string]::IsNullOrWhiteSpace($InputPath)) {
     $input = Get-JsonFile $inputResolvedPath 'input proof packet'
     if ($input) {
         $inputDecision = Resolve-LiveProofAdmission $input
-        Write-Host "INPUT TERMINAL: $($inputDecision.terminalState) proof=$($inputDecision.proofLevel)" -ForegroundColor Cyan
+        Write-Host "INPUT TERMINAL: $($inputDecision.terminalState) proof=$($inputDecision.proofLevel)"
     }
 }
 
@@ -201,7 +224,7 @@ $result = [ordered]@{
     proofLevel = 'static_test'
     proofCeiling = 'static_test unless -InputPath supplies a workflow-owned live proof packet; even then the decision is computed, never narrated'
 }
-$result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding UTF8
+$result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Force -Encoding UTF8
 
 $terminalLine = if ($inputDecision) { '- Terminal state: `{0}`' -f $inputDecision.terminalState } else { '- No live proof packet supplied; fixture/static validation only.' }
 $proofLine = if ($inputDecision) { '- Proof level: `{0}`' -f $inputDecision.proofLevel } else { '- Proof level: `static_test`' }
@@ -223,9 +246,9 @@ $report = @(
     '',
     'Generated output is evidence, not authority. Runtime mutation still requires the owning workflow contract.'
 )
-$report -join "`r`n" | Set-Content -LiteralPath $reportPath -Encoding UTF8
+$report -join "`r`n" | Set-Content -LiteralPath $reportPath -Force -Encoding UTF8
 
-Write-Host "`nLive runtime proof admission: $passes passed, $($failures.Count) failed" -ForegroundColor $(if ($failures.Count -eq 0) { 'Green' } else { 'Red' })
+Write-Host "`nLive runtime proof admission: $passes passed, $($failures.Count) failed"
 if ($failures.Count -gt 0) { exit 1 }
 if ($inputDecision -and -not $inputDecision.pass) { exit 2 }
 exit 0

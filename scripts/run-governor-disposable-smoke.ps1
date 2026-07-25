@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Alias('SkipBuild')]
     [switch]$NoBuild,
     [switch]$NoInstall,
@@ -24,6 +24,25 @@ $session = New-GovernorOperatorSessionDir -RepoRoot $RepoRoot -Kind 'governor-sm
 $evidenceDir = $session.Path
 Clear-GovernorStopSentinel -RepoRoot $RepoRoot
 
+function Invoke-GenerateGovernorProofPacket {
+    param(
+        [string]$SessionDir,
+        [string]$RepoRoot,
+        [string]$BannerlordRoot
+    )
+    $pktGen = Join-Path $RepoRoot 'scripts\tbg\New-TbgGovernorLiveProofPacket.ps1'
+    if (Test-Path -LiteralPath $pktGen -PathType Leaf) {
+        try {
+            $pktPath = & $pktGen -SessionDir $SessionDir -RepoRoot $RepoRoot -BannerlordRoot $BannerlordRoot
+            Write-Host "Proof packet generated: ${pktPath}" -ForegroundColor Cyan
+        } catch {
+            Write-Host "Packet generation error: $($_.Exception.Message)" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "Proof packet generator missing: ${pktGen}" -ForegroundColor Yellow
+    }
+}
+
 function Complete-GovernorSmokeFailure {
     param(
         [string]$Classification,
@@ -41,10 +60,7 @@ function Complete-GovernorSmokeFailure {
         evidenceDir = $evidenceDir
     }
     Write-GovernorJsonFile -InputObject $summary -Path (Join-Path $evidenceDir 'governor-smoke-summary.json') -Depth 8
-    $pktGen = Join-Path $RepoRoot 'scripts\tbg\New-TbgGovernorLiveProofPacket.ps1'
-    if (Test-Path -LiteralPath $pktGen -PathType Leaf) {
-        try { & $pktGen -SessionDir $evidenceDir -RepoRoot $RepoRoot -BannerlordRoot $bannerlordRoot | Out-Null } catch { }
-    }
+    Invoke-GenerateGovernorProofPacket -SessionDir $evidenceDir -RepoRoot $RepoRoot -BannerlordRoot $bannerlordRoot
     Write-Host ("GOVERNOR SMOKE {0}: {1}" -f $Classification, $Message) -ForegroundColor Yellow
     Write-Host ("evidence={0}" -f $evidenceDir)
 }
@@ -128,10 +144,7 @@ $summary = [ordered]@{
     evidenceDir      = $evidenceDir
 }
 Write-GovernorJsonFile -InputObject $summary -Path (Join-Path $evidenceDir 'governor-smoke-summary.json') -Depth 8
-$pktGen = Join-Path $RepoRoot 'scripts\tbg\New-TbgGovernorLiveProofPacket.ps1'
-if (Test-Path -LiteralPath $pktGen -PathType Leaf) {
-    try { & $pktGen -SessionDir $evidenceDir -RepoRoot $RepoRoot -BannerlordRoot $bannerlordRoot | Out-Null } catch { }
-}
+Invoke-GenerateGovernorProofPacket -SessionDir $evidenceDir -RepoRoot $RepoRoot -BannerlordRoot $bannerlordRoot
 
 Write-Host 'GOVERNOR SMOKE PASS' -ForegroundColor Green
 Write-Host ("branch={0} reason={1}" -f $decision.selectedBranch, $decision.selectedReason)

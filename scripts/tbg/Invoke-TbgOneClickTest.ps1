@@ -109,12 +109,13 @@ function Invoke-Test {
   foreach($a in $Test.arguments){$argParts+=$a}
   $psi.Arguments=$argParts -join ' '
   $psi.WorkingDirectory=$root;$psi.UseShellExecute=$false;$psi.CreateNoWindow=$true
-  $psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true
+  $psi.RedirectStandardOutput=$true;$psi.RedirectStandardError=$true;$psi.RedirectStandardInput=$true
   $p=New-Object Diagnostics.Process;$p.StartInfo=$psi;[void]$p.Start()
-  $outT=$p.StandardOutput.ReadToEndAsync();$errT=$p.StandardError.ReadToEndAsync()
+  try { $p.StandardInput.Close() } catch {}
+  $stdout=$p.StandardOutput.ReadToEnd()
+  $stderr=$p.StandardError.ReadToEnd()
   $to=-not $p.WaitForExit($Test.timeoutSeconds*1000)
   if($to){& taskkill.exe /PID $p.Id /T /F 2>$null|Out-Null;$p.WaitForExit()}
-  $stdout=$outT.Result;$stderr=$errT.Result
   if($stdout){Write-Event 'test.stdout' -TestId $tid -ParentEventId $eid -Payload @{text=$stdout}}
   if($stderr){Write-Event 'test.stderr' -TestId $tid -ParentEventId $eid -Payload @{text=$stderr}}
   $ec=if($to){124}else{$p.ExitCode}
