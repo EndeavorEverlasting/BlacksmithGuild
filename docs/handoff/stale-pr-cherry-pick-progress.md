@@ -1,8 +1,8 @@
 # Stale branch cherry-pick progress
 
 > **Overall: INCOMPLETE**
-> **5 of 16 stale pull requests are complete (31.2%).**
-> **Current distribution: 0 in progress, 4 blocked, and 7 not started.**
+> **6 of 16 stale pull requests are complete (37.5%).**
+> **Current distribution: 0 in progress, 4 blocked, and 6 not started.**
 > **Next: Wave D1, PR #28: Map the feedback-harness manifest fields into the current harness or record explicit rejections.**
 
 The authoritative machine-readable ledger is $LedgerPath. This Markdown file is generated from that ledger and the committed recovery plan.
@@ -26,7 +26,7 @@ The stale-branch cherry-pick process is finished only when every planned source 
 | D2 | #32 | ⬜ not started | — | — | — | Merge unique guardrail fields into current contracts or record why each field is superseded. |
 | D2 | #33 | ⬜ not started | — | — | — | Replay pure tools only when current-schema tests prove they cannot create false PASS results. |
 | D3 | #35 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value. |
-| E | #20 | ⬜ not started | — | — | — | Reconstruct the useful governor handoff model, tests, and review requirements against current main. |
+| E | #20 | ✅ superseded recorded | — | — | PR #20 is closed without merge after its useful governor activity handoff contract and implementation were preserved on current main. The stale PR is retained as historical provenance; no further branch replay is needed. | No further replay work remains for PR #20. |
 | E | #24 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject. |
 | E | #38 | ✅ superseded recorded | — | — | PR #38 was closed without merge after the local rebase was aborted on add/add conflicts against current main. Its guardrail, worktree, harness, and proof-discipline intent has been replaced by maintained mainline contracts, while source head e618349b7575dc6379cb7a8b378df6ec5be4d282 remains retained as provenance. | No further replay work remains for PR #38. |
 | F | #5 | ⛔ blocked dependency | — | #43, #52 | — | Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof. |
