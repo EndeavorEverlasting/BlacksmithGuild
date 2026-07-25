@@ -5,7 +5,7 @@
   "ownerLane": "runtime proof / live behavior evidence",
   "sourcePath": "scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1",
   "command": "powershell.exe",
-  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1"],
+  "arguments": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1"],
   "supportedHosts": ["win", "win_powershell"],
   "requiredTools": ["powershell.exe"],
   "requiredInputs": [],

@@ -10,10 +10,10 @@ $ErrorActionPreference = 'Stop'
 if ([string]::IsNullOrWhiteSpace($RepoRoot)) { $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 if (-not [IO.Path]::IsPathRooted($OutputPath)) { $OutputPath = Join-Path $RepoRoot $OutputPath }
 
-$failures = [System.Collections.Generic.List[string]]::new()
-$passes = 0
-function Add-Pass([string]$Message) { $script:passes++; Write-Host "PASS: $Message" -ForegroundColor Green }
-function Add-Failure([string]$Message) { $script:failures.Add($Message) | Out-Null; Write-Host "FAIL: $Message" -ForegroundColor Red }
+$script:failures = [System.Collections.Generic.List[string]]::new()
+$script:passes = 0
+function Add-Pass([string]$Message) { $script:passes = [int]$script:passes + 1; Write-Host "PASS: $Message" }
+function Add-Failure([string]$Message) { [void]$script:failures.Add($Message); Write-Host "FAIL: $Message" }
 function Get-Text([string]$RelativePath) {
     $path = Join-Path $RepoRoot $RelativePath
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { Add-Failure "missing file $RelativePath"; return $null }
@@ -29,9 +29,12 @@ function Get-Value($Object, [string[]]$Path) {
     $current = $Object
     foreach ($segment in $Path) {
         if ($null -eq $current) { return $null }
-        $property = $current.PSObject.Properties[$segment]
-        if ($null -eq $property) { return $null }
-        $current = $property.Value
+        if ($current -is [System.Collections.IDictionary]) {
+            if ($current.Contains($segment)) { $current = $current[$segment]; continue }
+            return $null
+        }
+        $matched = $current.PSObject.Properties.Match($segment)
+        if ($matched -and $matched.Count -gt 0) { $current = $matched[0].Value } else { return $null }
     }
     return $current
 }
