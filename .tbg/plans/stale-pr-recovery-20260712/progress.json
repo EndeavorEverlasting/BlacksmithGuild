@@ -200,36 +200,6 @@
         "PR #38 terminal disposition comment 4964827437"
       ],
       "nextAction": "No further replay work remains for PR #38."
-    },
-    {
-      "wave": "E",
-      "pr": 101,
-      "status": "superseded_recorded",
-      "replacementPr": 137,
-      "blockedBy": [],
-      "disposition": "PR #101 was closed as superseded after preservation. Already-current governor/cert value remains on main; the session-intent harness schema/policy were selectively replayed and authority-bounded in PR #137; the remaining product/runtime delta is preserved on an exact-head branch and tracked for reconstruction in issue #135.",
-      "evidence": [
-        "source head 38d0223685bbff6b77e212b3aa24f0b364574f76 retained at preserve/pr101-runtime-product-20260725",
-        "PR #137 merged commit 8138f344666c837daa3654eef10f683cc69a3c11",
-        "preservation matrix docs/handoff/pr101-pr102-preservation-matrix-20260725.md",
-        "replacement issue #135"
-      ],
-      "nextAction": "Product/runtime reconstruction, if still desired, is owned by issue #135 from current main; no further work remains on PR #101."
-    },
-    {
-      "wave": "E",
-      "pr": 102,
-      "status": "superseded_recorded",
-      "replacementPr": 137,
-      "blockedBy": [],
-      "disposition": "PR #102 was closed as superseded after preservation. Canonical doctrine and continuity work are already on main; unsafe stale-log crash promotion and duplicate/obsolete harness pieces were rejected as-is; potentially useful pause/runtime product ideas remain preserved on an exact-head branch and are tracked for reconstruction in issue #136.",
-      "evidence": [
-        "source head 8e60b9dc5488234d12c7d2c088d3754cb097038a retained at preserve/pr102-runtime-product-20260725",
-        "PR #137 merged commit 8138f344666c837daa3654eef10f683cc69a3c11",
-        "preservation matrix docs/handoff/pr101-pr102-preservation-matrix-20260725.md",
-        "replacement issue #136"
-      ],
-      "nextAction": "Pause/runtime reconstruction, if still desired, is owned by issue #136 from current main; no further work remains on PR #102."
     }
   ]
 }
