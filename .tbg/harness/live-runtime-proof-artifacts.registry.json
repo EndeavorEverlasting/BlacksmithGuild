@@ -1,0 +1,33 @@
+{
+  "schema": "TbgLiveRuntimeProofArtifactRegistry.v1",
+  "registryId": "live-runtime-proof-artifacts",
+  "runRoot": ".local/tbg-live-runtime-proof/<runId>",
+  "latestOutput": "artifacts/latest/live-runtime-proof-admission",
+  "naming": {
+    "result": "live-runtime-proof-admission.result.json",
+    "report": "live-runtime-proof-admission.report.md",
+    "failureCapsule": "live-runtime-proof-failure.json"
+  },
+  "freshness": {
+    "defaultMaxAgeSeconds": 120,
+    "sameRunRequired": true,
+    "sameCorrelationRequired": true,
+    "staleEvidenceTerminalState": "FAIL_STALE_EVIDENCE"
+  },
+  "artifacts": [
+    {"id": "run-context", "role": "identity", "pathHint": "run-context.json", "requiredForLivePass": true},
+    {"id": "launcher-context", "role": "launcher_pid_hwnd", "pathHint": "launcher-window-context.json", "requiredForLivePass": true},
+    {"id": "launch-log", "role": "launch_transition", "pathHint": "BlacksmithGuild_Launch.log", "requiredForLivePass": true},
+    {"id": "runtime-status", "role": "campaign_attach_and_readiness", "pathHint": "BlacksmithGuild_Status.json", "requiredForLivePass": true},
+    {"id": "command-ack", "role": "command_acknowledgement", "pathHint": "BlacksmithGuild_CommandAck.json", "requiredForLivePass": true},
+    {"id": "behavior-evidence", "role": "workflow_specific_behavior", "pathHint": "workflow-owned fresh artifact", "requiredForLivePass": true},
+    {"id": "phase-log", "role": "behavior_log", "pathHint": "BlacksmithGuild_Phase1.log", "requiredForLivePass": false},
+    {"id": "admission-result", "role": "machine_terminal_state", "pathHint": "artifacts/latest/live-runtime-proof-admission/live-runtime-proof-admission.result.json", "requiredForLivePass": true},
+    {"id": "operator-report", "role": "human_summary", "pathHint": "artifacts/latest/live-runtime-proof-admission/live-runtime-proof-admission.report.md", "requiredForLivePass": false}
+  ],
+  "retention": {
+    "rawRuntimeEvidence": "ignored_local_only",
+    "trackedRemoteEvidence": "sanitized_fixture_or_bounded_capsule_only",
+    "forbidSecretsSavesAndPersonalPaths": true
+  }
+}
