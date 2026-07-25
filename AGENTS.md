@@ -11,13 +11,13 @@
 When instructions conflict: (a) platform/security/legal/repo-owner instructions; (b) this governance contract; (c) current source/scripts/schemas/workflow contracts; (d) current evidence and state packets; (e) `.tbg/skills/<id>/SKILL.md`; (f) client adapters (`CLAUDE.md`); (g) task prompts; (h) generic defaults and stale docs.
 
 ## 3. Sprint Declaration
-Every writing sprint must state before mutation: repo, branch, lane, mission, owned scope, forbidden scope, expected artifacts, validation commands, proof ceiling.
+Every writing sprint must state before mutation: repo, branch, lane, mission, owned scope, forbidden scope, expected artifacts, validation commands, proof ceiling. Honor any user-specified validation order.
 
 ## 4. Completion Standard
-Complete only when: (a) changed files are named; (b) validation actually ran and passed; (c) commit SHA exists; (d) push or PR state is reported; (e) one exact next command is given.
+Complete only when: (a) changed files are named; (b) validation actually ran and passed; (c) commit SHA exists; (d) push or PR state is reported; (e) one exact next command is given. Checkpoint coherent tracked progress before broad validation, long diagnostics, refactoring expansion, or switching agents or environments. Include owned untracked files; a checkpoint proves preservation only.
 
 ## 5. Forbidden Behaviors
-Acknowledgment without mutation. Plans without execution. Summaries without proof. Completion claims without running checks. Secret/credential exposure. Reimplementing existing utilities. Save/game/launcher mutation without workflow authority.
+Acknowledgment without mutation. Plans without execution. Summaries without proof. Completion claims without running checks. Secret/credential exposure. Reimplementing existing utilities. Save/game/launcher mutation without workflow authority. An external tool, trigger, coordinator, or prompt may route work, but it does not grant destructive, runtime, deployment, merge, secret, or live-target authority.
 
 ## 6. Runtime Safety
 Every action target must be identity-frozen (exact PID/HWND preferred; unique process name or S1/S2 delta allowed). Multitasking must remain background-safe and mouse-independent by default. The window observer may retire only after a same-run runtime-observer attachment is acknowledged. Campaign readiness requires campaignReady:true, canPollFileInbox:true, and a fresh 60-second stable map-ready interval — readiness cascade grants no gameplay authority. ForgeContinue, Auto Launch Nav, new-game, Steam-mediated, and future launch paths share one observer-first run context across Play/Continue, calibration, Safe Mode, Caution, Steam broker, other launcher windows, and game handoff; every correlated surface is recorded, action identity freezes per surface, Steam and unknown windows stay observation-only, and fresh transition evidence is required before success. For crash diagnosis, treat the last marker as a boundary rather than a cause; require correlated pre-state, post-state, and external evidence. Process presence is context, not zombie proof — an active human, foreign, or ambiguous session must not be terminated. Cross-agent diagnosis uses a sanitized bounded runtime-context capsule; raw runtime evidence stays ignored/local.
