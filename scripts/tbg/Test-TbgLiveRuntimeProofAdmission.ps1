@@ -203,6 +203,8 @@ $result = [ordered]@{
 }
 $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding UTF8
 
+$terminalLine = if ($inputDecision) { '- Terminal state: `{0}`' -f $inputDecision.terminalState } else { '- No live proof packet supplied; fixture/static validation only.' }
+$proofLine = if ($inputDecision) { '- Proof level: `{0}`' -f $inputDecision.proofLevel } else { '- Proof level: `static_test`' }
 $report = @(
     '# Live Runtime Proof Admission Report',
     '',
@@ -216,8 +218,8 @@ $report = @(
     '',
     '## Input decision',
     '',
-    $(if ($inputDecision) { "- Terminal state: `$($inputDecision.terminalState)`" } else { '- No live proof packet supplied; fixture/static validation only.' }),
-    $(if ($inputDecision) { "- Proof level: `$($inputDecision.proofLevel)`" } else { '- Proof level: `static_test`' }),
+    $terminalLine,
+    $proofLine,
     '',
     'Generated output is evidence, not authority. Runtime mutation still requires the owning workflow contract.'
 )
