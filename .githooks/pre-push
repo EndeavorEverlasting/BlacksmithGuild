@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# BlacksmithGuild harness pre-push gate.
+# Static only: no launcher, game, save, command inbox, process mutation, or network activity beyond the push itself.
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if command -v pwsh >/dev/null 2>&1; then
+  PS=(pwsh -NoProfile)
+elif command -v powershell.exe >/dev/null 2>&1; then
+  PS=(powershell.exe -NoProfile -ExecutionPolicy Bypass)
+else
+  echo "[harness] BLOCKED: pwsh or powershell.exe is required for pre-push validation." >&2
+  exit 1
+fi
+
+echo "[harness] live runtime proof admission"
+"${PS[@]}" -File scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1
+
+echo "[harness] harness completeness"
+"${PS[@]}" -File scripts/tbg/Test-TbgHarnessCompleteness.ps1
+
+echo "[harness] git diff --check"
+git diff --check
+
+echo "[harness] pre-push PASS"
+exit 0
