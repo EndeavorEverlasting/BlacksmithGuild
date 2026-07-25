@@ -18,7 +18,7 @@
     "artifacts/latest/live-runtime-proof-admission/live-runtime-proof-admission.report.md"
   ],
   "proofLevel": "static test",
-  "proofCeiling": "Validates machine proof admission and failure classification. It does not launch Bannerlord or itself create live-runtime proof.",
+  "proofCeiling": "Machine-validates proof admission fixtures and terminal-state reduction only. It does not launch Bannerlord or create live-runtime proof.",
   "tags": ["static", "contract", "runtime-proof", "admission", "evidence", "core"],
   "triggerInterests": ["launch.handoff.verified", "command.ack", "behavior.observed"],
   "defaultProfileMembership": ["default-static", "operator-observe"],
