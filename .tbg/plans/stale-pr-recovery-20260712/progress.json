@@ -2,7 +2,7 @@
   "schema": "TbgStalePrRecoveryProgress.v1",
   "repository": "EndeavorEverlasting/BlacksmithGuild",
   "planPath": ".tbg/plans/stale-pr-recovery-20260712/manifest.json",
-  "updatedDate": "2026-07-18",
+  "updatedDate": "2026-07-25",
   "terminalCompleteStatuses": [
     "replayed_and_merged",
     "superseded_recorded",
@@ -39,10 +39,7 @@
       "pr": 5,
       "status": "blocked_dependency",
       "replacementPr": null,
-      "blockedBy": [
-        43,
-        52
-      ],
+      "blockedBy": [43, 52],
       "disposition": "",
       "evidence": [],
       "nextAction": "Wait for the maintained route lineage to settle, then reconstruct the sell-loop contract from current main with fresh proof."
@@ -52,10 +49,7 @@
       "pr": 6,
       "status": "blocked_dependency",
       "replacementPr": null,
-      "blockedBy": [
-        43,
-        52
-      ],
+      "blockedBy": [43, 52],
       "disposition": "",
       "evidence": [],
       "nextAction": "Wait for pull request 5 value to be reconstructed and for the maintained route lineage to settle."
@@ -89,22 +83,24 @@
     {
       "wave": "E",
       "pr": 20,
-      "status": "not_started",
+      "status": "superseded_recorded",
       "replacementPr": null,
       "blockedBy": [],
-      "disposition": "",
-      "evidence": [],
-      "nextAction": "Reconstruct the useful governor handoff model, tests, and review requirements against current main."
+      "disposition": "PR #20 is closed without merge after its useful governor activity handoff contract and implementation were preserved on current main. The stale PR is retained as historical provenance; no further branch replay is needed.",
+      "evidence": [
+        "PR #20 closed; source head 2839b37e0ff6cd9eb24d649a5b6d17fb14c738b0 retained",
+        "main docs/handoff/governor-activity-handoff-contract.md blob 591866d2c03732494f3d3e340addf5a5138f50fa",
+        "main src/BlacksmithGuild/GuildLoop/GovernorActivityHandoff.cs blob 10ab9ef1bb7ee1a97c2a7d4ef8c4c7e9be9f34f7",
+        "PR #137 preservation matrix merged at 8138f344666c837daa3654eef10f683cc69a3c11"
+      ],
+      "nextAction": "No further replay work remains for PR #20."
     },
     {
       "wave": "E",
       "pr": 24,
       "status": "blocked_dependency",
       "replacementPr": null,
-      "blockedBy": [
-        43,
-        52
-      ],
+      "blockedBy": [43, 52],
       "disposition": "",
       "evidence": [],
       "nextAction": "Wait for the active route and operator-control lineage to settle, then classify each helper as keep, superseded, or reject."
@@ -186,10 +182,7 @@
       "pr": 35,
       "status": "blocked_dependency",
       "replacementPr": null,
-      "blockedBy": [
-        43,
-        52
-      ],
+      "blockedBy": [43, 52],
       "disposition": "",
       "evidence": [],
       "nextAction": "Wait for the active launcher and route lineage to settle, then reconcile only unique focused-route utility value."
@@ -207,6 +200,36 @@
         "PR #38 terminal disposition comment 4964827437"
       ],
       "nextAction": "No further replay work remains for PR #38."
+    },
+    {
+      "wave": "E",
+      "pr": 101,
+      "status": "superseded_recorded",
+      "replacementPr": 137,
+      "blockedBy": [],
+      "disposition": "PR #101 was closed as superseded after preservation. Already-current governor/cert value remains on main; the session-intent harness schema/policy were selectively replayed and authority-bounded in PR #137; the remaining product/runtime delta is preserved on an exact-head branch and tracked for reconstruction in issue #135.",
+      "evidence": [
+        "source head 38d0223685bbff6b77e212b3aa24f0b364574f76 retained at preserve/pr101-runtime-product-20260725",
+        "PR #137 merged commit 8138f344666c837daa3654eef10f683cc69a3c11",
+        "preservation matrix docs/handoff/pr101-pr102-preservation-matrix-20260725.md",
+        "replacement issue #135"
+      ],
+      "nextAction": "Product/runtime reconstruction, if still desired, is owned by issue #135 from current main; no further work remains on PR #101."
+    },
+    {
+      "wave": "E",
+      "pr": 102,
+      "status": "superseded_recorded",
+      "replacementPr": 137,
+      "blockedBy": [],
+      "disposition": "PR #102 was closed as superseded after preservation. Canonical doctrine and continuity work are already on main; unsafe stale-log crash promotion and duplicate/obsolete harness pieces were rejected as-is; potentially useful pause/runtime product ideas remain preserved on an exact-head branch and are tracked for reconstruction in issue #136.",
+      "evidence": [
+        "source head 8e60b9dc5488234d12c7d2c088d3754cb097038a retained at preserve/pr102-runtime-product-20260725",
+        "PR #137 merged commit 8138f344666c837daa3654eef10f683cc69a3c11",
+        "preservation matrix docs/handoff/pr101-pr102-preservation-matrix-20260725.md",
+        "replacement issue #136"
+      ],
+      "nextAction": "Pause/runtime reconstruction, if still desired, is owned by issue #136 from current main; no further work remains on PR #102."
     }
   ]
 }
