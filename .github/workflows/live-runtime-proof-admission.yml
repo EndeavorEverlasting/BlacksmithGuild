@@ -1,0 +1,67 @@
+name: Live Runtime Proof Admission
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/workflows/live-runtime-proof-admission.contract.json'
+      - '.tbg/harness/live-runtime-proof-artifacts.registry.json'
+      - '.tbg/harness/fixtures/live-runtime-proof-admission.fixtures.json'
+      - '.tbg/harness/test-catalog.d/core/live-runtime-proof-admission.test.json'
+      - '.tbg/skills/runtime-evidence-certification/SKILL.md'
+      - 'scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1'
+      - 'scripts/tbg/Test-TbgHarnessCompleteness.ps1'
+      - '.githooks/pre-push'
+      - 'CODEBASE_MAP.md'
+      - 'docs/operator/live-runtime-proof-admission.md'
+      - '.github/workflows/live-runtime-proof-admission.yml'
+  workflow_dispatch:
+
+jobs:
+  pwsh-static:
+    name: PowerShell Core admission and completeness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate live runtime proof admission
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1
+      - name: Validate harness completeness
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgHarnessCompleteness.ps1
+      - name: Check diff whitespace
+        shell: bash
+        run: |
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          base="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
+          git diff --check "$base"...HEAD
+      - name: Upload admission diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-runtime-proof-admission-pwsh
+          if-no-files-found: error
+          path: artifacts/latest/live-runtime-proof-admission/*
+
+  windows-powershell:
+    name: Windows PowerShell 5.1 admission and encoding
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate live runtime proof admission
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgLiveRuntimeProofAdmission.ps1
+      - name: Validate PowerShell UTF-8 BOM contract
+        shell: powershell
+        run: .\scripts\test-powershell-utf8-bom-contract.ps1
+      - name: Validate harness completeness
+        shell: powershell
+        run: .\scripts\tbg\Test-TbgHarnessCompleteness.ps1
+      - name: Upload Windows admission diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-runtime-proof-admission-windows
+          if-no-files-found: error
+          path: artifacts/latest/live-runtime-proof-admission/*
