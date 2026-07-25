@@ -2,6 +2,7 @@
 .SYNOPSIS
   Validates that all harness components registered in .tbg/harness/manifest.json
   exist on disk and that every skill's entry contract, validators, and owned paths resolve.
+  Also enforces the weak-agent-safe live-runtime proof admission bundle.
 #>
 [CmdletBinding()]
 param(
@@ -38,26 +39,39 @@ function Require-File([string]$Label, [string]$RelativePath) {
     if (Test-Path -LiteralPath $full -PathType Leaf) { Add-Pass $Label }
     else { Add-Failure "${Label}: file not found $RelativePath" }
 }
+function Require-Text([string]$Label, [string]$RelativePath, [string]$Needle) {
+    $full = Join-Path $RepoRoot $RelativePath
+    if (-not (Test-Path -LiteralPath $full -PathType Leaf)) {
+        Add-Failure "${Label}: file not found $RelativePath"
+        return
+    }
+    $text = Get-Content -LiteralPath $full -Raw -Encoding UTF8
+    if ($text.Contains($Needle)) { Add-Pass $Label }
+    else { Add-Failure "${Label}: missing '$Needle' in $RelativePath" }
+}
 
 $manifest = Get-Json '.tbg/harness/manifest.json'
-if ($null -eq $manifest) { Add-Failure 'harness manifest missing or invalid'; $result = @{ schema = 'tbg.harness-completeness.result.v1'; passes = $passes; failures = $failures }; $null = New-Item -Path (Split-Path $OutputPath -Parent) -ItemType Directory -Force -ErrorAction SilentlyContinue; $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding UTF8; Write-Host "`nHarness completeness: $passes passed, $($failures.Count) failed" -ForegroundColor $(if ($failures.Count -eq 0) { 'Green' } else { 'Red' }); exit $(if ($failures.Count -eq 0) { 0 } else { 1 }) }
+if ($null -eq $manifest) {
+    Add-Failure 'harness manifest missing or invalid'
+    $result = @{ schema = 'tbg.harness-completeness.result.v1'; passes = $passes; failures = $failures }
+    $null = New-Item -Path (Split-Path $OutputPath -Parent) -ItemType Directory -Force -ErrorAction SilentlyContinue
+    $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
+    Write-Host "`nHarness completeness: $passes passed, $($failures.Count) failed" -ForegroundColor Red
+    exit 1
+}
 
 $skillsManifest = Get-Json '.tbg/skills/manifest.json'
 
 Write-Host "`n=== Harness surface components ==="
-
 $surfaceFiles = @(
     'AGENTS.md', 'CLAUDE.md', 'CODEBASE_MAP.md',
     'docs/AI_HARNESS_ENTRYPOINT.md', 'docs/harness-doctrine.md',
     '.tbg/harness/policies/harness-doctrine.policy.json',
     'scripts/tbg/Test-TbgHarnessDoctrine.ps1'
 )
-foreach ($f in $surfaceFiles) {
-    Require-File "surface $f" $f
-}
+foreach ($f in $surfaceFiles) { Require-File "surface $f" $f }
 
 Write-Host "`n=== Manifest path registry ==="
-
 $requiredPaths = @(
     'codebaseMap', 'aiHarnessEntrypoint', 'generatedOutputPolicy',
     'skillsManifest', 'harnessDoctrine', 'harnessDoctrinePolicy',
@@ -80,27 +94,23 @@ foreach ($key in $requiredPaths) {
 }
 
 Write-Host "`n=== Skill entry contracts and validators ==="
-
 $skillCount = 0
-foreach ($skill in @($skillsManifest.skills)) {
-    $skillCount++
-    $id = [string]$skill.id
-    if (-not [string]::IsNullOrWhiteSpace($skill.path)) {
-        Require-File "skill $id path" $skill.path
-    }
-    if (-not [string]::IsNullOrWhiteSpace($skill.entryContract)) {
-        Require-File "skill $id contract" $skill.entryContract
-    }
-    foreach ($v in @($skill.validators)) {
-        if ($v -match '-File\s+(scripts[^\s"]+)') {
-            Require-File "skill $id validator: $($Matches[1])" $Matches[1]
+if ($skillsManifest) {
+    foreach ($skill in @($skillsManifest.skills)) {
+        $skillCount++
+        $id = [string]$skill.id
+        if (-not [string]::IsNullOrWhiteSpace($skill.path)) { Require-File "skill $id path" $skill.path }
+        if (-not [string]::IsNullOrWhiteSpace($skill.entryContract)) { Require-File "skill $id contract" $skill.entryContract }
+        foreach ($v in @($skill.validators)) {
+            if ($v -match '-File\s+(scripts[^\s"]+)') { Require-File "skill $id validator: $($Matches[1])" $Matches[1] }
         }
     }
+    Add-Pass "skill manifest: $skillCount skills inspected"
+} else {
+    Add-Failure 'skills manifest missing or invalid'
 }
-Add-Pass "skill manifest: $skillCount skills inspected"
 
 Write-Host "`n=== Workflow contract inventory ==="
-
 $workflowDir = Join-Path $RepoRoot '.tbg/workflows'
 if (Test-Path -LiteralPath $workflowDir) {
     $wfCount = 0
@@ -124,33 +134,57 @@ if (Test-Path -LiteralPath $workflowDir) {
     Add-Failure 'workflow directory missing'
 }
 
-Write-Host "`n=== PowerShell UTF-8 BOM check ==="
+Write-Host "`n=== Live runtime proof admission bundle ==="
+$liveProofFiles = @(
+    '.tbg/workflows/live-runtime-proof-admission.contract.json',
+    '.tbg/harness/live-runtime-proof-artifacts.registry.json',
+    '.tbg/harness/fixtures/live-runtime-proof-admission.fixtures.json',
+    '.tbg/harness/test-catalog.d/core/live-runtime-proof-admission.test.json',
+    '.tbg/skills/runtime-evidence-certification/SKILL.md',
+    'scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1',
+    'docs/operator/live-runtime-proof-admission.md',
+    '.github/workflows/live-runtime-proof-admission.yml'
+)
+foreach ($f in $liveProofFiles) { Require-File "live proof $f" $f }
+Require-Text 'codebase map routes live proof admission' 'CODEBASE_MAP.md' '## Live runtime proof admission'
+Require-Text 'runtime skill reads live proof contract' '.tbg/skills/runtime-evidence-certification/SKILL.md' '.tbg/workflows/live-runtime-proof-admission.contract.json'
+Require-Text 'operator report forbids proof promotion' 'docs/operator/live-runtime-proof-admission.md' 'Agent prose cannot'
 
+$liveContract = Get-Json '.tbg/workflows/live-runtime-proof-admission.contract.json'
+if ($liveContract) {
+    if ($liveContract.modes.live_fresh_launch.rejectSkipLaunch -eq $true) { Add-Pass 'live proof contract rejects SkipLaunch' }
+    else { Add-Failure 'live proof contract does not reject SkipLaunch' }
+    if (@($liveContract.terminalStates) -contains 'PASS_LIVE_RUNTIME') { Add-Pass 'live proof contract has PASS_LIVE_RUNTIME' }
+    else { Add-Failure 'live proof contract missing PASS_LIVE_RUNTIME' }
+} else {
+    Add-Failure 'live proof contract invalid JSON'
+}
+
+Write-Host "`n=== PowerShell UTF-8 BOM check ==="
 $bomPaths = @(
     'scripts/tbg/Test-TbgEndToEndHarness.ps1',
     'scripts/tbg/Invoke-TbgEndToEndValidation.ps1',
     'scripts/tbg/New-TbgSprintCapsule.ps1',
     'scripts/tbg/Test-TbgHarnessDoctrine.ps1',
-    'scripts/tbg/Test-TbgSkillRouting.ps1'
+    'scripts/tbg/Test-TbgSkillRouting.ps1',
+    'scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1'
 )
 foreach ($bomPath in $bomPaths) {
     $bomFile = Join-Path $RepoRoot $bomPath
     if (Test-Path -LiteralPath $bomFile -PathType Leaf) {
         $raw = [IO.File]::ReadAllBytes($bomFile)
-        if ($raw.Length -ge 3 -and $raw[0] -eq 0xEF -and $raw[1] -eq 0xBB -and $raw[2] -eq 0xBF) {
-            Add-Pass "BOM $bomPath"
-        } else {
-            Add-Failure "BOM missing $bomPath"
-        }
+        if ($raw.Length -ge 3 -and $raw[0] -eq 0xEF -and $raw[1] -eq 0xBB -and $raw[2] -eq 0xBF) { Add-Pass "BOM $bomPath" }
+        else { Add-Failure "BOM missing $bomPath" }
     }
 }
 
 Write-Host "`n=== Git hooks ==="
-
 Require-File 'githook pre-commit' '.githooks/pre-commit'
+Require-File 'githook pre-push' '.githooks/pre-push'
+Require-Text 'pre-push runs live proof admission' '.githooks/pre-push' 'Test-TbgLiveRuntimeProofAdmission.ps1'
+Require-Text 'pre-push runs completeness' '.githooks/pre-push' 'Test-TbgHarnessCompleteness.ps1'
 
 Write-Host "`n=== E2E contract files ==="
-
 $e2eFiles = @(
     '.tbg/harness/e2e/profiles.json',
     '.tbg/harness/e2e-artifact-types.registry.json',
@@ -177,10 +211,17 @@ $result = @{
     passes = $passes
     failures = $failures
     skillsInspected = $skillCount
+    liveRuntimeProofAdmission = [ordered]@{
+        contract = '.tbg/workflows/live-runtime-proof-admission.contract.json'
+        validator = 'scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1'
+        artifactRegistry = '.tbg/harness/live-runtime-proof-artifacts.registry.json'
+        operatorReport = 'docs/operator/live-runtime-proof-admission.md'
+        prePushHook = '.githooks/pre-push'
+    }
 }
 
 $null = New-Item -Path (Split-Path $OutputPath -Parent) -ItemType Directory -Force -ErrorAction SilentlyContinue
-$result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
+$result | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $OutputPath -Encoding UTF8
 
 Write-Host "`n=== Harness completeness: $passes passed, $($failures.Count) failed ===" -ForegroundColor $(if ($failures.Count -eq 0) { 'Green' } else { 'Red' })
 if ($failures.Count -gt 0) {
