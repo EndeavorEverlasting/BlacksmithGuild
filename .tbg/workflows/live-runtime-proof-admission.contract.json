@@ -1,0 +1,80 @@
+{
+  "schema": "TbgLiveRuntimeProofAdmissionContract.v1",
+  "id": "live-runtime-proof-admission",
+  "purpose": "Machine-enforced proof admission for live/runtime claims. The harness computes the terminal state and proof level; agent prose cannot promote a claim.",
+  "ownerLane": "runtime proof / live behavior evidence",
+  "proofCeiling": "live_runtime",
+  "modes": {
+    "static_validation": {
+      "proofCeiling": "static_test",
+      "mayLaunch": false,
+      "mayAttachExisting": false,
+      "forbiddenClaim": "live_runtime"
+    },
+    "live_fresh_launch": {
+      "proofCeiling": "live_runtime",
+      "mayLaunch": true,
+      "mayAttachExisting": false,
+      "rejectSkipLaunch": true,
+      "requiresFreshEvidence": true,
+      "requiresSameRunCorrelation": true
+    },
+    "attach_existing": {
+      "proofCeiling": "live_runtime",
+      "mayLaunch": false,
+      "mayAttachExisting": true,
+      "requiresExplicitAttachAuthority": true,
+      "requiresFreshEvidence": true,
+      "requiresSameRunCorrelation": true
+    }
+  },
+  "stageOrder": [
+    {"field": "launchRequested", "failure": "BLOCKED_LAUNCH_NOT_REQUESTED", "proofLevelBefore": "build"},
+    {"field": "launchAttempted", "failure": "FAIL_LAUNCH_NOT_ATTEMPTED", "proofLevelBefore": "build"},
+    {"field": "launcherProcessObserved", "failure": "FAIL_LAUNCHER_PROCESS_NOT_OBSERVED", "proofLevelBefore": "build"},
+    {"field": "launcherHwndObserved", "failure": "FAIL_LAUNCHER_HWND_NOT_BOUND", "proofLevelBefore": "launcher"},
+    {"field": "launchActionDispatched", "failure": "FAIL_LAUNCH_ACTION_NOT_DISPATCHED", "proofLevelBefore": "launcher"},
+    {"field": "gameProcessObserved", "failure": "FAIL_GAME_PROCESS_NOT_OBSERVED", "proofLevelBefore": "launcher"},
+    {"field": "campaignAttached", "failure": "FAIL_CAMPAIGN_ATTACH_NOT_OBSERVED", "proofLevelBefore": "launcher"},
+    {"field": "campaignReady", "failure": "FAIL_CAMPAIGN_NOT_READY", "proofLevelBefore": "launcher"},
+    {"field": "commandIssued", "failure": "FAIL_COMMAND_NOT_ISSUED", "proofLevelBefore": "launcher"},
+    {"field": "commandAckObserved", "failure": "FAIL_COMMAND_ACK_NOT_OBSERVED", "proofLevelBefore": "command_ack"},
+    {"field": "behaviorObserved", "failure": "FAIL_BEHAVIOR_NOT_OBSERVED", "proofLevelBefore": "command_ack"},
+    {"field": "runtimeArtifactCollected", "failure": "FAIL_RUNTIME_ARTIFACT_NOT_COLLECTED", "proofLevelBefore": "behavior_observed"}
+  ],
+  "terminalStates": [
+    "PASS_STATIC_ONLY",
+    "PASS_LIVE_RUNTIME",
+    "BLOCKED_LIVE_MODE_SKIP_LAUNCH",
+    "BLOCKED_LAUNCH_NOT_REQUESTED",
+    "BLOCKED_ATTACH_AUTHORITY_MISSING",
+    "FAIL_LAUNCH_NOT_ATTEMPTED",
+    "FAIL_LAUNCHER_PROCESS_NOT_OBSERVED",
+    "FAIL_LAUNCHER_HWND_NOT_BOUND",
+    "FAIL_LAUNCH_ACTION_NOT_DISPATCHED",
+    "FAIL_GAME_PROCESS_NOT_OBSERVED",
+    "FAIL_CAMPAIGN_ATTACH_NOT_OBSERVED",
+    "FAIL_CAMPAIGN_NOT_READY",
+    "FAIL_COMMAND_NOT_ISSUED",
+    "FAIL_COMMAND_ACK_NOT_OBSERVED",
+    "FAIL_BEHAVIOR_NOT_OBSERVED",
+    "FAIL_RUNTIME_ARTIFACT_NOT_COLLECTED",
+    "FAIL_STALE_EVIDENCE",
+    "FAIL_CORRELATION_MISMATCH",
+    "FAIL_UNKNOWN_MODE"
+  ],
+  "rules": [
+    "live_fresh_launch rejects skipLaunch=true before any proof evaluation",
+    "not attempted is never reclassified as an environment blocker",
+    "command ACK is not behavior proof",
+    "behavior proof without a fresh runtime artifact is not live-runtime proof",
+    "stale evidence fails closed",
+    "runId and correlationId must remain constant across the admitted live chain",
+    "claimedProofLevel supplied by an agent is ignored; the validator computes proofLevel",
+    "static_validation can never return PASS_LIVE_RUNTIME"
+  ],
+  "validator": "scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1",
+  "fixtures": ".tbg/harness/fixtures/live-runtime-proof-admission.fixtures.json",
+  "artifactRegistry": ".tbg/harness/live-runtime-proof-artifacts.registry.json",
+  "operatorReport": "docs/operator/live-runtime-proof-admission.md"
+}
