@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.session-intent-contract",
+  "displayName": "Session Intent Contract Validation",
+  "ownerLane": "harness-spine/operator-test-frontdoor",
+  "sourcePath": "scripts/tbg/Test-TbgSessionIntentContract.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgSessionIntentContract.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 60,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": ["artifacts/latest/session-intent-contract/session-intent-contract.result.json"],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates the preserved session-intent schema/policy only; no product/runtime implementation is proven.",
+  "tags": ["static", "contract", "harness", "core", "session-intent"],
+  "triggerInterests": [],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "pr", "ref": "#101@38d0223685bbff6b77e212b3aa24f0b364574f76"}
+}
