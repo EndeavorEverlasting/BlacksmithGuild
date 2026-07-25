@@ -1,4 +1,4 @@
-﻿param(
+param(
     [Alias('SkipBuild')]
     [switch]$NoBuild,
     [switch]$NoInstall,
@@ -29,16 +29,22 @@ function Complete-GovernorSmokeFailure {
         [string]$Classification,
         [string]$Message
     )
+    $sessId = if ($session -and (Get-Member -InputObject $session -Name 'SessionId')) { [string]$session.SessionId } else { '' }
     $summary = [ordered]@{
         classification = $Classification
         pass = $false
-        sessionId = $session.SessionId
+        sessionId = $sessId
+        skipLaunch = $SkipLaunch.IsPresent
         testStartUtc = $testStartUtc.ToString('o')
         completedUtc = (Get-Date).ToUniversalTime().ToString('o')
         error = $Message
         evidenceDir = $evidenceDir
     }
     Write-GovernorJsonFile -InputObject $summary -Path (Join-Path $evidenceDir 'governor-smoke-summary.json') -Depth 8
+    $pktGen = Join-Path $RepoRoot 'scripts\tbg\New-TbgGovernorLiveProofPacket.ps1'
+    if (Test-Path -LiteralPath $pktGen -PathType Leaf) {
+        try { & $pktGen -SessionDir $evidenceDir -RepoRoot $RepoRoot -BannerlordRoot $bannerlordRoot | Out-Null } catch { }
+    }
     Write-Host ("GOVERNOR SMOKE {0}: {1}" -f $Classification, $Message) -ForegroundColor Yellow
     Write-Host ("evidence={0}" -f $evidenceDir)
 }
@@ -106,6 +112,7 @@ $summary = [ordered]@{
     classification   = 'PASS'
     pass             = $true
     sessionId        = $session.SessionId
+    skipLaunch       = $SkipLaunch.IsPresent
     testStartUtc     = $testStartUtc.ToString('o')
     completedUtc     = (Get-Date).ToUniversalTime().ToString('o')
     bootstrapUsed    = $ensureResult.bootstrapUsed
@@ -121,6 +128,10 @@ $summary = [ordered]@{
     evidenceDir      = $evidenceDir
 }
 Write-GovernorJsonFile -InputObject $summary -Path (Join-Path $evidenceDir 'governor-smoke-summary.json') -Depth 8
+$pktGen = Join-Path $RepoRoot 'scripts\tbg\New-TbgGovernorLiveProofPacket.ps1'
+if (Test-Path -LiteralPath $pktGen -PathType Leaf) {
+    try { & $pktGen -SessionDir $evidenceDir -RepoRoot $RepoRoot -BannerlordRoot $bannerlordRoot | Out-Null } catch { }
+}
 
 Write-Host 'GOVERNOR SMOKE PASS' -ForegroundColor Green
 Write-Host ("branch={0} reason={1}" -f $decision.selectedBranch, $decision.selectedReason)
