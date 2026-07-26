@@ -5,7 +5,8 @@
 param(
     [string]$RepoRoot,
     [string]$ExpectedHead,
-    [string]$SavePath,
+    [Alias('SavePath')]
+    [string]$DisposableSavePath,
     [int]$AttachTimeoutSec = 600,
     [int]$TradeTimeoutSec = 1200,
     [int]$AuthorityTimeoutSec = 60,
@@ -31,6 +32,8 @@ Set-Location -LiteralPath $RepoRoot
 . (Join-Path $PSScriptRoot 'visible-trade-lifecycle-gate.ps1')
 . (Join-Path $PSScriptRoot 'visible-trade-proof-capsule.ps1')
 . (Join-Path $PSScriptRoot 'publish-visible-trade-proof-evidence.ps1')
+. (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
+. (Join-Path $PSScriptRoot 'forge-status.ps1')
 
 $diagnosticOnly = $Diagnostic -or $SkipBuild -or $SkipLaunch -or $DryRun
 $certifyingMode = -not $diagnosticOnly
@@ -88,6 +91,8 @@ $proof = [ordered]@{
     gameVersion = ''
     testRunId = $runId
     commandCorrelationId = $runId
+    disposableSaveLeaf = ''
+    disposableSaveSha256 = ''
 }
 
 $stageResults = [ordered]@{}
@@ -98,6 +103,16 @@ $highestProofReached = 'none'
 $exitCode = 0
 $lifecycleGate = $null
 $lifecycleArtifactPaths = $null
+$readinessProof = $null
+$commandAckRecord = $null
+$routeCertRecord = $null
+$tradeCertRecord = $null
+$movementResult = [ordered]@{ observed = $false; delta = 0; startingPosition = ''; endingPosition = ''; sampleCount = 0; target = '' }
+$checkpointResult = [ordered]@{ observed = $false; checkpoints = @() }
+$arrivalResult = [ordered]@{ observed = $false; settlement = ''; target = '' }
+$buyResult = [ordered]@{ observed = $false; goldDelta = 0; inventoryDelta = 0; itemId = '' }
+$travelResult = [ordered]@{ observed = $false; from = ''; to = '' }
+$sellResult = [ordered]@{ observed = $false; goldDelta = 0; inventoryDelta = 0 }
 
 function Write-Event {
     param(
@@ -251,6 +266,81 @@ function Wait-TbgJsonEvidence {
     throw "${Label}_timeout after ${TimeoutSec}s"
 }
 
+function Wait-TbgStableCampaignReady {
+    param(
+        [Parameter(Mandatory = $true)][string]$BannerlordRoot,
+        [Parameter(Mandatory = $true)][string]$StatusPath,
+        [Parameter(Mandatory = $true)][datetime]$NotBeforeUtc,
+        [int]$StabilitySeconds = 60,
+        [int]$TimeoutSec = 600
+    )
+
+    $phase1Path = Get-Phase1LogPath -BannerlordRoot $BannerlordRoot
+    $crashPath = Get-CrashContextJsonPath -BannerlordRoot $BannerlordRoot
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    $stableSinceUtc = $null
+    $lastReason = 'status_missing'
+
+    while ((Get-Date) -lt $deadline) {
+        $detection = Get-BannerlordProcessDetection `
+            -BannerlordRoot $BannerlordRoot `
+            -Phase1Path $phase1Path `
+            -StatusPath $StatusPath `
+            -CrashContextPath $crashPath `
+            -LaunchStartedAtUtc $NotBeforeUtc `
+            -CacheSec 0
+
+        $status = $null
+        $statusFresh = $false
+        if (Test-Path -LiteralPath $StatusPath -PathType Leaf) {
+            try {
+                $statusItem = Get-Item -LiteralPath $StatusPath
+                $statusFresh = $statusItem.LastWriteTimeUtc -ge $NotBeforeUtc.ToUniversalTime()
+                $status = Get-Content -LiteralPath $StatusPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            }
+            catch {
+                $lastReason = 'status_malformed'
+            }
+        }
+
+        $runtimeFresh = [bool]$detection.gameProcessRunning `
+            -and [string]$detection.gameAliveConfidence -in @('definite', 'launcher_hosted')
+        $campaignReady = $null -ne $status -and [bool]$status.campaignReady
+        $canPoll = $null -ne $status -and [bool]$status.session.canPollFileInbox
+        $mapReady = $null -ne $status -and [bool]$status.session.mapReady
+        $ready = $statusFresh -and $runtimeFresh -and $campaignReady -and $canPoll -and $mapReady
+
+        if ($ready) {
+            if ($null -eq $stableSinceUtc) {
+                $stableSinceUtc = (Get-Date).ToUniversalTime()
+            }
+
+            $stableSeconds = ((Get-Date).ToUniversalTime() - $stableSinceUtc).TotalSeconds
+            if ($stableSeconds -ge $StabilitySeconds) {
+                return [pscustomobject][ordered]@{
+                    stableSinceUtc = $stableSinceUtc.ToString('o')
+                    stableSeconds = [Math]::Round($stableSeconds, 2)
+                    processId = $detection.gameProcessPid
+                    processConfidence = $detection.gameAliveConfidence
+                    statusUpdatedAt = $status.updatedAt
+                    campaignReady = $campaignReady
+                    canPollFileInbox = $canPoll
+                    mapReady = $mapReady
+                }
+            }
+            $lastReason = "stability_window_${stableSeconds}s"
+        }
+        else {
+            $stableSinceUtc = $null
+            $lastReason = "fresh=$statusFresh runtime=$runtimeFresh campaign=$campaignReady canPoll=$canPoll map=$mapReady"
+        }
+
+        Start-Sleep -Milliseconds ([Math]::Max(250, $PollIntervalMs))
+    }
+
+    throw "FAIL_CAMPAIGN_NOT_READY: stable readiness not observed for ${StabilitySeconds}s before timeout; last=$lastReason"
+}
+
 try {
     # ═══════════════════════════════════════════════════════════════
     # STAGE: preflight
@@ -263,6 +353,34 @@ try {
         Write-Event -Stage preflight -Status info -Subject 'coordinator' -Action 'diagnostic-mode' -Object 'visible-trade-proof' `
             -Condition 'DiagnosticOnly=true' `
             -Sentence 'The coordinator is running in diagnostic-only mode and will not launch Bannerlord, issue commands, or certify gameplay.'
+    }
+
+    $resolvedDisposableSave = $null
+    if ([string]::IsNullOrWhiteSpace($DisposableSavePath)) {
+        if ($certifyingMode) {
+            throw 'BLOCKED_DISPOSABLE_SAVE_PIN_REQUIRED: pass -DisposableSavePath with one exact approved disposable .sav path'
+        }
+    }
+    else {
+        if (-not [IO.Path]::IsPathRooted($DisposableSavePath)) {
+            throw 'BLOCKED_DISPOSABLE_SAVE_PATH_NOT_ABSOLUTE: -DisposableSavePath must be an exact absolute path'
+        }
+        if (-not (Test-Path -LiteralPath $DisposableSavePath -PathType Leaf)) {
+            throw "BLOCKED_DISPOSABLE_SAVE_NOT_FOUND:$([IO.Path]::GetFileName($DisposableSavePath))"
+        }
+        $resolvedDisposableSave = Get-Item -LiteralPath $DisposableSavePath
+        $approvedCandidates = @(Get-GovernorDisposableSaveCandidates -RepoRoot $RepoRoot)
+        $approvedExact = @($approvedCandidates | Where-Object {
+            [string]::Equals($_.FullName, $resolvedDisposableSave.FullName, [StringComparison]::OrdinalIgnoreCase)
+        })
+        if ($approvedExact.Count -eq 0) {
+            throw "BLOCKED_DISPOSABLE_SAVE_NOT_APPROVED:$($resolvedDisposableSave.Name)"
+        }
+        $proof.disposableSaveLeaf = $resolvedDisposableSave.Name
+        $proof.disposableSaveSha256 = Get-TbgFileSha256 -LiteralPath $resolvedDisposableSave.FullName
+        Write-Event -Stage preflight -Status passed -Subject 'coordinator' -Action 'validate-disposable-save' -Object $resolvedDisposableSave.Name `
+            -Evidence $proof.disposableSaveSha256 `
+            -Sentence "The coordinator resolved one exact approved disposable save named $($resolvedDisposableSave.Name)."
     }
 
     # ═══════════════════════════════════════════════════════════════
@@ -335,29 +453,50 @@ try {
         -Sentence "Static validation completed with $($validatorFailures.Count) failures."
 
     # ═══════════════════════════════════════════════════════════════
-    # STAGE: runtime-stop (safe stop before build)
+    # STAGE: runtime-stop (classification only; never stop an unknown session)
     # ═══════════════════════════════════════════════════════════════
-    Write-Event -Stage runtime-stop -Status started -Subject 'coordinator' -Action 'safe-stop' -Object 'bannerlord' `
-        -Sentence 'The coordinator issued a safe stop to ensure no Bannerlord processes interfere with the build.'
-    $preexisting = @(Get-BannerlordRelatedProcesses)
-    if ($preexisting.Count -gt 0) {
-        $preexistingPids = @($preexisting | ForEach-Object { $_.Id })
-        Write-Event -Stage runtime-stop -Status info -Subject 'coordinator' -Action 'processes-found' -Object ($preexistingPids -join ',') `
-            -Sentence "The coordinator found $($preexisting.Count) pre-existing Bannerlord process(es): $($preexistingPids -join ',')."
-        try {
-            & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'forge-stop.ps1') -ForceKill 2>&1 | Out-Null
-            Start-Sleep -Seconds 3
-        } catch { }
+    Write-Event -Stage runtime-stop -Status started -Subject 'coordinator' -Action 'classify-existing-session' -Object 'bannerlord' `
+        -Sentence 'The coordinator is classifying the existing Bannerlord session before build, install, or launch.'
+    $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
+    $preflightPhase1Path = Get-Phase1LogPath -BannerlordRoot $bannerlordRoot
+    $preflightStatusPath = Get-StatusJsonPath -BannerlordRoot $bannerlordRoot
+    $preflightCrashPath = Get-CrashContextJsonPath -BannerlordRoot $bannerlordRoot
+    $preexistingDetection = Get-BannerlordProcessDetection `
+        -BannerlordRoot $bannerlordRoot `
+        -Phase1Path $preflightPhase1Path `
+        -StatusPath $preflightStatusPath `
+        -CrashContextPath $preflightCrashPath `
+        -CacheSec 0
+    $preexistingCandidates = @($preexistingDetection.gameProcessCandidates)
+    $existingSessionObserved = [bool]$preexistingDetection.gameProcessRunning `
+        -or ([int]$preexistingDetection.launcherProcessPid -gt 0) `
+        -or ($preexistingCandidates.Count -gt 0)
+    $preexistingClassification = if ($existingSessionObserved) { 'ambiguous' } else { 'absent' }
+
+    if ($existingSessionObserved -and $certifyingMode) {
+        $identity = "classification=$preexistingClassification gamePid=$($preexistingDetection.gameProcessPid) launcherPid=$($preexistingDetection.launcherProcessPid) confidence=$($preexistingDetection.gameAliveConfidence)"
+        Write-Event -Stage runtime-stop -Status blocked -Subject 'coordinator' -Action 'fail-closed' -Object 'bannerlord' `
+            -Evidence $identity `
+            -Sentence 'A pre-existing or ambiguous Bannerlord session was observed. The coordinator left it untouched and blocked the fresh-launch proof.'
+        throw "BLOCKED_RUNTIME_SESSION_AMBIGUOUS:$identity"
     }
-    Write-Event -Stage runtime-stop -Status passed -Subject 'coordinator' -Action 'safe-stop-complete' -Object 'bannerlord' `
-        -Sentence 'The safe stop completed. No Bannerlord processes should remain.'
+    Write-Event -Stage runtime-stop -Status passed -Subject 'coordinator' -Action 'classification-complete' -Object $preexistingClassification `
+        -Evidence "gamePid=$($preexistingDetection.gameProcessPid) launcherPid=$($preexistingDetection.launcherProcessPid) confidence=$($preexistingDetection.gameAliveConfidence)" `
+        -Sentence "The existing Bannerlord session classified as $preexistingClassification; no process was stopped or killed."
+
+    if ($certifyingMode -and $resolvedDisposableSave) {
+        Set-GovernorActiveDisposableSavePin -SaveFile $resolvedDisposableSave -RepoRoot $RepoRoot `
+            -Reason "visible-trade-proof exact save for run $runId" | Out-Null
+        Write-Event -Stage runtime-stop -Status passed -Subject 'coordinator' -Action 'pin-disposable-save' -Object $resolvedDisposableSave.Name `
+            -Evidence $proof.disposableSaveSha256 `
+            -Sentence "The coordinator pinned the exact approved disposable save $($resolvedDisposableSave.Name) for run $runId."
+    }
 
     # ═══════════════════════════════════════════════════════════════
     # STAGE: build
     # ═══════════════════════════════════════════════════════════════
     Write-Event -Stage build -Status started -Subject 'coordinator' -Action 'dotnet-build' -Object 'BlacksmithGuild.csproj' `
         -Sentence 'The coordinator started a Release build of the BlacksmithGuild mod.'
-    $bannerlordRoot = Get-BannerlordRootFromRepo -RepoRoot $RepoRoot
     $localDllPath = Join-Path $RepoRoot 'Module\BlacksmithGuild\bin\Win64_Shipping_Client\BlacksmithGuild.dll'
     $installedDllPath = Join-Path $bannerlordRoot 'Modules\BlacksmithGuild\bin\Win64_Shipping_Client\BlacksmithGuild.dll'
 
@@ -586,9 +725,18 @@ try {
         }
         Write-Event -Stage campaign-ready -Status started -Subject 'coordinator' -Action 'wait-campaign-ready' -Object 'bannerlord' `
             -Sentence 'The coordinator is waiting for the campaign to become ready after launcher handoff.'
+        $readinessProof = Wait-TbgStableCampaignReady `
+            -BannerlordRoot $bannerlordRoot `
+            -StatusPath $statusPath `
+            -NotBeforeUtc $launchAttemptUtc `
+            -StabilitySeconds 60 `
+            -TimeoutSec $AttachTimeoutSec
         $campaignReadyUtc = (Get-Date).ToUniversalTime()
         Write-Event -Stage campaign-ready -Status passed -Subject 'coordinator' -Action 'campaign-ready' -Object 'bannerlord' `
-            -Sentence 'The campaign-ready wait completed. Lifecycle handoff remains distinct from campaign readiness proof.'
+            -Evidence ("pid={0} stableSeconds={1} campaignReady={2} canPollFileInbox={3} mapReady={4}" -f `
+                $readinessProof.processId, $readinessProof.stableSeconds, $readinessProof.campaignReady, `
+                $readinessProof.canPollFileInbox, $readinessProof.mapReady) `
+            -Sentence 'Campaign readiness remained fresh and stable for at least 60 seconds with an observed runtime and file-inbox polling enabled.'
     } else {
         Write-Event -Stage campaign-ready -Status skipped -Subject 'coordinator' -Action 'wait-campaign-ready' -Object 'bannerlord' `
             -Sentence 'Campaign-ready wait skipped.'
@@ -598,36 +746,60 @@ try {
     # STAGE: route-request
     # ═══════════════════════════════════════════════════════════════
     $routeCommandUtc = $null
+    $routeCommandId = "$runId-governor-cycle"
     if ($ownsLaunchedSession -and -not $diagnosticOnly) {
-        Write-Event -Stage route-request -Status started -Subject 'coordinator' -Action 'issue-route-command' -Object 'RunAutonomousVisibleTradeRouteNow' `
-            -Sentence 'The coordinator issued the RunAutonomousVisibleTradeRouteNow command.'
+        Write-Event -Stage route-request -Status started -Subject 'coordinator' -Action 'issue-route-command' -Object 'RunCampaignGovernorCycleNow' `
+            -Sentence 'The coordinator is enabling Automation and issuing one exact correlated governor-cycle command.'
 
         $routeCommandUtc = (Get-Date).ToUniversalTime()
         try {
-            & (Join-Path $RepoRoot 'forge.ps1') -Command 'ReportSaveIdentityNow' -Wait -TimeoutSec 45 2>&1 | Out-Null
-        } catch { }
-        Start-Sleep -Seconds 2
-        try {
-            & (Join-Path $RepoRoot 'forge.ps1') -Command 'ShowEngineToggleState' -Wait -TimeoutSec 45 2>&1 | Out-Null
-        } catch { }
-        Start-Sleep -Seconds 1
-        try {
-            & (Join-Path $RepoRoot 'forge.ps1') -Command 'SetMapTradeAutomation' -Wait -TimeoutSec 45 2>&1 | Out-Null
-        } catch { }
-        Start-Sleep -Seconds 2
+            $saveIdentityCommandId = "$runId-save-identity"
+            $saveIdentityCommandUtc = (Get-Date).ToUniversalTime()
+            Send-ForgeCommand -CommandName 'ReportSaveIdentityNow' -BannerlordRoot $bannerlordRoot -Wait `
+                -CommandId $saveIdentityCommandId -RunId $runId -CorrelationId $runId `
+                -TimeoutSec 45 2>&1 | Out-Null
 
-        try {
-            & (Join-Path $RepoRoot 'forge.ps1') -Command 'RunAutonomousVisibleTradeRouteNow' -Wait -TimeoutSec 60 2>&1 | Out-Null
+            $saveIdentityPath = Join-Path $bannerlordRoot 'BlacksmithGuild_SaveIdentity.json'
+            $saveIdentityItem = Get-Item -LiteralPath $saveIdentityPath -ErrorAction Stop
+            $saveIdentity = Get-Content -LiteralPath $saveIdentityPath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $expectedSaveId = [IO.Path]::GetFileNameWithoutExtension($resolvedDisposableSave.Name)
+            $allowedSaveIds = @($expectedSaveId)
+            if ([string]::Equals(
+                    $expectedSaveId,
+                    'BlacksmithGuild_DevStart',
+                    [StringComparison]::OrdinalIgnoreCase)) {
+                $allowedSaveIds += 'BlacksmithGuildDevStart'
+            }
+            $saveIdentityValid = $saveIdentityItem.LastWriteTimeUtc -ge $saveIdentityCommandUtc `
+                -and (Test-TbgSaveIdentityEvidence `
+                    -Identity $saveIdentity `
+                    -AllowedSaveIds $allowedSaveIds `
+                    -CommandId $saveIdentityCommandId `
+                    -RunId $runId `
+                    -CorrelationId $runId `
+                    -ProcessId ([int]$readinessProof.processId) `
+                    -NotBeforeUtc $saveIdentityCommandUtc)
+            if (-not $saveIdentityValid) {
+                throw "FAIL_SAVE_IDENTITY_MISMATCH: expected=$($allowedSaveIds -join '|') loaded=$($saveIdentity.loadedSaveId) active=$($saveIdentity.activeSaveSlotName) verified=$($saveIdentity.identityVerified) explicit=$($saveIdentity.explicitLoadObserved) process=$($saveIdentity.processId)"
+            }
+
+            Send-ForgeCommand -CommandName 'SetEngineToggleAutomation' -BannerlordRoot $bannerlordRoot -Wait `
+                -CommandId "$runId-automation" -RunId $runId -CorrelationId $runId `
+                -TimeoutSec 45 2>&1 | Out-Null
+
+            Send-ForgeCommand -CommandName 'RunCampaignGovernorCycleNow' -BannerlordRoot $bannerlordRoot -Wait `
+                -CommandId $routeCommandId -RunId $runId -CorrelationId $runId `
+                -TimeoutSec 60 2>&1 | Out-Null
         } catch {
-            Write-Event -Stage route-request -Status failed -Subject 'coordinator' -Action 'route-command-failed' -Object 'RunAutonomousVisibleTradeRouteNow' `
-                -Sentence "The route command failed: $($_.Exception.Message)."
+            Write-Event -Stage route-request -Status failed -Subject 'coordinator' -Action 'route-command-failed' -Object 'RunCampaignGovernorCycleNow' `
+                -Sentence "The governor route command failed: $($_.Exception.Message)."
             throw "FAIL_COMMAND_NOT_ACKNOWLEDGED:$($_.Exception.Message)"
         }
 
-        Write-Event -Stage route-request -Status passed -Subject 'coordinator' -Action 'route-command-sent' -Object 'RunAutonomousVisibleTradeRouteNow' `
-            -Sentence 'The route command was sent to the Bannerlord runtime.'
+        Write-Event -Stage route-request -Status passed -Subject 'coordinator' -Action 'route-command-sent' -Object 'RunCampaignGovernorCycleNow' `
+            -Sentence 'The exact correlated governor-cycle command was sent to the Bannerlord runtime.'
     } else {
-        Write-Event -Stage route-request -Status skipped -Subject 'coordinator' -Action 'route-command' -Object 'RunAutonomousVisibleTradeRouteNow' `
+        Write-Event -Stage route-request -Status skipped -Subject 'coordinator' -Action 'route-command' -Object 'RunCampaignGovernorCycleNow' `
             -Sentence 'Route command skipped in diagnostic/dry-run mode.'
     }
 
@@ -636,12 +808,12 @@ try {
     # ═══════════════════════════════════════════════════════════════
     $commandAckRecord = $null
     if ($ownsLaunchedSession -and -not $diagnosticOnly -and $routeCommandUtc) {
-        Write-Event -Stage command-ack -Status started -Subject 'coordinator' -Action 'wait-command-ack' -Object 'VisibleTradeCycle' `
-            -Sentence 'The coordinator is waiting for command acknowledgement evidence.'
+        Write-Event -Stage command-ack -Status started -Subject 'coordinator' -Action 'wait-command-ack' -Object 'RunCampaignGovernorCycleNow' `
+            -Sentence 'The coordinator is waiting for the exact governor command acknowledgement.'
 
         $runtimeCandidates = @(
-            (Join-Path $bannerlordRoot 'BlacksmithGuild_VisibleTradeCycle.json'),
-            (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_VisibleTradeCycle.json')
+            (Join-Path $bannerlordRoot 'BlacksmithGuild_CommandAck.json'),
+            (Join-Path (Get-BannerlordDocsRoot) 'BlacksmithGuild_CommandAck.json')
         )
         try {
             $commandAckRecord = Wait-TbgJsonEvidence `
@@ -651,20 +823,22 @@ try {
                 -Label 'FAIL_COMMAND_NOT_ACKNOWLEDGED' `
                 -Accept {
                     param($value)
-                    [string](Get-TbgObjectProperty $value 'runId' '') -eq $runId `
-                        -or [string](Get-TbgObjectProperty $value 'source' '') -eq 'RunAutonomousVisibleTradeRouteNow'
+                    [string](Get-TbgObjectProperty $value 'commandId' '') -eq $routeCommandId `
+                        -and [string](Get-TbgObjectProperty $value 'command' '') -eq 'RunCampaignGovernorCycleNow' `
+                        -and [string](Get-TbgObjectProperty $value 'runId' '') -eq $runId `
+                        -and [string](Get-TbgObjectProperty $value 'correlationId' '') -eq $runId
                 }
             Set-HighestProof -Level 'command-ack'
-            Write-Event -Stage command-ack -Status passed -Subject 'coordinator' -Action 'command-acked' -Object 'VisibleTradeCycle' `
+            Write-Event -Stage command-ack -Status passed -Subject 'coordinator' -Action 'command-acked' -Object 'RunCampaignGovernorCycleNow' `
                 -Evidence $commandAckRecord.Path `
-                -Sentence 'The command acknowledgement was received from the Bannerlord runtime.'
+                -Sentence 'The exact governor command acknowledgement was received from the Bannerlord runtime.'
         } catch {
-            Write-Event -Stage command-ack -Status failed -Subject 'coordinator' -Action 'command-ack-timeout' -Object 'VisibleTradeCycle' `
+            Write-Event -Stage command-ack -Status failed -Subject 'coordinator' -Action 'command-ack-timeout' -Object 'RunCampaignGovernorCycleNow' `
                 -Sentence "Command acknowledgement timed out: $($_.Exception.Message)."
             throw "FAIL_COMMAND_NOT_ACKNOWLEDGED:$($_.Exception.Message)"
         }
     } else {
-        Write-Event -Stage command-ack -Status skipped -Subject 'coordinator' -Action 'wait-command-ack' -Object 'VisibleTradeCycle' `
+        Write-Event -Stage command-ack -Status skipped -Subject 'coordinator' -Action 'wait-command-ack' -Object 'RunCampaignGovernorCycleNow' `
             -Sentence 'Command acknowledgement wait skipped.'
     }
 
@@ -692,7 +866,7 @@ try {
     # ═══════════════════════════════════════════════════════════════
     # STAGES: movement, checkpoint, arrival, buy, travel, sell
     # ═══════════════════════════════════════════════════════════════
-    $movementResult = [ordered]@{ observed = $false; delta = 0; startingPosition = ''; endingPosition = ''; sampleCount = 0 }
+    $movementResult = [ordered]@{ observed = $false; delta = 0; startingPosition = ''; endingPosition = ''; sampleCount = 0; target = '' }
     $checkpointResult = [ordered]@{ observed = $false; checkpoints = @() }
     $arrivalResult = [ordered]@{ observed = $false; settlement = ''; target = '' }
     $buyResult = [ordered]@{ observed = $false; goldDelta = 0; inventoryDelta = 0; itemId = '' }
@@ -716,9 +890,13 @@ try {
             $routeCertRecord = Wait-TbgJsonEvidence `
                 -Candidates $routeCertCandidates `
                 -NotBeforeUtc $routeCommandUtc `
-                -TimeoutSec 60 `
+                -TimeoutSec $TradeTimeoutSec `
                 -Label 'FAIL_ROUTE_CHECKPOINT_NOT_OBSERVED' `
-                -Accept { param($v) $true }
+                -Accept {
+                    param($value)
+                    (Test-TbgMapTradeCertLineage -Cert $value -NotBeforeUtc $routeCommandUtc) `
+                        -and (Test-TbgMapTradeCertTerminalState -Cert $value)
+                }
         } catch {
             Write-Event -Stage checkpoint -Status failed -Subject 'coordinator' -Action 'route-cert-timeout' -Object 'route-cert' `
                 -Sentence "Route certificate timed out: $($_.Exception.Message)."
@@ -728,46 +906,66 @@ try {
             $tradeCertRecord = Wait-TbgJsonEvidence `
                 -Candidates $tradeCertCandidates `
                 -NotBeforeUtc $routeCommandUtc `
-                -TimeoutSec 60 `
+                -TimeoutSec $TradeTimeoutSec `
                 -Label 'FAIL_BUY_DELTA_NOT_OBSERVED' `
-                -Accept { param($v) $true }
+                -Accept {
+                    param($value)
+                    (Test-TbgMapTradeCertLineage -Cert $value -NotBeforeUtc $routeCommandUtc) `
+                        -and (Test-TbgMapTradeCertTerminalState -Cert $value)
+                }
         } catch {
             Write-Event -Stage buy -Status failed -Subject 'coordinator' -Action 'trade-cert-timeout' -Object 'trade-cert' `
                 -Sentence "Trade certificate timed out: $($_.Exception.Message)."
         }
 
-        if ($commandAckRecord.Value) {
-            $route = Get-TbgObjectProperty $commandAckRecord.Value 'route'
-            $trade = Get-TbgObjectProperty $commandAckRecord.Value 'tradeExecution'
-            $surface = Get-TbgObjectProperty $commandAckRecord.Value 'tradeSurface'
+        if ($routeCertRecord -and $tradeCertRecord) {
+            $route = $routeCertRecord.Value
+            $tradeSurface = $tradeCertRecord.Value
+            $trade = Get-TbgObjectProperty $tradeSurface 'tradeExecution'
 
-            if ($route) {
-                $movementResult.observed = [bool](Get-TbgObjectProperty $route 'movementObserved' $false)
-                $movementResult.delta = [double](Get-TbgObjectProperty $route 'partyMovedDistance' 0)
-                $movementResult.target = [string](Get-TbgObjectProperty $route 'targetSettlement' '')
+            if (-not (Test-TbgMapTradeCertPairCorrelation -RouteCert $route -TradeCert $tradeSurface)) {
+                $failureDetail = 'FAIL_EVIDENCE_INCOMPLETE: route and trade certificates do not identify the same governor activity, start time, and target'
+                Write-Event -Stage checkpoint -Status failed -Subject 'coordinator' -Action 'cert-correlation-mismatch' -Object 'map-trade-cert-pair' `
+                    -Evidence "route=$($routeCertRecord.Path) trade=$($tradeCertRecord.Path)" `
+                    -Sentence 'The fresh route and trade certificates did not share one governor activity lineage, so no behavior proof was admitted.'
+            } else {
+                $movementResult.startingPosition = [string](Get-TbgObjectProperty $route 'startPosition' '')
+                $movementResult.endingPosition = [string](Get-TbgObjectProperty $route 'latestPosition' '')
+                $movementResult.target = [string](Get-TbgObjectProperty $route 'destinationSettlement' '')
+                $movementDelta = Get-TbgMapPositionDistance `
+                    -StartPosition $movementResult.startingPosition `
+                    -EndPosition $movementResult.endingPosition
+                $movementResult.sampleCount = if ($null -ne $movementDelta) { 2 } else { 0 }
+                $movementResult.delta = if ($null -ne $movementDelta) { [Math]::Round([double]$movementDelta, 6) } else { 0 }
+                $movementResult.observed = [bool](Get-TbgObjectProperty $route 'routeStarted' $false) `
+                    -and $null -ne $movementDelta `
+                    -and [double]$movementDelta -gt 0
                 if ($movementResult.observed -and $movementResult.delta -gt 0) {
                     Set-HighestProof -Level 'movement'
                     Write-Event -Stage movement -Status passed -Subject 'party' -Action 'move' -Object 'campaign-map' `
-                        -Evidence "delta=$($movementResult.delta)" `
+                        -Evidence "delta=$($movementResult.delta) cert=$($routeCertRecord.Path)" `
                         -Sentence "Party movement observed with delta $($movementResult.delta) toward $($movementResult.target)."
                 } else {
                     Write-Event -Stage movement -Status info -Subject 'party' -Action 'no-movement' -Object 'campaign-map' `
                         -Sentence 'No significant party movement was observed in the runtime evidence.'
                 }
 
-                $arrivalResult.observed = [bool](Get-TbgObjectProperty $route 'arrivalObserved' $false)
-                $arrivalResult.target = [string](Get-TbgObjectProperty $route 'targetSettlement' '')
-                $arrivalResult.settlement = [string](Get-TbgObjectProperty $route 'arrivedSettlement' '')
+                $routeSteps = @(Get-TbgObjectProperty $route 'steps' @())
+                $arrivalResult.observed = $routeSteps -contains 'TargetSettlementConfirmed'
+                $arrivalResult.target = [string](Get-TbgObjectProperty $route 'destinationSettlement' '')
+                $arrivalResult.settlement = if ($arrivalResult.observed) { $arrivalResult.target } else { '' }
                 if ($arrivalResult.observed) {
                     Set-HighestProof -Level 'arrival'
                     Write-Event -Stage arrival -Status passed -Subject 'party' -Action 'arrive' -Object $arrivalResult.settlement `
-                        -Sentence "Party arrived at $($arrivalResult.settlement)."
+                        -Evidence $routeCertRecord.Path `
+                        -Sentence "Party arrived at and confirmed the target settlement $($arrivalResult.settlement)."
                 } else {
                     Write-Event -Stage arrival -Status info -Subject 'party' -Action 'no-arrival' -Object 'settlement' `
                         -Sentence 'No arrival was observed in the runtime evidence.'
                 }
 
                 $checkpointResult.observed = $arrivalResult.observed
+                $checkpointResult.checkpoints = @($routeSteps)
                 if ($checkpointResult.observed) {
                     Set-HighestProof -Level 'checkpoint'
                     Write-Event -Stage checkpoint -Status passed -Subject 'party' -Action 'checkpoint' -Object $arrivalResult.settlement `
@@ -776,18 +974,36 @@ try {
                     Write-Event -Stage checkpoint -Status info -Subject 'party' -Action 'no-checkpoint' -Object 'route' `
                         -Sentence 'No route checkpoint progression was observed.'
                 }
+
+                $travelResult.observed = $movementResult.observed -and $arrivalResult.observed
+                $travelResult.from = $movementResult.startingPosition
+                $travelResult.to = $arrivalResult.settlement
             }
 
-            if ($trade) {
-                $buyResult.observed = (Get-TbgObjectProperty $trade 'fakeGameplayDelta' $true) -eq $false `
-                    -and [int](Get-TbgObjectProperty $trade 'quantityBought' 0) -gt 0
+            if ($trade -and -not $failureDetail) {
+                $goldBefore = [int](Get-TbgObjectProperty $trade 'goldBefore' 0)
+                $goldAfter = [int](Get-TbgObjectProperty $trade 'goldAfter' 0)
+                $inventoryBefore = [int](Get-TbgObjectProperty $trade 'inventoryBefore' 0)
+                $inventoryAfter = [int](Get-TbgObjectProperty $trade 'inventoryAfter' 0)
                 $buyResult.goldDelta = [int](Get-TbgObjectProperty $trade 'goldDelta' 0)
-                $buyResult.inventoryDelta = [int](Get-TbgObjectProperty $trade 'inventoryDelta' 0)
+                $buyResult.inventoryDelta = $inventoryAfter - $inventoryBefore
                 $buyResult.itemId = [string](Get-TbgObjectProperty $trade 'itemId' '')
+                $quantityBought = [int](Get-TbgObjectProperty $trade 'quantityBought' 0)
+                $executionMethod = [string](Get-TbgObjectProperty $trade 'executionMethod' '')
+                $buyResult.observed = [string](Get-TbgObjectProperty $tradeSurface 'state' '') -eq 'Complete' `
+                    -and [string](Get-TbgObjectProperty $tradeSurface 'runtimeProofClaim' '') -eq 'vanilla_trade_inventory_gold_delta_observed' `
+                    -and [bool](Get-TbgObjectProperty $tradeSurface 'mutationApplied' $false) `
+                    -and $quantityBought -gt 0 `
+                    -and $buyResult.inventoryDelta -gt 0 `
+                    -and $quantityBought -eq $buyResult.inventoryDelta `
+                    -and $buyResult.goldDelta -lt 0 `
+                    -and $buyResult.goldDelta -eq ($goldAfter - $goldBefore) `
+                    -and -not [string]::IsNullOrWhiteSpace($buyResult.itemId) `
+                    -and -not [string]::IsNullOrWhiteSpace($executionMethod)
                 if ($buyResult.observed) {
                     Set-HighestProof -Level 'buy'
                     Write-Event -Stage buy -Status passed -Subject 'player' -Action 'buy' -Object $buyResult.itemId `
-                        -Evidence "gold=$($buyResult.goldDelta) inv=$($buyResult.inventoryDelta)" `
+                        -Evidence "gold=$($buyResult.goldDelta) inv=$($buyResult.inventoryDelta) cert=$($tradeCertRecord.Path)" `
                         -Sentence "Visible buy observed: $($buyResult.itemId) gold_delta=$($buyResult.goldDelta) inventory_delta=$($buyResult.inventoryDelta)."
                 } else {
                     Write-Event -Stage buy -Status info -Subject 'player' -Action 'no-buy' -Object 'trade' `
@@ -819,7 +1035,9 @@ try {
         Write-Event -Stage runtime-stop-final -Status started -Subject 'coordinator' -Action 'cleanup' -Object 'MapTrade' `
             -Sentence 'The coordinator is cleaning up MapTrade automation and returning to Manual.'
         try {
-            & (Join-Path $RepoRoot 'forge.ps1') -Command 'SetMapTradeManual' -Wait -TimeoutSec 45 2>&1 | Out-Null
+            Send-ForgeCommand -CommandName 'SetEngineToggleManual' -BannerlordRoot $bannerlordRoot -Wait `
+                -CommandId "$runId-manual" -RunId $runId -CorrelationId $runId `
+                -TimeoutSec 45 2>&1 | Out-Null
             Write-Event -Stage runtime-stop-final -Status passed -Subject 'coordinator' -Action 'manual-cleanup' -Object 'MapTrade' `
                 -Sentence 'MapTrade automation returned to Manual.'
         } catch {

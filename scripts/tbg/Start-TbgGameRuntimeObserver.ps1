@@ -74,7 +74,15 @@ function New-TbgEvent([string]$Run, [string]$Correlation, [string]$SourceKind, [
         evidenceRefs = @($EvidenceRefs); freshness = $Freshness; proofLevel = 'harness'; redactionState = 'sanitized'
     }
 }
-function Write-TbgRun([string]$Root, [string]$Run, [string]$Correlation, [string]$Lease, [object[]]$Events, [string]$Status) {
+function Write-TbgRun(
+    [string]$Root,
+    [string]$Run,
+    [string]$Correlation,
+    [string]$Lease,
+    [object[]]$Events,
+    [string]$Status,
+    [string]$StartedUtc
+) {
     $runRoot = Join-Path $Root $Run
     $relativeRoot = ".local/tbg-runtime-observer/$Run/"
     $context = [ordered]@{
@@ -82,7 +90,7 @@ function Write-TbgRun([string]$Root, [string]$Run, [string]$Correlation, [string
         sourceCommit = Get-TbgGit @('rev-parse','HEAD'); branch = Get-TbgGit @('branch','--show-current'); worktreeLabel = 'game-runtime-observer'
         observers = @([ordered]@{ observerId = 'game-runtime-observer'; version = '1.0.0'; sourceKind = 'process_lifecycle' })
         processIdentity = [ordered]@{ canonicalName = 'unknown'; pid = $null; imageName = $null; ownership = 'unknown' }
-        startedUtc = Get-TbgNow; completedUtc = if ($Status -eq 'running') { $null } else { Get-TbgNow }
+        startedUtc = $StartedUtc; completedUtc = if ($Status -eq 'running') { $null } else { Get-TbgNow }
         mode = 'observe'; authority = 'read-only external observation; lease controls observer disposal only'; proofCeiling = 'harness'
         artifactRoot = $relativeRoot; redactionPolicy = [ordered]@{ rawEvidenceLocalOnly = $true; forbiddenContent = @('password','token','.dmp','absolute_personal_paths') }
     }
@@ -104,6 +112,17 @@ function Write-TbgRun([string]$Root, [string]$Run, [string]$Correlation, [string
     return $runRoot
 }
 
+function Test-TbgObserverStopRequested([string]$StatusPath, [string]$ExpectedLeaseId) {
+    if (-not (Test-Path -LiteralPath $StatusPath)) { return $false }
+    try {
+        $value = Get-Content -LiteralPath $StatusPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        return [string]$value.leaseId -eq $ExpectedLeaseId `
+            -and [string]$value.status -in @('stop_requested', 'stopped')
+    } catch {
+        return $false
+    }
+}
+
 $baseRoot = if ([IO.Path]::IsPathRooted($OutputRoot)) { $OutputRoot } else { Join-Path $repoRoot $OutputRoot }
 if ($Command -eq 'status') {
     if ([string]::IsNullOrWhiteSpace($RunId)) { throw 'status requires -RunId.' }
@@ -117,27 +136,69 @@ if ($Command -eq 'stop') {
     $statusPath = Join-Path (Join-Path $baseRoot $RunId) 'observer-status.json'
     $existing = Get-Content -LiteralPath $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if ([string]$existing.leaseId -ne $LeaseId) { throw 'Lease mismatch: only the starter may stop or dispose this observer.' }
-    $null = Write-TbgRun $baseRoot $RunId 'observer-stop' $LeaseId @((New-TbgEvent $RunId 'observer-stop' 'observer_health' 'observer.health' $null 'info' @{ disposition='observer_disposed_no_game_process_touched' })) 'stopped'
-    Write-Host "Observer $RunId stopped; no Bannerlord process was touched."; exit 0
+    if ([string]$existing.status -in @('stopped', 'completed')) {
+        Write-Host "Observer $RunId is already $($existing.status); no Bannerlord process was touched."
+        if ($PassThru) { return $existing }
+        exit 0
+    }
+    if ([string]$existing.status -eq 'stop_requested') {
+        Write-Host "Observer $RunId stop is already requested; no Bannerlord process was touched."
+        exit 0
+    }
+    $stopSignal = [ordered]@{
+        schema = 'TbgGameRuntimeObserverStatus.v1'
+        runId = $RunId
+        leaseId = $LeaseId
+        status = 'stop_requested'
+        updatedUtc = Get-TbgNow
+    }
+    Write-TbgJson $stopSignal $statusPath
+    Write-Host "Observer $RunId stop requested; no Bannerlord process was touched."; exit 0
 }
 
-if ($DurationSeconds -lt 1 -or $DurationSeconds -gt 300) { throw 'DurationSeconds must be between 1 and 300.' }
+if ($DurationSeconds -lt 1 -or $DurationSeconds -gt 2400) { throw 'DurationSeconds must be between 1 and 2400.' }
 if ([string]::IsNullOrWhiteSpace($RunId)) { $RunId = "gro-$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ'))-$([Guid]::NewGuid().ToString('N').Substring(0,8))" }
 if ([string]::IsNullOrWhiteSpace($CorrelationId)) { $CorrelationId = "gro-corr-$([Guid]::NewGuid().ToString('N').Substring(0,12))" }
 $lease = [Guid]::NewGuid().ToString('N')
+$observerStartedUtc = Get-TbgNow
 $events = New-Object Collections.Generic.List[object]
-$events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{ watcher='CIM_reconciliation_and_Process.Exited'; leaseId=$lease })) | Out-Null
+$events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{ watcher='CIM_reconciliation_and_Process.Exited'; leaseId=$lease; disposition='observer_runtime_started' })) | Out-Null
 $known = @{}
 foreach ($p in Get-TbgProcesses) { $known[[string]$p.pid] = $p; $events.Add((New-TbgEvent $RunId $CorrelationId 'process_lifecycle' 'process.started' $p 'info' @{ parentPid=$p.parentPid; sessionId=$p.sessionId; observedAtStart=$true })) | Out-Null }
+$runRoot = Write-TbgRun $baseRoot $RunId $CorrelationId $lease @($events.ToArray()) 'running' $observerStartedUtc
 $deadline = [DateTime]::UtcNow.AddSeconds($DurationSeconds)
+$nextFlushUtc = [DateTime]::UtcNow.AddSeconds(2)
+$observerStopRequested = $false
 while ([DateTime]::UtcNow -lt $deadline) {
     Start-Sleep -Milliseconds 500
+    $liveStatusPath = Join-Path $runRoot 'observer-status.json'
+    if (Test-TbgObserverStopRequested -StatusPath $liveStatusPath -ExpectedLeaseId $lease) {
+        $events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{
+            disposition = 'observer_disposed_no_game_process_touched'
+            leaseId = $lease
+        })) | Out-Null
+        $observerStopRequested = $true
+        break
+    }
     $current = @{}; foreach ($p in Get-TbgProcesses) { $current[[string]$p.pid] = $p }
     foreach ($key in $current.Keys) { if (-not $known.ContainsKey($key)) { $p=$current[$key]; $events.Add((New-TbgEvent $RunId $CorrelationId 'process_lifecycle' 'process.started' $p 'info' @{ parentPid=$p.parentPid; sessionId=$p.sessionId; reconciled=$true })) | Out-Null } }
     foreach ($key in $known.Keys) { if (-not $current.ContainsKey($key)) { $p=$known[$key]; $events.Add((New-TbgEvent $RunId $CorrelationId 'process_lifecycle' 'process.exited' $p 'warning' @{ exitCode=$null; parentPid=$p.parentPid; sessionId=$p.sessionId; reconciliationObserved=$true })) | Out-Null } }
     $known = $current
+    if (Test-TbgObserverStopRequested -StatusPath $liveStatusPath -ExpectedLeaseId $lease) {
+        $events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{
+            disposition = 'observer_disposed_no_game_process_touched'
+            leaseId = $lease
+        })) | Out-Null
+        $observerStopRequested = $true
+        break
+    }
+    if ([DateTime]::UtcNow -ge $nextFlushUtc) {
+        $runRoot = Write-TbgRun $baseRoot $RunId $CorrelationId $lease @($events.ToArray()) 'running' $observerStartedUtc
+        $nextFlushUtc = [DateTime]::UtcNow.AddSeconds(2)
+    }
 }
-$runRoot = Write-TbgRun $baseRoot $RunId $CorrelationId $lease @($events.ToArray()) 'completed'
+$finalObserverStatus = if ($observerStopRequested) { 'stopped' } else { 'completed' }
+$runRoot = Write-TbgRun $baseRoot $RunId $CorrelationId $lease @($events.ToArray()) $finalObserverStatus $observerStartedUtc
 $result = [pscustomobject]@{ runId=$RunId; correlationId=$CorrelationId; leaseId=$lease; runRoot=$runRoot; eventCount=$events.Count; proofLevel='harness'; proofCeiling='harness' }
 Write-Host "Game runtime observer completed: $RunId ($($events.Count) events)."
 if ($PassThru) { return $result }

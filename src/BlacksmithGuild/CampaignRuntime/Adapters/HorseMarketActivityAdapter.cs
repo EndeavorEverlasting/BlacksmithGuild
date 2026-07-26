@@ -1,4 +1,5 @@
 using System;
+using BlacksmithGuild.HorseMarket;
 
 namespace BlacksmithGuild.CampaignRuntime.Adapters
 {
@@ -23,16 +24,36 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (string.Equals(request.Operation, "RefreshHorseAtlas", StringComparison.OrdinalIgnoreCase))
             {
-                var refresh = CampaignActivityDispatcher.Deferred(request, detail + "; nextAction=ScanHorseAtlas; localVerificationRequiredBeforeBuySell=true");
-                refresh.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "ScanHorseAtlas before any horse buy/sell."));
-                return refresh;
+                if (HorseMarketAtlasService.RunScanNow("governor:" + request.ActivityId))
+                {
+                    var refresh = CampaignActivityDispatcher.CompletedReadOnly(
+                        request,
+                        detail + "; read-only horse atlas refreshed; localVerificationRequiredBeforeBuySell=true");
+                    refresh.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "Horse atlas evidence refreshed before any horse buy/sell."));
+                    return refresh;
+                }
+
+                return CampaignActivityDispatcher.Blocked(
+                    request,
+                    detail + "; read-only horse atlas refresh failed",
+                    "horse_atlas_refresh_failed");
             }
 
             if (string.Equals(request.Operation, "AnalyzeHerdLedger", StringComparison.OrdinalIgnoreCase))
             {
-                var analyze = CampaignActivityDispatcher.Deferred(request, detail + "; nextAction=AnalyzeHerdLedger; mutationBlockedUntilLedgerFresh=true");
-                analyze.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "AnalyzeHerdLedger before any horse buy/sell."));
-                return analyze;
+                if (HerdLedgerService.RunAnalyzeNow("governor:" + request.ActivityId))
+                {
+                    var analyze = CampaignActivityDispatcher.CompletedReadOnly(
+                        request,
+                        detail + "; read-only herd ledger refreshed; mutationBlockedUntilLedgerFresh=false");
+                    analyze.NarrativeDetails.Add(CampaignActivityEngineNarratives.HorseMarket(request, "Herd ledger evidence refreshed before any horse buy/sell."));
+                    return analyze;
+                }
+
+                return CampaignActivityDispatcher.Blocked(
+                    request,
+                    detail + "; read-only herd ledger analysis failed",
+                    "herd_ledger_analysis_failed");
             }
 
             if (request.MutationAuthorized)

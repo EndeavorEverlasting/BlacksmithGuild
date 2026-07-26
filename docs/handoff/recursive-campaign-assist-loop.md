@@ -8,6 +8,8 @@
 
 The campaign assist system must not treat a single successful test checkpoint as the end of the product path.
 
+A player should be able to delegate the hard, repetitive hands-on work—route execution, settlement entry, market evaluation, bounded trading, provisioning, and similar campaign chores—then jump back in whenever the next moment looks fun. Within an explicitly authorized Automation session, enabled engines should carry those phases through without a hotkey ceremony at every boundary. An explicit player takeover always wins: stop new dispatch, reach a safe hold or clean checkpoint, preserve the next intended priority, and leave the game running for the player unless separate process-stop authority exists.
+
 A live cert can prove that one action worked, but the product goal is a logically recursive campaign loop:
 
 ```text

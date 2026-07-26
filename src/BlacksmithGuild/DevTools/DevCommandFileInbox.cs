@@ -92,8 +92,8 @@ namespace BlacksmithGuild.DevTools
 
                 var commandSource = string.IsNullOrWhiteSpace(source) ? "file-inbox" : source;
                 var result = DevCommandBus.TryRun(command, commandSource, sequence: sequence, payload: payload);
-                WriteAck(sequence, command, result.ToString());
-                EmitCommandCheckpoint(sequence, command, result.ToString());
+                WriteAck(sequence, command, result.ToString(), commandSource, payload);
+                EmitCommandCheckpoint(sequence, command, result.ToString(), payload);
                 TryClearInboxAfterConsume(sequence, command, result);
             }
             catch (Exception ex)
@@ -124,16 +124,28 @@ namespace BlacksmithGuild.DevTools
             }
         }
 
-        private static void WriteAck(int sequence, string command, string result)
+        private static void WriteAck(
+            int sequence,
+            string command,
+            string result,
+            string source,
+            AssistiveCommandInboxPayload payload)
         {
             try
             {
+                var ackUtc = DateTime.UtcNow.ToString("o");
                 var json =
                     "{" +
                     $"\"sequence\": {sequence}," +
-                    $"\"command\": \"{command}\"," +
-                    $"\"result\": \"{result}\"," +
-                    $"\"time\": \"{DateTime.Now:o}\"" +
+                    $"\"command\": \"{Escape(command)}\"," +
+                    $"\"result\": \"{Escape(result)}\"," +
+                    $"\"source\": \"{Escape(source)}\"," +
+                    $"\"commandId\": {JsonString(payload?.CommandId)}," +
+                    $"\"runId\": {JsonString(payload?.RunId)}," +
+                    $"\"correlationId\": {JsonString(payload?.CorrelationId)}," +
+                    $"\"requestedUtc\": {JsonString(payload?.RequestedUtc)}," +
+                    $"\"ackUtc\": \"{ackUtc}\"," +
+                    $"\"time\": \"{ackUtc}\"" +
                     "}";
                 File.WriteAllText(AckPath, json);
             }
@@ -142,7 +154,11 @@ namespace BlacksmithGuild.DevTools
             }
         }
 
-        private static void EmitCommandCheckpoint(int sequence, string command, string result)
+        private static void EmitCommandCheckpoint(
+            int sequence,
+            string command,
+            string result,
+            AssistiveCommandInboxPayload payload)
         {
             var checkpointName = default(string);
             if (!string.IsNullOrEmpty(command)
@@ -172,7 +188,11 @@ namespace BlacksmithGuild.DevTools
                 null,
                 phase: "command",
                 reason: result,
-                detailsJson: "{\"sequence\":" + sequence + ",\"command\":\"" + Escape(command) + "\"}");
+                detailsJson: "{\"sequence\":" + sequence
+                    + ",\"command\":\"" + Escape(command) + "\""
+                    + ",\"commandId\":" + JsonString(payload?.CommandId)
+                    + ",\"correlationId\":" + JsonString(payload?.CorrelationId)
+                    + "}");
         }
 
         private static bool TryParseInbox(string json, out int sequence, out string command, out string source)
@@ -211,5 +231,8 @@ namespace BlacksmithGuild.DevTools
 
         private static string Escape(string value) =>
             (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+        private static string JsonString(string value) =>
+            value == null ? "null" : "\"" + Escape(value) + "\"";
     }
 }

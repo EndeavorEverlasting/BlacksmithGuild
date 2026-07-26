@@ -101,7 +101,7 @@ Assert-Contains 'scripts\launcher-auto-nav.ps1' 'Invoke-OperatorInteractiveFocus
 Assert-Contains 'scripts\launcher-auto-nav.ps1' 'guarded_click_denied' 'focus prompt trigger reason'
 
 # Launch-setup mode must reach launcher-auto-nav so guarded PLAY/CONTINUE clicks are permitted.
-Assert-Contains 'scripts\install-mod.ps1' '-LaunchSetup' 'install-mod must request launch-setup mode'
+Assert-Contains 'scripts\install-mod.ps1' 'LaunchSetup = $true' 'install-mod must request launch-setup mode'
 # Existing-launcher reuse: an already-running launcher is the target, not a fatal blocker.
 Assert-Contains 'scripts\open-bannerlord-launcher.ps1' 'existing launcher detected; reusing' 'reuse existing launcher during launch setup'
 Assert-Contains 'scripts\open-bannerlord-launcher.ps1' 'Forge Stop approval' 'running game process still requires Forge Stop approval'

@@ -37,9 +37,10 @@ namespace BlacksmithGuild.CampaignRuntime
                     CampaignActivityStatus.Started.ToString(),
                     "Dispatcher received governor activity request for routing.");
 
-                if (request.MutationAuthorized && !DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution)
+                if (request.MutationAuthorized
+                    && !EngineToggleAuthority.IsBoundedExecutionAllowed(EngineToggleKey.Governor))
                 {
-                    return Result(request, CampaignActivityStatus.Blocked, "bounded execution disabled by governor config", false, "bounded_execution_disabled");
+                    return Result(request, CampaignActivityStatus.Blocked, "bounded execution disabled by governor authority", false, "bounded_execution_disabled");
                 }
 
                 for (var i = 0; i < Adapters.Length; i++)
@@ -80,6 +81,16 @@ namespace BlacksmithGuild.CampaignRuntime
         public static CampaignActivityResult Blocked(CampaignActivityRequest request, string detail, string failureClass)
         {
             return Result(request, CampaignActivityStatus.Blocked, detail, false, failureClass);
+        }
+
+        public static CampaignActivityResult Started(CampaignActivityRequest request, string detail)
+        {
+            return Result(request, CampaignActivityStatus.Started, detail, false, null);
+        }
+
+        public static CampaignActivityResult CompletedReadOnly(CampaignActivityRequest request, string detail)
+        {
+            return Result(request, CampaignActivityStatus.Completed, detail, false, null);
         }
 
         public static CampaignActivityResult Completed(CampaignActivityRequest request, string detail, bool inventoryDeltaObserved, bool goldDeltaObserved)

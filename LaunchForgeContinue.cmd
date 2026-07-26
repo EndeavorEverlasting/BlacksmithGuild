@@ -4,7 +4,7 @@ setlocal
 echo.
 echo The Blacksmith Guild - Launch Forge Continue
 echo.
-echo Build + install + open launcher + auto CONTINUE intent (Sprint 006I-5).
+echo Build + install + launcher PLAY + exact in-game dev-save CONTINUE.
 echo Use when you need launcher mod checkboxes before continuing a save.
 echo Daily dev loop: ForgeContinue.cmd (no launcher) or Forge.cmd (new game).
 echo.

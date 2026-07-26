@@ -34,12 +34,63 @@ try {
     Assert-True (@($events|Where-Object {$_.eventType -eq 'process.exited'}).Count -ge 1) 'disposable process exit observed'
     $status=& $start -Command status -RunId $result.runId -OutputRoot $temp -PassThru
     Assert-True ($status.leaseId -eq $result.leaseId) 'owned lease status'
+    $stopRunId="stop-smoke-$([Guid]::NewGuid().ToString('N').Substring(0,8))"
+    $stopJob=Start-Job -ScriptBlock {
+        param($ScriptPath,$OutputRoot,$RunId)
+        & $ScriptPath -Command start -DurationSeconds 20 -OutputRoot $OutputRoot -RunId $RunId
+    } -ArgumentList $start,$temp,$stopRunId
+    $stopStatusPath=Join-Path $temp "$stopRunId\observer-status.json"
+    $stopDeadline=(Get-Date).AddSeconds(8)
+    while(-not (Test-Path -LiteralPath $stopStatusPath) -and (Get-Date) -lt $stopDeadline) {
+        Start-Sleep -Milliseconds 100
+    }
+    Assert-True (Test-Path -LiteralPath $stopStatusPath) 'background observer publishes running status before completion'
+    $stopStatus=Read-Json $stopStatusPath
+    & $start -Command stop -RunId $stopRunId -LeaseId $stopStatus.leaseId -OutputRoot $temp
+    Wait-Job -Job $stopJob -Timeout 8 | Out-Null
+    $null=Receive-Job -Job $stopJob -ErrorAction SilentlyContinue
+    Remove-Job -Job $stopJob -Force
+    $stoppedStatus=Read-Json $stopStatusPath
+    Assert-True ($stoppedStatus.status -eq 'stopped') 'owned lease stop request is acknowledged without touching game processes'
+    & $start -Command stop -RunId $stopRunId -LeaseId $stopStatus.leaseId -OutputRoot $temp
+    $idempotentStopStatus=Read-Json $stopStatusPath
+    Assert-True ($idempotentStopStatus.status -eq 'stopped') 'repeated lease stop preserves terminal stopped status'
+    $stopEvents=@(Get-Content -LiteralPath (Join-Path $temp "$stopRunId\events.jsonl") -Encoding UTF8 | Where-Object {$_} | ForEach-Object {$_|ConvertFrom-Json})
+    Assert-True (@($stopEvents|Where-Object {
+        if (-not $_.payload) { return $false }
+        if (-not $_.payload.PSObject.Properties['disposition']) { return $false }
+        return $_.payload.disposition -eq 'observer_disposed_no_game_process_touched'
+    }).Count -eq 1) 'observer stop records safe disposal evidence'
     & (Join-Path $PSScriptRoot 'Get-TbgWindowsCrashEvidence.ps1') -RunId 'eventlog-smoke' -CorrelationId 'eventlog-smoke' -SinceUtc ([DateTime]::UtcNow.AddMinutes(-1)) -OutputRoot $temp | Out-Null
     $werPath=Join-Path $temp 'eventlog-smoke\windows-crash-evidence.jsonl'
     $werText=if(Test-Path $werPath){Get-Content $werPath -Raw -Encoding UTF8}else{''}
     Assert-True (-not ([string]$werText -match '(?i)unrelated-process-attribution')) 'bounded event-log query avoids false attribution'
     & (Join-Path $PSScriptRoot 'Get-TbgTaleWorldsCrashEvidence.ps1') -RunId 'no-data-smoke' -CorrelationId 'no-data-smoke' -SearchRoots @($temp) -OutputRoot $temp | Out-Null
     Assert-True (Test-Path -LiteralPath (Join-Path $temp 'no-data-smoke\taleworlds-crash-evidence.jsonl')) 'TaleWorlds no-data collector writes bounded result'
+
+    $steamSourceRoot = Join-Path $temp 'steam-source'
+    New-Item -ItemType Directory -Force -Path $steamSourceRoot | Out-Null
+    $steamLog = Join-Path $steamSourceRoot 'gameprocess_log.txt'
+    [IO.File]::WriteAllText(
+        $steamLog,
+        "[$([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))] AppID 261550 no longer tracking PID 30800, exit code -2147023895",
+        [Text.UTF8Encoding]::new($false))
+    & (Join-Path $PSScriptRoot 'Get-TbgTaleWorldsCrashEvidence.ps1') `
+        -RunId 'steam-exit-smoke' `
+        -CorrelationId 'steam-exit-smoke' `
+        -SearchRoots @($steamSourceRoot) `
+        -SinceUtc ([DateTime]::UtcNow.AddMinutes(-1)) `
+        -ExpectedPid 30800 `
+        -SteamGameProcessLogPath $steamLog `
+        -OutputRoot $temp | Out-Null
+    $steamEvidencePath = Join-Path $temp 'steam-exit-smoke\taleworlds-crash-evidence.jsonl'
+    $steamEvents = @(Get-Content -LiteralPath $steamEvidencePath -Encoding UTF8 |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        ForEach-Object { $_ | ConvertFrom-Json })
+    Assert-True ($steamEvents.Count -eq 1) 'Steam gameprocess collector correlates one exact PID exit'
+    Assert-True ($steamEvents[0].payload.exitCodeHex -eq '0x800703E9') 'Steam gameprocess collector preserves unsigned exit code'
+    Assert-True ($steamEvents[0].payload.stackOverflowSignature -eq $true) 'Steam gameprocess collector identifies Win32 stack-overflow signature'
+    Assert-True ($steamEvents[0].payload.correlation -eq 'pid_and_timestamp') 'Steam gameprocess collector records bounded correlation'
     $heartbeat=& (Join-Path $PSScriptRoot 'Get-TbgRuntimeHeartbeatEvidence.ps1') -RunId 'heartbeat-smoke' -CorrelationId 'heartbeat-smoke' -ObserverActive:$false -OutputRoot $temp -PassThru
     Assert-True (@($heartbeat|Where-Object {$_.eventType -eq 'observer.gap'}).Count -eq 1) 'missing observer remains unknown evidence'
 } finally { if(Test-Path $temp){Remove-Item -LiteralPath $temp -Recurse -Force} }

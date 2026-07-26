@@ -29,6 +29,22 @@ if ($scanner -notmatch 'new List<MobileParty>\(MobileParty\.All\)') {
     throw 'Scan must snapshot MobileParty.All before enumeration to avoid mid-tick mutation'
 }
 
+$classifier = Read-Source 'src/BlacksmithGuild/Cohesion/CohesionPartyClassifier.cs'
+if ($classifier -match 'var relation = ClassifyRelation\(party, MobileParty\.MainParty\)') {
+    throw 'neutral-protector classification must not recurse into ClassifyRelation'
+}
+if ($classifier -notmatch 'party\?\.Party\?\.NumberOfAllMembers \?\? 0\) >= 80') {
+    throw 'neutral-protector classification must use the already-disambiguated party strength'
+}
+
+$banditAvoidance = Read-Source 'src/BlacksmithGuild/MapTrade/MapTradeBanditAvoidanceService.cs'
+if ($banditAvoidance -match 'foreach\s*\(var party in MobileParty\.All\)') {
+    throw 'MapTrade bandit avoidance must not directly enumerate the mutable MobileParty.All collection'
+}
+if ($banditAvoidance -notmatch 'CohesionPartyScanner\.Scan') {
+    throw 'MapTrade bandit avoidance must reuse the guarded cohesion-party snapshot'
+}
+
 $forge = Read-Source 'src/BlacksmithGuild/ForgeStatus.cs'
 if ($forge -notmatch 'FactionPowerPostureStatusScanEnabled') {
     throw 'AppendFactionPowerPosture must be gated by the diagnostic status scan switch'
@@ -98,5 +114,19 @@ function Test-PartyReadable {
 if (Test-PartyReadable -IsActive $false -HasParty $true) { throw 'inactive party must be skipped' }
 if (Test-PartyReadable -IsActive $true -HasParty $false) { throw 'party with null Party must be skipped' }
 if (-not (Test-PartyReadable -IsActive $true -HasParty $true)) { throw 'active party with Party must be readable' }
+
+# Mirror the classifier fallthrough: player/clan/friendly/hostile/bandit cases have
+# already returned before strength is used to distinguish a neutral protector.
+function Get-NeutralFallthroughRelation {
+    param([int]$PartyStrength)
+    if ($PartyStrength -ge 80) { return 'NeutralProtector' }
+    return 'Unknown'
+}
+if ((Get-NeutralFallthroughRelation -PartyStrength 40) -ne 'Unknown') {
+    throw 'small neutral party must remain Unknown'
+}
+if ((Get-NeutralFallthroughRelation -PartyStrength 80) -ne 'NeutralProtector') {
+    throw 'large neutral party must be classified as NeutralProtector'
+}
 
 Write-Host 'PASS offline faction posture scan guard regression'

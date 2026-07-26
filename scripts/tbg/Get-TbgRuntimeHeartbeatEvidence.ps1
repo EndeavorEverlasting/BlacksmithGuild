@@ -23,7 +23,9 @@ function New-HeartbeatEvent($type,$severity,$process,$payload,$freshness) {
         payload=$payload;evidenceRefs=@();freshness=$freshness;proofLevel='harness';redactionState='sanitized'
     }
 }
-$process = @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $names -contains $_.ProcessName } | Select-Object -First 1)[0]
+$process = Get-Process -ErrorAction SilentlyContinue |
+    Where-Object { $names -contains $_.ProcessName } |
+    Select-Object -First 1
 $events = New-Object Collections.Generic.List[object]
 if (-not $ObserverActive) {
     $events.Add((New-HeartbeatEvent 'observer.gap' 'warning' $process @{reason='observer_missing'; logConclusion='unknown_not_negative_evidence'} 'unknown')) | Out-Null

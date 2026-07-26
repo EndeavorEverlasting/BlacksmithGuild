@@ -1,4 +1,9 @@
 ﻿# Build/install/verify, then open Bannerlord launcher only on clean Forge PASS.
+param(
+    [ValidateSet('play', 'continue')]
+    [string]$LaunchIntent = 'play'
+)
+
 $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
@@ -20,7 +25,7 @@ Write-Host 'Step 2: Checking Forge status for launcher...' -ForegroundColor Cyan
 if (Test-ForgeCleanPass -StatusJsonPath $statusPath) {
     Write-Host ''
     Write-Host 'Step 3: Opening Bannerlord launcher...' -ForegroundColor Cyan
-    & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1')
+    & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -LaunchIntent $LaunchIntent
 } else {
     Write-Host ''
     Write-Host 'Launcher will not be opened.' -ForegroundColor Yellow

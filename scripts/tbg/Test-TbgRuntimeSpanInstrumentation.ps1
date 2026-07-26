@@ -30,7 +30,7 @@ Assert-Span ($context -match 'RunId' -and $context -match 'SessionId' -and $cont
 Assert-Span ($emitter -match 'BeginSpan' -and $emitter -match 'CompleteSpan' -and $emitter -match 'BlockSpan' -and $emitter -match 'FailSpan' -and $emitter -match 'AbandonSpan') 'span lifecycle API'
 Assert-Span ($writer -match 'MaximumExceptionText = 512' -and $writer -match 'in_process_span' -and $writer -match 'assemblyIdentity') 'bounded sanitized writer'
 Assert-Span ($snapshot -match 'CampaignReady' -and $snapshot -match 'MapMenuOpen' -and $snapshot -match 'MainPartyAvailable' -and $snapshot -match 'CachedMarketScan' -and $snapshot -match 'CandidateCount') 'bounded runtime state snapshot'
-Assert-Span (($governor.IndexOf('RuntimeStateSnapshot.Capture(source)') -lt $governor.IndexOf('BuildDecision(source)')) -and $governor -match 'FailSpan' -and $governor -match 'throw;') 'governor captures pre-state and rethrows'
+Assert-Span (($governor.IndexOf('RuntimeStateSnapshot.Capture(source)') -lt $governor.IndexOf('BuildDecision(source)')) -and $governor -match 'FailSpan' -and $governor -match 'return false;') 'governor captures pre-state and fails soft'
 Assert-Span ($selector -match 'MarketScan' -and $selector -match 'PackMissionEvaluation' -and $selector -match 'SmithingInputLookup' -and $selector -match 'SettlementResolution' -and $selector -match 'DistanceEvaluation' -and $selector -match 'CandidateCreation' -and $selector -match 'Fallback' -and $selector -match 'FinalOrdering') 'selector nested operation spans'
 Assert-Span ($service -match 'StartRouteNow' -and $service -match 'BeginTravel' -and $service -match 'BlockSpan' -and $service -match 'CompleteSpan') 'route boundaries terminalized'
 

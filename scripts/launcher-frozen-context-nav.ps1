@@ -424,8 +424,22 @@ try {
                 if ($classification -eq 'post_handoff_idle_unactionable') { exit 2 }
                 exit 0
             }
-            $postInvalidationHandoffBudgetMs = 5000
-            Write-FrozenLaunchLog ('LAUNCH_STATE=post_invalidation_handoff_watch classification=frozen_target_invalidated waiting_for=game_spawned_or_safe_mode budgetMs={0} operationMode={1} runtimeProofClaim={2}' -f $postInvalidationHandoffBudgetMs, $operationMode, $runtimeProofClaim)
+            # Invalidating the frozen HWND is an expected launcher-to-host boundary. Preserve
+            # the frozen PID lineage and observe for its successor without rescoring or
+            # redispatching. Use the remaining caller budget when it is larger, while keeping
+            # a bounded 60-second minimum so a slow Safe Mode/game successor is not rejected
+            # by the former five-second window.
+            $postInvalidationMinimumBudgetMs = 60000
+            $remainingOverallBudgetMs = [int][Math]::Max(
+                0,
+                [Math]::Floor(($overallDeadline - (Get-Date)).TotalMilliseconds))
+            $postInvalidationMaximumBudgetMs = [int][Math]::Max(
+                $postInvalidationMinimumBudgetMs,
+                ([int]$durationBudget.budgetSec * 1000))
+            $postInvalidationHandoffBudgetMs = [int][Math]::Min(
+                $postInvalidationMaximumBudgetMs,
+                [Math]::Max($postInvalidationMinimumBudgetMs, $remainingOverallBudgetMs))
+            Write-FrozenLaunchLog ('LAUNCH_STATE=post_invalidation_handoff_watch classification=frozen_target_invalidated waiting_for=game_spawned_or_safe_mode budgetMs={0} remainingOverallBudgetMs={1} minimumBudgetMs={2} redispatch=false operationMode={3} runtimeProofClaim={4}' -f $postInvalidationHandoffBudgetMs, $remainingOverallBudgetMs, $postInvalidationMinimumBudgetMs, $operationMode, $runtimeProofClaim)
             $safeModeWindow = $null
             $postInvalidationResult = $null
             $handoffStop = (Get-Date).AddMilliseconds($postInvalidationHandoffBudgetMs)

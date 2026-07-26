@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading;
+using BlacksmithGuild.CampaignRuntime;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.DevTools.Automation;
@@ -24,11 +25,16 @@ namespace BlacksmithGuild.MapTrade
 
         private const string BranchRouteSource = "campaign_tick_recursive_branch_travel";
         private const string StatusFileName = "BlacksmithGuild_Status.json";
+        private const int MaxSettlementTradeAttempts = 12;
         private static readonly TimeSpan BranchAutoStartCooldown = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan SettlementTradeRetryInterval = TimeSpan.FromMilliseconds(750);
 
         private static MapTradeCertReport _activeReport;
+        private static CampaignActivityRequest _governorActivity;
         private static bool _abortRequested;
         private static DateTime _nextBranchAutoStartUtc = DateTime.MinValue;
+        private static DateTime _nextSettlementTradeAttemptUtc = DateTime.MinValue;
+        private static int _settlementTradeAttempts;
         private static string _lastBranchAutoStartKey;
 
         public static string LastFailReason { get; private set; }
@@ -75,7 +81,9 @@ namespace BlacksmithGuild.MapTrade
             return true;
         }
 
-        public static bool StartRouteNow(string source = RunAutonomousVisibleTradeRouteNowCommand)
+        public static bool StartRouteNow(
+            string source = RunAutonomousVisibleTradeRouteNowCommand,
+            bool requireTradeMission = false)
         {
             var span = AutomationRuntimeEventEmitter.BeginSpan(
                 "MapTradeAutonomousService.StartRouteNow",
@@ -143,6 +151,15 @@ namespace BlacksmithGuild.MapTrade
                 return false;
             }
 
+            if (requireTradeMission
+                && _activeReport.Mission.MissionType == MapTradeMissionType.TravelOnlySafetyCert)
+            {
+                const string reason = "no executable trade mission selected; travel-only fallback is not trade proof";
+                Finish(MapTradeRouteState.Blocked, "BlockedNoTradeMission", reason);
+                AutomationRuntimeEventEmitter.BlockSpan(span, reason, RuntimeStateSnapshot.Capture(source));
+                return false;
+            }
+
             if (MapTradeMissionSelector.NeedsCohesionCheck(_activeReport.Mission))
             {
                 var cohesionResult = RunCohesionCheck(source);
@@ -159,6 +176,102 @@ namespace BlacksmithGuild.MapTrade
             else
                 AutomationRuntimeEventEmitter.BlockSpan(span, _activeReport?.BlockedReason ?? "travel blocked", RuntimeStateSnapshot.Capture(source));
             return travelResult;
+        }
+
+        public static bool TryStartGovernorTradeActivity(
+            CampaignActivityRequest request,
+            out string detail)
+        {
+            if (!CanStartGovernorActivity(request, out detail))
+            {
+                return false;
+            }
+
+            var source = "governor:" + request.ActivityId;
+            if (!StartRouteNow(source, requireTradeMission: true))
+            {
+                detail = LastFailReason
+                    ?? _activeReport?.BlockedReason
+                    ?? "MapTrade trade route did not start";
+                return false;
+            }
+
+            _governorActivity = request;
+            _activeReport.Steps.Add("GovernorActivity:Trade:" + request.ActivityId);
+            MapTradeEvidenceWriter.WriteCert(_activeReport);
+            detail = "MapTrade trade route started"
+                + " activityId=" + request.ActivityId
+                + " state=" + _activeReport.State;
+            return true;
+        }
+
+        public static bool TryStartGovernorTravelActivity(
+            CampaignActivityRequest request,
+            out string detail)
+        {
+            if (!CanStartGovernorActivity(request, out detail))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TargetTown))
+            {
+                detail = "governor travel target is missing";
+                LastFailReason = detail;
+                return false;
+            }
+
+            var source = "governor:" + request.ActivityId;
+            if (!StartBranchRouteNow(request.TargetTown, source))
+            {
+                detail = LastFailReason
+                    ?? _activeReport?.BlockedReason
+                    ?? "MapTrade travel route did not start";
+                return false;
+            }
+
+            _governorActivity = request;
+            _activeReport.Steps.Add("GovernorActivity:Travel:" + request.ActivityId);
+            MapTradeEvidenceWriter.WriteCert(_activeReport);
+            detail = "MapTrade visible travel started"
+                + " activityId=" + request.ActivityId
+                + " target=" + request.TargetTown;
+            return true;
+        }
+
+        public static bool TryStartGovernorFoodActivity(
+            CampaignActivityRequest request,
+            out string detail)
+        {
+            if (!CanStartGovernorActivity(request, out detail))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TargetTown))
+            {
+                detail = "governor food procurement target is missing";
+                LastFailReason = detail;
+                return false;
+            }
+
+            var source = "governor:" + request.ActivityId;
+            if (!StartBranchRouteNow(request.TargetTown, source))
+            {
+                detail = LastFailReason
+                    ?? _activeReport?.BlockedReason
+                    ?? "MapTrade food procurement route did not start";
+                return false;
+            }
+
+            _governorActivity = request;
+            _activeReport.Steps.Add("GovernorActivity:Food:" + request.ActivityId);
+            _activeReport.Steps.Add("FoodProcurementAfterArrival");
+            MapTradeEvidenceWriter.WriteCert(_activeReport);
+            detail = "MapTrade visible food procurement route started"
+                + " activityId=" + request.ActivityId
+                + " target=" + request.TargetTown;
+            return true;
         }
 
         public static bool StartBranchRouteNow(string targetSettlementName, string source = BranchRouteSource)
@@ -242,7 +355,7 @@ namespace BlacksmithGuild.MapTrade
 
         public static bool AbortNow()
         {
-            if (_activeReport == null)
+            if (_activeReport == null || !IsRunning)
             {
                 InGameNotice.Info("TBG MAP TRADE: no active route.");
                 return true;
@@ -259,7 +372,19 @@ namespace BlacksmithGuild.MapTrade
         {
             GameSessionState.Refresh();
 
-            if ((_activeReport == null || !IsRunning) && !_abortRequested)
+            if (!EngineToggleAuthority.IsEngineEnabled(EngineToggleKey.MapTrade))
+            {
+                if (IsRunning)
+                {
+                    AbortNow();
+                }
+
+                return;
+            }
+
+            if ((_activeReport == null || !IsRunning)
+                && !_abortRequested
+                && EngineToggleAuthority.IsAutomationEnabled(EngineToggleKey.MapTrade))
             {
                 TryStartFromRecursiveBranchState();
             }
@@ -269,8 +394,19 @@ namespace BlacksmithGuild.MapTrade
                 return;
             }
 
-            if (GameSessionState.IsMapMenuOpen)
+            if (GameSessionState.IsMapMenuOpen
+                && _activeReport.State != MapTradeRouteState.EnterSettlement
+                && _activeReport.State != MapTradeRouteState.ExecuteTrade)
             {
+                if ((_activeReport.State == MapTradeRouteState.TravelToTarget
+                        || _activeReport.State == MapTradeRouteState.WaitForArrival)
+                    && IsAtTargetSettlement())
+                {
+                    BeginSettlementEntry();
+                    TickSettlementAndTrade();
+                    return;
+                }
+
                 MapTradeVisibleMovementDriver.Hold();
                 return;
             }
@@ -295,7 +431,69 @@ namespace BlacksmithGuild.MapTrade
                 case MapTradeRouteState.WaitForArrival:
                     TickTravel();
                     break;
+                case MapTradeRouteState.EnterSettlement:
+                case MapTradeRouteState.ExecuteTrade:
+                    TickSettlementAndTrade();
+                    break;
             }
+        }
+
+        public static void OnRealtimeTick()
+        {
+            if (_activeReport == null || !IsRunning || _abortRequested)
+            {
+                return;
+            }
+
+            if (!GameSessionState.IsMapMenuOpen || !IsAtTargetSettlement())
+            {
+                return;
+            }
+
+            if (_activeReport.State != MapTradeRouteState.TravelToTarget
+                && _activeReport.State != MapTradeRouteState.WaitForArrival
+                && _activeReport.State != MapTradeRouteState.EnterSettlement
+                && _activeReport.State != MapTradeRouteState.ExecuteTrade)
+            {
+                return;
+            }
+
+            _activeReport.LatestPosition = DescribePartyPosition();
+            BeginSettlementEntry();
+            TickSettlementAndTrade();
+        }
+
+        private static bool CanStartGovernorActivity(
+            CampaignActivityRequest request,
+            out string detail)
+        {
+            detail = null;
+            if (request == null)
+            {
+                detail = "governor activity request is missing";
+                return false;
+            }
+
+            if (!request.MutationAuthorized
+                || !EngineToggleAuthority.IsBoundedExecutionAllowed(EngineToggleKey.Governor))
+            {
+                detail = "governor bounded execution is not authorized";
+                return false;
+            }
+
+            if (!EngineToggleAuthority.IsAutomationEnabled(EngineToggleKey.MapTrade))
+            {
+                detail = "MapTrade automation authority is required for governor dispatch";
+                return false;
+            }
+
+            if (IsRunning)
+            {
+                detail = "map trade route already in progress";
+                return false;
+            }
+
+            return true;
         }
 
         private static bool TryStartFromRecursiveBranchState()
@@ -530,6 +728,7 @@ namespace BlacksmithGuild.MapTrade
             _activeReport.RouteStarted = true;
             _activeReport.RuntimeProofClaim = "main_party_move_to_settlement_order_issued";
             _activeReport.State = MapTradeRouteState.TravelToTarget;
+            ResetSettlementTradeRetry();
             _activeReport.Steps.Add("RouteLifeCert:travelCommandIssued=true");
             _activeReport.Steps.Add($"TravelToTarget:{_activeReport.Mission.TargetSettlementName}");
             InGameNotice.Info($"TBG MAP TRADE MOVE: riding toward {_activeReport.Mission.TargetSettlementName}.");
@@ -547,25 +746,101 @@ namespace BlacksmithGuild.MapTrade
                 return;
             }
 
+            BeginSettlementEntry();
+            TickSettlementAndTrade();
+        }
+
+        private static void BeginSettlementEntry()
+        {
+            if (_activeReport.State != MapTradeRouteState.EnterSettlement)
+            {
+                _activeReport.Steps.Add("ArrivedAtTargetDistance");
+            }
+
             _activeReport.State = MapTradeRouteState.EnterSettlement;
-            _activeReport.Steps.Add("ArrivedAtTarget");
+            _nextSettlementTradeAttemptUtc = DateTime.MinValue;
+        }
+
+        private static void TickSettlementAndTrade()
+        {
+            var now = DateTime.UtcNow;
+            if (now < _nextSettlementTradeAttemptUtc)
+            {
+                return;
+            }
+
+            _nextSettlementTradeAttemptUtc = now.Add(SettlementTradeRetryInterval);
+            _settlementTradeAttempts++;
+            GameSessionState.Refresh();
+
+            if (!IsAtTargetSettlement())
+            {
+                SettlementNavigationHelper.TryEnsureSettlementInterior(out var arrivalDetail);
+                RetrySettlementOrTrade(
+                    "SettlementEntry",
+                    arrivalDetail ?? "target settlement identity not confirmed");
+                return;
+            }
+
+            if (!SettlementNavigationHelper.TryEnsureSettlementInterior(out var entryDetail))
+            {
+                RetrySettlementOrTrade(
+                    "SettlementEntry",
+                    entryDetail ?? "settlement interior not ready");
+                return;
+            }
+
+            if (_activeReport.Steps.Count == 0
+                || !_activeReport.Steps.Contains("TargetSettlementConfirmed"))
+            {
+                _activeReport.Steps.Add("TargetSettlementConfirmed");
+            }
+
             TryTradeAndFinish();
         }
 
         private static void TryTradeAndFinish()
         {
             _activeReport.State = MapTradeRouteState.ExecuteTrade;
-            MapTradeVanillaTradeDriver.ProbeTradeApi(out var probeDetail);
-            _activeReport.TradeDriverAvailable = MapTradeVanillaTradeDriver.LastProbeAvailable;
-            _activeReport.TradeDriverMethod = MapTradeVanillaTradeDriver.LastProbeMethod;
+
+            if (_governorActivity != null
+                && string.Equals(
+                    _governorActivity.Operation,
+                    "AcquireFoodBeforeRunwayBreach",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                if (MapTradeVanillaTradeDriver.RunProbeFoodBuyNow(_activeReport.Source))
+                {
+                    _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
+                    _activeReport.TradeDriverAvailable = _activeReport.TradeExecution != null;
+                    _activeReport.TradeDriverMethod = _activeReport.TradeExecution?.ExecutionMethod;
+                    _activeReport.MutationApplied = _activeReport.TradeExecution != null;
+                    _activeReport.Steps.Add("ExecuteFoodBuy:Success");
+                    _activeReport.RuntimeProofClaim = "vanilla_trade_inventory_gold_delta_observed";
+                    RunForgeHandoffIfConfigured();
+                    Finish(MapTradeRouteState.Complete, "Complete", null);
+                    return;
+                }
+
+                RetrySettlementOrTrade(
+                    "ExecuteFoodBuy",
+                    MapTradeVanillaTradeDriver.LastProbeDetail
+                        ?? "vanilla food inventory/gold delta not proven");
+                return;
+            }
 
             if (_activeReport.Mission.MissionType == MapTradeMissionType.TravelOnlySafetyCert)
             {
                 _activeReport.Steps.Add("TravelOnlySafetyCert:Complete");
+                _activeReport.RuntimeProofClaim = "target_settlement_arrival_confirmed";
                 RunForgeHandoffIfConfigured();
                 Finish(MapTradeRouteState.Complete, "Complete", null);
                 return;
             }
+
+            MapTradeVanillaTradeDriver.ProbeTradeApi(out var probeDetail);
+            _activeReport.TradeDriverAvailable = MapTradeVanillaTradeDriver.LastProbeAvailable;
+            _activeReport.TradeDriverMethod = MapTradeVanillaTradeDriver.LastProbeMethod;
 
             if (MapTradeVanillaTradeDriver.TryExecuteBuy(_activeReport.Mission, out var buyDetail))
             {
@@ -575,27 +850,64 @@ namespace BlacksmithGuild.MapTrade
                 _activeReport.Steps.Add(successStep);
                 _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
                 _activeReport.MutationApplied = _activeReport.TradeExecution != null;
+                _activeReport.RuntimeProofClaim = "vanilla_trade_inventory_gold_delta_observed";
                 RunForgeHandoffIfConfigured();
                 Finish(MapTradeRouteState.Complete, "Complete", null);
                 return;
             }
 
-            _activeReport.Steps.Add(
+            RetrySettlementOrTrade(
                 _activeReport.Mission.MissionType == MapTradeMissionType.BuyPackAnimalForCapacityThenTrade
-                    ? $"ExecutePackAnimalBuy:Blocked:{buyDetail ?? probeDetail}"
-                    : $"ExecuteTrade:Blocked:{buyDetail ?? probeDetail}");
-            if (DevToolsConfig.MapTradeAllowDirectInventoryMutation)
+                    ? "ExecutePackAnimalBuy"
+                    : "ExecuteTrade",
+                buyDetail ?? probeDetail ?? "vanilla trade delta not proven");
+        }
+
+        private static void RetrySettlementOrTrade(string stage, string detail)
+        {
+            var attemptDetail = stage
+                + ":Retry:"
+                + _settlementTradeAttempts
+                + "/"
+                + MaxSettlementTradeAttempts
+                + ":"
+                + detail;
+            _activeReport.Steps.Add(attemptDetail);
+            _activeReport.BlockedReason = detail;
+
+            if (_settlementTradeAttempts >= MaxSettlementTradeAttempts)
             {
-                Finish(MapTradeRouteState.Blocked, "Blocked", buyDetail);
+                Finish(
+                    MapTradeRouteState.Blocked,
+                    "BlockedAfterBoundedRetry",
+                    stage + " failed after " + MaxSettlementTradeAttempts + " attempts: " + detail);
                 return;
             }
 
-            _activeReport.Steps.Add("TravelOnlyFallback");
-            RunForgeHandoffIfConfigured();
-            Finish(
-                MapTradeRouteState.Complete,
-                "Complete",
-                buyDetail ?? "VisibleTradeDriverUnavailable");
+            _activeReport.State = MapTradeRouteState.EnterSettlement;
+            _activeReport.GeneratedUtc = DateTime.UtcNow.ToString("o");
+            MapTradeEvidenceWriter.WriteCert(_activeReport);
+        }
+
+        private static bool IsAtTargetSettlement()
+        {
+            var target = _activeReport?.Mission?.TargetSettlement;
+            if (target == null)
+            {
+                return false;
+            }
+
+            var current = MobileParty.MainParty?.CurrentSettlement
+                ?? GameSessionState.ResolveCurrentSettlement();
+            return current != null
+                && (ReferenceEquals(current, target)
+                    || string.Equals(current.StringId, target.StringId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static void ResetSettlementTradeRetry()
+        {
+            _settlementTradeAttempts = 0;
+            _nextSettlementTradeAttemptUtc = DateTime.MinValue;
         }
 
         private static void RunForgeHandoffIfConfigured()
@@ -635,11 +947,18 @@ namespace BlacksmithGuild.MapTrade
 
             _activeReport.State = state;
             _activeReport.Verdict = verdict;
-            _activeReport.BlockedReason = state == MapTradeRouteState.Complete ? reason : reason;
+            _activeReport.BlockedReason = state == MapTradeRouteState.Complete ? null : reason;
             _activeReport.GeneratedUtc = DateTime.UtcNow.ToString("o");
             _activeReport.LatestPosition = DescribePartyPosition();
+            if (state != MapTradeRouteState.Complete)
+            {
+                LastFailReason = reason;
+                _activeReport.RuntimeProofClaim = "route_terminal_without_completion";
+            }
+
             MapTradeEvidenceWriter.WriteCert(_activeReport);
             MapTradeEvidenceWriter.WriteArmyPressure(MapTradeArmyPressureAnalyzer.AnalyzeNow());
+            ReconcileGovernorActivity(state, verdict, reason);
 
             if (state == MapTradeRouteState.Complete)
             {
@@ -650,7 +969,49 @@ namespace BlacksmithGuild.MapTrade
                 InGameNotice.Blocked($"TBG MAP TRADE {verdict}: {reason}");
             }
 
-            _activeReport = null;
+            // Retain the terminal report in memory so ShowMapTradeRouteStatus and the
+            // governor can distinguish a completed/blocked route from an idle service.
+        }
+
+        private static void ReconcileGovernorActivity(
+            MapTradeRouteState state,
+            string verdict,
+            string reason)
+        {
+            var request = _governorActivity;
+            if (request == null)
+            {
+                return;
+            }
+
+            CampaignActivityResult result;
+            var detail = "MapTrade terminal state=" + state
+                + " verdict=" + verdict
+                + " evidence=BlacksmithGuild_MapTradeCert.json"
+                + (string.IsNullOrWhiteSpace(reason) ? string.Empty : " reason=" + reason);
+            if (state == MapTradeRouteState.Complete)
+            {
+                var execution = _activeReport?.TradeExecution;
+                var inventoryDeltaObserved = execution != null
+                    && execution.InventoryAfter != execution.InventoryBefore;
+                var goldDeltaObserved = execution != null
+                    && execution.GoldDelta != 0;
+                result = CampaignActivityDispatcher.Completed(
+                    request,
+                    detail,
+                    inventoryDeltaObserved,
+                    goldDeltaObserved);
+            }
+            else
+            {
+                result = CampaignActivityDispatcher.Blocked(
+                    request,
+                    detail,
+                    "map_trade_" + state.ToString().ToLowerInvariant());
+            }
+
+            CampaignRuntimeGovernor.ReconcileActivityResult(request, result);
+            _governorActivity = null;
         }
 
         private static void PauseIfVisible(string label)

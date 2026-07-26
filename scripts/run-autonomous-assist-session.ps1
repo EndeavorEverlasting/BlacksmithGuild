@@ -50,6 +50,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 . (Join-Path $PSScriptRoot 'governor-operator-common.ps1')
 . (Join-Path $PSScriptRoot 'full-campaign-handoff-cert.ps1')
+. (Join-Path $PSScriptRoot 'exact-save-launch-intent.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
 $checkpointDir = Join-Path $repoRoot "docs\evidence\live-cert\${sessionId}-autonomous-assist-session"
@@ -400,11 +401,19 @@ if (-not $SkipLaunch) {
     $attachCheck = Test-F7AssistiveSessionAttachable -BannerlordRoot $bannerlordRoot `
         -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath
     if (-not $attachCheck.attachable) {
-        Write-SessionLog "Launching Bannerlord LaunchIntent=$LaunchIntent"
+        $launcherSelectionIntent = Resolve-TbgLauncherSelectionIntent `
+            -InGameLaunchIntent $LaunchIntent `
+            -ExactSave:($LaunchIntent -eq 'continue')
+        Write-SessionLog (
+            "Launching Bannerlord launcherSelection=$launcherSelectionIntent " +
+            "inGameIntent=$LaunchIntent"
+        )
         Invoke-TbgFreshTestLaunchPreflight -BannerlordRoot $bannerlordRoot -Reason 'autonomous_assist_fresh_launch'
         $launcherRunning = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue
         if (-not $launcherRunning) {
-            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $bannerlordRoot
+            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') `
+                -BannerlordRoot $bannerlordRoot `
+                -LaunchIntent $launcherSelectionIntent
             Start-Sleep -Seconds 3
         }
         & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent $LaunchIntent -BannerlordRoot $bannerlordRoot
@@ -415,7 +424,7 @@ if (-not $SkipLaunch) {
         $navExit = 0
         $navError = $null
         try {
-            $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
+            $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $launcherSelectionIntent `
                 -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
                 -RespectUserForeground:(-not $AllowFocusSteal) -AllowFocusSteal:$AllowFocusSteal `
                 -ExternalStateTimelinePath $timelinePath
@@ -592,6 +601,7 @@ $isFullCampaignHandoff = ($CertProfile -eq 'full_campaign_handoff')
 $arrivalObserved = $false
 $townEntryObserved = $false
 $governorHandoffPresent = $false
+$governorHandoffStalled = $false
 $ordinaryTradeDone = $false
 $horseAcquisitionDone = $false
 $provisionAcquisitionDone = $false
@@ -713,8 +723,9 @@ while ((Get-Date) -lt $loopDeadline) {
         if (Test-Path -LiteralPath $guildLoopPath) {
             try {
                 $guildLoopJson = Get-Content -LiteralPath $guildLoopPath -Raw | ConvertFrom-Json
-                $handoffEv = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson $guildLoopJson
+                $handoffEv = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson $guildLoopJson -SinceUtc $tradeScopeSinceUtc
                 $governorHandoffPresent = [bool]$handoffEv.present
+                $governorHandoffStalled = [bool]$handoffEv.stalled
                 $latestHandoffChain = @($handoffEv.handoffs)
             } catch { }
         }
@@ -1079,6 +1090,7 @@ if ($isFullCampaignHandoff) {
         -ArrivalObserved:$arrivalObserved `
         -TownEntryObserved:$townEntryObserved `
         -GovernorHandoffPresent:$governorHandoffPresent `
+        -GovernorHandoffStalled:$governorHandoffStalled `
         -TradeIterations $tradeRowsFinal `
         -TradeScopeSinceUtc $tradeScopeSinceUtc `
         -TradeIterationTarget $TradeIterationTarget `
@@ -1140,6 +1152,7 @@ $summary = [ordered]@{
     arrivalObserved = [bool]$arrivalObserved
     townEntryObserved = [bool]$townEntryObserved
     governorHandoffPresent = [bool]$governorHandoffPresent
+    governorHandoffStalled = [bool]$governorHandoffStalled
     handoffChain = $latestHandoffChain
     highestProofLevel = $highestProofLevel
     movementProofClassification = $latestMovementUpdate.movementProofClassification

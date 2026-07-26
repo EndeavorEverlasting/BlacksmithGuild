@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using SandBox;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.SaveSystem;
@@ -8,6 +9,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
 {
     public static class DevSaveAutoLoader
     {
+        private static bool _exactSaveStartInProgress;
+
         public static bool TryLoad(SaveGameFileInfo saveInfo)
         {
             if (saveInfo == null)
@@ -24,7 +27,20 @@ namespace BlacksmithGuild.DevTools.QuickStart
                     return false;
                 }
 
-                MBSaveLoad.OnStartGame(loadResult);
+                _exactSaveStartInProgress = true;
+                try
+                {
+                    // Loading the bytes is not enough to leave InitialState. Mirror the
+                    // v1.4.6 vanilla saved-game startup sequence and allow the original
+                    // StartNewGame call through our Harmony prefix exactly once.
+                    MBSaveLoad.OnStartGame(loadResult);
+                    MBGameManager.StartNewGame(new SandBoxGameManager(loadResult));
+                }
+                finally
+                {
+                    _exactSaveStartInProgress = false;
+                }
+
                 CampaignSetupStateTracker.MarkDevSaveLoadStarted(saveInfo.Name);
                 GuildLog.Info($"[TBG QUICKSTART] auto-loading dev save '{saveInfo.Name}'.", showInGame: false);
                 return true;
@@ -60,6 +76,11 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         private static bool StartNewGamePrefix(MBGameManager gameLoader)
         {
+            if (_exactSaveStartInProgress)
+            {
+                return true;
+            }
+
             if (!DevToolsConfig.AutoLoadDevSaveOnStartNewGame || !DevToolsConfig.AutoLoadDevSave || gameLoader == null)
             {
                 if (DevToolsConfig.AutoSkipCharacterCreation)

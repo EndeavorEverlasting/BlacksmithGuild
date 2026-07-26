@@ -198,6 +198,31 @@
     "triggerRoutingIsAuthorityNeutral": true,
     "missingSuccessorDisposition": "blocked_unknown_not_absent"
   },
+  "campaignAssistOperatingModel": {
+    "taskSpecificGameplayAuthorityRequired": true,
+    "campaignAutomationReadyRequired": true,
+    "automationModeRequired": true,
+    "defaultPostureWithinAuthorizedAutomation": "hands_off_enabled_bounded_work",
+    "defaultDelegatedActivities": [
+      "travel",
+      "settlement_entry",
+      "trade",
+      "provisioning_and_capacity",
+      "smithing_preparation",
+      "other_enabled_bounded_campaign_work"
+    ],
+    "perPhaseHotkeyOrConfirmationRequired": false,
+    "explicitUserTakeoverAlwaysAvailable": true,
+    "takeoverPreemptsNewAutonomousDispatch": true,
+    "takeoverRequiresAcknowledgedSafeYield": true,
+    "gameTerminationRequiresSeparateAuthority": true,
+    "resumeRequiresFreshStateReadinessAndAuthority": true,
+    "handoffContinuityContract": ".tbg/workflows/runtime-context-continuity.contract.json#handoffContinuity",
+    "prioritySemantic": "branch",
+    "phaseAndPriorityChangesRequireCorrelatedHandoff": true,
+    "handoffAcknowledgementIsNotCompletion": true,
+    "missingOrMismatchedHandoffDisposition": "blocked_unknown_not_success"
+  },
   "rules": [
     {
       "id": "HD-001",
@@ -273,6 +298,11 @@
       "id": "HD-015",
       "name": "launcher-to-campaign-observer-continuity",
       "requirement": "The window and runtime observers must overlap across the final launcher handoff with one run and correlation lineage; the window observer retires only after runtime attachment acknowledgement; launcher handoff and MapTransition are not campaign readiness; campaign automation readiness requires campaignReady, command-poll readiness, observer health, process life, and a 60-second stable map-ready interval; the readiness cascade grants no gameplay authority."
+    },
+    {
+      "id": "HD-016",
+      "name": "automation-first-assistance-user-takeover-and-observable-handoffs",
+      "requirement": "Within an authorized, campaign-ready Automation workflow, enabled bounded travel, settlement entry, trade, and difficult campaign work proceed without per-phase ceremony; explicit user takeover preempts new dispatch and requires an acknowledged safe yield without process termination authority; every phase or priority change is a same-run correlated engine handoff whose ACK is not completion."
     }
   ],
   "invalidCloseouts": [

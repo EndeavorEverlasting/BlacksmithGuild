@@ -77,6 +77,11 @@ Require-Match 'doctrine defines observer continuity' $doctrine 'Cross-boundary o
 Require-Match 'doctrine requires observer overlap' $doctrine 'window observer and external runtime observer must overlap'
 Require-Match 'doctrine gates campaign release' $doctrine 'campaignReady:true[\s\S]*canPollFileInbox:true[\s\S]*60-second stable map-ready interval'
 Require-Match 'doctrine denies trigger gameplay authority' $doctrine 'readiness cascade grants no gameplay authority'
+Require-Match 'doctrine defines automation-first assistance' $doctrine 'Automation-first assistance, user takeover, and observable handoffs'
+Require-Match 'doctrine gates automation-first assistance' $doctrine 'task-specific workflow grants gameplay authority[\s\S]*EngineToggleAuthority.*resolves Automation'
+Require-Match 'doctrine delegates bounded campaign work without ceremony' $doctrine 'bounded travel[\s\S]*settlement entry[\s\S]*trade[\s\S]*without a per-phase hotkey or confirmation'
+Require-Match 'doctrine preserves explicit user takeover' $doctrine 'explicit takeover signal[\s\S]*preempts new autonomous dispatch[\s\S]*safe hold'
+Require-Match 'doctrine requires correlated phase and priority handoffs' $doctrine 'phase or priority selection is a handoff[\s\S]*same-run, same-correlation handoff[\s\S]*ACK alone is not completion'
 Require-Match 'doctrine defines crash observability' $doctrine 'Crash observability and negative evidence'
 Require-Match 'doctrine requires pre-post state' $doctrine 'pre-state snapshot[\s\S]*post-state snapshot'
 Require-Match 'doctrine constrains negative evidence' $doctrine 'Negative evidence is valid only when'
@@ -119,7 +124,7 @@ if ($policy) {
     Require-Values 'policy invalid closeouts' @($policy.invalidCloseouts) @(
         'acknowledgment_only','summary_only','rewritten_prompt_only','plan_only','handoff_only','preflight_only'
     )
-    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011','HD-012','HD-013','HD-014','HD-015')
+    Require-Values 'policy rule IDs' @($policy.rules | ForEach-Object { $_.id }) @('HD-001','HD-002','HD-003','HD-004','HD-005','HD-006','HD-007','HD-008','HD-009','HD-010','HD-011','HD-012','HD-013','HD-014','HD-015','HD-016')
     Require-Values 'policy launcher identity signals' @($policy.launcherSelection.acceptableIdentitySignals) @(
         'exact_pid_and_hwnd','unique_process_name','verified_executable_path','uia_root_process_id','s1_s2_process_or_window_delta'
     )
@@ -145,6 +150,25 @@ if ($policy) {
     if ($policy.launcherToCampaignContinuity.mapTransitionIsNotCampaignReadiness) { Add-Pass 'policy map transition boundary' } else { Add-Failure 'policy map transition boundary' }
     if ([int]$policy.launcherToCampaignContinuity.stabilityWindowSeconds -eq 60) { Add-Pass 'policy readiness stability window' } else { Add-Failure 'policy readiness stability window' }
     if ($policy.launcherToCampaignContinuity.readinessCascadeGrantsGameplayAuthority -eq $false) { Add-Pass 'policy readiness trigger authority boundary' } else { Add-Failure 'policy readiness trigger authority boundary' }
+    $assistModel = $policy.campaignAssistOperatingModel
+    if ($assistModel.taskSpecificGameplayAuthorityRequired) { Add-Pass 'policy task-specific gameplay authority required' } else { Add-Failure 'policy task-specific gameplay authority required' }
+    if ($assistModel.campaignAutomationReadyRequired) { Add-Pass 'policy campaign automation readiness required' } else { Add-Failure 'policy campaign automation readiness required' }
+    if ($assistModel.automationModeRequired) { Add-Pass 'policy Automation mode required' } else { Add-Failure 'policy Automation mode required' }
+    if ([string]$assistModel.defaultPostureWithinAuthorizedAutomation -eq 'hands_off_enabled_bounded_work') { Add-Pass 'policy automation-first posture' } else { Add-Failure 'policy automation-first posture' }
+    Require-Values 'policy default delegated campaign work' @($assistModel.defaultDelegatedActivities) @(
+        'travel','settlement_entry','trade','provisioning_and_capacity','smithing_preparation','other_enabled_bounded_campaign_work'
+    )
+    if ($assistModel.perPhaseHotkeyOrConfirmationRequired -eq $false) { Add-Pass 'policy rejects per-phase ceremony' } else { Add-Failure 'policy rejects per-phase ceremony' }
+    if ($assistModel.explicitUserTakeoverAlwaysAvailable) { Add-Pass 'policy explicit user takeover available' } else { Add-Failure 'policy explicit user takeover available' }
+    if ($assistModel.takeoverPreemptsNewAutonomousDispatch) { Add-Pass 'policy takeover preempts dispatch' } else { Add-Failure 'policy takeover preempts dispatch' }
+    if ($assistModel.takeoverRequiresAcknowledgedSafeYield) { Add-Pass 'policy takeover requires acknowledged safe yield' } else { Add-Failure 'policy takeover requires acknowledged safe yield' }
+    if ($assistModel.gameTerminationRequiresSeparateAuthority) { Add-Pass 'policy takeover preserves game process authority' } else { Add-Failure 'policy takeover preserves game process authority' }
+    if ($assistModel.resumeRequiresFreshStateReadinessAndAuthority) { Add-Pass 'policy resume rechecks fresh authority' } else { Add-Failure 'policy resume rechecks fresh authority' }
+    if ([string]$assistModel.handoffContinuityContract -eq '.tbg/workflows/runtime-context-continuity.contract.json#handoffContinuity') { Add-Pass 'policy reuses handoff continuity contract' } else { Add-Failure 'policy reuses handoff continuity contract' }
+    if ([string]$assistModel.prioritySemantic -eq 'branch') { Add-Pass 'policy branch is priority semantic' } else { Add-Failure 'policy branch is priority semantic' }
+    if ($assistModel.phaseAndPriorityChangesRequireCorrelatedHandoff) { Add-Pass 'policy phase and priority handoff observability' } else { Add-Failure 'policy phase and priority handoff observability' }
+    if ($assistModel.handoffAcknowledgementIsNotCompletion) { Add-Pass 'policy handoff ACK is not completion' } else { Add-Failure 'policy handoff ACK is not completion' }
+    if ([string]$assistModel.missingOrMismatchedHandoffDisposition -eq 'blocked_unknown_not_success') { Add-Pass 'policy missing handoff blocks success' } else { Add-Failure 'policy missing handoff blocks success' }
     Require-Values 'policy crash trace fields' @($policy.crashObservability.requiredTraceFields) @(
         'runId','commandIdOrNull','correlationId','spanId','parentSpanIdOrNull','operation','startedAtUtc',
         'preState','postStateOrNull','expectedSignals','observedSignals','negativeEvidence','terminalStatus'
@@ -196,6 +220,14 @@ if ($runtimeSchema -and $runtimeSchema.title -eq 'TbgRuntimeContextCapsule.v1') 
 else { Add-Failure 'runtime capsule schema' }
 if ($runtime -and $runtime.crashObservability.lastMarkerIsBoundaryNotCause) { Add-Pass 'runtime crash observability contract' }
 else { Add-Failure 'runtime crash observability contract' }
+if ($runtime) {
+    Require-Values 'runtime engine handoff fields' @($runtime.handoffContinuity.requiredForEveryEngineHandoff) @(
+        'runId','sourceEngine','targetEngine','branch','phase','authority','correlationId','startedAtUtc',
+        'completedAtUtcOrNull','status','failureClassOrNull','evidenceRefs','nextEngineHint'
+    )
+    if ($runtime.handoffContinuity.orphanDispatchForbidden) { Add-Pass 'runtime orphan handoff dispatch rejected' } else { Add-Failure 'runtime orphan handoff dispatch rejected' }
+    if ($runtime.handoffContinuity.ackIsNotCompletion) { Add-Pass 'runtime handoff ACK is not completion' } else { Add-Failure 'runtime handoff ACK is not completion' }
+}
 if ($runtimeSchema -and ($runtimeSchema.properties.PSObject.Properties.Name -contains 'crashObservability')) { Add-Pass 'runtime crash observability schema' }
 else { Add-Failure 'runtime crash observability schema' }
 if ($continuity -and $continuity.id -eq 'launcher-to-campaign-event-continuity') { Add-Pass 'launcher to campaign continuity contract' }

@@ -24,6 +24,14 @@ if ($Launch -and -not $LaunchIntent) {
 . (Join-Path $PSScriptRoot 'forge-status.ps1')
 . (Join-Path $PSScriptRoot 'bannerlord-paths.ps1')
 . (Join-Path $PSScriptRoot 'copy-client-dll.ps1')
+. (Join-Path $PSScriptRoot 'exact-save-launch-intent.ps1')
+
+$launcherSelectionIntent = if ($Launch) {
+    Resolve-TbgLauncherSelectionIntent -InGameLaunchIntent $LaunchIntent -ExactSave:($LaunchIntent -eq 'continue')
+}
+else {
+    $null
+}
 
 function Get-RepoRoot {
     $root = Split-Path -Parent $PSScriptRoot
@@ -183,12 +191,12 @@ try {
                 }
             }
             & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $BannerlordRoot `
-                -LaunchIntent $LaunchIntent `
+                -LaunchIntent $launcherSelectionIntent `
                 -AllowExistingProcess:($SessionAuthorityMode -eq 'FreshTestLaunch')
             if (-not $LaunchManual) {
                 $launcherContextPath = Join-Path $BannerlordRoot 'launcher-window-context.json'
                 $navParams = @{
-                    LaunchIntent = $LaunchIntent
+                    LaunchIntent = $launcherSelectionIntent
                     BannerlordRoot = $BannerlordRoot
                     LauncherContextPath = $launcherContextPath
                     PollMs = 250
@@ -200,7 +208,7 @@ try {
                 if ($AllowFocusSteal) { $navParams.AllowFocusSteal = $true }
                 & (Join-Path $PSScriptRoot 'launcher-frozen-context-nav.ps1') @navParams
             }
-            if ($LaunchIntent -eq 'continue' -and -not $LaunchManual) {
+            if ($launcherSelectionIntent -eq 'continue' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
                 $continueVerified = $false
                 if (Test-Path -LiteralPath $launchLogPath) {
@@ -218,7 +226,7 @@ try {
                 } else {
                     Set-ForgeStep -Name 'open_launcher' -Status 'PASS'
                 }
-            } elseif ($LaunchIntent -eq 'play' -and -not $LaunchManual) {
+            } elseif ($launcherSelectionIntent -eq 'play' -and -not $LaunchManual) {
                 $launchLogPath = Get-LaunchLogPath -BannerlordRoot $BannerlordRoot
                 $playVerified = $false
                 if (Test-Path -LiteralPath $launchLogPath) {

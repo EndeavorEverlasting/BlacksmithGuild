@@ -196,6 +196,8 @@ function Set-GovernorActiveDisposableSavePin {
         machineLocalOnly = $true
         leafName = $SaveFile.Name
         fullPath = $SaveFile.FullName
+        sha256 = (Get-FileHash -LiteralPath $SaveFile.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        lengthBytes = [long]$SaveFile.Length
         lastWriteUtc = $SaveFile.LastWriteTimeUtc.ToString('o')
         approvalReason = $confidence.Reason
         reason = $Reason

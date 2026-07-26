@@ -43,7 +43,7 @@ Design and proof boundaries: [architecture/bannerlord-game-compatibility-updater
 .\ForgeContinue.cmd
 ```
 
-- Auto-clicks launcher **CONTINUE**, loads dev save, lands on campaign map
+- Auto-clicks launcher **PLAY**, then the mod loads only the exact approved dev save from the in-game main menu
 - Wait for **F7** → `campaignReady: true` (or `Blacksmith Guild — Ready:` / legacy `TBG READY` in Phase1)
 - See also: [dev-disposable-save.md](dev-disposable-save.md), [player-command-guide.md](player-command-guide.md) § Play now
 

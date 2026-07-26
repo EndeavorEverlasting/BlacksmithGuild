@@ -1242,6 +1242,7 @@ function Save-AutonomousAssistSessionEvidence {
             Test-FullCampaignHandoffPassCriteria -CertProfile 'full_campaign_handoff' -StopReason ([string]$Summary.stopReason) `
                 -MovementObserved:([bool]$Summary.movementObserved) -ArrivalObserved:([bool]$Summary.arrivalObserved) `
                 -TownEntryObserved:([bool]$Summary.townEntryObserved) -GovernorHandoffPresent:([bool]$Summary.governorHandoffPresent) `
+                -GovernorHandoffStalled:([bool]$Summary.governorHandoffStalled) `
                 -RequireTerminalEvent:$false
         }
         Save-FullCampaignHandoffCertEvidence -Evidence $Evidence -BannerlordRoot $BannerlordRoot -Summary $Summary -Criteria $criteria | Out-Null

@@ -9,7 +9,15 @@ Set-Location -LiteralPath $repoRoot
 
 $forgeStatusPath = Join-Path $PSScriptRoot 'forge-status.ps1'
 $forgeStatusText = Get-Content -LiteralPath $forgeStatusPath -Raw
-foreach ($needle in @('Get-LastConsumedForgeInboxSequence', 'Select-String', 'consumed sequence=')) {
+foreach ($needle in @(
+    'Get-LastConsumedForgeInboxSequence',
+    'Select-String',
+    'consumed sequence=',
+    'commandId',
+    'runId',
+    'correlationId',
+    'Only the exact correlated ACK above may complete this wait.'
+)) {
     if ($forgeStatusText -notmatch [regex]::Escape($needle)) {
         throw "forge-status.ps1 missing production needle: $needle"
     }
@@ -64,8 +72,24 @@ try {
     if ($inboxSeq -ne 3) {
         throw "Inbox JSON sequence must be 3 got $inboxSeq"
     }
+    foreach ($field in @('commandId', 'runId', 'correlationId', 'requestedUtc')) {
+        if (-not ($inbox.PSObject.Properties.Name -contains $field) -or
+            [string]::IsNullOrWhiteSpace([string]$inbox.$field)) {
+            throw "Inbox JSON must carry non-empty $field"
+        }
+    }
+    if ([string]$inbox.correlationId -ne [string]$inbox.runId) {
+        throw 'Default command correlationId must equal runId'
+    }
 
-    Write-Host 'PASS offline forge command sequence after prior ack regression'
+    $inboxSource = Get-Content -LiteralPath (Join-Path $repoRoot 'src\BlacksmithGuild\DevTools\DevCommandFileInbox.cs') -Raw
+    foreach ($needle in @('payload?.CommandId', 'payload?.RunId', 'payload?.CorrelationId', 'payload?.RequestedUtc', 'ackUtc')) {
+        if ($inboxSource -notmatch [regex]::Escape($needle)) {
+            throw "DevCommandFileInbox.cs missing correlated ACK field $needle"
+        }
+    }
+
+    Write-Host 'PASS offline forge command sequence and correlated ACK contract'
 }
 finally {
     if (Test-Path -LiteralPath $tmpRoot) {

@@ -5,6 +5,7 @@ using BlacksmithGuild.DevTools.Diagnostics;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Food;
 using BlacksmithGuild.HorseMarket;
+using BlacksmithGuild.MapTrade;
 
 namespace BlacksmithGuild.CampaignRuntime
 {
@@ -24,7 +25,14 @@ namespace BlacksmithGuild.CampaignRuntime
 
         public static void OnCampaignTick()
         {
-            if (!DevToolsConfig.CampaignRuntimeGovernorAutonomousMode || _paused)
+            if (!EngineToggleAuthority.IsAutomationEnabled(EngineToggleKey.Governor) || _paused)
+            {
+                return;
+            }
+
+            // The selected MapTrade activity owns the campaign-map ticks until it reaches
+            // a terminal state. Do not replace its correlated governor decision mid-route.
+            if (MapTradeAutonomousService.IsRunning)
             {
                 return;
             }
@@ -77,7 +85,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.GovernorFailSafePause, reason: ex.Message);
                 DebugLogger.Test($"[TBG GOVERNOR] failed and paused: {ex.Message}", showInGame: false);
                 InGameNotice.Blocked(ModDisplay.CompactLine("Governor", "failed; automation paused"));
-                throw;
+                return false;
             }
         }
 
@@ -110,30 +118,67 @@ namespace BlacksmithGuild.CampaignRuntime
             return true;
         }
 
+        public static void ReconcileActivityResult(
+            CampaignActivityRequest request,
+            CampaignActivityResult result)
+        {
+            if (request == null || result == null)
+            {
+                return;
+            }
+
+            var decision = LastDecision;
+            if (decision?.ProposedActivity == null
+                || !string.Equals(
+                    decision.ProposedActivity.ActivityId,
+                    request.ActivityId,
+                    StringComparison.Ordinal))
+            {
+                DebugLogger.Test(
+                    "[TBG GOVERNOR] terminal activity result retained outside latest decision"
+                    + " activityId=" + request.ActivityId
+                    + " status=" + result.Status,
+                    showInGame: false);
+                return;
+            }
+
+            decision.LatestActivityResult = result;
+            decision.NextAction = string.Equals(
+                result.Status,
+                CampaignActivityStatus.Completed.ToString(),
+                StringComparison.OrdinalIgnoreCase)
+                ? "Activity completed; select the next priority."
+                : "Activity ended without completion; re-evaluate blockers before retry.";
+            CampaignRuntimeDecisionWriter.Write(decision);
+        }
+
         private static CampaignRuntimeDecision BuildDecision(string source)
         {
             GameSessionState.Refresh();
 
-            var food = CampaignRuntimeStatusReaders.ReadFood();
-            var capacityStatus = CampaignRuntimeStatusReaders.ReadCapacityStatus();
-            var horseStatus = CampaignRuntimeStatusReaders.ReadHorseStatus();
-            var staminaStatus = CampaignRuntimeStatusReaders.ReadStaminaStatus();
-            var materialStatus = CampaignRuntimeStatusReaders.ReadMaterialStatus();
-            var smithingStatus = CampaignRuntimeStatusReaders.ReadSmithingStatus(staminaStatus, materialStatus);
-            var tradeStatus = CampaignRuntimeStatusReaders.ReadTradeStatus();
-            var companionStatus = CampaignRuntimeStatusReaders.ReadCompanionStatus();
-            var diplomacyStatus = CampaignRuntimeStatusReaders.ReadDiplomacyStatus();
-            var threatStatus = CampaignRuntimeStatusReaders.ReadThreatStatus();
+            var food = ReadDecisionStage(source, "ReadFood", CampaignRuntimeStatusReaders.ReadFood);
+            var capacityStatus = ReadDecisionStage(source, "ReadCapacity", CampaignRuntimeStatusReaders.ReadCapacityStatus);
+            var horseStatus = ReadDecisionStage(source, "ReadHorse", CampaignRuntimeStatusReaders.ReadHorseStatus);
+            var staminaStatus = ReadDecisionStage(source, "ReadStamina", CampaignRuntimeStatusReaders.ReadStaminaStatus);
+            var materialStatus = ReadDecisionStage(source, "ReadMaterials", CampaignRuntimeStatusReaders.ReadMaterialStatus);
+            var smithingStatus = ReadDecisionStage(
+                source,
+                "ReadSmithing",
+                () => CampaignRuntimeStatusReaders.ReadSmithingStatus(staminaStatus, materialStatus));
+            var tradeStatus = ReadDecisionStage(source, "ReadTrade", CampaignRuntimeStatusReaders.ReadTradeStatus);
+            var companionStatus = ReadDecisionStage(source, "ReadCompanions", CampaignRuntimeStatusReaders.ReadCompanionStatus);
+            var diplomacyStatus = ReadDecisionStage(source, "ReadDiplomacy", CampaignRuntimeStatusReaders.ReadDiplomacyStatus);
+            var threatStatus = ReadDecisionStage(source, "ReadThreat", CampaignRuntimeStatusReaders.ReadThreatStatus);
 
             var decision = new CampaignRuntimeDecision
             {
                 CycleId = Guid.NewGuid().ToString("N"),
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
                 Source = source,
-                Surface = CampaignRuntimeStatusReaders.ReadSurface(),
-                GameHealth = CampaignRuntimeStatusReaders.ReadGameHealth(),
-                CurrentTown = CampaignRuntimeStatusReaders.ReadCurrentTown(),
-                DestinationCandidate = CampaignRuntimeStatusReaders.ReadDestinationCandidate(),
+                Surface = ReadDecisionStage(source, "ReadSurface", CampaignRuntimeStatusReaders.ReadSurface),
+                GameHealth = ReadDecisionStage(source, "ReadGameHealth", CampaignRuntimeStatusReaders.ReadGameHealth),
+                CurrentTown = ReadDecisionStage(source, "ReadCurrentTown", CampaignRuntimeStatusReaders.ReadCurrentTown),
+                DestinationCandidate = ReadDecisionStage(source, "ReadDestination", CampaignRuntimeStatusReaders.ReadDestinationCandidate),
                 FoodStatus = food.QuantityStatus + ":" + food.Detail,
                 FoodDiversityStatus = food.DiversityStatus + ":uniqueTypes=" + food.UniqueFoodTypes,
                 FoodForecastStatus = food.ForecastStatus + ":daysRemaining=" + food.EstimatedDaysRemaining.ToString("0.##") + " daysUntilFloor=" + food.EstimatedDaysUntilFloor.ToString("0.##"),
@@ -160,6 +205,18 @@ namespace BlacksmithGuild.CampaignRuntime
             decision.LatestActivityResult = CampaignActivityDispatcher.Dispatch(decision.ProposedActivity);
             AnnotateDeferredNextAction(decision);
             return decision;
+        }
+
+        private static T ReadDecisionStage<T>(string source, string stage, Func<T> read)
+        {
+            // Explicit operator/harness cycles get durable crash-boundary breadcrumbs.
+            // Autonomous four-second campaign cycles stay lean and avoid trace spam.
+            if (string.Equals(source, "campaign_tick", StringComparison.Ordinal))
+            {
+                return read();
+            }
+
+            return RuntimeTrace.Run("CampaignRuntimeGovernor", stage, read);
         }
 
         private static void RankAndSelect(CampaignRuntimeDecision decision, FoodInventoryStatus food)
@@ -194,7 +251,25 @@ namespace BlacksmithGuild.CampaignRuntime
             {
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.FoodQuantityLow, reason: food.Detail);
                 AddBlocked(decision, CampaignRuntimePolicy.BranchProfitableTrade, "food runway below planning horizon");
-                Select(decision, CampaignRuntimePolicy.BranchFoodQuantity, food.Detail, false, "branch_gate_blocked");
+                var resupplyTarget = ResolveFoodResupplyTarget(decision);
+                var resupplyTargetAvailable = !string.IsNullOrWhiteSpace(resupplyTarget);
+                if (!resupplyTargetAvailable)
+                {
+                    AddBlocked(
+                        decision,
+                        CampaignRuntimePolicy.BranchTravelOpportunity,
+                        "food resupply selected but no current or destination settlement is available");
+                }
+
+                Select(
+                    decision,
+                    CampaignRuntimePolicy.BranchFoodQuantity,
+                    food.Detail,
+                    resupplyTargetAvailable,
+                    resupplyTargetAvailable ? null : "food_resupply_target_missing");
+                decision.NextAction = resupplyTargetAvailable
+                    ? "AcquireFoodBeforeRunwayBreach at " + resupplyTarget
+                    : "Observe until a safe food resupply settlement can be resolved.";
                 return;
             }
 
@@ -208,14 +283,14 @@ namespace BlacksmithGuild.CampaignRuntime
 
             if (HorseMarketAtlasService.IsMissingOrStale(out var atlasReason))
             {
-                Select(decision, CampaignRuntimePolicy.BranchRefreshHorseAtlas, atlasReason, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchRefreshHorseAtlas, atlasReason, true, null);
                 decision.NextAction = "RefreshHorseAtlas -> ScanHorseAtlas";
                 return;
             }
 
             if (HerdLedgerService.IsMissingOrStale(out var ledgerReason))
             {
-                Select(decision, CampaignRuntimePolicy.BranchAnalyzeHerdLedger, ledgerReason, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchAnalyzeHerdLedger, ledgerReason, true, null);
                 decision.NextAction = "AnalyzeHerdLedger";
                 return;
             }
@@ -226,22 +301,22 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
             }
 
-            if (decision.SmithingStatus == "ready_or_advisory")
-            {
-                Select(decision, CampaignRuntimePolicy.BranchSmithingReadiness, "smithing appears ready; bounded execution disabled by governor spine", false, null);
-                return;
-            }
-
             if (decision.TradeStatus.StartsWith("cached", StringComparison.OrdinalIgnoreCase)
                 && decision.TradeStatus.IndexOf("routes=0", StringComparison.OrdinalIgnoreCase) < 0)
             {
-                Select(decision, CampaignRuntimePolicy.BranchProfitableTrade, decision.TradeStatus, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchProfitableTrade, decision.TradeStatus, true, null);
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(decision.DestinationCandidate))
             {
-                Select(decision, CampaignRuntimePolicy.BranchTravelOpportunity, decision.DestinationCandidate, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchTravelOpportunity, decision.DestinationCandidate, true, null);
+                return;
+            }
+
+            if (decision.SmithingStatus == "ready_or_advisory")
+            {
+                Select(decision, CampaignRuntimePolicy.BranchSmithingReadiness, "smithing appears ready for advisory review", false, null);
                 return;
             }
 
@@ -298,7 +373,13 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
 
             var branch = BranchForCouncilActivity(council.RecommendedActivity);
-            Select(decision, branch, "route council: " + council.RecommendedActivity, false, null);
+            Select(
+                decision,
+                branch,
+                "route council: " + council.RecommendedActivity,
+                string.Equals(branch, CampaignRuntimePolicy.BranchProfitableTrade, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(branch, CampaignRuntimePolicy.BranchTravelOpportunity, StringComparison.OrdinalIgnoreCase),
+                null);
             if (!string.IsNullOrWhiteSpace(council.RecommendedDestination))
                 decision.DestinationCandidate = council.RecommendedDestination;
         }
@@ -318,7 +399,9 @@ namespace BlacksmithGuild.CampaignRuntime
 
         private static void AttachProposedActivity(CampaignRuntimeDecision decision)
         {
-            var mutationAuthorized = DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution && decision.Allowed;
+            var mutationAuthorized =
+                EngineToggleAuthority.IsBoundedExecutionAllowed(EngineToggleKey.Governor)
+                && decision.Allowed;
             var branch = decision.SelectedBranch;
             var rank = decision.PriorityRank;
             var reason = decision.SelectedReason;
@@ -328,23 +411,33 @@ namespace BlacksmithGuild.CampaignRuntime
                 case CampaignRuntimePolicy.BranchRefreshHorseAtlas:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "RefreshHorseAtlas", reason, rank, false, decision.CurrentTown, decision.HorseAtlasTopDestination);
                     decision.ProposedActivity.ExpectedProof = "run ScanHorseAtlas and refresh BlacksmithGuild_HorseAtlas.json before buy/sell; local verification required before buy/sell";
-                    decision.ProposedActivity.BlockedReason = "bounded execution disabled; next action: ScanHorseAtlas";
+                    decision.ProposedActivity.BlockedReason = null;
                     decision.ProposedActivity.Inputs.Add("horseAtlasVerdict=" + (decision.HorseAtlasVerdict ?? "missing"));
                     return;
                 case CampaignRuntimePolicy.BranchAnalyzeHerdLedger:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AnalyzeHerdLedger", reason, rank, false, decision.CurrentTown, decision.HorseAtlasTopDestination);
                     decision.ProposedActivity.ExpectedProof = "run AnalyzeHerdLedger and refresh BlacksmithGuild_HerdLedger.json before horse buy/sell";
-                    decision.ProposedActivity.BlockedReason = "bounded execution disabled; next action: AnalyzeHerdLedger";
+                    decision.ProposedActivity.BlockedReason = null;
                     decision.ProposedActivity.Inputs.Add("herdLedgerPosture=" + (decision.HerdLedgerPosture ?? "missing"));
                     return;
                 case CampaignRuntimePolicy.BranchFoodQuantity:
                 case CampaignRuntimePolicy.BranchFoodDiversity:
-                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Food, "AcquireFoodBeforeRunwayBreach", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    var foodTarget = ResolveFoodResupplyTarget(decision);
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Food, "AcquireFoodBeforeRunwayBreach", reason, rank, mutationAuthorized, decision.CurrentTown, foodTarget);
                     decision.ProposedActivity.RequiresFreshMarketScan = true;
                     decision.ProposedActivity.RequiresVisibleSurface = true;
                     decision.ProposedActivity.RequiresInventoryDelta = true;
                     decision.ProposedActivity.RequiresGoldDelta = true;
-                    decision.ProposedActivity.ExpectedProof = "fresh market scan plus vanilla buy inventory/gold delta before food runway breach";
+                    decision.ProposedActivity.ExpectedProof = "one correlated MapTrade route cert from food-priority selection through travel/settlement handoff and a vanilla food buy with positive inventory and negative gold deltas";
+                    decision.ProposedActivity.BlockedReason = mutationAuthorized
+                        ? null
+                        : decision.Allowed
+                            ? "bounded execution disabled; food activity remains proposal-only"
+                            : "food resupply target unavailable";
+                    decision.ProposedActivity.Inputs.Add("selectedPriority=" + branch);
+                    decision.ProposedActivity.Inputs.Add("foodResupplyTarget=" + (foodTarget ?? "missing"));
+                    decision.ProposedActivity.ExpectedOutputs.Add("MapTrade route cert retains activityId=" + decision.ProposedActivity.ActivityId);
+                    decision.ProposedActivity.ExpectedOutputs.Add("terminal completion requires positive food inventory and negative gold deltas");
                     return;
                 case CampaignRuntimePolicy.BranchCapacityPressure:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AcquirePackAnimalForCapacity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.RouteCouncilRecommendedDestination ?? decision.HorseAtlasTopDestination ?? decision.DestinationCandidate);
@@ -419,6 +512,26 @@ namespace BlacksmithGuild.CampaignRuntime
 
             return threatStatus.StartsWith("unknown", StringComparison.OrdinalIgnoreCase)
                 || threatStatus.Equals("high", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ResolveFoodResupplyTarget(CampaignRuntimeDecision decision)
+        {
+            if (decision == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(decision.CurrentTown))
+            {
+                return decision.CurrentTown;
+            }
+
+            if (!string.IsNullOrWhiteSpace(decision.RouteCouncilRecommendedDestination))
+            {
+                return decision.RouteCouncilRecommendedDestination;
+            }
+
+            return decision.DestinationCandidate;
         }
 
         private static void Select(

@@ -184,6 +184,65 @@ namespace BlacksmithGuild.DevTools
             return true;
         }
 
+        public static bool CanRunSettlementTrade(out string reason)
+        {
+            GameSessionState.Refresh();
+            RunPreflightWhenReady();
+
+            if (GameSessionState.IsMissionActiveForTrace())
+            {
+                reason = "mission active";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (!GameSessionState.IsSettlementInteriorReady)
+            {
+                reason = "settlement interior not ready";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (GameSessionState.ResolveCurrentSettlement() == null)
+            {
+                reason = "current settlement unavailable";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (!IsCampaignReady)
+            {
+                reason = "campaign not ready";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (!IsMainHeroReady)
+            {
+                reason = "MainHero not ready";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (!_preflightCompleted)
+            {
+                reason = "data preflight not completed";
+                LastBlockReason = reason;
+                return false;
+            }
+
+            if (Verdict == PreflightVerdict.Fail)
+            {
+                reason = BlockReason;
+                LastBlockReason = reason;
+                return false;
+            }
+
+            reason = null;
+            LastBlockReason = null;
+            return true;
+        }
+
         public static void RunPreflightWhenReady()
         {
             if (_preflightCompleted)

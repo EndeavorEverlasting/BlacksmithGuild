@@ -33,6 +33,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static bool _bootstrapArmed;
         private static bool _bootstrapUsed;
         private static bool _devSaveLoadUsed;
+        private static bool _devSaveLoadStartedExplicitly;
         private static string _devSaveName;
         private static string _simpleStagePendingAdvance;
         private static float _creationStageStalledSeconds;
@@ -103,6 +104,10 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static bool DevSaveLoadUsed => _devSaveLoadUsed;
 
+        public static bool DevSaveLoadStartedExplicitly => _devSaveLoadStartedExplicitly;
+
+        public static string DevSaveName => _devSaveName;
+
         public static bool UsedDisposableQuickStartPath => _bootstrapUsed || _devSaveLoadUsed;
 
         /// <summary>
@@ -129,6 +134,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _bootstrapArmed = DevToolsConfig.AutoSkipCharacterCreation;
             _bootstrapUsed = false;
             _devSaveLoadUsed = false;
+            _devSaveLoadStartedExplicitly = false;
             _devSaveName = null;
             _simpleStagePendingAdvance = null;
             _creationStageStalledSeconds = 0f;
@@ -185,6 +191,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         public static void MarkDevSaveLoadStarted(string saveName)
         {
             _devSaveLoadUsed = true;
+            _devSaveLoadStartedExplicitly = true;
             _devSaveName = saveName;
             _setupComplete = false;
             _phase = SetupPhase.MapTransition;

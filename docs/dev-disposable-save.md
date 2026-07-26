@@ -18,11 +18,11 @@ Preferred sprint pin on this workstation: `BlacksmithGuildDevStart.sav` (also mi
 | Forge entry | Launcher (auto) | In-game (auto) | Use |
 |-------------|-----------------|----------------|-----|
 | **`Forge.cmd`** | PLAY | New Campaign → SandBox | Bootstrap cert / fresh sandbox |
-| **`ForgeContinue.cmd`** | CONTINUE | Continue Campaign | **Daily dev loop** |
+| **`ForgeContinue.cmd`** | PLAY | Exact approved dev-save Continue | **Daily dev loop** |
 
 ```text
 Forge.cmd          → zero clicks until map (bootstrap cert)
-ForgeContinue.cmd  → zero clicks until map (daily dev loop)
+ForgeContinue.cmd  → launcher PLAY → exact approved dev save → map (daily dev loop)
 ```
 
 Opt-out: `.\forge.ps1 -Launch -LaunchManual` opens the launcher without UI automation.
@@ -46,13 +46,13 @@ The repo does **not** commit `.sav` binaries — only this Documents path is doc
 ## Daily dev loop (preferred)
 
 ```text
-ForgeContinue.cmd → auto CONTINUE → map ready
+ForgeContinue.cmd → launcher PLAY → exact in-game dev-save CONTINUE → map ready
 ```
 
 | Step | Action |
 |------|--------|
 | 1 | Close Bannerlord if open |
-| 2 | Double-click **`ForgeContinue.cmd`** (build + install + auto CONTINUE) |
+| 2 | Double-click **`ForgeContinue.cmd`** (build + install + launcher PLAY + exact dev-save load) |
 | 3 | Wait for `TBG READY` or `TBG DEVSAVE: map ready` |
 | 4 | Run dev tests (F7, inbox cert, etc.) |
 
@@ -64,11 +64,18 @@ For fresh bootstrap cert, use **`Forge.cmd`** instead (auto PLAY → New Campaig
 
 | Path | Behavior (006C+) |
 |------|------------------|
-| **Continue** | Loads pinned dev save — daily dev loop |
+| **Continue** | Launcher selects PLAY; the mod loads only the exact approved dev save at the in-game main menu. A failed exact load does not fall back to vanilla Continue. |
 | **New Campaign → SandBox** | Fresh bootstrap: intro skip + auto character creation + 006B auto-build |
 | **Play → SandBox** | Same as New Campaign (dev save **not** auto-loaded on `StartNewGame`) |
 
 To re-enable dev-save hijack on Play/New Campaign (legacy 003C behavior), set `DevToolsConfig.AutoLoadDevSaveOnStartNewGame = true`.
+
+The approved physical pair is
+`Game Saves\BlacksmithGuildDevStart.sav` and
+`Game Saves\Native\BlacksmithGuild_DevStart.sav`. `pin-dev-save.ps1`
+requires both files to be byte-identical and never selects an autosave. A
+newer-save/version error remains operator-visible; the harness does not
+auto-dismiss it.
 
 ## Mod checkbox rules
 

@@ -439,6 +439,9 @@ function Send-ForgeCommand {
         [switch]$Wait,
         [switch]$Execute,
         [string]$TargetSettlement,
+        [string]$CommandId,
+        [string]$RunId,
+        [string]$CorrelationId,
         [int]$TimeoutSec = 60
     )
 
@@ -473,10 +476,25 @@ function Send-ForgeCommand {
         }
     }
 
+    if ([string]::IsNullOrWhiteSpace($CommandId)) {
+        $CommandId = 'forge-command-' + [Guid]::NewGuid().ToString('N')
+    }
+    if ([string]::IsNullOrWhiteSpace($RunId)) {
+        $RunId = 'forge-run-' + [Guid]::NewGuid().ToString('N')
+    }
+    if ([string]::IsNullOrWhiteSpace($CorrelationId)) {
+        $CorrelationId = $RunId
+    }
+    $requestedUtc = (Get-Date).ToUniversalTime().ToString('o')
+
     $payload = [ordered]@{
-        sequence = $sequence
-        command  = $CommandName
-        source   = 'forge.ps1'
+        sequence      = $sequence
+        command       = $CommandName
+        source        = 'forge.ps1'
+        commandId     = $CommandId
+        runId         = $RunId
+        correlationId = $CorrelationId
+        requestedUtc  = $requestedUtc
     }
     if ($Execute) {
         $payload.execute = $true
@@ -485,16 +503,16 @@ function Send-ForgeCommand {
         $payload.targetSettlement = $TargetSettlement
     }
 
+    if ($Wait -and (Test-Path -LiteralPath $ackPath)) {
+        Remove-Item -LiteralPath $ackPath -Force -ErrorAction SilentlyContinue
+    }
+
     $payload | ConvertTo-Json | Set-Content -LiteralPath $inboxPath -Encoding UTF8
-    Write-Host "Wrote command inbox: sequence=$sequence command=$CommandName" -ForegroundColor Green
+    Write-Host "Wrote command inbox: sequence=$sequence command=$CommandName commandId=$CommandId runId=$RunId" -ForegroundColor Green
 
     if (-not $Wait) {
         Write-Host 'Polls every 0.5s via OnApplicationTick (works when campaign loaded; focus not required).'
         return $sequence
-    }
-
-    if (Test-Path -LiteralPath $ackPath) {
-        Remove-Item -LiteralPath $ackPath -Force -ErrorAction SilentlyContinue
     }
 
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
@@ -505,7 +523,11 @@ function Send-ForgeCommand {
         if (Test-Path -LiteralPath $ackPath) {
             try {
                 $ack = Get-Content -LiteralPath $ackPath -Raw | ConvertFrom-Json
-                if ([int]$ack.sequence -eq $sequence -and $ack.command -eq $CommandName) {
+                if ([int]$ack.sequence -eq $sequence `
+                    -and $ack.command -eq $CommandName `
+                    -and [string]$ack.commandId -eq $CommandId `
+                    -and [string]$ack.runId -eq $RunId `
+                    -and [string]$ack.correlationId -eq $CorrelationId) {
                     Write-Host "ACK: $($ack.command) = $($ack.result)" -ForegroundColor Green
                     if ($ack.result -eq 'Blocked') {
                         Write-Host 'Command blocked by guardrail (expected for missing prerequisites).' -ForegroundColor Yellow
@@ -523,27 +545,17 @@ function Send-ForgeCommand {
             }
         }
 
+        # Status.json is useful progress context but it does not carry commandId/runId/correlationId.
+        # Only the exact correlated ACK above may complete this wait.
         if (Test-Path -LiteralPath $statusPath) {
             try {
                 $st = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
                 if ($st.lastCommand -and
                     [int]$st.lastCommand.sequence -eq $sequence -and
                     $st.lastCommand.name -eq $CommandName) {
-                    Write-Host "Status: $($st.lastCommand.name) = $($st.lastCommand.result)" -ForegroundColor Green
-                    if ($st.lastCommand.result -eq 'Blocked') {
-                        Write-Host 'Command blocked by guardrail (expected for missing prerequisites).' -ForegroundColor Yellow
-                        return $sequence
-                    }
-                    if ($st.lastCommand.result -and $st.lastCommand.result -ne 'Success') {
-                        throw "Command '$CommandName' status result: $($st.lastCommand.result)"
-                    }
-                    return $sequence
+                    Write-Verbose "Uncorrelated Status.json progress observed for $CommandName; awaiting exact ACK."
                 }
-            } catch {
-                if ($_.Exception.Message -match 'status result:') {
-                    throw
-                }
-            }
+            } catch { }
         }
     }
 

@@ -30,6 +30,9 @@ param(
     [ValidateSet('AutoLoop', 'Manual')]
     [string]$IterationMode,
     [string]$Command,
+    [string]$CommandId,
+    [string]$RunId,
+    [string]$CorrelationId,
     [int]$TimeoutSec = 60,
     [int]$WatchDebounceSec = 2,
     [ValidateSet('AttachOnly', 'FreshTestLaunch', 'UserSession', 'RunnerCleanup')]
@@ -90,7 +93,9 @@ if ($Command -or $Certify -or $CertifyProgression) {
         return
     }
     try {
-        Send-ForgeCommand -CommandName $Command -BannerlordRoot $bannerlordRoot -Wait:$Wait -TimeoutSec $TimeoutSec | Out-Null
+        Send-ForgeCommand -CommandName $Command -BannerlordRoot $bannerlordRoot -Wait:$Wait `
+            -CommandId $CommandId -RunId $RunId -CorrelationId $CorrelationId `
+            -TimeoutSec $TimeoutSec | Out-Null
         exit 0
     } catch {
         Write-Host $_.Exception.Message -ForegroundColor Red

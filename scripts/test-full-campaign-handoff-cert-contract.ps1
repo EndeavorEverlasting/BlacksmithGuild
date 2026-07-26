@@ -110,6 +110,18 @@ $valid = Test-FullCampaignHandoffPassCriteria `
     -BranchConsiderationLog @($fx.branchLog.ToArray())
 Assert-True ($valid.pass -eq $true) 'complete valid chain PASSes'
 
+$stalledGovernor = Test-FullCampaignHandoffPassCriteria `
+    -StopReason 'full_campaign_handoff_complete' `
+    -MovementObserved:$true -ArrivalObserved:$true -TownEntryObserved:$true `
+    -GovernorHandoffPresent:$true -GovernorHandoffStalled:$true `
+    -TradeIterations @($fx.trades.ToArray()) `
+    -ManpowerEvidence $fx.manpower `
+    -RuntimeEvents @($fx.runtime.ToArray()) `
+    -CheckpointEvents @($fx.checkpoints.ToArray()) `
+    -BranchConsiderationLog @($fx.branchLog.ToArray())
+Assert-True ($stalledGovernor.failureClasses -contains 'governor_handoff_stalled') `
+    'dictated handoff without terminal evidence cannot pass the full chain'
+
 $movementOnly = Test-FullCampaignHandoffPassCriteria `
     -StopReason 'movement_observed' `
     -MovementObserved:$true -ArrivalObserved:$false -TownEntryObserved:$false `
@@ -206,6 +218,64 @@ $stale = Get-ProvenTradesByClassification -TradeIterations @(
     }
 ) -SinceUtc ([datetime]::Parse('2026-07-18T00:00:00Z').ToUniversalTime())
 Assert-True (@($stale.ordinary).Count -eq 0) 'stale trade rows excluded by SinceUtc'
+
+$handoffCutoff = [datetime]::Parse('2026-07-18T00:00:00Z').ToUniversalTime()
+$staleHandoff = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson ([pscustomobject]@{
+    governorActivityHandoffs = @(
+        [pscustomobject]@{
+            generatedUtc = '2020-01-01T00:00:00.0000000Z'
+            authority = 'Dictated'
+            isTerminal = $false
+        },
+        [pscustomobject]@{
+            generatedUtc = '2020-01-01T00:00:01.0000000Z'
+            authority = 'Terminal'
+            isTerminal = $true
+        }
+    )
+}) -SinceUtc $handoffCutoff
+Assert-True (-not $staleHandoff.present -and $staleHandoff.count -eq 0 -and $staleHandoff.staleRejectedCount -eq 2) `
+    'stale governor handoffs excluded by SinceUtc'
+
+$freshOpenHandoff = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson ([pscustomobject]@{
+    governorActivityHandoffs = @(
+        [pscustomobject]@{
+            generatedUtc = '2026-07-18T00:00:01.0000000Z'
+            authority = 'Dictated'
+            isTerminal = $false
+        }
+    )
+}) -SinceUtc $handoffCutoff
+Assert-True ($freshOpenHandoff.present -and $freshOpenHandoff.stalled -and $freshOpenHandoff.dictatedCount -eq 1) `
+    'fresh dictated handoff reads authority and remains stalled without terminal evidence'
+
+$freshClosedHandoff = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson ([pscustomobject]@{
+    governorActivityHandoffs = @(
+        [pscustomobject]@{
+            generatedUtc = '2026-07-18T00:00:01.0000000Z'
+            authority = 'Dictated'
+            isTerminal = $false
+        },
+        [pscustomobject]@{
+            generatedUtc = '2026-07-18T00:00:02.0000000Z'
+            authority = 'Terminal'
+            isTerminal = $true
+        }
+    )
+}) -SinceUtc $handoffCutoff
+Assert-True ($freshClosedHandoff.present -and -not $freshClosedHandoff.stalled -and $freshClosedHandoff.terminalCount -eq 1) `
+    'fresh terminal handoff reads isTerminal and closes the dictated chain'
+
+$observedOnlyHandoff = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson ([pscustomobject]@{
+    governorActivityHandoffs = @(
+        [pscustomobject]@{
+            generatedUtc = '2026-07-18T00:00:01.0000000Z'
+            authority = 'ObservedOnly'
+            isTerminal = $false
+        }
+    )
+}) -SinceUtc $handoffCutoff
+Assert-True (-not $observedOnlyHandoff.present) 'observed-only handoff is not promoted to dictated governor authority'
 
 Write-Host ''
 Write-Host "=== Results: $($script:PassCount) passed, $($script:FailCount) failed ==="

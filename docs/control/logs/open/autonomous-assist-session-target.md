@@ -11,6 +11,8 @@ This document codifies the current user-facing product goal.
 - assist loop starts automatically
 - each cycle: observe state, choose next safe branch, act when allowed, log checkpoints
 - avatar visibly trains / moves / acts on campaign map when travel/training branches run
+- automation carries enabled repetitive or difficult phases without per-phase confirmation
+- the player can take over at any time; automation yields safely and leaves the game running
 - logs document every step
 - user can toggle off
 - runner stops cleanly with terminal finalization

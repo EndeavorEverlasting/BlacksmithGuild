@@ -467,6 +467,38 @@ public static class UIAHelper
 
     // Never click AutomationElement.RootElement — only scoped Bannerlord windows/dialogs.
 
+    private static AutomationElement GetKnownCustomRenderedLauncherWindowForCoords(List<AutomationElement> windows)
+    {
+        if (windows == null || windows.Count == 0) return null;
+
+        foreach (var window in windows)
+        {
+            try
+            {
+                var title = window.Current.Name ?? string.Empty;
+                if (!title.Equals("MB II: Bannerlord", StringComparison.OrdinalIgnoreCase)
+                    && !title.Equals("M&B II: Bannerlord", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!GetLauncherProcessIds().Contains(window.Current.ProcessId))
+                {
+                    continue;
+                }
+
+                var rect = window.Current.BoundingRectangle;
+                if (rect.Width >= 400 && rect.Height >= 300)
+                {
+                    return window;
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
     public static string ClickButtonByNameInLauncher(string[] names, bool requireEnabled = true)
     {
         if (names == null || names.Length == 0) return null;
@@ -489,6 +521,27 @@ public static class UIAHelper
             var focusTarget = FindPreferredLauncherWindow(windows) ?? GetBestLauncherWindowForCoords(windows) ?? windows[0];
             FocusScope(focusTarget, "launcher");
             _launcherFocused = true;
+        }
+
+        var launcherStable = (DateTime.UtcNow - _firstLauncherWindowSeenUtc).TotalSeconds >= LauncherStableSecBeforeFallback;
+        var knownCustomCoordWindow = GetKnownCustomRenderedLauncherWindowForCoords(windows);
+        if (!RespectUserForeground && knownCustomCoordWindow != null)
+        {
+            if (launcherStable && !IsCoordClickThrottled())
+            {
+                var coordIntent = NamesIndicateContinue(names) ? "continue" : "play";
+                LogLine("CLICK ROUTE launcher coords — known custom-rendered launcher bypasses descendant UIA");
+                FocusScope(knownCustomCoordWindow, "launcher coords prep");
+                if (TryClickLauncherByCoordinates(knownCustomCoordWindow, coordIntent))
+                {
+                    _lastCoordClickUtc = DateTime.UtcNow;
+                    _coordAttemptIndex++;
+                    return names[0];
+                }
+            }
+
+            LogLauncherMissThrottled("CLICK WAIT launcher coords — known custom-rendered launcher waiting for stability");
+            return null;
         }
 
         foreach (var window in windows)
@@ -517,7 +570,6 @@ public static class UIAHelper
             }
         }
 
-        var launcherStable = (DateTime.UtcNow - _firstLauncherWindowSeenUtc).TotalSeconds >= LauncherStableSecBeforeFallback;
         if (launcherStable && !IsCoordClickThrottled())
         {
             var coordIntent = NamesIndicateContinue(names) ? "continue" : "play";

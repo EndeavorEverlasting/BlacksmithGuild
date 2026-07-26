@@ -23,6 +23,24 @@ function Assert-Contains {
     }
 }
 
+function Assert-NotContains {
+    param(
+        [Parameter(Mandatory = $true)][string]$RelativePath,
+        [Parameter(Mandatory = $true)][string]$Needle
+    )
+
+    $path = Join-Path $repoRoot $RelativePath
+    if (-not (Test-Path -LiteralPath $path)) {
+        $failures.Add("missing file: $RelativePath") | Out-Null
+        return
+    }
+
+    $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+    if ($text.IndexOf($Needle, [System.StringComparison]::Ordinal) -ge 0) {
+        $failures.Add("$RelativePath unexpectedly contains '$Needle'") | Out-Null
+    }
+}
+
 $doc = 'docs\handoff\launcher-safe-mode-handoff-doctrine.md'
 
 foreach ($needle in @(
@@ -44,6 +62,17 @@ foreach ($needle in @(
 )) {
     Assert-Contains $doc $needle
 }
+
+$frozenNav = 'scripts\launcher-frozen-context-nav.ps1'
+foreach ($needle in @(
+    '$postInvalidationMinimumBudgetMs = 60000',
+    '$remainingOverallBudgetMs',
+    '$postInvalidationMaximumBudgetMs',
+    'redispatch=false'
+)) {
+    Assert-Contains $frozenNav $needle
+}
+Assert-NotContains $frozenNav '$postInvalidationHandoffBudgetMs = 5000'
 
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: launcher Safe Mode doctrine has $($failures.Count) issue(s)." -ForegroundColor Red

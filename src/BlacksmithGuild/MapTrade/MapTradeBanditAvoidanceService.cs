@@ -1,7 +1,7 @@
+using System;
 using System.Linq;
 using BlacksmithGuild.Cohesion;
 using BlacksmithGuild.DevTools;
-using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 
 namespace BlacksmithGuild.MapTrade
@@ -19,19 +19,14 @@ namespace BlacksmithGuild.MapTrade
             }
 
             var playerStrength = CampaignMapMovementHelper.PartyStrength(main);
-            foreach (var party in MobileParty.All)
+            var scanRadius = Math.Max(
+                DevToolsConfig.MapTradeAvoidHostileRadius,
+                DevToolsConfig.MapTradeAbortHostileRadius);
+            var snapshots = CohesionPartyScanner.Scan(scanRadius, main);
+            foreach (var party in snapshots.Where(snapshot =>
+                         snapshot.RelationToPlayer == CohesionRelationToPlayer.Hostile))
             {
-                if (party == null || party == main || party.MapFaction == null)
-                {
-                    continue;
-                }
-
-                if (!main.MapFaction.IsAtWarWith(party.MapFaction))
-                {
-                    continue;
-                }
-
-                var distance = CampaignMapMovementHelper.Distance(main, party);
+                var distance = party.DistanceToPlayer;
                 if (distance > DevToolsConfig.MapTradeAvoidHostileRadius)
                 {
                     continue;
@@ -44,7 +39,7 @@ namespace BlacksmithGuild.MapTrade
                 }
 
                 if (distance <= DevToolsConfig.MapTradeAbortHostileRadius
-                    && CampaignMapMovementHelper.PartyStrength(party) >= playerStrength)
+                    && party.Strength >= playerStrength)
                 {
                     return true;
                 }

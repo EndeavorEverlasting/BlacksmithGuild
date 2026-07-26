@@ -4,6 +4,7 @@ using BlacksmithGuild.DevTools.Automation;
 using BlacksmithGuild.DevTools.AutoCharacterBuild;
 using BlacksmithGuild.DevTools.QuickStart;
 using BlacksmithGuild.DevTools.Reporting;
+using BlacksmithGuild.MapTrade;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
@@ -72,6 +73,7 @@ namespace BlacksmithGuild
                 _refreshGenerationAtCampaignTick = GameSessionState.RefreshGeneration;
 
                 AutoTravelService.OnRealtimeTick();
+                MapTradeAutonomousService.OnRealtimeTick();
 
                 if (!CampaignMapReadyOrchestrator.ImmediateHooksCompleted
                     && CampaignMapReadyOrchestrator.ShouldRunOrchestratorTick())

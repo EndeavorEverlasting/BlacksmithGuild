@@ -288,28 +288,65 @@ function Test-FullCampaignArrivalEvidence {
 }
 
 function Test-FullCampaignGovernorHandoffEvidence {
-    param([object]$GuildLoopJson = $null)
+    param(
+        [object]$GuildLoopJson = $null,
+        [nullable[datetime]]$SinceUtc = $null
+    )
     if (-not $GuildLoopJson) {
-        return [pscustomobject][ordered]@{ present = $false; stalled = $true; count = 0; handoffs = @() }
+        return [pscustomobject][ordered]@{
+            present = $false
+            stalled = $true
+            count = 0
+            dictatedCount = 0
+            terminalCount = 0
+            staleRejectedCount = 0
+            handoffs = @()
+        }
     }
     $handoffs = @()
     if ($GuildLoopJson.PSObject.Properties.Name -contains 'governorActivityHandoffs') {
         $handoffs = @($GuildLoopJson.governorActivityHandoffs)
     }
-    $present = ($handoffs.Count -gt 0)
-    $stalled = $false
-    if ($present) {
-        $openDictated = @($handoffs | Where-Object {
-            ([string]$_.authorityMode -eq 'Dictated') -and
-            ([string]$_.terminalOutcome -notin @('Completed', 'Blocked', 'Failed', 'Terminal'))
+
+    $allHandoffs = @($handoffs | Where-Object { $null -ne $_ })
+    $freshHandoffs = @($allHandoffs)
+    if ($null -ne $SinceUtc) {
+        if (-not (Get-Command ConvertTo-Pr11Utc -ErrorAction SilentlyContinue)) {
+            . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
+        }
+        $since = ConvertTo-Pr11Utc -Value $SinceUtc
+        $freshHandoffs = @($allHandoffs | Where-Object {
+            if (($_.PSObject.Properties.Name -contains 'generatedUtc') -and
+                -not [string]::IsNullOrWhiteSpace([string]$_.generatedUtc)) {
+                $handoffUtc = ConvertTo-Pr11Utc -Value $_.generatedUtc
+                return ($null -ne $handoffUtc -and $null -ne $since -and $handoffUtc -ge $since)
+            }
+            return $false
         })
-        $stalled = ($openDictated.Count -gt 0)
     }
+
+    # The runtime writer emits `authority` and `isTerminal`. Do not consume the
+    # previously assumed authorityMode/terminalOutcome fields, which are absent
+    # from BlacksmithGuild_AutonomousGuildLoop.json.
+    $dictated = @($freshHandoffs | Where-Object {
+        ($_.PSObject.Properties.Name -contains 'authority') -and
+        ([string]$_.authority -eq 'Dictated')
+    })
+    $terminal = @($freshHandoffs | Where-Object {
+        ($_.PSObject.Properties.Name -contains 'isTerminal') -and
+        ($_.isTerminal -eq $true)
+    })
+    $present = ($dictated.Count -gt 0)
+    $stalled = $present -and ($terminal.Count -eq 0)
+
     return [pscustomobject][ordered]@{
         present = $present
         stalled = $stalled
-        count = $handoffs.Count
-        handoffs = $handoffs
+        count = $freshHandoffs.Count
+        dictatedCount = $dictated.Count
+        terminalCount = $terminal.Count
+        staleRejectedCount = ($allHandoffs.Count - $freshHandoffs.Count)
+        handoffs = $freshHandoffs
     }
 }
 
@@ -441,6 +478,7 @@ function Test-FullCampaignHandoffPassCriteria {
         arrivalObserved = [bool]$ArrivalObserved
         townEntryObserved = [bool]$TownEntryObserved
         governorHandoffPresent = [bool]$GovernorHandoffPresent
+        governorHandoffStalled = [bool]$GovernorHandoffStalled
         ordinaryTradeCount = $ordinaryCount
         horseAcquisitionCount = $horseCount
         provisionAcquisitionCount = $foodCount
@@ -502,6 +540,7 @@ function Save-FullCampaignHandoffCertEvidence {
             arrival = [bool]$Summary.arrivalObserved
             townEntry = [bool]$Summary.townEntryObserved
             governorHandoff = [bool]$Summary.governorHandoffPresent
+            governorHandoffStalled = [bool]$Criteria.governorHandoffStalled
             ordinaryTrade = [int]$Criteria.ordinaryTradeCount
             horseAcquisition = [int]$Criteria.horseAcquisitionCount
             provisionAcquisition = [int]$Criteria.provisionAcquisitionCount
