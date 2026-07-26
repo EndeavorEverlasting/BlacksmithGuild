@@ -1,21 +1,21 @@
 ﻿<#
 .SYNOPSIS
-Dedicated live-runtime entrypoint for the disposable-save priority-engine certificate.
+Dedicated protected-runtime entrypoint for the disposable-save priority-engine certificate.
 
 The workflow is fail-closed. It requires explicit disposable-save mutation authority, a pinned
 save matching the tracked disposable policy, and PASS_SAVE_VERSION_EXACT from the canonical
-save-compatibility gate before any launcher or priority-engine action is attempted.
+save-compatibility gate before any launcher action is attempted.
 
-It deliberately does not force-stop Bannerlord. Runtime ownership/inactive-session enforcement
-remains the launcher-lifecycle authority; an active or ambiguous session must be resolved there.
+Current priority-engine tooling dispatches one priority command at a time. This wrapper therefore
+stops honestly at launcher proof and emits the exact first command for the behavior-certification
+lane; it does not turn command dispatch into a full Land -> Survive -> Purchase -> Travel -> Sell
+runtime claim.
 #>
 [CmdletBinding()]
 param(
     [string]$RepoRoot,
     [string]$BannerlordRoot,
     [switch]$AllowDisposableSaveMutation,
-    [int]$MaxIterations = 1,
-    [ValidateRange(60, 1800)][int]$MapReadyTimeoutSec = 300,
     [switch]$PassThru
 )
 
@@ -52,6 +52,7 @@ function Write-Result {
     param(
         [Parameter(Mandatory = $true)][string]$Verdict,
         [Parameter(Mandatory = $true)][string]$TerminalState,
+        [Parameter(Mandatory = $true)][string]$ProofLevel,
         [string]$PinnedSave,
         [string]$SaveCompatibilityState,
         [string]$NextCommand,
@@ -64,7 +65,7 @@ function Write-Result {
         sourceBranch = $sourceBranch
         verdict = $Verdict
         terminalState = $TerminalState
-        proofLevel = if ($Verdict -eq 'PASS') { 'live runtime' } else { 'harness' }
+        proofLevel = $ProofLevel
         mutationAuthorityGranted = [bool]$AllowDisposableSaveMutation
         pinnedSave = $PinnedSave
         saveCompatibilityState = $SaveCompatibilityState
@@ -82,7 +83,7 @@ Add-Event 'DISPOSABLE-SAVE LIVE CERT'
 
 if (-not $AllowDisposableSaveMutation) {
     Add-Event 'BLOCKED: explicit disposable-save mutation authority absent.'
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_mutation_authority_absent' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_mutation_authority_absent' -ProofLevel 'harness' `
         -PinnedSave $null -SaveCompatibilityState $null `
         -NextCommand 'Re-run only after explicitly authorizing disposable-save mutation.' -Extra $null
     if (-not $PassThru) { exit 32 }
@@ -92,7 +93,7 @@ if (-not $AllowDisposableSaveMutation) {
 $pin = Get-GovernorActiveDisposableSavePin -RepoRoot $RepoRoot
 if (-not $pin -or [string]::IsNullOrWhiteSpace([string]$pin.leafName)) {
     Add-Event 'BLOCKED: active disposable-save pin missing.'
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_disposable_pin_missing' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_disposable_pin_missing' -ProofLevel 'harness' `
         -PinnedSave $null -SaveCompatibilityState $null `
         -NextCommand '.\scripts\tbg\Update-TbgDisposableSaveRegistry.ps1 -CreateOwned' -Extra $null
     if (-not $PassThru) { exit 33 }
@@ -103,7 +104,7 @@ $saveLeaf = [string]$pin.leafName
 $savePath = [string]$pin.fullPath
 if ([string]::IsNullOrWhiteSpace($savePath) -or -not (Test-Path -LiteralPath $savePath -PathType Leaf)) {
     Add-Event "BLOCKED: pinned save file missing: $saveLeaf"
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_pinned_save_missing' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_pinned_save_missing' -ProofLevel 'harness' `
         -PinnedSave $saveLeaf -SaveCompatibilityState 'BLOCKED_SAVE_NOT_FOUND' `
         -NextCommand '.\scripts\tbg\Update-TbgDisposableSaveRegistry.ps1 -CreateOwned' -Extra $null
     if (-not $PassThru) { exit 34 }
@@ -114,7 +115,7 @@ $saveFile = Get-Item -LiteralPath $savePath
 $confidence = Test-DisposableSaveConfidence -SaveFile $saveFile -RepoRoot $RepoRoot
 if (-not $confidence -or -not $confidence.ApprovedPattern) {
     Add-Event "BLOCKED: pinned save '$saveLeaf' does not satisfy disposable-save policy."
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_pinned_save_not_disposable' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_pinned_save_not_disposable' -ProofLevel 'harness' `
         -PinnedSave $saveLeaf -SaveCompatibilityState $null `
         -NextCommand '.\scripts\tbg\Update-TbgDisposableSaveRegistry.ps1 -CreateOwned' -Extra $null
     if (-not $PassThru) { exit 35 }
@@ -134,7 +135,7 @@ $gateRecord = if ($saveGate) { @($saveGate.saveRecords | Where-Object { $_.path 
 $gateEligible = $gateState -eq 'PASS_SAVE_VERSION_EXACT' -and $gateRecord.Count -eq 1 -and [bool]$gateRecord[0].autoLoadEligible
 if (-not $gateEligible) {
     Add-Event "BLOCKED: canonical save compatibility gate rejected '$saveLeaf' as $gateState."
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_save_compatibility_gate' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_save_compatibility_gate' -ProofLevel 'real-file read-only parsing' `
         -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
         -NextCommand '.\ForgeSaveCompatibility.cmd' `
         -Extra @{ saveCompatibilityResult = if ($saveGate) { [string]$saveGate.evidencePaths.result } else { $null } }
@@ -149,7 +150,7 @@ if ([string]::IsNullOrWhiteSpace($BannerlordRoot)) {
 }
 if ([string]::IsNullOrWhiteSpace($BannerlordRoot) -or -not (Test-Path -LiteralPath $BannerlordRoot -PathType Container)) {
     Add-Event 'BLOCKED: Bannerlord install root not resolved.'
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_bannerlord_root_unresolved' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_bannerlord_root_unresolved' -ProofLevel 'harness' `
         -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
         -NextCommand 'Resolve the canonical Bannerlord install root, then rerun this workflow.' -Extra $null
     if (-not $PassThru) { exit 37 }
@@ -161,10 +162,11 @@ if ([string]::IsNullOrWhiteSpace($BannerlordRoot) -or -not (Test-Path -LiteralPa
 $forge = Join-Path $RepoRoot 'forge.ps1'
 $writeIntent = Join-Path $RepoRoot 'scripts\write-launch-intent.ps1'
 $launcherNav = Join-Path $RepoRoot 'scripts\launcher-frozen-context-nav.ps1'
-foreach ($required in @($forge, $writeIntent, $launcherNav)) {
+$priorityEngine = Join-Path $RepoRoot 'scripts\tbg\Invoke-TbgPriorityEngine.ps1'
+foreach ($required in @($forge, $writeIntent, $launcherNav, $priorityEngine)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
-        Add-Event "BLOCKED: launcher component missing: $required"
-        Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launcher_component_missing' `
+        Add-Event "BLOCKED: required runtime component missing: $required"
+        Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launcher_component_missing' -ProofLevel 'harness' `
             -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
             -NextCommand '.\ForgeContinue.cmd' -Extra @{ missingComponent = $required }
         if (-not $PassThru) { exit 38 }
@@ -176,7 +178,7 @@ Add-Event "Launching canonical Continue path for exact-version disposable save '
 & $forge -Launch -LaunchIntent continue -LaunchManual
 if ($LASTEXITCODE -ne 0) {
     Add-Event "BLOCKED: forge launch/build admission exited $LASTEXITCODE."
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launcher_admission_failed' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launcher_admission_failed' -ProofLevel 'launcher' `
         -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
         -NextCommand '.\ForgeContinue.cmd' -Extra @{ launcherExitCode = $LASTEXITCODE }
     if (-not $PassThru) { exit 39 }
@@ -185,7 +187,7 @@ if ($LASTEXITCODE -ne 0) {
 
 & $writeIntent -LaunchIntent continue -BannerlordRoot $BannerlordRoot
 if ($LASTEXITCODE -ne 0) {
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launch_intent_failed' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launch_intent_failed' -ProofLevel 'launcher' `
         -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
         -NextCommand '.\ForgeContinue.cmd' -Extra @{ launcherExitCode = $LASTEXITCODE }
     if (-not $PassThru) { exit 40 }
@@ -201,41 +203,20 @@ if ($LASTEXITCODE -ne 0) {
     -AllowFocusSteal
 if ($LASTEXITCODE -ne 0) {
     Add-Event "BLOCKED: launcher navigation exited $LASTEXITCODE."
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launcher_navigation_failed' `
+    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_launcher_navigation_failed' -ProofLevel 'launcher' `
         -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
         -NextCommand '.\ForgeContinue.cmd' -Extra @{ launcherExitCode = $LASTEXITCODE }
     if (-not $PassThru) { exit 41 }
     return
 }
 
-$engine = Join-Path $PSScriptRoot 'Invoke-TbgPriorityEngine.ps1'
-if (-not (Test-Path -LiteralPath $engine -PathType Leaf)) {
-    Write-Result -Verdict 'BLOCKED' -TerminalState 'BLOCKED_priority_engine_missing' `
-        -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
-        -NextCommand 'Restore scripts/tbg/Invoke-TbgPriorityEngine.ps1 before live certification.' -Extra $null
-    if (-not $PassThru) { exit 42 }
-    return
-}
-
-Add-Event "Priority engine live-cert run begins (MaxIterations=$MaxIterations, MapReadyTimeoutSec=$MapReadyTimeoutSec)."
-try {
-    & $engine -BannerlordRoot $BannerlordRoot -MaxIterations $MaxIterations -MapReadyTimeoutSec $MapReadyTimeoutSec | Out-Null
-    $engineExit = $LASTEXITCODE
-}
-catch {
-    Add-Event "Priority engine exception: $($_.Exception.Message)"
-    $engineExit = 1
-}
-
-if ($engineExit -ne 0) {
-    Write-Result -Verdict 'ATTENTION' -TerminalState 'ATTENTION_priority_engine_not_proven' `
-        -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
-        -NextCommand '.\ExportTbgEvidence.cmd' -Extra @{ priorityEngineExitCode = $engineExit }
-    if (-not $PassThru) { exit 2 }
-    return
-}
-
-Write-Result -Verdict 'PASS' -TerminalState 'PASS_priority_engine_live_on_exact_version_disposable_save' `
-    -PinnedSave $saveLeaf -SaveCompatibilityState $gateState `
-    -NextCommand '.\ExportTbgEvidence.cmd' -Extra @{ priorityEngineExitCode = 0 }
-if (-not $PassThru) { exit 0 }
+# The current priority engine accepts exactly one Priority value and records command dispatch.
+# A full five-stage behavioral loop needs same-run ACK/behavior observations between stages.
+# Until that workflow is implemented, stop below behavior proof rather than blasting five inbox
+# writes or declaring a successful live certificate from process/dispatch success.
+$next = 'pwsh -NoProfile -File .\scripts\tbg\Invoke-TbgPriorityEngine.ps1 -Priority Land -RepoRoot "' + $RepoRoot + '"'
+Add-Event 'ATTENTION: launcher gate passed; full priority-engine same-run behavior loop is not yet implemented by the current single-priority dispatcher.'
+Write-Result -Verdict 'ATTENTION' -TerminalState 'ATTENTION_priority_engine_behavior_proof_pending' -ProofLevel 'launcher' `
+    -PinnedSave $saveLeaf -SaveCompatibilityState $gateState -NextCommand $next `
+    -Extra @{ priorityEngineMode = 'single-priority-dispatch'; firstPriority = 'Land'; behaviorProofClaimed = $false }
+if (-not $PassThru) { exit 2 }
