@@ -1,0 +1,29 @@
+{
+  "schema": "TbgSaveCompatibilityRealReference.v1",
+  "date": "2026-07-26",
+  "authority": "operator-reported read-only observation; tracked replay still required",
+  "gameVersion": "1.4.6.115628",
+  "observations": [
+    {
+      "leafName": "saveauto1.sav",
+      "saveVersion": "1.4.7.117484",
+      "expectedTerminalState": "BLOCKED_SAVE_NEWER_THAN_GAME"
+    },
+    {
+      "leafName": "BlacksmithGuildDevStart.sav",
+      "pairedLeafName": "BlacksmithGuild_DevStart.sav",
+      "saveVersion": "1.4.6.115628",
+      "byteIdentical": true,
+      "sha256Prefix": "C472",
+      "sha256Suffix": "9BDC",
+      "expectedTerminalState": "PASS_SAVE_VERSION_EXACT"
+    }
+  ],
+  "safety": {
+    "readOnly": true,
+    "runningGameTouched": false,
+    "saveBytesTouched": false,
+    "completeHashStored": false
+  },
+  "completionGate": "Run the tracked classifier locally against the real files and replace this reference-only confidence with a generated save-compatibility result containing the complete SHA-256 and parsed versions."
+}
