@@ -15,7 +15,7 @@
   "riskClass": "static",
   "expectedArtifacts": [],
   "proofLevel": "static test",
-  "proofCeiling": "Fixture-reduces upgrade findings, owner routing, sprint packets, and explicit remote-publication boundaries only; it does not prove a real candidate build or live runtime compatibility.",
+  "proofCeiling": "Machine-validates repaired fixture reduction, owner routing, sprint packets, and explicit remote-publication boundaries only; it does not prove a real candidate build or live runtime compatibility.",
   "tags": ["static", "contract", "version", "upgrade", "compatibility", "sprint", "harness", "core"],
   "triggerInterests": ["game.compatibility.observed", "game.version.changed", "candidate.build.failed"],
   "defaultProfileMembership": ["default-static", "operator-observe"],
