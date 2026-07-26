@@ -34,6 +34,26 @@ try {
     Assert-True (@($events|Where-Object {$_.eventType -eq 'process.exited'}).Count -ge 1) 'disposable process exit observed'
     $status=& $start -Command status -RunId $result.runId -OutputRoot $temp -PassThru
     Assert-True ($status.leaseId -eq $result.leaseId) 'owned lease status'
+    $stopRunId="stop-smoke-$([Guid]::NewGuid().ToString('N').Substring(0,8))"
+    $stopJob=Start-Job -ScriptBlock {
+        param($ScriptPath,$OutputRoot,$RunId)
+        & $ScriptPath -Command start -DurationSeconds 20 -OutputRoot $OutputRoot -RunId $RunId
+    } -ArgumentList $start,$temp,$stopRunId
+    $stopStatusPath=Join-Path $temp "$stopRunId\observer-status.json"
+    $stopDeadline=(Get-Date).AddSeconds(8)
+    while(-not (Test-Path -LiteralPath $stopStatusPath) -and (Get-Date) -lt $stopDeadline) {
+        Start-Sleep -Milliseconds 100
+    }
+    Assert-True (Test-Path -LiteralPath $stopStatusPath) 'background observer publishes running status before completion'
+    $stopStatus=Read-Json $stopStatusPath
+    & $start -Command stop -RunId $stopRunId -LeaseId $stopStatus.leaseId -OutputRoot $temp
+    Wait-Job -Job $stopJob -Timeout 8 | Out-Null
+    $null=Receive-Job -Job $stopJob -ErrorAction SilentlyContinue
+    Remove-Job -Job $stopJob -Force
+    $stoppedStatus=Read-Json $stopStatusPath
+    Assert-True ($stoppedStatus.status -eq 'stopped') 'owned lease stop request is acknowledged without touching game processes'
+    $stopEvents=@(Get-Content -LiteralPath (Join-Path $temp "$stopRunId\events.jsonl") -Encoding UTF8 | Where-Object {$_} | ForEach-Object {$_|ConvertFrom-Json})
+    Assert-True (@($stopEvents|Where-Object {$_.payload.disposition -eq 'observer_disposed_no_game_process_touched'}).Count -eq 1) 'observer stop records safe disposal evidence'
     & (Join-Path $PSScriptRoot 'Get-TbgWindowsCrashEvidence.ps1') -RunId 'eventlog-smoke' -CorrelationId 'eventlog-smoke' -SinceUtc ([DateTime]::UtcNow.AddMinutes(-1)) -OutputRoot $temp | Out-Null
     $werPath=Join-Path $temp 'eventlog-smoke\windows-crash-evidence.jsonl'
     $werText=if(Test-Path $werPath){Get-Content $werPath -Raw -Encoding UTF8}else{''}

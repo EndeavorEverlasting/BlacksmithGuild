@@ -1095,7 +1095,9 @@ function Invoke-F7NavLaunchAttempt {
     if ($OpenLauncher) {
         Write-F7LaunchState 'polling'
         & (Join-Path $PSScriptRoot 'write-launch-intent.ps1') -LaunchIntent continue -BannerlordRoot $bannerlordRoot
-        & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $bannerlordRoot
+        & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') `
+            -BannerlordRoot $bannerlordRoot `
+            -LaunchIntent continue
         Write-F7LaunchState 'launcher_spawned'
     }
 

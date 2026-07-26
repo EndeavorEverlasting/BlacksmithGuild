@@ -250,7 +250,9 @@ if (-not $SkipLaunch) {
 
         $launcherRunning = Get-Process -Name 'TaleWorlds.MountAndBlade.Launcher' -ErrorAction SilentlyContinue
         if (-not $launcherRunning) {
-            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') -BannerlordRoot $bannerlordRoot
+            & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') `
+                -BannerlordRoot $bannerlordRoot `
+                -LaunchIntent $LaunchIntent
             Start-Sleep -Seconds 3
         }
 

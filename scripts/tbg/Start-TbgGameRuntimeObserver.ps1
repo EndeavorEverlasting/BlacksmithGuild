@@ -132,7 +132,7 @@ if ($Command -eq 'stop') {
         status = 'stop_requested'
         updatedUtc = Get-TbgNow
     }
-    Write-TbgJson $statusPath $stopSignal
+    Write-TbgJson $stopSignal $statusPath
     Write-Host "Observer $RunId stop requested; no Bannerlord process was touched."; exit 0
 }
 
