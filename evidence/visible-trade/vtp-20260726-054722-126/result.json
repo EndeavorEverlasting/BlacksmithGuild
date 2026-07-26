@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "TbgVisibleTradeProofResult.v1",
+  "runId": "vtp-20260726-054722-126",
+  "correlationId": "vtp-20260726-054722-126",
+  "startedAtUtc": "2026-07-26T05:47:22.1261354Z",
+  "endedAtUtc": "2026-07-26T05:50:24.8983743Z",
+  "durationSec": 182.77,
+  "repo": "EndeavorEverlasting/BlacksmithGuild",
+  "branch": "codex/live-governor-trade-runtime-20260725",
+  "headSha": "04db876abe7034c79c61e363777c0d100b8aba5c",
+  "mode": "certify",
+  "passFail": "FAIL",
+  "terminalState": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED",
+  "terminalReason": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED:Window-lifecycle evidence is quarantined for an unknown window; no click or launch authority is granted.",
+  "failureDetail": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED:Window-lifecycle evidence is quarantined for an unknown window; no click or launch authority is granted.",
+  "highestProofReached": "lifecycle",
+  "provenance": {
+    "sourceBranch": "codex/live-governor-trade-runtime-20260725",
+    "sourceCommit": "04db876abe7034c79c61e363777c0d100b8aba5c",
+    "executionWorktree": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725",
+    "executionBranch": "codex/live-governor-trade-runtime-20260725",
+    "executionCommit": "04db876abe7034c79c61e363777c0d100b8aba5c",
+    "builtAssemblySha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8",
+    "installedAssemblySha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8",
+    "moduleVersion": "",
+    "gameVersion": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe",
+    "testRunId": "vtp-20260726-054722-126",
+    "commandCorrelationId": "vtp-20260726-054722-126",
+    "disposableSaveLeaf": "BlacksmithGuild_DevStart.sav",
+    "disposableSaveSha256": "C472536165FE3971A535479FF174B8BF2750985A4C2805A2ECB7701D765E9BDC"
+  },
+  "dll": {
+    "localPath": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\Module\\BlacksmithGuild\\bin\\Win64_Shipping_Client\\BlacksmithGuild.dll",
+    "installedPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord\\Modules\\BlacksmithGuild\\bin\\Win64_Shipping_Client\\BlacksmithGuild.dll",
+    "localSha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8",
+    "installedSha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8"
+  },
+  "commandAck": {
+    "observed": false,
+    "evidencePath": null
+  },
+  "campaignTime": {
+    "advancing": true
+  },
+  "movement": {
+    "observed": false,
+    "delta": 0,
+    "startingPosition": "",
+    "endingPosition": "",
+    "sampleCount": 0,
+    "target": ""
+  },
+  "checkpoint": {
+    "observed": false,
+    "checkpoints": []
+  },
+  "arrival": {
+    "observed": false,
+    "settlement": "",
+    "target": ""
+  },
+  "buy": {
+    "observed": false,
+    "goldDelta": 0,
+    "inventoryDelta": 0,
+    "itemId": ""
+  },
+  "travel": {
+    "observed": false,
+    "from": "",
+    "to": ""
+  },
+  "sell": {
+    "observed": false,
+    "goldDelta": 0,
+    "inventoryDelta": 0
+  },
+  "publication": {
+    "published": false
+  },
+  "windowLifecycle": {
+    "gate": "quarantined",
+    "terminalState": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED",
+    "hostHandoffObserved": false,
+    "modalTransitionObserved": false,
+    "actionDispatched": false,
+    "artifactPaths": {
+      "latestRoot": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle",
+      "runContext": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.run-context.json",
+      "artifactRegistry": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.artifact-registry.json",
+      "events": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.events.jsonl",
+      "state": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.state.json",
+      "result": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.result.json",
+      "report": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.report.md",
+      "handoff": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725\\artifacts\\latest\\window-lifecycle\\window-lifecycle.handoff.md"
+    }
+  },
+  "allowedClaims": "The run produced a bounded terminal diagnosis; inspect terminalState and highestProofReached.",
+  "forbiddenClaims": [
+    "A command acknowledgement is not terminal workflow proof.",
+    "Diagnostic and skip modes can never certify gameplay.",
+    "The runner does not grant gold, inventory, movement, or other gameplay outcomes.",
+    "A local-only run without remote publication does not achieve PASS_VISIBLE_TRADE_PROVEN.",
+    "Window-lifecycle action dispatch is not modal acceptance, host handoff, or campaign readiness.",
+    "A READY window-lifecycle-boundary packet is artifact interpretation, not live runtime proof."
+  ],
+  "eventCount": 31
+}

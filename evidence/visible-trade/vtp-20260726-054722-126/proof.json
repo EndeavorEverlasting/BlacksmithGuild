@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "TbgVisibleTradeProof.v1",
+  "runId": "vtp-20260726-054722-126",
+  "terminalState": "BLOCKED_WINDOW_LIFECYCLE_QUARANTINED",
+  "highestProofReached": "lifecycle",
+  "provenance": {
+    "sourceBranch": "codex/live-governor-trade-runtime-20260725",
+    "sourceCommit": "04db876abe7034c79c61e363777c0d100b8aba5c",
+    "executionWorktree": "C:\\Users\\Cheex\\Desktop\\dev\\Mods\\Bannerlord\\BlacksmithGuild-live-runtime-20260725",
+    "executionBranch": "codex/live-governor-trade-runtime-20260725",
+    "executionCommit": "04db876abe7034c79c61e363777c0d100b8aba5c",
+    "builtAssemblySha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8",
+    "installedAssemblySha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8",
+    "moduleVersion": "",
+    "gameVersion": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Mount & Blade II Bannerlord\\bin\\Win64_Shipping_Client\\TaleWorlds.MountAndBlade.Launcher.exe",
+    "testRunId": "vtp-20260726-054722-126",
+    "commandCorrelationId": "vtp-20260726-054722-126",
+    "disposableSaveLeaf": "BlacksmithGuild_DevStart.sav",
+    "disposableSaveSha256": "C472536165FE3971A535479FF174B8BF2750985A4C2805A2ECB7701D765E9BDC"
+  },
+  "checks": {
+    "sourceCommitKnown": true,
+    "buildHashMatch": true,
+    "commandAckObserved": false,
+    "timeAdvanceObserved": true,
+    "movementObserved": false,
+    "checkpointObserved": false,
+    "arrivalObserved": false,
+    "buyObserved": false,
+    "sellObserved": false,
+    "capsuleGenerated": true,
+    "remotePublished": false
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "TbgArtifactIndex.v1",
+  "runId": "vtp-20260726-054722-126",
+  "generatedAtUtc": "2026-07-26T05:50:25.0055638Z",
+  "entries": [
+    {
+      "name": "manifest.json",
+      "sha256": "4325C0622BEAB0D13D89BB5DC1A6D1092726F541E60B28BD87C97645EFFCE433",
+      "path": "artifacts\\latest\\visible-trade-proof\\vtp-20260726-054722-126\\capsule\\manifest.json",
+      "sourcePath": ""
+    },
+    {
+      "name": "result.json",
+      "sha256": "C6748A25E1B3D047ECA8F448686A3E5BC0C86311D2F3B936A6770EAEEFA99D7E",
+      "path": "artifacts\\latest\\visible-trade-proof\\vtp-20260726-054722-126\\capsule\\result.json",
+      "sourcePath": ""
+    },
+    {
+      "name": "proof.json",
+      "sha256": "3748865D4AF69B5A98F2ACF4B3A9E398F8BC239FB346B9EDF1FB3C5CEB35B5F1",
+      "path": "artifacts\\latest\\visible-trade-proof\\vtp-20260726-054722-126\\capsule\\proof.json",
+      "sourcePath": ""
+    },
+    {
+      "name": "events.jsonl",
+      "sha256": "FECFE6D54B5BDCFB35896FFE7D23C2094BEF25EDC8AADCB5A99A88D645C44FE4",
+      "path": "artifacts\\latest\\visible-trade-proof\\vtp-20260726-054722-126\\capsule\\events.jsonl",
+      "sourcePath": ""
+    },
+    {
+      "name": "handoff.md",
+      "sha256": "E7DD71DCC3EACF1E6BA43C2D58AB7DE035AC1CA199831799114B3BEE5187DC30",
+      "path": "artifacts\\latest\\visible-trade-proof\\vtp-20260726-054722-126\\capsule\\handoff.md",
+      "sourcePath": ""
+    }
+  ]
+}
