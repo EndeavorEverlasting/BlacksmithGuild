@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.version-upgrade-impact",
+  "displayName": "Version Upgrade Impact Harness Validation",
+  "ownerLane": "harness/version-upgrade-impact",
+  "sourcePath": "scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": ["core.save-compatibility"],
+  "timeoutSeconds": 180,
+  "mutationClass": "temp_fixture_only",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Fixture-reduces upgrade findings, owner routing, sprint packets, and explicit remote-publication boundaries only; it does not prove a real candidate build or live runtime compatibility.",
+  "tags": ["static", "contract", "version", "upgrade", "compatibility", "sprint", "harness", "core"],
+  "triggerInterests": ["game.compatibility.observed", "game.version.changed", "candidate.build.failed"],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "version-upgrade-impact-probe"}
+}
