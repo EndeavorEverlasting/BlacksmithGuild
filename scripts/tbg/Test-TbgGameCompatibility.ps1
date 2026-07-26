@@ -51,6 +51,7 @@ $scriptText = Get-Content -LiteralPath $scriptPath -Raw -Encoding UTF8
 foreach ($forbidden in @('ForgeReboot.cmd', 'Run-VisibleTradeProof.cmd', 'BlacksmithGuild_CommandInbox', 'Start-Process')) {
     Assert-Tbg -Condition (-not $scriptText.Contains($forbidden)) -Message "Compatibility implementation must not contain runtime action '$forbidden'."
 }
+Assert-Tbg -Condition (-not $scriptText.Contains('Get-FileHash')) -Message 'Compatibility implementation must not depend on the optional Microsoft.PowerShell.Utility Get-FileHash command.'
 
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ('tbg-game-compatibility-' + [Guid]::NewGuid().ToString('N'))
 try {
