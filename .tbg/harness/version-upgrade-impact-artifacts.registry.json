@@ -1,0 +1,29 @@
+{
+  "schema": "TbgVersionUpgradeImpactArtifactsRegistry.v1",
+  "workflow": "version-upgrade-impact-probe",
+  "latestRoot": "artifacts/latest/version-upgrade-impact",
+  "runRoot": "artifacts/latest/version-upgrade-impact/runs/<runId>",
+  "resultSchema": ".tbg/harness/schemas/version-upgrade-impact-result.schema.json",
+  "artifacts": [
+    {"id": "result", "fileName": "version-upgrade-impact.result.json", "required": true, "contains": ["baselineVersion", "candidateVersion", "terminalState", "findings", "sprintCandidates", "proofCeiling"]},
+    {"id": "report", "fileName": "version-upgrade-impact.report.md", "required": true, "contains": ["upgrade verdict", "probe findings", "actionable sprints", "claims not made"]},
+    {"id": "sprintPacket", "fileName": "version-upgrade-impact.sprint-packet.json", "required": true, "contains": ["candidateVersion", "sprints", "dependencyOrder"]},
+    {"id": "issueDraft", "fileName": "version-upgrade-impact.issue.md", "required": true, "contains": ["candidate version", "actionable sprint", "completion gate"]},
+    {"id": "sourceInventory", "fileName": "version-upgrade-impact.source-inventory.json", "required": true, "contains": ["assemblyReferences", "dynamicBindings"]},
+    {"id": "compilerLog", "fileName": "candidate-build.log", "required": false, "contains": ["dotnet build output"]}
+  ],
+  "findingFields": ["id", "probeFamily", "severity", "terminalState", "ownerLane", "summary", "evidence", "recommendedAction"],
+  "sprintFields": ["id", "owner", "dependency", "mission", "firstCommand", "expectedArtifact", "completionGate"],
+  "privacy": {
+    "absoluteCandidatePathsInRemoteDraft": false,
+    "secretsInRemoteDraft": false,
+    "compilerMessagesMayBeIncludedAfterRepoPathSanitization": true,
+    "rawGameBinariesCommitted": false
+  },
+  "remoteEmission": {
+    "default": "issue draft only",
+    "publisher": "scripts/tbg/Publish-TbgVersionUpgradeSprintPacket.ps1",
+    "explicitOperatorPublishRequired": true
+  },
+  "proofBoundary": "Artifacts classify static/build upgrade risk. They do not prove launcher acceptance, save load, campaign readiness, gameplay behavior, or live runtime compatibility."
+}
