@@ -1,0 +1,71 @@
+{
+  "id": "disposable-save-live-cert",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "disposable-save-priority-engine-cert",
+  "contextBanner": "[TBG | disposable-save-live-cert | lane: route-visible-trade | protected runtime]",
+  "lane": "runtime/priority-engine-live-cert",
+  "operatorEntry": "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1",
+  "purpose": "Gate priority-engine runtime work to an explicitly authorized, pinned disposable save whose actual bytes pass the canonical exact save/game version classifier. The current implementation can reach launcher proof only; the existing priority engine is a single-priority dispatcher, so full Land -> Survive -> Purchase -> Travel -> Sell behavior proof remains a successor runtime workflow.",
+  "proofLevel": "launcher",
+  "requiresInactiveRuntime": true,
+  "requiresForgeStopFirst": false,
+  "writesRuntimeState": true,
+  "mutationAuthority": {
+    "requiresExplicitFlag": "-AllowDisposableSaveMutation",
+    "requiresActiveDisposablePin": ".local/disposable-save.active.json",
+    "pinMustSatisfyPolicy": ".tbg/harness/policies/disposable-save.policy.json",
+    "saveCompatibilityGate": "scripts/tbg/Invoke-TbgSaveCompatibility.ps1",
+    "requiredSaveCompatibilityState": "PASS_SAVE_VERSION_EXACT",
+    "runtimeGateMirror": "src/BlacksmithGuild/SaveSafety/SaveSafetyClassifier.cs"
+  },
+  "allowedScope": [
+    "read Git metadata",
+    "read disposable-save policy, registry, and active pin",
+    "read the pinned save bytes through the canonical save-compatibility classifier",
+    "reject a pinned save unless its role and exact version are automation eligible",
+    "invoke the canonical launcher lifecycle without force-stopping an ambiguous or human-owned runtime",
+    "name the first priority-engine command without representing dispatch as behavior proof",
+    "write gitignored classification and launcher-gate result artifacts"
+  ],
+  "forbiddenScope": [
+    "mutate any save that is not the approved disposable pin",
+    "launch or mutate without -AllowDisposableSaveMutation",
+    "treat filename, calendar year, or registry cohort as version proof",
+    "force-stop an active or ambiguously owned Bannerlord session",
+    "blast multiple priority commands without same-run acknowledgement between them",
+    "claim observed priority-engine behavior from command dispatch alone",
+    "promote launcher or command acknowledgement into trade/runtime proof"
+  ],
+  "requiredArtifacts": [
+    "artifacts/latest/disposable-save/disposable-save-classification.result.json",
+    "artifacts/latest/save-compatibility/save-compatibility.result.json",
+    "artifacts/latest/disposable-save/disposable-save-live-cert.result.json"
+  ],
+  "validationCommands": [
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgDisposableSaveRegistry.ps1",
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgSaveCompatibility.ps1",
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgEndToEndHarness.ps1"
+  ],
+  "terminalStates": [
+    "BLOCKED_mutation_authority_absent",
+    "BLOCKED_disposable_pin_missing",
+    "BLOCKED_pinned_save_missing",
+    "BLOCKED_pinned_save_not_disposable",
+    "BLOCKED_save_compatibility_gate",
+    "BLOCKED_bannerlord_root_unresolved",
+    "BLOCKED_launcher_component_missing",
+    "BLOCKED_launcher_admission_failed",
+    "BLOCKED_launch_intent_failed",
+    "BLOCKED_launcher_navigation_failed",
+    "ATTENTION_priority_engine_behavior_proof_pending"
+  ],
+  "successorGate": {
+    "ownerLane": "route-visible-trade",
+    "firstCommand": "pwsh -NoProfile -File scripts/tbg/Invoke-TbgPriorityEngine.ps1 -Priority Land -RepoRoot <repo-root>",
+    "requiredBehavior": "same-run ordered priority acknowledgements and fresh observed gameplay deltas before advancing through Survive, Purchase, Travel, and Sell",
+    "proofTarget": "live runtime"
+  },
+  "proofBoundary": "This workflow currently proves only disposable-save admission plus the canonical launcher path. Exact save classification and launcher success are lower proof levels. Full priority-engine live-runtime certification remains unproven until a successor workflow observes the ordered five-stage behavior chain in the same run.",
+  "resultSchema": "TbgDisposableSaveLiveCertResult.v1"
+}

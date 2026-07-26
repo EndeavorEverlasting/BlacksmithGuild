@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using BlacksmithGuild.DevTools.Automation;
+using BlacksmithGuild.SaveSafety;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
@@ -102,6 +103,13 @@ namespace BlacksmithGuild.MapTrade
             if (settlement == null || item == null || quantity <= 0)
             {
                 detail = "settlement, item, or quantity invalid";
+                return false;
+            }
+
+            if (!SaveSafetyClassifier.IsMutationAllowed(out var saveSafetyReason))
+            {
+                detail = saveSafetyReason;
+                AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.TradeBlocked, reason: detail);
                 return false;
             }
 

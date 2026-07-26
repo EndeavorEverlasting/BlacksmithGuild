@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.disposable-save-registry",
+  "displayName": "Disposable Save Registry Harness Validation",
+  "ownerLane": "harness/save-compatibility",
+  "sourcePath": "scripts/tbg/Test-TbgDisposableSaveRegistry.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgDisposableSaveRegistry.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": ["core.save-compatibility"],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates disposable-save cohort, artifact, exact-version delegation, runtime mutation chokepoint, and live-cert safety wiring only; it does not inspect real save bytes or launch Bannerlord.",
+  "tags": ["static", "contract", "save", "disposable", "compatibility", "harness", "core"],
+  "triggerInterests": ["save.discovered", "save.disposable.selected", "launcher.preflight", "priority-engine.requested"],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "disposable-save-registry"}
+}
