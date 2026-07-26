@@ -206,24 +206,25 @@ foreach ($path in @($paths.ToArray())) {
     }
     $before = Get-Item -LiteralPath $path
     $beforeWrite = $before.LastWriteTimeUtc
-    $beforeAccess = $before.LastAccessTimeUtc
-    $sha256 = Get-TbgSaveSha256 -LiteralPath $path
+    $beforeLength = [long]$before.Length
+    $beforeHash = Get-TbgSaveSha256 -LiteralPath $path
     $parsed = Get-TbgParsedSaveVersion -LiteralPath $path -Registry $registry
     $role = Get-TbgSaveRole -LeafName $before.Name -Registry $registry
     $comparison = Compare-TbgSaveToGameVersion -SaveVersion $parsed.version -ExactGameVersion $exactGameVersion -ParseStatus $parsed.status
     $roleEligible = @('approved_alias','disposable_candidate') -contains $role
     $autoLoadEligible = ($comparison.terminalState -eq 'PASS_SAVE_VERSION_EXACT') -and $roleEligible
     $after = Get-Item -LiteralPath $path
-    if ($after.LastWriteTimeUtc -ne $beforeWrite -or $after.LastAccessTimeUtc -ne $beforeAccess) {
-        throw "Read-only contract violated while inspecting $($before.Name): file timestamps changed."
+    $afterHash = Get-TbgSaveSha256 -LiteralPath $path
+    if ($after.LastWriteTimeUtc -ne $beforeWrite -or [long]$after.Length -ne $beforeLength -or $afterHash -ne $beforeHash) {
+        throw "Read-only contract violated while inspecting $($before.Name): bytes, length, or write timestamp changed."
     }
     $record = [pscustomobject][ordered]@{
         path = $path
         leafName = $before.Name
         exists = $true
         role = $role
-        length = [long]$before.Length
-        sha256 = $sha256
+        length = $beforeLength
+        sha256 = $beforeHash
         lastWriteUtc = $beforeWrite.ToString('o')
         parseStatus = $parsed.status
         parsedSaveVersion = $parsed.version
@@ -300,15 +301,15 @@ $result | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encod
 $reportLines = New-Object System.Collections.Generic.List[string]
 $reportLines.Add('# Save compatibility report') | Out-Null
 $reportLines.Add('') | Out-Null
-$reportLines.Add("- Terminal state: `$terminalState`") | Out-Null
-$reportLines.Add("- Mode: `$Mode`") | Out-Null
-$reportLines.Add("- Game version: `$exactGameVersion`") | Out-Null
-$reportLines.Add("- Proof ceiling: `$proofCeiling`") | Out-Null
-$reportLines.Add("- Approved alias pair: `$pairState`") | Out-Null
+$reportLines.Add(('- Terminal state: `{0}`' -f $terminalState)) | Out-Null
+$reportLines.Add(('- Mode: `{0}`' -f $Mode)) | Out-Null
+$reportLines.Add(('- Game version: `{0}`' -f $exactGameVersion)) | Out-Null
+$reportLines.Add(('- Proof ceiling: `{0}`' -f $proofCeiling)) | Out-Null
+$reportLines.Add(('- Approved alias pair: `{0}`' -f $pairState)) | Out-Null
 $reportLines.Add('') | Out-Null
 $reportLines.Add('## Save classifications') | Out-Null
 foreach ($record in @($records.ToArray())) {
-    $reportLines.Add("- `$($record.leafName)`: role=`$($record.role)` saveVersion=`$($record.parsedSaveVersion)` state=`$($record.terminalState)` sha256=`$($record.sha256)`") | Out-Null
+    $reportLines.Add(('- `{0}`: role=`{1}` saveVersion=`{2}` state=`{3}` sha256=`{4}`' -f $record.leafName, $record.role, $record.parsedSaveVersion, $record.terminalState, $record.sha256)) | Out-Null
 }
 $reportLines.Add('') | Out-Null
 $reportLines.Add('## Next executable gate') | Out-Null
