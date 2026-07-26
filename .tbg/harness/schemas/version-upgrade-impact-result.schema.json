@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "TbgVersionUpgradeImpactResult.v1",
+  "title": "BlacksmithGuild version upgrade impact result",
+  "type": "object",
+  "required": ["schema", "generatedUtc", "runId", "mode", "baselineVersion", "candidateVersion", "terminalState", "proofCeiling", "findings", "sprintCandidates", "evidencePaths"],
+  "properties": {
+    "schema": {"const": "TbgVersionUpgradeImpactResult.v1"},
+    "generatedUtc": {"type": "string"},
+    "runId": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["inventory", "candidate", "fixture"]},
+    "baselineVersion": {"type": ["string", "null"]},
+    "candidateVersion": {"type": ["string", "null"]},
+    "versionChanged": {"type": "boolean"},
+    "terminalState": {"type": "string"},
+    "proofCeiling": {"const": "candidate static/build compatibility"},
+    "candidateBuild": {"type": "object"},
+    "findings": {"type": "array", "items": {"type": "object", "required": ["id", "probeFamily", "severity", "terminalState", "ownerLane", "summary", "recommendedAction"]}},
+    "sprintCandidates": {"type": "array", "items": {"type": "object", "required": ["id", "owner", "dependency", "mission", "firstCommand", "expectedArtifact", "completionGate"]}},
+    "evidencePaths": {"type": "object", "required": ["result", "report", "sprintPacket", "issueDraft", "sourceInventory"]}
+  }
+}
