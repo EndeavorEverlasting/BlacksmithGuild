@@ -1,5 +1,8 @@
 ﻿[CmdletBinding()]
-param([string]$RepoRoot)
+param(
+    [string]$RepoRoot,
+    [string]$OutputRoot
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -8,6 +11,12 @@ if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
     $RepoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 }
 $RepoRoot = [IO.Path]::GetFullPath($RepoRoot)
+if (-not [string]::IsNullOrWhiteSpace($OutputRoot)) {
+    $OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
+    if (-not (Test-Path -LiteralPath $OutputRoot -PathType Container)) {
+        New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
+    }
+}
 
 $failures = [System.Collections.Generic.List[string]]::new()
 function Fail([string]$Message) { $failures.Add($Message) | Out-Null }
@@ -27,6 +36,18 @@ function Read-Text([string]$RelativePath) {
         return ''
     }
     return Get-Content -LiteralPath $path -Raw -Encoding UTF8
+}
+function Write-ValidationResult([string]$Status) {
+    if ([string]::IsNullOrWhiteSpace($OutputRoot)) { return }
+    [ordered]@{
+        schema = 'TbgDisposableSaveRegistryValidationResult.v1'
+        generatedUtc = [DateTime]::UtcNow.ToString('o')
+        status = $Status
+        supportedGameVersionPrefix = if ($gameRegistry) { [string]$gameRegistry.repoSupportedBuild.gameVersionPrefix } else { $null }
+        failureCount = $failures.Count
+        failures = @($failures.ToArray())
+        proofCeiling = 'static disposable-save registry, save-compatibility delegation, and runtime mutation-gate wiring'
+    } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $OutputRoot 'validation-result.json') -Encoding UTF8
 }
 
 $registry = Read-Json '.tbg/state/disposable-save.registry.json'
@@ -84,6 +105,7 @@ foreach ($needle in @('Invoke-TbgSaveCompatibility.ps1','targetGateTerminalState
     if ($liveCertText -notmatch [regex]::Escape($needle)) { Fail "live cert missing safety marker: $needle" }
 }
 if ($liveCertText -match 'ForgeStop\.cmd.*force') { Fail 'live cert must not force-stop an active/ambiguous runtime' }
+if ($liveCertText -match 'PASS_priority_engine_live_on_exact_version_disposable_save') { Fail 'live cert must not advertise full behavior PASS before a same-run behavior observer exists' }
 
 foreach ($needle in @('CampaignSetupStateTracker.DevSaveName','SaveSafetyClass.Disposable','prelaunch_exact_version_gate_required')) {
     if ($classifierText -notmatch [regex]::Escape($needle)) { Fail "runtime classifier missing marker: $needle" }
@@ -109,14 +131,17 @@ if ($catalog) {
 if ($workflow) {
     if ([string]$workflow.mutationAuthority.saveCompatibilityGate -ne 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1') { Fail 'workflow must name canonical save compatibility gate' }
     if ($workflow.requiresForgeStopFirst -eq $true) { Fail 'workflow must not require automated ForgeStop; active runtime ownership is a separate launcher gate' }
+    if ([string]$workflow.proofLevel -ne 'launcher') { Fail 'current live-cert workflow proof level must remain launcher until a behavior observer exists' }
 }
 
 if ($failures.Count -gt 0) {
+    Write-ValidationResult -Status 'FAIL'
     Write-Host 'FAIL_disposable_save_registry_contract'
     foreach ($failure in $failures) { Write-Host " - $failure" }
     exit 1
 }
 
+Write-ValidationResult -Status 'PASS'
 Write-Host 'PASS_disposable_save_registry_contract'
 Write-Host "supportedVersion=$($gameRegistry.repoSupportedBuild.gameVersionPrefix)"
 Write-Host "patterns=$(@($registry.namePatterns).Count) cohorts=$(@($registry.cohorts).Count)"
