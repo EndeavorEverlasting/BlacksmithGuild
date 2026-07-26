@@ -9,10 +9,11 @@ Use this skill when a sprint asks whether the app should become more harness-dri
 - A domain behavior is becoming hard to audit because config, permissions, logging, retries, rollback, or evidence are mixed into it.
 - An agent proposes moving logic because the app should be closer to a high-harness automation-first architecture.
 - A sprint adds composed E2E profiles, artifact registration, sprint capsules, or AgentSwitchboard/SysAdminSuite consumer handoffs.
+- Save/version drift is blocking multiple launcher/runtime workflows and needs one read-only compatibility classifier, artifact shape, and consumer gate instead of repeated model judgment.
 
 ## Do not use when
 
-- The sprint is implementing route, trade, smithing, save, launcher, or runtime behavior.
+- The sprint is implementing route, trade, smithing, save mutation, launcher actuation, or runtime behavior.
 - The only goal is to increase a harness percentage.
 - The change would hide game or economy behavior inside generic plumbing.
 - Static harness changes would be used to claim live runtime proof.
@@ -28,6 +29,7 @@ Use this skill when a sprint asks whether the app should become more harness-dri
 7. `docs/architecture/harness-skill-maturity.md`
 8. `docs/architecture/local-agent-harness.md`
 9. `docs/architecture/effective-policy-english-reports.md`
+10. `.tbg/workflows/save-compatibility-classification.contract.json` when save/version compatibility is the cross-cutting blocker
 
 ## Owned scope
 
@@ -36,6 +38,7 @@ Use this skill when a sprint asks whether the app should become more harness-dri
 - `.tbg/harness/manifest.json`
 - `.tbg/harness/e2e/**`, consumer registries, operation APIs, artifact roles, and their schemas
 - `scripts/tbg/*EndToEnd*` and `scripts/tbg/*SprintCapsule*`
+- read-only compatibility adapters and validators under `scripts/tbg/**` when they do not launch, load, mutate, or promote runtime proof
 - `AGENTS.md`, `CLAUDE.md`, and `CODEBASE_MAP.md` when routing agents to canonical authorities
 - Architecture docs that explain harness versus skill/domain boundaries
 
@@ -53,9 +56,20 @@ Classify each proposed movement as one of three outcomes.
 
 | Outcome | Use when | Examples |
 |---|---|---|
-| `harness` | The logic is cross-cutting and protects multiple workflows, agents, runners, or engines. | config loading, dependency injection, capability routing, permission gates, evidence capture, retries, rollback, metrics, English/JSON reporting, UI shims, schemas, adapters. |
-| `skill_or_domain` | The logic is stateless, side-effect-free, or domain-specific. | route scoring, smithing advice, market math, save-identity interpretation, economy rules, focused validators. |
+| `harness` | The logic is cross-cutting and protects multiple workflows, agents, runners, or engines. | config loading, dependency injection, capability routing, permission gates, evidence capture, retries, rollback, metrics, English/JSON reporting, UI shims, schemas, adapters, save/game compatibility registries and consumer gates. |
+| `skill_or_domain` | The logic is stateless, side-effect-free, or domain-specific. | route scoring, smithing advice, market math, save-byte/version interpretation, economy rules, focused validators. |
 | `defer_or_reject` | The change is only percentage chasing, crosses forbidden runtime scope, or adds ceremony without solving drift/safety/replay/audit load. | generic plugin framework without recurring duplication, moving gameplay decisions into harness wrappers, broad rewrite before a pain point is proven. |
+
+### Save compatibility split
+
+When save versions are the blocker, split responsibility deliberately:
+
+1. **Harness** owns discovery contracts, role/version classifications, artifact shapes, terminal states, proof ceilings, and the launcher consumer gate.
+2. **Narrow save-domain helper** may read bytes and interpret version metadata, but remains side-effect-free and read-only.
+3. **Launcher-lifecycle** owns selecting/loading an already-classified target and proving the in-game load boundary.
+4. **Runtime** owns creating or overwriting a save. After creation, the read-only classifier records the new bytes/version before that save can be reused automatically.
+
+A filename such as `Disposable` or `DevStart` is role metadata only and never overrides the version gate.
 
 ## Done gate
 
@@ -78,6 +92,8 @@ A harness maturity sprint is done only when:
 - Adding a plugin registry before two or more real skill families need it.
 - Forgetting that docs and skills explain contracts; they do not become a second policy engine.
 - Replacing the mature `.tbg` router with a client-specific directory tree.
+- Treating a disposable-looking filename as proof that the file is compatible with the installed game.
+- Letting a successful prelaunch parse masquerade as proof that Bannerlord actually loaded the save.
 
 ## Handoff output
 
