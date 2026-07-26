@@ -196,6 +196,14 @@ observer.window.started
 
 Missing successor events, a changed run or correlation ID, premature window-observer retirement, an unreconciled observer gap, or a readiness trigger fired from lower proof must fail closed. The canonical specialization is `.tbg/workflows/launcher-to-campaign-event-continuity.contract.json`.
 
+## Automation-first assistance, user takeover, and observable handoffs
+
+Campaign readiness makes a session eligible for automation; it does not grant gameplay authority. After a task-specific workflow grants gameplay authority and `EngineToggleAuthority` resolves Automation for the current owned session, the product default is hands-off assistance: enabled, bounded travel, settlement entry, trade, provisioning and capacity work, smithing preparation, and other repetitive or difficult campaign mechanisms proceed without a per-phase hotkey or confirmation. Every domain safety gate and real-delta proof requirement still applies.
+
+The player may jump in at any time. An explicit takeover signal, Manual-mode change, assist-toggle off, or stop or hold request preempts new autonomous dispatch. The current owner must acknowledge the operator-to-system handoff, reach a safe hold or the workflow-declared clean finalization, preserve the current and next intended phase and priority, and leave the live game process untouched unless separate process-stop authority was granted. Any resume must re-read fresh state, campaign readiness, and engine and task authority before dispatch.
+
+A phase or priority selection is a handoff, not an internal assignment. The existing `branch` field is the canonical priority vocabulary. Every change must append a same-run, same-correlation handoff satisfying `.tbg/workflows/runtime-context-continuity.contract.json#handoffContinuity`, including phase, branch, source and target engine, authority, status, timestamps, evidence references, and next-engine hint. A dispatch needs a matching completed, blocked, failed, or aborted record; ACK alone is not completion. Missing, stale, mismatched, or orphaned handoff evidence blocks a phase or priority success claim.
+
 ## Crash observability and negative evidence
 
 Crash-sensitive engine calls, API calls, and state transitions must be reconstructable from correlated evidence rather than guessed from the last log line.

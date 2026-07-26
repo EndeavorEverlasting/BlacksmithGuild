@@ -36,8 +36,10 @@ namespace BlacksmithGuild.DevTools
         {
             GameSessionState.SyncForgeStatus();
 
-            var commandId = System.Guid.NewGuid().ToString("N");
-            EmitCommandEvent(AutomationRuntimeEventEmitter.CommandReceived, commandId, commandName);
+            var commandId = !string.IsNullOrWhiteSpace(payload?.CommandId)
+                ? payload.CommandId
+                : System.Guid.NewGuid().ToString("N");
+            EmitCommandEvent(AutomationRuntimeEventEmitter.CommandReceived, commandId, commandName, context: payload);
 
             DebugLogger.Test(
                 $"Command received: {commandName} (source: {source})",
@@ -101,7 +103,7 @@ namespace BlacksmithGuild.DevTools
 
             DebugLogger.Test($"Command started: {commandName}", showInGame: false);
             RuntimeLifecycleWriter.RecordCommandStarted(commandName, sequence);
-            EmitCommandEvent(AutomationRuntimeEventEmitter.CommandStarted, commandId, commandName);
+            EmitCommandEvent(AutomationRuntimeEventEmitter.CommandStarted, commandId, commandName, context: payload);
 
             var result = Execute(commandName, payload);
             EmitCommandEvent(
@@ -110,7 +112,8 @@ namespace BlacksmithGuild.DevTools
                     : AutomationRuntimeEventEmitter.CommandFailed,
                 commandId,
                 commandName,
-                result);
+                result,
+                context: payload);
             ForgeStatus.RecordCommand(commandName, source, result.ToString(), null, sequence);
             CertificationTracker.OnCommandResult(commandName, result);
             Sprint002CertificationTracker.OnCommandResult(commandName, result);
@@ -226,6 +229,12 @@ namespace BlacksmithGuild.DevTools
                 commandName == CampaignRuntimeGovernor.ShowCampaignGovernorDecisionCommand ||
                 commandName == CampaignRuntimeGovernor.PauseCampaignGovernorAutomationCommand ||
                 commandName == CampaignRuntimeGovernor.ResumeCampaignGovernorAutomationCommand ||
+                commandName == SaveIdentityReportService.ReportSaveIdentityNowCommand ||
+                commandName == EngineToggleAuthority.ShowEngineToggleStateCommand ||
+                commandName == EngineToggleAuthority.CycleEngineToggleModeCommand ||
+                commandName == EngineToggleAuthority.SetEngineToggleManualCommand ||
+                commandName == EngineToggleAuthority.SetEngineToggleHybridCommand ||
+                commandName == EngineToggleAuthority.SetEngineToggleAutomationCommand ||
                 commandName == CampaignRuntimeRegent.ShowRuntimeRegentStateCommand ||
                 commandName == CampaignRouteCouncil.ConveneRouteCouncilCommand ||
                 commandName == CampaignRouteCouncil.ShowRouteCouncilCommand ||
@@ -687,6 +696,18 @@ namespace BlacksmithGuild.DevTools
                     return CampaignRuntimeGovernor.ResumeAutomation("command")
                         ? DevCommandResult.Success
                         : DevCommandResult.Failed;
+                case SaveIdentityReportService.ReportSaveIdentityNowCommand:
+                    return SaveIdentityReportService.ReportNow(payload, commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Blocked;
+                case EngineToggleAuthority.ShowEngineToggleStateCommand:
+                case EngineToggleAuthority.CycleEngineToggleModeCommand:
+                case EngineToggleAuthority.SetEngineToggleManualCommand:
+                case EngineToggleAuthority.SetEngineToggleHybridCommand:
+                case EngineToggleAuthority.SetEngineToggleAutomationCommand:
+                    return EngineToggleAuthority.RunCommand(commandName, commandName)
+                        ? DevCommandResult.Success
+                        : DevCommandResult.Failed;
                 case CampaignRuntimeRegent.ShowRuntimeRegentStateCommand:
                     return CampaignRuntimeRegent.ShowNow()
                         ? DevCommandResult.Success
@@ -974,16 +995,27 @@ namespace BlacksmithGuild.DevTools
             string commandId,
             string commandName,
             DevCommandResult? result = null,
-            string reason = null)
+            string reason = null,
+            AssistiveCommandInboxPayload context = null)
         {
             var payload = "{\"commandId\":\"" + JsonEscape(commandId)
                 + "\",\"command\":\"" + JsonEscape(commandName) + "\""
+                + ",\"runId\":" + JsonString(context?.RunId)
+                + ",\"correlationId\":" + JsonString(context?.CorrelationId)
+                + ",\"requestedUtc\":" + JsonString(context?.RequestedUtc)
                 + (result.HasValue ? ",\"result\":\"" + result.Value + "\"" : string.Empty)
                 + "}";
-            AutomationRuntimeEventEmitter.Emit(type, reason: reason, payloadJson: payload);
+            AutomationRuntimeEventEmitter.Emit(
+                type,
+                sessionId: context?.RunId,
+                reason: reason,
+                payloadJson: payload);
         }
 
         private static string JsonEscape(string value) =>
             (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+
+        private static string JsonString(string value) =>
+            value == null ? "null" : "\"" + JsonEscape(value) + "\"";
     }
 }

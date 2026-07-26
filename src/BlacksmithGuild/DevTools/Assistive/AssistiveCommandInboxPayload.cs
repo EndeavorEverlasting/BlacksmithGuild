@@ -6,6 +6,10 @@ namespace BlacksmithGuild.DevTools.Assistive
     {
         public bool? ExecuteRequested { get; set; }
         public string TargetSettlement { get; set; }
+        public string CommandId { get; set; }
+        public string RunId { get; set; }
+        public string CorrelationId { get; set; }
+        public string RequestedUtc { get; set; }
 
         public static bool TryParseFromJson(string json, out AssistiveCommandInboxPayload payload)
         {
@@ -33,7 +37,21 @@ namespace BlacksmithGuild.DevTools.Assistive
                 payload.TargetSettlement = targetMatch.Groups[1].Value;
             }
 
+            payload.CommandId = ReadString(json, "commandId");
+            payload.RunId = ReadString(json, "runId");
+            payload.CorrelationId = ReadString(json, "correlationId");
+            payload.RequestedUtc = ReadString(json, "requestedUtc");
+
             return true;
+        }
+
+        private static string ReadString(string json, string propertyName)
+        {
+            var match = Regex.Match(
+                json,
+                "\"" + Regex.Escape(propertyName) + "\"\\s*:\\s*\"([^\"]+)\"",
+                RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value : null;
         }
     }
 }

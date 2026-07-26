@@ -1,4 +1,5 @@
 using System;
+using BlacksmithGuild.MapTrade;
 
 namespace BlacksmithGuild.CampaignRuntime.Adapters
 {
@@ -22,8 +23,24 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; trade action step is pending implementation", "trade_action_pending");
-                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Trade(request, "Use route and market evidence to prepare a future trade step without changing inventory or gold."));
+                if (MapTradeAutonomousService.TryStartGovernorTradeActivity(request, out var startDetail))
+                {
+                    var started = CampaignActivityDispatcher.Started(
+                        request,
+                        detail + "; " + startDetail);
+                    started.NarrativeDetails.Add(CampaignActivityEngineNarratives.Trade(
+                        request,
+                        "MapTrade route started; only a proven vanilla inventory/gold delta can reconcile this activity as completed."));
+                    return started;
+                }
+
+                var blocked = CampaignActivityDispatcher.Blocked(
+                    request,
+                    detail + "; " + (startDetail ?? MapTradeAutonomousService.LastFailReason ?? "MapTrade trade route did not start"),
+                    "map_trade_trade_start_blocked");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Trade(
+                    request,
+                    "Trade remained blocked and no inventory or gold mutation was claimed."));
                 return blocked;
             }
 

@@ -1,4 +1,5 @@
 using System;
+using BlacksmithGuild.MapTrade;
 
 namespace BlacksmithGuild.CampaignRuntime.Adapters
 {
@@ -21,8 +22,24 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
 
             if (request.MutationAuthorized)
             {
-                var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; travel action step is pending implementation", "travel_action_pending");
-                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Travel(request, "Prepare travel only after destination, visible map surface, and stop-condition evidence are present."));
+                if (MapTradeAutonomousService.TryStartGovernorTravelActivity(request, out var startDetail))
+                {
+                    var started = CampaignActivityDispatcher.Started(
+                        request,
+                        detail + "; " + startDetail);
+                    started.NarrativeDetails.Add(CampaignActivityEngineNarratives.Travel(
+                        request,
+                        "Visible MapTrade movement started; terminal arrival or blocked evidence will reconcile this governor activity."));
+                    return started;
+                }
+
+                var blocked = CampaignActivityDispatcher.Blocked(
+                    request,
+                    detail + "; " + (startDetail ?? MapTradeAutonomousService.LastFailReason ?? "MapTrade travel did not start"),
+                    "map_trade_travel_start_blocked");
+                blocked.NarrativeDetails.Add(CampaignActivityEngineNarratives.Travel(
+                    request,
+                    "Travel remained blocked and no movement-complete claim was emitted."));
                 return blocked;
             }
 

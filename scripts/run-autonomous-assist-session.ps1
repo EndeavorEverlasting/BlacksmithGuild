@@ -592,6 +592,7 @@ $isFullCampaignHandoff = ($CertProfile -eq 'full_campaign_handoff')
 $arrivalObserved = $false
 $townEntryObserved = $false
 $governorHandoffPresent = $false
+$governorHandoffStalled = $false
 $ordinaryTradeDone = $false
 $horseAcquisitionDone = $false
 $provisionAcquisitionDone = $false
@@ -713,8 +714,9 @@ while ((Get-Date) -lt $loopDeadline) {
         if (Test-Path -LiteralPath $guildLoopPath) {
             try {
                 $guildLoopJson = Get-Content -LiteralPath $guildLoopPath -Raw | ConvertFrom-Json
-                $handoffEv = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson $guildLoopJson
+                $handoffEv = Test-FullCampaignGovernorHandoffEvidence -GuildLoopJson $guildLoopJson -SinceUtc $tradeScopeSinceUtc
                 $governorHandoffPresent = [bool]$handoffEv.present
+                $governorHandoffStalled = [bool]$handoffEv.stalled
                 $latestHandoffChain = @($handoffEv.handoffs)
             } catch { }
         }
@@ -1079,6 +1081,7 @@ if ($isFullCampaignHandoff) {
         -ArrivalObserved:$arrivalObserved `
         -TownEntryObserved:$townEntryObserved `
         -GovernorHandoffPresent:$governorHandoffPresent `
+        -GovernorHandoffStalled:$governorHandoffStalled `
         -TradeIterations $tradeRowsFinal `
         -TradeScopeSinceUtc $tradeScopeSinceUtc `
         -TradeIterationTarget $TradeIterationTarget `
@@ -1140,6 +1143,7 @@ $summary = [ordered]@{
     arrivalObserved = [bool]$arrivalObserved
     townEntryObserved = [bool]$townEntryObserved
     governorHandoffPresent = [bool]$governorHandoffPresent
+    governorHandoffStalled = [bool]$governorHandoffStalled
     handoffChain = $latestHandoffChain
     highestProofLevel = $highestProofLevel
     movementProofClassification = $latestMovementUpdate.movementProofClassification

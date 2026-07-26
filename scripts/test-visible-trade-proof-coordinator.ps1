@@ -487,6 +487,37 @@ Test-Case 'Diagnostic mode exits with code 3' {
     Assert-True ($text.Contains('exitCode = 3') -or $text.Contains('exitCode=3')) 'Diagnostic mode must set exit code 3'
 }
 
+Test-Case 'Coordinator requires one exact disposable save for certifying mode' {
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' '[string]$DisposableSavePath'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'BLOCKED_DISPOSABLE_SAVE_PIN_REQUIRED'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'Set-GovernorActiveDisposableSavePin'
+}
+
+Test-Case 'Coordinator classifies pre-existing runtime and never force-kills it' {
+    $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\run-visible-trade-proof.ps1') -Raw
+    Assert-True ($text.Contains('Get-BannerlordProcessDetection')) 'Coordinator must use the standard Bannerlord detector'
+    Assert-True ($text.Contains('BLOCKED_RUNTIME_SESSION_AMBIGUOUS')) 'Coordinator must fail closed for an ambiguous existing session'
+    Assert-True (-not $text.Contains("forge-stop.ps1') -ForceKill")) 'Coordinator must not force-kill pre-existing Bannerlord processes'
+}
+
+Test-Case 'Coordinator requires stable complete campaign readiness' {
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'Wait-TbgStableCampaignReady'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' '-StabilitySeconds 60'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' '$status.session.canPollFileInbox'
+    Assert-Contains 'scripts\run-visible-trade-proof.ps1' '$status.session.mapReady'
+}
+
+Test-Case 'Coordinator uses exact save identity and correlated governor acknowledgement' {
+    $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\run-visible-trade-proof.ps1') -Raw
+    Assert-True ($text.Contains("Send-ForgeCommand -CommandName 'ReportSaveIdentityNow'")) 'Coordinator requests runtime save identity'
+    Assert-True ($text.Contains("Send-ForgeCommand -CommandName 'RunCampaignGovernorCycleNow'")) 'Coordinator commands the governor'
+    Assert-True ($text.Contains("'commandId' '') -eq `$routeCommandId")) 'Coordinator matches commandId'
+    Assert-True ($text.Contains("'runId' '') -eq `$runId")) 'Coordinator matches runId'
+    Assert-True ($text.Contains("'correlationId' '') -eq `$runId")) 'Coordinator matches correlationId'
+    Assert-True (-not $text.Contains('SetMapTradeAutomation')) 'Removed nonexistent MapTrade automation command'
+    Assert-True (-not $text.Contains('BlacksmithGuild_VisibleTradeCycle.json')) 'Removed nonexistent generic command-ack artifact'
+}
+
 # ═══════════════════════════════════════════════════════════════
 # 14. Show/Toggle surface
 # ═══════════════════════════════════════════════════════════════

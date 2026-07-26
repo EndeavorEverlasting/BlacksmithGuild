@@ -5,6 +5,7 @@ using BlacksmithGuild.DevTools.Diagnostics;
 using BlacksmithGuild.DevTools.Reporting;
 using BlacksmithGuild.Food;
 using BlacksmithGuild.HorseMarket;
+using BlacksmithGuild.MapTrade;
 
 namespace BlacksmithGuild.CampaignRuntime
 {
@@ -24,7 +25,14 @@ namespace BlacksmithGuild.CampaignRuntime
 
         public static void OnCampaignTick()
         {
-            if (!DevToolsConfig.CampaignRuntimeGovernorAutonomousMode || _paused)
+            if (!EngineToggleAuthority.IsAutomationEnabled(EngineToggleKey.Governor) || _paused)
+            {
+                return;
+            }
+
+            // The selected MapTrade activity owns the campaign-map ticks until it reaches
+            // a terminal state. Do not replace its correlated governor decision mid-route.
+            if (MapTradeAutonomousService.IsRunning)
             {
                 return;
             }
@@ -108,6 +116,40 @@ namespace BlacksmithGuild.CampaignRuntime
             _paused = false;
             InGameNotice.Success(ModDisplay.CompactLine("Governor", "automation resumed"));
             return true;
+        }
+
+        public static void ReconcileActivityResult(
+            CampaignActivityRequest request,
+            CampaignActivityResult result)
+        {
+            if (request == null || result == null)
+            {
+                return;
+            }
+
+            var decision = LastDecision;
+            if (decision?.ProposedActivity == null
+                || !string.Equals(
+                    decision.ProposedActivity.ActivityId,
+                    request.ActivityId,
+                    StringComparison.Ordinal))
+            {
+                DebugLogger.Test(
+                    "[TBG GOVERNOR] terminal activity result retained outside latest decision"
+                    + " activityId=" + request.ActivityId
+                    + " status=" + result.Status,
+                    showInGame: false);
+                return;
+            }
+
+            decision.LatestActivityResult = result;
+            decision.NextAction = string.Equals(
+                result.Status,
+                CampaignActivityStatus.Completed.ToString(),
+                StringComparison.OrdinalIgnoreCase)
+                ? "Activity completed; select the next priority."
+                : "Activity ended without completion; re-evaluate blockers before retry.";
+            CampaignRuntimeDecisionWriter.Write(decision);
         }
 
         private static CampaignRuntimeDecision BuildDecision(string source)
@@ -208,14 +250,14 @@ namespace BlacksmithGuild.CampaignRuntime
 
             if (HorseMarketAtlasService.IsMissingOrStale(out var atlasReason))
             {
-                Select(decision, CampaignRuntimePolicy.BranchRefreshHorseAtlas, atlasReason, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchRefreshHorseAtlas, atlasReason, true, null);
                 decision.NextAction = "RefreshHorseAtlas -> ScanHorseAtlas";
                 return;
             }
 
             if (HerdLedgerService.IsMissingOrStale(out var ledgerReason))
             {
-                Select(decision, CampaignRuntimePolicy.BranchAnalyzeHerdLedger, ledgerReason, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchAnalyzeHerdLedger, ledgerReason, true, null);
                 decision.NextAction = "AnalyzeHerdLedger";
                 return;
             }
@@ -226,22 +268,22 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
             }
 
-            if (decision.SmithingStatus == "ready_or_advisory")
-            {
-                Select(decision, CampaignRuntimePolicy.BranchSmithingReadiness, "smithing appears ready; bounded execution disabled by governor spine", false, null);
-                return;
-            }
-
             if (decision.TradeStatus.StartsWith("cached", StringComparison.OrdinalIgnoreCase)
                 && decision.TradeStatus.IndexOf("routes=0", StringComparison.OrdinalIgnoreCase) < 0)
             {
-                Select(decision, CampaignRuntimePolicy.BranchProfitableTrade, decision.TradeStatus, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchProfitableTrade, decision.TradeStatus, true, null);
                 return;
             }
 
             if (!string.IsNullOrWhiteSpace(decision.DestinationCandidate))
             {
-                Select(decision, CampaignRuntimePolicy.BranchTravelOpportunity, decision.DestinationCandidate, false, null);
+                Select(decision, CampaignRuntimePolicy.BranchTravelOpportunity, decision.DestinationCandidate, true, null);
+                return;
+            }
+
+            if (decision.SmithingStatus == "ready_or_advisory")
+            {
+                Select(decision, CampaignRuntimePolicy.BranchSmithingReadiness, "smithing appears ready for advisory review", false, null);
                 return;
             }
 
@@ -298,7 +340,13 @@ namespace BlacksmithGuild.CampaignRuntime
                 return;
 
             var branch = BranchForCouncilActivity(council.RecommendedActivity);
-            Select(decision, branch, "route council: " + council.RecommendedActivity, false, null);
+            Select(
+                decision,
+                branch,
+                "route council: " + council.RecommendedActivity,
+                string.Equals(branch, CampaignRuntimePolicy.BranchProfitableTrade, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(branch, CampaignRuntimePolicy.BranchTravelOpportunity, StringComparison.OrdinalIgnoreCase),
+                null);
             if (!string.IsNullOrWhiteSpace(council.RecommendedDestination))
                 decision.DestinationCandidate = council.RecommendedDestination;
         }
@@ -318,7 +366,9 @@ namespace BlacksmithGuild.CampaignRuntime
 
         private static void AttachProposedActivity(CampaignRuntimeDecision decision)
         {
-            var mutationAuthorized = DevToolsConfig.CampaignRuntimeGovernorAllowBoundedExecution && decision.Allowed;
+            var mutationAuthorized =
+                EngineToggleAuthority.IsBoundedExecutionAllowed(EngineToggleKey.Governor)
+                && decision.Allowed;
             var branch = decision.SelectedBranch;
             var rank = decision.PriorityRank;
             var reason = decision.SelectedReason;
@@ -328,13 +378,13 @@ namespace BlacksmithGuild.CampaignRuntime
                 case CampaignRuntimePolicy.BranchRefreshHorseAtlas:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "RefreshHorseAtlas", reason, rank, false, decision.CurrentTown, decision.HorseAtlasTopDestination);
                     decision.ProposedActivity.ExpectedProof = "run ScanHorseAtlas and refresh BlacksmithGuild_HorseAtlas.json before buy/sell; local verification required before buy/sell";
-                    decision.ProposedActivity.BlockedReason = "bounded execution disabled; next action: ScanHorseAtlas";
+                    decision.ProposedActivity.BlockedReason = null;
                     decision.ProposedActivity.Inputs.Add("horseAtlasVerdict=" + (decision.HorseAtlasVerdict ?? "missing"));
                     return;
                 case CampaignRuntimePolicy.BranchAnalyzeHerdLedger:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AnalyzeHerdLedger", reason, rank, false, decision.CurrentTown, decision.HorseAtlasTopDestination);
                     decision.ProposedActivity.ExpectedProof = "run AnalyzeHerdLedger and refresh BlacksmithGuild_HerdLedger.json before horse buy/sell";
-                    decision.ProposedActivity.BlockedReason = "bounded execution disabled; next action: AnalyzeHerdLedger";
+                    decision.ProposedActivity.BlockedReason = null;
                     decision.ProposedActivity.Inputs.Add("herdLedgerPosture=" + (decision.HerdLedgerPosture ?? "missing"));
                     return;
                 case CampaignRuntimePolicy.BranchFoodQuantity:
