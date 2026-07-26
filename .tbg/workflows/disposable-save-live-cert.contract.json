@@ -1,0 +1,67 @@
+{
+  "id": "disposable-save-live-cert",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "disposable-save-priority-engine-cert",
+  "contextBanner": "[TBG | disposable-save-live-cert | lane: route-visible-trade | protected runtime]",
+  "lane": "runtime/priority-engine-live-cert",
+  "operatorEntry": "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1",
+  "purpose": "Gate priority-engine runtime work to an explicitly authorized, pinned disposable save whose actual bytes pass the canonical exact save/game version classifier. Save-role classification and version compatibility remain separate authorities.",
+  "proofLevel": "live runtime",
+  "requiresInactiveRuntime": true,
+  "requiresForgeStopFirst": false,
+  "writesRuntimeState": true,
+  "mutationAuthority": {
+    "requiresExplicitFlag": "-AllowDisposableSaveMutation",
+    "requiresActiveDisposablePin": ".local/disposable-save.active.json",
+    "pinMustSatisfyPolicy": ".tbg/harness/policies/disposable-save.policy.json",
+    "saveCompatibilityGate": "scripts/tbg/Invoke-TbgSaveCompatibility.ps1",
+    "requiredSaveCompatibilityState": "PASS_SAVE_VERSION_EXACT",
+    "runtimeGateMirror": "src/BlacksmithGuild/SaveSafety/SaveSafetyClassifier.cs"
+  },
+  "allowedScope": [
+    "read Git metadata",
+    "read disposable-save policy, registry, and active pin",
+    "read the pinned save bytes through the canonical save-compatibility classifier",
+    "reject a pinned save unless its role and exact version are automation eligible",
+    "invoke the canonical launcher lifecycle without force-stopping an ambiguous or human-owned runtime",
+    "dispatch priority-engine work against the exact approved disposable save",
+    "write gitignored classification and runtime result artifacts"
+  ],
+  "forbiddenScope": [
+    "mutate any save that is not the approved disposable pin",
+    "launch or mutate without -AllowDisposableSaveMutation",
+    "treat filename, calendar year, or registry cohort as version proof",
+    "force-stop an active or ambiguously owned Bannerlord session",
+    "claim observed priority-engine behavior from command dispatch alone",
+    "promote launcher or command acknowledgement into trade/runtime proof"
+  ],
+  "requiredArtifacts": [
+    "artifacts/latest/disposable-save/disposable-save-classification.result.json",
+    "artifacts/latest/save-compatibility/save-compatibility.result.json",
+    "artifacts/latest/disposable-save/disposable-save-live-cert.result.json"
+  ],
+  "validationCommands": [
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgDisposableSaveRegistry.ps1",
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgSaveCompatibility.ps1",
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgEndToEndHarness.ps1",
+    "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1 -AllowDisposableSaveMutation"
+  ],
+  "terminalStates": [
+    "BLOCKED_mutation_authority_absent",
+    "BLOCKED_disposable_pin_missing",
+    "BLOCKED_pinned_save_missing",
+    "BLOCKED_pinned_save_not_disposable",
+    "BLOCKED_save_compatibility_gate",
+    "BLOCKED_bannerlord_root_unresolved",
+    "BLOCKED_launcher_component_missing",
+    "BLOCKED_launcher_admission_failed",
+    "BLOCKED_launch_intent_failed",
+    "BLOCKED_launcher_navigation_failed",
+    "BLOCKED_priority_engine_missing",
+    "ATTENTION_priority_engine_behavior_proof_pending",
+    "PASS_priority_engine_live_on_exact_version_disposable_save"
+  ],
+  "proofBoundary": "The workflow may reach live-runtime proof only when same-run behavior evidence proves the priority-engine outcome. Exact save classification, launcher success, and command dispatch are lower proof levels and must remain ATTENTION/BLOCKED until that behavior evidence exists.",
+  "resultSchema": "TbgDisposableSaveLiveCertResult.v1"
+}
