@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using BlacksmithGuild.DevTools;
 using BlacksmithGuild.Forge;
+using BlacksmithGuild.SaveSafety;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.Party;
@@ -76,6 +77,14 @@ namespace BlacksmithGuild.MapTrade
             if (mission == null)
             {
                 detail = "no mission";
+                return false;
+            }
+
+            if (!SaveSafetyClassifier.IsMutationAllowed(out var saveSafetyReason))
+            {
+                detail = saveSafetyReason;
+                LastProbeDetail = detail;
+                GuildLog.Info($"[TBG SAVESAFETY] buy mutation blocked: {detail}", showInGame: false);
                 return false;
             }
 
@@ -155,6 +164,13 @@ namespace BlacksmithGuild.MapTrade
 
         public static bool TryExecuteSell(MapTradeMission mission, out string detail)
         {
+            if (!SaveSafetyClassifier.IsMutationAllowed(out var saveSafetyReason))
+            {
+                detail = saveSafetyReason;
+                GuildLog.Info($"[TBG SAVESAFETY] sell mutation blocked: {detail}", showInGame: false);
+                return false;
+            }
+
             detail = "sell execution not implemented in 006C-1";
             return false;
         }

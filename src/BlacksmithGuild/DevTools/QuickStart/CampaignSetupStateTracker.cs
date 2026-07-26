@@ -93,6 +93,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
 
         public static string ActiveStateName => _lastActiveStateName;
 
+        public static string LoadedSaveName => _devSaveName;
+
         public static bool IsBootstrapArmed =>
             _bootstrapArmed && DevToolsConfig.AutoSkipCharacterCreation && !_setupComplete;
 

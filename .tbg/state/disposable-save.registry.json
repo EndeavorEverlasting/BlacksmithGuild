@@ -1,0 +1,79 @@
+{
+  "schema": "TbgDisposableSaveRegistry.v1",
+  "description": "Tracked, iterable registry of disposable-save cohorts and the TBG-owned canonical disposable save. Individual on-disk save files and paths are machine-local; this registry tracks the durable name patterns, cohorts, and the version family under which automated mutation is authorized. A fresh disposable save can be created by scripts/tbg/Update-TbgDisposableSaveRegistry.ps1 -CreateOwned without opening a new sprint.",
+  "policy": ".tbg/harness/policies/disposable-save.policy.json",
+  "activePinRelativePath": ".local/disposable-save.active.json",
+  "classificationArtifact": "artifacts/latest/disposable-save-classification.result.json",
+  "updater": "scripts/tbg/Update-TbgDisposableSaveRegistry.ps1",
+  "compatibility": {
+    "registry": ".tbg/state/game-compatibility.registry.json",
+    "supportedGameVersionPrefix": "1.4.7",
+    "note": "Automated mutation is authorized only for saves in the disposable cohort AND created under a supported game-version family. Calendar year alone is never disposable authority."
+  },
+  "namePatterns": [
+    "BlacksmithGuild_DevStart*.sav",
+    "BlacksmithGuildDevStart*.sav",
+    "BlacksmithGuild_Disposable_*.sav",
+    "TBG_Disposable_*.sav",
+    "Disposable*.sav",
+    "DISPOSABLE*.sav"
+  ],
+  "ownedCanonical": {
+    "id": "tbg-owned-devstart",
+    "leafName": "BlacksmithGuild_DevStart.sav",
+    "role": "canonical TBG-owned disposable save; DevSaveResolver prefix mirror",
+    "preferredRoot": ["Mount and Blade II Bannerlord", "Game Saves", "Native"],
+    "createPrefix": "BlacksmithGuild_Disposable_",
+    "note": "When a fresh owned save is needed, the updater creates BlacksmithGuild_Disposable_<timestamp>.sav and records it here; it is machine-local on disk but pattern-tracked here."
+  },
+  "cohorts": [
+    {
+      "id": "tbg-devstart",
+      "classification": "Disposable",
+      "match": ["BlacksmithGuild_DevStart*.sav", "BlacksmithGuildDevStart*.sav"],
+      "purpose": "Canonical dev-start disposable save for QuickStart/priority-engine automation.",
+      "knownMembers": ["BlacksmithGuildDevStart.sav", "BlacksmithGuild_DevStart.sav"]
+    },
+    {
+      "id": "tbg-disposable-generated",
+      "classification": "Disposable",
+      "match": ["BlacksmithGuild_Disposable_*.sav", "TBG_Disposable_*.sav"],
+      "purpose": "Agent-generated disposable saves created by the updater for isolated automation runs.",
+      "knownMembers": []
+    },
+    {
+      "id": "explicit-disposable-tests",
+      "classification": "Disposable",
+      "match": ["Disposable*.sav", "DISPOSABLE*.sav"],
+      "purpose": "Explicitly-named disposable test saves.",
+      "knownMembers": ["DISPOSABLECandidate002.sav", "DisposableCharcoalTest001.sav"]
+    },
+    {
+      "id": "personal-and-scratch",
+      "classification": "NonDisposable",
+      "match": [],
+      "purpose": "Operator personal, scratch, and named-milestone saves. Never eligible for automated mutation regardless of calendar year.",
+      "knownMembers": [
+        "blacksmith mechanics.sav",
+        "Costly Peace with Battania.sav",
+        "dev save.sav",
+        "Emi Battle.sav",
+        "f9 not fast forwarding.sav",
+        "finish money n Askar garrison.sav",
+        "last manual save right.sav",
+        "mf hotkeys working.sav",
+        "OrtysiaTestComplete.sav",
+        "save001.sav",
+        "saveauto1.sav",
+        "saveauto2.sav",
+        "saveauto3.sav",
+        "Showed Emi.sav",
+        "Siege on Bulgard.sav",
+        "TBG Session3 Pre Trade.sav",
+        "TBGPersonalAserai001 .sav",
+        "TBGPersonalAserai001.sav"
+      ]
+    }
+  ],
+  "proofBoundary": "Registry membership authorizes automation mutation of disposable-cohort saves only, and only under the supported game-version family. It is not launcher, campaign-ready, movement, or trade proof."
+}

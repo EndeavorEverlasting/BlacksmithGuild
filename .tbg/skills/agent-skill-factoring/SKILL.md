@@ -58,6 +58,32 @@ When resuming interrupted work, inspect the latest checkpoint, verify its file b
 
 A checkpoint proves preservation only. It does not prove correctness, completion, merge readiness, launcher behavior, or runtime behavior.
 
+## Lane router
+
+Full lane-to-skill routing table (kept here as conditional lane knowledge; AGENTS.md holds only a pointer). Route by lane and touched surface, not by agent alias.
+
+| Request or touched surface | Primary skill |
+|---|---|
+| harness doctrine, execution loop, action-commitment, agent rules | `harness-maturity` |
+| branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
+| root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
+| harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
+| local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
+| proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
+| ForgeStop, build/deploy/launch/Continue | `launcher-lifecycle` |
+| window lifecycle reduce/replay/quarantine | `window-lifecycle-runtime` |
+| campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |
+| hotkeys, toggles, command inbox, Manual/Assist/Autonomous | `operator-control-surface` |
+| commit, push, PR, concurrent completion, release gates | `implementation-completion` |
+| stale or stacked PR value recovery | `stale-pr-cherry-pick` |
+| Continuum capability export or extraction | `continuum-interoperability` |
+| long annotations, stale snapshots, retained insight | `compendium-preservation` |
+| external coordinators and agent-operation tools | `agentic-operations` |
+| WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
+| disposable-save registry, save classification, owned disposable save | `runtime-evidence-certification` + `harness-maturity` |
+
+Agent A/B/C/D names are compatibility aliases only. Map: A=Cert/Evidence/Git/PR; B=Runtime/Readiness; C=Launcher/lifecycle/window; D=Docs/atlas. Living boards: `docs/handoff/blacksmithguild-agent-coordination.md`, `docs/handoff/runtime-state-routing.md`.
+
 ## Owned scope
 
 - Root agent coordination language.

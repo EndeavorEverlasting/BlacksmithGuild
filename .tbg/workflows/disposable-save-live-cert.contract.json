@@ -1,0 +1,54 @@
+{
+  "id": "disposable-save-live-cert",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "trade-priority-engine-live-cert-v1",
+  "contextBanner": "[TBG | disposable-save-live-cert | lane: route-visible-trade | live runtime]",
+  "lane": "runtime/priority-engine-live-cert",
+  "operatorEntry": "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1",
+  "purpose": "Prove the priority engine (Land -> Survive -> Purchase -> Travel -> Sell) end-to-end on a disposable save only. This is the specific workflow contract the generic E2E runner defers to; generic harness flags cannot authorize disposable-save mutation.",
+  "proofLevel": "live runtime",
+  "requiresInactiveRuntime": true,
+  "requiresForgeStopFirst": true,
+  "writesRuntimeState": true,
+  "mutationAuthority": {
+    "requiresExplicitFlag": "-AllowDisposableSaveMutation",
+    "requiresActiveDisposablePin": ".local/disposable-save.active.json",
+    "pinMustSatisfyPolicy": ".tbg/harness/policies/disposable-save.policy.json",
+    "runtimeGateMirror": "src/BlacksmithGuild/SaveSafety/SaveSafetyClassifier.cs"
+  },
+  "allowedScope": [
+    "read Git metadata",
+    "read the disposable-save policy and active pin",
+    "validate the pinned save name against disposable-save name patterns",
+    "run ForgeStop before launch",
+    "launch Continue onto the pinned disposable save",
+    "drive the priority engine loop against the disposable save",
+    "mutate the pinned disposable save only",
+    "write gitignored reports and the result artifact"
+  ],
+  "forbiddenScope": [
+    "mutate any save that is not the approved disposable pin",
+    "launch or mutate without -AllowDisposableSaveMutation",
+    "treat calendar year alone as disposable authority",
+    "claim live-runtime proof when the priority engine did not run",
+    "run when Bannerlord is already active without ForgeStop first"
+  ],
+  "requiredArtifacts": [
+    "artifacts/latest/disposable-save-live-cert.result.json"
+  ],
+  "validationCommands": [
+    "scripts/tbg/Test-TbgEndToEndHarness.ps1",
+    "scripts/tbg/Test-TbgVersionCompatibility.ps1",
+    "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1 -AllowDisposableSaveMutation"
+  ],
+  "terminalStates": [
+    "PASS_priority_engine_live_on_disposable_save",
+    "ATTENTION_priority_engine_not_run",
+    "BLOCKED_mutation_authority_absent",
+    "BLOCKED_disposable_pin_missing",
+    "BLOCKED_pinned_save_not_disposable",
+    "BLOCKED_bannerlord_root_unresolved"
+  ],
+  "resultSchema": "TbgDisposableSaveLiveCertResult.v1"
+}

@@ -69,26 +69,7 @@ Incomplete proof is not automatically an execution prohibition. Prefer the stron
 
 ## Lane router
 
-| Request or touched surface | Primary skill |
-|---|---|
-| harness doctrine, execution loop, action-commitment, agent rules | `harness-maturity` |
-| branches, PRs, worktrees, conflicts, safe bases | `repo-floor-hygiene` |
-| root rules, manifests, prompts, skill design, refactoring plans | `agent-skill-factoring` |
-| harness placement, E2E profiles, sprint capsules, consumer handoffs | `harness-maturity` |
-| local artifact parsing, watcher, toggle, cascade | `local-artifact-engine` |
-| proof, freshness, loaded identity, claim discipline | `runtime-evidence-certification` |
-| ForgeStop, build/deploy/launch/Continue | `launcher-lifecycle` |
-| window lifecycle reduce/replay/quarantine | `window-lifecycle-runtime` |
-| campaign readiness, movement, arrival, buy/sell deltas | `route-visible-trade` |
-| hotkeys, toggles, command inbox, Manual/Assist/Autonomous | `operator-control-surface` |
-| commit, push, PR, concurrent completion, release gates | `implementation-completion` |
-| stale or stacked PR value recovery | `stale-pr-cherry-pick` |
-| Continuum capability export or extraction | `continuum-interoperability` |
-| long annotations, stale snapshots, retained insight | `compendium-preservation` |
-| external coordinators and agent-operation tools | `agentic-operations` |
-| WezTerm, tmux, Neovim, voice-input ergonomics | `operator-terminal-environment` |
-
-Agent A/B/C/D names are compatibility aliases only. Route by lane and skill. Map: A=Cert/Evidence/Git/PR; B=Runtime/Readiness; C=Launcher/lifecycle/window; D=Docs/atlas. Living boards: [`docs/handoff/blacksmithguild-agent-coordination.md`](docs/handoff/blacksmithguild-agent-coordination.md), [`docs/handoff/runtime-state-routing.md`](docs/handoff/runtime-state-routing.md). Runner owns evidence capture.
+Select one primary skill from `.tbg/skills/manifest.json` by lane and touched surface (for example `harness-maturity`, `repo-floor-hygiene`, `route-visible-trade`, `launcher-lifecycle`, `window-lifecycle-runtime`, `runtime-evidence-certification`). The full lane-to-skill routing table lives in `.tbg/skills/agent-skill-factoring/SKILL.md` (conditional lane knowledge belongs in skills, not this bootloader). Agent A/B/C/D names are compatibility aliases only. Living boards: [`docs/handoff/blacksmithguild-agent-coordination.md`](docs/handoff/blacksmithguild-agent-coordination.md), [`docs/handoff/runtime-state-routing.md`](docs/handoff/runtime-state-routing.md). Runner owns evidence capture.
 
 ## Current-state pointers
 
