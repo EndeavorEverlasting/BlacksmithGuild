@@ -1,0 +1,89 @@
+{
+  "schema": "TbgVersionUpgradeImpactFixtures.v1",
+  "cases": [
+    {
+      "id": "baseline_inventory_only",
+      "mode": "fixture",
+      "baselineVersion": "1.4.6.115628",
+      "candidateVersion": "1.4.6.115628",
+      "assemblyReferences": [
+        {"include": "TaleWorlds.Core", "exists": true},
+        {"include": "TaleWorlds.CampaignSystem", "exists": true}
+      ],
+      "compile": {"attempted": false, "exitCode": null, "errors": []},
+      "dynamicBindings": [],
+      "moduleDependencyDrift": [],
+      "expectedTerminalState": "PASS_UPGRADE_BASELINE_INVENTORIED",
+      "expectedSprintCount": 0
+    },
+    {
+      "id": "candidate_compile_break",
+      "mode": "fixture",
+      "baselineVersion": "1.4.6.115628",
+      "candidateVersion": "1.4.7.117484",
+      "assemblyReferences": [
+        {"include": "TaleWorlds.Core", "exists": true},
+        {"include": "TaleWorlds.CampaignSystem", "exists": true}
+      ],
+      "compile": {
+        "attempted": true,
+        "exitCode": 1,
+        "errors": [
+          {"file": "src/BlacksmithGuild/MapTrade/MapTradeTradeActionReflection.cs", "code": "CS0117", "message": "SellItemsAction does not contain a definition for Apply"}
+        ]
+      },
+      "dynamicBindings": [],
+      "moduleDependencyDrift": [],
+      "expectedTerminalState": "BLOCKED_VERSION_UPGRADE_GAPS",
+      "expectedSprintOwners": ["route-visible-trade", "harness/save-compatibility", "runtime-evidence-certification"]
+    },
+    {
+      "id": "candidate_missing_assembly",
+      "mode": "fixture",
+      "baselineVersion": "1.4.6.115628",
+      "candidateVersion": "1.4.7.117484",
+      "assemblyReferences": [
+        {"include": "TaleWorlds.Core", "exists": true},
+        {"include": "TaleWorlds.SaveSystem", "exists": false}
+      ],
+      "compile": {"attempted": false, "exitCode": null, "errors": []},
+      "dynamicBindings": [],
+      "moduleDependencyDrift": [],
+      "expectedTerminalState": "BLOCKED_VERSION_UPGRADE_GAPS",
+      "expectedSprintOwners": ["harness/game-version-observation", "harness/save-compatibility", "runtime-evidence-certification"]
+    },
+    {
+      "id": "candidate_dynamic_binding_review",
+      "mode": "fixture",
+      "baselineVersion": "1.4.6.115628",
+      "candidateVersion": "1.4.7.117484",
+      "assemblyReferences": [
+        {"include": "TaleWorlds.Core", "exists": true},
+        {"include": "TaleWorlds.CampaignSystem", "exists": true}
+      ],
+      "compile": {"attempted": true, "exitCode": 0, "errors": []},
+      "dynamicBindings": [
+        {"file": "src/BlacksmithGuild/DevTools/QuickStart/DevSaveAutoLoader.cs", "line": 210, "pattern": ".GetMethod(", "snippet": "type.GetMethod(methodName)"}
+      ],
+      "moduleDependencyDrift": [],
+      "expectedTerminalState": "ATTENTION_VERSION_CHANGE_REQUIRES_RECERTIFICATION",
+      "expectedSprintOwners": ["launcher-lifecycle", "harness/save-compatibility", "runtime-evidence-certification"]
+    },
+    {
+      "id": "candidate_module_dependency_drift",
+      "mode": "fixture",
+      "baselineVersion": "1.4.6.115628",
+      "candidateVersion": "1.5.0.120000",
+      "assemblyReferences": [
+        {"include": "TaleWorlds.Core", "exists": true}
+      ],
+      "compile": {"attempted": true, "exitCode": 0, "errors": []},
+      "dynamicBindings": [],
+      "moduleDependencyDrift": [
+        {"module": "Native", "declaredVersion": "v1.4.6", "candidateVersion": "v1.5.0"}
+      ],
+      "expectedTerminalState": "ATTENTION_VERSION_CHANGE_REQUIRES_RECERTIFICATION",
+      "expectedSprintOwners": ["harness/game-version-observation", "harness/save-compatibility", "runtime-evidence-certification"]
+    }
+  ]
+}
