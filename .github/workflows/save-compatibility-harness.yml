@@ -6,11 +6,16 @@ on:
       - '.tbg/state/save-compatibility.registry.json'
       - '.tbg/workflows/save-compatibility-classification.contract.json'
       - '.tbg/harness/save-compatibility-artifacts.registry.json'
+      - '.tbg/harness/schemas/save-compatibility-result.schema.json'
       - '.tbg/harness/fixtures/save-compatibility.fixtures.json'
+      - '.tbg/harness/fixtures/save-compatibility-real-reference.json'
       - '.tbg/harness/test-catalog.d/core/save-compatibility.test.json'
+      - '.tbg/harness/test-catalog.d/core/save-compatibility-real-reference.test.json'
       - 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1'
       - 'scripts/tbg/Test-TbgSaveCompatibility.ps1'
+      - 'ForgeSaveCompatibility.cmd'
       - 'docs/operator/save-compatibility.md'
+      - 'docs/operator/harness-status-save-compatibility.md'
       - 'CODEBASE_MAP.md'
       - '.tbg/harness/manifest.json'
       - '.tbg/skills/harness-maturity/SKILL.md'
@@ -24,15 +29,20 @@ on:
       - '.tbg/state/save-compatibility.registry.json'
       - '.tbg/workflows/save-compatibility-classification.contract.json'
       - '.tbg/harness/save-compatibility-artifacts.registry.json'
+      - '.tbg/harness/schemas/save-compatibility-result.schema.json'
       - '.tbg/harness/fixtures/save-compatibility.fixtures.json'
       - 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1'
       - 'scripts/tbg/Test-TbgSaveCompatibility.ps1'
+      - 'ForgeSaveCompatibility.cmd'
+      - '.github/workflows/save-compatibility-harness.yml'
 
 jobs:
   focused-save-compatibility:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Validate with PowerShell 7
         shell: pwsh
         run: |
@@ -54,7 +64,8 @@ jobs:
           ./scripts/test-powershell-utf8-bom-contract.ps1
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Diff check
-        shell: pwsh
+        shell: bash
         run: |
-          git diff --check HEAD^ HEAD
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          git fetch origin "${{ github.base_ref }}" --depth=1
+          base="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
+          git diff --check "$base"...HEAD
