@@ -1,6 +1,7 @@
 {
   "schema": "TbgSaveCompatibilityArtifactsRegistry.v1",
   "workflow": "save-compatibility-classification",
+  "resultSchema": ".tbg/harness/schemas/save-compatibility-result.schema.json",
   "latestRoot": "artifacts/latest/save-compatibility",
   "runRoot": "artifacts/latest/save-compatibility/runs/<runId>",
   "artifacts": [
