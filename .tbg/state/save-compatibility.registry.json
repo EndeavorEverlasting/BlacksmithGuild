@@ -1,0 +1,57 @@
+{
+  "schema": "TbgSaveCompatibilityRegistry.v1",
+  "purpose": "Read-only classification of Bannerlord saves before launcher or runtime authority is granted.",
+  "gameCompatibilityResult": "artifacts/latest/game-compatibility/game-compatibility.result.json",
+  "disposableSavePolicy": ".tbg/harness/policies/disposable-save.policy.json",
+  "scan": {
+    "maxHeaderBytes": 8388608,
+    "versionRegex": "(?<![0-9])(?<version>[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)(?![0-9])",
+    "taggedVersionRegex": "(?i)(?:application(?:\\s*|_)?version|save(?:\\s*|_)?version|game(?:\\s*|_)?version|version)[^0-9]{0,64}(?<version>[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)",
+    "encodings": ["ascii", "utf16le"],
+    "multipleDistinctCandidates": "blocked_ambiguous"
+  },
+  "roles": {
+    "approvedAliases": [
+      "BlacksmithGuildDevStart.sav",
+      "BlacksmithGuild_DevStart.sav"
+    ],
+    "autosaveRegex": "(?i)^saveauto[0-9]+\\.sav$",
+    "disposableNameRegex": "(?i)(?:BlacksmithGuild[_-]?(?:DevStart|Disposable)|TBG[_-]?Disposable|^Disposable|^DISPOSABLE)",
+    "defaultRole": "user_or_unclassified"
+  },
+  "compatibility": {
+    "exact": {
+      "terminalState": "PASS_SAVE_VERSION_EXACT",
+      "autoLoadEligible": true
+    },
+    "newer": {
+      "terminalState": "BLOCKED_SAVE_NEWER_THAN_GAME",
+      "autoLoadEligible": false
+    },
+    "older": {
+      "terminalState": "ATTENTION_SAVE_OLDER_THAN_GAME_RECERTIFY",
+      "autoLoadEligible": false
+    },
+    "unknown": {
+      "terminalState": "BLOCKED_SAVE_VERSION_UNKNOWN",
+      "autoLoadEligible": false
+    },
+    "ambiguous": {
+      "terminalState": "BLOCKED_SAVE_VERSION_AMBIGUOUS",
+      "autoLoadEligible": false
+    }
+  },
+  "approvedAliasPair": {
+    "requireBothWhenEitherExists": true,
+    "requireByteIdentical": true,
+    "requireSameParsedVersion": true,
+    "blockedTerminalState": "BLOCKED_APPROVED_ALIAS_PAIR_MISMATCH"
+  },
+  "newSaveContract": {
+    "creationOwnedBy": "launcher/runtime lane",
+    "classifierMutationAuthority": false,
+    "requiredPostCreateObservation": ["sha256", "length", "parsedSaveVersion", "gameVersionAtObservation", "role", "leafName"],
+    "rule": "A new save is not assumed compatible merely because it was created by the current game. The saved bytes must be parsed and recorded before automation reuses it."
+  },
+  "proofBoundary": "Classification is prelaunch harness proof only. It does not prove successful load, campaign readiness, map traversal, governor execution, or live runtime behavior."
+}
