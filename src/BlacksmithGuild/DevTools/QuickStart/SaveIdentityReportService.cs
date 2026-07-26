@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using BlacksmithGuild.DevTools.Assistive;
 using BlacksmithGuild.DevTools.Reporting;
+using TaleWorlds.Core;
 using TaleWorlds.Library;
 
 namespace BlacksmithGuild.DevTools.QuickStart
@@ -12,20 +13,33 @@ namespace BlacksmithGuild.DevTools.QuickStart
     {
         public const string ReportSaveIdentityNowCommand = "ReportSaveIdentityNow";
         public const string FileName = "BlacksmithGuild_SaveIdentity.json";
-
         public static bool ReportNow(
             AssistiveCommandInboxPayload context,
             string source = ReportSaveIdentityNowCommand)
         {
             GameSessionState.Refresh();
 
-            var loadedSaveId = CampaignSetupStateTracker.DevSaveName;
-            var explicitLoadObserved = CampaignSetupStateTracker.DevSaveLoadStartedExplicitly;
-            var identityVerified = explicitLoadObserved
-                && !string.IsNullOrWhiteSpace(loadedSaveId)
-                && loadedSaveId.StartsWith(
-                    DevSaveResolver.DevSavePrefix,
-                    StringComparison.OrdinalIgnoreCase);
+            var activeSaveSlotName = NormalizeSaveSlotName(TryGetActiveSaveSlotName());
+            var hasActiveSaveSlot = !string.IsNullOrWhiteSpace(activeSaveSlotName);
+            var activeSlotVerified = IsAllowedDisposableSave(activeSaveSlotName);
+
+            var explicitTrackerSaveId = CampaignSetupStateTracker.DevSaveLoadStartedExplicitly
+                ? NormalizeSaveSlotName(CampaignSetupStateTracker.DevSaveName)
+                : null;
+            var explicitTrackerAllowed = IsAllowedDisposableSave(explicitTrackerSaveId);
+            var explicitTrackerVerified = !hasActiveSaveSlot && explicitTrackerAllowed;
+
+            // An active slot is authoritative and must never be overridden by stale tracker state.
+            // The tracker is only a fallback while an explicitly initiated load has no active slot yet.
+            var identityVerified = activeSlotVerified || explicitTrackerVerified;
+            var loadedSaveId = hasActiveSaveSlot ? activeSaveSlotName : explicitTrackerSaveId;
+            var devSaveLoadUsed = identityVerified;
+            var explicitLoadObserved = explicitTrackerAllowed
+                && (!hasActiveSaveSlot
+                    || string.Equals(
+                        activeSaveSlotName,
+                        explicitTrackerSaveId,
+                        StringComparison.OrdinalIgnoreCase));
 
             var process = Process.GetCurrentProcess();
             var json = new StringBuilder()
@@ -40,8 +54,8 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 .AppendLine($"  \"processId\": {process.Id},")
                 .AppendLine($"  \"processStartTimeUtc\": \"{process.StartTime.ToUniversalTime():o}\",")
                 .AppendLine($"  \"loadedSaveId\": {JsonString(loadedSaveId)},")
-                .AppendLine($"  \"activeSaveSlotName\": {JsonString(loadedSaveId)},")
-                .AppendLine($"  \"devSaveLoadUsed\": {(CampaignSetupStateTracker.DevSaveLoadUsed ? "true" : "false")},")
+                .AppendLine($"  \"activeSaveSlotName\": {JsonString(activeSaveSlotName)},")
+                .AppendLine($"  \"devSaveLoadUsed\": {(devSaveLoadUsed ? "true" : "false")},")
                 .AppendLine($"  \"explicitLoadObserved\": {(explicitLoadObserved ? "true" : "false")},")
                 .AppendLine($"  \"identityVerified\": {(identityVerified ? "true" : "false")},")
                 .AppendLine($"  \"campaignReady\": {(GameSessionState.IsCampaignSessionReady ? "true" : "false")}")
@@ -70,6 +84,40 @@ namespace BlacksmithGuild.DevTools.QuickStart
             }
 
             return identityVerified;
+        }
+
+        internal static bool IsAllowedDisposableSave(string saveSlotName)
+        {
+            var normalized = NormalizeSaveSlotName(saveSlotName);
+            return DevSaveResolver.IsDisposableSaveName(normalized);
+        }
+
+        internal static string NormalizeSaveSlotName(string saveSlotName)
+        {
+            if (string.IsNullOrWhiteSpace(saveSlotName))
+            {
+                return null;
+            }
+
+            var normalized = Path.GetFileName(saveSlotName.Trim());
+            return normalized.EndsWith(".sav", StringComparison.OrdinalIgnoreCase)
+                ? normalized.Substring(0, normalized.Length - 4)
+                : normalized;
+        }
+
+        private static string TryGetActiveSaveSlotName()
+        {
+            try
+            {
+                return MBSaveLoad.ActiveSaveSlotName;
+            }
+            catch (Exception ex)
+            {
+                GuildLog.Info(
+                    $"[TBG SAVE IDENTITY] active save slot unavailable: {ex.Message}",
+                    showInGame: false);
+                return null;
+            }
         }
 
         private static string JsonString(string value) =>

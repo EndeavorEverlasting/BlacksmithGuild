@@ -103,6 +103,16 @@ $highestProofReached = 'none'
 $exitCode = 0
 $lifecycleGate = $null
 $lifecycleArtifactPaths = $null
+$readinessProof = $null
+$commandAckRecord = $null
+$routeCertRecord = $null
+$tradeCertRecord = $null
+$movementResult = [ordered]@{ observed = $false; delta = 0; startingPosition = ''; endingPosition = ''; sampleCount = 0; target = '' }
+$checkpointResult = [ordered]@{ observed = $false; checkpoints = @() }
+$arrivalResult = [ordered]@{ observed = $false; settlement = ''; target = '' }
+$buyResult = [ordered]@{ observed = $false; goldDelta = 0; inventoryDelta = 0; itemId = '' }
+$travelResult = [ordered]@{ observed = $false; from = ''; to = '' }
+$sellResult = [ordered]@{ observed = $false; goldDelta = 0; inventoryDelta = 0 }
 
 function Write-Event {
     param(
@@ -743,18 +753,34 @@ try {
 
         $routeCommandUtc = (Get-Date).ToUniversalTime()
         try {
+            $saveIdentityCommandId = "$runId-save-identity"
+            $saveIdentityCommandUtc = (Get-Date).ToUniversalTime()
             Send-ForgeCommand -CommandName 'ReportSaveIdentityNow' -BannerlordRoot $bannerlordRoot -Wait `
-                -CommandId "$runId-save-identity" -RunId $runId -CorrelationId $runId `
+                -CommandId $saveIdentityCommandId -RunId $runId -CorrelationId $runId `
                 -TimeoutSec 45 2>&1 | Out-Null
 
             $saveIdentityPath = Join-Path $bannerlordRoot 'BlacksmithGuild_SaveIdentity.json'
+            $saveIdentityItem = Get-Item -LiteralPath $saveIdentityPath -ErrorAction Stop
             $saveIdentity = Get-Content -LiteralPath $saveIdentityPath -Raw -Encoding UTF8 | ConvertFrom-Json
             $expectedSaveId = [IO.Path]::GetFileNameWithoutExtension($resolvedDisposableSave.Name)
-            if (-not [bool]$saveIdentity.identityVerified `
-                -or [string]$saveIdentity.loadedSaveId -ne $expectedSaveId `
-                -or [string]$saveIdentity.runId -ne $runId `
-                -or [string]$saveIdentity.correlationId -ne $runId) {
-                throw "FAIL_SAVE_IDENTITY_MISMATCH: expected=$expectedSaveId loaded=$($saveIdentity.loadedSaveId) verified=$($saveIdentity.identityVerified)"
+            $allowedSaveIds = @($expectedSaveId)
+            if ([string]::Equals(
+                    $expectedSaveId,
+                    'BlacksmithGuild_DevStart',
+                    [StringComparison]::OrdinalIgnoreCase)) {
+                $allowedSaveIds += 'BlacksmithGuildDevStart'
+            }
+            $saveIdentityValid = $saveIdentityItem.LastWriteTimeUtc -ge $saveIdentityCommandUtc `
+                -and (Test-TbgSaveIdentityEvidence `
+                    -Identity $saveIdentity `
+                    -AllowedSaveIds $allowedSaveIds `
+                    -CommandId $saveIdentityCommandId `
+                    -RunId $runId `
+                    -CorrelationId $runId `
+                    -ProcessId ([int]$readinessProof.processId) `
+                    -NotBeforeUtc $saveIdentityCommandUtc)
+            if (-not $saveIdentityValid) {
+                throw "FAIL_SAVE_IDENTITY_MISMATCH: expected=$($allowedSaveIds -join '|') loaded=$($saveIdentity.loadedSaveId) active=$($saveIdentity.activeSaveSlotName) verified=$($saveIdentity.identityVerified) explicit=$($saveIdentity.explicitLoadObserved) process=$($saveIdentity.processId)"
             }
 
             Send-ForgeCommand -CommandName 'SetEngineToggleAutomation' -BannerlordRoot $bannerlordRoot -Wait `
@@ -840,7 +866,7 @@ try {
     # ═══════════════════════════════════════════════════════════════
     # STAGES: movement, checkpoint, arrival, buy, travel, sell
     # ═══════════════════════════════════════════════════════════════
-    $movementResult = [ordered]@{ observed = $false; delta = 0; startingPosition = ''; endingPosition = ''; sampleCount = 0 }
+    $movementResult = [ordered]@{ observed = $false; delta = 0; startingPosition = ''; endingPosition = ''; sampleCount = 0; target = '' }
     $checkpointResult = [ordered]@{ observed = $false; checkpoints = @() }
     $arrivalResult = [ordered]@{ observed = $false; settlement = ''; target = '' }
     $buyResult = [ordered]@{ observed = $false; goldDelta = 0; inventoryDelta = 0; itemId = '' }
@@ -864,9 +890,13 @@ try {
             $routeCertRecord = Wait-TbgJsonEvidence `
                 -Candidates $routeCertCandidates `
                 -NotBeforeUtc $routeCommandUtc `
-                -TimeoutSec 60 `
+                -TimeoutSec $TradeTimeoutSec `
                 -Label 'FAIL_ROUTE_CHECKPOINT_NOT_OBSERVED' `
-                -Accept { param($v) $true }
+                -Accept {
+                    param($value)
+                    (Test-TbgMapTradeCertLineage -Cert $value -NotBeforeUtc $routeCommandUtc) `
+                        -and (Test-TbgMapTradeCertTerminalState -Cert $value)
+                }
         } catch {
             Write-Event -Stage checkpoint -Status failed -Subject 'coordinator' -Action 'route-cert-timeout' -Object 'route-cert' `
                 -Sentence "Route certificate timed out: $($_.Exception.Message)."
@@ -876,46 +906,66 @@ try {
             $tradeCertRecord = Wait-TbgJsonEvidence `
                 -Candidates $tradeCertCandidates `
                 -NotBeforeUtc $routeCommandUtc `
-                -TimeoutSec 60 `
+                -TimeoutSec $TradeTimeoutSec `
                 -Label 'FAIL_BUY_DELTA_NOT_OBSERVED' `
-                -Accept { param($v) $true }
+                -Accept {
+                    param($value)
+                    (Test-TbgMapTradeCertLineage -Cert $value -NotBeforeUtc $routeCommandUtc) `
+                        -and (Test-TbgMapTradeCertTerminalState -Cert $value)
+                }
         } catch {
             Write-Event -Stage buy -Status failed -Subject 'coordinator' -Action 'trade-cert-timeout' -Object 'trade-cert' `
                 -Sentence "Trade certificate timed out: $($_.Exception.Message)."
         }
 
-        if ($commandAckRecord.Value) {
-            $route = Get-TbgObjectProperty $commandAckRecord.Value 'route'
-            $trade = Get-TbgObjectProperty $commandAckRecord.Value 'tradeExecution'
-            $surface = Get-TbgObjectProperty $commandAckRecord.Value 'tradeSurface'
+        if ($routeCertRecord -and $tradeCertRecord) {
+            $route = $routeCertRecord.Value
+            $tradeSurface = $tradeCertRecord.Value
+            $trade = Get-TbgObjectProperty $tradeSurface 'tradeExecution'
 
-            if ($route) {
-                $movementResult.observed = [bool](Get-TbgObjectProperty $route 'movementObserved' $false)
-                $movementResult.delta = [double](Get-TbgObjectProperty $route 'partyMovedDistance' 0)
-                $movementResult.target = [string](Get-TbgObjectProperty $route 'targetSettlement' '')
+            if (-not (Test-TbgMapTradeCertPairCorrelation -RouteCert $route -TradeCert $tradeSurface)) {
+                $failureDetail = 'FAIL_EVIDENCE_INCOMPLETE: route and trade certificates do not identify the same governor activity, start time, and target'
+                Write-Event -Stage checkpoint -Status failed -Subject 'coordinator' -Action 'cert-correlation-mismatch' -Object 'map-trade-cert-pair' `
+                    -Evidence "route=$($routeCertRecord.Path) trade=$($tradeCertRecord.Path)" `
+                    -Sentence 'The fresh route and trade certificates did not share one governor activity lineage, so no behavior proof was admitted.'
+            } else {
+                $movementResult.startingPosition = [string](Get-TbgObjectProperty $route 'startPosition' '')
+                $movementResult.endingPosition = [string](Get-TbgObjectProperty $route 'latestPosition' '')
+                $movementResult.target = [string](Get-TbgObjectProperty $route 'destinationSettlement' '')
+                $movementDelta = Get-TbgMapPositionDistance `
+                    -StartPosition $movementResult.startingPosition `
+                    -EndPosition $movementResult.endingPosition
+                $movementResult.sampleCount = if ($null -ne $movementDelta) { 2 } else { 0 }
+                $movementResult.delta = if ($null -ne $movementDelta) { [Math]::Round([double]$movementDelta, 6) } else { 0 }
+                $movementResult.observed = [bool](Get-TbgObjectProperty $route 'routeStarted' $false) `
+                    -and $null -ne $movementDelta `
+                    -and [double]$movementDelta -gt 0
                 if ($movementResult.observed -and $movementResult.delta -gt 0) {
                     Set-HighestProof -Level 'movement'
                     Write-Event -Stage movement -Status passed -Subject 'party' -Action 'move' -Object 'campaign-map' `
-                        -Evidence "delta=$($movementResult.delta)" `
+                        -Evidence "delta=$($movementResult.delta) cert=$($routeCertRecord.Path)" `
                         -Sentence "Party movement observed with delta $($movementResult.delta) toward $($movementResult.target)."
                 } else {
                     Write-Event -Stage movement -Status info -Subject 'party' -Action 'no-movement' -Object 'campaign-map' `
                         -Sentence 'No significant party movement was observed in the runtime evidence.'
                 }
 
-                $arrivalResult.observed = [bool](Get-TbgObjectProperty $route 'arrivalObserved' $false)
-                $arrivalResult.target = [string](Get-TbgObjectProperty $route 'targetSettlement' '')
-                $arrivalResult.settlement = [string](Get-TbgObjectProperty $route 'arrivedSettlement' '')
+                $routeSteps = @(Get-TbgObjectProperty $route 'steps' @())
+                $arrivalResult.observed = $routeSteps -contains 'TargetSettlementConfirmed'
+                $arrivalResult.target = [string](Get-TbgObjectProperty $route 'destinationSettlement' '')
+                $arrivalResult.settlement = if ($arrivalResult.observed) { $arrivalResult.target } else { '' }
                 if ($arrivalResult.observed) {
                     Set-HighestProof -Level 'arrival'
                     Write-Event -Stage arrival -Status passed -Subject 'party' -Action 'arrive' -Object $arrivalResult.settlement `
-                        -Sentence "Party arrived at $($arrivalResult.settlement)."
+                        -Evidence $routeCertRecord.Path `
+                        -Sentence "Party arrived at and confirmed the target settlement $($arrivalResult.settlement)."
                 } else {
                     Write-Event -Stage arrival -Status info -Subject 'party' -Action 'no-arrival' -Object 'settlement' `
                         -Sentence 'No arrival was observed in the runtime evidence.'
                 }
 
                 $checkpointResult.observed = $arrivalResult.observed
+                $checkpointResult.checkpoints = @($routeSteps)
                 if ($checkpointResult.observed) {
                     Set-HighestProof -Level 'checkpoint'
                     Write-Event -Stage checkpoint -Status passed -Subject 'party' -Action 'checkpoint' -Object $arrivalResult.settlement `
@@ -924,18 +974,36 @@ try {
                     Write-Event -Stage checkpoint -Status info -Subject 'party' -Action 'no-checkpoint' -Object 'route' `
                         -Sentence 'No route checkpoint progression was observed.'
                 }
+
+                $travelResult.observed = $movementResult.observed -and $arrivalResult.observed
+                $travelResult.from = $movementResult.startingPosition
+                $travelResult.to = $arrivalResult.settlement
             }
 
-            if ($trade) {
-                $buyResult.observed = (Get-TbgObjectProperty $trade 'fakeGameplayDelta' $true) -eq $false `
-                    -and [int](Get-TbgObjectProperty $trade 'quantityBought' 0) -gt 0
+            if ($trade -and -not $failureDetail) {
+                $goldBefore = [int](Get-TbgObjectProperty $trade 'goldBefore' 0)
+                $goldAfter = [int](Get-TbgObjectProperty $trade 'goldAfter' 0)
+                $inventoryBefore = [int](Get-TbgObjectProperty $trade 'inventoryBefore' 0)
+                $inventoryAfter = [int](Get-TbgObjectProperty $trade 'inventoryAfter' 0)
                 $buyResult.goldDelta = [int](Get-TbgObjectProperty $trade 'goldDelta' 0)
-                $buyResult.inventoryDelta = [int](Get-TbgObjectProperty $trade 'inventoryDelta' 0)
+                $buyResult.inventoryDelta = $inventoryAfter - $inventoryBefore
                 $buyResult.itemId = [string](Get-TbgObjectProperty $trade 'itemId' '')
+                $quantityBought = [int](Get-TbgObjectProperty $trade 'quantityBought' 0)
+                $executionMethod = [string](Get-TbgObjectProperty $trade 'executionMethod' '')
+                $buyResult.observed = [string](Get-TbgObjectProperty $tradeSurface 'state' '') -eq 'Complete' `
+                    -and [string](Get-TbgObjectProperty $tradeSurface 'runtimeProofClaim' '') -eq 'vanilla_trade_inventory_gold_delta_observed' `
+                    -and [bool](Get-TbgObjectProperty $tradeSurface 'mutationApplied' $false) `
+                    -and $quantityBought -gt 0 `
+                    -and $buyResult.inventoryDelta -gt 0 `
+                    -and $quantityBought -eq $buyResult.inventoryDelta `
+                    -and $buyResult.goldDelta -lt 0 `
+                    -and $buyResult.goldDelta -eq ($goldAfter - $goldBefore) `
+                    -and -not [string]::IsNullOrWhiteSpace($buyResult.itemId) `
+                    -and -not [string]::IsNullOrWhiteSpace($executionMethod)
                 if ($buyResult.observed) {
                     Set-HighestProof -Level 'buy'
                     Write-Event -Stage buy -Status passed -Subject 'player' -Action 'buy' -Object $buyResult.itemId `
-                        -Evidence "gold=$($buyResult.goldDelta) inv=$($buyResult.inventoryDelta)" `
+                        -Evidence "gold=$($buyResult.goldDelta) inv=$($buyResult.inventoryDelta) cert=$($tradeCertRecord.Path)" `
                         -Sentence "Visible buy observed: $($buyResult.itemId) gold_delta=$($buyResult.goldDelta) inventory_delta=$($buyResult.inventoryDelta)."
                 } else {
                     Write-Event -Stage buy -Status info -Subject 'player' -Action 'no-buy' -Object 'trade' `

@@ -150,7 +150,12 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
                 LogMainMenuIntentDecision("auto-select", "continue intent");
-                if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
+                if (TryLoadUniqueDisposableSaveForContinue(out var devSaveName))
+                {
+                    CompleteIntent($"auto-loading disposable dev save {devSaveName} (Continue).");
+                    executed = true;
+                }
+                else if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
                 {
                     CompleteIntent($"auto-selecting {selectedId} (Continue Campaign).");
                     executed = true;
@@ -168,6 +173,21 @@ namespace BlacksmithGuild.DevTools.QuickStart
                 _loggedMainMenuTimeout = true;
                 LogVisibleOptions("main menu auto-select timed out");
             }
+        }
+
+        private static bool TryLoadUniqueDisposableSaveForContinue(out string saveName)
+        {
+            saveName = null;
+            if (!DevToolsConfig.AutoLoadDevSave
+                || !DevSaveResolver.TryGetUnique(out var saveInfo)
+                || saveInfo?.Name == null
+                || !DevSaveAutoLoader.TryLoad(saveInfo))
+            {
+                return false;
+            }
+
+            saveName = saveInfo.Name;
+            return true;
         }
 
         private static void CompleteIntent(string message)

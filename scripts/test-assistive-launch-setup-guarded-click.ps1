@@ -32,6 +32,22 @@ if ($navText -notmatch 'assistive_launch_setup' -or $navText -notmatch 'LaunchSe
     throw 'launcher-auto-nav.ps1 missing LaunchSetup / assistive_launch_setup mode'
 }
 
+$clickStart = $navText.IndexOf('public static string ClickButtonByNameInLauncher', [StringComparison]::Ordinal)
+$clickEnd = $navText.IndexOf('private static bool NamesIndicateContinue', $clickStart, [StringComparison]::Ordinal)
+if ($clickStart -lt 0 -or $clickEnd -le $clickStart) {
+    throw 'launcher-auto-nav.ps1 ClickButtonByNameInLauncher body could not be isolated'
+}
+$clickBody = $navText.Substring($clickStart, $clickEnd - $clickStart)
+$knownCustomIndex = $clickBody.IndexOf('var knownCustomCoordWindow', [StringComparison]::Ordinal)
+$descendantScanIndex = $clickBody.IndexOf('FindClickableInScope(window, names, requireEnabled)', [StringComparison]::Ordinal)
+if ($knownCustomIndex -lt 0 -or $descendantScanIndex -lt 0 -or $knownCustomIndex -gt $descendantScanIndex) {
+    throw 'known custom-rendered launcher coordinate route must precede descendant UIA scanning'
+}
+if (($clickBody -notmatch 'known custom-rendered launcher bypasses descendant UIA') -or
+    ($clickBody -notmatch 'known custom-rendered launcher waiting for stability')) {
+    throw 'launcher-auto-nav.ps1 missing fail-closed custom-rendered launcher coordinate routing'
+}
+
 $cmdText = Get-Content -LiteralPath (Join-Path $repoRoot 'Run-LauncherNavNow.cmd') -Raw
 if ($cmdText -notmatch '-LaunchSetup') {
     throw 'Run-LauncherNavNow.cmd must pass -LaunchSetup for explicit launch setup'

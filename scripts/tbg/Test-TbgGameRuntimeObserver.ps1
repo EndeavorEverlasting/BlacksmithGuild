@@ -52,8 +52,15 @@ try {
     Remove-Job -Job $stopJob -Force
     $stoppedStatus=Read-Json $stopStatusPath
     Assert-True ($stoppedStatus.status -eq 'stopped') 'owned lease stop request is acknowledged without touching game processes'
+    & $start -Command stop -RunId $stopRunId -LeaseId $stopStatus.leaseId -OutputRoot $temp
+    $idempotentStopStatus=Read-Json $stopStatusPath
+    Assert-True ($idempotentStopStatus.status -eq 'stopped') 'repeated lease stop preserves terminal stopped status'
     $stopEvents=@(Get-Content -LiteralPath (Join-Path $temp "$stopRunId\events.jsonl") -Encoding UTF8 | Where-Object {$_} | ForEach-Object {$_|ConvertFrom-Json})
-    Assert-True (@($stopEvents|Where-Object {$_.payload.disposition -eq 'observer_disposed_no_game_process_touched'}).Count -eq 1) 'observer stop records safe disposal evidence'
+    Assert-True (@($stopEvents|Where-Object {
+        if (-not $_.payload) { return $false }
+        if (-not $_.payload.PSObject.Properties['disposition']) { return $false }
+        return $_.payload.disposition -eq 'observer_disposed_no_game_process_touched'
+    }).Count -eq 1) 'observer stop records safe disposal evidence'
     & (Join-Path $PSScriptRoot 'Get-TbgWindowsCrashEvidence.ps1') -RunId 'eventlog-smoke' -CorrelationId 'eventlog-smoke' -SinceUtc ([DateTime]::UtcNow.AddMinutes(-1)) -OutputRoot $temp | Out-Null
     $werPath=Join-Path $temp 'eventlog-smoke\windows-crash-evidence.jsonl'
     $werText=if(Test-Path $werPath){Get-Content $werPath -Raw -Encoding UTF8}else{''}

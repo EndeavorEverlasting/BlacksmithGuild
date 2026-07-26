@@ -112,6 +112,17 @@ function Write-TbgRun(
     return $runRoot
 }
 
+function Test-TbgObserverStopRequested([string]$StatusPath, [string]$ExpectedLeaseId) {
+    if (-not (Test-Path -LiteralPath $StatusPath)) { return $false }
+    try {
+        $value = Get-Content -LiteralPath $StatusPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        return [string]$value.leaseId -eq $ExpectedLeaseId `
+            -and [string]$value.status -in @('stop_requested', 'stopped')
+    } catch {
+        return $false
+    }
+}
+
 $baseRoot = if ([IO.Path]::IsPathRooted($OutputRoot)) { $OutputRoot } else { Join-Path $repoRoot $OutputRoot }
 if ($Command -eq 'status') {
     if ([string]::IsNullOrWhiteSpace($RunId)) { throw 'status requires -RunId.' }
@@ -125,6 +136,15 @@ if ($Command -eq 'stop') {
     $statusPath = Join-Path (Join-Path $baseRoot $RunId) 'observer-status.json'
     $existing = Get-Content -LiteralPath $statusPath -Raw -Encoding UTF8 | ConvertFrom-Json
     if ([string]$existing.leaseId -ne $LeaseId) { throw 'Lease mismatch: only the starter may stop or dispose this observer.' }
+    if ([string]$existing.status -in @('stopped', 'completed')) {
+        Write-Host "Observer $RunId is already $($existing.status); no Bannerlord process was touched."
+        if ($PassThru) { return $existing }
+        exit 0
+    }
+    if ([string]$existing.status -eq 'stop_requested') {
+        Write-Host "Observer $RunId stop is already requested; no Bannerlord process was touched."
+        exit 0
+    }
     $stopSignal = [ordered]@{
         schema = 'TbgGameRuntimeObserverStatus.v1'
         runId = $RunId
@@ -152,23 +172,26 @@ $observerStopRequested = $false
 while ([DateTime]::UtcNow -lt $deadline) {
     Start-Sleep -Milliseconds 500
     $liveStatusPath = Join-Path $runRoot 'observer-status.json'
-    if (Test-Path -LiteralPath $liveStatusPath) {
-        try {
-            $liveStatus = Get-Content -LiteralPath $liveStatusPath -Raw -Encoding UTF8 | ConvertFrom-Json
-            if ([string]$liveStatus.leaseId -eq $lease -and [string]$liveStatus.status -in @('stop_requested', 'stopped')) {
-                $events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{
-                    disposition = 'observer_disposed_no_game_process_touched'
-                    leaseId = $lease
-                })) | Out-Null
-                $observerStopRequested = $true
-                break
-            }
-        } catch {}
+    if (Test-TbgObserverStopRequested -StatusPath $liveStatusPath -ExpectedLeaseId $lease) {
+        $events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{
+            disposition = 'observer_disposed_no_game_process_touched'
+            leaseId = $lease
+        })) | Out-Null
+        $observerStopRequested = $true
+        break
     }
     $current = @{}; foreach ($p in Get-TbgProcesses) { $current[[string]$p.pid] = $p }
     foreach ($key in $current.Keys) { if (-not $known.ContainsKey($key)) { $p=$current[$key]; $events.Add((New-TbgEvent $RunId $CorrelationId 'process_lifecycle' 'process.started' $p 'info' @{ parentPid=$p.parentPid; sessionId=$p.sessionId; reconciled=$true })) | Out-Null } }
     foreach ($key in $known.Keys) { if (-not $current.ContainsKey($key)) { $p=$known[$key]; $events.Add((New-TbgEvent $RunId $CorrelationId 'process_lifecycle' 'process.exited' $p 'warning' @{ exitCode=$null; parentPid=$p.parentPid; sessionId=$p.sessionId; reconciliationObserved=$true })) | Out-Null } }
     $known = $current
+    if (Test-TbgObserverStopRequested -StatusPath $liveStatusPath -ExpectedLeaseId $lease) {
+        $events.Add((New-TbgEvent $RunId $CorrelationId 'observer_health' 'observer.health' $null 'info' @{
+            disposition = 'observer_disposed_no_game_process_touched'
+            leaseId = $lease
+        })) | Out-Null
+        $observerStopRequested = $true
+        break
+    }
     if ([DateTime]::UtcNow -ge $nextFlushUtc) {
         $runRoot = Write-TbgRun $baseRoot $RunId $CorrelationId $lease @($events.ToArray()) 'running' $observerStartedUtc
         $nextFlushUtc = [DateTime]::UtcNow.AddSeconds(2)

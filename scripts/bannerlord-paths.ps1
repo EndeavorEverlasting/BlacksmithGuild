@@ -491,10 +491,12 @@ function Get-BannerlordProcessDetection {
     )
 
     $nowUtc = (Get-Date).ToUniversalTime()
-    if ($script:BannerlordProcessDetectionCache -and $script:BannerlordProcessDetectionCacheUtc) {
-        $cacheAge = ($nowUtc - $script:BannerlordProcessDetectionCacheUtc).TotalSeconds
+    $cacheVariable = Get-Variable -Name BannerlordProcessDetectionCache -Scope Script -ErrorAction SilentlyContinue
+    $cacheUtcVariable = Get-Variable -Name BannerlordProcessDetectionCacheUtc -Scope Script -ErrorAction SilentlyContinue
+    if ($cacheVariable -and $cacheUtcVariable -and $cacheVariable.Value -and $cacheUtcVariable.Value) {
+        $cacheAge = ($nowUtc - [datetime]$cacheUtcVariable.Value).TotalSeconds
         if ($cacheAge -le $CacheSec) {
-            return $script:BannerlordProcessDetectionCache
+            return $cacheVariable.Value
         }
     }
 

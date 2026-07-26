@@ -251,14 +251,65 @@ Test-Case 'All events include runId and correlationId' {
 Write-Host ''
 Write-Host '--- Movement Proof Tests ---' -ForegroundColor Yellow
 
-Test-Case 'Coordinator checks movement delta' {
-    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'movementResult'
-    Assert-Contains 'scripts\run-visible-trade-proof.ps1' 'partyMovedDistance'
+Test-Case 'Map-trade cert position parser derives movement delta from current cert fields' {
+    $distance = Get-TbgMapPositionDistance `
+        -StartPosition '(Vec2) X: 10.5 Y: -2' `
+        -EndPosition 'X: 13.5 Y: 2'
+    Assert-True ($null -ne $distance) 'Current MapTrade cert positions must parse'
+    Assert-True ([Math]::Abs([double]$distance - 5.0) -lt 0.000001) 'Position delta must equal five map units'
 }
 
-Test-Case 'Coordinator checks movement below noise is not counted' {
+Test-Case 'Coordinator requires a positive parsed movement delta' {
     $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\run-visible-trade-proof.ps1') -Raw
-    Assert-True ($text.Contains('movementResult') -and $text.Contains('partyMovedDistance')) 'Movement must check both delta and observed'
+    Assert-True ($text.Contains('Get-TbgMapPositionDistance')) 'Movement must derive a delta from the cert positions'
+    Assert-True ($text.Contains('$movementResult.delta -gt 0')) 'Movement must require a positive delta'
+}
+
+Test-Case 'Map-trade cert lineage rejects stale or uncorrelated content' {
+    $notBefore = [datetime]'2026-07-26T01:00:00Z'
+    $fresh = [pscustomobject]@{
+        generatedUtc = '2026-07-26T01:00:02Z'
+        startedAtUtc = '2026-07-26T01:00:01Z'
+        source = 'governor:0123456789abcdef0123456789abcdef'
+    }
+    $stale = [pscustomobject]@{
+        generatedUtc = '2026-07-26T00:59:59Z'
+        startedAtUtc = '2026-07-26T00:59:58Z'
+        source = 'governor:0123456789abcdef0123456789abcdef'
+    }
+    $uncorrelated = [pscustomobject]@{
+        generatedUtc = '2026-07-26T01:00:02Z'
+        startedAtUtc = '2026-07-26T01:00:01Z'
+        source = 'campaign_tick'
+    }
+
+    Assert-True (Test-TbgMapTradeCertLineage -Cert $fresh -NotBeforeUtc $notBefore) 'Fresh governor cert must be accepted'
+    Assert-True (-not (Test-TbgMapTradeCertLineage -Cert $stale -NotBeforeUtc $notBefore)) 'Stale cert content must be rejected'
+    Assert-True (-not (Test-TbgMapTradeCertLineage -Cert $uncorrelated -NotBeforeUtc $notBefore)) 'Cert without governor activity lineage must be rejected'
+}
+
+Test-Case 'Map-trade route and trade certs require the same activity lineage and target' {
+    $route = [pscustomobject]@{
+        source = 'governor:0123456789abcdef0123456789abcdef'
+        startedAtUtc = '2026-07-26T01:00:01Z'
+        targetSettlementId = 'town_A1'
+        destinationSettlement = 'Ortysia'
+    }
+    $matchingTrade = [pscustomobject]@{
+        source = 'governor:0123456789abcdef0123456789abcdef'
+        startedAtUtc = '2026-07-26T01:00:01Z'
+        targetSettlementId = 'town_A1'
+        destinationSettlement = 'Ortysia'
+    }
+    $wrongActivity = [pscustomobject]@{
+        source = 'governor:fedcba9876543210fedcba9876543210'
+        startedAtUtc = '2026-07-26T01:00:01Z'
+        targetSettlementId = 'town_A1'
+        destinationSettlement = 'Ortysia'
+    }
+
+    Assert-True (Test-TbgMapTradeCertPairCorrelation -RouteCert $route -TradeCert $matchingTrade) 'Matching cert pair must correlate'
+    Assert-True (-not (Test-TbgMapTradeCertPairCorrelation -RouteCert $route -TradeCert $wrongActivity)) 'Different governor activities must fail closed'
 }
 
 # ═══════════════════════════════════════════════════════════════
@@ -510,12 +561,99 @@ Test-Case 'Coordinator requires stable complete campaign readiness' {
 Test-Case 'Coordinator uses exact save identity and correlated governor acknowledgement' {
     $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\run-visible-trade-proof.ps1') -Raw
     Assert-True ($text.Contains("Send-ForgeCommand -CommandName 'ReportSaveIdentityNow'")) 'Coordinator requests runtime save identity'
+    Assert-True ($text.Contains('Test-TbgSaveIdentityEvidence')) 'Coordinator validates the complete save identity artifact'
+    Assert-True ($text.Contains("'BlacksmithGuildDevStart'")) 'Coordinator permits the approved logical slot alias for the canonical physical save'
+    Assert-True ($text.Contains('$saveIdentityItem.LastWriteTimeUtc -ge $saveIdentityCommandUtc')) 'Save identity file must be post-command fresh'
+    Assert-True ($text.Contains('-ProcessId ([int]$readinessProof.processId)')) 'Save identity must belong to the current observed runtime'
     Assert-True ($text.Contains("Send-ForgeCommand -CommandName 'RunCampaignGovernorCycleNow'")) 'Coordinator commands the governor'
     Assert-True ($text.Contains("'commandId' '') -eq `$routeCommandId")) 'Coordinator matches commandId'
     Assert-True ($text.Contains("'runId' '') -eq `$runId")) 'Coordinator matches runId'
     Assert-True ($text.Contains("'correlationId' '') -eq `$runId")) 'Coordinator matches correlationId'
     Assert-True (-not $text.Contains('SetMapTradeAutomation')) 'Removed nonexistent MapTrade automation command'
     Assert-True (-not $text.Contains('BlacksmithGuild_VisibleTradeCycle.json')) 'Removed nonexistent generic command-ack artifact'
+}
+
+Test-Case 'Save identity gate accepts only the approved logical alias with exact runtime correlation' {
+    $observedAt = [datetime]'2026-07-26T01:00:02Z'
+    $identity = [pscustomobject]@{
+        schemaVersion = 'TbgSaveIdentity.v2'
+        observedAtUtc = $observedAt.ToString('o')
+        source = 'ReportSaveIdentityNow'
+        commandId = 'save-command'
+        runId = 'save-run'
+        correlationId = 'save-correlation'
+        processId = 4242
+        loadedSaveId = 'BlacksmithGuildDevStart'
+        activeSaveSlotName = 'BlacksmithGuildDevStart'
+        devSaveLoadUsed = $true
+        explicitLoadObserved = $true
+        identityVerified = $true
+        campaignReady = $true
+    }
+
+    $valid = Test-TbgSaveIdentityEvidence `
+        -Identity $identity `
+        -AllowedSaveIds @('BlacksmithGuild_DevStart', 'BlacksmithGuildDevStart') `
+        -CommandId 'save-command' `
+        -RunId 'save-run' `
+        -CorrelationId 'save-correlation' `
+        -ProcessId 4242 `
+        -NotBeforeUtc ([datetime]'2026-07-26T01:00:00Z')
+    Assert-True $valid 'Approved logical save slot must pass with exact identity and runtime correlation'
+
+    $identity.activeSaveSlotName = 'SomeOtherSave'
+    Assert-True (-not (Test-TbgSaveIdentityEvidence `
+        -Identity $identity `
+        -AllowedSaveIds @('BlacksmithGuild_DevStart', 'BlacksmithGuildDevStart') `
+        -CommandId 'save-command' `
+        -RunId 'save-run' `
+        -CorrelationId 'save-correlation' `
+        -ProcessId 4242 `
+        -NotBeforeUtc ([datetime]'2026-07-26T01:00:00Z'))) 'Loaded and active save identities must match'
+
+    $identity.activeSaveSlotName = 'BlacksmithGuildDevStart'
+    Assert-True (-not (Test-TbgSaveIdentityEvidence `
+        -Identity $identity `
+        -AllowedSaveIds @('BlacksmithGuild_DevStart', 'BlacksmithGuildDevStart') `
+        -CommandId 'save-command' `
+        -RunId 'save-run' `
+        -CorrelationId 'save-correlation' `
+        -ProcessId 9999 `
+        -NotBeforeUtc ([datetime]'2026-07-26T01:00:00Z'))) 'Wrong runtime PID must fail closed'
+
+    Assert-True (-not (Test-TbgSaveIdentityEvidence `
+        -Identity $identity `
+        -AllowedSaveIds @('BlacksmithGuild_DevStart', 'BlacksmithGuildDevStart') `
+        -CommandId 'save-command' `
+        -RunId 'save-run' `
+        -CorrelationId 'save-correlation' `
+        -ProcessId 4242 `
+        -NotBeforeUtc ([datetime]'2026-07-26T01:00:03Z'))) 'Stale save identity content must fail closed'
+}
+
+Test-Case 'Coordinator consumes fresh cert values instead of nonexistent command-ack behavior fields' {
+    $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\run-visible-trade-proof.ps1') -Raw
+    $certBlockStart = $text.IndexOf('$routeCertCandidates', [System.StringComparison]::Ordinal)
+    $certBlockEnd = $text.IndexOf('# STAGE: runtime-stop-final', $certBlockStart, [System.StringComparison]::Ordinal)
+    Assert-True ($certBlockStart -ge 0 -and $certBlockEnd -gt $certBlockStart) 'Coordinator cert-consumption block must exist'
+    $certBlock = $text.Substring($certBlockStart, $certBlockEnd - $certBlockStart)
+
+    Assert-True ($certBlock.Contains('$route = $routeCertRecord.Value')) 'Route behavior must come from the parsed route cert'
+    Assert-True ($certBlock.Contains('$tradeSurface = $tradeCertRecord.Value')) 'Trade behavior must come from the parsed trade cert'
+    Assert-True ($certBlock.Contains("Get-TbgObjectProperty `$tradeSurface 'tradeExecution'")) 'Trade execution must be read from the trade cert root'
+    foreach ($currentField in @("'startPosition'", "'latestPosition'", "'destinationSettlement'", "'routeStarted'", "'runtimeProofClaim'", "'mutationApplied'")) {
+        Assert-True ($certBlock.Contains($currentField)) "Coordinator must consume current cert field $currentField"
+    }
+    Assert-True ($certBlock.Contains("'TargetSettlementConfirmed'")) 'Arrival must use the explicit target-settlement checkpoint'
+    Assert-True (-not $certBlock.Contains("Get-TbgObjectProperty `$commandAckRecord.Value 'route'")) 'Command ACK must not be treated as route behavior'
+    Assert-True (-not $certBlock.Contains("Get-TbgObjectProperty `$commandAckRecord.Value 'tradeExecution'")) 'Command ACK must not be treated as trade behavior'
+    Assert-True (-not $certBlock.Contains("Get-TbgObjectProperty `$route 'movementObserved'")) 'Removed nonexistent movementObserved cert field'
+    Assert-True (-not $certBlock.Contains("Get-TbgObjectProperty `$route 'arrivalObserved'")) 'Removed nonexistent arrivalObserved cert field'
+    Assert-True (-not $certBlock.Contains("Get-TbgObjectProperty `$trade 'fakeGameplayDelta'")) 'Removed nonexistent fakeGameplayDelta cert field'
+    Assert-True (-not $certBlock.Contains("Get-TbgObjectProperty `$trade 'inventoryDelta'")) 'Inventory delta must be derived from before/after values'
+    Assert-True ($certBlock.Contains('Test-TbgMapTradeCertLineage')) 'Fresh cert content must retain a lineage gate'
+    Assert-True ($certBlock.Contains('Test-TbgMapTradeCertPairCorrelation')) 'Route and trade certs must retain cross-artifact correlation'
+    Assert-True ($certBlock.Contains('-NotBeforeUtc $routeCommandUtc')) 'Both cert files must remain post-command fresh'
 }
 
 # ═══════════════════════════════════════════════════════════════
