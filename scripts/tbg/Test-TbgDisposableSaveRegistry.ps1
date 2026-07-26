@@ -86,7 +86,10 @@ if ($registry) {
 
 if ($schema -and [string]$schema.title -ne 'TbgDisposableSaveRegistry.v1') { Fail 'registry schema title mismatch' }
 if ($gameRegistry -and [string]::IsNullOrWhiteSpace([string]$gameRegistry.repoSupportedBuild.gameVersionPrefix)) { Fail 'game compatibility registry lacks supported version prefix' }
-if ($saveRegistry -and $saveRegistry.newSaveContract.requirePostCreateObservation.Count -eq 0) { Fail 'save compatibility new-save post-create observation contract missing' }
+if ($saveRegistry) {
+    $postCreateFields = @($saveRegistry.newSaveContract.requiredPostCreateObservation)
+    if ($postCreateFields.Count -eq 0) { Fail 'save compatibility new-save requiredPostCreateObservation contract missing' }
+}
 
 if ($artifacts) {
     if ([string]$artifacts.latestRoot -ne 'artifacts/latest/disposable-save') { Fail 'disposable-save artifact latestRoot mismatch' }
