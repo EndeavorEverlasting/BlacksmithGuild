@@ -1,0 +1,91 @@
+{
+  "schema": "TbgVersionUpgradeImpactRegistry.v1",
+  "purpose": "Turn a Bannerlord version/build change into deterministic compatibility findings and sprint-ready work without launching or mutating the game.",
+  "baseline": {
+    "gameCompatibilityRegistry": ".tbg/state/game-compatibility.registry.json",
+    "sourceProject": "src/BlacksmithGuild/BlacksmithGuild.csproj",
+    "moduleManifest": "Module/BlacksmithGuild/SubModule.xml"
+  },
+  "probeFamilies": [
+    {
+      "id": "candidate_assembly_presence",
+      "ownerLane": "harness/game-version-observation",
+      "severityOnFailure": "blocker",
+      "description": "Every assembly referenced by BlacksmithGuild.csproj must resolve under the candidate Bannerlord root."
+    },
+    {
+      "id": "candidate_compile",
+      "ownerLane": "implementation-completion",
+      "severityOnFailure": "blocker",
+      "description": "Compile BlacksmithGuild against the candidate game assemblies using isolated output paths and no install target."
+    },
+    {
+      "id": "module_dependency_drift",
+      "ownerLane": "harness/game-version-observation",
+      "severityOnFailure": "attention",
+      "description": "Compare tracked module dependency versions with the candidate Native module version."
+    },
+    {
+      "id": "dynamic_binding_inventory",
+      "ownerLane": "implementation-completion",
+      "severityOnFailure": "attention",
+      "description": "Inventory Harmony/reflection/string-bound API assumptions that compile success cannot prove."
+    },
+    {
+      "id": "save_reclassification",
+      "ownerLane": "harness/save-compatibility",
+      "severityOnFailure": "attention",
+      "description": "A changed game version invalidates prior save compatibility admission until saves are reclassified against the new exact version."
+    },
+    {
+      "id": "runtime_recertification",
+      "ownerLane": "runtime-evidence-certification",
+      "severityOnFailure": "attention",
+      "description": "A changed game build invalidates version-sensitive launcher/campaign/governor/trade runtime certification."
+    }
+  ],
+  "candidateAssemblies": [
+    {"include": "SandBox", "relativePath": "Modules/SandBox/bin/Win64_Shipping_Client/SandBox.dll"},
+    {"include": "TaleWorlds.Core", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Core.dll"},
+    {"include": "TaleWorlds.Library", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Library.dll"},
+    {"include": "TaleWorlds.MountAndBlade", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.MountAndBlade.dll"},
+    {"include": "TaleWorlds.CampaignSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.CampaignSystem.dll"},
+    {"include": "TaleWorlds.ObjectSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.ObjectSystem.dll"},
+    {"include": "TaleWorlds.SaveSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.SaveSystem.dll"},
+    {"include": "TaleWorlds.Localization", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Localization.dll"},
+    {"include": "TaleWorlds.InputSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.InputSystem.dll"}
+  ],
+  "dynamicBindingPatterns": [
+    "HarmonyPatch",
+    "AccessTools.",
+    ".GetMethod(",
+    ".GetProperty(",
+    ".GetField(",
+    "Type.GetType(",
+    "Assembly.GetType("
+  ],
+  "pathRouting": [
+    {"regex": "(?i)^src/BlacksmithGuild/(MapTrade|Engine|Governor|Activities)/", "ownerLane": "route-visible-trade"},
+    {"regex": "(?i)^src/BlacksmithGuild/DevTools/QuickStart/", "ownerLane": "launcher-lifecycle"},
+    {"regex": "(?i)^scripts/.*(launcher|continue|launch)", "ownerLane": "launcher-lifecycle"},
+    {"regex": "(?i)save", "ownerLane": "harness/save-compatibility"},
+    {"regex": "(?i)^Module/BlacksmithGuild/SubModule.xml$", "ownerLane": "harness/game-version-observation"}
+  ],
+  "runtimeCertFamiliesInvalidatedOnVersionChange": [
+    "exact-save load boundary",
+    "launcher-to-campaign continuity",
+    "campaign readiness",
+    "governor command/ACK/behavior chain",
+    "route-visible-trade behavior",
+    "loaded assembly identity"
+  ],
+  "publisher": {
+    "provider": "GitHub CLI",
+    "defaultRemote": "origin",
+    "issueTitleTemplate": "Version upgrade probe: Bannerlord {0} -> {1}",
+    "dedupeByOpenIssueTitle": true,
+    "automaticPublication": false,
+    "rule": "The probe always produces a sanitized issue draft. Remote issue creation requires the explicit publisher command and existing operator GitHub authentication."
+  },
+  "proofBoundary": "Compile/API/static compatibility findings are not live runtime proof. A clean candidate build can reduce upgrade risk but version-sensitive runtime behavior remains unproven until separately recertified."
+}
