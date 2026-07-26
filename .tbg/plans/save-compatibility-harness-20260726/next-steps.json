@@ -1,0 +1,37 @@
+{
+  "schema": "TbgNextStepsContract.v1",
+  "steps": [
+    {
+      "order": 1,
+      "owner": "harness operator",
+      "dependency": "save compatibility harness merged or checked out at exact head",
+      "action": "Run the read-only classifier against the real save catalog and exact approved alias pair without touching the active game process.",
+      "expectedArtifact": "artifacts/latest/save-compatibility/save-compatibility.result.json",
+      "completionGate": "saveauto1.sav is blocked as 1.4.7.117484 vs 1.4.6.115628 and both approved aliases resolve byte-identical at 1.4.6.115628 with the complete local SHA-256 recorded."
+    },
+    {
+      "order": 2,
+      "owner": "launcher-lifecycle",
+      "dependency": "step 1 exact target gate passes",
+      "action": "Wire the prelaunch gate into the canonical exact-save route and make the in-game load report correlate the same save identity/version/hash at the load boundary; do not launch while the protected live session remains active.",
+      "expectedArtifact": "same-run exact-save load-boundary report/contract",
+      "completionGate": "static launcher contract proves incompatible saves cannot advance and same-save identity is required at the in-game boundary."
+    },
+    {
+      "order": 3,
+      "owner": "live-cert technician",
+      "dependency": "step 2 merged and a clean runtime window is authorized",
+      "action": "Execute one clean canonical launcher route against the exact classified disposable target.",
+      "expectedArtifact": "fresh correlated launcher/runtime evidence",
+      "completionGate": "exact save identity is observed at load boundary and campaign readiness passes independently."
+    },
+    {
+      "order": 4,
+      "owner": "priority-engine runtime lane",
+      "dependency": "step 3 campaign readiness proven",
+      "action": "Resume map traversal and priority-engine tuning from the proven loaded settlement/map state.",
+      "expectedArtifact": "priority-engine and traversal behavior evidence",
+      "completionGate": "engines execute their bounded runtime behaviors from the intended save without version-modal interference."
+    }
+  ]
+}
