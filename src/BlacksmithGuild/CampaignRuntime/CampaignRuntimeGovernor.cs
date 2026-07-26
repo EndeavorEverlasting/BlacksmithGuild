@@ -85,7 +85,7 @@ namespace BlacksmithGuild.CampaignRuntime
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.GovernorFailSafePause, reason: ex.Message);
                 DebugLogger.Test($"[TBG GOVERNOR] failed and paused: {ex.Message}", showInGame: false);
                 InGameNotice.Blocked(ModDisplay.CompactLine("Governor", "failed; automation paused"));
-                throw;
+                return false;
             }
         }
 
@@ -156,26 +156,29 @@ namespace BlacksmithGuild.CampaignRuntime
         {
             GameSessionState.Refresh();
 
-            var food = CampaignRuntimeStatusReaders.ReadFood();
-            var capacityStatus = CampaignRuntimeStatusReaders.ReadCapacityStatus();
-            var horseStatus = CampaignRuntimeStatusReaders.ReadHorseStatus();
-            var staminaStatus = CampaignRuntimeStatusReaders.ReadStaminaStatus();
-            var materialStatus = CampaignRuntimeStatusReaders.ReadMaterialStatus();
-            var smithingStatus = CampaignRuntimeStatusReaders.ReadSmithingStatus(staminaStatus, materialStatus);
-            var tradeStatus = CampaignRuntimeStatusReaders.ReadTradeStatus();
-            var companionStatus = CampaignRuntimeStatusReaders.ReadCompanionStatus();
-            var diplomacyStatus = CampaignRuntimeStatusReaders.ReadDiplomacyStatus();
-            var threatStatus = CampaignRuntimeStatusReaders.ReadThreatStatus();
+            var food = ReadDecisionStage(source, "ReadFood", CampaignRuntimeStatusReaders.ReadFood);
+            var capacityStatus = ReadDecisionStage(source, "ReadCapacity", CampaignRuntimeStatusReaders.ReadCapacityStatus);
+            var horseStatus = ReadDecisionStage(source, "ReadHorse", CampaignRuntimeStatusReaders.ReadHorseStatus);
+            var staminaStatus = ReadDecisionStage(source, "ReadStamina", CampaignRuntimeStatusReaders.ReadStaminaStatus);
+            var materialStatus = ReadDecisionStage(source, "ReadMaterials", CampaignRuntimeStatusReaders.ReadMaterialStatus);
+            var smithingStatus = ReadDecisionStage(
+                source,
+                "ReadSmithing",
+                () => CampaignRuntimeStatusReaders.ReadSmithingStatus(staminaStatus, materialStatus));
+            var tradeStatus = ReadDecisionStage(source, "ReadTrade", CampaignRuntimeStatusReaders.ReadTradeStatus);
+            var companionStatus = ReadDecisionStage(source, "ReadCompanions", CampaignRuntimeStatusReaders.ReadCompanionStatus);
+            var diplomacyStatus = ReadDecisionStage(source, "ReadDiplomacy", CampaignRuntimeStatusReaders.ReadDiplomacyStatus);
+            var threatStatus = ReadDecisionStage(source, "ReadThreat", CampaignRuntimeStatusReaders.ReadThreatStatus);
 
             var decision = new CampaignRuntimeDecision
             {
                 CycleId = Guid.NewGuid().ToString("N"),
                 GeneratedUtc = DateTime.UtcNow.ToString("o"),
                 Source = source,
-                Surface = CampaignRuntimeStatusReaders.ReadSurface(),
-                GameHealth = CampaignRuntimeStatusReaders.ReadGameHealth(),
-                CurrentTown = CampaignRuntimeStatusReaders.ReadCurrentTown(),
-                DestinationCandidate = CampaignRuntimeStatusReaders.ReadDestinationCandidate(),
+                Surface = ReadDecisionStage(source, "ReadSurface", CampaignRuntimeStatusReaders.ReadSurface),
+                GameHealth = ReadDecisionStage(source, "ReadGameHealth", CampaignRuntimeStatusReaders.ReadGameHealth),
+                CurrentTown = ReadDecisionStage(source, "ReadCurrentTown", CampaignRuntimeStatusReaders.ReadCurrentTown),
+                DestinationCandidate = ReadDecisionStage(source, "ReadDestination", CampaignRuntimeStatusReaders.ReadDestinationCandidate),
                 FoodStatus = food.QuantityStatus + ":" + food.Detail,
                 FoodDiversityStatus = food.DiversityStatus + ":uniqueTypes=" + food.UniqueFoodTypes,
                 FoodForecastStatus = food.ForecastStatus + ":daysRemaining=" + food.EstimatedDaysRemaining.ToString("0.##") + " daysUntilFloor=" + food.EstimatedDaysUntilFloor.ToString("0.##"),
@@ -202,6 +205,18 @@ namespace BlacksmithGuild.CampaignRuntime
             decision.LatestActivityResult = CampaignActivityDispatcher.Dispatch(decision.ProposedActivity);
             AnnotateDeferredNextAction(decision);
             return decision;
+        }
+
+        private static T ReadDecisionStage<T>(string source, string stage, Func<T> read)
+        {
+            // Explicit operator/harness cycles get durable crash-boundary breadcrumbs.
+            // Autonomous four-second campaign cycles stay lean and avoid trace spam.
+            if (string.Equals(source, "campaign_tick", StringComparison.Ordinal))
+            {
+                return read();
+            }
+
+            return RuntimeTrace.Run("CampaignRuntimeGovernor", stage, read);
         }
 
         private static void RankAndSelect(CampaignRuntimeDecision decision, FoodInventoryStatus food)

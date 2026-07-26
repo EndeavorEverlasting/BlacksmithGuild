@@ -16,6 +16,12 @@ function Write-TbgJson($Value, [string]$Path) {
     [IO.File]::WriteAllText($Path, ($Value | ConvertTo-Json -Depth 32), [Text.UTF8Encoding]::new($false))
 }
 function Test-TbgUtc([object]$Value) {
+    if ($Value -is [DateTime]) {
+        return $Value.Kind -ne [DateTimeKind]::Unspecified
+    }
+    if ($Value -is [DateTimeOffset]) {
+        return $true
+    }
     $parsed = [DateTime]::MinValue
     return ($null -ne $Value -and [DateTime]::TryParse([string]$Value, [ref]$parsed) -and $parsed.Kind -ne [DateTimeKind]::Unspecified)
 }

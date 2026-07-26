@@ -22,6 +22,24 @@ function Assert-Contains {
     }
 }
 
+function Assert-NotContains {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Pattern,
+        [string]$Label = $Pattern
+    )
+
+    $full = Join-Path $RepoRoot $Path
+    if (-not (Test-Path -LiteralPath $full)) {
+        throw "Missing file: $Path"
+    }
+
+    $text = Get-Content -LiteralPath $full -Raw
+    if ($text -match [regex]::Escape($Pattern)) {
+        throw "Forbidden '$Label' in $Path"
+    }
+}
+
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public sealed class CampaignRuntimeDecision'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public string SelectedBranch'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeDecision.cs' -Pattern 'public bool ReportInsufficient'
@@ -52,6 +70,14 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovern
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'Activity completed; select the next priority.'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignRuntimePolicy.BranchProfitableTrade, decision.TradeStatus, true'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'CampaignRuntimePolicy.BranchTravelOpportunity, decision.DestinationCandidate, true'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'ReadDecisionStage(source, "ReadDiplomacy"'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'ReadDecisionStage(source, "ReadThreat"'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/CampaignRuntimeGovernor.cs' -Pattern 'return false;'
+
+Assert-Contains -Path 'src/BlacksmithGuild/Cohesion/CohesionPartyClassifier.cs' -Pattern 'return (party?.Party?.NumberOfAllMembers ?? 0) >= 80;'
+Assert-NotContains -Path 'src/BlacksmithGuild/Cohesion/CohesionPartyClassifier.cs' `
+    -Pattern 'var relation = ClassifyRelation(party, MobileParty.MainParty);' `
+    -Label 'recursive neutral-party classification'
 
 Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodInventoryAnalyzer.cs' -Pattern 'public static FoodInventoryStatus Analyze'
 Assert-Contains -Path 'src/BlacksmithGuild/Food/FoodInventoryAnalyzer.cs' -Pattern 'EstimatedDaysRemaining'

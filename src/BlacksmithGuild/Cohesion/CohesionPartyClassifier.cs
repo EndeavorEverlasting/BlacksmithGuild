@@ -118,11 +118,11 @@ namespace BlacksmithGuild.Cohesion
 
         private static bool IsLargeNeutralParty(MobileParty party)
         {
-            var strength = party.Party?.NumberOfAllMembers ?? 0;
-            var relation = ClassifyRelation(party, MobileParty.MainParty);
-            return strength >= 80
-                && relation != CohesionRelationToPlayer.Hostile
-                && relation != CohesionRelationToPlayer.Player;
+            // ClassifyRelation reaches this helper only after player, clan, same-faction,
+            // hostile, and bandit cases have already returned. Calling ClassifyRelation
+            // from here recurses forever for an ordinary neutral party and terminates the
+            // game with an uncatchable StackOverflowException.
+            return (party?.Party?.NumberOfAllMembers ?? 0) >= 80;
         }
     }
 }
