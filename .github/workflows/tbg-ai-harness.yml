@@ -7,13 +7,20 @@ on:
       - "CLAUDE.md"
       - "CODEBASE_MAP.md"
       - ".tbg/harness/**"
+      - ".tbg/state/disposable-save.registry.json"
       - ".tbg/skills/harness-maturity/SKILL.md"
       - ".tbg/workflows/end-to-end-validation.contract.json"
       - ".tbg/workflows/tbg-sprint-capsule.contract.json"
+      - ".tbg/workflows/disposable-save-live-cert.contract.json"
       - "scripts/tbg/Test-TbgEndToEndHarness.ps1"
       - "scripts/tbg/Test-TbgSkillRouting.ps1"
       - "scripts/tbg/Invoke-TbgEndToEndValidation.ps1"
       - "scripts/tbg/New-TbgSprintCapsule.ps1"
+      - "scripts/tbg/Test-TbgDisposableSaveRegistry.ps1"
+      - "scripts/tbg/Update-TbgDisposableSaveRegistry.ps1"
+      - "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1"
+      - "src/BlacksmithGuild/SaveSafety/**"
+      - "src/BlacksmithGuild/MapTrade/MapTradeTradeActionReflection.cs"
       - "tests/harness/**"
       - "docs/AI_HARNESS_ENTRYPOINT.md"
       - "docs/END_TO_END_TESTING_POSTURE.md"
@@ -43,8 +50,21 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          paths=[Path('.tbg/harness/api/operations.json'),Path('.tbg/harness/e2e/profiles.json'),Path('.tbg/harness/consumer-handoffs.registry.json'),Path('.tbg/harness/e2e-artifact-types.registry.json'),Path('.tbg/workflows/end-to-end-validation.contract.json'),Path('.tbg/workflows/tbg-sprint-capsule.contract.json')]+list(Path('.tbg/harness/schemas').glob('*tbg-*.schema.json'))+[Path('.tbg/harness/schemas/e2e-validation-profiles.schema.json')]
-          for path in paths: json.loads(path.read_text(encoding='utf-8-sig'))
+          paths = [
+              Path('.tbg/harness/api/operations.json'),
+              Path('.tbg/harness/e2e/profiles.json'),
+              Path('.tbg/harness/consumer-handoffs.registry.json'),
+              Path('.tbg/harness/e2e-artifact-types.registry.json'),
+              Path('.tbg/harness/disposable-save-artifacts.registry.json'),
+              Path('.tbg/state/disposable-save.registry.json'),
+              Path('.tbg/workflows/end-to-end-validation.contract.json'),
+              Path('.tbg/workflows/tbg-sprint-capsule.contract.json'),
+              Path('.tbg/workflows/disposable-save-live-cert.contract.json'),
+              Path('.tbg/harness/schemas/disposable-save-registry.schema.json'),
+          ] + list(Path('.tbg/harness/schemas').glob('*tbg-*.schema.json')) + [Path('.tbg/harness/schemas/e2e-validation-profiles.schema.json')]
+          for path in paths:
+              json.loads(path.read_text(encoding='utf-8-sig'))
+              print(f'PASS json: {path}')
           PY
       - name: Upload Linux contract diagnostics
         if: always()
@@ -65,7 +85,15 @@ jobs:
         shell: powershell
         run: |
           powershell -NoProfile -ExecutionPolicy Bypass -File scripts\test-powershell-utf8-bom-contract.ps1
-          foreach ($file in @('scripts/tbg/Test-TbgEndToEndHarness.ps1','scripts/tbg/Test-TbgSkillRouting.ps1','scripts/tbg/Invoke-TbgEndToEndValidation.ps1','scripts/tbg/New-TbgSprintCapsule.ps1')) {
+          foreach ($file in @(
+            'scripts/tbg/Test-TbgEndToEndHarness.ps1',
+            'scripts/tbg/Test-TbgSkillRouting.ps1',
+            'scripts/tbg/Invoke-TbgEndToEndValidation.ps1',
+            'scripts/tbg/New-TbgSprintCapsule.ps1',
+            'scripts/tbg/Test-TbgDisposableSaveRegistry.ps1',
+            'scripts/tbg/Update-TbgDisposableSaveRegistry.ps1',
+            'scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1'
+          )) {
             $tokens=$null; $errors=$null
             [void][System.Management.Automation.Language.Parser]::ParseFile($file,[ref]$tokens,[ref]$errors)
             if($errors.Count){$errors|ForEach-Object{Write-Error "${file}: $($_.Message)"};exit 1}
