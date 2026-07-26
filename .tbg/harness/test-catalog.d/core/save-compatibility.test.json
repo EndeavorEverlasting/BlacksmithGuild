@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.save-compatibility",
+  "displayName": "Save Compatibility Harness Validation",
+  "ownerLane": "harness/save-compatibility",
+  "sourcePath": "scripts/tbg/Test-TbgSaveCompatibility.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgSaveCompatibility.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": [],
+  "timeoutSeconds": 120,
+  "mutationClass": "temp_fixture_only",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates read-only save classification fixtures and harness contracts only; real-file replay separately proves read-only parsing and never proves a successful in-game load.",
+  "tags": ["static", "contract", "save", "compatibility", "version", "harness", "core"],
+  "triggerInterests": ["save.discovered", "game.compatibility.observed", "launcher.preflight"],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "save-compatibility-classification"}
+}
