@@ -403,6 +403,31 @@ namespace BlacksmithGuild.MapTrade
             }
         }
 
+        public static void OnRealtimeTick()
+        {
+            if (_activeReport == null || !IsRunning || _abortRequested)
+            {
+                return;
+            }
+
+            if (!GameSessionState.IsMapMenuOpen || !IsAtTargetSettlement())
+            {
+                return;
+            }
+
+            if (_activeReport.State != MapTradeRouteState.TravelToTarget
+                && _activeReport.State != MapTradeRouteState.WaitForArrival
+                && _activeReport.State != MapTradeRouteState.EnterSettlement
+                && _activeReport.State != MapTradeRouteState.ExecuteTrade)
+            {
+                return;
+            }
+
+            _activeReport.LatestPosition = DescribePartyPosition();
+            BeginSettlementEntry();
+            TickSettlementAndTrade();
+        }
+
         private static bool CanStartGovernorActivity(
             CampaignActivityRequest request,
             out string detail)

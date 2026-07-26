@@ -75,12 +75,24 @@ namespace BlacksmithGuild.DevTools
 
             if (RequiresRiskyGate(commandName))
             {
-                var canRun = commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand
-                    ? GameReadinessService.CanRunTavernRecruitment(out var tavernBlockReason)
-                    : GameReadinessService.CanRunRiskyCommands(out tavernBlockReason);
+                string riskyBlockReason;
+                bool canRun;
+                if (IsSettlementTradeCommand(commandName))
+                {
+                    canRun = GameReadinessService.CanRunSettlementTrade(out riskyBlockReason);
+                }
+                else if (commandName == TavernHeroRecruitmentService.RecruitTavernHeroVisibleNowCommand)
+                {
+                    canRun = GameReadinessService.CanRunTavernRecruitment(out riskyBlockReason);
+                }
+                else
+                {
+                    canRun = GameReadinessService.CanRunRiskyCommands(out riskyBlockReason);
+                }
+
                 if (!canRun)
                 {
-                    var blockReason = tavernBlockReason;
+                    var blockReason = riskyBlockReason;
                     DebugLogger.Test($"{commandName} blocked: {blockReason}");
                     ForgeStatus.RecordCommand(commandName, source, "BLOCKED", blockReason, sequence);
                     ForgeStatus.SetTest(commandName, "BLOCKED", blockReason);
@@ -466,6 +478,13 @@ namespace BlacksmithGuild.DevTools
             }
 
             return "command failed";
+        }
+
+        private static bool IsSettlementTradeCommand(string commandName)
+        {
+            return commandName == MapTradeVanillaTradeDriver.ProbeVanillaTradeExecutionNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbePackAnimalBuyNowCommand
+                || commandName == MapTradeVanillaTradeDriver.ProbeFoodBuyNowCommand;
         }
 
         private static bool RequiresRiskyGate(string commandName)
