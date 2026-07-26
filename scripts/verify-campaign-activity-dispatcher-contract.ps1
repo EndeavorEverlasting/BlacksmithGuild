@@ -70,7 +70,9 @@ Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivity
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'AddFoodNarrative'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'Food engine evaluated runway, procurement candidates, read-only market stock, and execution proof readiness.'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'FoodProcurementExecutionGate.Evaluate'
-Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'food_vanilla_driver_not_wired'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'MapTradeAutonomousService.TryStartGovernorFoodActivity'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'CampaignActivityDispatcher.Started'
+Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/FoodActivityAdapter.cs' -Pattern 'map_trade_food_start_blocked'
 
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/MarketActivityAdapter.cs' -Pattern 'public sealed class MarketActivityAdapter'
 Assert-Contains -Path 'src/BlacksmithGuild/CampaignRuntime/Adapters/MarketActivityAdapter.cs' -Pattern 'RefreshMarketScan'

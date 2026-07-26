@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using BlacksmithGuild.Food;
+using BlacksmithGuild.MapTrade;
 using TaleWorlds.CampaignSystem.Party;
 
 namespace BlacksmithGuild.CampaignRuntime.Adapters
@@ -47,8 +48,36 @@ namespace BlacksmithGuild.CampaignRuntime.Adapters
                 return result;
             }
 
-            var blocked = CampaignActivityDispatcher.Blocked(request, detail + "; vanilla food driver is not wired yet", "food_vanilla_driver_not_wired");
-            AddFoodNarrative(blocked, request, plan, candidates, marketStock, marketMatches, gate, "Wire and prove the vanilla food driver before execution.");
+            if (MapTradeAutonomousService.TryStartGovernorFoodActivity(request, out var startDetail))
+            {
+                var started = CampaignActivityDispatcher.Started(
+                    request,
+                    detail + "; " + startDetail);
+                AddFoodNarrative(
+                    started,
+                    request,
+                    plan,
+                    candidates,
+                    marketStock,
+                    marketMatches,
+                    gate,
+                    "MapTrade owns the correlated travel, settlement, and vanilla food-buy phases; await its terminal delta reconciliation.");
+                return started;
+            }
+
+            var blocked = CampaignActivityDispatcher.Blocked(
+                request,
+                detail + "; " + (startDetail ?? MapTradeAutonomousService.LastFailReason ?? "MapTrade food activity did not start"),
+                "map_trade_food_start_blocked");
+            AddFoodNarrative(
+                blocked,
+                request,
+                plan,
+                candidates,
+                marketStock,
+                marketMatches,
+                gate,
+                "Food execution remained blocked; no travel, purchase, or completion claim was emitted.");
             return blocked;
         }
 

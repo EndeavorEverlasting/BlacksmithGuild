@@ -251,7 +251,25 @@ namespace BlacksmithGuild.CampaignRuntime
             {
                 AutomationRuntimeEventEmitter.Emit(AutomationRuntimeEventEmitter.FoodQuantityLow, reason: food.Detail);
                 AddBlocked(decision, CampaignRuntimePolicy.BranchProfitableTrade, "food runway below planning horizon");
-                Select(decision, CampaignRuntimePolicy.BranchFoodQuantity, food.Detail, false, "branch_gate_blocked");
+                var resupplyTarget = ResolveFoodResupplyTarget(decision);
+                var resupplyTargetAvailable = !string.IsNullOrWhiteSpace(resupplyTarget);
+                if (!resupplyTargetAvailable)
+                {
+                    AddBlocked(
+                        decision,
+                        CampaignRuntimePolicy.BranchTravelOpportunity,
+                        "food resupply selected but no current or destination settlement is available");
+                }
+
+                Select(
+                    decision,
+                    CampaignRuntimePolicy.BranchFoodQuantity,
+                    food.Detail,
+                    resupplyTargetAvailable,
+                    resupplyTargetAvailable ? null : "food_resupply_target_missing");
+                decision.NextAction = resupplyTargetAvailable
+                    ? "AcquireFoodBeforeRunwayBreach at " + resupplyTarget
+                    : "Observe until a safe food resupply settlement can be resolved.";
                 return;
             }
 
@@ -404,12 +422,22 @@ namespace BlacksmithGuild.CampaignRuntime
                     return;
                 case CampaignRuntimePolicy.BranchFoodQuantity:
                 case CampaignRuntimePolicy.BranchFoodDiversity:
-                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Food, "AcquireFoodBeforeRunwayBreach", reason, rank, mutationAuthorized, decision.CurrentTown, decision.DestinationCandidate);
+                    var foodTarget = ResolveFoodResupplyTarget(decision);
+                    decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.Food, "AcquireFoodBeforeRunwayBreach", reason, rank, mutationAuthorized, decision.CurrentTown, foodTarget);
                     decision.ProposedActivity.RequiresFreshMarketScan = true;
                     decision.ProposedActivity.RequiresVisibleSurface = true;
                     decision.ProposedActivity.RequiresInventoryDelta = true;
                     decision.ProposedActivity.RequiresGoldDelta = true;
-                    decision.ProposedActivity.ExpectedProof = "fresh market scan plus vanilla buy inventory/gold delta before food runway breach";
+                    decision.ProposedActivity.ExpectedProof = "one correlated MapTrade route cert from food-priority selection through travel/settlement handoff and a vanilla food buy with positive inventory and negative gold deltas";
+                    decision.ProposedActivity.BlockedReason = mutationAuthorized
+                        ? null
+                        : decision.Allowed
+                            ? "bounded execution disabled; food activity remains proposal-only"
+                            : "food resupply target unavailable";
+                    decision.ProposedActivity.Inputs.Add("selectedPriority=" + branch);
+                    decision.ProposedActivity.Inputs.Add("foodResupplyTarget=" + (foodTarget ?? "missing"));
+                    decision.ProposedActivity.ExpectedOutputs.Add("MapTrade route cert retains activityId=" + decision.ProposedActivity.ActivityId);
+                    decision.ProposedActivity.ExpectedOutputs.Add("terminal completion requires positive food inventory and negative gold deltas");
                     return;
                 case CampaignRuntimePolicy.BranchCapacityPressure:
                     decision.ProposedActivity = CampaignActivityFactory.Create(decision.CycleId, branch, CampaignActivityEngine.HorseMarket, "AcquirePackAnimalForCapacity", reason, rank, mutationAuthorized, decision.CurrentTown, decision.RouteCouncilRecommendedDestination ?? decision.HorseAtlasTopDestination ?? decision.DestinationCandidate);
@@ -484,6 +512,26 @@ namespace BlacksmithGuild.CampaignRuntime
 
             return threatStatus.StartsWith("unknown", StringComparison.OrdinalIgnoreCase)
                 || threatStatus.Equals("high", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string ResolveFoodResupplyTarget(CampaignRuntimeDecision decision)
+        {
+            if (decision == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrWhiteSpace(decision.CurrentTown))
+            {
+                return decision.CurrentTown;
+            }
+
+            if (!string.IsNullOrWhiteSpace(decision.RouteCouncilRecommendedDestination))
+            {
+                return decision.RouteCouncilRecommendedDestination;
+            }
+
+            return decision.DestinationCandidate;
         }
 
         private static void Select(

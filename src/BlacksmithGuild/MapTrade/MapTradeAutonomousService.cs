@@ -239,6 +239,41 @@ namespace BlacksmithGuild.MapTrade
             return true;
         }
 
+        public static bool TryStartGovernorFoodActivity(
+            CampaignActivityRequest request,
+            out string detail)
+        {
+            if (!CanStartGovernorActivity(request, out detail))
+            {
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.TargetTown))
+            {
+                detail = "governor food procurement target is missing";
+                LastFailReason = detail;
+                return false;
+            }
+
+            var source = "governor:" + request.ActivityId;
+            if (!StartBranchRouteNow(request.TargetTown, source))
+            {
+                detail = LastFailReason
+                    ?? _activeReport?.BlockedReason
+                    ?? "MapTrade food procurement route did not start";
+                return false;
+            }
+
+            _governorActivity = request;
+            _activeReport.Steps.Add("GovernorActivity:Food:" + request.ActivityId);
+            _activeReport.Steps.Add("FoodProcurementAfterArrival");
+            MapTradeEvidenceWriter.WriteCert(_activeReport);
+            detail = "MapTrade visible food procurement route started"
+                + " activityId=" + request.ActivityId
+                + " target=" + request.TargetTown;
+            return true;
+        }
+
         public static bool StartBranchRouteNow(string targetSettlementName, string source = BranchRouteSource)
         {
             LastFailReason = null;
@@ -767,6 +802,32 @@ namespace BlacksmithGuild.MapTrade
         private static void TryTradeAndFinish()
         {
             _activeReport.State = MapTradeRouteState.ExecuteTrade;
+
+            if (_governorActivity != null
+                && string.Equals(
+                    _governorActivity.Operation,
+                    "AcquireFoodBeforeRunwayBreach",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                if (MapTradeVanillaTradeDriver.RunProbeFoodBuyNow(_activeReport.Source))
+                {
+                    _activeReport.TradeExecution = MapTradeVanillaTradeDriver.LastExecutionResult;
+                    _activeReport.TradeDriverAvailable = _activeReport.TradeExecution != null;
+                    _activeReport.TradeDriverMethod = _activeReport.TradeExecution?.ExecutionMethod;
+                    _activeReport.MutationApplied = _activeReport.TradeExecution != null;
+                    _activeReport.Steps.Add("ExecuteFoodBuy:Success");
+                    _activeReport.RuntimeProofClaim = "vanilla_trade_inventory_gold_delta_observed";
+                    RunForgeHandoffIfConfigured();
+                    Finish(MapTradeRouteState.Complete, "Complete", null);
+                    return;
+                }
+
+                RetrySettlementOrTrade(
+                    "ExecuteFoodBuy",
+                    MapTradeVanillaTradeDriver.LastProbeDetail
+                        ?? "vanilla food inventory/gold delta not proven");
+                return;
+            }
 
             if (_activeReport.Mission.MissionType == MapTradeMissionType.TravelOnlySafetyCert)
             {
