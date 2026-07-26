@@ -67,6 +67,29 @@ function Normalize-TbgVersion {
     return (@($parts.ToArray()) -join '.')
 }
 
+function Get-TbgFileSha256 {
+    param([Parameter(Mandatory = $true)][string]$LiteralPath)
+
+    $stream = [IO.File]::Open(
+        $LiteralPath,
+        [IO.FileMode]::Open,
+        [IO.FileAccess]::Read,
+        [IO.FileShare]::ReadWrite
+    )
+    try {
+        $sha256 = [Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($sha256.ComputeHash($stream))).Replace('-', '').ToLowerInvariant()
+        }
+        finally {
+            $sha256.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 function Get-TbgFileFingerprint {
     param([AllowNull()][string]$Path)
     $record = [ordered]@{
@@ -83,7 +106,7 @@ function Get-TbgFileFingerprint {
     }
     $item = Get-Item -LiteralPath $Path
     $record.exists = $true
-    $record.sha256 = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    $record.sha256 = Get-TbgFileSha256 -LiteralPath $Path
     $record.length = [long]$item.Length
     $record.lastWriteUtc = $item.LastWriteTimeUtc.ToString('o')
     try { $record.assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName($Path).Version.ToString() } catch { }

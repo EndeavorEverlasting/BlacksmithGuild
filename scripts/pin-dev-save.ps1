@@ -6,6 +6,24 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Get-TbgSaveSha256 {
+    param([Parameter(Mandatory = $true)][string]$LiteralPath)
+
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    try {
+        $sha = [Security.Cryptography.SHA256]::Create()
+        try {
+            return ([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-', '')
+        }
+        finally {
+            $sha.Dispose()
+        }
+    }
+    finally {
+        $stream.Dispose()
+    }
+}
+
 $logicalAliasPath = Join-Path $GameSavesRoot 'BlacksmithGuildDevStart.sav'
 $nativeApprovedPath = Join-Path $GameSavesRoot 'Native\BlacksmithGuild_DevStart.sav'
 $logicalAliasExists = Test-Path -LiteralPath $logicalAliasPath -PathType Leaf
@@ -28,8 +46,8 @@ if (-not $logicalAliasExists -or -not $nativeApprovedExists) {
 
 $logicalAlias = Get-Item -LiteralPath $logicalAliasPath
 $nativeApproved = Get-Item -LiteralPath $nativeApprovedPath
-$logicalHash = (Get-FileHash -LiteralPath $logicalAliasPath -Algorithm SHA256).Hash
-$nativeHash = (Get-FileHash -LiteralPath $nativeApprovedPath -Algorithm SHA256).Hash
+$logicalHash = Get-TbgSaveSha256 -LiteralPath $logicalAliasPath
+$nativeHash = Get-TbgSaveSha256 -LiteralPath $nativeApprovedPath
 if ($logicalAlias.Length -ne $nativeApproved.Length -or $logicalHash -ne $nativeHash) {
     throw 'Approved disposable save pair is not byte-identical. Refusing to choose or pin either file.'
 }

@@ -17,6 +17,7 @@ function Assert-Contains {
 
 $autoLoaderPath = 'src\BlacksmithGuild\DevTools\QuickStart\DevSaveAutoLoader.cs'
 $mainMenuPath = 'src\BlacksmithGuild\DevTools\QuickStart\MainMenuAutoLauncher.cs'
+$pinScriptPath = 'scripts\pin-dev-save.ps1'
 Assert-Contains $autoLoaderPath 'using SandBox;' 'the v1.4.6 SandBox game manager must be compile-bound'
 Assert-Contains $autoLoaderPath 'MBSaveLoad.OnStartGame(loadResult);' 'vanilla save startup must initialize MBSaveLoad'
 Assert-Contains $autoLoaderPath 'MBGameManager.StartNewGame(new SandBoxGameManager(loadResult));' 'loaded data must start a campaign'
@@ -24,6 +25,11 @@ Assert-Contains $autoLoaderPath '_exactSaveStartInProgress = true;' 'the StartNe
 Assert-Contains $autoLoaderPath 'if (_exactSaveStartInProgress)' 'the exact save start must pass through the prefix once'
 Assert-Contains $mainMenuPath 'if (DevToolsConfig.AutoLoadDevSave)' 'exact-save mode must be explicit'
 Assert-Contains $mainMenuPath 'vanilla Continue is forbidden' 'an exact-load failure must fail closed'
+Assert-Contains $pinScriptPath 'Get-TbgSaveSha256' 'save pinning must hash without optional PowerShell modules'
+$pinScriptText = Get-Content -LiteralPath (Join-Path $repoRoot $pinScriptPath) -Raw -Encoding UTF8
+if ($pinScriptText -match '\bGet-FileHash\b') {
+    throw 'Save pinning must not depend on Get-FileHash being available in the launcher child.'
+}
 
 $mainMenuText = Get-Content -LiteralPath (Join-Path $repoRoot $mainMenuPath) -Raw -Encoding UTF8
 $exactBranchPattern = '(?s)if \(DevToolsConfig\.AutoLoadDevSave\).*?else if \(TryExecuteFirstAvailable\(ContinueOptionIds'

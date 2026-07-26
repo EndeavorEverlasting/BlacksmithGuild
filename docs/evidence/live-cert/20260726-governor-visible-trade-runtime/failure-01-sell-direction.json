@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "TbgSanitizedRuntimeFailure.v1",
+  "runId": "governor-visible-trade-04db876-20260726-055050",
+  "correlationId": "gvt-04db876-20260726-055050",
+  "testedSourceCommit": "04db876abe7034c79c61e363777c0d100b8aba5c",
+  "installedDllSha256": "967D86DD1149CDB64D99FD9E990FC6E9E07F140358F96B57BB324CFA6445A0B8",
+  "saveIdentity": {
+    "loadedSaveId": "BlacksmithGuildDevStart",
+    "identityVerified": true,
+    "explicitLoadObserved": true,
+    "campaignReady": true
+  },
+  "governor": {
+    "cycleId": "e6d5ee30264f45a3859678022d98afa0",
+    "activityId": "d13e3730230b4a7daed9767bfa5fc3c8",
+    "selectedBranch": "food_quantity",
+    "priorityRank": 4,
+    "allowed": true,
+    "mutationAuthorized": true,
+    "targetTown": "Quyaz"
+  },
+  "route": {
+    "targetSettlementId": "town_A1",
+    "travelCommandIssued": true,
+    "routeStarted": true,
+    "startPosition": {
+      "x": 300.78,
+      "y": 259.99
+    },
+    "latestPosition": {
+      "x": 300.6186,
+      "y": 261.9282
+    },
+    "targetSettlementConfirmed": true,
+    "terminalState": "Blocked",
+    "verdict": "BlockedAfterBoundedRetry"
+  },
+  "tradeAttempt": {
+    "itemId": "butter",
+    "itemClassification": "Food",
+    "goldBefore": 1354,
+    "goldAfter": 1383,
+    "goldDelta": 29,
+    "inventoryBefore": 0,
+    "inventoryAfter": 0,
+    "inventoryDelta": 0,
+    "attemptSuccess": false,
+    "executionMethod": "SellItemsAction.Apply(PartyBase, PartyBase, ItemRosterElement, Int32, Settlement) settlement-buy"
+  },
+  "classification": {
+    "gameCrashObserved": false,
+    "buyProven": false,
+    "failureClass": "sell_items_action_direction_reversed",
+    "observation": "The fallback action increased hero gold and produced no food inventory delta.",
+    "inference": "The main party acted as seller instead of buyer.",
+    "hypothesis": "The fallback constructed SellItemsAction arguments as buyerParty, sellerParty, while the API is seller-first.",
+    "provenCause": "Confirmed by the post-repair counterfactual: sellerParty, buyerParty produced inventoryDelta=1 and goldDelta=-40 for the same Butter buy path."
+  },
+  "repair": {
+    "change": "Construct fallback arguments as sellerParty, buyerParty.",
+    "acceptance": "A buy is admitted only when inventoryDelta > 0 and goldDelta < 0.",
+    "rerunRequired": false,
+    "verifiedBy": "success-01-visible-food-buy.json"
+  },
+  "redaction": {
+    "rawLogsLocalOnly": true,
+    "personalPathsIncluded": false,
+    "secretsIncluded": false
+  }
+}
