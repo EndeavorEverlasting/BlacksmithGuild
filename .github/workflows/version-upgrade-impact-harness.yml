@@ -1,0 +1,69 @@
+name: Version Upgrade Impact Harness
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/state/version-upgrade-impact.registry.json'
+      - '.tbg/workflows/version-upgrade-impact-probe.contract.json'
+      - '.tbg/harness/version-upgrade-impact-artifacts.registry.json'
+      - '.tbg/harness/schemas/version-upgrade-impact-result.schema.json'
+      - '.tbg/harness/fixtures/version-upgrade-impact.fixtures.json'
+      - '.tbg/harness/test-catalog.d/core/version-upgrade-impact.test.json'
+      - 'scripts/tbg/Invoke-TbgVersionUpgradeImpactProbe.ps1'
+      - 'scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1'
+      - 'scripts/tbg/Publish-TbgVersionUpgradeSprintPacket.ps1'
+      - 'ForgeVersionUpgradeProbe.cmd'
+      - 'ForgeVersionUpgradePublish.cmd'
+      - 'docs/operator/version-upgrade-impact.md'
+      - 'docs/handoff/version-upgrade-sprint-emission.md'
+      - 'CODEBASE_MAP.md'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/skills/harness-maturity/SKILL.md'
+      - '.githooks/pre-push'
+      - '.github/workflows/version-upgrade-impact-harness.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.tbg/state/version-upgrade-impact.registry.json'
+      - '.tbg/workflows/version-upgrade-impact-probe.contract.json'
+      - 'scripts/tbg/Invoke-TbgVersionUpgradeImpactProbe.ps1'
+      - 'scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1'
+      - '.github/workflows/version-upgrade-impact-harness.yml'
+
+jobs:
+  focused-version-upgrade-impact:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate with PowerShell 7
+        shell: pwsh
+        run: |
+          ./scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Validate with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\tbg\Test-TbgVersionUpgradeImpactProbe.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Harness completeness
+        shell: pwsh
+        run: |
+          ./scripts/tbg/Test-TbgHarnessCompleteness.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: PowerShell UTF-8 BOM contract
+        shell: pwsh
+        run: |
+          ./scripts/test-powershell-utf8-bom-contract.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Diff check
+        shell: bash
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            base="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
+            git diff --check "$base"...HEAD
+          else
+            git diff --check HEAD^
+          fi
