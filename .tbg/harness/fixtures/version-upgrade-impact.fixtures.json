@@ -7,13 +7,13 @@
       "baselineVersion": "1.4.6.115628",
       "candidateVersion": "1.4.6.115628",
       "assemblyReferences": [
-        {"include": "TaleWorlds.Core", "exists": true},
-        {"include": "TaleWorlds.CampaignSystem", "exists": true}
+        {"include": "TaleWorlds.Core", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Core.dll", "exists": true},
+        {"include": "TaleWorlds.CampaignSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.CampaignSystem.dll", "exists": true}
       ],
       "compile": {"attempted": false, "exitCode": null, "errors": []},
       "dynamicBindings": [],
       "moduleDependencyDrift": [],
-      "expectedTerminalState": "PASS_UPGRADE_BASELINE_INVENTORIED",
+      "expectedTerminalState": "PASS_NO_ACTIONABLE_UPGRADE_GAPS",
       "expectedSprintCount": 0
     },
     {
@@ -22,8 +22,8 @@
       "baselineVersion": "1.4.6.115628",
       "candidateVersion": "1.4.7.117484",
       "assemblyReferences": [
-        {"include": "TaleWorlds.Core", "exists": true},
-        {"include": "TaleWorlds.CampaignSystem", "exists": true}
+        {"include": "TaleWorlds.Core", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Core.dll", "exists": true},
+        {"include": "TaleWorlds.CampaignSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.CampaignSystem.dll", "exists": true}
       ],
       "compile": {
         "attempted": true,
@@ -43,8 +43,8 @@
       "baselineVersion": "1.4.6.115628",
       "candidateVersion": "1.4.7.117484",
       "assemblyReferences": [
-        {"include": "TaleWorlds.Core", "exists": true},
-        {"include": "TaleWorlds.SaveSystem", "exists": false}
+        {"include": "TaleWorlds.Core", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Core.dll", "exists": true},
+        {"include": "TaleWorlds.SaveSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.SaveSystem.dll", "exists": false}
       ],
       "compile": {"attempted": false, "exitCode": null, "errors": []},
       "dynamicBindings": [],
@@ -58,8 +58,8 @@
       "baselineVersion": "1.4.6.115628",
       "candidateVersion": "1.4.7.117484",
       "assemblyReferences": [
-        {"include": "TaleWorlds.Core", "exists": true},
-        {"include": "TaleWorlds.CampaignSystem", "exists": true}
+        {"include": "TaleWorlds.Core", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Core.dll", "exists": true},
+        {"include": "TaleWorlds.CampaignSystem", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.CampaignSystem.dll", "exists": true}
       ],
       "compile": {"attempted": true, "exitCode": 0, "errors": []},
       "dynamicBindings": [
@@ -75,7 +75,7 @@
       "baselineVersion": "1.4.6.115628",
       "candidateVersion": "1.5.0.120000",
       "assemblyReferences": [
-        {"include": "TaleWorlds.Core", "exists": true}
+        {"include": "TaleWorlds.Core", "relativePath": "bin/Win64_Shipping_Client/TaleWorlds.Core.dll", "exists": true}
       ],
       "compile": {"attempted": true, "exitCode": 0, "errors": []},
       "dynamicBindings": [],
