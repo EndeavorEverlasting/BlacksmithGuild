@@ -1,0 +1,50 @@
+{
+  "schema": "TbgDisposableSaveArtifactsRegistry.v1",
+  "workflow": "disposable-save-registry",
+  "latestRoot": "artifacts/latest/disposable-save",
+  "artifacts": [
+    {
+      "id": "classification-result",
+      "fileName": "disposable-save-classification.result.json",
+      "required": true,
+      "contains": [
+        "terminalState",
+        "gameVersion",
+        "supportedGameVersionPrefix",
+        "disposableCount",
+        "mutationEligibleCount",
+        "saves",
+        "proofCeiling"
+      ]
+    },
+    {
+      "id": "classification-report",
+      "fileName": "disposable-save-classification.report.md",
+      "required": true,
+      "contains": [
+        "terminal state",
+        "game version",
+        "mutation eligible",
+        "proof ceiling"
+      ]
+    },
+    {
+      "id": "live-cert-result",
+      "fileName": "disposable-save-live-cert.result.json",
+      "required": false,
+      "contains": [
+        "terminalState",
+        "pinnedSave",
+        "saveCompatibilityState",
+        "proofLevel"
+      ]
+    }
+  ],
+  "privacy": {
+    "rawSaveBytesCommitted": false,
+    "absolutePersonalPathsCommitted": false,
+    "localResultsMayContainAbsolutePaths": true,
+    "trackedRegistryUsesLeafNamesOnly": true
+  },
+  "proofBoundary": "Classification artifacts prove save role plus the canonical read-only save-compatibility result. Live-cert output is separate and may claim live runtime only after the explicit mutation, launcher, and priority-engine gates actually run."
+}
