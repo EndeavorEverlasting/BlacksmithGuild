@@ -3,10 +3,10 @@
   "gameVersion": "1.4.6.115628",
   "cases": [
     {
-      "id": "approved_alias_exact_match",
-      "leafName": "BlacksmithGuildDevStart.sav",
+      "id": "disposable_exact_match",
+      "leafName": "BlacksmithGuild_Disposable_Exact.sav",
       "headerText": "Bannerlord Save Header ApplicationVersion=1.4.6.115628",
-      "expectedRole": "approved_alias",
+      "expectedRole": "disposable_candidate",
       "expectedTerminalState": "PASS_SAVE_VERSION_EXACT",
       "expectedAutoLoadEligible": true
     },
