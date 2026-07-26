@@ -39,7 +39,7 @@ function Publish-TbgVisibleTradeProofEvidence {
         evidencePath = $evidencePath
         prCommentId = ''
         prCommentUrl = ''
-        published = false
+        published = $false
         error = ''
     }
 
@@ -124,7 +124,7 @@ function Publish-TbgVisibleTradeProofEvidence {
 - **Tested source head:** ``$SourceCommit``
 - **Evidence branch:** ``$evidenceBranch``
 - **Evidence commit:** ``$evidenceCommit``
-- **Terminal state:** ``$($publishResult.terminalState)``
+- **Terminal state:** See result.json
 - **Highest proof reached:** See result.json
 - **Movement delta:** See result.json
 - **Arrival outcome:** See result.json

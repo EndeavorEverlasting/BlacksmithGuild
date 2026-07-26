@@ -373,6 +373,17 @@ Test-Case 'Publication retries transient failures' {
     Assert-Contains 'scripts\publish-visible-trade-proof-evidence.ps1' 'Start-Sleep'
 }
 
+Test-Case 'Publication result uses a PowerShell boolean literal' {
+    $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\publish-visible-trade-proof-evidence.ps1') -Raw
+    Assert-True ($text.Contains('published = $false')) 'Publication result must initialize with $false'
+    Assert-True ($text -notmatch '(?m)^\s*published\s*=\s*false\s*$') 'Bare false would be invoked as a command'
+}
+
+Test-Case 'Publication fallback comment does not read an undefined terminal state' {
+    $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\publish-visible-trade-proof-evidence.ps1') -Raw
+    Assert-True (-not $text.Contains('$publishResult.terminalState')) 'Publication result has no terminalState property'
+}
+
 Test-Case 'Publication never force pushes' {
     $text = Get-Content -LiteralPath (Join-Path $RepoRoot 'scripts\publish-visible-trade-proof-evidence.ps1') -Raw
     Assert-True (-not $text.Contains('push --force')) 'Publication must never force push'

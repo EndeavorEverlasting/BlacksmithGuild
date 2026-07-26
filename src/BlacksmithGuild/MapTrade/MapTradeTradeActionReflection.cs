@@ -270,7 +270,10 @@ namespace BlacksmithGuild.MapTrade
 
                 try
                 {
-                    var args = BuildApplyArguments(parameters, buyerParty, sellerParty, settlement, element, quantity);
+                    // SellItemsAction is seller-first. For a settlement purchase the
+                    // settlement sells and the main party buys; reversing these parties
+                    // credits the hero and produces no inventory delta.
+                    var args = BuildApplyArguments(parameters, sellerParty, buyerParty, settlement, element, quantity);
                     if (args == null)
                     {
                         continue;

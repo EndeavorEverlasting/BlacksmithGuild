@@ -106,5 +106,13 @@ Assert-Match `
     -Text $tradeAction `
     -Pattern 'inventoryDelta > 0 && goldDelta < 0' `
     -Message 'The vanilla buy chokepoint must require a positive inventory delta and a negative gold delta.'
+Assert-Match `
+    -Text $tradeAction `
+    -Pattern 'BuildApplyArguments\(parameters, sellerParty, buyerParty, settlement, element, quantity\)' `
+    -Message 'SellItemsAction must receive the settlement seller before the main-party buyer.'
+Assert-NoMatch `
+    -Text $tradeAction `
+    -Pattern 'BuildApplyArguments\(parameters, buyerParty, sellerParty, settlement, element, quantity\)' `
+    -Message 'The reversed SellItemsAction direction would sell from the hero and cannot certify a buy.'
 
 Write-Host 'Governor food MapTrade handoff contract PASS' -ForegroundColor Green
