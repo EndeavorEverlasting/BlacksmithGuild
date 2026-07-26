@@ -6,8 +6,8 @@
   "contextBanner": "[TBG | disposable-save-live-cert | lane: route-visible-trade | protected runtime]",
   "lane": "runtime/priority-engine-live-cert",
   "operatorEntry": "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1",
-  "purpose": "Gate priority-engine runtime work to an explicitly authorized, pinned disposable save whose actual bytes pass the canonical exact save/game version classifier. Save-role classification and version compatibility remain separate authorities.",
-  "proofLevel": "live runtime",
+  "purpose": "Gate priority-engine runtime work to an explicitly authorized, pinned disposable save whose actual bytes pass the canonical exact save/game version classifier. The current implementation can reach launcher proof only; the existing priority engine is a single-priority dispatcher, so full Land -> Survive -> Purchase -> Travel -> Sell behavior proof remains a successor runtime workflow.",
+  "proofLevel": "launcher",
   "requiresInactiveRuntime": true,
   "requiresForgeStopFirst": false,
   "writesRuntimeState": true,
@@ -25,14 +25,15 @@
     "read the pinned save bytes through the canonical save-compatibility classifier",
     "reject a pinned save unless its role and exact version are automation eligible",
     "invoke the canonical launcher lifecycle without force-stopping an ambiguous or human-owned runtime",
-    "dispatch priority-engine work against the exact approved disposable save",
-    "write gitignored classification and runtime result artifacts"
+    "name the first priority-engine command without representing dispatch as behavior proof",
+    "write gitignored classification and launcher-gate result artifacts"
   ],
   "forbiddenScope": [
     "mutate any save that is not the approved disposable pin",
     "launch or mutate without -AllowDisposableSaveMutation",
     "treat filename, calendar year, or registry cohort as version proof",
     "force-stop an active or ambiguously owned Bannerlord session",
+    "blast multiple priority commands without same-run acknowledgement between them",
     "claim observed priority-engine behavior from command dispatch alone",
     "promote launcher or command acknowledgement into trade/runtime proof"
   ],
@@ -44,8 +45,7 @@
   "validationCommands": [
     "pwsh -NoProfile -File scripts/tbg/Test-TbgDisposableSaveRegistry.ps1",
     "pwsh -NoProfile -File scripts/tbg/Test-TbgSaveCompatibility.ps1",
-    "pwsh -NoProfile -File scripts/tbg/Test-TbgEndToEndHarness.ps1",
-    "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1 -AllowDisposableSaveMutation"
+    "pwsh -NoProfile -File scripts/tbg/Test-TbgEndToEndHarness.ps1"
   ],
   "terminalStates": [
     "BLOCKED_mutation_authority_absent",
@@ -58,10 +58,14 @@
     "BLOCKED_launcher_admission_failed",
     "BLOCKED_launch_intent_failed",
     "BLOCKED_launcher_navigation_failed",
-    "BLOCKED_priority_engine_missing",
-    "ATTENTION_priority_engine_behavior_proof_pending",
-    "PASS_priority_engine_live_on_exact_version_disposable_save"
+    "ATTENTION_priority_engine_behavior_proof_pending"
   ],
-  "proofBoundary": "The workflow may reach live-runtime proof only when same-run behavior evidence proves the priority-engine outcome. Exact save classification, launcher success, and command dispatch are lower proof levels and must remain ATTENTION/BLOCKED until that behavior evidence exists.",
+  "successorGate": {
+    "ownerLane": "route-visible-trade",
+    "firstCommand": "pwsh -NoProfile -File scripts/tbg/Invoke-TbgPriorityEngine.ps1 -Priority Land -RepoRoot <repo-root>",
+    "requiredBehavior": "same-run ordered priority acknowledgements and fresh observed gameplay deltas before advancing through Survive, Purchase, Travel, and Sell",
+    "proofTarget": "live runtime"
+  },
+  "proofBoundary": "This workflow currently proves only disposable-save admission plus the canonical launcher path. Exact save classification and launcher success are lower proof levels. Full priority-engine live-runtime certification remains unproven until a successor workflow observes the ordered five-stage behavior chain in the same run.",
   "resultSchema": "TbgDisposableSaveLiveCertResult.v1"
 }
