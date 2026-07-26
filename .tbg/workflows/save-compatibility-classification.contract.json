@@ -1,0 +1,87 @@
+{
+  "id": "save-compatibility-classification",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "lane": "harness/save-compatibility",
+  "purpose": "Classify save identity, role, byte identity, and save/game version compatibility before any exact-save load or runtime mutation.",
+  "proofLevel": "harness",
+  "proofCeiling": "real-file read-only parsing",
+  "operatorEntry": "ForgeSaveCompatibility.cmd",
+  "scriptEntrypoint": "scripts/tbg/Invoke-TbgSaveCompatibility.ps1",
+  "validator": "scripts/tbg/Test-TbgSaveCompatibility.ps1",
+  "registry": ".tbg/state/save-compatibility.registry.json",
+  "artifactRegistry": ".tbg/harness/save-compatibility-artifacts.registry.json",
+  "requiresInactiveRuntime": false,
+  "writesRuntimeState": false,
+  "mutatesSaves": false,
+  "modes": {
+    "catalog": "Classify all supplied/discovered saves without granting load authority. Incompatible saves remain blocked per-record and do not poison unrelated targets.",
+    "gate": "Evaluate one explicit target save plus approved-alias pair integrity for launcher-lifecycle consumption."
+  },
+  "inputs": [
+    "one or more .sav paths or read-only discovery under the Bannerlord Game Saves roots",
+    "exact installed game executable version, preferably from the current game-compatibility result",
+    "tracked disposable-save naming policy"
+  ],
+  "stageOrder": [
+    "resolve_game_version",
+    "discover_or_accept_save_paths",
+    "read_file_identity_without_mutation",
+    "extract_unambiguous_save_version",
+    "classify_save_role",
+    "compare_save_version_to_game_version",
+    "verify_approved_alias_pair_when_present",
+    "write_local_result_and_operator_report"
+  ],
+  "terminalStates": [
+    "PASS_SAVE_CATALOG_CLASSIFIED",
+    "PASS_SAVE_VERSION_EXACT",
+    "PASS_APPROVED_ALIAS_PAIR_IDENTICAL",
+    "ATTENTION_SAVE_OLDER_THAN_GAME_RECERTIFY",
+    "ATTENTION_APPROVED_ALIAS_PAIR_INCOMPLETE",
+    "BLOCKED_GAME_VERSION_UNKNOWN",
+    "BLOCKED_SAVE_VERSION_UNKNOWN",
+    "BLOCKED_SAVE_VERSION_AMBIGUOUS",
+    "BLOCKED_SAVE_NEWER_THAN_GAME",
+    "BLOCKED_SAVE_ROLE_NOT_AUTOMATION_ELIGIBLE",
+    "BLOCKED_APPROVED_ALIAS_PAIR_MISMATCH",
+    "BLOCKED_SAVE_NOT_FOUND"
+  ],
+  "rules": [
+    "Save bytes are read only; classification never changes write timestamps, contents, names, or directories.",
+    "A filename containing disposable or dev language grants role classification only; it never overrides version compatibility.",
+    "Autosaves are never selected as approved aliases merely because they are newer on disk.",
+    "Catalog mode is inventory, not load authorization; blocked records may coexist with a compatible target.",
+    "Gate mode requires an explicit target and returns that target's first applicable terminal state.",
+    "Exact save/game version match plus an automation-eligible role is required for automatic reuse by the exact-save launcher path.",
+    "A save newer than the installed game fails closed before launcher action.",
+    "An older save is attention-only and requires an explicit runtime recertification lane before automatic reuse.",
+    "Unknown or ambiguous parsed versions fail closed.",
+    "The approved alias pair must be byte-identical and report the same parsed version when either alias is present.",
+    "Creating a new save belongs to launcher/runtime authority; after creation this classifier must record the new file's observed bytes and version before reuse.",
+    "Prelaunch compatibility does not prove that the game accepted or loaded the save. The in-game load boundary requires separate same-run evidence."
+  ],
+  "consumers": [
+    {
+      "lane": "launcher-lifecycle",
+      "gate": "Only gate-mode PASS_SAVE_VERSION_EXACT with an automation-eligible role and satisfied approved-alias integrity may advance into exact-save selection; the launcher must still prove the in-game load boundary."
+    },
+    {
+      "lane": "runtime-evidence-certification",
+      "gate": "Save classification may be cited as prelaunch provenance only and cannot promote launcher or runtime proof."
+    },
+    {
+      "lane": "route-visible-trade",
+      "gate": "Map traversal and priority-engine work begins only after the launcher/runtime lanes independently prove campaign readiness."
+    }
+  ],
+  "forbiddenScope": [
+    "launch Bannerlord",
+    "click or dismiss launcher or in-game dialogs",
+    "load a save",
+    "create or overwrite a save",
+    "touch save write timestamps",
+    "write command inbox files",
+    "claim campaign readiness or live runtime"
+  ]
+}

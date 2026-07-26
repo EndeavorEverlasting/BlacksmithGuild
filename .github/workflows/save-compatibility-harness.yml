@@ -1,0 +1,60 @@
+name: Save Compatibility Harness
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/state/save-compatibility.registry.json'
+      - '.tbg/workflows/save-compatibility-classification.contract.json'
+      - '.tbg/harness/save-compatibility-artifacts.registry.json'
+      - '.tbg/harness/fixtures/save-compatibility.fixtures.json'
+      - '.tbg/harness/test-catalog.d/core/save-compatibility.test.json'
+      - 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1'
+      - 'scripts/tbg/Test-TbgSaveCompatibility.ps1'
+      - 'docs/operator/save-compatibility.md'
+      - 'CODEBASE_MAP.md'
+      - '.tbg/harness/manifest.json'
+      - '.tbg/skills/harness-maturity/SKILL.md'
+      - 'scripts/tbg/Test-TbgHarnessCompleteness.ps1'
+      - '.githooks/pre-push'
+      - '.github/workflows/save-compatibility-harness.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.tbg/state/save-compatibility.registry.json'
+      - '.tbg/workflows/save-compatibility-classification.contract.json'
+      - '.tbg/harness/save-compatibility-artifacts.registry.json'
+      - '.tbg/harness/fixtures/save-compatibility.fixtures.json'
+      - 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1'
+      - 'scripts/tbg/Test-TbgSaveCompatibility.ps1'
+
+jobs:
+  focused-save-compatibility:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate with PowerShell 7
+        shell: pwsh
+        run: |
+          ./scripts/tbg/Test-TbgSaveCompatibility.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Validate with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\tbg\Test-TbgSaveCompatibility.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Harness completeness
+        shell: pwsh
+        run: |
+          ./scripts/tbg/Test-TbgHarnessCompleteness.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: PowerShell UTF-8 BOM contract
+        shell: pwsh
+        run: |
+          ./scripts/test-powershell-utf8-bom-contract.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Diff check
+        shell: pwsh
+        run: |
+          git diff --check HEAD^ HEAD
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }

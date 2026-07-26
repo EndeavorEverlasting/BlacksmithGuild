@@ -2,7 +2,7 @@
 .SYNOPSIS
   Validates that all harness components registered in .tbg/harness/manifest.json
   exist on disk and that every skill's entry contract, validators, and owned paths resolve.
-  Also enforces the weak-agent-safe live-runtime proof admission bundle.
+  Also enforces the weak-agent-safe live-runtime proof admission and save compatibility bundles.
 #>
 [CmdletBinding()]
 param(
@@ -82,6 +82,10 @@ $requiredPaths = @(
     'artifactEngineContract', 'artifactEngineRegistry',
     'windowIdentityRegistry', 'windowIntelligencePolicy', 'windowIntelligenceContract',
     'gameCompatibilityRegistry', 'gameCompatibilityContract',
+    'saveCompatibilityRegistry', 'saveCompatibilityContract', 'saveCompatibilityCommand',
+    'saveCompatibilityEntrypoint', 'saveCompatibilityValidator',
+    'saveCompatibilityArtifactRegistry', 'saveCompatibilityFixtures',
+    'saveCompatibilityOperatorReport',
     'stateEnvelopeContract', 'stateEnvelopeValidator',
     'skillRoutingValidator'
 )
@@ -160,6 +164,49 @@ if ($liveContract) {
     Add-Failure 'live proof contract invalid JSON'
 }
 
+Write-Host "`n=== Save compatibility bundle ==="
+$saveCompatibilityFiles = @(
+    '.tbg/state/save-compatibility.registry.json',
+    '.tbg/workflows/save-compatibility-classification.contract.json',
+    '.tbg/harness/save-compatibility-artifacts.registry.json',
+    '.tbg/harness/fixtures/save-compatibility.fixtures.json',
+    '.tbg/harness/test-catalog.d/core/save-compatibility.test.json',
+    'scripts/tbg/Invoke-TbgSaveCompatibility.ps1',
+    'scripts/tbg/Test-TbgSaveCompatibility.ps1',
+    'docs/operator/save-compatibility.md',
+    '.github/workflows/save-compatibility-harness.yml',
+    'ForgeSaveCompatibility.cmd'
+)
+foreach ($f in $saveCompatibilityFiles) { Require-File "save compatibility $f" $f }
+Require-Text 'codebase map routes save compatibility' 'CODEBASE_MAP.md' '## Save compatibility classification'
+Require-Text 'harness maturity defines save compatibility split' '.tbg/skills/harness-maturity/SKILL.md' '### Save compatibility split'
+Require-Text 'pre-push runs save compatibility' '.githooks/pre-push' 'Test-TbgSaveCompatibility.ps1'
+
+$saveContract = Get-Json '.tbg/workflows/save-compatibility-classification.contract.json'
+if ($saveContract) {
+    if ([string]$saveContract.proofCeiling -eq 'real-file read-only parsing') { Add-Pass 'save compatibility proof ceiling is read-only parsing' }
+    else { Add-Failure 'save compatibility proof ceiling drifted' }
+    if ($saveContract.mutatesSaves -eq $false) { Add-Pass 'save compatibility contract forbids save mutation' }
+    else { Add-Failure 'save compatibility contract allows save mutation' }
+    if (@($saveContract.terminalStates) -contains 'BLOCKED_SAVE_NEWER_THAN_GAME') { Add-Pass 'save compatibility contract blocks newer saves' }
+    else { Add-Failure 'save compatibility contract missing newer-save block' }
+    if ([string]$saveContract.operatorEntry -eq 'ForgeSaveCompatibility.cmd') { Add-Pass 'save compatibility operator entry is canonical CMD' }
+    else { Add-Failure 'save compatibility operator entry is not ForgeSaveCompatibility.cmd' }
+} else {
+    Add-Failure 'save compatibility contract invalid JSON'
+}
+
+$saveFixtures = Get-Json '.tbg/harness/fixtures/save-compatibility.fixtures.json'
+if ($saveFixtures) {
+    $autosaveFixture = @($saveFixtures.cases | Where-Object { $_.leafName -eq 'saveauto1.sav' } | Select-Object -First 1)
+    if ($autosaveFixture.Count -eq 1 -and [string]$autosaveFixture[0].expectedTerminalState -eq 'BLOCKED_SAVE_NEWER_THAN_GAME') { Add-Pass 'save compatibility fixture reproduces newer saveauto1 block' }
+    else { Add-Failure 'save compatibility fixture does not reproduce newer saveauto1 block' }
+    if ([string]$saveFixtures.operatorObservedReference.gameVersion -eq '1.4.6.115628') { Add-Pass 'save compatibility fixture records operator-observed game version reference' }
+    else { Add-Failure 'save compatibility operator reference game version drifted' }
+} else {
+    Add-Failure 'save compatibility fixtures invalid JSON'
+}
+
 Write-Host "`n=== PowerShell UTF-8 BOM check ==="
 $bomPaths = @(
     'scripts/tbg/Test-TbgEndToEndHarness.ps1',
@@ -167,7 +214,9 @@ $bomPaths = @(
     'scripts/tbg/New-TbgSprintCapsule.ps1',
     'scripts/tbg/Test-TbgHarnessDoctrine.ps1',
     'scripts/tbg/Test-TbgSkillRouting.ps1',
-    'scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1'
+    'scripts/tbg/Test-TbgLiveRuntimeProofAdmission.ps1',
+    'scripts/tbg/Invoke-TbgSaveCompatibility.ps1',
+    'scripts/tbg/Test-TbgSaveCompatibility.ps1'
 )
 foreach ($bomPath in $bomPaths) {
     $bomFile = Join-Path $RepoRoot $bomPath
@@ -182,6 +231,7 @@ Write-Host "`n=== Git hooks ==="
 Require-File 'githook pre-commit' '.githooks/pre-commit'
 Require-File 'githook pre-push' '.githooks/pre-push'
 Require-Text 'pre-push runs live proof admission' '.githooks/pre-push' 'Test-TbgLiveRuntimeProofAdmission.ps1'
+Require-Text 'pre-push runs save compatibility validator' '.githooks/pre-push' 'Test-TbgSaveCompatibility.ps1'
 Require-Text 'pre-push runs completeness' '.githooks/pre-push' 'Test-TbgHarnessCompleteness.ps1'
 
 Write-Host "`n=== E2E contract files ==="
@@ -217,6 +267,16 @@ $result = @{
         artifactRegistry = '.tbg/harness/live-runtime-proof-artifacts.registry.json'
         operatorReport = 'docs/operator/live-runtime-proof-admission.md'
         prePushHook = '.githooks/pre-push'
+    }
+    saveCompatibility = [ordered]@{
+        contract = '.tbg/workflows/save-compatibility-classification.contract.json'
+        registry = '.tbg/state/save-compatibility.registry.json'
+        validator = 'scripts/tbg/Test-TbgSaveCompatibility.ps1'
+        entrypoint = 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1'
+        operatorEntry = 'ForgeSaveCompatibility.cmd'
+        artifactRegistry = '.tbg/harness/save-compatibility-artifacts.registry.json'
+        operatorReport = 'docs/operator/save-compatibility.md'
+        proofCeiling = 'real-file read-only parsing'
     }
 }
 

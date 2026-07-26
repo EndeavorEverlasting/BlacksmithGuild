@@ -1,0 +1,22 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.save-compatibility-real-reference",
+  "displayName": "Save Compatibility Real-Reference Contract",
+  "ownerLane": "harness/save-compatibility",
+  "sourcePath": ".tbg/harness/fixtures/save-compatibility-real-reference.json",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", "$r=Get-Content '.tbg/harness/fixtures/save-compatibility-real-reference.json' -Raw | ConvertFrom-Json; if($r.gameVersion -ne '1.4.6.115628'){exit 1}; $a=@($r.observations|? leafName -eq 'saveauto1.sav')[0]; if($a.saveVersion -ne '1.4.7.117484' -or $a.expectedTerminalState -ne 'BLOCKED_SAVE_NEWER_THAN_GAME'){exit 1}; exit 0"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": ["core.save-compatibility"],
+  "timeoutSeconds": 60,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "contract",
+  "proofCeiling": "Checks only the sanitized operator-reported reference; it is not a real-file replay.",
+  "tags": ["static", "contract", "save", "compatibility", "reference"],
+  "defaultProfileMembership": ["default-static"],
+  "sourceProvenance": {"type": "operator_reported_reference", "date": "2026-07-26"}
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "TbgSaveCompatibilityResult.v1",
+  "title": "BlacksmithGuild save compatibility result",
+  "type": "object",
+  "required": ["schema", "generatedUtc", "runId", "mode", "gameVersion", "terminalState", "proofCeiling", "saveRecords", "approvedAliasPair", "eligibleTargets", "evidencePaths"],
+  "properties": {
+    "schema": {"const": "TbgSaveCompatibilityResult.v1"},
+    "generatedUtc": {"type": "string"},
+    "runId": {"type": "string", "minLength": 1},
+    "mode": {"enum": ["catalog", "gate"]},
+    "gameVersion": {"type": ["string", "null"]},
+    "terminalState": {"type": ["string", "null"]},
+    "proofCeiling": {"const": "real-file read-only parsing"},
+    "saveRecords": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["leafName", "exists", "role", "compatibility", "terminalState", "autoLoadEligible"],
+        "properties": {
+          "leafName": {"type": "string"},
+          "exists": {"type": "boolean"},
+          "role": {"type": "string"},
+          "length": {"type": ["integer", "null"]},
+          "sha256": {"type": ["string", "null"]},
+          "lastWriteUtc": {"type": ["string", "null"]},
+          "parseStatus": {"type": "string"},
+          "parsedSaveVersion": {"type": ["string", "null"]},
+          "versionCandidates": {"type": "array"},
+          "compatibility": {"type": "string"},
+          "terminalState": {"type": "string"},
+          "autoLoadEligible": {"type": "boolean"}
+        }
+      }
+    },
+    "approvedAliasPair": {"type": "object"},
+    "eligibleTargets": {"type": "array"},
+    "targetSavePath": {"type": ["string", "null"]},
+    "targetGateTerminalState": {"type": ["string", "null"]},
+    "evidencePaths": {
+      "type": "object",
+      "required": ["result", "report", "events"]
+    }
+  }
+}

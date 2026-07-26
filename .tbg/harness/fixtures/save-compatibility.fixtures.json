@@ -1,0 +1,80 @@
+{
+  "schema": "TbgSaveCompatibilityFixtures.v1",
+  "gameVersion": "1.4.6.115628",
+  "cases": [
+    {
+      "id": "disposable_exact_match",
+      "leafName": "BlacksmithGuild_Disposable_Exact.sav",
+      "headerText": "Bannerlord Save Header ApplicationVersion=1.4.6.115628",
+      "expectedRole": "disposable_candidate",
+      "expectedTerminalState": "PASS_SAVE_VERSION_EXACT",
+      "expectedAutoLoadEligible": true
+    },
+    {
+      "id": "autosave_newer_than_game",
+      "leafName": "saveauto1.sav",
+      "headerText": "Bannerlord Save Header SaveVersion=1.4.7.117484",
+      "expectedRole": "autosave",
+      "expectedTerminalState": "BLOCKED_SAVE_NEWER_THAN_GAME",
+      "expectedAutoLoadEligible": false
+    },
+    {
+      "id": "disposable_name_does_not_override_newer_version",
+      "leafName": "DisposableVersionTrap.sav",
+      "headerText": "ApplicationVersion=1.4.7.117484",
+      "expectedRole": "disposable_candidate",
+      "expectedTerminalState": "BLOCKED_SAVE_NEWER_THAN_GAME",
+      "expectedAutoLoadEligible": false
+    },
+    {
+      "id": "older_save_requires_recertification",
+      "leafName": "OldCampaign.sav",
+      "headerText": "ApplicationVersion=1.4.5.114000",
+      "expectedRole": "user_or_unclassified",
+      "expectedTerminalState": "ATTENTION_SAVE_OLDER_THAN_GAME_RECERTIFY",
+      "expectedAutoLoadEligible": false
+    },
+    {
+      "id": "unknown_version_fails_closed",
+      "leafName": "UnknownCampaign.sav",
+      "headerText": "Bannerlord Save Header Without Version Metadata",
+      "expectedRole": "user_or_unclassified",
+      "expectedTerminalState": "BLOCKED_SAVE_VERSION_UNKNOWN",
+      "expectedAutoLoadEligible": false
+    },
+    {
+      "id": "ambiguous_versions_fail_closed",
+      "leafName": "AmbiguousCampaign.sav",
+      "headerText": "ApplicationVersion=1.4.6.115628 SaveVersion=1.4.7.117484",
+      "expectedRole": "user_or_unclassified",
+      "expectedTerminalState": "BLOCKED_SAVE_VERSION_AMBIGUOUS",
+      "expectedAutoLoadEligible": false
+    }
+  ],
+  "pairCases": [
+    {
+      "id": "approved_pair_identical",
+      "leftLeafName": "BlacksmithGuildDevStart.sav",
+      "rightLeafName": "BlacksmithGuild_DevStart.sav",
+      "headerText": "ApplicationVersion=1.4.6.115628",
+      "expectedByteIdentical": true,
+      "expectedTerminalState": "PASS_SAVE_VERSION_EXACT"
+    },
+    {
+      "id": "approved_pair_mismatch",
+      "leftLeafName": "BlacksmithGuildDevStart.sav",
+      "rightLeafName": "BlacksmithGuild_DevStart.sav",
+      "leftHeaderText": "ApplicationVersion=1.4.6.115628 left",
+      "rightHeaderText": "ApplicationVersion=1.4.6.115628 right",
+      "expectedByteIdentical": false,
+      "expectedTerminalState": "BLOCKED_APPROVED_ALIAS_PAIR_MISMATCH"
+    }
+  ],
+  "operatorObservedReference": {
+    "date": "2026-07-26",
+    "proofClass": "reported_real-file_read-only_observation_pending_tracked_harness_replay",
+    "gameVersion": "1.4.6.115628",
+    "newerAutosave": {"leafName": "saveauto1.sav", "saveVersion": "1.4.7.117484", "expectedTerminalState": "BLOCKED_SAVE_NEWER_THAN_GAME"},
+    "approvedAliases": {"saveVersion": "1.4.6.115628", "sha256KnownPrefix": "C472", "sha256KnownSuffix": "9BDC", "expectedTerminalState": "PASS_SAVE_VERSION_EXACT"}
+  }
+}

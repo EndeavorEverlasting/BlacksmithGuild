@@ -1,0 +1,51 @@
+{
+  "schema": "TbgSaveCompatibilityArtifactsRegistry.v1",
+  "workflow": "save-compatibility-classification",
+  "resultSchema": ".tbg/harness/schemas/save-compatibility-result.schema.json",
+  "latestRoot": "artifacts/latest/save-compatibility",
+  "runRoot": "artifacts/latest/save-compatibility/runs/<runId>",
+  "artifacts": [
+    {
+      "id": "result",
+      "fileName": "save-compatibility.result.json",
+      "required": true,
+      "contains": ["runId", "gameVersion", "terminalState", "saveRecords", "approvedAliasPair", "proofCeiling"]
+    },
+    {
+      "id": "report",
+      "fileName": "save-compatibility.report.md",
+      "required": true,
+      "contains": ["terminal state", "game version", "save classifications", "next executable gate"]
+    },
+    {
+      "id": "events",
+      "fileName": "events.jsonl",
+      "required": true,
+      "contains": ["inspection.started", "save.observed", "classification.completed"]
+    }
+  ],
+  "saveRecordFields": [
+    "leafName",
+    "role",
+    "length",
+    "sha256",
+    "parsedSaveVersion",
+    "versionCandidates",
+    "compatibility",
+    "terminalState",
+    "autoLoadEligible",
+    "lastWriteUtc"
+  ],
+  "privacy": {
+    "rawSaveBytesCommitted": false,
+    "absolutePersonalPathsCommitted": false,
+    "localResultsMayContainAbsolutePaths": true,
+    "sanitizedRemoteEvidenceMustUseLeafNameAndHashOnly": true
+  },
+  "retention": {
+    "generatedResults": "gitignored/local unless explicitly sanitized",
+    "saveFiles": "never copied into repository artifacts",
+    "hashes": "allowed in sanitized evidence when intentionally published"
+  },
+  "proofBoundary": "These artifacts prove only what the classifier read from save bytes and local game-version metadata. They do not prove a successful in-game load."
+}
