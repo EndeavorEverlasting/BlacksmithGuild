@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "TbgSanitizedRuntimeSuccess.v1",
+  "runId": "governor-visible-trade-56fa387-20260726-060335",
+  "correlationId": "gvt-56fa387-20260726-060335",
+  "testedSourceCommit": "56fa38732ff3edc3dde55e2827ea7b84aea1efd4",
+  "installedDllSha256": "37A48B7531BF8626E56BA9E0E74D50E803481955825A7BF1316435B4222618FB",
+  "installedDllMatchedBuiltDll": true,
+  "saveIdentity": {
+    "loadedSaveId": "BlacksmithGuildDevStart",
+    "activeSaveSlotName": "BlacksmithGuildDevStart",
+    "identityVerified": true,
+    "explicitLoadObserved": true,
+    "campaignReady": true
+  },
+  "governor": {
+    "cycleId": "24243a41ca294522b2e0275bf8811e10",
+    "activityId": "42977fcb4ef140548f3ef5aa860360a1",
+    "selectedBranch": "food_quantity",
+    "selectedReason": "foodItems=1 uniqueTypes=1 troops=1 dailyDemand=1 daysRemaining=1 daysUntilFloor=0",
+    "priorityRank": 4,
+    "allowed": true,
+    "mutationAuthorized": true,
+    "targetEngine": "Food",
+    "targetTown": "Quyaz",
+    "activityStatus": "Completed"
+  },
+  "handoffs": [
+    {
+      "from": "Governor",
+      "to": "Food",
+      "stage": "governor_selection",
+      "status": "Dictated"
+    },
+    {
+      "from": "Governor",
+      "to": "ActivityDispatcher",
+      "stage": "dispatch_received",
+      "status": "Started"
+    },
+    {
+      "from": "ActivityDispatcher",
+      "to": "FoodActivityAdapter",
+      "stage": "adapter_selected",
+      "status": "Started"
+    },
+    {
+      "from": "Food",
+      "to": "Governor",
+      "stage": "adapter_completed",
+      "status": "Completed"
+    }
+  ],
+  "route": {
+    "startedAtUtc": "2026-07-26T06:06:46.5635018Z",
+    "completedAtUtc": "2026-07-26T06:06:49.2507710Z",
+    "targetSettlementId": "town_A1",
+    "destinationSettlement": "Quyaz",
+    "travelCommandIssued": true,
+    "routeStarted": true,
+    "startPosition": {
+      "x": 300.78,
+      "y": 259.99
+    },
+    "latestPosition": {
+      "x": 300.6186,
+      "y": 261.9282
+    },
+    "targetSettlementConfirmed": true,
+    "terminalState": "Complete",
+    "verdict": "Complete",
+    "steps": [
+      "TravelToTarget:Quyaz",
+      "GovernorActivity:Food:42977fcb4ef140548f3ef5aa860360a1",
+      "FoodProcurementAfterArrival",
+      "ArrivedAtTargetDistance",
+      "TargetSettlementConfirmed",
+      "ExecuteFoodBuy:Success"
+    ]
+  },
+  "trade": {
+    "runtimeProofClaim": "vanilla_trade_inventory_gold_delta_observed",
+    "itemId": "butter",
+    "itemName": "Butter",
+    "itemClassification": "Food",
+    "quantityBought": 1,
+    "goldBefore": 1000,
+    "goldAfter": 960,
+    "goldDelta": -40,
+    "inventoryBefore": 0,
+    "inventoryAfter": 1,
+    "inventoryDelta": 1,
+    "mutationApplied": true,
+    "executionMethod": "SellItemsAction.Apply(PartyBase, PartyBase, ItemRosterElement, Int32, Settlement) settlement-buy"
+  },
+  "runtime": {
+    "observedProcessId": 24608,
+    "processStartObserved": true,
+    "processExitObservedDuringProof": false,
+    "gameCrashObserved": false,
+    "observerStoppedWithoutTouchingGame": true,
+    "gameProcessLeftRunning": true
+  },
+  "playerTakeover": {
+    "engineMode": "Manual",
+    "manualTransitionAcknowledged": true,
+    "governorAutomationEnabled": false,
+    "boundedExecutionEnabled": false,
+    "mapTradeAutomationEnabled": false,
+    "guildLoopAutomationEnabled": false
+  },
+  "redaction": {
+    "rawLogsLocalOnly": true,
+    "personalPathsIncluded": false,
+    "secretsIncluded": false
+  }
+}

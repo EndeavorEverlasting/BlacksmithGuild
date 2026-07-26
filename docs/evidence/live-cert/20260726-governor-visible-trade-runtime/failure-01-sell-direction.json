@@ -54,12 +54,13 @@
     "observation": "The fallback action increased hero gold and produced no food inventory delta.",
     "inference": "The main party acted as seller instead of buyer.",
     "hypothesis": "The fallback constructed SellItemsAction arguments as buyerParty, sellerParty, while the API is seller-first.",
-    "provenCause": null
+    "provenCause": "Confirmed by the post-repair counterfactual: sellerParty, buyerParty produced inventoryDelta=1 and goldDelta=-40 for the same Butter buy path."
   },
   "repair": {
     "change": "Construct fallback arguments as sellerParty, buyerParty.",
     "acceptance": "A buy is admitted only when inventoryDelta > 0 and goldDelta < 0.",
-    "rerunRequired": true
+    "rerunRequired": false,
+    "verifiedBy": "success-01-visible-food-buy.json"
   },
   "redaction": {
     "rawLogsLocalOnly": true,
