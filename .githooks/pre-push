@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # BlacksmithGuild harness pre-push gate.
-# Static/read-only only: no launcher, game, save mutation, command inbox, process mutation, or network activity beyond the push itself.
+# Static/read-only only: no launcher, game, save mutation, command inbox, process mutation, issue publication, or network activity beyond the push itself.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -20,6 +20,9 @@ echo "[harness] live runtime proof admission"
 
 echo "[harness] save compatibility"
 "${PS[@]}" -File scripts/tbg/Test-TbgSaveCompatibility.ps1
+
+echo "[harness] version upgrade impact"
+"${PS[@]}" -File scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1
 
 echo "[harness] harness completeness"
 "${PS[@]}" -File scripts/tbg/Test-TbgHarnessCompleteness.ps1

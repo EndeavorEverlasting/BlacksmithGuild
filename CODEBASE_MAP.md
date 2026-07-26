@@ -81,6 +81,20 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - `.github/workflows/save-compatibility-harness.yml` — focused PS7/PS5.1, completeness, BOM, and diff CI.
 - `artifacts/latest/save-compatibility/` — generated local result/report; raw `.sav` bytes are never copied into repository artifacts.
 
+## Version-upgrade impact and sprint emission
+
+- `.tbg/state/version-upgrade-impact.registry.json` — candidate assembly list, probe families, dynamic-binding patterns, owner routing, invalidated cert families, and remote-emission policy.
+- `.tbg/workflows/version-upgrade-impact-probe.contract.json` — inventory/candidate/fixture workflow; compile/static proof ceiling and remote-write boundary.
+- `.tbg/harness/version-upgrade-impact-artifacts.registry.json` and `.tbg/harness/schemas/version-upgrade-impact-result.schema.json` — result/report/source-inventory/sprint/issue artifact contract.
+- `.tbg/harness/fixtures/version-upgrade-impact.fixtures.json` — baseline, missing-assembly, compile-break, dynamic-binding, and module-drift reductions.
+- `scripts/tbg/Invoke-TbgVersionUpgradeImpactProbe.ps1` — candidate-root probe; verifies nine project assembly surfaces, inventories reflection/Harmony assumptions, compares module dependency versions, and runs an isolated-output Debug build.
+- `scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1` — focused deterministic validator and routing contract.
+- `ForgeVersionUpgradeProbe.cmd` — operator entry for baseline inventory or candidate probing.
+- `scripts/tbg/Publish-TbgVersionUpgradeSprintPacket.ps1` and `ForgeVersionUpgradePublish.cmd` — review/explicit-publish surface for the sanitized GitHub sprint issue; never used by CI/pre-push.
+- `docs/operator/version-upgrade-impact.md` — human explanation of what an update invalidates and why.
+- `docs/handoff/version-upgrade-sprint-emission.md` — dependency-aware handoff from findings to owner-lane sprints.
+- `artifacts/latest/version-upgrade-impact/` — generated result, report, source inventory, sprint packet, and issue draft.
+
 ## Existing harness and state systems
 
 - `.tbg/harness/artifact-engines.registry.json` and `.tbg/workflows/local-artifact-engine.contract.json` — deterministic artifact parsing/routing.
@@ -98,7 +112,7 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 ## Product and build
 
 - `src/BlacksmithGuild/` — gameplay/module source.
-- `src/BlacksmithGuild/BlacksmithGuild.csproj` — net472 build; Release invokes install, Debug is build-only.
+- `src/BlacksmithGuild/BlacksmithGuild.csproj` — net472 build; Release invokes install, Debug is build-only. It directly references `SandBox` plus eight `TaleWorlds.*` assemblies, so those are first-class version-upgrade probe surfaces.
 - `Module/BlacksmithGuild/SubModule.xml` — module identity/version.
 - `Module/BlacksmithGuild/bin/` — generated binaries; never commit.
 - `forge.ps1`, `Forge.cmd`, `ForgeContinue.cmd`, `ForgeReboot.cmd`, `ForgeStop.cmd` — build/install/launch lifecycle.
@@ -121,6 +135,9 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 
 ## Proof-safe validation
 
+- Version-upgrade fixtures: `pwsh -NoProfile -File scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1`.
+- Version-upgrade baseline inventory: `pwsh -NoProfile -File scripts/tbg/Invoke-TbgVersionUpgradeImpactProbe.ps1 -Mode inventory`.
+- Candidate upgrade probe/build: `pwsh -NoProfile -File scripts/tbg/Invoke-TbgVersionUpgradeImpactProbe.ps1 -Mode candidate`.
 - Save compatibility fixtures: `pwsh -NoProfile -File scripts/tbg/Test-TbgSaveCompatibility.ps1`.
 - Save compatibility real-file read-only catalog: `pwsh -NoProfile -File scripts/tbg/Invoke-TbgSaveCompatibility.ps1 -Mode catalog`.
 - Harness completeness: `pwsh -NoProfile -File scripts/tbg/Test-TbgHarnessCompleteness.ps1`.
@@ -130,4 +147,4 @@ Load only the smallest surface required by the active `.tbg` skill and workflow 
 - Read-only runtime: explicit `-AllowLiveRuntime`; refreshes current artifacts without save mutation.
 - Disposable-save mutation: profile exists but fails closed until a specific live workflow and disposable save are explicitly supplied.
 
-Never infer save compatibility from a filename, and never infer successful load, build, install, launcher, ACK, behavior, or live-runtime proof from a lower surface. A model cannot override terminal states computed by repository validators.
+Never infer upgrade safety from a version number or a green compile alone. Never infer save compatibility from a filename, and never infer successful load, build, install, launcher, ACK, behavior, or live-runtime proof from a lower surface. A model cannot override terminal states computed by repository validators.

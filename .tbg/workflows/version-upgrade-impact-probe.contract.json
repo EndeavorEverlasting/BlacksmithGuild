@@ -1,0 +1,83 @@
+{
+  "id": "version-upgrade-impact-probe",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "lane": "harness/version-upgrade-impact",
+  "purpose": "Detect what BlacksmithGuild must repair or recertify when Bannerlord moves to a new version/build, then emit deterministic sprint candidates.",
+  "operatorEntry": "ForgeVersionUpgradeProbe.cmd",
+  "publisherEntry": "ForgeVersionUpgradePublish.cmd",
+  "scriptEntrypoint": "scripts/tbg/Invoke-TbgVersionUpgradeImpactProbe.ps1",
+  "validator": "scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1",
+  "registry": ".tbg/state/version-upgrade-impact.registry.json",
+  "artifactRegistry": ".tbg/harness/version-upgrade-impact-artifacts.registry.json",
+  "proofLevel": "harness",
+  "proofCeiling": "candidate static/build compatibility",
+  "requiresInactiveRuntime": false,
+  "writesRuntimeState": false,
+  "mutatesGameInstall": false,
+  "mutatesProductSource": false,
+  "modes": {
+    "inventory": "Inventory current repo assumptions and produce a baseline packet without requiring a candidate game root or compiling.",
+    "candidate": "Inspect a candidate Bannerlord root, verify referenced assemblies, run a no-install isolated-output build, reduce compile/dynamic/module/save/certification findings, and produce sprint candidates.",
+    "fixture": "Reduce deterministic synthetic observations for validator coverage; never claims real candidate compatibility."
+  },
+  "stageOrder": [
+    "resolve_repo_and_baseline",
+    "observe_candidate_version",
+    "inventory_project_assembly_dependencies",
+    "verify_candidate_assembly_presence",
+    "inventory_dynamic_binding_assumptions",
+    "compare_module_dependency_versions",
+    "run_isolated_candidate_compile_when_authorized",
+    "invalidate_version_sensitive_save_and_runtime_certification",
+    "reduce_findings",
+    "route_findings_to_owner_lanes",
+    "write_result_report_sprint_packet_and_issue_draft"
+  ],
+  "terminalStates": [
+    "PASS_UPGRADE_BASELINE_INVENTORIED",
+    "PASS_NO_ACTIONABLE_UPGRADE_GAPS",
+    "ATTENTION_VERSION_CHANGE_REQUIRES_RECERTIFICATION",
+    "ATTENTION_DYNAMIC_BINDING_REVIEW_REQUIRED",
+    "BLOCKED_CANDIDATE_ASSEMBLY_MISSING",
+    "BLOCKED_CANDIDATE_COMPILE_FAILURE",
+    "BLOCKED_VERSION_UPGRADE_GAPS"
+  ],
+  "findingRules": [
+    "A missing candidate assembly is a blocker even before compile.",
+    "A compiler error against candidate game assemblies is a blocker and must retain file, compiler code, and message when available.",
+    "Compile success does not prove reflection, Harmony, string-bound members, UI flow, save loading, or runtime behavior.",
+    "Dynamic binding assumptions become explicit review findings on every version-family change unless separately proven against candidate metadata.",
+    "A game version/build change invalidates prior save compatibility admission and version-sensitive runtime certification until rerun.",
+    "Findings are grouped into sprint candidates by owner lane and dependency; sprint candidates contain an executable first action, expected artifact, and completion gate.",
+    "No model may delete, downgrade, or promote a finding without new machine evidence."
+  ],
+  "remoteEmission": {
+    "issueDraftAlwaysProduced": true,
+    "publisher": "scripts/tbg/Publish-TbgVersionUpgradeSprintPacket.ps1",
+    "remoteWriteRequiresExplicitPublishSwitch": true,
+    "ciMayPublishIssues": false,
+    "prePushMayPublishIssues": false,
+    "issueContainsOnlySanitizedRelativePaths": true
+  },
+  "allowedScope": [
+    "read tracked source, project, workflow, test, manifest, and evidence metadata",
+    "read candidate Bannerlord files and assembly identities",
+    "run dotnet build with candidate GameFolder and isolated temporary output directories",
+    "write gitignored probe/report/sprint artifacts",
+    "prepare a sanitized GitHub issue draft",
+    "publish that issue only through an explicit operator publisher invocation"
+  ],
+  "forbiddenScope": [
+    "launch Bannerlord",
+    "load or create saves",
+    "install or update Bannerlord",
+    "install the mod",
+    "write product source files",
+    "write command inbox files",
+    "dismiss launcher or game dialogs",
+    "claim candidate runtime compatibility from compile/static proof",
+    "automatically create GitHub issues from CI or pre-push"
+  ],
+  "handoff": "docs/handoff/version-upgrade-sprint-emission.md"
+}
