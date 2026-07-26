@@ -75,7 +75,7 @@ Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once
 | 6 | Hand off to game | `handoff:` … |
 | 7 | Post-handoff watchdog until map | `post-handoff: TBG READY detected` |
 
-**Continue path:** use `LaunchForgeContinue.cmd` (`-LaunchIntent continue`) — same dialog handling; cert via 006I-5.
+**Exact-save Continue path:** use `LaunchForgeContinue.cmd` (`-LaunchIntent continue`). The launcher action is PLAY; the retained in-game intent loads the exact approved disposable save. A newer-save/version error is never auto-dismissed.
 
 **PowerShell 5.1 encoding:** all `.ps1` files must have **UTF-8 BOM** (use `scripts/tools/Add-Utf8Bom.ps1 -Fix`). Non-ASCII log strings without BOM break Layer A parse on `Forge.cmd`.
 
@@ -106,9 +106,9 @@ Audit (`AUDIT launcher controls`, `AUDIT launcher PID-named elements`) runs once
 | Command | Intent | Use when |
 |---------|--------|----------|
 | `Forge.cmd` | `play` | **Daily dev** — new SandBox campaign → map |
-| `ForgeContinue.cmd` | `continue` | Continue without opening launcher (game exe direct) |
+| `ForgeContinue.cmd` | in-game `continue`, launcher `play` | Exact approved dev-save load through the in-game main menu |
 | `LaunchForge.cmd` | `play` | Build + launcher (manual mod checkboxes OK) |
-| `LaunchForgeContinue.cmd` | `continue` | Build + launcher + Continue (006I-5 cert) |
+| `LaunchForgeContinue.cmd` | in-game `continue`, launcher `play` | Build + launcher PLAY + exact approved dev-save Continue |
 
 ---
 

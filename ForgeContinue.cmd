@@ -4,7 +4,7 @@ setlocal
 echo.
 echo The Blacksmith Guild - Forge Continue
 echo.
-echo Build + install + frozen-context CONTINUE until map.
+echo Build + install + launcher PLAY, then exact in-game dev-save CONTINUE until map.
 echo Watch mode: ForgeWatch.cmd or .\forge.ps1 -Watch
 echo.
 
@@ -17,11 +17,11 @@ if %FORGE_EXIT% NEQ 0 (
     exit /b %FORGE_EXIT%
 )
 
-pwsh -NoProfile -ExecutionPolicy Bypass -Command ". '%~dp0scripts\bannerlord-paths.ps1'; $root = Get-BannerlordRootFromRepo -RepoRoot '%~dp0'; & '%~dp0scripts\write-launch-intent.ps1' -LaunchIntent continue -BannerlordRoot $root; & '%~dp0scripts\launcher-frozen-context-nav.ps1' -LaunchIntent continue -BannerlordRoot $root -LauncherContextPath (Join-Path $root 'launcher-window-context.json') -PollMs 250 -LaunchSetup -AllowFocusSteal"
+pwsh -NoProfile -ExecutionPolicy Bypass -Command ". '%~dp0scripts\bannerlord-paths.ps1'; $root = Get-BannerlordRootFromRepo -RepoRoot '%~dp0'; & '%~dp0scripts\write-launch-intent.ps1' -LaunchIntent continue -BannerlordRoot $root; & '%~dp0scripts\launcher-frozen-context-nav.ps1' -LaunchIntent play -BannerlordRoot $root -LauncherContextPath (Join-Path $root 'launcher-window-context.json') -PollMs 250 -LaunchSetup -AllowFocusSteal"
 set FORGE_EXIT=%ERRORLEVEL%
 if %FORGE_EXIT% NEQ 0 (
     echo.
-    echo Frozen CONTINUE failed or needs operator action. See Launch.log.
+    echo Frozen PLAY / exact in-game CONTINUE failed or needs operator action. See Launch.log.
     pause
     exit /b %FORGE_EXIT%
 )

@@ -98,9 +98,9 @@ Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLaunc
 Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs' -Pattern 'DevSaveAutoLoader.TryLoad(saveInfo)'
 Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs' -Pattern 'CompleteIntent($"auto-loading disposable dev save {devSaveName} (Continue).")'
 Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/DevSaveAutoLoader.cs' -Pattern 'CampaignSetupStateTracker.MarkDevSaveLoadStarted(saveInfo.Name)'
-Assert-Ordered -Path 'src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs' `
-    -First 'if (TryLoadUniqueDisposableSaveForContinue(out var devSaveName))' `
-    -Then 'else if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))' `
-    -Label 'explicit disposable load must precede the vanilla Continue fallback'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/DevSaveAutoLoader.cs' -Pattern 'MBSaveLoad.OnStartGame(loadResult)'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/DevSaveAutoLoader.cs' -Pattern 'MBGameManager.StartNewGame(new SandBoxGameManager(loadResult))'
+Assert-Contains -Path 'src/BlacksmithGuild/DevTools/QuickStart/MainMenuAutoLauncher.cs' `
+    -Pattern 'exact disposable dev save unavailable or failed to start; vanilla Continue is forbidden'
 
 Write-Host 'Campaign governor command-bus source contract: PASS'

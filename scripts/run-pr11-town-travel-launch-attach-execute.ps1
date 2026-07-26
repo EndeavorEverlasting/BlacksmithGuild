@@ -32,6 +32,7 @@ $startSha = (git rev-parse HEAD).Trim()
 . (Join-Path $PSScriptRoot 'process-lifecycle-authority.ps1')
 . (Join-Path $PSScriptRoot 'pr11-runtime-state-consumer.ps1')
 . (Join-Path $PSScriptRoot 'automation-checkpoint-contract.ps1')
+. (Join-Path $PSScriptRoot 'exact-save-launch-intent.ps1')
 . (Join-Path $PSScriptRoot 'autonomous-assist-session.ps1')
 
 $sessionId = (Get-Date).ToString('yyyyMMdd-HHmmss')
@@ -242,6 +243,9 @@ if (-not $SkipLaunch) {
     $attachCheck = Test-F7AssistiveSessionAttachable -BannerlordRoot $bannerlordRoot `
         -Phase1Path $phase1Path -StatusPath $statusPath -CrashContextPath $crashContextPath
     if (-not $attachCheck.attachable) {
+        $launcherSelectionIntent = Resolve-TbgLauncherSelectionIntent `
+            -InGameLaunchIntent $LaunchIntent `
+            -ExactSave:($LaunchIntent -eq 'continue')
         Write-CertLog "Attach not ready ($($attachCheck.reason)); launching with guarded nav LaunchIntent=$LaunchIntent"
         if ($sessionAuthorityMode -eq 'FreshTestLaunch') {
             Write-CertLog 'FreshTestLaunch preflight: intentional close before launch'
@@ -252,7 +256,7 @@ if (-not $SkipLaunch) {
         if (-not $launcherRunning) {
             & (Join-Path $PSScriptRoot 'open-bannerlord-launcher.ps1') `
                 -BannerlordRoot $bannerlordRoot `
-                -LaunchIntent $LaunchIntent
+                -LaunchIntent $launcherSelectionIntent
             Start-Sleep -Seconds 3
         }
 
@@ -264,7 +268,7 @@ if (-not $SkipLaunch) {
         $navExit = 0
         $navError = $null
         try {
-            $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $LaunchIntent `
+            $navResult = Invoke-TbgLauncherAutoNavChild -ScriptPath $navScript -LaunchIntent $launcherSelectionIntent `
                 -BannerlordRoot $bannerlordRoot -TimeoutSec 300 -LauncherSelectionMaxMs 30000 `
                 -RespectUserForeground:(-not $AllowFocusSteal) -AllowFocusSteal:$AllowFocusSteal `
                 -ExternalStateTimelinePath $timelinePath

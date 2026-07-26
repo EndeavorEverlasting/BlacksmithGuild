@@ -50,6 +50,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
         private static List<string> _intentSourcePaths = new List<string>();
         private static bool _forwardLaunchInProgress;
         private static bool _forwardLaunchCompletedThisProcess;
+        private static bool _exactDevSaveLoadBlocked;
         private static readonly HashSet<string> LoggedBlockReasons = new HashSet<string>(StringComparer.Ordinal);
 
         private const float InitialStateWarmupSeconds = 1.0f;
@@ -74,6 +75,7 @@ namespace BlacksmithGuild.DevTools.QuickStart
             _intentConsumed = false;
             _forwardLaunchInProgress = false;
             _forwardLaunchCompletedThisProcess = false;
+            _exactDevSaveLoadBlocked = false;
             _optionsProbed = false;
             _loggedMainMenuTimeout = false;
             _mainMenuWaitSeconds = 0f;
@@ -150,10 +152,27 @@ namespace BlacksmithGuild.DevTools.QuickStart
             if (string.Equals(_launchIntent, "continue", StringComparison.OrdinalIgnoreCase))
             {
                 LogMainMenuIntentDecision("auto-select", "continue intent");
-                if (TryLoadUniqueDisposableSaveForContinue(out var devSaveName))
+                if (DevToolsConfig.AutoLoadDevSave)
                 {
-                    CompleteIntent($"auto-loading disposable dev save {devSaveName} (Continue).");
-                    executed = true;
+                    if (_exactDevSaveLoadBlocked)
+                    {
+                        return;
+                    }
+
+                    if (TryLoadUniqueDisposableSaveForContinue(out var devSaveName))
+                    {
+                        CompleteIntent($"auto-loading disposable dev save {devSaveName} (Continue).");
+                        executed = true;
+                    }
+                    else
+                    {
+                        _exactDevSaveLoadBlocked = true;
+                        LogMainMenuIntentDecision(
+                            "block",
+                            "exact disposable dev save unavailable or failed to start; vanilla Continue is forbidden");
+                        GuildLog.Display(
+                            "TBG QUICKSTART: exact disposable dev save failed; vanilla Continue was not used.");
+                    }
                 }
                 else if (TryExecuteFirstAvailable(ContinueOptionIds, "Continue Campaign", out var selectedId))
                 {
