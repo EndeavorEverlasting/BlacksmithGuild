@@ -1,0 +1,56 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.version-authority",
+  "displayName": "Canonical Bannerlord Version Authority Validation",
+  "ownerLane": "harness/version-compatibility",
+  "sourcePath": "scripts/tbg/Test-TbgVersionAuthority.ps1",
+  "command": "powershell.exe",
+  "arguments": [
+    "-NoProfile",
+    "-NonInteractive",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "scripts/tbg/Test-TbgVersionAuthority.ps1"
+  ],
+  "supportedHosts": [
+    "win",
+    "win_powershell"
+  ],
+  "requiredTools": [
+    "powershell.exe"
+  ],
+  "requiredInputs": [],
+  "dependencies": [
+    "core.disposable-save-registry"
+  ],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Proves canonical registry/module metadata alignment and prevents protected save-safety consumers from owning Bannerlord version literals; it does not prove build, save, launcher, reflection, Harmony, or live-runtime compatibility.",
+  "tags": [
+    "static",
+    "contract",
+    "version",
+    "compatibility",
+    "authority",
+    "save-safety",
+    "harness",
+    "core"
+  ],
+  "triggerInterests": [
+    "game.version.changed",
+    "save.disposable.selected",
+    "launcher.preflight"
+  ],
+  "defaultProfileMembership": [
+    "default-static",
+    "operator-observe"
+  ],
+  "sourceProvenance": {
+    "type": "repository",
+    "ref": "version-authority-policy"
+  }
+}
