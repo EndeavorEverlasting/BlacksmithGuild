@@ -1,0 +1,71 @@
+{
+  "schema": "TbgVersionAuthorityPolicy.v1",
+  "purpose": "Keep Bannerlord version truth in the canonical game-compatibility registry and module metadata while preventing save-safety consumers from introducing branch-local supported-version literals.",
+  "canonicalAuthority": {
+    "registry": ".tbg/state/game-compatibility.registry.json",
+    "supportedVersionField": "repoSupportedBuild.gameVersionPrefix",
+    "moduleDependencyVersionField": "repoSupportedBuild.moduleDependencyVersion",
+    "moduleMetadata": "Module/BlacksmithGuild/SubModule.xml",
+    "moduleMetadataSourceField": "repoSupportedBuild.source"
+  },
+  "versionLiteralPattern": "(?<![A-Za-z0-9])v?\\d+\\.\\d+\\.\\d+(?:\\.\\d+)?(?![A-Za-z0-9])",
+  "protectedConsumers": [
+    {
+      "path": ".tbg/state/disposable-save.registry.json",
+      "requiredMarkers": [
+        ".tbg/state/game-compatibility.registry.json",
+        "repoSupportedBuild.gameVersionPrefix"
+      ],
+      "forbiddenProperties": [
+        "supportedGameVersionPrefix"
+      ],
+      "forbidVersionLiterals": true
+    },
+    {
+      "path": ".tbg/workflows/disposable-save-live-cert.contract.json",
+      "requiredMarkers": [
+        "scripts/tbg/Invoke-TbgSaveCompatibility.ps1",
+        "PASS_SAVE_VERSION_EXACT"
+      ],
+      "forbiddenProperties": [],
+      "forbidVersionLiterals": true
+    },
+    {
+      "path": "scripts/tbg/Update-TbgDisposableSaveRegistry.ps1",
+      "requiredMarkers": [
+        "game-compatibility.registry.json",
+        "repoSupportedBuild.gameVersionPrefix",
+        "Invoke-TbgSaveCompatibility.ps1"
+      ],
+      "forbiddenProperties": [],
+      "forbidVersionLiterals": true
+    },
+    {
+      "path": "scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1",
+      "requiredMarkers": [
+        "Invoke-TbgSaveCompatibility.ps1",
+        "PASS_SAVE_VERSION_EXACT"
+      ],
+      "forbiddenProperties": [],
+      "forbidVersionLiterals": true
+    },
+    {
+      "path": "src/BlacksmithGuild/SaveSafety/SaveSafetyClassifier.cs",
+      "requiredMarkers": [
+        "Invoke-TbgSaveCompatibility.ps1",
+        "prelaunch_exact_version_gate_required"
+      ],
+      "forbiddenProperties": [],
+      "forbidVersionLiterals": true
+    }
+  ],
+  "allowedVersionLiteralOwners": [
+    ".tbg/state/game-compatibility.registry.json",
+    "Module/BlacksmithGuild/SubModule.xml",
+    ".tbg/harness/fixtures/**",
+    "scripts/tbg/Test-TbgGameCompatibility.ps1",
+    "scripts/tbg/Test-TbgSaveCompatibility.ps1",
+    "scripts/tbg/Test-TbgVersionUpgradeImpactProbe.ps1"
+  ],
+  "proofBoundary": "This policy proves repository authority alignment and literal ownership only. It does not prove that a Bannerlord build, save, launcher, reflection target, Harmony patch, or live runtime is compatible."
+}

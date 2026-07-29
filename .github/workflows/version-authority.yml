@@ -1,0 +1,104 @@
+name: Version Authority Contract
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/harness/policies/version-authority.policy.json'
+      - '.tbg/harness/test-catalog.d/core/version-authority.test.json'
+      - '.tbg/state/game-compatibility.registry.json'
+      - '.tbg/state/disposable-save.registry.json'
+      - '.tbg/workflows/disposable-save-live-cert.contract.json'
+      - 'Module/BlacksmithGuild/SubModule.xml'
+      - 'scripts/tbg/Test-TbgVersionAuthority.ps1'
+      - 'scripts/tbg/Update-TbgDisposableSaveRegistry.ps1'
+      - 'scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1'
+      - 'src/BlacksmithGuild/SaveSafety/SaveSafetyClassifier.cs'
+      - '.github/workflows/version-authority.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.tbg/harness/policies/version-authority.policy.json'
+      - '.tbg/harness/test-catalog.d/core/version-authority.test.json'
+      - '.tbg/state/game-compatibility.registry.json'
+      - '.tbg/state/disposable-save.registry.json'
+      - '.tbg/workflows/disposable-save-live-cert.contract.json'
+      - 'Module/BlacksmithGuild/SubModule.xml'
+      - 'scripts/tbg/Test-TbgVersionAuthority.ps1'
+      - 'scripts/tbg/Update-TbgDisposableSaveRegistry.ps1'
+      - 'scripts/tbg/Invoke-TbgDisposableSaveLiveCert.ps1'
+      - 'src/BlacksmithGuild/SaveSafety/SaveSafetyClassifier.cs'
+      - '.github/workflows/version-authority.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  version-authority:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse authority policy and catalog
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @(
+            '.tbg/harness/policies/version-authority.policy.json',
+            '.tbg/harness/test-catalog.d/core/version-authority.test.json'
+          ) | ForEach-Object {
+            Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "JSON OK: $_"
+          }
+
+      - name: Validate with PowerShell 7
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $output = 'artifacts/latest/version-authority-ci'
+          ./scripts/tbg/Test-TbgVersionAuthority.ps1 -OutputRoot $output
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Validate with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\tbg\Test-TbgVersionAuthority.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Run default-static composition
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./ForgeTest.cmd run --profile default-static --no-pause
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: PowerShell UTF-8 BOM contract
+        shell: pwsh
+        run: |
+          ./scripts/test-powershell-utf8-bom-contract.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Diff check
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            base="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
+            git diff --check "$base"...HEAD
+          else
+            git diff --check HEAD^ HEAD
+          fi
+
+      - name: Upload validation result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-authority-${{ github.run_id }}
+          path: artifacts/latest/version-authority-ci/version-authority.validation.json
+          if-no-files-found: ignore
+          retention-days: 14
