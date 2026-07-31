@@ -108,7 +108,9 @@ function Stop-Cert {
 function Invoke-ValidatorChild {
     param([Parameter(Mandatory = $true)][string]$ScriptPath)
     & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $ScriptPath -RepoRoot $RepoRoot
-    return (if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE })
+    $childExit = 0
+    if ($null -ne $LASTEXITCODE) { $childExit = [int]$LASTEXITCODE }
+    return $childExit
 }
 
 Add-Event 'DISPOSABLE VISIBLE TRADE LIVE CERT START'
@@ -164,7 +166,8 @@ $visibleResultPath = Join-Path $RepoRoot 'artifacts/latest/visible-trade-proof.r
 if (Test-Path -LiteralPath $visibleResultPath) { Remove-Item -LiteralPath $visibleResultPath -Force }
 Add-Event 'Invoking visible-trade coordinator in certifying mode (build/install/launch enabled).'
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $visibleTrade -RepoRoot $RepoRoot -ExpectedHead $head -DisposableSavePath $savePath
-$visibleExit = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
+$visibleExit = 0
+if ($null -ne $LASTEXITCODE) { $visibleExit = [int]$LASTEXITCODE }
 if (-not (Test-Path -LiteralPath $visibleResultPath -PathType Leaf)) {
     Stop-Cert -State 'FAIL_VISIBLE_TRADE_RESULT_MISSING' -Reason "Visible-trade coordinator exited $visibleExit without a result artifact." -ExitCode 29 -Head $head -PinnedSave $saveLeaf -SaveState $saveState
 }
