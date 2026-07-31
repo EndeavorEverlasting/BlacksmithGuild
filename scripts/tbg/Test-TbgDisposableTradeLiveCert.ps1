@@ -41,6 +41,8 @@ function Write-Result([string]$Status) {
 }
 
 $contract = Read-Json '.tbg/workflows/disposable-visible-trade-live-cert.contract.json'
+$artifactRegistry = Read-Json '.tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json'
+$resultSchema = Read-Json '.tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json'
 $wrapperPath = Join-Path $RepoRoot 'scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1'
 $wrapper = Read-Text 'scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1'
 $cmd = Read-Text 'ForgeDisposableTradeCert.cmd'
@@ -58,6 +60,8 @@ if (Test-Path -LiteralPath $wrapperPath -PathType Leaf) {
 if ($contract) {
     if ([string]$contract.operatorEntry -ne 'ForgeDisposableTradeCert.cmd') { Fail 'contract operatorEntry mismatch' }
     if ([string]$contract.implementation -ne 'scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1') { Fail 'contract implementation mismatch' }
+    if ([string]$contract.artifactRegistry -ne '.tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json') { Fail 'contract artifact registry mismatch' }
+    if ([string]$contract.resultSchema -ne '.tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json') { Fail 'contract result schema mismatch' }
     if ($contract.requiresCleanMain -ne $true) { Fail 'contract must require clean main' }
     if ([string]$contract.saveAuthority.requiredState -ne 'PASS_SAVE_VERSION_EXACT') { Fail 'contract must require exact save version' }
     if ([string]$contract.visibleTradeCoordinator -ne 'scripts/run-visible-trade-proof.ps1') { Fail 'contract must delegate runtime proof to canonical visible-trade coordinator' }
@@ -70,6 +74,23 @@ if ($contract) {
     if ($signals -contains 'sell.observed') { Fail 'contract must not promote the existing buy-only visible trade proof into a sell claim' }
 }
 
+if ($artifactRegistry) {
+    if ([string]$artifactRegistry.workflow -ne 'disposable-visible-trade-live-cert') { Fail 'artifact registry workflow mismatch' }
+    if ([string]$artifactRegistry.latestRoot -ne 'artifacts/latest/disposable-trade-live-cert') { Fail 'artifact registry latestRoot mismatch' }
+    if ([string]$artifactRegistry.resultSchema -ne '.tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json') { Fail 'artifact registry result schema mismatch' }
+    $artifactIds = @($artifactRegistry.artifacts | ForEach-Object { [string]$_.id })
+    foreach ($requiredId in @('live-cert-result','live-cert-report')) {
+        if ($artifactIds -notcontains $requiredId) { Fail "artifact registry missing $requiredId" }
+    }
+}
+if ($resultSchema) {
+    if ([string]$resultSchema.title -ne 'TbgDisposableVisibleTradeLiveCertResult.v1') { Fail 'result schema title mismatch' }
+    $requiredFields = @($resultSchema.required | ForEach-Object { [string]$_ })
+    foreach ($requiredField in @('terminalState','sourceCommit','saveCompatibilityState','visibleTradeTerminalState','commandAckObserved','movementObserved','arrivalObserved','buyObserved','buyInventoryDelta','buyGoldDelta')) {
+        if ($requiredFields -notcontains $requiredField) { Fail "result schema missing required field: $requiredField" }
+    }
+}
+
 foreach ($needle in @(
     "branch -ne 'main'",
     'status --porcelain',
@@ -80,7 +101,7 @@ foreach ($needle in @(
     'PASS_SAVE_VERSION_EXACT',
     'run-visible-trade-proof.ps1',
     "mode -eq 'certify'",
-    "PASS_VISIBLE_TRADE_PROVEN",
+    'PASS_VISIBLE_TRADE_PROVEN',
     'commandAck.observed',
     'movement.observed',
     'arrival.observed',
@@ -95,7 +116,7 @@ if ($wrapper -match 'Invoke-TbgPriorityEngine\.ps1') { Fail 'live cert must not 
 foreach ($forbiddenSwitch in @('-Diagnostic','-SkipBuild','-SkipLaunch','-DryRun')) {
     if ($wrapper -match ('run-visible-trade-proof\.ps1[^\r\n]*' + [regex]::Escape($forbiddenSwitch))) { Fail "certifying visible-trade invocation includes forbidden switch: $forbiddenSwitch" }
 }
-if ($wrapper -notmatch 'powershell\.exe[^\r\n]*Test-TbgVersionAuthority' -and $wrapper -notmatch 'Invoke-ValidatorChild') { Fail 'validator exit isolation marker missing' }
+if ($wrapper -notmatch 'Invoke-ValidatorChild') { Fail 'validator exit isolation marker missing' }
 
 foreach ($needle in @('Invoke-TbgDisposableTradeLiveCert.ps1','exit /b %TBG_EXIT%')) {
     if ($cmd -notmatch [regex]::Escape($needle)) { Fail "CMD entrypoint missing marker: $needle" }
