@@ -12,6 +12,8 @@ on:
       - 'scripts/tbg/Test-TbgVersionAuthority.ps1'
       - 'scripts/tbg/Test-TbgDisposableSaveRegistry.ps1'
       - '.tbg/workflows/disposable-visible-trade-live-cert.contract.json'
+      - '.tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json'
+      - '.tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json'
       - '.tbg/harness/test-catalog.d/core/disposable-visible-trade-live-cert.test.json'
       - '.tbg/harness/policies/version-authority.policy.json'
       - '.tbg/state/game-compatibility.registry.json'
@@ -27,6 +29,8 @@ on:
       - 'scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1'
       - 'scripts/run-visible-trade-proof.ps1'
       - '.tbg/workflows/disposable-visible-trade-live-cert.contract.json'
+      - '.tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json'
+      - '.tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json'
       - '.tbg/harness/test-catalog.d/core/disposable-visible-trade-live-cert.test.json'
       - '.github/workflows/disposable-visible-trade-live-cert.yml'
   workflow_dispatch:
@@ -42,12 +46,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Parse tracked contract and catalog
+      - name: Parse tracked JSON contracts
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           @(
             '.tbg/workflows/disposable-visible-trade-live-cert.contract.json',
+            '.tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json',
+            '.tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json',
             '.tbg/harness/test-catalog.d/core/disposable-visible-trade-live-cert.test.json'
           ) | ForEach-Object {
             Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json | Out-Null
