@@ -99,7 +99,7 @@ function Stop-Cert {
         [string]$TradeState = '',
         $TradeResult = $null
     )
-    Add-Event "$State: $Reason"
+    Add-Event "${State}: $Reason"
     Write-CertResult -TerminalState $State -Verdict 'BLOCKED' -Reason $Reason -Head $Head -PinnedSave $PinnedSave -SaveCompatibilityState $SaveState -VisibleTradeState $TradeState -VisibleTradeResult $TradeResult
     Write-Host "Result: $resultPath"
     exit $ExitCode
