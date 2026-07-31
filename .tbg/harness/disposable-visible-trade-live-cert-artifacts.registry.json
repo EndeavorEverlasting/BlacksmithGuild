@@ -1,0 +1,52 @@
+{
+  "schema": "TbgDisposableVisibleTradeLiveCertArtifactsRegistry.v1",
+  "workflow": "disposable-visible-trade-live-cert",
+  "latestRoot": "artifacts/latest/disposable-trade-live-cert",
+  "resultSchema": ".tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json",
+  "artifacts": [
+    {
+      "id": "live-cert-result",
+      "fileName": "result.json",
+      "required": true,
+      "contains": [
+        "terminalState",
+        "sourceCommit",
+        "saveCompatibilityState",
+        "visibleTradeTerminalState",
+        "commandAckObserved",
+        "movementObserved",
+        "arrivalObserved",
+        "buyObserved",
+        "buyInventoryDelta",
+        "buyGoldDelta",
+        "proofBoundary"
+      ]
+    },
+    {
+      "id": "live-cert-report",
+      "fileName": "report.md",
+      "required": true,
+      "contains": [
+        "Terminal state",
+        "Source commit",
+        "Save compatibility",
+        "Buy observed",
+        "Inventory delta",
+        "Gold delta",
+        "Proof boundary"
+      ]
+    }
+  ],
+  "upstreamArtifacts": [
+    "artifacts/latest/disposable-save/disposable-save-classification.result.json",
+    "artifacts/latest/save-compatibility/save-compatibility.result.json",
+    "artifacts/latest/visible-trade-proof.result.json",
+    "artifacts/latest/visible-trade-proof.proof.json"
+  ],
+  "privacy": {
+    "committed": false,
+    "mayContainLocalPaths": true,
+    "rawSaveBytesCommitted": false
+  },
+  "proofBoundary": "The result is certifying only when the live wrapper itself emits PASS_DISPOSABLE_VISIBLE_TRADE_LIVE_CERT after admitting fresh exact-head visible trade evidence. Static validation of this registry is not runtime proof."
+}
