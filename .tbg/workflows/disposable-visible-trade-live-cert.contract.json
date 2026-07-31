@@ -7,6 +7,8 @@
   "lane": "runtime/visible-trade-live-cert",
   "operatorEntry": "ForgeDisposableTradeCert.cmd",
   "implementation": "scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1",
+  "artifactRegistry": ".tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json",
+  "resultSchema": ".tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json",
   "purpose": "Provide one certifying path from a clean current-main checkout through canonical version authority, disposable-save exact-version admission, build/install, launcher handoff, campaign readiness, correlated command acknowledgement, movement, settlement arrival, and a real visible in-game purchase.",
   "proofLevel": "live runtime",
   "requiresCleanMain": true,
@@ -28,12 +30,7 @@
     "buy.inventoryDelta > 0",
     "buy.goldDelta < 0"
   ],
-  "forbiddenCertificationModes": [
-    "Diagnostic",
-    "SkipBuild",
-    "SkipLaunch",
-    "DryRun"
-  ],
+  "forbiddenCertificationModes": ["Diagnostic", "SkipBuild", "SkipLaunch", "DryRun"],
   "forbiddenClaims": [
     "launcher action alone proves gameplay",
     "save filename alone proves compatibility",
