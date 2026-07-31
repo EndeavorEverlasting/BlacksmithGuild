@@ -3,14 +3,12 @@
   Canonical live certificate for proving a real visible in-game trade from a clean current-main checkout.
 
 .DESCRIPTION
-  This wrapper is intentionally boring. It does not rediscover launcher, save, or version rules.
-  It composes the existing canonical authorities, then delegates the real runtime work to
-  scripts/run-visible-trade-proof.ps1 in certifying mode.
+  This wrapper composes existing repository authorities instead of rediscovering launcher, save,
+  or version rules. Certifying mode is mandatory: build/install/launch cannot be skipped.
 #>
 [CmdletBinding()]
 param(
-    [string]$RepoRoot,
-    [switch]$PassThru
+    [string]$RepoRoot
 )
 
 Set-StrictMode -Version Latest
@@ -21,18 +19,15 @@ if ([string]::IsNullOrWhiteSpace($RepoRoot)) {
 }
 $RepoRoot = [IO.Path]::GetFullPath($RepoRoot)
 Set-Location -LiteralPath $RepoRoot
-
 . (Join-Path $RepoRoot 'scripts/governor-operator-common.ps1')
 
 $startedUtc = [DateTime]::UtcNow
 $outputRoot = Join-Path $RepoRoot 'artifacts/latest/disposable-trade-live-cert'
-if (-not (Test-Path -LiteralPath $outputRoot -PathType Container)) {
-    New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
-}
+New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 $resultPath = Join-Path $outputRoot 'result.json'
 $reportPath = Join-Path $outputRoot 'report.md'
-
 $events = [System.Collections.Generic.List[string]]::new()
+
 function Add-Event([string]$Message) {
     $line = '[{0}] {1}' -f ([DateTime]::UtcNow.ToString('HH:mm:ss')), $Message
     $events.Add($line) | Out-Null
@@ -74,10 +69,8 @@ function Write-CertResult {
         events = @($events.ToArray())
     }
     $payload | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $resultPath -Encoding UTF8
-
     @(
-        '# Disposable visible trade live certificate',
-        '',
+        '# Disposable visible trade live certificate','',
         ('- Verdict: `{0}`' -f $Verdict),
         ('- Terminal state: `{0}`' -f $TerminalState),
         ('- Source commit: `{0}`' -f $Head),
@@ -89,25 +82,36 @@ function Write-CertResult {
         ('- Arrival observed: `{0}`' -f $payload.arrivalObserved),
         ('- Buy observed: `{0}`' -f $payload.buyObserved),
         ('- Inventory delta: `{0}`' -f $payload.buyInventoryDelta),
-        ('- Gold delta: `{0}`' -f $payload.buyGoldDelta),
-        '',
-        ('Proof boundary: {0}' -f $payload.proofBoundary),
-        '',
+        ('- Gold delta: `{0}`' -f $payload.buyGoldDelta),'',
+        ('Proof boundary: {0}' -f $payload.proofBoundary),'',
         ('Reason: {0}' -f $Reason)
     ) | Set-Content -LiteralPath $reportPath -Encoding UTF8
-
-    if ($PassThru) { return [pscustomobject]$payload }
 }
 
-function Stop-Cert([string]$State, [string]$Reason, [int]$ExitCode, [string]$Head = '', [string]$PinnedSave = '', [string]$SaveState = '', [string]$TradeState = '', $TradeResult = $null) {
+function Stop-Cert {
+    param(
+        [string]$State,
+        [string]$Reason,
+        [int]$ExitCode,
+        [string]$Head = '',
+        [string]$PinnedSave = '',
+        [string]$SaveState = '',
+        [string]$TradeState = '',
+        $TradeResult = $null
+    )
     Add-Event "$State: $Reason"
-    $value = Write-CertResult -TerminalState $State -Verdict 'BLOCKED' -Reason $Reason -Head $Head -PinnedSave $PinnedSave -SaveCompatibilityState $SaveState -VisibleTradeState $TradeState -VisibleTradeResult $TradeResult
-    if ($PassThru) { return $value }
+    Write-CertResult -TerminalState $State -Verdict 'BLOCKED' -Reason $Reason -Head $Head -PinnedSave $PinnedSave -SaveCompatibilityState $SaveState -VisibleTradeState $TradeState -VisibleTradeResult $TradeResult
+    Write-Host "Result: $resultPath"
     exit $ExitCode
 }
 
-Add-Event 'DISPOSABLE VISIBLE TRADE LIVE CERT START'
+function Invoke-ValidatorChild {
+    param([Parameter(Mandatory = $true)][string]$ScriptPath)
+    & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $ScriptPath -RepoRoot $RepoRoot
+    return (if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE })
+}
 
+Add-Event 'DISPOSABLE VISIBLE TRADE LIVE CERT START'
 $branch = (@(& git -C $RepoRoot branch --show-current 2>$null) -join '').Trim()
 $head = (@(& git -C $RepoRoot rev-parse HEAD 2>$null) -join '').Trim()
 $status = @(& git -C $RepoRoot status --porcelain 2>$null)
@@ -127,15 +131,14 @@ foreach ($required in @($versionValidator,$disposableValidator,$updater,$saveGat
     }
 }
 
-& $versionValidator -RepoRoot $RepoRoot
-if ($LASTEXITCODE -ne 0) { Stop-Cert -State 'BLOCKED_VERSION_AUTHORITY' -Reason "Version authority validator exited $LASTEXITCODE." -ExitCode 24 -Head $head }
-& $disposableValidator -RepoRoot $RepoRoot
-if ($LASTEXITCODE -ne 0) { Stop-Cert -State 'BLOCKED_DISPOSABLE_SAVE_CONTRACT' -Reason "Disposable-save validator exited $LASTEXITCODE." -ExitCode 25 -Head $head }
+$versionExit = Invoke-ValidatorChild -ScriptPath $versionValidator
+if ($versionExit -ne 0) { Stop-Cert -State 'BLOCKED_VERSION_AUTHORITY' -Reason "Version authority validator exited $versionExit." -ExitCode 24 -Head $head }
+$disposableExit = Invoke-ValidatorChild -ScriptPath $disposableValidator
+if ($disposableExit -ne 0) { Stop-Cert -State 'BLOCKED_DISPOSABLE_SAVE_CONTRACT' -Reason "Disposable-save validator exited $disposableExit." -ExitCode 25 -Head $head }
 Add-Event 'Static authority gates PASS.'
 
 $catalog = & $updater -RepoRoot $RepoRoot -PassThru
 if ($null -eq $catalog) { Stop-Cert -State 'BLOCKED_DISPOSABLE_CATALOG_MISSING' -Reason 'Disposable-save updater returned no catalog result.' -ExitCode 26 -Head $head }
-
 $pin = Get-GovernorActiveDisposableSavePin -RepoRoot $RepoRoot
 if (-not $pin -or [string]::IsNullOrWhiteSpace([string]$pin.fullPath) -or -not (Test-Path -LiteralPath ([string]$pin.fullPath) -PathType Leaf)) {
     Add-Event 'No usable active disposable pin; creating a fresh owned clone from an exact-version eligible source.'
@@ -159,7 +162,6 @@ Add-Event "Exact save admission PASS: $saveLeaf ($saveState)."
 
 $visibleResultPath = Join-Path $RepoRoot 'artifacts/latest/visible-trade-proof.result.json'
 if (Test-Path -LiteralPath $visibleResultPath) { Remove-Item -LiteralPath $visibleResultPath -Force }
-
 Add-Event 'Invoking visible-trade coordinator in certifying mode (build/install/launch enabled).'
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $visibleTrade -RepoRoot $RepoRoot -ExpectedHead $head -DisposableSavePath $savePath
 $visibleExit = if ($null -eq $LASTEXITCODE) { 0 } else { [int]$LASTEXITCODE }
@@ -172,7 +174,6 @@ if ($visibleItem.LastWriteTimeUtc -lt $startedUtc) {
 }
 $tradeResult = Get-Content -LiteralPath $visibleResultPath -Raw -Encoding UTF8 | ConvertFrom-Json -ErrorAction Stop
 $tradeState = [string]$tradeResult.terminalState
-
 $proofOk = $visibleExit -eq 0 `
     -and [string]$tradeResult.mode -eq 'certify' `
     -and $tradeState -eq 'PASS_VISIBLE_TRADE_PROVEN' `
@@ -183,14 +184,13 @@ $proofOk = $visibleExit -eq 0 `
     -and [bool]$tradeResult.buy.observed `
     -and [int]$tradeResult.buy.inventoryDelta -gt 0 `
     -and [int]$tradeResult.buy.goldDelta -lt 0
-
 if (-not $proofOk) {
     Stop-Cert -State 'FAIL_VISIBLE_TRADE_NOT_PROVEN' -Reason "Visible-trade proof did not satisfy the live-cert admission contract; exit=$visibleExit state=$tradeState." -ExitCode 31 -Head $head -PinnedSave $saveLeaf -SaveState $saveState -TradeState $tradeState -TradeResult $tradeResult
 }
 
 Add-Event "PASS: real visible purchase observed. item=$($tradeResult.buy.itemId) inventoryDelta=$($tradeResult.buy.inventoryDelta) goldDelta=$($tradeResult.buy.goldDelta)"
-$final = Write-CertResult -TerminalState 'PASS_DISPOSABLE_VISIBLE_TRADE_LIVE_CERT' -Verdict 'PASS' -Reason 'Exact clean-main source crossed canonical version/save/launcher/runtime gates and produced a real visible purchase.' -Head $head -PinnedSave $saveLeaf -SaveCompatibilityState $saveState -VisibleTradeState $tradeState -VisibleTradeResult $tradeResult
+Write-CertResult -TerminalState 'PASS_DISPOSABLE_VISIBLE_TRADE_LIVE_CERT' -Verdict 'PASS' -Reason 'Exact clean-main source crossed canonical version/save/launcher/runtime gates and produced a real visible purchase.' -Head $head -PinnedSave $saveLeaf -SaveCompatibilityState $saveState -VisibleTradeState $tradeState -VisibleTradeResult $tradeResult
 Write-Host 'PASS_DISPOSABLE_VISIBLE_TRADE_LIVE_CERT' -ForegroundColor Green
 Write-Host "Result: $resultPath"
 Write-Host "Report: $reportPath"
-if ($PassThru) { $final } else { exit 0 }
+exit 0
