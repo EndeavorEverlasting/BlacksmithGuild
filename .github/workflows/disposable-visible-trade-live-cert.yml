@@ -1,0 +1,113 @@
+name: Disposable Visible Trade Live-Cert Contract
+
+on:
+  pull_request:
+    paths:
+      - 'ForgeDisposableTradeCert.cmd'
+      - 'scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1'
+      - 'scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1'
+      - 'scripts/run-visible-trade-proof.ps1'
+      - 'scripts/tbg/Update-TbgDisposableSaveRegistry.ps1'
+      - 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1'
+      - 'scripts/tbg/Test-TbgVersionAuthority.ps1'
+      - 'scripts/tbg/Test-TbgDisposableSaveRegistry.ps1'
+      - '.tbg/workflows/disposable-visible-trade-live-cert.contract.json'
+      - '.tbg/harness/test-catalog.d/core/disposable-visible-trade-live-cert.test.json'
+      - '.tbg/harness/policies/version-authority.policy.json'
+      - '.tbg/state/game-compatibility.registry.json'
+      - '.tbg/state/save-compatibility.registry.json'
+      - '.tbg/state/disposable-save.registry.json'
+      - '.github/workflows/disposable-visible-trade-live-cert.yml'
+      - 'docs/handoff/disposable-visible-trade-live-cert.md'
+  push:
+    branches: [main]
+    paths:
+      - 'ForgeDisposableTradeCert.cmd'
+      - 'scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1'
+      - 'scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1'
+      - 'scripts/run-visible-trade-proof.ps1'
+      - '.tbg/workflows/disposable-visible-trade-live-cert.contract.json'
+      - '.tbg/harness/test-catalog.d/core/disposable-visible-trade-live-cert.test.json'
+      - '.github/workflows/disposable-visible-trade-live-cert.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  composition:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Parse tracked contract and catalog
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @(
+            '.tbg/workflows/disposable-visible-trade-live-cert.contract.json',
+            '.tbg/harness/test-catalog.d/core/disposable-visible-trade-live-cert.test.json'
+          ) | ForEach-Object {
+            Get-Content -LiteralPath $_ -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "JSON OK: $_"
+          }
+
+      - name: Parse PowerShell implementation
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($path in @(
+            'scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1',
+            'scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1'
+          )) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path), [ref]$tokens, [ref]$errors) | Out-Null
+            if (@($errors).Count -gt 0) { throw "$path parser errors: $($errors -join '; ')" }
+            Write-Host "POWERSHELL OK: $path"
+          }
+
+      - name: Validate composition with PowerShell 7
+        shell: pwsh
+        run: |
+          ./scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1 -OutputRoot ./artifacts/latest/disposable-trade-live-cert-ci/pwsh
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Validate composition with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\scripts\tbg\Test-TbgDisposableTradeLiveCert.ps1 -OutputRoot .\artifacts\latest\disposable-trade-live-cert-ci\windows-powershell
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Run default-static composition
+        shell: powershell
+        run: |
+          .\ForgeTest.cmd run --profile default-static --no-pause
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: PowerShell UTF-8 BOM contract
+        shell: pwsh
+        run: |
+          ./scripts/test-powershell-utf8-bom-contract.ps1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Diff check
+        shell: bash
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then
+            base="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
+            git diff --check "$base"...HEAD
+          else
+            git diff --check HEAD^ HEAD
+          fi
+
+      - name: Upload static validation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: disposable-visible-trade-live-cert-${{ github.run_id }}
+          path: artifacts/latest/disposable-trade-live-cert-ci
+          if-no-files-found: ignore
+          retention-days: 14
