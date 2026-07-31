@@ -130,7 +130,10 @@ if ($visible -notmatch 'sellResult\.observed\s*=\s*\$buyResult\.observed\s*-and\
     Fail 'visible-trade sell proof shape changed; review whether the wrapper proof boundary should now include independent sell evidence'
 }
 
-if ($versionPolicy -and [string]$versionPolicy.canonicalRegistry -ne '.tbg/state/game-compatibility.registry.json') { Fail 'version authority policy canonical registry drifted' }
+if ($versionPolicy) {
+    if ([string]$versionPolicy.canonicalAuthority.registry -ne '.tbg/state/game-compatibility.registry.json') { Fail 'version authority canonical registry drifted' }
+    if ([string]$versionPolicy.canonicalAuthority.supportedVersionField -ne 'repoSupportedBuild.gameVersionPrefix') { Fail 'version authority supported-version field drifted' }
+}
 if ($disposableRegistry -and [string]$disposableRegistry.saveCompatibilityEntrypoint -ne 'scripts/tbg/Invoke-TbgSaveCompatibility.ps1') { Fail 'disposable registry canonical save entrypoint drifted' }
 
 if ($failures.Count -gt 0) {
