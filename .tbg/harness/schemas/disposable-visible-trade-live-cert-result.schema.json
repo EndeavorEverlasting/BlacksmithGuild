@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "TbgDisposableVisibleTradeLiveCertResult.v1",
+  "title": "TbgDisposableVisibleTradeLiveCertResult.v1",
+  "type": "object",
+  "required": [
+    "schema",
+    "generatedUtc",
+    "startedUtc",
+    "verdict",
+    "terminalState",
+    "sourceBranch",
+    "sourceCommit",
+    "saveCompatibilityState",
+    "visibleTradeTerminalState",
+    "commandAckObserved",
+    "movementObserved",
+    "arrivalObserved",
+    "buyObserved",
+    "buyInventoryDelta",
+    "buyGoldDelta",
+    "proofBoundary"
+  ],
+  "properties": {
+    "schema": { "const": "TbgDisposableVisibleTradeLiveCertResult.v1" },
+    "generatedUtc": { "type": "string" },
+    "startedUtc": { "type": "string" },
+    "verdict": { "enum": ["PASS", "BLOCKED"] },
+    "terminalState": { "type": "string" },
+    "reason": { "type": ["string", "null"] },
+    "sourceBranch": { "type": "string" },
+    "sourceCommit": { "type": "string" },
+    "pinnedSave": { "type": ["string", "null"] },
+    "saveCompatibilityState": { "type": ["string", "null"] },
+    "visibleTradeTerminalState": { "type": ["string", "null"] },
+    "commandAckObserved": { "type": "boolean" },
+    "movementObserved": { "type": "boolean" },
+    "arrivalObserved": { "type": "boolean" },
+    "buyObserved": { "type": "boolean" },
+    "buyInventoryDelta": { "type": "integer" },
+    "buyGoldDelta": { "type": "integer" },
+    "visibleTradeResultPath": { "type": "string" },
+    "proofBoundary": { "type": "string" },
+    "events": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "terminalState": { "const": "PASS_DISPOSABLE_VISIBLE_TRADE_LIVE_CERT" } } },
+      "then": {
+        "properties": {
+          "verdict": { "const": "PASS" },
+          "sourceBranch": { "const": "main" },
+          "saveCompatibilityState": { "const": "PASS_SAVE_VERSION_EXACT" },
+          "visibleTradeTerminalState": { "const": "PASS_VISIBLE_TRADE_PROVEN" },
+          "commandAckObserved": { "const": true },
+          "movementObserved": { "const": true },
+          "arrivalObserved": { "const": true },
+          "buyObserved": { "const": true },
+          "buyInventoryDelta": { "minimum": 1 },
+          "buyGoldDelta": { "maximum": -1 }
+        }
+      }
+    }
+  ],
+  "additionalProperties": true
+}

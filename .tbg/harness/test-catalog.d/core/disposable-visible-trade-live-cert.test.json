@@ -1,0 +1,23 @@
+{
+  "schema": "tbg.one-click-test.catalog-entry.v1",
+  "testId": "core.disposable-visible-trade-live-cert",
+  "displayName": "Disposable Visible Trade Live-Cert Composition",
+  "ownerLane": "runtime/visible-trade-live-cert",
+  "sourcePath": "scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1",
+  "command": "powershell.exe",
+  "arguments": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "scripts/tbg/Test-TbgDisposableTradeLiveCert.ps1"],
+  "supportedHosts": ["win", "win_powershell"],
+  "requiredTools": ["powershell.exe"],
+  "requiredInputs": [],
+  "dependencies": ["core.version-authority", "core.disposable-save-registry"],
+  "timeoutSeconds": 120,
+  "mutationClass": "none",
+  "riskClass": "static",
+  "expectedArtifacts": [],
+  "proofLevel": "static test",
+  "proofCeiling": "Validates composition of clean-main, canonical version/save authority, and real visible-trade proof requirements only. It never launches Bannerlord and cannot certify gameplay.",
+  "tags": ["static", "contract", "runtime-cert", "save", "launcher", "visible-trade", "core"],
+  "triggerInterests": ["save.disposable.selected", "launcher.preflight", "visible-trade.requested", "runtime-cert.requested"],
+  "defaultProfileMembership": ["default-static", "operator-observe"],
+  "sourceProvenance": {"type": "repository", "ref": "disposable-visible-trade-live-cert"}
+}

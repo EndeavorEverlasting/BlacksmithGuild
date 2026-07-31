@@ -1,0 +1,51 @@
+{
+  "id": "disposable-visible-trade-live-cert",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "status": "implementation_active",
+  "sprint": "disposable-visible-trade-live-cert",
+  "contextBanner": "[TBG | disposable-visible-trade-live-cert | lane: live trade convergence | protected runtime]",
+  "lane": "runtime/visible-trade-live-cert",
+  "operatorEntry": "ForgeDisposableTradeCert.cmd",
+  "implementation": "scripts/tbg/Invoke-TbgDisposableTradeLiveCert.ps1",
+  "artifactRegistry": ".tbg/harness/disposable-visible-trade-live-cert-artifacts.registry.json",
+  "resultSchema": ".tbg/harness/schemas/disposable-visible-trade-live-cert-result.schema.json",
+  "purpose": "Provide one certifying path from a clean current-main checkout through canonical version authority, disposable-save exact-version admission, build/install, launcher handoff, campaign readiness, correlated command acknowledgement, movement, settlement arrival, and a real visible in-game purchase.",
+  "proofLevel": "live runtime",
+  "requiresCleanMain": true,
+  "requiresInactiveOrOwnedRuntime": true,
+  "versionAuthority": ".tbg/state/game-compatibility.registry.json",
+  "saveAuthority": {
+    "registry": ".tbg/state/disposable-save.registry.json",
+    "updater": "scripts/tbg/Update-TbgDisposableSaveRegistry.ps1",
+    "compatibilityGate": "scripts/tbg/Invoke-TbgSaveCompatibility.ps1",
+    "requiredState": "PASS_SAVE_VERSION_EXACT"
+  },
+  "visibleTradeCoordinator": "scripts/run-visible-trade-proof.ps1",
+  "requiredVisibleTradeTerminalState": "PASS_VISIBLE_TRADE_PROVEN",
+  "requiredObservedSignals": [
+    "commandAck.observed",
+    "movement.observed",
+    "arrival.observed",
+    "buy.observed",
+    "buy.inventoryDelta > 0",
+    "buy.goldDelta < 0"
+  ],
+  "forbiddenCertificationModes": ["Diagnostic", "SkipBuild", "SkipLaunch", "DryRun"],
+  "forbiddenClaims": [
+    "launcher action alone proves gameplay",
+    "save filename alone proves compatibility",
+    "command dispatch alone proves trade",
+    "the existing visible-trade coordinator proves a sell when only a buy delta was observed",
+    "a dirty or non-main checkout is canonical live-cert proof"
+  ],
+  "requiredArtifacts": [
+    "artifacts/latest/disposable-save/disposable-save-classification.result.json",
+    "artifacts/latest/save-compatibility/save-compatibility.result.json",
+    "artifacts/latest/visible-trade-proof.result.json",
+    "artifacts/latest/visible-trade-proof.proof.json",
+    "artifacts/latest/disposable-trade-live-cert/result.json",
+    "artifacts/latest/disposable-trade-live-cert/report.md"
+  ],
+  "successState": "PASS_DISPOSABLE_VISIBLE_TRADE_LIVE_CERT",
+  "proofBoundary": "PASS proves that the exact clean-main source head, its built and installed DLL, and an exact-version disposable save crossed the real launcher/runtime boundary and produced correlated movement, settlement arrival, and a visible purchase with positive inventory delta and negative gold delta. It does not claim that the separate Sell priority is certified unless independent sell evidence is added later."
+}
