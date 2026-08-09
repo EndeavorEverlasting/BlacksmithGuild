@@ -37,11 +37,16 @@ function Read-Json([string]$Path) {
     }
 }
 
+function Find-Consumer([object]$Registry, [string]$Repository) {
+    return @($Registry.consumers | Where-Object { [string]$_.repository -eq $Repository })
+}
+
 $Contract = Read-Json $ContractPath
 $Schema = Read-Json $SchemaPath
 $Registry = Read-Json $RegistryPath
 Assert-True (Test-Path -LiteralPath $DocPath -PathType Leaf) 'missing docs/architecture/repo-ledger-interoperability.md'
 
+$ExpectedCanonicalContractCommit = '429237aa41d8712d71859865c9be407ca23d8580'
 $ExpectedDonorCommit = '9351c952b057ae4520b1ea0d388e1d8908f4c093'
 $ExpectedSources = [ordered]@{
     '.ai/README.md' = '78eee20a18ab20e66193542be0b35099428fc83b'
@@ -97,6 +102,9 @@ if ($Schema) {
 if ($Registry) {
     Assert-True ($Registry.schema -eq 'TbgRepoLedgerContributionRegistry.v1') 'contribution registry schema drifted'
     Assert-True ($Registry.contractOwner -eq 'EndeavorEverlasting/BlacksmithGuild') 'contribution registry owner drifted'
+    Assert-True ($Registry.contractVersion -eq 'RepoLedgerInteroperability.v1') 'registry contract version drifted'
+    Assert-True ($Registry.canonicalContractCommit -eq $ExpectedCanonicalContractCommit) 'registry canonical contract commit drifted for a non-contract maintenance change'
+    Assert-True (Test-ExactCommitPin ([string]$Registry.canonicalContractCommit)) 'canonical contract commit must be an exact 40-hex pin'
     Assert-True ($Registry.donor.repository -eq 'EndeavorEverlasting/AxTask') 'registry donor repository drifted'
     Assert-True ($Registry.donor.commit -eq $ExpectedDonorCommit) 'registry donor commit drifted'
     Assert-True (@($Registry.donor.sources).Count -eq $ExpectedSources.Count) 'registry donor source count drifted'
@@ -112,7 +120,7 @@ if ($Registry) {
     foreach ($Classification in $ExpectedClassifications) {
         Assert-True ($ActualClassifications -contains $Classification) "missing candidate classification: $Classification"
     }
-    Assert-True (@($ActualClassifications | Sort-Object -Unique).Count -eq $ExpectedClassifications.Count) 'candidate classifications must be unique and complete'
+    Assert-True (@($ActualClassifications | Sort-Object -Unique).Count -eq $ExpectedClassifications.Count) 'candidate classifications contain an unexpected portable category'
 
     $SeenConsumers = @{}
     $SeenNamespaces = @{}
@@ -125,17 +133,52 @@ if ($Registry) {
         }
         Assert-True (-not $SeenConsumers.ContainsKey($Repo)) "duplicate consumer repository: $Repo"
         Assert-True (-not $SeenNamespaces.ContainsKey($Namespace)) "task namespace collision: $Namespace"
+        Assert-True (Test-ExactCommitPin ([string]$Consumer.observedAtCommit)) "consumer observedAtCommit must be exact 40-hex for $Repo"
         $SeenConsumers[$Repo] = $true
         $SeenNamespaces[$Namespace] = $true
     }
     Assert-True ($SeenConsumers.Count -eq $ExpectedConsumers.Count) 'consumer registry is incomplete'
+
+    $AxTask = @(Find-Consumer -Registry $Registry -Repository 'EndeavorEverlasting/AxTask')
+    Assert-True ($AxTask.Count -eq 1) 'AxTask consumer registry entry must be unique'
+    if ($AxTask.Count -eq 1) {
+        Assert-True ($AxTask[0].adoption -eq 'native_donor') 'AxTask must remain the native donor'
+        Assert-True ($AxTask[0].expectedValidatorPath -eq 'scripts/ai-harness/validate-work-queue.mjs') 'AxTask validator path drifted'
+    }
+
+    $AgentSwitchboard = @(Find-Consumer -Registry $Registry -Repository 'EndeavorEverlasting/AgentSwitchboard')
+    Assert-True ($AgentSwitchboard.Count -eq 1) 'AgentSwitchboard consumer registry entry must be unique'
+    if ($AgentSwitchboard.Count -eq 1) {
+        Assert-True ($AgentSwitchboard[0].expectedAdoptionManifestPath -eq '.ai/harness/repository-work-ledger-adoption.json') 'AgentSwitchboard adoption manifest path drifted'
+        Assert-True ($AgentSwitchboard[0].expectedValidatorPath -eq 'scripts/Test-RepositoryWorkLedgerContract.ps1') 'AgentSwitchboard local validator path drifted'
+        Assert-True ($AgentSwitchboard[0].expectedCiPath -eq '.github/workflows/repository-work-ledger-contract.yml') 'AgentSwitchboard local CI path drifted'
+        Assert-True ($AgentSwitchboard[0].localExtension.profileId -eq 'agentswitchboard.repository-work-ledger.v1') 'AgentSwitchboard local profile id drifted'
+        Assert-True ($AgentSwitchboard[0].localExtension.frontierPath -eq 'scripts/Get-RepositoryWorkLedgerFrontier.ps1') 'AgentSwitchboard frontier path drifted'
+        Assert-True ($AgentSwitchboard[0].localExtension.scope -eq 'AgentSwitchboard-local strengthening; not portable v1 authority') 'AgentSwitchboard local extension must not claim portable authority'
+        $WorkClassDiff = @(Compare-Object -ReferenceObject @('BOUNDED','UNBOUNDED') -DifferenceObject @($AgentSwitchboard[0].localExtension.workClasses) -SyncWindow 0)
+        Assert-True ($WorkClassDiff.Count -eq 0) 'AgentSwitchboard local work classes drifted'
+    }
+
+    $Triage = @(Find-Consumer -Registry $Registry -Repository 'EndeavorEverlasting/web-excel-repair-triage')
+    Assert-True ($Triage.Count -eq 1) 'triage consumer registry entry must be unique'
+    if ($Triage.Count -eq 1) {
+        Assert-True ($Triage[0].expectedAdoptionManifestPath -eq '.ai/work-ledger-adoption.json') 'triage adoption manifest path drifted'
+        Assert-True ($Triage[0].expectedValidatorPath -eq 'scripts/validate_repository_work_ledger.py') 'triage local validator path drifted'
+        Assert-True ($Triage[0].expectedCiPath -eq '.github/workflows/repository-work-ledger-contract.yml') 'triage local CI path drifted'
+        Assert-True (@($Triage[0].expectedHooks) -contains '.githooks/pre-commit') 'triage pre-commit ledger hook registration missing'
+        Assert-True (@($Triage[0].expectedHooks) -contains '.githooks/pre-push') 'triage pre-push ledger hook registration missing'
+    }
+
+    Assert-True (@($Registry.collisionBoundaries) -contains "AgentSwitchboard's agentswitchboard.repository-work-ledger.v1 is a local compatibility/execution profile, not a second portable or family-level authority.") 'AgentSwitchboard duplicate-authority collision boundary missing'
+    Assert-True (@($Registry.collisionBoundaries) -contains 'AgentSwitchboard Work class and frontier routing remain local extensions and are not required by RepoLedgerInteroperability.v1.') 'AgentSwitchboard local-extension portability boundary missing'
     Assert-True ($Registry.staleReferencePolicy.acceptedRef -eq 'exact 40-character lowercase hexadecimal commit SHA') 'stale-reference policy drifted'
 }
 
-foreach ($BadRef in @('main','master','HEAD','feat/repo-ledger','v1.0.0','9351c952b057')) {
+foreach ($BadRef in @('main','master','HEAD','feat/repo-ledger','v1.0.0','9351c952b057','429237aa41d8')) {
     Assert-True (-not (Test-ExactCommitPin $BadRef)) "stale-reference probe unexpectedly accepted '$BadRef'"
 }
 Assert-True (Test-ExactCommitPin $ExpectedDonorCommit) 'exact donor pin probe failed'
+Assert-True (Test-ExactCommitPin $ExpectedCanonicalContractCommit) 'exact canonical contract pin probe failed'
 
 if ($Failures.Count -gt 0) {
     Write-Error "[repo-ledger] FAIL ($($Failures.Count))"
@@ -143,5 +186,5 @@ if ($Failures.Count -gt 0) {
     exit 1
 }
 
-Write-Host "[repo-ledger] PASS contract=RepoLedgerInteroperability.v1 donor=$($ExpectedDonorCommit.Substring(0,12)) consumers=$($ExpectedConsumers.Count) stale-ref-probes=PASS"
+Write-Host "[repo-ledger] PASS contract=RepoLedgerInteroperability.v1 canonical=$($ExpectedCanonicalContractCommit.Substring(0,12)) donor=$($ExpectedDonorCommit.Substring(0,12)) consumers=$($ExpectedConsumers.Count) local-extension=AgentSwitchboard stale-ref-probes=PASS"
 exit 0

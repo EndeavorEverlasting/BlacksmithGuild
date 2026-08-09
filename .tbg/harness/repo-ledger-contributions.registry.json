@@ -2,6 +2,7 @@
   "schema": "TbgRepoLedgerContributionRegistry.v1",
   "contractVersion": "RepoLedgerInteroperability.v1",
   "contractOwner": "EndeavorEverlasting/BlacksmithGuild",
+  "canonicalContractCommit": "429237aa41d8712d71859865c9be407ca23d8580",
   "donor": {
     "repository": "EndeavorEverlasting/AxTask",
     "commit": "9351c952b057ae4520b1ea0d388e1d8908f4c093",
@@ -39,7 +40,7 @@
         "continuation versus terminal state distinction",
         "strict DONE gate with durable proof",
         "exact gate and executable next action for blocked/operator work",
-        "concurrent-work preservation"
+        "concurrent ledger preservation"
       ],
       "proofCeiling": "repository_harness_only"
     },
@@ -103,6 +104,20 @@
         "AxTask product, deployment, provider, or runtime gates"
       ],
       "proofCeiling": "axtask_authority_only"
+    },
+    {
+      "id": "agentswitchboard-bounded-frontier",
+      "classification": "domain_specific_rejected",
+      "disposition": "local_extension_only",
+      "capabilities": [
+        "BOUNDED versus UNBOUNDED work classification",
+        "EXECUTE versus DECOMPOSE route derivation",
+        "compact actionable frontier"
+      ],
+      "mustNotCopy": [
+        "do not make AgentSwitchboard Work class or frontier routing a RepoLedgerInteroperability.v1 consumer requirement"
+      ],
+      "proofCeiling": "agentswitchboard_local_harness_only"
     }
   ],
   "consumers": [
@@ -111,6 +126,7 @@
       "targetLayer": ".ai",
       "taskNamespace": "AXQ",
       "adoption": "native_donor",
+      "observedAtCommit": "9351c952b057ae4520b1ea0d388e1d8908f4c093",
       "expectedLedgerPath": ".ai/WORK_QUEUE.md",
       "expectedValidatorPath": "scripts/ai-harness/validate-work-queue.mjs",
       "mustRemainAuthoritativeFor": [
@@ -121,13 +137,27 @@
     },
     {
       "repository": "EndeavorEverlasting/AgentSwitchboard",
-      "targetLayer": ".ai",
+      "targetLayer": ".ai/harness",
       "taskNamespace": "ASQ",
-      "adoption": "proposed",
+      "adoption": "implemented_local_profile_requires_authority_reconciliation",
+      "observedAtCommit": "b090637be810b2b25c35a11c299b4f2d9cc90ca3",
+      "expectedAdoptionManifestPath": ".ai/harness/repository-work-ledger-adoption.json",
       "expectedLedgerPath": ".ai/WORK_QUEUE.md",
-      "expectedValidatorPath": "scripts/ai-harness/validate-repo-ledger.py",
+      "expectedValidatorPath": "scripts/Test-RepositoryWorkLedgerContract.ps1",
+      "expectedTests": [
+        "tests/test_repository_work_ledger_contract.py",
+        "tests/test_repository_work_ledger_frontier.py"
+      ],
+      "expectedCiPath": ".github/workflows/repository-work-ledger-contract.yml",
+      "localExtension": {
+        "profileId": "agentswitchboard.repository-work-ledger.v1",
+        "frontierPath": "scripts/Get-RepositoryWorkLedgerFrontier.ps1",
+        "workClasses": ["BOUNDED", "UNBOUNDED"],
+        "scope": "AgentSwitchboard-local strengthening; not portable v1 authority"
+      },
       "mustRemainAuthoritativeFor": [
-        "repository-family governance",
+        "AgentSwitchboard ASQ queue contents",
+        "AgentSwitchboard Work class and frontier execution profile",
         "AgentSwitchboard runtime and product behavior",
         "AgentSwitchboard proof promotion"
       ]
@@ -136,10 +166,21 @@
       "repository": "EndeavorEverlasting/web-excel-repair-triage",
       "targetLayer": ".ai",
       "taskNamespace": "TRQ",
-      "adoption": "proposed",
+      "adoption": "implemented_requires_contract_repin",
+      "observedAtCommit": "07b960fa35b61f4b9be6190b16bf0c21a6e06678",
+      "expectedAdoptionManifestPath": ".ai/work-ledger-adoption.json",
       "expectedLedgerPath": ".ai/WORK_QUEUE.md",
-      "expectedValidatorPath": "scripts/validate_repo_ledger.py",
+      "expectedValidatorPath": "scripts/validate_repository_work_ledger.py",
+      "expectedTests": [
+        "tests/test_repository_work_ledger.py"
+      ],
+      "expectedCiPath": ".github/workflows/repository-work-ledger-contract.yml",
+      "expectedHooks": [
+        ".githooks/pre-commit",
+        ".githooks/pre-push"
+      ],
       "mustRemainAuthoritativeFor": [
+        "triage TRQ queue contents",
         "triage and Prompt Kit product behavior",
         "artifact-engine rules and protected-data boundaries",
         "triage proof promotion"
@@ -148,6 +189,8 @@
   ],
   "collisionBoundaries": [
     "BlacksmithGuild may version the portable contract but may not own or mutate consumer task state.",
+    "AgentSwitchboard's agentswitchboard.repository-work-ledger.v1 is a local compatibility/execution profile, not a second portable or family-level authority.",
+    "AgentSwitchboard Work class and frontier routing remain local extensions and are not required by RepoLedgerInteroperability.v1.",
     "Consumers may strengthen local validation but may not redefine RepoLedgerInteroperability.v1 in place.",
     "Consumers use distinct task namespaces; AXQ remains AxTask-only.",
     "Consumer validators are local implementations and must not call across repositories to mutate state.",
@@ -156,6 +199,6 @@
   "staleReferencePolicy": {
     "acceptedRef": "exact 40-character lowercase hexadecimal commit SHA",
     "rejectedRefs": ["main", "master", "HEAD", "branch names", "tags", "short SHAs"],
-    "behavior": "fail closed until the adoption manifest is deliberately repinned and revalidated"
+    "behavior": "fail closed for compatibility pins; observedAtCommit records implementation evidence and must be refreshed only when the registry intentionally claims a newer consumer layout"
   }
 }
