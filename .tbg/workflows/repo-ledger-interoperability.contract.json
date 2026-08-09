@@ -1,0 +1,133 @@
+{
+  "id": "repo-ledger-interoperability",
+  "schemaVersion": "TbgWorkflowContract.v1",
+  "contractVersion": "RepoLedgerInteroperability.v1",
+  "sprint": "shared-agentic-ledger-contract",
+  "status": "adoption_active",
+  "purpose": "Factor AxTask's proven repo-local coordination-ledger discipline into a versioned cross-repository adoption contract without moving consumer task state or domain authority into BlacksmithGuild.",
+  "contractOwner": {
+    "repo": "EndeavorEverlasting/BlacksmithGuild",
+    "owns": [
+      "portable ledger vocabulary and invariants",
+      "adoption manifest schema",
+      "donor provenance and compatibility boundary",
+      "cross-repository collision and stale-reference rules"
+    ],
+    "doesNotOwn": [
+      "consumer queue contents",
+      "consumer task priority",
+      "consumer product or runtime behavior",
+      "consumer proof promotion",
+      "consumer validator implementation"
+    ]
+  },
+  "donor": {
+    "repo": "EndeavorEverlasting/AxTask",
+    "commit": "9351c952b057ae4520b1ea0d388e1d8908f4c093",
+    "authority": "AxTask remains authoritative for AxTask queue contents, AXQ namespace, production/recovery tasks, authority identifiers, and product/deployment behavior.",
+    "sourcePaths": [
+      ".ai/README.md",
+      ".ai/WORK_QUEUE.md",
+      ".ai/authority.json",
+      "scripts/ai-harness/validate-work-queue.mjs"
+    ]
+  },
+  "portableContract": {
+    "ledgerRole": "One repo-local coordination ledger records unfinished work and continuation state; implementation authority remains in the repository's own code, contracts, tests, runbooks, issues, PRs, and current evidence.",
+    "statuses": [
+      "READY",
+      "CLAIMED",
+      "VERIFY",
+      "REVIEW",
+      "MERGE",
+      "OPERATOR",
+      "BLOCKED",
+      "DONE"
+    ],
+    "priorities": ["P0", "P1", "P2", "P3"],
+    "requiredTaskFields": [
+      "Status",
+      "Priority",
+      "Owner",
+      "Branch / PR",
+      "Scope",
+      "Forbidden",
+      "Dependencies",
+      "References",
+      "Acceptance gate",
+      "Gate",
+      "Last proof",
+      "Next action",
+      "Updated"
+    ],
+    "continuationStatuses": ["READY", "CLAIMED", "VERIFY", "REVIEW", "MERGE"],
+    "terminalStatuses": ["DONE", "BLOCKED", "OPERATOR"],
+    "durableProofTokens": [
+      "commit:<git-sha>",
+      "merge:<git-sha>",
+      "workflow:<github-actions-run-id>",
+      "run:<github-actions-run-id>",
+      "artifact:<durable-path-or-reference>",
+      "operator-proof:<durable-external-reference>"
+    ],
+    "doneNextAction": "none; no safe actionable work remains",
+    "invariants": [
+      "Read the repo-local ledger at intake before choosing unfinished work.",
+      "Claim before substantial mutation and re-read current ledger state before updating a claim.",
+      "Continuation states are not stopping states when safe authorized work remains.",
+      "Opening a PR is not completion.",
+      "BLOCKED and OPERATOR require an exact gate and first executable next action.",
+      "DONE requires the acceptance gate, durable proof, Gate: none, and the canonical no-safe-work-remains next action.",
+      "Preserve concurrent work; never erase or rewrite another active task merely to simplify convergence."
+    ]
+  },
+  "compatibility": {
+    "adoptionSchema": "RepoLedgerAdoption.v1",
+    "schemaPath": ".tbg/harness/schemas/repo-ledger-adoption.schema.json",
+    "pinPolicy": "Consumers must pin an exact 40-hex BlacksmithGuild commit containing this contract and an exact 40-hex donor commit. Symbolic refs such as main, HEAD, tags, or branches are rejected.",
+    "upgradePolicy": "A consumer changes its pinned contract commit only in an explicit compatibility update that reruns its own validator. No consumer follows BlacksmithGuild main implicitly.",
+    "majorVersionRule": "Breaking portable vocabulary, task-field, status, or proof-token changes require a new RepoLedgerInteroperability major version."
+  },
+  "consumerContract": {
+    "requirements": [
+      "Keep the runtime ledger inside the consumer repository.",
+      "Use a consumer-owned task namespace; do not copy AXQ identifiers outside AxTask.",
+      "Implement and run a consumer-owned validator for local queue semantics.",
+      "Keep local product, deployment, runtime, secrets, and proof authority in the consumer repository.",
+      "Treat the adoption manifest as compatibility metadata, not proof that any queued task is complete.",
+      "Fail closed on symbolic or malformed contract/donor refs."
+    ],
+    "mayStrengthen": "Consumers may add stricter local fields, states, gates, or proof requirements if they do not silently weaken this version's portable invariants.",
+    "mustNotReimplement": [
+      "AxTask production recovery queue contents",
+      "AxTask authority identifiers",
+      "AxTask AXQ task IDs",
+      "BlacksmithGuild as a central runtime queue or task scheduler"
+    ]
+  },
+  "classification": {
+    "portable_harness": "adopt the coordination-ledger lifecycle and invariant vocabulary",
+    "reusable_skill": "reference-only; reuse existing repo factoring/interoperability skills rather than create a second skill authority",
+    "shared_schema_or_evidence_packet": "adopt RepoLedgerAdoption.v1 for compatibility/provenance metadata; it is not runtime proof",
+    "adapter": "consumer-owned local queue, namespace, intake pointer, and validator",
+    "reference_only_doctrine": "AxTask queue prose and BlacksmithGuild interoperability doctrine explain provenance but do not become consumer product authority",
+    "domain_specific_rejected": "AXQ task bodies, AxTask production recovery/deployment details, authority IDs, and consumer product/runtime behavior remain local"
+  },
+  "proofCeiling": "contract_and_repository_harness_proof_only",
+  "forbiddenScope": [
+    "centralizing consumer queue contents in BlacksmithGuild",
+    "making BlacksmithGuild required for consumer build or runtime",
+    "copying AxTask production/recovery task bodies into another repository",
+    "using adoption metadata to claim queued task completion or live behavior",
+    "cross-repository mutation from a consumer validator",
+    "circular authority where a consumer owns or redefines this shared contract"
+  ],
+  "terminalStates": [
+    "PASS_contract_boundary_proven",
+    "PASS_consumer_adoption_valid",
+    "BLOCKED_stale_or_symbolic_reference",
+    "BLOCKED_missing_local_validator",
+    "REJECTED_circular_authority",
+    "REJECTED_domain_authority_copy"
+  ]
+}

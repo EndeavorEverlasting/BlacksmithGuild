@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/EndeavorEverlasting/BlacksmithGuild/.tbg/harness/schemas/repo-ledger-adoption.schema.json",
+  "title": "Repository ledger adoption manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "repository",
+    "adoptionStatus",
+    "contract",
+    "donor",
+    "local",
+    "authority",
+    "proofCeiling"
+  ],
+  "properties": {
+    "schema": {"const": "RepoLedgerAdoption.v1"},
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "adoptionStatus": {
+      "enum": ["native_donor", "implemented", "proposed", "blocked"]
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "path", "version"],
+      "properties": {
+        "repository": {"const": "EndeavorEverlasting/BlacksmithGuild"},
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "path": {"const": ".tbg/workflows/repo-ledger-interoperability.contract.json"},
+        "version": {"const": "RepoLedgerInteroperability.v1"}
+      }
+    },
+    "donor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "sourcePaths"],
+      "properties": {
+        "repository": {"const": "EndeavorEverlasting/AxTask"},
+        "commit": {"const": "9351c952b057ae4520b1ea0d388e1d8908f4c093"},
+        "sourcePaths": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "local": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ledgerPath", "validatorPath", "taskNamespace", "format"],
+      "properties": {
+        "ledgerPath": {"type": "string", "minLength": 1},
+        "validatorPath": {"type": "string", "minLength": 1},
+        "taskNamespace": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9]{1,7}$"
+        },
+        "format": {"enum": ["markdown", "json"]}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtimeOwner", "contractOwner", "noCircularAuthority"],
+      "properties": {
+        "runtimeOwner": {"type": "string", "minLength": 1},
+        "contractOwner": {"const": "EndeavorEverlasting/BlacksmithGuild"},
+        "noCircularAuthority": {"const": true}
+      }
+    },
+    "proofCeiling": {"const": "repository_harness_only"}
+  }
+}

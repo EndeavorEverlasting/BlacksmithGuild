@@ -1,0 +1,43 @@
+name: Repo Ledger Interoperability
+
+on:
+  pull_request:
+    paths:
+      - '.tbg/workflows/repo-ledger-interoperability.contract.json'
+      - '.tbg/harness/schemas/repo-ledger-adoption.schema.json'
+      - '.tbg/harness/repo-ledger-contributions.registry.json'
+      - 'scripts/tbg/Test-TbgRepoLedgerInteroperability.ps1'
+      - 'docs/architecture/repo-ledger-interoperability.md'
+      - '.github/workflows/repo-ledger-interoperability.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.tbg/workflows/repo-ledger-interoperability.contract.json'
+      - '.tbg/harness/schemas/repo-ledger-adoption.schema.json'
+      - '.tbg/harness/repo-ledger-contributions.registry.json'
+      - 'scripts/tbg/Test-TbgRepoLedgerInteroperability.ps1'
+      - 'docs/architecture/repo-ledger-interoperability.md'
+      - '.github/workflows/repo-ledger-interoperability.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Validate shared repo-ledger contract
+        shell: pwsh
+        run: ./scripts/tbg/Test-TbgRepoLedgerInteroperability.ps1
+      - name: Check patch whitespace
+        shell: bash
+        run: |
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            git diff --check HEAD^ HEAD
+          else
+            git diff --check
+          fi

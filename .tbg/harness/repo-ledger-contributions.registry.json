@@ -1,0 +1,161 @@
+{
+  "schema": "TbgRepoLedgerContributionRegistry.v1",
+  "contractVersion": "RepoLedgerInteroperability.v1",
+  "contractOwner": "EndeavorEverlasting/BlacksmithGuild",
+  "donor": {
+    "repository": "EndeavorEverlasting/AxTask",
+    "commit": "9351c952b057ae4520b1ea0d388e1d8908f4c093",
+    "sources": [
+      {
+        "path": ".ai/README.md",
+        "blob": "78eee20a18ab20e66193542be0b35099428fc83b",
+        "role": "agent-facing queue entry and usage guidance"
+      },
+      {
+        "path": ".ai/WORK_QUEUE.md",
+        "blob": "916d31d8f41cc130eee32f069043934fbde98186",
+        "role": "canonical AxTask coordination ledger and portable lifecycle semantics"
+      },
+      {
+        "path": ".ai/authority.json",
+        "blob": "6228a537381823e1685f094ad9fd502226829444",
+        "role": "AxTask authority boundary proving the queue is subordinate to repo-owned executable authority"
+      },
+      {
+        "path": "scripts/ai-harness/validate-work-queue.mjs",
+        "blob": "50f8fef19c261b38cc560ad9e9c9c4012ec4db8d",
+        "role": "donor-side machine enforcement of queue continuation and completion semantics"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "id": "repo-local-coordination-ledger",
+      "classification": "portable_harness",
+      "disposition": "adopt",
+      "capabilities": [
+        "single repo-local unfinished-work ledger",
+        "claim-before-mutation coordination",
+        "continuation versus terminal state distinction",
+        "strict DONE gate with durable proof",
+        "exact gate and executable next action for blocked/operator work",
+        "concurrent-work preservation"
+      ],
+      "proofCeiling": "repository_harness_only"
+    },
+    {
+      "id": "ledger-factoring-skill",
+      "classification": "reusable_skill",
+      "disposition": "reference_only",
+      "capabilities": [
+        "reuse existing BlacksmithGuild agent-skill-factoring and continuum-interoperability doctrine"
+      ],
+      "proofCeiling": "doctrine_reference_only",
+      "mustNotCopy": [
+        "do not create a second shared skill that competes with existing factoring/interoperability authority"
+      ]
+    },
+    {
+      "id": "repo-ledger-adoption-manifest",
+      "classification": "shared_schema_or_evidence_packet",
+      "disposition": "adopt",
+      "capabilities": [
+        "exact contract pin",
+        "exact donor provenance",
+        "consumer ledger and validator discovery",
+        "explicit runtime-versus-contract ownership boundary"
+      ],
+      "proofCeiling": "compatibility_metadata_only"
+    },
+    {
+      "id": "consumer-ledger-adapter",
+      "classification": "adapter",
+      "disposition": "consumer_owned",
+      "capabilities": [
+        "consumer namespace",
+        "consumer-local work queue",
+        "consumer-local validator",
+        "consumer intake pointer"
+      ],
+      "proofCeiling": "consumer_repository_harness_only"
+    },
+    {
+      "id": "continuation-doctrine",
+      "classification": "reference_only_doctrine",
+      "disposition": "reference_only",
+      "capabilities": [
+        "PR opened is not completion",
+        "continuation states are not stopping states",
+        "no safe actionable work remains is the strict DONE boundary"
+      ],
+      "proofCeiling": "reference_only"
+    },
+    {
+      "id": "axtask-domain-queue",
+      "classification": "domain_specific_rejected",
+      "disposition": "reject_extraction",
+      "capabilities": [],
+      "mustNotCopy": [
+        "AXQ task identifiers and task bodies",
+        "axtask.agent-authority.v1",
+        "Render and Neon recovery state",
+        "production database recovery ordering",
+        "AxTask product, deployment, provider, or runtime gates"
+      ],
+      "proofCeiling": "axtask_authority_only"
+    }
+  ],
+  "consumers": [
+    {
+      "repository": "EndeavorEverlasting/AxTask",
+      "targetLayer": ".ai",
+      "taskNamespace": "AXQ",
+      "adoption": "native_donor",
+      "expectedLedgerPath": ".ai/WORK_QUEUE.md",
+      "expectedValidatorPath": "scripts/ai-harness/validate-work-queue.mjs",
+      "mustRemainAuthoritativeFor": [
+        "AxTask queue contents",
+        "AxTask product and deployment behavior",
+        "AxTask proof promotion"
+      ]
+    },
+    {
+      "repository": "EndeavorEverlasting/AgentSwitchboard",
+      "targetLayer": ".ai",
+      "taskNamespace": "ASQ",
+      "adoption": "proposed",
+      "expectedLedgerPath": ".ai/WORK_QUEUE.md",
+      "expectedValidatorPath": "scripts/ai-harness/validate-repo-ledger.py",
+      "mustRemainAuthoritativeFor": [
+        "repository-family governance",
+        "AgentSwitchboard runtime and product behavior",
+        "AgentSwitchboard proof promotion"
+      ]
+    },
+    {
+      "repository": "EndeavorEverlasting/web-excel-repair-triage",
+      "targetLayer": ".ai",
+      "taskNamespace": "TRQ",
+      "adoption": "proposed",
+      "expectedLedgerPath": ".ai/WORK_QUEUE.md",
+      "expectedValidatorPath": "scripts/validate_repo_ledger.py",
+      "mustRemainAuthoritativeFor": [
+        "triage and Prompt Kit product behavior",
+        "artifact-engine rules and protected-data boundaries",
+        "triage proof promotion"
+      ]
+    }
+  ],
+  "collisionBoundaries": [
+    "BlacksmithGuild may version the portable contract but may not own or mutate consumer task state.",
+    "Consumers may strengthen local validation but may not redefine RepoLedgerInteroperability.v1 in place.",
+    "Consumers use distinct task namespaces; AXQ remains AxTask-only.",
+    "Consumer validators are local implementations and must not call across repositories to mutate state.",
+    "Contract upgrades require explicit exact-commit repinning and local validation; symbolic refs are forbidden."
+  ],
+  "staleReferencePolicy": {
+    "acceptedRef": "exact 40-character lowercase hexadecimal commit SHA",
+    "rejectedRefs": ["main", "master", "HEAD", "branch names", "tags", "short SHAs"],
+    "behavior": "fail closed until the adoption manifest is deliberately repinned and revalidated"
+  }
+}
