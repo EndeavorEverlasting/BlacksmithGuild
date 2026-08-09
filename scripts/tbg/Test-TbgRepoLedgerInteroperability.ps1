@@ -75,7 +75,8 @@ if ($Contract) {
     foreach ($Path in $ExpectedSources.Keys) {
         Assert-True (@($Contract.donor.sourcePaths) -contains $Path) "missing donor source path: $Path"
     }
-    Assert-True ((Compare-Object $ExpectedStatuses @($Contract.portableContract.statuses) -SyncWindow 0).Count -eq 0) 'portable status vocabulary drifted'
+    $StatusDiff = @(Compare-Object -ReferenceObject $ExpectedStatuses -DifferenceObject @($Contract.portableContract.statuses) -SyncWindow 0)
+    Assert-True ($StatusDiff.Count -eq 0) 'portable status vocabulary drifted'
     Assert-True ($Contract.portableContract.doneNextAction -eq 'none; no safe actionable work remains') 'strict DONE next-action token drifted'
     Assert-True ($Contract.compatibility.adoptionSchema -eq 'RepoLedgerAdoption.v1') 'adoption schema id drifted'
     Assert-True ($Contract.proofCeiling -eq 'contract_and_repository_harness_proof_only') 'contract proof ceiling drifted'
