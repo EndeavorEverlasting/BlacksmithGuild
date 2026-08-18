@@ -23,6 +23,9 @@ namespace BlacksmithGuild.DevTools
                     return IsClockRunning();
                 }
 
+                // Escape is an operator-interruption surface, not an automation target. Do not
+                // replay the preserved PR #102 global key injection; the operator closes Escape,
+                // then the active route's existing ReassertRunningClock path resumes simulation.
                 if (IsEscapeMenuOpen())
                 {
                     DebugLogger.Test(
@@ -81,104 +84,6 @@ namespace BlacksmithGuild.DevTools
             {
                 return false;
             }
-        }
-    }
-
-    /// <summary>
-    /// Remembers a route-blocking escape-menu pause and restores the campaign clock after the
-    /// operator returns to the campaign map. This service never sends global input or dismisses UI;
-    /// it only performs the existing in-process clock transition once the surface is safe again.
-    /// </summary>
-    internal static class PauseAwareCampaignClockRecoveryService
-    {
-        private const float PollIntervalSeconds = 0.25f;
-        private static readonly TimeSpan RecoveryWindow = TimeSpan.FromSeconds(5);
-
-        private static float _pollAccumulator;
-        private static bool _escapeMenuObserved;
-        private static DateTime _lastEscapeMenuObservedUtc = DateTime.MinValue;
-
-        public static void Poll(float dt)
-        {
-            if (dt <= 0f)
-            {
-                return;
-            }
-
-            _pollAccumulator += dt;
-            if (_pollAccumulator < PollIntervalSeconds)
-            {
-                return;
-            }
-
-            _pollAccumulator = 0f;
-            var snapshot = GameSessionState.LatestGameplaySurface;
-            if (snapshot == null)
-            {
-                return;
-            }
-
-            if (string.Equals(snapshot.GameplaySurface, GameplaySurfaceKinds.EscapeMenu, StringComparison.Ordinal))
-            {
-                if (!_escapeMenuObserved)
-                {
-                    DebugLogger.Test(
-                        "[TBG PAUSE] escape menu observed; clock recovery armed",
-                        showInGame: false);
-                }
-
-                _escapeMenuObserved = true;
-                _lastEscapeMenuObservedUtc = DateTime.UtcNow;
-                return;
-            }
-
-            if (!_escapeMenuObserved)
-            {
-                return;
-            }
-
-            if (DateTime.UtcNow - _lastEscapeMenuObservedUtc > RecoveryWindow)
-            {
-                Reset("recovery_window_expired");
-                return;
-            }
-
-            if (GameSessionState.IsMapMenuOpen || GameSessionState.IsMissionActiveForTrace())
-            {
-                return;
-            }
-
-            if (!string.Equals(snapshot.GameplaySurface, GameplaySurfaceKinds.CampaignMap, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            if (!GameSessionState.IsTimePaused || CampaignClockResumeHelper.IsClockRunning())
-            {
-                Reset("clock_already_running");
-                return;
-            }
-
-            var resumed = CampaignClockResumeHelper.EnsureClockRunning(nameof(PauseAwareCampaignClockRecoveryService));
-            DebugLogger.Test(
-                $"[TBG PAUSE] post-escape clock recovery resumed={resumed.ToString().ToLowerInvariant()}",
-                showInGame: false);
-
-            if (resumed)
-            {
-                Reset("clock_resumed");
-            }
-        }
-
-        private static void Reset(string reason)
-        {
-            if (_escapeMenuObserved)
-            {
-                DebugLogger.Test($"[TBG PAUSE] clock recovery disarmed reason={reason}", showInGame: false);
-            }
-
-            _escapeMenuObserved = false;
-            _lastEscapeMenuObservedUtc = DateTime.MinValue;
         }
     }
 }
