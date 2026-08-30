@@ -8,6 +8,7 @@
   "proofOrder": ["contract", "harness", "static test", "build", "launcher", "command ACK", "behavior observed", "live runtime"],
   "guardrails": [
     "Default profile cannot launch Bannerlord or mutate saves.",
+    "Canonical stale-PR recovery progress validation is part of default-static so superseded, rejected, replayed, and historical dispositions cannot drift outside composed proof.",
     "Release build and install are excluded from build-only proof.",
     "Read-only runtime requires explicit authority and a fresh expected artifact.",
     "Disposable-save live proof requires a specific workflow contract and explicit mutation authority.",
