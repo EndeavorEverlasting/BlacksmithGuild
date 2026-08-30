@@ -79,14 +79,16 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 $contractPath = Join-Path $repoRoot '.tbg/workflows/stale-pr-recovery-automation.contract.json'
 $planPath = Join-Path $repoRoot '.tbg/plans/stale-pr-recovery-20260712/manifest.json'
 $invokePath = Join-Path $repoRoot 'scripts/tbg/Invoke-TbgStalePrRecovery.ps1'
+$pr32ValidatorPath = Join-Path $repoRoot 'scripts/tbg/Test-TbgPr32GuardrailPreservation.ps1'
 $wrapperPath = Join-Path $repoRoot 'ForgeStalePrRecovery.cmd'
 $workflowPath = Join-Path $repoRoot '.github/workflows/harness-policy-reports.yml'
 
-foreach ($path in @($contractPath, $planPath, $invokePath, $wrapperPath, $workflowPath)) {
+foreach ($path in @($contractPath, $planPath, $invokePath, $pr32ValidatorPath, $wrapperPath, $workflowPath)) {
     Assert-TbgTrue (Test-Path -LiteralPath $path -PathType Leaf) "Required stale PR recovery surface is missing: $path"
 }
 
 Assert-TbgPowerShellParses -Path $invokePath
+Assert-TbgPowerShellParses -Path $pr32ValidatorPath
 Assert-TbgPowerShellParses -Path $PSCommandPath
 
 $contract = Get-Content -LiteralPath $contractPath -Raw | ConvertFrom-Json
@@ -103,6 +105,8 @@ Assert-TbgTrue (@($plan.entries | Where-Object { [int]$_.pr -eq 2 }).Count -eq 1
 $workflowText = Get-Content -LiteralPath $workflowPath -Raw
 Assert-TbgTrue ($workflowText.Contains("'.tbg/plans/**'")) 'Harness Policy Reports must run when recovery plans change.'
 Assert-TbgTrue ($workflowText.Contains('Test-TbgStalePrRecovery.ps1')) 'Harness Policy Reports must execute the stale PR recovery validator.'
+
+& $pr32ValidatorPath -RepoRoot $repoRoot -OutputRoot 'artifacts/latest/pr32-guardrail-preservation' | Out-Null
 
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("tbg-stale-pr-recovery-{0}" -f [Guid]::NewGuid().ToString('N'))
 try {
@@ -146,4 +150,4 @@ finally {
     if (Test-Path -LiteralPath $tempRoot) { Remove-Item -LiteralPath $tempRoot -Recurse -Force }
 }
 
-Write-Host 'PASS: stale PR recovery produced deterministic syntactic-English instructions, paired artifacts, fail-closed floor gating, and a bounded ready fixture.'
+Write-Host 'PASS: stale PR recovery produced deterministic syntactic-English instructions, paired artifacts, fail-closed floor gating, PR #32 guardrail-preservation proof, and a bounded ready fixture.'
