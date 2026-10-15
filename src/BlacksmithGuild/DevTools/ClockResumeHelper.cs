@@ -15,12 +15,29 @@ namespace BlacksmithGuild.DevTools
             var who = string.IsNullOrWhiteSpace(caller) ? "unknown" : caller;
             try
             {
-                if (Campaign.Current == null
-                    || GameSessionState.IsMapMenuOpen
-                    || GameSessionState.IsMissionActiveForTrace())
+                if (Campaign.Current == null || GameSessionState.IsMissionActiveForTrace())
                 {
                     DebugLogger.Test(
                         $"[TBG CLOCK] resume skipped caller={who} reason=unsafe_surface running={IsClockRunning().ToString().ToLowerInvariant()}",
+                        showInGame: false);
+                    return IsClockRunning();
+                }
+
+                // Escape is an operator-interruption surface, not an automation target. Do not
+                // replay the preserved PR #102 global key injection; the operator closes Escape,
+                // then the active route's existing ReassertRunningClock path resumes simulation.
+                if (IsEscapeMenuOpen())
+                {
+                    DebugLogger.Test(
+                        $"[TBG CLOCK] resume skipped caller={who} reason=escape_menu_open running={IsClockRunning().ToString().ToLowerInvariant()}",
+                        showInGame: false);
+                    return IsClockRunning();
+                }
+
+                if (GameSessionState.IsMapMenuOpen)
+                {
+                    DebugLogger.Test(
+                        $"[TBG CLOCK] resume skipped caller={who} reason=map_menu_open running={IsClockRunning().ToString().ToLowerInvariant()}",
                         showInGame: false);
                     return IsClockRunning();
                 }
@@ -39,6 +56,19 @@ namespace BlacksmithGuild.DevTools
             catch (Exception ex)
             {
                 DebugLogger.Test($"[TBG CLOCK] resume failed caller={who}: {ex.Message}", showInGame: false);
+                return false;
+            }
+        }
+
+        public static bool IsEscapeMenuOpen()
+        {
+            try
+            {
+                var surface = GameSessionState.LatestGameplaySurface?.GameplaySurface;
+                return string.Equals(surface, GameplaySurfaceKinds.EscapeMenu, StringComparison.Ordinal);
+            }
+            catch
+            {
                 return false;
             }
         }

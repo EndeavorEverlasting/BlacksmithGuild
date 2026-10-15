@@ -19,6 +19,13 @@ function Assert-Contains($RelativePath, $Needle, $Why = '') {
     }
 }
 
+function Assert-NotContains($RelativePath, $Needle, $Why = '') {
+    $text = Read-Text $RelativePath
+    if ($text.IndexOf($Needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
+        $failures.Add("$RelativePath must not contain '$Needle' $Why") | Out-Null
+    }
+}
+
 function Assert-ManifestArrayContains($Array, [string]$Value, [string]$FieldName) {
     if (@($Array | ForEach-Object { [string]$_ }) -notcontains $Value) {
         $failures.Add("manifest $FieldName missing '$Value'") | Out-Null
@@ -134,6 +141,17 @@ Assert-Contains 'scripts\autonomous-assist-session.ps1' "-CheckpointName 'party_
 Assert-Contains 'scripts\reboot-context-classifier.ps1' 'movementIntentSet' 'Reboot classifier must preserve movement intent'
 Assert-Contains 'scripts\reboot-context-classifier.ps1' 'partyMovedDistanceBucket' 'distance is a bucketed signal, not sole truth'
 Assert-Contains 'scripts\reboot-context-classifier.ps1' 'movementProofClassification' 'classifier must preserve richer movement proof labels'
+
+# PR #102 reconstruction: Escape remains operator-owned, while an active route resumes the
+# campaign clock through the existing in-process movement choke point after the operator returns.
+Assert-Contains 'src\BlacksmithGuild\DevTools\ClockResumeHelper.cs' 'GameplaySurfaceKinds.EscapeMenu' 'clock policy must detect the canonical escape-menu surface'
+Assert-Contains 'src\BlacksmithGuild\DevTools\ClockResumeHelper.cs' 'reason=escape_menu_open' 'clock policy must fail closed while Escape is open'
+Assert-Contains 'src\BlacksmithGuild\DevTools\ClockResumeHelper.cs' 'CampaignTimeControlMode.StoppablePlay' 'post-intervention recovery must remain an in-process clock transition'
+Assert-Contains 'src\BlacksmithGuild\DevTools\AutoTravelService.cs' 'ReassertRunningClock();' 'active travel must reassert the clock after the operator returns to the campaign map'
+Assert-Contains 'src\BlacksmithGuild\DevTools\AutoTravelService.cs' 'CampaignClockResumeHelper.EnsureClockRunning("AutoTravelService")' 'active travel must route recovery through the shared clock policy'
+foreach ($forbidden in @('keybd_event', 'user32.dll', 'Thread.Sleep', 'SendKeys', 'mouse_event')) {
+    Assert-NotContains 'src\BlacksmithGuild\DevTools\ClockResumeHelper.cs' $forbidden 'route pause recovery must not replay global input injection or blocking sleeps'
+}
 
 if ($failures.Count -gt 0) {
     Write-Host "FAIL: travel logistics circuit contract has $($failures.Count) issue(s)." -ForegroundColor Red
