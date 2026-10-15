@@ -1,5 +1,9 @@
 # Blacksmith Guild Agent Governance Contract
 
+## P00/P01/P04 — settled cross-repository product ownership
+AgentSwitchboard is a retired product (donor/verified old callers only). TokenCorridor owns the product control plane. Technical cleanup does not reopen retirement. Never assign new orchestration, policy or website work to AgentSwitchboard.
+
+
 `AGENTS.md` is the single source of truth for agent operations in `EndeavorEverlasting/BlacksmithGuild`. Keep executable sequence and done gates in `.tbg/workflows/**`. Canonical execution doctrine: [`docs/harness-doctrine.md`](docs/harness-doctrine.md), enforced by `.tbg/harness/policies/harness-doctrine.policy.json` and `scripts/tbg/Test-TbgHarnessDoctrine.ps1`.
 
 ---
